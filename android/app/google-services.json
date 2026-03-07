@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "610307403409",
+    "project_id": "paa-yangu",
+    "storage_bucket": "paa-yangu.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:610307403409:android:f58b9db750a20136961930",
+        "android_client_info": {
+          "package_name": "tz.co.artbel.paa_yangu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8unCDC_hWiesXPQ3vdiNwMc1QjCdDZJI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:610307403409:android:70ee5414cd96590b961930",
+        "android_client_info": {
+          "package_name": "tz.co.artbel.paa_yangu.paa_yangu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8unCDC_hWiesXPQ3vdiNwMc1QjCdDZJI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,715 @@
+PODS:
+  - connectivity_plus (0.0.1):
+    - Flutter
+  - DKImagePickerController/Core (4.3.9):
+    - DKImagePickerController/ImageDataManager
+    - DKImagePickerController/Resource
+  - DKImagePickerController/ImageDataManager (4.3.9)
+  - DKImagePickerController/PhotoGallery (4.3.9):
+    - DKImagePickerController/Core
+    - DKPhotoGallery
+  - DKImagePickerController/Resource (4.3.9)
+  - DKPhotoGallery (0.0.19):
+    - DKPhotoGallery/Core (= 0.0.19)
+    - DKPhotoGallery/Model (= 0.0.19)
+    - DKPhotoGallery/Preview (= 0.0.19)
+    - DKPhotoGallery/Resource (= 0.0.19)
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Core (0.0.19):
+    - DKPhotoGallery/Model
+    - DKPhotoGallery/Preview
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Model (0.0.19):
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Preview (0.0.19):
+    - DKPhotoGallery/Model
+    - DKPhotoGallery/Resource
+    - SDWebImage
+    - SwiftyGif
+  - DKPhotoGallery/Resource (0.0.19):
+    - SDWebImage
+    - SwiftyGif
+  - file_picker (0.0.1):
+    - DKImagePickerController/PhotoGallery
+    - Flutter
+  - Firebase/Analytics (11.15.0):
+    - Firebase/Core
+  - Firebase/Core (11.15.0):
+    - Firebase/CoreOnly
+    - FirebaseAnalytics (~> 11.15.0)
+  - Firebase/CoreOnly (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+  - Firebase/Crashlytics (11.15.0):
+    - Firebase/CoreOnly
+    - FirebaseCrashlytics (~> 11.15.0)
+  - Firebase/Messaging (11.15.0):
+    - Firebase/CoreOnly
+    - FirebaseMessaging (~> 11.15.0)
+  - firebase_analytics (11.6.0):
+    - Firebase/Analytics (= 11.15.0)
+    - firebase_core
+    - Flutter
+  - firebase_core (3.15.2):
+    - Firebase/CoreOnly (= 11.15.0)
+    - Flutter
+  - firebase_crashlytics (4.3.10):
+    - Firebase/Crashlytics (= 11.15.0)
+    - firebase_core
+    - Flutter
+  - firebase_messaging (15.2.10):
+    - Firebase/Messaging (= 11.15.0)
+    - firebase_core
+    - Flutter
+  - FirebaseAnalytics (11.15.0):
+    - FirebaseAnalytics/Default (= 11.15.0)
+    - FirebaseCore (~> 11.15.0)
+    - FirebaseInstallations (~> 11.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - FirebaseAnalytics/Default (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+    - FirebaseInstallations (~> 11.0)
+    - GoogleAppMeasurement/Default (= 11.15.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - FirebaseCore (11.15.0):
+    - FirebaseCoreInternal (~> 11.15.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Logger (~> 8.1)
+  - FirebaseCoreExtension (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+  - FirebaseCoreInternal (11.15.0):
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+  - FirebaseCrashlytics (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+    - FirebaseInstallations (~> 11.0)
+    - FirebaseRemoteConfigInterop (~> 11.0)
+    - FirebaseSessions (~> 11.0)
+    - GoogleDataTransport (~> 10.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - nanopb (~> 3.30910.0)
+    - PromisesObjC (~> 2.4)
+  - FirebaseInstallations (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
+    - PromisesObjC (~> 2.4)
+  - FirebaseMessaging (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+    - FirebaseInstallations (~> 11.0)
+    - GoogleDataTransport (~> 10.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/Reachability (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
+    - nanopb (~> 3.30910.0)
+  - FirebaseRemoteConfigInterop (11.15.0)
+  - FirebaseSessions (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+    - FirebaseCoreExtension (~> 11.15.0)
+    - FirebaseInstallations (~> 11.0)
+    - GoogleDataTransport (~> 10.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
+    - nanopb (~> 3.30910.0)
+    - PromisesSwift (~> 2.1)
+  - Flutter (1.0.0)
+  - flutter_local_notifications (0.0.1):
+    - Flutter
+  - flutter_secure_storage (6.0.0):
+    - Flutter
+  - fluttertoast (0.0.2):
+    - Flutter
+  - GoogleAdsOnDeviceConversion (2.1.0):
+    - GoogleUtilities/Logger (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - nanopb (~> 3.30910.0)
+  - GoogleAppMeasurement/Core (11.15.0):
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - GoogleAppMeasurement/Default (11.15.0):
+    - GoogleAdsOnDeviceConversion (= 2.1.0)
+    - GoogleAppMeasurement/Core (= 11.15.0)
+    - GoogleAppMeasurement/IdentitySupport (= 11.15.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - GoogleAppMeasurement/IdentitySupport (11.15.0):
+    - GoogleAppMeasurement/Core (= 11.15.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/Network (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
+    - nanopb (~> 3.30910.0)
+  - GoogleDataTransport (10.1.0):
+    - nanopb (~> 3.30910.0)
+    - PromisesObjC (~> 2.4)
+  - GoogleUtilities/AppDelegateSwizzler (8.1.0):
+    - GoogleUtilities/Environment
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Network
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Environment (8.1.0):
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Logger (8.1.0):
+    - GoogleUtilities/Environment
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/MethodSwizzler (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Network (8.1.0):
+    - GoogleUtilities/Logger
+    - "GoogleUtilities/NSData+zlib"
+    - GoogleUtilities/Privacy
+    - GoogleUtilities/Reachability
+  - "GoogleUtilities/NSData+zlib (8.1.0)":
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/Privacy (8.1.0)
+  - GoogleUtilities/Reachability (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/UserDefaults (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
+  - image_picker_ios (0.0.1):
+    - Flutter
+  - libwebp (1.5.0):
+    - libwebp/demux (= 1.5.0)
+    - libwebp/mux (= 1.5.0)
+    - libwebp/sharpyuv (= 1.5.0)
+    - libwebp/webp (= 1.5.0)
+  - libwebp/demux (1.5.0):
+    - libwebp/webp
+  - libwebp/mux (1.5.0):
+    - libwebp/demux
+  - libwebp/sharpyuv (1.5.0)
+  - libwebp/webp (1.5.0):
+    - libwebp/sharpyuv
+  - local_auth_darwin (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - nanopb (3.30910.0):
+    - nanopb/decode (= 3.30910.0)
+    - nanopb/encode (= 3.30910.0)
+  - nanopb/decode (3.30910.0)
+  - nanopb/encode (3.30910.0)
+  - open_file_ios (1.0.3):
+    - Flutter
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - permission_handler_apple (9.3.0):
+    - Flutter
+  - PromisesObjC (2.4.0)
+  - PromisesSwift (2.4.0):
+    - PromisesObjC (= 2.4.0)
+  - SDWebImage (5.21.7):
+    - SDWebImage/Core (= 5.21.7)
+  - SDWebImage/Core (5.21.7)
+  - SwiftyGif (5.4.5)
+  - ThingAudioEngineSDK (1.7.13):
+    - ThingAvLoggerSDK
+  - ThingAvLoggerSDK (1.3.0)
+  - ThingBluetooth (5.6.1):
+    - ThingSmartUtil (~> 5.13)
+  - ThingCameraSDK (4.26.4):
+    - ThingAudioEngineSDK
+    - ThingAvLoggerSDK
+    - ThingFFmpegWrapper
+    - ThingOpenSSLSDK (~> 1.1.1-t.0)
+    - ThingP2PSDK
+    - ThingVideoCodecSDK
+  - ThingCameraUIKit (5.0.10):
+    - ThingSmartMediaUIKit
+  - ThingEncryptImage (4.33.0):
+    - libwebp
+    - ThingSmartUtil
+  - ThingFFmpegWrapper (4.4.2.6)
+  - ThingFoundationKit (1.25.1):
+    - ThingSmartUtil
+  - ThingMachRegister (0.8.0)
+  - ThingMbedtls (3.5.2)
+  - ThingOpenSSLSDK (1.1.1-w.4)
+  - ThingP2PSDK (3.10.0):
+    - ThingAvLoggerSDK
+    - ThingMbedtls
+  - ThingSmartActivatorCoreKit (5.9.0):
+    - ThingSmartBaseKit (~> 5.0)
+    - ThingSmartDeviceCoreKit (~> 5.0)
+    - ThingSmartPairingCoreKit (~> 5.3)
+    - ThingSmartSocketChannelKit (~> 5.0)
+    - ThingSmartUtil (~> 5.14)
+  - ThingSmartActivatorKit (5.60.3):
+    - ThingSmartActivatorCoreKit (~> 5.2)
+    - ThingSmartDeviceKit (~> 5.0)
+    - YYModel
+  - ThingSmartAVBaseKit (2.3.9.1):
+    - ThingAvLoggerSDK
+    - ThingSmartUtil
+  - ThingSmartBaseBLEKit (1.0.0):
+    - ThingSmartUtil (~> 5.12)
+  - ThingSmartBaseKit (5.8.3):
+    - ThingSmartMQTTChannelKit (~> 5.0)
+    - ThingSmartNetworkKit (~> 5.0)
+    - ThingSmartUtil (~> 5.0)
+    - YYModel
+  - ThingSmartBeaconKit (5.4.3):
+    - ThingSmartBaseBLEKit (~> 1.0)
+    - ThingSmartBaseKit (~> 5.0)
+    - ThingSmartBLECoreKit (~> 5.0)
+    - ThingSmartDeviceCoreKit (~> 5.14)
+    - ThingSmartUtil (~> 5.14)
+  - ThingSmartBLECoreKit (5.13.0.3):
+    - ThingBluetooth (< 10.0, ~> 5.5)
+    - ThingSmartBaseBLEKit (~> 1.0)
+    - ThingSmartUtil (~> 5.16)
+    - YYModel
+  - ThingSmartBLEKit (5.14.2):
+    - ThingBluetooth (< 10.0, ~> 5.6)
+    - ThingSmartBaseBLEKit (~> 1.0)
+    - ThingSmartBaseKit (~> 5.0)
+    - ThingSmartBeaconKit (~> 5.0)
+    - ThingSmartBLECoreKit (~> 5.13)
+    - ThingSmartDeviceCoreKit (~> 5.15)
+    - ThingSmartUtil (~> 5.17)
+  - ThingSmartBLEMeshKit (5.13.2):
+    - ThingBluetooth (< 10.0, ~> 5.4)
+    - ThingSmartActivatorCoreKit (~> 5.0)
+    - ThingSmartBaseBLEKit (~> 1.0)
+    - ThingSmartBaseKit (~> 5.0)
+    - ThingSmartDeviceCoreKit (~> 5.14)
+    - ThingSmartUtil (~> 5.14)
+  - ThingSmartCallChannelKit (2.2.0):
+    - ThingSmartAVBaseKit
+    - ThingSmartBaseKit
+    - ThingSmartCallCounterKit
+    - ThingSmartDeviceCoreKit
+    - ThingSmartMQTTChannelKit
+    - ThingSmartNetworkKit
+  - ThingSmartCallCounterKit (1.0.3)
+  - ThingSmartCameraBase (6.5.3):
+    - ThingSmartAVBaseKit
+    - ThingSmartMediaServices
+  - ThingSmartCameraExtSDK (1.0.6)
+  - ThingSmartCameraKit (6.7.5.6):
+    - libwebp
+    - libwebp/demux
+    - libwebp/mux
+    - libwebp/sharpyuv
+    - libwebp/webp
+    - ThingAudioEngineSDK (= 1.7.13)
+    - ThingAvLoggerSDK (= 1.3.0)
+    - ThingCameraSDK (= 4.26.4)
+    - ThingEncryptImage (= 4.33.0)
+    - ThingFFmpegWrapper (= 4.4.2.6)
+    - ThingMbedtls (= 3.5.2)
+    - ThingOpenSSLSDK (~> 1.1.1-w.4)
+    - ThingP2PSDK (= 3.10.0)
+    - ThingSmartAVBaseKit (= 2.3.9.1)
+    - ThingSmartBaseKit (= 5.8.3)
+    - ThingSmartCallChannelKit (= 2.2.0)
+    - ThingSmartCallCounterKit (= 1.0.3)
+    - ThingSmartCameraBase (= 6.5.3)
+    - ThingSmartCameraExtSDK (= 1.0.6)
+    - ThingSmartCameraM (= 6.7.1)
+    - ThingSmartCryption
+    - ThingSmartDeviceCoreKit (= 5.21.7)
+    - ThingSmartMediaServices (= 3.0.1)
+    - ThingSmartMediaUIKit (= 3.0.1)
+    - ThingSmartMQTTChannelKit (= 5.8.0)
+    - ThingSmartNetworkKit (= 5.8.0.1)
+    - ThingSmartP2pChannelKit (= 5.15.0)
+    - ThingSmartSocketChannelKit (= 5.0.11)
+    - ThingSmartUtil (= 5.17.1.3)
+    - ThingVideoCodecSDK (= 1.7.0)
+    - YYModel
+  - ThingSmartCameraM (6.7.1):
+    - ThingAvLoggerSDK
+    - ThingCameraSDK
+    - ThingSmartAVBaseKit
+    - ThingSmartBaseKit
+    - ThingSmartCameraBase
+    - ThingSmartDeviceCoreKit
+    - ThingSmartMediaUIKit
+    - ThingSmartP2pChannelKit
+  - ThingSmartCryption (5.0.0)
+  - ThingSmartDeviceCoreKit (5.21.7):
+    - ThingSmartMQTTChannelKit (~> 5.8)
+    - ThingSmartNetworkKit (~> 5.0)
+    - ThingSmartSocketChannelKit (~> 5.0)
+    - ThingSmartUtil (~> 5.15)
+    - YYModel
+  - ThingSmartDeviceKit (5.12.1.2):
+    - ThingMachRegister
+    - ThingSmartBaseKit (~> 5.0)
+    - ThingSmartDeviceCoreKit (~> 5.20)
+    - ThingSmartMQTTChannelKit (~> 5.5)
+    - ThingSmartNetworkKit (>= 5.7.10)
+    - ThingSmartShareKit (~> 5.0)
+    - YYModel
+  - ThingSmartFeedbackKit (5.0.0):
+    - ThingSmartBaseKit (~> 5.0)
+    - YYModel
+  - ThingSmartHomeKit (6.7.0.4):
+    - ThingBluetooth (= 5.6.1)
+    - ThingMachRegister (= 0.8.0)
+    - ThingMbedtls (= 3.5.2)
+    - ThingOpenSSLSDK (~> 1.1.1-w.4)
+    - ThingSmartActivatorCoreKit (= 5.9.0)
+    - ThingSmartActivatorKit (= 5.60.3)
+    - ThingSmartBaseBLEKit (= 1.0.0)
+    - ThingSmartBaseKit (= 5.8.3)
+    - ThingSmartBeaconKit (= 5.4.3)
+    - ThingSmartBLECoreKit (= 5.13.0.3)
+    - ThingSmartBLEKit (= 5.14.2)
+    - ThingSmartBLEMeshKit (= 5.13.2)
+    - ThingSmartCryption
+    - ThingSmartDeviceCoreKit (= 5.21.7)
+    - ThingSmartDeviceKit (= 5.12.1.2)
+    - ThingSmartFeedbackKit (= 5.0.0)
+    - ThingSmartMessageKit (= 5.6.1)
+    - ThingSmartMQTTChannelKit (= 5.8.0)
+    - ThingSmartNetworkKit (= 5.8.0.1)
+    - ThingSmartPairingCoreKit (= 5.6.1.1)
+    - ThingSmartSceneCoreKit (= 5.17.1)
+    - ThingSmartSceneKit (= 4.0.0)
+    - ThingSmartShareKit (= 5.4.0)
+    - ThingSmartSocketChannelKit (= 5.0.11)
+    - ThingSmartTimerKit (= 5.0.0)
+    - ThingSmartUtil (= 5.17.1.3)
+    - YYModel
+  - ThingSmartLockKit (6.7.0.6):
+    - libwebp
+    - libwebp/demux
+    - libwebp/mux
+    - libwebp/sharpyuv
+    - libwebp/webp
+    - ThingAudioEngineSDK (= 1.7.13)
+    - ThingAvLoggerSDK (= 1.3.0)
+    - ThingBluetooth (= 5.6.1)
+    - ThingCameraSDK (= 4.26.4)
+    - ThingCameraUIKit (= 5.0.10)
+    - ThingEncryptImage (= 4.33.0)
+    - ThingFFmpegWrapper (= 4.4.2.6)
+    - ThingFoundationKit (= 1.25.1)
+    - ThingMachRegister (= 0.8.0)
+    - ThingMbedtls (= 3.5.2)
+    - ThingOpenSSLSDK (~> 1.1.1-w.4)
+    - ThingP2PSDK (= 3.10.0)
+    - ThingSmartAVBaseKit (= 2.3.9.1)
+    - ThingSmartBaseBLEKit (= 1.0.0)
+    - ThingSmartBaseKit (= 5.8.3)
+    - ThingSmartBeaconKit (= 5.4.3)
+    - ThingSmartBLECoreKit (= 5.13.0.3)
+    - ThingSmartBLEKit (= 5.14.2)
+    - ThingSmartCallChannelKit (= 2.2.0)
+    - ThingSmartCallCounterKit (= 1.0.3)
+    - ThingSmartCameraBase (= 6.5.3)
+    - ThingSmartCameraExtSDK (= 1.0.6)
+    - ThingSmartCameraKit (~> 6.7.5.0)
+    - ThingSmartCameraM (= 6.7.1)
+    - ThingSmartCryption
+    - ThingSmartDeviceCoreKit (= 5.21.7)
+    - ThingSmartDeviceKit (= 5.12.1.2)
+    - ThingSmartMediaServices (= 3.0.1)
+    - ThingSmartMediaUIKit (= 3.0.1)
+    - ThingSmartMQTTChannelKit (= 5.8.0)
+    - ThingSmartNetworkKit (= 5.8.0.1)
+    - ThingSmartP2pChannelKit (= 5.15.0)
+    - ThingSmartShareKit (= 5.4.0)
+    - ThingSmartSocketChannelKit (= 5.0.11)
+    - ThingSmartUtil (= 5.17.1.3)
+    - ThingVideoCodecSDK (= 1.7.0)
+    - YYModel
+  - ThingSmartMediaServices (3.0.1)
+  - ThingSmartMediaUIKit (3.0.1):
+    - ThingSmartMediaServices
+  - ThingSmartMessageKit (5.6.1):
+    - ThingSmartBaseKit
+    - YYModel
+  - ThingSmartMQTTChannelKit (5.8.0):
+    - ThingSmartUtil (>= 5.0.0)
+  - ThingSmartNetworkKit (5.8.0.1):
+    - ThingSmartUtil (>= 5.8)
+    - YYModel
+  - ThingSmartP2pChannelKit (5.15.0):
+    - ThingP2PSDK
+    - ThingSmartAVBaseKit
+    - ThingSmartBaseKit
+    - ThingSmartDeviceCoreKit
+  - ThingSmartPairingCoreKit (5.6.1.1):
+    - ThingSmartMQTTChannelKit (>= 5.0.0)
+    - ThingSmartSocketChannelKit (>= 5.0.0)
+    - ThingSmartUtil (>= 5.16.0)
+    - YYModel
+  - ThingSmartSceneCoreKit (5.17.1):
+    - ThingSmartBaseKit
+    - ThingSmartDeviceCoreKit
+    - ThingSmartNetworkKit (>= 5.7.10)
+    - YYModel
+  - ThingSmartSceneKit (4.0.0):
+    - ThingSmartBaseKit
+    - ThingSmartDeviceKit
+    - ThingSmartSceneCoreKit
+  - ThingSmartShareKit (5.4.0):
+    - ThingSmartBaseKit (~> 5.0)
+    - ThingSmartDeviceCoreKit (~> 5.0)
+  - ThingSmartSocketChannelKit (5.0.11):
+    - ThingSmartUtil (>= 5.0.0)
+  - ThingSmartTimerKit (5.0.0):
+    - ThingSmartBaseKit (~> 5.0)
+    - ThingSmartDeviceCoreKit (~> 5.0)
+    - YYModel
+  - ThingSmartUtil (5.17.1.3):
+    - ThingMbedtls (= 3.5.2)
+    - ThingOpenSSLSDK (~> 1.1.1-t.0)
+  - ThingVideoCodecSDK (1.7.0):
+    - ThingAvLoggerSDK
+    - ThingFFmpegWrapper
+  - tuya_home_sdk_flutter (0.0.2):
+    - Flutter
+    - ThingSmartHomeKit (~> 6.7.0)
+  - url_launcher_ios (0.0.1):
+    - Flutter
+  - YYModel (1.0.4)
+
+DEPENDENCIES:
+  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
+  - file_picker (from `.symlinks/plugins/file_picker/ios`)
+  - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
+  - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
+  - firebase_crashlytics (from `.symlinks/plugins/firebase_crashlytics/ios`)
+  - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
+  - Flutter (from `Flutter`)
+  - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
+  - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
+  - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - local_auth_darwin (from `.symlinks/plugins/local_auth_darwin/darwin`)
+  - open_file_ios (from `.symlinks/plugins/open_file_ios/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - ThingSmartCameraKit (~> 6.7.0)
+  - ThingSmartCryption (from `./ios_core_sdk`)
+  - ThingSmartHomeKit (~> 6.7.0)
+  - ThingSmartLockKit (~> 6.7.0)
+  - tuya_home_sdk_flutter (from `.symlinks/plugins/tuya_home_sdk_flutter/ios`)
+  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
+
+SPEC REPOS:
+  https://github.com/CocoaPods/Specs.git:
+    - DKImagePickerController
+    - DKPhotoGallery
+    - Firebase
+    - FirebaseAnalytics
+    - FirebaseCore
+    - FirebaseCoreExtension
+    - FirebaseCoreInternal
+    - FirebaseCrashlytics
+    - FirebaseInstallations
+    - FirebaseMessaging
+    - FirebaseRemoteConfigInterop
+    - FirebaseSessions
+    - GoogleAdsOnDeviceConversion
+    - GoogleAppMeasurement
+    - GoogleDataTransport
+    - GoogleUtilities
+    - libwebp
+    - nanopb
+    - PromisesObjC
+    - PromisesSwift
+    - SDWebImage
+    - SwiftyGif
+    - YYModel
+  https://github.com/tuya/tuya-pod-specs.git:
+    - ThingAudioEngineSDK
+    - ThingAvLoggerSDK
+    - ThingBluetooth
+    - ThingCameraSDK
+    - ThingCameraUIKit
+    - ThingEncryptImage
+    - ThingFFmpegWrapper
+    - ThingFoundationKit
+    - ThingMachRegister
+    - ThingMbedtls
+    - ThingOpenSSLSDK
+    - ThingP2PSDK
+    - ThingSmartActivatorCoreKit
+    - ThingSmartActivatorKit
+    - ThingSmartAVBaseKit
+    - ThingSmartBaseBLEKit
+    - ThingSmartBaseKit
+    - ThingSmartBeaconKit
+    - ThingSmartBLECoreKit
+    - ThingSmartBLEKit
+    - ThingSmartBLEMeshKit
+    - ThingSmartCallChannelKit
+    - ThingSmartCallCounterKit
+    - ThingSmartCameraBase
+    - ThingSmartCameraExtSDK
+    - ThingSmartCameraKit
+    - ThingSmartCameraM
+    - ThingSmartDeviceCoreKit
+    - ThingSmartDeviceKit
+    - ThingSmartFeedbackKit
+    - ThingSmartHomeKit
+    - ThingSmartLockKit
+    - ThingSmartMediaServices
+    - ThingSmartMediaUIKit
+    - ThingSmartMessageKit
+    - ThingSmartMQTTChannelKit
+    - ThingSmartNetworkKit
+    - ThingSmartP2pChannelKit
+    - ThingSmartPairingCoreKit
+    - ThingSmartSceneCoreKit
+    - ThingSmartSceneKit
+    - ThingSmartShareKit
+    - ThingSmartSocketChannelKit
+    - ThingSmartTimerKit
+    - ThingSmartUtil
+    - ThingVideoCodecSDK
+
+EXTERNAL SOURCES:
+  connectivity_plus:
+    :path: ".symlinks/plugins/connectivity_plus/ios"
+  file_picker:
+    :path: ".symlinks/plugins/file_picker/ios"
+  firebase_analytics:
+    :path: ".symlinks/plugins/firebase_analytics/ios"
+  firebase_core:
+    :path: ".symlinks/plugins/firebase_core/ios"
+  firebase_crashlytics:
+    :path: ".symlinks/plugins/firebase_crashlytics/ios"
+  firebase_messaging:
+    :path: ".symlinks/plugins/firebase_messaging/ios"
+  Flutter:
+    :path: Flutter
+  flutter_local_notifications:
+    :path: ".symlinks/plugins/flutter_local_notifications/ios"
+  flutter_secure_storage:
+    :path: ".symlinks/plugins/flutter_secure_storage/ios"
+  fluttertoast:
+    :path: ".symlinks/plugins/fluttertoast/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+  local_auth_darwin:
+    :path: ".symlinks/plugins/local_auth_darwin/darwin"
+  open_file_ios:
+    :path: ".symlinks/plugins/open_file_ios/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
+  ThingSmartCryption:
+    :path: "./ios_core_sdk"
+  tuya_home_sdk_flutter:
+    :path: ".symlinks/plugins/tuya_home_sdk_flutter/ios"
+  url_launcher_ios:
+    :path: ".symlinks/plugins/url_launcher_ios/ios"
+
+SPEC CHECKSUMS:
+  connectivity_plus: 2a701ffec2c0ae28a48cf7540e279787e77c447d
+  DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
+  DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
+  file_picker: b159e0c068aef54932bb15dc9fd1571818edaf49
+  Firebase: d99ac19b909cd2c548339c2241ecd0d1599ab02e
+  firebase_analytics: bf93e20703c95030404d6ddbb1adf05bf5c3885b
+  firebase_core: 99a37263b3c27536063a7b601d9e2a49400a433c
+  firebase_crashlytics: 986773c0c7ea4c3f5a4ead141b58522fcd9dfdb1
+  firebase_messaging: bf6697c61f31c7cc0f654131212ff04c0115c2c7
+  FirebaseAnalytics: 6433dfd311ba78084fc93bdfc145e8cb75740eae
+  FirebaseCore: efb3893e5b94f32b86e331e3bd6dadf18b66568e
+  FirebaseCoreExtension: edbd30474b5ccf04e5f001470bdf6ea616af2435
+  FirebaseCoreInternal: 9afa45b1159304c963da48addb78275ef701c6b4
+  FirebaseCrashlytics: e09d0bc19aa54a51e45b8039c836ef73f32c039a
+  FirebaseInstallations: 317270fec08a5d418fdbc8429282238cab3ac843
+  FirebaseMessaging: 3b26e2cee503815e01c3701236b020aa9b576f09
+  FirebaseRemoteConfigInterop: 1c6135e8a094cc6368949f5faeeca7ee8948b8aa
+  FirebaseSessions: b9a92c1c51bbb81e78fc3142cda6d925d700f8e7
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_local_notifications: ff50f8405aaa0ccdc7dcfb9022ca192e8ad9688f
+  flutter_secure_storage: d33dac7ae2ea08509be337e775f6b59f1ff45f12
+  fluttertoast: 21eecd6935e7064cc1fcb733a4c5a428f3f24f0f
+  GoogleAdsOnDeviceConversion: 2be6297a4f048459e0ae17fad9bfd2844e10cf64
+  GoogleAppMeasurement: 700dce7541804bec33db590a5c496b663fbe2539
+  GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
+  GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
+  image_picker_ios: 4f2f91b01abdb52842a8e277617df877e40f905b
+  libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
+  local_auth_darwin: 63c73d6d28cc3e239be2b6aa460ea6e317cd5100
+  nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
+  open_file_ios: ece9c5358aec7b7ed7dc12fcb0f926ef6d6650f1
+  path_provider_foundation: 0b743cbb62d8e47eab856f09262bb8c1ddcfe6ba
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
+  SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
+  SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
+  ThingAudioEngineSDK: 8aa9a26019929d50c12cd4edb6e1a5b6fc793403
+  ThingAvLoggerSDK: 796177d0575fe8a57a625909c2cbecdbe4d36d7b
+  ThingBluetooth: 3edb8956c3cb4c373fbfcb99aa0f14141118c974
+  ThingCameraSDK: 04f00719aaee3ba651e66bacf1757545304cc502
+  ThingCameraUIKit: f9d926669c9657eab6b0af771309feaebf37561a
+  ThingEncryptImage: a596d62f177d03260613acd05858baeb287e2f0c
+  ThingFFmpegWrapper: 8f57ebbd59549e89342a3862d3db8d4163766ed8
+  ThingFoundationKit: 34280c5a38a8ab09a5f40229ca48d2aa33b077fa
+  ThingMachRegister: 44c6eb53032ebfdeeaa1b610071e2cc8b5bfa0ff
+  ThingMbedtls: 52721dc4ab458c5bcd4e2d679fc08d1bb716f3a0
+  ThingOpenSSLSDK: 838c9c839f77cad49e23fa007221794965325459
+  ThingP2PSDK: d736e845c27a2d810f90208deaae5a5e394a2324
+  ThingSmartActivatorCoreKit: 4420040a0f93df3eb3af933249ff294c5c9fd874
+  ThingSmartActivatorKit: 9c09d6e04c0306d5c7c4be5ed6457beb7b4385ad
+  ThingSmartAVBaseKit: 71beeb94ba9810e2547402cfc1ea962fedd8e769
+  ThingSmartBaseBLEKit: ce4744d0ef3f4327b8c6c1f101a5836b804b7484
+  ThingSmartBaseKit: 3c3067db790621a4d78b9068538686a1149ecb5f
+  ThingSmartBeaconKit: d5507eea8d118a8ef96abcbd79816c207dffdf41
+  ThingSmartBLECoreKit: f5f24dc8c32d1b2deaa7376557087e10b8312f6e
+  ThingSmartBLEKit: 818947ddf4b52cced4bf6cad0f95028412a0187b
+  ThingSmartBLEMeshKit: 590373c8354b4486a7109bdf978093fd8df449b9
+  ThingSmartCallChannelKit: ae0d3751b194754b532038d94bd194297800d338
+  ThingSmartCallCounterKit: d66eaf519eac50e29d867fe8729fca5941afe120
+  ThingSmartCameraBase: 29d2b0aa77b9cf7184f98ca7fff52a88a8c52915
+  ThingSmartCameraExtSDK: 3001a5278cdd4ad4217e1e76c0707354bb516af0
+  ThingSmartCameraKit: 8ee4c0786ee63ee418d6d444ce1c20992722a3c4
+  ThingSmartCameraM: 5f3ac0b7e63732cdb83b95f88a755c05547d92d6
+  ThingSmartCryption: 33906a7bf4d19f26bf90dccde474e2bcba46c21f
+  ThingSmartDeviceCoreKit: 2afd8087cb5b2b00aa20c432ae681d3386a7afe7
+  ThingSmartDeviceKit: 37687205c70ebf6078e7a6e45afbfe36fab6fa5c
+  ThingSmartFeedbackKit: 9cdd6d748f06b20fec1076eedae5dc07c3c2e8d0
+  ThingSmartHomeKit: 03dc4bd8127037cf2ee30b5b477779d6789c4d66
+  ThingSmartLockKit: 2b9566d867f0b96ca869ceb13c790416a63de75a
+  ThingSmartMediaServices: 762be816bae62106539e0e3af1661253df507c8b
+  ThingSmartMediaUIKit: a03e7ed747b7c7061427ddc55157253b85b2d361
+  ThingSmartMessageKit: 99ab3d31eb4ef53c5d2dfdc078e509eb16e3a101
+  ThingSmartMQTTChannelKit: 455a72a50f0d74bf0bc9e5ec70d47e59dc915308
+  ThingSmartNetworkKit: ce1cf875e3313fdc074fe414efbb580eb9ebc24e
+  ThingSmartP2pChannelKit: 259ed06ce5c5baf847c084e7a72bae7774970510
+  ThingSmartPairingCoreKit: 7e018e6411e55631ff24350cc65692d30d7f2210
+  ThingSmartSceneCoreKit: 1234e4ecb72aecb254fb907f9280e71bc0676160
+  ThingSmartSceneKit: d738bbf17790e3b4e087cb820f66dfcd5d7aa551
+  ThingSmartShareKit: 5d97cf5e650ba28484c114c871e292a53aa7030f
+  ThingSmartSocketChannelKit: 3251b177c2cb6bb4ec51754ea7e21f2c302ab0da
+  ThingSmartTimerKit: 092435bef111dc7f2086e015643641e7e984bdcd
+  ThingSmartUtil: 4d6438fdb86b6dd7af3369ed52a250ccfbbe4abd
+  ThingVideoCodecSDK: 857e79a3eaf4dacd6712d848be67b5e869427564
+  tuya_home_sdk_flutter: 784e5919d81113f8dbfe30413a0f22e7b6d31034
+  url_launcher_ios: bb13df5870e8c4234ca12609d04010a21be43dfa
+  YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
+
+PODFILE CHECKSUM: e313336f25f2bb61fc873ee0ee5c2cb532f83326
+
+COCOAPODS: 1.16.2

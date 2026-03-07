@@ -1,0 +1,318 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_values.dart';
+import '../controllers/document_scanner_controller.dart';
+
+const _scannerBg = Color(0xFF1E2E3A);
+const _scannerTeal = Color(0xFF2DD4BF);
+const _scannerTealRing = Color(0xFF5EEAD4);
+const _scannerPillBg = Color(0xFF2A3A45);
+const _scannerSecondary = Color(0xFF9CA3AF);
+
+class DocumentScannerView extends GetView<DocumentScannerController> {
+  const DocumentScannerView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _scannerBg,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: controller.close,
+          icon: const Icon(Icons.close, size: 28),
+          color: Colors.white,
+        ),
+        actions: [
+          IconButton(
+            onPressed: controller.toggleFlash,
+            icon: Obx(() => Icon(
+                  controller.flashOn.value ? Icons.flash_on : Icons.flash_off,
+                  size: 26,
+                  color: Colors.white,
+                )),
+          ),
+          Obx(
+            () => Padding(
+              padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+              child: GestureDetector(
+                onTap: controller.toggleAutoCapture,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _scannerPillBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: controller.autoCaptureOn.value
+                              ? AppColors.paaYanguSuccess
+                              : _scannerSecondary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        controller.autoCaptureOn.value
+                            ? 'AUTO-CAPTURE ON'
+                            : 'AUTO-CAPTURE OFF',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildCameraPlaceholder(),
+          _buildDocumentFrameOverlay(context),
+          _buildInstructionPill(context),
+          _buildBottomBar(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCameraPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            _scannerBg,
+            _scannerBg.withOpacity(0.95),
+            const Color(0xFF15202B),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.document_scanner_outlined,
+          size: 80,
+          color: _scannerBg.withOpacity(0.6),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocumentFrameOverlay(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    const inset = 32.0;
+    final frameWidth = size.width - inset * 2;
+    final frameHeight = frameWidth * (11 / 8.5); // approximate A4 aspect
+    final top = (size.height - frameHeight) * 0.35;
+
+    return Positioned(
+      left: inset,
+      top: top,
+      width: frameWidth,
+      height: frameHeight,
+      child: CustomPaint(
+        painter: _DocumentFramePainter(),
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+
+  Widget _buildInstructionPill(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    const inset = 32.0;
+    final frameWidth = size.width - inset * 2;
+    final frameHeight = frameWidth * (11 / 8.5);
+    final top = (size.height - frameHeight) * 0.35;
+
+    return Positioned(
+      left: 24,
+      right: 24,
+      top: top + frameHeight + 16,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: _scannerPillBg,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: const Text(
+            'Position the document within the frame',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(BuildContext context) {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _BottomAction(
+                icon: Icons.photo_library_outlined,
+                label: 'IMPORT',
+                onTap: controller.importFromGallery,
+              ),
+              _buildCaptureButton(context),
+              _BottomAction(
+                icon: Icons.layers_outlined,
+                label: 'BATCH MODE',
+                onTap: controller.batchMode,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCaptureButton(BuildContext context) {
+    return GestureDetector(
+      onTap: controller.capture,
+      child: SizedBox(
+        width: 80,
+        height: 80,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _scannerTealRing, width: 4),
+              ),
+            ),
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: _scannerTeal,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.camera_alt,
+                size: 32,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DocumentFramePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const borderColor = _scannerTeal;
+    const borderWidth = 2.5;
+    const cornerLen = 24.0;
+    const radius = 12.0;
+
+    final border = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = borderWidth;
+
+    final path = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      const Radius.circular(radius),
+    );
+    canvas.drawRRect(path, border);
+
+    final corner = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+
+    final w = size.width;
+    final h = size.height;
+
+    void drawCorner(double x, double y, bool horizontalOut, bool verticalOut) {
+      final dx = horizontalOut ? 1.0 : -1.0;
+      final dy = verticalOut ? 1.0 : -1.0;
+      canvas.drawLine(Offset(x, y), Offset(x + cornerLen * dx, y), corner);
+      canvas.drawLine(Offset(x, y), Offset(x, y + cornerLen * dy), corner);
+    }
+
+    drawCorner(0, 0, true, true);
+    drawCorner(w, 0, false, true);
+    drawCorner(w, h, false, false);
+    drawCorner(0, h, true, false);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _BottomAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _BottomAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: _scannerPillBg,
+              borderRadius: BorderRadius.circular(AppValues.radius_6),
+            ),
+            child: Icon(icon, size: 26, color: _scannerSecondary),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: _scannerSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

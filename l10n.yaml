@@ -1,0 +1,12 @@
+# Flutter localization (l10n) configuration.
+# Generated files are in lib/l10n/ (app_localizations.dart, app_localizations_*.dart).
+#
+# After editing .arb files in lib/l10n/, regenerate with:
+#   flutter gen-l10n
+# (flutter pub get does NOT run this.)
+
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-dir: lib/l10n
+untranslated-messages-file: missing.txt
