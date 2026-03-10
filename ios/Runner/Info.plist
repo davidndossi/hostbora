@@ -79,11 +79,15 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need access to the microphone for voice control</string>
 	<key>NSCameraUsageDescription</key>
-	<string>We need access to the camera for device setup</string>
+	<string>We need camera access to scan documents and capture receipts.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>We need access to contacts to invite people to your community or add next of kin.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to the photo library for device setup</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>We need access to the photo library for device setup</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>We use Face ID or Touch ID to sign you in quickly and securely when you return to the app.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>

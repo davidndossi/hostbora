@@ -109,12 +109,6 @@ class MainView extends BaseView<MainController> {
       case MenuCode.CALENDAR:
         _hostCalendarView ??= HostCalendarView();
         return _hostCalendarView!;
-      case MenuCode.TASKS:
-        _maintenanceTasksView ??= MaintenanceTasksView();
-        return _maintenanceTasksView!;
-      case MenuCode.VAULT:
-        _propertyVaultView ??= PropertyVaultView();
-        return _propertyVaultView!;
       case MenuCode.SETTINGS:
         _settingsView ??= SettingsView();
         return _settingsView!;

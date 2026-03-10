@@ -36,7 +36,7 @@ class OtpView extends BaseView<OtpController> {
             ),
             const SizedBox(height: 20),
             Text(
-              appLocalization.otpSubtitle,
+              controller.otpSubtitle,
               style: blackSubTitleTextStyle,
               textAlign: TextAlign.center
             ),

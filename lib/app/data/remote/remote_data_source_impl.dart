@@ -1,23 +1,22 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
+import '../model/add_listing_request.dart';
 import '../model/change_password_request.dart';
+import '../model/create_booking_request.dart';
+import '../model/add_expense_request.dart';
+import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
-import '../model/invite_request.dart';
 import '../model/login_request.dart';
-import '../model/new_announcement_request.dart';
-import '../model/new_community_request.dart';
-import '../model/new_event_request.dart';
-import '../model/new_resource_request.dart';
-import '../model/otp_request.dart';
 import '../model/otp_response.dart';
+import '../model/otp_request.dart';
 import '../model/page_request.dart';
 import '../model/reg_request.dart';
-import '../model/report_death_request.dart';
 import '../model/send_sms_request.dart';
 import '../model/update_preference_request.dart';
 import '../model/update_request.dart';
 import '../model/user_profile_request.dart';
-import '../model/user_profile_save_request.dart';
 import '/app/core/base/base_remote_source.dart';
 import '../../network/dio_provider.dart';
 import '../model/login_response.dart';
@@ -42,7 +41,7 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   @override
   Future<GeneralResponse> changePassword(ChangePasswordRequest request) {
     var endpoint = '${DioProvider.baseUrl}/api/dev/change/password';
-    var dioCall = dioDevClient.post(endpoint, data: request);
+    var dioCall = dioDevClient.post(endpoint, data: request.toJson());
 
     try {
       return callApiWithErrorParser(dioCall)
@@ -79,7 +78,20 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   @override
   Future<GeneralResponse> getOtpForgotPassword(OtpRequest request) {
     var endpoint = '${DioProvider.baseUrl}/api/dev/forgot/password';
-    var dioCall = dioDevClient.post(endpoint, data: request);
+    var dioCall = dioDevClient.post(endpoint, data: request.toJson());
+
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> verifyForgotOtp(OtpRequest request) {
+    var endpoint = '${DioProvider.baseUrl}/api/dev/forgot/verify-otp';
+    var dioCall = dioDevClient.post(endpoint, data: request.toJson());
 
     try {
       return callApiWithErrorParser(dioCall)
@@ -129,114 +141,6 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
-  Future<GeneralResponse> createCommunity(NewCommunityRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/community/new';
-    var dioCall = dioClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> createCommunityEvent(NewEventRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/new/event';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> addCommunityAnnouncement(NewAnnouncementRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/new/announcement';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> addCommunityResource(NewResourceRequest request) async {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/add/resource';
-    FormData formData = FormData.fromMap({
-      'title': request.title,
-      'description': request.description,
-      'category': request.category,
-      'type': request.type,
-      'communityId': request.communityId,
-      'userId': request.userId,
-      'file': await MultipartFile.fromFile(
-        request.file.path,
-        filename: request.file.path.split('/').last,
-      ),
-    });
-    var dioCall = dioDevClient.post(
-      endpoint,
-      options: Options(headers: {'Content-Type': 'multipart/form-data'}),
-      data: formData,
-      onSendProgress: (sent, total) {
-        print('Uploaded ${(sent / total * 100).toStringAsFixed(0)}%');
-      },
-    );
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> reportMemberDeath(ReportDeathRequest request) async {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/report/death';
-    FormData formData = FormData.fromMap({
-      'name': request.name,
-      'description': request.description,
-      'relation': request.relation,
-      'communityId': request.communityId,
-      'userId': request.userId,
-      if (request.deathCertificate != null)
-        'deathCertificate': await MultipartFile.fromFile(
-          request.deathCertificate!.path,
-          filename: request.deathCertificate!.path.split('/').last,
-        ),
-      if (request.picture != null)
-        'picture': await MultipartFile.fromFile(
-          request.picture!.path,
-          filename: request.picture!.path.split('/').last,
-        ),
-    });
-    var dioCall = dioDevClient.post(
-      endpoint,
-      options: Options(headers: {'Content-Type': 'multipart/form-data'}),
-      data: formData,
-      onSendProgress: (sent, total) {
-        print('Uploaded ${(sent / total * 100).toStringAsFixed(0)}%');
-      },
-    );
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
   Future<GeneralResponse> updateSettingsPreferences(UpdatePreferenceRequest request) {
     var endpoint = '${DioProvider.baseUrl}/api/user/update/preference';
     var dioCall = dioClient.post(endpoint, data: request);
@@ -263,37 +167,8 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
-  Future<GeneralResponse> getUserCommunities(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/users/${request.userId}/communities';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
   Future<GeneralResponse> getUserNotifications(String userId, PageRequest request) {
     var endpoint = '${DioProvider.baseUrl}/api/dev/users/$userId/notifications';
-    var dioCall = dioDevClient.post(endpoint, queryParameters: {
-      'page': request.page,
-      'size': request.size
-    });
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getUserRequests(String userId, PageRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/users/$userId/requests';
     var dioCall = dioDevClient.post(endpoint, queryParameters: {
       'page': request.page,
       'size': request.size
@@ -321,269 +196,9 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
-  Future<GeneralResponse> editCommunity(NewCommunityRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/community/${request.communityId}/edit';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getCommunityLeaders(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/leaders';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getCommunityAnnouncements(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/announcements';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getCommunityEvents(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/events';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getCommunityResources(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/resources';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getFeaturedCommunityResources(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/resources/featured';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getCommunityGroups(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/groups';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getCommunityPosts(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/posts';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getCommunityFeaturedPosts(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/posts/featured';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getActiveMembers(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/members/active';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getActiveMaleMembers(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/members/active/male';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getActiveFemaleMembers(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/members/active/female';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getDeceasedMembers(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/members/deceased';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getDeceasedMaleMembers(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/members/deceased/male';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getDeceasedFemaleMembers(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/members/deceased/female';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> joinUserToCommunity(String communityId, String userId, InviteRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/community/$communityId/users/$userId';
-    var dioCall = dioClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> savePartialData(UserProfileSaveRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/users/${request.userId}/save';
-    var dioCall = dioDevClient.post(endpoint, data: request.jsonString);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> loadSavedData(String userId) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/users/$userId/load';
-    var dioCall = dioDevClient.post(endpoint);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> inviteUserToCommunity(String communityId, String userId, InviteRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/community/$communityId/users/$userId/invite';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
   Future<GeneralResponse> getUsers(String searchValue) {
     var endpoint = '${DioProvider.baseUrl}/api/dev/users';
     var dioCall = dioDevClient.post(endpoint, queryParameters: {'search': searchValue});
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getCommunities(String searchValue) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/$searchValue';
-    var dioCall = dioDevClient.post(endpoint);
 
     try {
       return callApiWithErrorParser(dioCall)
@@ -622,58 +237,6 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   Future<GeneralResponse> updateNotification(String id, String action) {
     var endpoint = '${DioProvider.baseUrl}/api/notification/$id/$action';
     var dioCall = dioDevClient.post(endpoint);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> updateRequest(String id, String action) {
-    var endpoint = '${DioProvider.baseUrl}/api/request/$id/$action';
-    var dioCall = dioDevClient.post(endpoint);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> requestToJoinCommunity(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/community/${request.communityId}/users/${request.userId}/request';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getInviteRequests(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/requests';
-    var dioCall = dioDevClient.post(endpoint, data: request);
-
-    try {
-      return callApiWithErrorParser(dioCall)
-          .then((response) => GeneralResponse.fromJson(response.data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<GeneralResponse> getCommunityMembers(UserProfileRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/dev/communities/${request.communityId}/members';
-    var dioCall = dioDevClient.post(endpoint, data: request);
 
     try {
       return callApiWithErrorParser(dioCall)
@@ -736,9 +299,41 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
-  Future<GeneralResponse> removeUserFromCommunity(String communityId, String userId) {
-    var endpoint = '${DioProvider.baseUrl}/api/community/$communityId/users/$userId/remove';
-    var dioCall = dioDevClient.post(endpoint);
+  Future<GeneralResponse> publishListing(
+    AddListingRequest request,
+    Map<String, List<String>> roomPhotoPaths,
+  ) async {
+    final endpoint = '${DioProvider.baseUrl}/api/listings';
+    final formData = FormData.fromMap({
+      'listing': MultipartFile.fromString(
+        jsonEncode(request.toJson()),
+        filename: 'listing.json',
+      ),
+    });
+
+    for (final entry in roomPhotoPaths.entries) {
+      final roomKey = entry.key;
+      final paths = entry.value;
+      for (var i = 0; i < paths.length; i++) {
+        formData.files.add(MapEntry(
+          roomKey,
+          await MultipartFile.fromFile(
+            paths[i],
+            filename: '${roomKey.replaceAll(' ', '_')}_$i.jpg',
+          ),
+        ));
+      }
+    }
+
+    final dioCall = dioClient.post(
+      endpoint,
+      data: formData,
+      options: Options(
+        contentType: 'multipart/form-data',
+        sendTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+    );
 
     try {
       return callApiWithErrorParser(dioCall)
@@ -749,10 +344,9 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
-  Future<GeneralResponse> removeCommunity(String communityId) {
-    var endpoint = '${DioProvider.baseUrl}/api/community/$communityId/remove';
-    var dioCall = dioDevClient.post(endpoint);
-
+  Future<GeneralResponse> getMyListings() {
+    final endpoint = '${DioProvider.baseUrl}/api/listings';
+    final dioCall = dioClient.get(endpoint);
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));
@@ -762,10 +356,61 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
-  Future<GeneralResponse> updateMemberRole(String communityId, String userId, String role) {
-    var endpoint = '${DioProvider.baseUrl}/api/community/$communityId/users/$userId/role';
-    var dioCall = dioDevClient.post(endpoint, data: {'role': role});
+  Future<GeneralResponse> createBooking(CreateBookingRequest request) {
+    final endpoint = '${DioProvider.baseUrl}/api/bookings';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
 
+  @override
+  Future<GeneralResponse> recordPayment(RecordPaymentRequest request) {
+    final endpoint = '${DioProvider.baseUrl}/api/payments';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]) async {
+    final endpoint = '${DioProvider.baseUrl}/api/expenses';
+    final FormData formData;
+    if (receiptFilePath != null && receiptFilePath.isNotEmpty) {
+      formData = FormData.fromMap({
+        'expense': MultipartFile.fromString(
+          jsonEncode(request.toJson()),
+          filename: 'expense.json',
+        ),
+        'receipt': await MultipartFile.fromFile(
+          receiptFilePath,
+          filename: 'receipt.jpg',
+        ),
+      });
+    } else {
+      formData = FormData.fromMap({
+        'expense': MultipartFile.fromString(
+          jsonEncode(request.toJson()),
+          filename: 'expense.json',
+        ),
+      });
+    }
+    final dioCall = dioClient.post(
+      endpoint,
+      data: formData,
+      options: Options(
+        contentType: 'multipart/form-data',
+        sendTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+      ),
+    );
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));

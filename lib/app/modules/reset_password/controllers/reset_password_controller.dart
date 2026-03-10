@@ -2,16 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/util.dart';
+import '../../../data/model/general_response.dart';
+import '../../../data/model/otp_request.dart';
+import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
 class ResetPasswordController extends BaseController {
   final formKey = GlobalKey<FormState>();
-  final emailController = TextEditingController();
+  final msisdnController = TextEditingController();
+  final isLoading = false.obs;
 
-  String? validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Email is required';
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value.trim())) return 'Enter a valid email';
+  final AppRepository _repository = Get.find(tag: (AppRepository).toString());
+
+  String? validateMsisdn(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Phone number is required';
+    final phonePattern = RegExp(r'^0[678]\d{8}$');
+    if (!phonePattern.hasMatch(value.trim())) {
+      return 'Enter a valid phone number (e.g. 0712345678)';
+    }
     return null;
   }
 
@@ -20,19 +29,35 @@ class ResetPasswordController extends BaseController {
   void backToLogin() => Get.offAllNamed(Routes.AUTH);
 
   void sendCode() {
-    if (formKey.currentState?.validate() ?? false) {
-      // TODO: call API to send verification code to email
-      // Then navigate to OTP or a "check your email" screen
-      Get.toNamed(Routes.OTP, arguments: {
-        'email': emailController.text.trim(),
-        'flow': 'reset_password',
-      });
-    }
+    if (!(formKey.currentState?.validate() ?? false)) return;
+    final msisdn = msisdnController.text.trim();
+    Util().checkConnectivity().then((value) {
+      if (value != 'Mobile' && value != 'Wifi') {
+        showErrorMessage(appLocalization.noInternet);
+        return;
+      }
+      callDataService<GeneralResponse>(
+        _repository.getOtpForgotPassword(OtpRequest(msisdn: msisdn)),
+        onStart: () => isLoading(true),
+        onComplete: () => isLoading(false),
+        onError: (_) => isLoading(false),
+        onSuccess: (GeneralResponse res) {
+          if (res.responseCode == '0' || res.responseCode == null) {
+            Get.offAllNamed(Routes.OTP, arguments: {
+              'msisdn': msisdn,
+              'flow': 'reset_password',
+            });
+          } else {
+            showErrorMessage(res.message ?? 'Failed to send code');
+          }
+        },
+      );
+    });
   }
 
   @override
   void onClose() {
-    emailController.dispose();
+    msisdnController.dispose();
     super.onClose();
   }
 }

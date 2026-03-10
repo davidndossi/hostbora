@@ -44,17 +44,17 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   final checkIns = [
     CheckInItem(
-      imageUrl: 'https://placehold.co/280x160/f0f0f0/999?text=Downtown+Loft',
+      imageUrl: 'https://placehold.co/280x160/e0f7f6/00695c.png?text=Downtown+Loft',
       guestName: 'Sarah M.',
-      guestAvatarUrl: 'https://placehold.co/48x48',
+      guestAvatarUrl: 'https://placehold.co/48x48.png',
       propertyType: 'Downtown Loft',
       dates: 'Oct 12 - Oct 15 • 3 Nights',
       isConfirmed: true,
     ),
     CheckInItem(
-      imageUrl: 'https://placehold.co/280x160/e3f2f1/999?text=Seaside',
+      imageUrl: 'https://placehold.co/280x160/e3f2fd/1565c0.png?text=Seaside',
       guestName: 'James',
-      guestAvatarUrl: 'https://placehold.co/48x48',
+      guestAvatarUrl: 'https://placehold.co/48x48.png',
       propertyType: 'Seaside',
       dates: 'Oct 14 - Oct 18 • 4 Nights',
       isConfirmed: false,
@@ -82,6 +82,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void assignTasks() => Get.toNamed(Routes.TEAM_AND_STAFF);
 
   void reports() => Get.toNamed(Routes.EXPENSE_ANALYSIS);
+
+  void documents() => Get.toNamed(Routes.PROPERTY_VAULT);
 
   void addExpense() => Get.toNamed(Routes.ADD_EXPENSE);
 

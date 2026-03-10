@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -82,7 +83,7 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          _buildCameraPlaceholder(),
+          Positioned.fill(child: _buildCameraPreview()),
           _buildDocumentFrameOverlay(context),
           _buildInstructionPill(context),
           _buildBottomBar(context),
@@ -91,27 +92,67 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
     );
   }
 
-  Widget _buildCameraPlaceholder() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            _scannerBg,
-            _scannerBg.withOpacity(0.95),
-            const Color(0xFF15202B),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.document_scanner_outlined,
-          size: 80,
-          color: _scannerBg.withOpacity(0.6),
-        ),
-      ),
-    );
+  Widget _buildCameraPreview() {
+    return Obx(() {
+      if (controller.cameraError.value.isNotEmpty) {
+        return Container(
+          color: _scannerBg,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    controller.cameraError.value,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+      if (!controller.isCameraReady.value || controller.cameraController == null) {
+        return Container(
+          color: _scannerBg,
+          child: const Center(
+            child: CircularProgressIndicator(color: _scannerTeal),
+          ),
+        );
+      }
+      final ctrl = controller.cameraController!;
+      final previewSize = ctrl.value.previewSize;
+      if (previewSize == null) {
+        return Container(color: _scannerBg, child: const Center(child: CircularProgressIndicator(color: _scannerTeal)));
+      }
+      final isPortrait = MediaQuery.orientationOf(Get.context!) == Orientation.portrait;
+      final aspectRatio = isPortrait
+          ? previewSize.height / previewSize.width
+          : previewSize.width / previewSize.height;
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final w = constraints.maxWidth;
+          final h = constraints.maxHeight;
+          double width, height;
+          if (h / w > aspectRatio) {
+            height = h;
+            width = h / aspectRatio;
+          } else {
+            width = w;
+            height = w * aspectRatio;
+          }
+          return Center(
+            child: SizedBox(
+              width: width,
+              height: height,
+              child: CameraPreview(ctrl),
+            ),
+          );
+        },
+      );
+    });
   }
 
   Widget _buildDocumentFrameOverlay(BuildContext context) {

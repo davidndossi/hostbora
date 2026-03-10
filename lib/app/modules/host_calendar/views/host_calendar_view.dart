@@ -228,16 +228,23 @@ class HostCalendarView extends BaseView<HostCalendarController> {
       final selected = controller.selectedDate.value;
       final firstDay = DateTime(focused.year - 2, 1);
       final lastDay = DateTime(focused.year + 2, 12, 31);
+      final today = DateTime.now();
+      final startOfToday = DateTime(today.year, today.month, today.day);
       return TableCalendar(
         firstDay: firstDay,
         lastDay: lastDay,
         focusedDay: focused,
-        currentDay: DateTime.now(),
+        currentDay: today,
         selectedDayPredicate: (day) =>
             day.year == selected.year &&
             day.month == selected.month &&
             day.day == selected.day,
+        enabledDayPredicate: (day) {
+          final d = DateTime(day.year, day.month, day.day);
+          return !d.isBefore(startOfToday);
+        },
         onDaySelected: (day, _) {
+          if (!controller.isDayEnabled(day)) return;
           controller.selectDate(day);
           controller.setMonth(DateTime(day.year, day.month));
         },
@@ -291,6 +298,8 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                 day.month == selected.month &&
                 day.day == selected.day,
             dayType: controller.typeForDay(day),
+            isBlocked: controller.isDateBlocked(day),
+            isDisabled: !controller.isDayEnabled(day),
           ),
           outsideBuilder: (context, day, focusedDay) => _dayCell(
             day,
@@ -298,6 +307,8 @@ class HostCalendarView extends BaseView<HostCalendarController> {
             price: null,
             isSelected: false,
             dayType: DayType.standard,
+            isBlocked: false,
+            isDisabled: true,
           ),
         ),
       );
@@ -310,18 +321,29 @@ class HostCalendarView extends BaseView<HostCalendarController> {
     String? price,
     bool isSelected = false,
     DayType dayType = DayType.standard,
+    bool isBlocked = false,
+    bool isDisabled = false,
   }) {
     Color? bg;
     if (isCurrentMonth) {
-      if (dayType == DayType.aiOptimized) {
+      if (isBlocked) {
+        bg = Colors.grey.shade300;
+      } else if (dayType == DayType.aiOptimized) {
         bg = AppColors.colorPrimaryLight.withOpacity(0.6);
       } else if (dayType == DayType.manualRate) {
         bg = _hostCalendarManualRateBg.withOpacity(0.5);
       }
     }
     return GestureDetector(
-      onTap: () => controller.selectDate(d),
-      child: Container(
+      onTap: isDisabled
+          ? null
+          : () {
+              controller.selectDate(d);
+              controller.setMonth(DateTime(d.year, d.month));
+            },
+      child: Opacity(
+        opacity: isDisabled ? 0.45 : 1,
+        child: Container(
         width: 44,
         height: 52,
         decoration: BoxDecoration(
@@ -340,10 +362,13 @@ class HostCalendarView extends BaseView<HostCalendarController> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: isCurrentMonth ? AppColors.textColorPrimary : AppColors.textColorSecondary,
+                color: isCurrentMonth
+                    ? (isBlocked ? AppColors.textColorSecondary : AppColors.textColorPrimary)
+                    : AppColors.textColorSecondary,
+                decoration: isBlocked ? TextDecoration.lineThrough : null,
               ),
             ),
-            if (price != null) ...[
+            if (price != null && !isBlocked) ...[
               const SizedBox(height: 2),
               Text(
                 price,
@@ -358,8 +383,14 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                 ),
               ),
             ],
+            if (isBlocked && isCurrentMonth)
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Text('Blocked', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600)),
+              ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -409,6 +440,9 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   Widget _buildEventsSection(BuildContext context) {
     return Obx(() {
       final events = controller.eventsForSelectedDay;
+      final selected = controller.selectedDate.value;
+      final isBlocked = controller.isDateBlocked(selected);
+      final canBlock = controller.isDayEnabled(selected);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -434,6 +468,38 @@ class HostCalendarView extends BaseView<HostCalendarController> {
             ],
           ),
           const SizedBox(height: 12),
+          if (canBlock)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => controller.toggleBlockDate(selected),
+                  icon: Icon(
+                    isBlocked ? Icons.lock_open_outlined : Icons.block_outlined,
+                    size: 20,
+                    color: isBlocked ? AppColors.colorPrimary : AppColors.paaYanguAlert,
+                  ),
+                  label: Text(
+                    isBlocked ? 'Unblock date' : 'Block date',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isBlocked ? AppColors.colorPrimary : AppColors.paaYanguAlert,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: BorderSide(
+                      color: isBlocked ? AppColors.colorPrimary : AppColors.paaYanguAlert,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppValues.radius_6),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ...events.map((e) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _EventCard(event: e),

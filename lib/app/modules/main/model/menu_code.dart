@@ -2,7 +2,5 @@ enum MenuCode {
   HOME,
   DASHBOARD,
   CALENDAR,
-  TASKS,
-  VAULT,
   SETTINGS,
 }

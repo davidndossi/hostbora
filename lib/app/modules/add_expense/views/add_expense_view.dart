@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
@@ -138,22 +140,35 @@ class AddExpenseView extends BaseView<AddExpenseController> {
             const SizedBox(height: 20),
             _buildTaxDeductibleCard(context),
             const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: controller.submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.colorPrimary,
-                  foregroundColor: AppColors.textColorWhite,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
+            Obx(() {
+              final saving = controller.saving.value;
+              return SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: saving ? null : controller.submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.colorPrimary,
+                    foregroundColor: AppColors.textColorWhite,
+                    disabledBackgroundColor: AppColors.colorPrimary.withOpacity(0.6),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
+                  child: saving
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.textColorWhite),
+                          ),
+                        )
+                      : const Text('Add Expense'),
                 ),
-                child: const Text('Add Expense'),
-              ),
-            ),
+              );
+            }),
           ],
         ),
       ),
@@ -219,48 +234,103 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   }
 
   Widget _buildUploadArea(BuildContext context) {
-    return GestureDetector(
-      onTap: controller.uploadReceipt,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 32),
-        decoration: BoxDecoration(
-          color: AppColors.colorPrimaryLight.withOpacity(0.25),
-          borderRadius: BorderRadius.circular(AppValues.radius_12),
-          border: Border.all(
-            color: AppColors.colorPrimary.withOpacity(0.5),
-            width: 2,
-            strokeAlign: BorderSide.strokeAlignInside,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.cloud_upload_outlined,
-              size: 48,
-              color: AppColors.colorPrimary,
+    return Obx(() {
+      final path = controller.receiptFilePath.value;
+      if (path != null && path.isNotEmpty) {
+        final file = File(path);
+        if (file.existsSync()) {
+          return Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.colorWhite,
+              borderRadius: BorderRadius.circular(AppValues.radius_12),
+              border: Border.all(color: AppColors.designInputBorder),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Upload Receipt',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(AppValues.radius_12)),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 10,
+                    child: Image.file(file, fit: BoxFit.cover),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.receipt_long, size: 20, color: AppColors.colorPrimary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Receipt captured',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textColorPrimary,
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: controller.clearReceipt,
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('Remove'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.textColorSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+      return GestureDetector(
+        onTap: controller.uploadReceipt,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          decoration: BoxDecoration(
+            color: AppColors.colorPrimaryLight.withOpacity(0.25),
+            borderRadius: BorderRadius.circular(AppValues.radius_12),
+            border: Border.all(
+              color: AppColors.colorPrimary.withOpacity(0.5),
+              width: 2,
+              strokeAlign: BorderSide.strokeAlignInside,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.camera_alt_outlined,
+                size: 48,
                 color: AppColors.colorPrimary,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'PDF, JPG UP TO 10MB',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textColorSecondary,
+              const SizedBox(height: 12),
+              Text(
+                'Tap to capture receipt',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.colorPrimary,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                'Take a photo of your receipt',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textColorSecondary,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildTaxDeductibleCard(BuildContext context) {

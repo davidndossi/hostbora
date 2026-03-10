@@ -1,21 +1,18 @@
+import '../model/add_listing_request.dart';
 import '../model/change_password_request.dart';
+import '../model/create_booking_request.dart';
+import '../model/add_expense_request.dart';
+import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
-import '../model/invite_request.dart';
 import '../model/login_request.dart';
 import '../model/login_response.dart';
-import '../model/new_announcement_request.dart';
-import '../model/new_community_request.dart';
-import '../model/new_event_request.dart';
-import '../model/new_resource_request.dart';
 import '../model/otp_request.dart';
 import '../model/otp_response.dart';
 import '../model/page_request.dart';
 import '../model/reg_request.dart';
-import '../model/report_death_request.dart';
 import '../model/send_sms_request.dart';
 import '../model/update_preference_request.dart';
 import '../model/user_profile_request.dart';
-import '../model/user_profile_save_request.dart';
 import '../model/update_request.dart';
 
 abstract class RemoteDataSource {
@@ -30,21 +27,13 @@ abstract class RemoteDataSource {
 
   Future<GeneralResponse> getOtpForgotPassword(OtpRequest request);
 
+  Future<GeneralResponse> verifyForgotOtp(OtpRequest request);
+
   Future<OtpResponse> verifyPhoneNumber(OtpRequest request);
 
   Future<GeneralResponse> createUserProfile(RegRequest request);
 
   Future<GeneralResponse> modifyUserProfile(UpdateRequest request, String userId);
-
-  Future<GeneralResponse> createCommunity(NewCommunityRequest request);
-
-  Future<GeneralResponse> createCommunityEvent(NewEventRequest request);
-
-  Future<GeneralResponse> addCommunityAnnouncement(NewAnnouncementRequest request);
-
-  Future<GeneralResponse> addCommunityResource(NewResourceRequest request);
-
-  Future<GeneralResponse> reportMemberDeath(ReportDeathRequest request);
 
   Future<GeneralResponse> updateSettingsPreferences(UpdatePreferenceRequest request);
 
@@ -54,65 +43,13 @@ abstract class RemoteDataSource {
 
   Future<GeneralResponse> getUserNotificationsCount(String userId);
 
-  Future<GeneralResponse> getUserRequests(String userId, PageRequest request);
-
-  Future<GeneralResponse> getUserCommunities(UserProfileRequest request);
-
-  Future<GeneralResponse> editCommunity(NewCommunityRequest request);
-
-  Future<GeneralResponse> getCommunityMembers(UserProfileRequest request);
-
-  Future<GeneralResponse> getCommunityLeaders(UserProfileRequest request);
-
-  Future<GeneralResponse> getCommunityAnnouncements(UserProfileRequest request);
-
-  Future<GeneralResponse> getCommunityEvents(UserProfileRequest request);
-
-  Future<GeneralResponse> getCommunityResources(UserProfileRequest request);
-
-  Future<GeneralResponse> getFeaturedCommunityResources(UserProfileRequest request);
-
-  Future<GeneralResponse> getCommunityGroups(UserProfileRequest request);
-
-  Future<GeneralResponse> getCommunityPosts(UserProfileRequest request);
-
-  Future<GeneralResponse> getCommunityFeaturedPosts(UserProfileRequest request);
-
-  Future<GeneralResponse> getActiveMembers(UserProfileRequest request);
-
-  Future<GeneralResponse> getActiveMaleMembers(UserProfileRequest request);
-
-  Future<GeneralResponse> getActiveFemaleMembers(UserProfileRequest request);
-
-  Future<GeneralResponse> getDeceasedMembers(UserProfileRequest request);
-
-  Future<GeneralResponse> getDeceasedMaleMembers(UserProfileRequest request);
-
-  Future<GeneralResponse> getDeceasedFemaleMembers(UserProfileRequest request);
-
-  Future<GeneralResponse> joinUserToCommunity(String communityId, String userId, InviteRequest request);
-
-  Future<GeneralResponse> inviteUserToCommunity(String communityId, String userId, InviteRequest request);
-
-  Future<GeneralResponse> savePartialData(UserProfileSaveRequest request);
-
-  Future<GeneralResponse> loadSavedData(String userId);
-
   Future<GeneralResponse> getUsers(String searchValue);
-
-  Future<GeneralResponse> getCommunities(String searchValue);
 
   Future<void> saveUserPreference(String userId, Map<String, dynamic> request);
 
   Future<GeneralResponse> deliverNotification(String id);
 
   Future<GeneralResponse> updateNotification(String id, String action);
-
-  Future<GeneralResponse> requestToJoinCommunity(UserProfileRequest request);
-
-  Future<GeneralResponse> getInviteRequests(UserProfileRequest request);
-
-  Future<GeneralResponse> updateRequest(String id, String action);
 
   Future<GeneralResponse> resendOtp(OtpRequest request);
 
@@ -122,9 +59,22 @@ abstract class RemoteDataSource {
 
   Future<GeneralResponse> blockUser(String userId);
 
-  Future<GeneralResponse> removeUserFromCommunity(String communityId, String userId);
+  /// Submits new listing with all 5 steps data and room photos (multipart).
+  Future<GeneralResponse> publishListing(
+    AddListingRequest request,
+    Map<String, List<String>> roomPhotoPaths,
+  );
 
-  Future<GeneralResponse> removeCommunity(String communityId);
+  /// Fetches current user's listings (for add booking property dropdown).
+  Future<GeneralResponse> getMyListings();
 
-  Future<GeneralResponse> updateMemberRole(String communityId, String userId, String role);
+  /// Creates a booking for a listing.
+  Future<GeneralResponse> createBooking(CreateBookingRequest request);
+
+  /// Records a payment (amount, method, optional booking, date, status).
+  Future<GeneralResponse> recordPayment(RecordPaymentRequest request);
+
+  /// Adds an expense (amount, category, date, vendor, tax deductible).
+  /// Optional [receiptFilePath] is uploaded as multipart when provided.
+  Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]);
 }

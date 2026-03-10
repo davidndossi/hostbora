@@ -5,12 +5,49 @@ import '../../../routes/app_pages.dart';
 import '../enum/day_type.dart';
 
 class HostCalendarController extends BaseController {
-  final selectedDate = DateTime(2023, 10, 11).obs;
-  final currentMonth = DateTime(2023, 10).obs;
+  static DateTime get _today {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
+
+  HostCalendarController() {
+    selectedDate.value = _today;
+    currentMonth.value = DateTime(_today.year, _today.month);
+  }
+
+  final selectedDate = Rx<DateTime>(DateTime.now());
+  final currentMonth = Rx<DateTime>(DateTime.now());
   final dynamicPricingOn = true.obs;
   final selectedPropertyName = 'The Glass House, Oslo'.obs;
 
   final properties = ['The Glass House, Oslo', 'Downtown Loft', 'Seaside Villa'];
+
+  /// Blocked dates (not available for booking), stored as 'yyyy-MM-dd'.
+  final blockedDates = <String>[].obs;
+
+  static String _dateKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  bool isDateBlocked(DateTime day) {
+    final key = _dateKey(DateTime(day.year, day.month, day.day));
+    return blockedDates.contains(key);
+  }
+
+  void toggleBlockDate(DateTime day) {
+    final key = _dateKey(DateTime(day.year, day.month, day.day));
+    if (blockedDates.contains(key)) {
+      blockedDates.remove(key);
+    } else {
+      blockedDates.add(key);
+    }
+    blockedDates.refresh();
+  }
+
+  /// True if [day] is today or in the future (date only).
+  bool isDayEnabled(DateTime day) {
+    final d = DateTime(day.year, day.month, day.day);
+    return !d.isBefore(_today);
+  }
 
   /// Price or label for a day (e.g. "125k"). Null if not in current month.
   String? priceForDay(DateTime day) {

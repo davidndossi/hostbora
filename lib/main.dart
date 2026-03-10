@@ -179,6 +179,11 @@ void main() async {
     baseUrl: 'http://167.86.89.92:8081/paa_yangu-v1',
     // baseUrl: 'http://172.20.10.3:8080',
     shouldCollectCrashLog: true,
+    // Optional: enable Push to Pay (AzamPay) in Add Booking. Get credentials from https://developerdocs.azampay.co.tz
+    // azamPayAppName: 'your-app-name',
+    // azamPayClientId: 'your-client-id',
+    // azamPayClientSecret: 'your-client-secret',
+    // azamPaySandbox: true,
   );
 
   BuildConfig.instantiate(

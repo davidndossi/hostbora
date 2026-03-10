@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
@@ -53,7 +54,7 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Enter your registered email address and we will send you a verification code.',
+                      'Enter your registered phone number and we will send you a verification code.',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
@@ -63,7 +64,7 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
                     ),
                     const SizedBox(height: 32),
                     Text(
-                      'Email Address',
+                      'Phone Number',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -72,17 +73,17 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
-                      controller: controller.emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: _inputDecoration(hint: 'e.g. host@example.com'),
-                      validator: controller.validateEmail,
+                      controller: controller.msisdnController,
+                      keyboardType: TextInputType.phone,
+                      decoration: _inputDecoration(hint: 'e.g. 0712345678'),
+                      validator: controller.validateMsisdn,
                     ),
                     const SizedBox(height: 32),
-                    SizedBox(
+                    Obx(() => SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: controller.sendCode,
+                        onPressed: controller.isLoading.isTrue ? null : controller.sendCode,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.colorPrimary,
                           foregroundColor: Colors.white,
@@ -91,27 +92,36 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
                             borderRadius: BorderRadius.circular(AppValues.radius_6),
                           ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'Send Code',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                        child: controller.isLoading.isTrue
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'Send Code',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20,
+                                    color: Colors.white.withOpacity(0.95),
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 20,
-                              color: Colors.white.withOpacity(0.95),
-                            ),
-                          ],
-                        ),
                       ),
-                    ),
+                    )),
                   ],
                 ),
               ),

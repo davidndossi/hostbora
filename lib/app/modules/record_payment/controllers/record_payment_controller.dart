@@ -1,22 +1,38 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
-import '../../../routes/app_pages.dart';
+import '../../../data/local/pending_payments_store.dart';
+import '../../../data/model/record_payment_request.dart';
+import '../../../data/repository/app_repository.dart';
 
 enum PaymentStatus { paid, pending }
 
 class RecordPaymentController extends BaseController {
+  RecordPaymentController()
+      : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _pendingStore = PendingPaymentsStore();
+
+  final AppRepository _repository;
+  final PendingPaymentsStore _pendingStore;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
   final formKey = GlobalKey<FormState>();
   final amountController = TextEditingController();
   final linkedBookingController = TextEditingController();
 
   final selectedPaymentMethod = Rx<String>('Cash');
-  final paymentDate = Rx<DateTime>(DateTime(2023, 10, 27));
+  final paymentDate = Rx<DateTime>(DateTime.now());
   final status = PaymentStatus.paid.obs;
+  final saving = false.obs;
+  final syncing = false.obs;
 
   static const _dateFormat = 'MM/dd/yyyy';
+  static const _isoDateFormat = 'yyyy-MM-dd';
 
   final paymentMethods = ['Cash', 'Card', 'Bank Transfer', 'Mobile Money', 'Other'];
 
@@ -46,36 +62,106 @@ class RecordPaymentController extends BaseController {
     status.value = value;
   }
 
-  void recordPayment() {
+  @override
+  void onReady() {
+    super.onReady();
+    _syncPendingWhenOnline();
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
+      if (results.any((r) => r == ConnectivityResult.wifi || r == ConnectivityResult.mobile)) {
+        _syncPendingWhenOnline();
+      }
+    });
+  }
+
+  Future<bool> _isOnline() async {
+    final results = await Connectivity().checkConnectivity();
+    return results.any((r) => r == ConnectivityResult.wifi || r == ConnectivityResult.mobile);
+  }
+
+  Future<void> _syncPendingWhenOnline() async {
+    if (syncing.value) return;
+    if (!await _isOnline()) return;
+    final list = _pendingStore.load();
+    if (list.isEmpty) return;
+    syncing.value = true;
+    try {
+      final toKeep = <Map<String, dynamic>>[];
+      var synced = 0;
+      for (final item in list) {
+        try {
+          final request = RecordPaymentRequest.fromJson(item);
+          final res = await _repository.recordPayment(request);
+          if (res.responseCode == '200' || res.responseCode == '201') {
+            synced++;
+          } else {
+            toKeep.add(item);
+          }
+        } catch (_) {
+          toKeep.add(item);
+        }
+      }
+      await _pendingStore.save(toKeep);
+      if (synced > 0) {
+        if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
+        Get.snackbar('Synced', synced == 1 ? 'Offline payment synced.' : '$synced offline payments synced.');
+      }
+    } finally {
+      syncing.value = false;
+    }
+  }
+
+  Future<void> recordPayment() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
-    final amountText = amountController.text.trim().replaceFirst(r'$', '').trim();
+    final amountText = amountController.text.trim().replaceFirst(RegExp(r'\$'), '').trim();
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
       Get.snackbar('Invalid amount', 'Please enter a valid amount');
       return;
     }
-    // TODO: persist payment and navigate
-    Get.back();
-  }
+    if (saving.value) return;
 
-  void onNavTap(int index) {
-    switch (index) {
-      case 0:
-        Get.offAllNamed(Routes.MAIN);
-        break;
-      case 1:
-        Get.offAllNamed(Routes.ADD_NEW_BOOKING);
-        break; // Bookings - navigate to add booking for now
-      case 2:
-        break; // Payments - current screen
-      case 3:
-        Get.offAllNamed(Routes.SETTINGS);
-        break; // Profile
+    final request = RecordPaymentRequest(
+      amount: amount,
+      paymentMethod: selectedPaymentMethod.value,
+      bookingId: linkedBookingController.text.trim().isEmpty
+          ? null
+          : linkedBookingController.text.trim(),
+      paymentDate: DateFormat(_isoDateFormat).format(paymentDate.value),
+      status: status.value == PaymentStatus.paid ? 'PAID' : 'PENDING',
+    );
+
+    saving.value = true;
+    try {
+      final online = await _isOnline();
+      if (!online) {
+        await _pendingStore.add(request.toJson());
+        Get.back();
+        Get.snackbar(
+          'Saved offline',
+          'Payment will sync when you\'re back online.',
+          duration: const Duration(seconds: 4),
+        );
+        saving.value = false;
+        return;
+      }
+      await _syncPendingWhenOnline();
+      final res = await _repository.recordPayment(request);
+      if (res.responseCode == '201' || res.responseCode == '200') {
+        Get.back();
+        Get.snackbar('Success', 'Payment recorded');
+      } else {
+        Get.snackbar('Error', res.message ?? 'Could not record payment');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to record payment: $e');
+    } finally {
+      saving.value = false;
     }
   }
 
   @override
   void onClose() {
+    _connectivitySubscription?.cancel();
     amountController.dispose();
     linkedBookingController.dispose();
     super.onClose();

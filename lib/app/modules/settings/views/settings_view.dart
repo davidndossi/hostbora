@@ -117,11 +117,11 @@ class SettingsView extends BaseView<SettingsController> {
               description: Text(appLocalization.useFingerprintDescription),
               activeSwitchColor: AppColors.colorPrimary
             ),
-            SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(Routes.CHANGE_PASSWORD),
-              leading: const Icon(Icons.lock),
-              title: Text(appLocalization.changePin)
-            )
+            // SettingsTile.navigation(
+            //   onPressed: (context) => Get.toNamed(Routes.CHANGE_PASSWORD),
+            //   leading: const Icon(Icons.lock),
+            //   title: Text(appLocalization.changePin)
+            // )
           ],
         ),
         SettingsSection(

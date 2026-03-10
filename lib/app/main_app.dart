@@ -218,6 +218,14 @@ class _MainAppState extends State<MainApp> {
           fontWeight: FontWeight.bold,
         ),
       ),
+      appBarTheme: const AppBarTheme(
+        titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: AppColors.appBarTextColor,
+          fontFamily: 'Roboto',
+        ),
+      ),
       fontFamily: 'Roboto',
     );
   }
@@ -261,6 +269,14 @@ class _MainAppState extends State<MainApp> {
           borderSide: const BorderSide(color: AppColors.errorColor),
         ),
         labelStyle: const TextStyle(color: Color(0xFF8E8E93)),
+      ),
+      appBarTheme: const AppBarTheme(
+        titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textColorWhite,
+          fontFamily: 'Roboto',
+        ),
       ),
       fontFamily: 'Roboto',
     );

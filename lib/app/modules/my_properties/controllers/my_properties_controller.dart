@@ -76,7 +76,15 @@ class MyPropertiesController extends BaseController {
   }
 
   void manageProperty(PropertyListing p) {
-    Get.toNamed(Routes.BOOKING_DETAILS);
+    Get.toNamed(
+      Routes.BOOKING_DETAILS,
+      arguments: {
+        'listingId': p.id,
+        'listingTitle': p.title,
+        'listingLocation': p.location,
+        'listingImageUrl': p.imageUrl,
+      },
+    );
   }
 
   void addProperty() => Get.toNamed(Routes.ADD_LISTING);

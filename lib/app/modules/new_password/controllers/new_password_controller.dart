@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/model/change_password_request.dart';
+import '../../../data/model/general_response.dart';
+import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
 class NewPasswordController extends BaseController {
@@ -11,6 +14,12 @@ class NewPasswordController extends BaseController {
   final obscureNewPassword = true.obs;
   final obscureConfirmPassword = true.obs;
   final _passwordTrigger = 0.obs;
+  final isLoading = false.obs;
+
+  final AppRepository _repository = Get.find(tag: (AppRepository).toString());
+
+  String get msisdn => Get.arguments?['msisdn']?.toString() ?? '';
+  String get otp => Get.arguments?['otp']?.toString() ?? '';
 
   static const int step = 3;
   static const int totalSteps = 3;
@@ -58,10 +67,32 @@ class NewPasswordController extends BaseController {
   void refreshPasswordUi() => _passwordTrigger.value++;
 
   void resetAndLogin() {
-    if (formKey.currentState?.validate() ?? false) {
-      // TODO: call API to set new password, then navigate
-      Get.offAllNamed(Routes.PASSWORD_UPDATED);
+    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (msisdn.isEmpty || otp.isEmpty) {
+      showErrorMessage('Session expired. Please start reset password again.');
+      return;
     }
+    isLoading(true);
+    final req = ChangePasswordRequest(
+      username: msisdn,
+      password: otp,
+      newPassword1: newPasswordController.text,
+      newPassword2: confirmPasswordController.text,
+    );
+    callDataService<GeneralResponse>(
+      _repository.changePassword(req),
+      onStart: () => isLoading(true),
+      onComplete: () => isLoading(false),
+      onError: (_) => isLoading(false),
+      onSuccess: (GeneralResponse res) {
+        isLoading(false);
+        if (res.responseCode == '0' || res.responseCode == null) {
+          Get.offAllNamed(Routes.PASSWORD_UPDATED);
+        } else {
+          showErrorMessage(res.message ?? 'Failed to update password');
+        }
+      },
+    );
   }
 
   String? validateNewPassword(String? value) {

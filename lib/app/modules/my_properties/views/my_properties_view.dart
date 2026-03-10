@@ -10,8 +10,8 @@ import '../controllers/my_properties_controller.dart';
 class MyPropertiesView extends BaseView<MyPropertiesController> {
   MyPropertiesView({super.key});
 
-  @override
-  Color pageBackgroundColor(BuildContext context) => AppColors.designAccentDark;
+  // @override
+  // Color pageBackgroundColor(BuildContext context) => AppColors.designAccentDark;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -21,11 +21,11 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
       isLight: true,
       isBackButtonEnabled: false,
       actions: [
-        IconButton(
-          onPressed: controller.openFilter,
-          icon: const Icon(Icons.tune),
-          color: Colors.white,
-        ),
+        // IconButton(
+        //   onPressed: controller.openFilter,
+        //   icon: const Icon(Icons.tune),
+        //   color: Colors.white,
+        // ),
       ],
     );
   }
@@ -60,7 +60,7 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
   Widget? floatingActionButton() => FloatingActionButton(
     onPressed: controller.addProperty,
     backgroundColor: AppColors.designAccent,
-    child: const Icon(Icons.add, color: Colors.white, size: 28),
+    child: const Icon(Icons.add, size: 28),
   );
 
 
@@ -76,7 +76,7 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
               padding: const EdgeInsets.only(right: 10),
               child: Material(
                 color: index == controller.selectedFilterIndex.value
-                    ? AppColors.designAccent
+                    ? AppColors.colorWhite
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
                 child: InkWell(
@@ -93,8 +93,8 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: index == controller.selectedFilterIndex.value
-                            ? Colors.white
-                            : Colors.white70,
+                            ? Colors.black
+                            : Colors.black54,
                       ),
                     ),
                   ),
@@ -123,7 +123,7 @@ class _PropertyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.designAccentDark,
+        color: AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
       ),
       clipBehavior: Clip.antiAlias,
@@ -143,7 +143,7 @@ class _PropertyCard extends StatelessWidget {
                   child: const Icon(
                     Icons.home_work_outlined,
                     size: 48,
-                    color: Colors.white54,
+                    color: Colors.black54,
                   ),
                 ),
               ),
@@ -154,7 +154,7 @@ class _PropertyCard extends StatelessWidget {
                   onPressed: onFavorite,
                   icon: Icon(
                     listing.isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: Colors.white,
+                    // color: Colors.white,
                     size: 26,
                   ),
                   style: IconButton.styleFrom(
@@ -180,7 +180,7 @@ class _PropertyCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    // color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -303,7 +303,7 @@ class _StatusBadge extends StatelessWidget {
           Icon(
             isReady ? Icons.check : Icons.cleaning_services,
             size: 16,
-            color: Colors.white,
+            // color: Colors.white,
           ),
           const SizedBox(width: 6),
           Text(
@@ -311,7 +311,7 @@ class _StatusBadge extends StatelessWidget {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              // color: Colors.white,
             ),
           ),
         ],

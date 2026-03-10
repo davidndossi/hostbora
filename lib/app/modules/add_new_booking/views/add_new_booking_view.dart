@@ -54,30 +54,42 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
   }
 
   Widget _buildSaveButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: AppValues.formButtonHeight + 4,
-      child: ElevatedButton.icon(
-        onPressed: controller.saveBooking,
-        icon: const Icon(Icons.calendar_today, size: 20, color: Colors.white),
-        label: const Text(
-          'Save Booking',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+    return Obx(() {
+      final isSaving = controller.saving.value;
+      return SizedBox(
+        width: double.infinity,
+        height: AppValues.formButtonHeight + 4,
+        child: ElevatedButton.icon(
+          onPressed: isSaving ? null : controller.saveBooking,
+          icon: isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.calendar_today, size: 20, color: Colors.white),
+          label: Text(
+            isSaving ? 'Saving…' : 'Save Booking',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _bookingNavTeal,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppValues.radius_6),
+            ),
+            elevation: 0,
           ),
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _bookingNavTeal,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppValues.radius_6),
-          ),
-          elevation: 0,
-        ),
-      ),
-    );
+      );
+    });
   }
 
   @override
@@ -97,6 +109,45 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Obx(() {
+              final pending = controller.pendingCount.value;
+              final syncing = controller.syncing.value;
+              if (pending > 0) {
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.colorPrimaryLight.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(AppValues.radius_6),
+                    border: Border.all(color: AppColors.colorPrimary.withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        syncing ? Icons.sync : Icons.cloud_off_outlined,
+                        size: 22,
+                        color: AppColors.colorPrimary,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          syncing
+                              ? 'Syncing offline bookings…'
+                              : '$pending booking${pending == 1 ? '' : 's'} saved offline. Will sync when online.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textColorPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
             _buildLabel('Guest Name'),
             const SizedBox(height: 8),
             TextFormField(
@@ -108,11 +159,130 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   : null,
             ),
             const SizedBox(height: 20),
+            _buildLabel('Phone Number'),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: controller.guestPhoneController,
+              keyboardType: TextInputType.phone,
+              decoration: _inputDecoration(hint: 'e.g. 255 712 345 678').copyWith(
+                suffixIcon: Icon(
+                  Icons.phone_outlined,
+                  size: 22,
+                  color: AppColors.designPlaceholder,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Obx(() {
+              if (!controller.isAzamPayEnabled) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: Checkbox(
+                          value: controller.sendPushToPay.value,
+                          onChanged: (v) =>
+                              controller.setSendPushToPay(v ?? false),
+                          activeColor: _bookingNavTeal,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => controller.setSendPushToPay(
+                            !controller.sendPushToPay.value,
+                          ),
+                          child: _buildLabel(
+                            'Send Push to Pay to guest (AzamPay)',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (controller.sendPushToPay.value) ...[
+                    const SizedBox(height: 12),
+                    _buildLabel('Amount (TZS)'),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: controller.pushToPayAmountController,
+                      keyboardType: TextInputType.number,
+                      decoration: _inputDecoration(hint: 'e.g. 50000'),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildLabel('Mobile provider'),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: controller.selectedProvider.value,
+                      decoration: _inputDecoration(hint: 'Provider').copyWith(
+                        suffixIcon: const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: AppColors.designPlaceholder,
+                        ),
+                      ),
+                      isExpanded: true,
+                      items: azamPayProviders
+                          .map(
+                            (e) => DropdownMenuItem<String>(
+                              value: e,
+                              child: Text(e),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: controller.selectProvider,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'A payment request will be sent to the guest\'s phone.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.designPlaceholder,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ] else
+                    const SizedBox(height: 20),
+                ],
+              );
+            }),
             _buildLabel('Select Property'),
             const SizedBox(height: 8),
-            Obx(
-                  () => DropdownButtonFormField<String>(
-                value: controller.selectedProperty.value,
+            Obx(() {
+              if (controller.listingsLoading.value) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.colorWhite,
+                    borderRadius: BorderRadius.circular(AppValues.radius_6),
+                    border: Border.all(color: AppColors.designInputBorder),
+                  ),
+                  child: const Row(
+                    children: [
+                      Text(
+                        'Loading properties…',
+                        style: TextStyle(
+                          color: AppColors.designPlaceholder,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return DropdownButtonFormField<String>(
+                value: controller.selectedListingId.value,
                 decoration: _inputDecoration(hint: 'Choose a listing').copyWith(
                   suffixIcon: const Icon(
                     Icons.keyboard_arrow_down,
@@ -128,19 +298,19 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                 ),
                 icon: const SizedBox.shrink(),
                 isExpanded: true,
-                items: controller.propertyOptions
+                items: controller.listings
                     .map(
-                      (e) => DropdownMenuItem(
-                    value: e,
-                    child: Text(e),
-                  ),
-                )
+                      (e) => DropdownMenuItem<String>(
+                        value: e.id,
+                        child: Text(e.propertyName),
+                      ),
+                    )
                     .toList(),
                 onChanged: controller.selectProperty,
                 validator: (v) =>
-                v == null || v.isEmpty ? 'Please select a property' : null,
-              ),
-            ),
+                    v == null || v.isEmpty ? 'Please select a property' : null,
+              );
+            }),
             const SizedBox(height: 20),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,

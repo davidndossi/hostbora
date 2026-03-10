@@ -112,10 +112,16 @@ class NewPasswordView extends GetView<NewPasswordController> {
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: controller.resetAndLogin,
-                  icon: const Icon(Icons.arrow_forward, size: 20, color: Colors.white),
-                  label: const Text('Reset and Login'),
+                child: Obx(() => ElevatedButton.icon(
+                  onPressed: controller.isLoading.isTrue ? null : controller.resetAndLogin,
+                  icon: controller.isLoading.isTrue
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.arrow_forward, size: 20, color: Colors.white),
+                  label: Text(controller.isLoading.isTrue ? 'Updating...' : 'Reset and Login'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.designAccent,
                     foregroundColor: Colors.white,
@@ -125,7 +131,7 @@ class NewPasswordView extends GetView<NewPasswordController> {
                     ),
                     elevation: 0,
                   ),
-                ),
+                )),
               ),
               const SizedBox(height: 20),
               Center(

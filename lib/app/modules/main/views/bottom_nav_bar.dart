@@ -79,14 +79,6 @@ class BottomNavBar extends StatelessWidget {
         iconSvgName: 'ic_booking.svg',
         menuCode: MenuCode.CALENDAR),
       BottomNavItem(
-        navTitle: appLocalization.tasks,
-        iconSvgName: 'tick-circle.svg',
-        menuCode: MenuCode.TASKS),
-      BottomNavItem(
-        navTitle: appLocalization.vault,
-        iconSvgName: 'ic_vault.svg',
-        menuCode: MenuCode.VAULT),
-      BottomNavItem(
         navTitle: appLocalization.settings,
         iconSvgName: 'ic_settings.svg',
         menuCode: MenuCode.SETTINGS),

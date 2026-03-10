@@ -94,6 +94,27 @@ class RegistrationView extends BaseView<RegistrationController> {
                       validator: controller.msisdnValidator,
                     ),
                     const SizedBox(height: 20),
+                    TextFormField(
+                      controller: controller.emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email (optional)',
+                        hintText: 'e.g. you@example.com',
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(
+                            color: AppColors.colorPrimary,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      validator: controller.emailValidator,
+                    ),
+                    const SizedBox(height: 20),
                     const Align(
                       alignment: Alignment.topLeft,
                       child: Text('Gender'),

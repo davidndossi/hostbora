@@ -15,11 +15,13 @@ import '../../../data/model/otp_request.dart';
 import '../../../data/model/otp_response.dart';
 import '../../../data/model/reg_request.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../network/exceptions/api_exception.dart';
 import '../../../routes/app_pages.dart';
 
 class RegistrationController extends BaseController {
   final name = ''.obs;
   final msisdn = ''.obs;
+  final email = ''.obs;
   final password = ''.obs;
   final selectedGender = ''.obs;
   final otp = ''.obs;
@@ -36,6 +38,7 @@ class RegistrationController extends BaseController {
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController msisdnController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   TextEditingController otpController = TextEditingController();
 
@@ -54,49 +57,58 @@ class RegistrationController extends BaseController {
   void onClose() {
     errorController?.close();
     msisdnController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     otpController.dispose();
     super.onClose();
   }
 
   void register() async {
-    String name = nameController.text;
+    if (!registerFormKey.currentState!.validate()) return;
+
+    String name = nameController.text.trim();
     String firstName = '';
     String middleName = '';
     String lastName = '';
-    List<String> names = name.split(' ');
-    if (names.length == 3) {
+    List<String> names = name.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+    if (names.length >= 3) {
       firstName = names[0];
       middleName = names[1];
-      lastName = names[2];
+      lastName = names.sublist(2).join(' ');
     } else if (names.length == 2) {
       firstName = names[0];
       lastName = names[1];
-    } else {
+    } else if (names.isNotEmpty) {
       firstName = names[0];
     }
-    String msisdn = msisdnController.text;
+    String msisdn = msisdnController.text.trim();
+    String emailStr = emailController.text.trim();
     this.msisdn(msisdn);
+    this.email(emailStr);
     String password = passwordController.text;
+
     Util().checkConnectivity().then((value) async {
-      if (value == 'Mobile' || value == 'Wifi') {
-        RegRequest regRequest = RegRequest(
-          firstName: firstName,
-          middleName: middleName,
-          surname: lastName,
-          mobileNumber: msisdn,
-          gender: selectedGender.value,
-          password: password
-        );
-        _preferenceManager.setString(PreferenceManager.keyUsername, msisdn);
-        callDataService(
-          _repository.createUserProfile(regRequest),
-          onError: _handleLoginResponseError,
-          onSuccess: _handleRegistrationResponseSuccess,
-        );
-      } else {
+      if (value != 'Mobile' && value != 'Wifi') {
         showErrorMessage(appLocalization.noInternet);
+        return;
       }
+      RegRequest regRequest = RegRequest(
+        firstName: firstName,
+        middleName: middleName.isEmpty ? null : middleName,
+        surname: lastName.isEmpty ? null : lastName,
+        mobileNumber: msisdn,
+        gender: selectedGender.value.isEmpty ? null : selectedGender.value,
+        email: emailStr.isEmpty ? null : emailStr,
+        password: password,
+      );
+      _preferenceManager.setString(PreferenceManager.keyUsername, msisdn);
+      callDataService<GeneralResponse>(
+        _repository.createUserProfile(regRequest),
+        onStart: () => isLoading(true),
+        onComplete: () => isLoading(false),
+        onError: _handleRegistrationResponseError,
+        onSuccess: _handleRegistrationResponseSuccess,
+      );
     });
   }
 
@@ -106,11 +118,23 @@ class RegistrationController extends BaseController {
 
   void _handleRegistrationResponseSuccess(GeneralResponse res) async {
     _generalResponse(res);
-    Get.toNamed(Routes.OTP,arguments: {'msisdn': msisdn.value});
+    isLoading(false);
+    if (res.responseCode == '0' || res.responseCode == null) {
+      Get.offAllNamed(Routes.OTP, arguments: {
+        'msisdn': msisdn.value,
+        'email': email.value,
+        'flow': 'registration',
+      });
+    } else {
+      showErrorMessage(res.message ?? appLocalization.loginFailed);
+    }
   }
 
-  void _handleLoginResponseError(Exception e) {
-    // showErrorMessage(e.toString());
+  void _handleRegistrationResponseError(Exception? e) {
+    isLoading(false);
+    if (e is ApiException && e.message.isNotEmpty) {
+      showErrorMessage(e.message);
+    }
   }
 
   Future<void> showOtpDialog() async {
@@ -219,9 +243,10 @@ class RegistrationController extends BaseController {
   Future<void> _handleOtpValidateResponseSuccess(OtpResponse res) async {
     Get.back(closeOverlays: true);
     if (res.respCode == '0') {
-      // proceedToLogin(loginResponse);
+      Get.offAllNamed(Routes.AUTH);
+      showSuccessMessage('Registration successful. Please sign in with your phone and password.');
     } else {
-      showErrorMessage('${res.respMsg}');
+      showErrorMessage(res.respMsg ?? 'Verification failed');
     }
   }
 
@@ -263,6 +288,15 @@ class RegistrationController extends BaseController {
     final phonePattern = RegExp(r'^0[678]\d{8}$');
     if (value != null && !phonePattern.hasMatch(value)) {
       return 'Please enter a valid phone number (e.g., 0612345678)';
+    }
+    return null;
+  }
+
+  String? emailValidator(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Enter a valid email address';
     }
     return null;
   }

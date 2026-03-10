@@ -186,26 +186,41 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
   }
 
   Widget _buildBiometricCircle(BuildContext context) {
-    return GestureDetector(
-      onTap: controller.authenticateWithBiometrics,
-      child: Container(
-        width: 140,
-        height: 140,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: AppColors.designAccent,
-            width: 2,
+    return Obx(() {
+      final available = controller.canUseBiometrics.value;
+      final inProgress = controller.isBiometricAuthInProgress.value;
+      return GestureDetector(
+        onTap: available && !inProgress ? controller.authenticateWithBiometrics : null,
+        child: Opacity(
+          opacity: available ? 1 : 0.5,
+          child: Container(
+            width: 140,
+            height: 140,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.designAccent,
+                width: 2,
+              ),
+              color: Colors.white,
+            ),
+            child: inProgress
+                ? const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: CircularProgressIndicator(
+                      color: AppColors.designAccent,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(
+                    Icons.fingerprint_rounded,
+                    size: 72,
+                    color: AppColors.designAccent,
+                  ),
           ),
-          color: Colors.white,
         ),
-        child: const Icon(
-          Icons.fingerprint_rounded,
-          size: 72,
-          color: AppColors.designAccent,
-        ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildPinDots() {
@@ -305,17 +320,17 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
       child: InkWell(
         onTap: controller.onBackspace,
         borderRadius: BorderRadius.circular(28),
-        child: Container(
+        child: SizedBox(
           width: 56,
           height: 56,
-          decoration: const BoxDecoration(
-            color: AppColors.designAccent,
-            shape: BoxShape.circle,
-          ),
+          // decoration: const BoxDecoration(
+          //   color: AppColors.designAccent,
+          //   shape: BoxShape.circle,
+          // ),
           child: const Icon(
             Icons.backspace_outlined,
-            color: Colors.white,
-            size: 26,
+            color: AppColors.designAccent,
+            size: 20,
           ),
         ),
       ),

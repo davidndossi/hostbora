@@ -47,18 +47,24 @@ Exception _parseDioErrorResponse(DioException dioError) {
   String? serverMessage;
 
   try {
-    if (statusCode == -1 || statusCode == HttpStatus.ok) {
-      statusCode = int.parse(dioError.response?.data['statusCode']);
-    } else {
-      serverMessage = dioError.response?.statusMessage;
+    final data = dioError.response?.data;
+    if (data is Map<String, dynamic>) {
+      serverMessage = data['message']?.toString();
     }
-    // status = dioError.response?.data["status"].toString();
-    // serverMessage = dioError.response?.data["error"];
+    if (serverMessage == null || serverMessage.isEmpty) {
+      if (statusCode == -1 || statusCode == HttpStatus.ok) {
+        statusCode = int.parse(dioError.response?.data['statusCode']?.toString() ?? '$statusCode');
+      } else {
+        serverMessage = dioError.response?.statusMessage;
+      }
+    }
+    if (serverMessage == null || serverMessage.isEmpty) {
+      serverMessage = 'Something went wrong. Please try again later.';
+    }
   } catch (e, s) {
     logger.i('$e');
     logger.i(s.toString());
-
-    serverMessage = 'Something went wrong. Please try again later.';
+    serverMessage = serverMessage ?? 'Something went wrong. Please try again later.';
   }
 
   switch (statusCode) {
@@ -68,7 +74,7 @@ Exception _parseDioErrorResponse(DioException dioError) {
     case HttpStatus.notFound:
       return NotFoundException(serverMessage ?? '', status ?? '');
     case HttpStatus.unauthorized:
-      return UnauthorizedException('Unauthorized access');
+      return UnauthorizedException(serverMessage?.isNotEmpty == true ? serverMessage! : 'Invalid username or password');
     case HttpStatus.forbidden:
       return UnauthorizedException('Access token expired, please login...');
     case HttpStatus.internalServerError:

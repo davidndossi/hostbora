@@ -18,6 +18,7 @@ import '../../../data/model/login_response.dart';
 import '../../../data/model/otp_request.dart';
 import '../../../data/model/otp_response.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../network/exceptions/api_exception.dart';
 import '../../../routes/app_pages.dart';
 
 class AuthController extends BaseController {
@@ -67,27 +68,40 @@ class AuthController extends BaseController {
   }
 
   void login() async {
-    String firebaseToken = await _preferenceManager.getString(
-        PreferenceManager.keyFirebaseToken);
-    Util().checkConnectivity().then((value) async {
-      if (value == 'Mobile' || value == 'Wifi') {
-        password(passwordController.text);
-        msisdn(msisdnController.text);
-        LoginRequest loginRequest = LoginRequest(
-          username: msisdn.value,
-          password: password.value,
-          verified: true,
-          firebaseToken: firebaseToken
-        );
-        callDataService(
-          _repository.signIn(loginRequest),
-          onError: _handleLoginResponseError,
-          onSuccess: _handleLoginResponseSuccess,
+    if (!authFormKey.currentState!.validate()) return;
+
+    password(passwordController.text);
+    msisdn(msisdnController.text.trim());
+
+    final connectivity = await Util().checkConnectivity();
+    if (connectivity != 'Mobile' && connectivity != 'Wifi') {
+      final token = await _preferenceManager.getString(PreferenceManager.keyToken, defaultValue: '');
+      final firstLogin = await _preferenceManager.getBool(PreferenceManager.keyFirstLogin, defaultValue: true);
+      if (token.isNotEmpty && !firstLogin) {
+        Get.offAllNamed(Routes.MAIN);
+        Get.snackbar(
+          'Offline',
+          'You\'re offline. Using your last session.',
+          duration: const Duration(seconds: 3),
         );
       } else {
         showErrorMessage(appLocalization.noInternet);
       }
-    });
+      return;
+    }
+    final loginRequest = LoginRequest(
+      username: msisdnController.text.trim(),
+      password: passwordController.text,
+      verified: true,
+      firebaseToken: firebaseToken.isNotEmpty ? firebaseToken : null,
+    );
+    callDataService<LoginResponse>(
+      _repository.signIn(loginRequest),
+      onStart: () => isLoading(true),
+      onComplete: () => isLoading(false),
+      onError: _handleLoginResponseError,
+      onSuccess: _handleLoginResponseSuccess,
+    );
   }
 
   Future<void> getFirebaseToken() async {
@@ -99,8 +113,11 @@ class AuthController extends BaseController {
     proceedToLogin(res);
   }
 
-  void _handleLoginResponseError(Exception e) {
-    // showErrorMessage(e.toString());
+  void _handleLoginResponseError(Exception? e) {
+    isLoading(false);
+    if (e is ApiException && (e.message).isNotEmpty) {
+      showErrorMessage(e.message);
+    }
   }
 
   void useBiometrics() async {
@@ -261,7 +278,8 @@ class AuthController extends BaseController {
       await _preferenceManager.setUser('user', loginResponse.user);
       await _preferenceManager.setString('userApp', password.value);
       if (res.token != null) {
-        _preferenceManager.setBool(PreferenceManager.keyFirstLogin, false);
+        final isFirstLogin = await _preferenceManager.getBool(PreferenceManager.keyFirstLogin, defaultValue: true);
+        await _preferenceManager.setBool(PreferenceManager.keyFirstLogin, false);
         if (Navigator.canPop(Get.context!)) {
           debugPrint('Go back to previous page');
           Navigator.pop(Get.context!);
@@ -269,6 +287,9 @@ class AuthController extends BaseController {
           if (res.message == 'verify_code') {
             debugPrint('Go to otp page');
             Get.offAndToNamed(Routes.OTP);
+          } else if (isFirstLogin) {
+            debugPrint('First time user: go to add listing');
+            Get.offAllNamed(Routes.ADD_LISTING, arguments: {'from_first_login': true});
           } else {
             debugPrint('Go to welcome back');
             Get.offAllNamed(Routes.WELCOME_BACK, arguments: {'from_password_login': true});

@@ -34,14 +34,6 @@ class MainBinding extends Bindings {
       () => HostCalendarController(),
       fenix: true,
     );
-    Get.lazyPut<MaintenanceTasksController>(
-      () => MaintenanceTasksController(),
-      fenix: true,
-    );
-    Get.lazyPut<PropertyVaultController>(
-      () => PropertyVaultController(),
-      fenix: true,
-    );
     Get.lazyPut<SettingsController>(
       () => SettingsController(),
       fenix: true,

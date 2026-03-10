@@ -56,14 +56,12 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
   Widget? floatingActionButton() {
     return FloatingActionButton.extended(
       onPressed: controller.goToAddExpense,
-      backgroundColor: _expenseAnalysisBlue,
       icon: const Icon(Icons.add, color: Colors.white),
       label: Text(
         'Add Expense',
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: AppColors.colorWhite,
         ),
       ),
     );
@@ -218,18 +216,15 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: controller.downloadReport,
-        icon: Icon(Icons.download_rounded, size: 22, color: _expenseAnalysisBlue),
+        icon: Icon(Icons.download_rounded, size: 22),
         label: Text(
           'Download Detailed Report',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: _expenseAnalysisBlue,
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: _expenseChartCyan,
-          foregroundColor: const Color(0xFF1565C0),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppValues.radius_12),

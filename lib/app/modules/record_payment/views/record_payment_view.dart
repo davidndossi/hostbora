@@ -199,30 +199,42 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   }
 
   Widget _buildRecordButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: AppValues.formButtonHeight + 4,
-      child: ElevatedButton.icon(
-        onPressed: controller.recordPayment,
-        icon: const Icon(Icons.check_circle_outline, size: 20, color: Colors.white),
-        label: const Text(
-          'Record Payment',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+    return Obx(() {
+      final isSaving = controller.saving.value;
+      return SizedBox(
+        width: double.infinity,
+        height: AppValues.formButtonHeight + 4,
+        child: ElevatedButton.icon(
+          onPressed: isSaving ? null : controller.recordPayment,
+          icon: isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.check_circle_outline, size: 20, color: Colors.white),
+          label: Text(
+            isSaving ? 'Recording…' : 'Record Payment',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _transactionTeal,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppValues.radius_6),
+            ),
+            elevation: 0,
           ),
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _transactionTeal,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppValues.radius_6),
-          ),
-          elevation: 0,
-        ),
-      ),
-    );
+      );
+    });
   }
 }
 

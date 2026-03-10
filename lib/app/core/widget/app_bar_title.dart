@@ -9,9 +9,11 @@ class AppBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final titleStyle = theme.appBarTheme.titleTextStyle ?? pageTitleStyle;
     return Text(
       text,
-      style: pageTitleStyle,
+      style: titleStyle,
       textAlign: TextAlign.center,
     );
   }

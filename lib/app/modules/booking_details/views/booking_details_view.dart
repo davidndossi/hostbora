@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
@@ -8,11 +9,6 @@ import '../controllers/booking_details_controller.dart';
 
 class BookingDetailsView extends BaseView<BookingDetailsController> {
   BookingDetailsView({super.key});
-
-  static const _cardDark = Color(0xFF2A2A2A);
-
-  @override
-  Color pageBackgroundColor(BuildContext context) => AppColors.designBackgroundDark;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -25,48 +21,277 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
   @override
   Widget body(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    return Column(
-      children: [
-        _buildHeader(context, topPadding),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+    return Obx(() {
+      final isListingMode = controller.isListingMode;
+      return Column(
+        children: [
+          _buildHeader(context, topPadding),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isListingMode) ...[
+                    _buildCheckAvailabilitySection(context),
+                  ] else ...[
+                    _buildGuestCard(context),
+                    const SizedBox(height: 16),
+                    _buildCheckInOutRow(context),
+                    const SizedBox(height: 20),
+                    _buildPaymentRow(context),
+                    const SizedBox(height: 24),
+                    _buildSectionLabel('RESERVATION DETAILS'),
+                    const SizedBox(height: 16),
+                    _buildMessageGuestButton(context),
+                    const SizedBox(height: 12),
+                    _buildModifyBookingLink(context),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildCheckAvailabilitySection(BuildContext context) {
+    return Obx(() {
+      final mode = controller.availabilityMode.value;
+      final selectedMonth = controller.selectedMonth.value;
+      final selectedDate = controller.selectedDate.value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Check availability',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textColorPrimary,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'View availability for today, a month, or a specific date.',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textColorSecondary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildSectionLabel('SHOW AVAILABILITY'),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _availabilityChip(
+                  context,
+                  label: 'Today',
+                  selected: mode == 'today',
+                  onTap: () => controller.setAvailabilityMode('today'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _availabilityChip(
+                  context,
+                  label: 'Month',
+                  selected: mode == 'month',
+                  onTap: () => controller.setAvailabilityMode('month'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _availabilityChip(
+                  context,
+                  label: 'Month + Date',
+                  selected: mode == 'month_date',
+                  onTap: () => controller.setAvailabilityMode('month_date'),
+                ),
+              ),
+            ],
+          ),
+          if (mode == 'month') ...[
+            const SizedBox(height: 16),
+            _buildSectionLabel('MONTH'),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () => controller.pickMonth(context),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                side: const BorderSide(color: AppColors.designInputBorder),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppValues.radius_6),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_month_outlined, size: 20, color: AppColors.colorPrimary),
+                  const SizedBox(width: 10),
+                  Text(
+                    selectedMonth != null
+                        ? '${_monthName(selectedMonth.month)} ${selectedMonth.year}'
+                        : 'Select month',
+                    style: TextStyle(color: AppColors.textColorPrimary),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (mode == 'month_date') ...[
+            const SizedBox(height: 16),
+            _buildSectionLabel('MONTH & DATE'),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => controller.pickMonth(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: AppColors.designInputBorder),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppValues.radius_6),
+                      ),
+                    ),
+                    child: Text(
+                      selectedMonth != null
+                          ? '${_monthName(selectedMonth.month)} ${selectedMonth.year}'
+                          : 'Month',
+                      style: TextStyle(fontSize: 14, color: AppColors.textColorPrimary),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => controller.pickDate(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: AppColors.designInputBorder),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppValues.radius_6),
+                      ),
+                    ),
+                    child: Text(
+                      selectedDate != null ? '${selectedDate.day}' : 'Date',
+                      style: TextStyle(fontSize: 14, color: AppColors.textColorPrimary),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 24),
+          _buildSectionLabel('AVAILABILITY'),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.colorWhite,
+              borderRadius: BorderRadius.circular(AppValues.radius_12),
+              border: Border.all(color: AppColors.designInputBorder),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildGuestCard(context),
-                const SizedBox(height: 16),
-                _buildCheckInOutRow(context),
-                const SizedBox(height: 20),
-                _buildPaymentRow(context),
-                const SizedBox(height: 24),
-                _buildSectionLabel('RESERVATION DETAILS'),
-                const SizedBox(height: 16),
-                _buildMessageGuestButton(context),
-                const SizedBox(height: 12),
-                _buildModifyBookingLink(context),
+                Text(
+                  controller.availabilitySummary,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textColorPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle_outline, size: 20, color: AppColors.colorPrimary),
+                    const SizedBox(width: 8),
+                    Text(
+                      controller.availabilityStatus,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textColorSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
+        ],
+      );
+    });
+  }
+
+  String _monthName(int month) {
+    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return names[month - 1];
+  }
+
+  Widget _availabilityChip(
+    BuildContext context, {
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: selected ? AppColors.colorPrimaryLight.withOpacity(0.5) : AppColors.colorWhite,
+      borderRadius: BorderRadius.circular(AppValues.radius_6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppValues.radius_6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppValues.radius_6),
+            border: Border.all(
+              color: selected ? AppColors.colorPrimary : AppColors.designInputBorder,
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: selected ? AppColors.colorPrimary : AppColors.textColorSecondary,
+              ),
+            ),
+          ),
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildHeader(BuildContext context, double topPadding) {
     final height = MediaQuery.sizeOf(context).height * 0.38;
-    return SizedBox(
+    return Obx(() => SizedBox(
       height: height,
       width: double.infinity,
       child: Stack(
         fit: StackFit.expand,
         children: [
           Image.network(
-            controller.propertyImageUrl,
+            controller.propertyImageUrl.value,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Container(
-              color: _cardDark,
-              child: const Icon(Icons.home_work_outlined, size: 64, color: Colors.white54),
+              color: AppColors.lightGreyColor,
+              child: Icon(Icons.home_work_outlined, size: 64, color: AppColors.textColorSecondary),
             ),
           ),
           DecoratedBox(
@@ -118,7 +343,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  controller.propertyTitle,
+                  controller.propertyTitle.value,
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
@@ -136,7 +361,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      controller.propertyLocation,
+                      controller.propertyLocation.value,
                       style: const TextStyle(
                         fontSize: 15,
                         color: Colors.white70,
@@ -149,7 +374,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _headerIconButton({
@@ -174,14 +399,22 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _cardDark,
+        color: AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
+        border: Border.all(color: AppColors.designInputBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: AppColors.designAccent.withOpacity(0.3),
+            backgroundColor: AppColors.colorPrimaryLight,
             backgroundImage: controller.guestAvatarUrl.isNotEmpty
                 ? NetworkImage(controller.guestAvatarUrl)
                 : null,
@@ -190,10 +423,10 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                     controller.guestName.isNotEmpty
                         ? controller.guestName[0].toUpperCase()
                         : '?',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: AppColors.colorPrimary,
                     ),
                   )
                 : null,
@@ -205,10 +438,10 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
               children: [
                 Text(
                   controller.guestName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: AppColors.textColorPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -240,13 +473,13 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.designAccent, width: 1.5),
+                  border: Border.all(color: AppColors.colorPrimary, width: 1.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.chat_bubble_outline,
                   size: 22,
-                  color: AppColors.designAccent,
+                  color: AppColors.colorPrimary,
                 ),
               ),
             ),
@@ -286,8 +519,16 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _cardDark,
+        color: AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
+        border: Border.all(color: AppColors.designInputBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,16 +539,16 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
-              color: Colors.white.withOpacity(0.6),
+              color: AppColors.textColorSecondary,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             date,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: AppColors.textColorPrimary,
             ),
           ),
           const SizedBox(height: 2),
@@ -315,7 +556,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
             time,
             style: TextStyle(
               fontSize: 13,
-              color: Colors.white.withOpacity(0.6),
+              color: AppColors.textColorSecondary,
             ),
           ),
         ],
@@ -334,14 +575,14 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                 'Payment Status',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withOpacity(0.6),
+                  color: AppColors.textColorSecondary,
                 ),
               ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.designAccent,
+                  color: AppColors.colorPrimary,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
@@ -372,16 +613,16 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                 'Total Payout',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withOpacity(0.6),
+                  color: AppColors.textColorSecondary,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 controller.totalPayout,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.designAccent,
+                  color: AppColors.colorPrimary,
                 ),
               ),
             ],
@@ -398,7 +639,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
         fontSize: 12,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.5,
-        color: Colors.white.withOpacity(0.6),
+        color: AppColors.textColorSecondary,
       ),
     );
   }
@@ -411,7 +652,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
         icon: const Icon(Icons.mail_outline, size: 22, color: Colors.white),
         label: const Text('Message Guest'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.designAccent,
+          backgroundColor: AppColors.colorPrimary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
@@ -431,7 +672,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
           'Modify Booking',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.white.withOpacity(0.7),
+            color: AppColors.colorPrimary,
             decoration: TextDecoration.underline,
           ),
         ),

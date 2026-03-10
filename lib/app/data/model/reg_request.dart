@@ -5,6 +5,7 @@ class RegRequest {
     String? surname,
     String? gender,
     String? mobileNumber,
+    String? email,
     String? password,
   }){
     _firstName = firstName;
@@ -12,6 +13,7 @@ class RegRequest {
     _surname = surname;
     _gender = gender;
     _mobileNumber = mobileNumber;
+    _email = email;
     _password = password;
   }
 
@@ -21,6 +23,7 @@ class RegRequest {
     _surname = json['surname'];
     _gender = json['gender'];
     _mobileNumber = json['mobileNumber'];
+    _email = json['email'];
     _password = json['password'];
   }
 
@@ -29,6 +32,7 @@ class RegRequest {
   String? _surname;
   String? _gender;
   String? _mobileNumber;
+  String? _email;
   String? _password;
 
   String? get firstName => _firstName;
@@ -36,6 +40,7 @@ class RegRequest {
   String? get surname => _surname;
   String? get gender => _gender;
   String? get mobileNumber => _mobileNumber;
+  String? get email => _email;
   String? get password => _password;
 
   Map<String, dynamic> toJson() {
@@ -45,6 +50,7 @@ class RegRequest {
     map['surname'] = _surname;
     map['gender'] = _gender;
     map['mobileNumber'] = _mobileNumber;
+    map['email'] = _email;
     map['password'] = _password;
 
     return map;

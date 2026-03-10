@@ -6,6 +6,7 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/model/general_response.dart';
 import '../../../data/model/otp_request.dart';
 import '../../../data/model/otp_response.dart';
 import '../../../data/repository/app_repository.dart';
@@ -27,14 +28,23 @@ class OtpController extends BaseController {
   StreamController<ErrorAnimationType>? errorController = StreamController<ErrorAnimationType>();
 
   late String msisdn;
+  String get flow => Get.arguments?['flow']?.toString() ?? '';
+  String? get email => Get.arguments?['email']?.toString();
+
+  String get otpSubtitle {
+    if (flow == 'registration') {
+      return 'We sent a verification code to your email and phone number. Enter the code below.';
+    }
+    return appLocalization.otpSubtitle;
+  }
 
   @override
   void onInit() async {
     msisdn = await _preferenceManager.getString('username');
     if (Get.arguments != null) {
       if (Get.arguments['msisdn'] != null) {
-        String msisdn = Get.arguments['msisdn'];
-        this.msisdn = msisdn;
+        final argMsisdn = Get.arguments['msisdn'];
+        this.msisdn = argMsisdn is String ? argMsisdn : argMsisdn.toString();
       }
     }
     super.onInit();
@@ -80,7 +90,14 @@ class OtpController extends BaseController {
 
   void _handleVerificationResponseSuccess(OtpResponse res) async {
     if (res.respCode == '0') {
-      Get.until((route) => route.isFirst);
+      if (flow == 'reset_password') {
+        Get.offAllNamed(Routes.NEW_PASSWORD, arguments: {'msisdn': msisdn, 'otp': otp.value});
+      } else if (flow == 'registration') {
+        Get.offAllNamed(Routes.AUTH);
+        showSuccessMessage('Registration successful. Please sign in with your phone and password.');
+      } else {
+        Get.until((route) => route.isFirst);
+      }
     } else {
       callDataService(
         _repository.verifyCode(OtpRequest(msisdn: msisdn, otp: otp.value)),
@@ -99,11 +116,27 @@ class OtpController extends BaseController {
   }
 
   void validateOtp() {
+    if (flow == 'reset_password') {
+      callDataService(
+        _repository.verifyForgotOtp(OtpRequest(msisdn: msisdn, otp: otp.value)),
+        onError: _handleVerificationResponseError,
+        onSuccess: _handleVerifyForgotOtpSuccess,
+      );
+      return;
+    }
     callDataService(
       _repository.verifyPhoneNumber(OtpRequest(msisdn: msisdn, otp: otp.value)),
       onError: _handleVerificationResponseError,
       onSuccess: _handleVerificationResponseSuccess,
     );
+  }
+
+  void _handleVerifyForgotOtpSuccess(GeneralResponse res) {
+    if (res.responseCode == '0' || res.responseCode == null) {
+      Get.offAllNamed(Routes.NEW_PASSWORD, arguments: {'msisdn': msisdn, 'otp': otp.value});
+    } else {
+      showErrorMessage(res.message ?? 'Invalid or expired OTP');
+    }
   }
 
   void resendOtp() {
