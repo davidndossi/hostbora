@@ -10,23 +10,11 @@ import '../controllers/my_properties_controller.dart';
 class MyPropertiesView extends BaseView<MyPropertiesController> {
   MyPropertiesView({super.key});
 
-  // @override
-  // Color pageBackgroundColor(BuildContext context) => AppColors.designAccentDark;
-
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
       appBarTitleText: appLocalization.myProperties,
       isCentered: true,
-      isLight: true,
-      isBackButtonEnabled: false,
-      actions: [
-        // IconButton(
-        //   onPressed: controller.openFilter,
-        //   icon: const Icon(Icons.tune),
-        //   color: Colors.white,
-        // ),
-      ],
     );
   }
 
@@ -37,19 +25,35 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
         _buildFilterTabs(context),
         Expanded(
           child: Obx(
-            () => ListView.separated(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-              itemCount: controller.properties.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final p = controller.properties[index];
-                return _PropertyCard(
-                  listing: p,
-                  onFavorite: () => controller.toggleFavorite(p),
-                  onManage: () => controller.manageProperty(p),
+            () {
+              if (controller.loading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (controller.properties.isEmpty) {
+                return Center(
+                  child: Text(
+                    'No properties',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textColorSecondary,
+                    ),
+                  ),
                 );
-              },
-            ),
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                itemCount: controller.properties.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final p = controller.properties[index];
+                  return _PropertyCard(
+                    listing: p,
+                    onFavorite: () => controller.toggleFavorite(p),
+                    onManage: () => controller.manageProperty(p),
+                  );
+                },
+              );
+            },
           ),
         ),
       ],

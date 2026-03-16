@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
+import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/add_listing_controller.dart';
 
 class AddListingView extends BaseView<AddListingController> {
@@ -19,31 +20,9 @@ class AddListingView extends BaseView<AddListingController> {
   }
 
   PreferredSizeWidget _buildStepAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: AppColors.pageBackground,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      leading: IconButton(
-        onPressed: controller.goBack,
-        icon: const Icon(Icons.arrow_back),
-      ),
-      title: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'STEP ${controller.currentStep.value} OF ${AddListingController.totalSteps}',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColorSecondary,
-              letterSpacing: 0.3,
-            ),
-          ),
-          const SizedBox(height: 6),
-          _buildStepDots(),
-        ],
-      ),
-      centerTitle: true,
+    return CustomAppBar(
+      appBarTitleText: appLocalization.listing,
+      isCentered: true,
       actions: [
         IconButton(
           onPressed: controller.openHelp,
@@ -79,22 +58,29 @@ class AddListingView extends BaseView<AddListingController> {
   @override
   Widget body(BuildContext context) {
     return Obx(() {
+      if (controller.loadingListing.value && controller.isEditMode.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
       final step = controller.currentStep.value;
       return Column(
         children: [
-          if (step == 1) _buildProgress(context),
+          _buildProgress(context),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: step == 1
                   ? _buildStep1Content(context)
                   : step == 2
-                      ? _buildStep2Content(context)
+                      ? _buildStep2CoverPhotoContent(context)
                       : step == 3
-                          ? _buildStep3InitialInvestmentContent(context)
+                          ? _buildStep3CapacityContent(context)
                           : step == 4
-                              ? _buildStep4Content(context)
-                              : _buildStep5Content(context),
+                              ? _buildStep4RoomPhotosContent(context)
+                              : step == 5
+                                  ? _buildStep5InitialInvestmentContent(context)
+                                  : step == 6
+                                      ? _buildStep6Content(context)
+                                      : _buildStep7Content(context),
             ),
           ),
           _buildBottomBar(context),
@@ -110,13 +96,15 @@ class AddListingView extends BaseView<AddListingController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
-          Text(
-            'Add New Property',
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textColorPrimary,
-              letterSpacing: -0.5,
+          Obx(
+            () => Text(
+              controller.isEditMode.value ? 'Edit Property' : 'Add New Property',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textColorPrimary,
+                letterSpacing: -0.5,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -191,7 +179,7 @@ class AddListingView extends BaseView<AddListingController> {
             validator: (v) =>
                 controller.validateRequired(v, 'Street address'),
           ),
-          Obx(() => _buildAddressSuggestions(context)),
+          _buildAddressSuggestions(context),
           const SizedBox(height: 16),
           _buildMapPreview(context),
           const SizedBox(height: 100),
@@ -200,7 +188,209 @@ class AddListingView extends BaseView<AddListingController> {
     );
   }
 
-  Widget _buildStep2Content(BuildContext context) {
+  Widget _buildStep2CoverPhotoContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          'Property photo',
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textColorPrimary,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Upload a photo of your property. This will be shown in the listing preview and search results.',
+          style: TextStyle(
+            fontSize: 15,
+            color: AppColors.textColorSecondary,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Obx(() {
+          final path = controller.propertyCoverPhotoPath.value;
+          return GestureDetector(
+            onTap: () => _showCoverPhotoSourceSheet(context),
+            child: Container(
+              width: double.infinity,
+              height: 220,
+              decoration: BoxDecoration(
+                color: AppColors.colorWhite,
+                borderRadius: BorderRadius.circular(AppValues.radius_12),
+                border: Border.all(
+                  color: path != null ? AppColors.colorPrimary : AppColors.designInputBorder,
+                  width: path != null ? 2 : 1,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: path != null
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.file(File(path), fit: BoxFit.cover),
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              GestureDetector(
+                                onTap: controller.clearCoverPhoto,
+                                child: CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: Colors.black54,
+                                  child: const Icon(Icons.close, color: Colors.white, size: 22),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => _showCoverPhotoSourceSheet(context),
+                                child: CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: AppColors.colorPrimary,
+                                  child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_photo_alternate_outlined, size: 56, color: AppColors.colorPrimary),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Add cover photo',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textColorPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap to choose from gallery or take a picture',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textColorSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          );
+        }),
+        const SizedBox(height: 100),
+      ],
+    );
+  }
+
+  void _showCoverPhotoSourceSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Add cover photo',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColorPrimary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined, color: AppColors.colorPrimary),
+                title: const Text('Choose from gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickCoverPhoto(fromGallery: true);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.colorPrimary),
+                title: const Text('Take a picture'),
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickCoverPhoto(fromGallery: false);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStep3CapacityContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          'Capacity',
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textColorPrimary,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'How many rooms, bathrooms, and guests can your property accommodate?',
+          style: TextStyle(
+            fontSize: 15,
+            color: AppColors.textColorSecondary,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildLabel('BEDROOMS'),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller.numberOfBedroomsController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: false),
+          decoration: _inputDecoration(hint: 'e.g. 2'),
+        ),
+        const SizedBox(height: 20),
+        _buildLabel('BATHROOMS'),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller.numberOfBathsController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: _inputDecoration(hint: 'e.g. 1 or 1.5'),
+        ),
+        const SizedBox(height: 20),
+        _buildLabel('MAX GUESTS'),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller.maxGuestsController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: false),
+          decoration: _inputDecoration(hint: 'e.g. 4'),
+        ),
+        const SizedBox(height: 100),
+      ],
+    );
+  }
+
+  Widget _buildStep4RoomPhotosContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -230,7 +420,7 @@ class AddListingView extends BaseView<AddListingController> {
     );
   }
 
-  Widget _buildStep3InitialInvestmentContent(BuildContext context) {
+  Widget _buildStep5InitialInvestmentContent(BuildContext context) {
     return Obx(() {
       final useIndividual = controller.initialInvestmentMode.value == 'individual';
       return Column(
@@ -295,11 +485,11 @@ class AddListingView extends BaseView<AddListingController> {
             OutlinedButton.icon(
               onPressed: controller.addInvestmentItem,
               icon: const Icon(Icons.add, size: 20),
-              label: const Text('Add item'),
+              label: const Text('Add item', style: TextStyle(fontSize: 14)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.colorPrimary,
                 side: const BorderSide(color: AppColors.colorPrimary),
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.all(12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppValues.radius_6),
                 ),
@@ -311,8 +501,8 @@ class AddListingView extends BaseView<AddListingController> {
             TextFormField(
               controller: controller.approximateTotalCostController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: _inputDecoration(hint: '0.00').copyWith(
-                prefixText: '\$ ',
+              decoration: _inputDecoration(hint: '0').copyWith(
+                prefixText: 'TZS ',
                 prefixStyle: TextStyle(
                   fontSize: 16,
                   color: AppColors.textColorPrimary,
@@ -435,12 +625,12 @@ class AddListingView extends BaseView<AddListingController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Cost/Unit (\$)'),
+                    _buildLabel('Cost/Unit (TZS)'),
                     const SizedBox(height: 4),
                     TextFormField(
                       controller: controllers[3],
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: _inputDecoration(hint: '0.00'),
+                      decoration: _inputDecoration(hint: '0'),
                       onChanged: (_) => controller.syncInvestmentItemFromControllers(index),
                     ),
                   ],
@@ -453,7 +643,7 @@ class AddListingView extends BaseView<AddListingController> {
     );
   }
 
-  Widget _buildStep4Content(BuildContext context) {
+  Widget _buildStep6Content(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -502,8 +692,8 @@ class AddListingView extends BaseView<AddListingController> {
         TextFormField(
           controller: controller.baseNightlyRateController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: _inputDecoration(hint: '0.00').copyWith(
-            prefixText: '\$ ',
+          decoration: _inputDecoration(hint: '0').copyWith(
+            prefixText: 'TZS ',
             prefixStyle: TextStyle(
               fontSize: 16,
               color: AppColors.textColorPrimary,
@@ -517,8 +707,8 @@ class AddListingView extends BaseView<AddListingController> {
         TextFormField(
           controller: controller.cleaningFeeController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: _inputDecoration(hint: '0.00').copyWith(
-            prefixText: '\$ ',
+          decoration: _inputDecoration(hint: '0').copyWith(
+            prefixText: 'TZS ',
             prefixStyle: TextStyle(
               fontSize: 16,
               color: AppColors.textColorPrimary,
@@ -634,7 +824,7 @@ class AddListingView extends BaseView<AddListingController> {
     );
   }
 
-  Widget _buildStep5Content(BuildContext context) {
+  Widget _buildStep7Content(BuildContext context) {
     final title = controller.propertyNameController.text.trim().isEmpty
         ? 'Modern Lakeside Cabin'
         : controller.propertyNameController.text;
@@ -670,12 +860,22 @@ class AddListingView extends BaseView<AddListingController> {
         const SizedBox(height: 24),
         _buildLabel('LISTING PREVIEW'),
         const SizedBox(height: 12),
-        _buildListingPreviewCard(
+        Obx(() => _buildListingPreviewCard(
           context,
           title: title,
           price: price,
           location: location,
-        ),
+          coverImagePath: controller.propertyCoverPhotoPath.value,
+          bedrooms: controller.numberOfBedroomsController.text.trim().isEmpty
+              ? null
+              : int.tryParse(controller.numberOfBedroomsController.text.replaceAll(RegExp(r'[^\d]'), '')),
+          baths: controller.numberOfBathsController.text.trim().isEmpty
+              ? null
+              : double.tryParse(controller.numberOfBathsController.text.replaceAll(RegExp(r'[^\d.]'), '')),
+          guests: controller.maxGuestsController.text.trim().isEmpty
+              ? null
+              : int.tryParse(controller.maxGuestsController.text.replaceAll(RegExp(r'[^\d]'), '')),
+        )),
         const SizedBox(height: 24),
         Text(
           'Ready to Publish',
@@ -688,7 +888,11 @@ class AddListingView extends BaseView<AddListingController> {
         const SizedBox(height: 12),
         _buildReadyItem('Address verified'),
         const SizedBox(height: 8),
-        _buildReadyItem('Photos uploaded'),
+        _buildReadyItem('Cover photo added'),
+        const SizedBox(height: 8),
+        _buildReadyItem('Capacity set'),
+        const SizedBox(height: 8),
+        _buildReadyItem('Room photos uploaded'),
         const SizedBox(height: 8),
         _buildReadyItem('Initial investment added'),
         const SizedBox(height: 8),
@@ -705,6 +909,7 @@ class AddListingView extends BaseView<AddListingController> {
         const SizedBox(height: 24),
         Obx(() {
           final isPublishing = controller.publishing.value;
+          final isEdit = controller.isEditMode.value;
           return SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -718,8 +923,16 @@ class AddListingView extends BaseView<AddListingController> {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(Icons.rocket_launch, size: 20, color: Colors.white),
-              label: Text(isPublishing ? 'Publishing…' : 'Publish Listing'),
+                  : Icon(
+                      isEdit ? Icons.save : Icons.rocket_launch,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+              label: Text(
+                isPublishing
+                    ? (isEdit ? 'Updating…' : 'Publishing…')
+                    : (isEdit ? 'Update Listing' : 'Publish Listing'),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.colorPrimary,
                 foregroundColor: Colors.white,
@@ -742,6 +955,10 @@ class AddListingView extends BaseView<AddListingController> {
     required String title,
     required String price,
     required String location,
+    String? coverImagePath,
+    int? bedrooms,
+    double? baths,
+    int? guests,
   }) {
     return Container(
       clipBehavior: Clip.antiAlias,
@@ -765,11 +982,18 @@ class AddListingView extends BaseView<AddListingController> {
                 height: 160,
                 width: double.infinity,
                 color: AppColors.lightGreyColor.withOpacity(0.5),
-                child: Icon(
-                  Icons.home_work_outlined,
-                  size: 64,
-                  color: AppColors.designPlaceholder,
-                ),
+                child: coverImagePath != null && coverImagePath.isNotEmpty
+                    ? Image.file(
+                        File(coverImagePath),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 160,
+                      )
+                    : Icon(
+                        Icons.home_work_outlined,
+                        size: 64,
+                        color: AppColors.designPlaceholder,
+                      ),
               ),
               Positioned(
                 top: 12,
@@ -819,7 +1043,7 @@ class AddListingView extends BaseView<AddListingController> {
                       ),
                     ),
                     Text(
-                      '\$$price',
+                      'TZS $price',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -858,7 +1082,7 @@ class AddListingView extends BaseView<AddListingController> {
                     Icon(Icons.bed_outlined, size: 18, color: AppColors.textColorSecondary),
                     const SizedBox(width: 4),
                     Text(
-                      '2 Bedrooms',
+                      bedrooms != null ? '${bedrooms} Bedroom${bedrooms == 1 ? '' : 's'}' : '— Bedrooms',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textColorSecondary,
@@ -868,7 +1092,7 @@ class AddListingView extends BaseView<AddListingController> {
                     Icon(Icons.bathtub_outlined, size: 18, color: AppColors.textColorSecondary),
                     const SizedBox(width: 4),
                     Text(
-                      '1.5 Baths',
+                      baths != null ? '$baths Bath${baths == 1 ? '' : 's'}' : '— Baths',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textColorSecondary,
@@ -878,7 +1102,7 @@ class AddListingView extends BaseView<AddListingController> {
                     Icon(Icons.people_outline, size: 18, color: AppColors.textColorSecondary),
                     const SizedBox(width: 4),
                     Text(
-                      '4 Guests',
+                      guests != null ? '$guests Guest${guests == 1 ? '' : 's'}' : '— Guests',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textColorSecondary,
@@ -927,7 +1151,7 @@ class AddListingView extends BaseView<AddListingController> {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: AppColors.designInputBorder.withOpacity(0.3),
+              color: AppColors.designInputBorder.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -1239,50 +1463,52 @@ class AddListingView extends BaseView<AddListingController> {
   }
 
   Widget _buildProgress(BuildContext context) {
-    const step = 1;
-    const total = 5;
-    final percent = step / total;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'STEP $step OF $total',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColorSecondary,
-                  letterSpacing: 0.3,
+    return Obx(() {
+      final step = controller.currentStep.value;
+      final total = AddListingController.totalSteps;
+      final percent = step / total;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'STEP $step OF $total',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textColorSecondary,
+                    letterSpacing: 0.3,
+                  ),
                 ),
-              ),
-              Text(
-                '${(percent * 100).round()}% COMPLETE',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColorSecondary,
-                  letterSpacing: 0.3,
+                Text(
+                  '${(percent * 100).round()}% COMPLETE',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textColorSecondary,
+                    letterSpacing: 0.3,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: percent,
-              minHeight: 6,
-              backgroundColor: AppColors.lightGreyColor,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.colorPrimary),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: percent,
+                minHeight: 6,
+                backgroundColor: AppColors.lightGreyColor,
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.colorPrimary),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildLabel(String text) {
@@ -1446,45 +1672,63 @@ class AddListingView extends BaseView<AddListingController> {
         );
       }
       final center = LatLng(lat, lon);
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(AppValues.radius_6),
-        child: Container(
-          width: double.infinity,
-          height: 200,
-          decoration: BoxDecoration(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
-            border: Border.all(color: AppColors.designInputBorder),
-          ),
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: center,
-              initialZoom: 15,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.drag | InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom,
+            child: Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppValues.radius_6),
+                border: Border.all(color: AppColors.designInputBorder),
               ),
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'tz.co.artbel.paayangu.paaYangu',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: center,
-                    width: 40,
-                    height: 40,
-                    child: Icon(
-                      Icons.location_on,
-                      color: AppColors.colorPrimary,
-                      size: 40,
-                    ),
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: center,
+                  initialZoom: 15,
+                  onTap: (_, point) =>
+                      controller.updateLocationFromMap(point.latitude, point.longitude),
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.drag | InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom,
+                  ),
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'tz.co.artbel.paayangu.paaYangu',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: center,
+                        width: 40,
+                        height: 40,
+                        child: Icon(
+                          Icons.location_on,
+                          color: AppColors.colorPrimary,
+                          size: 40,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              'Tap on the map to pinpoint exact location',
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.textColorSecondary,
+              ),
+            ),
+          ),
+        ],
       );
     });
   }
@@ -1531,13 +1775,13 @@ class AddListingView extends BaseView<AddListingController> {
                 ),
                 child: const Text('Back'),
               ),
-            if (step >= 2 && step < 5) const SizedBox(width: 12),
-            if (step < 5)
+            if (step >= 2 && step < 7) const SizedBox(width: 12),
+            if (step < 7)
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: controller.nextStep,
                   icon: const Icon(Icons.arrow_forward, size: 20, color: Colors.white),
-                  label: Text(step == 4 ? 'Continue' : 'Next Step'),
+                  label: Text(step == 6 ? 'Continue' : 'Next Step'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.colorPrimary,
                   foregroundColor: Colors.white,
@@ -1549,7 +1793,7 @@ class AddListingView extends BaseView<AddListingController> {
                 ),
               ),
             ),
-            if (step == 5) const Spacer(),
+            if (step == 7) const Spacer(),
           ],
         ),
       );

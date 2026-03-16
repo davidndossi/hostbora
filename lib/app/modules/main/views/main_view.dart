@@ -19,6 +19,8 @@ import '/app/modules/main/views/bottom_nav_bar.dart';
 class MainView extends BaseView<MainController> {
   MainView({super.key});
 
+  final _expandableFabKey = GlobalKey<ExpandableFabState>();
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return null;
@@ -38,6 +40,7 @@ class MainView extends BaseView<MainController> {
       // if (controller.selectedMenuCode != MenuCode.HOME) return null;
       final homeController = Get.find<HomeController>();
       return ExpandableFab(
+        key: _expandableFabKey,
         type: ExpandableFabType.fan,
         pos: ExpandableFabPos.right,
         fanAngle: 60,
@@ -65,7 +68,9 @@ class MainView extends BaseView<MainController> {
             heroTag: null,
             backgroundColor: AppColors.colorWhite,
             foregroundColor: AppColors.colorPrimary,
-            onPressed: homeController.addExpense,
+            onPressed: () {
+              _closeFabThen(() => homeController.addExpense());
+            },
             tooltip: 'Add expense',
             child: const Icon(Icons.receipt_long_outlined),
           ),
@@ -73,7 +78,9 @@ class MainView extends BaseView<MainController> {
             heroTag: null,
             backgroundColor: AppColors.colorWhite,
             foregroundColor: AppColors.colorPrimary,
-            onPressed: homeController.addPayment,
+            onPressed: () {
+              _closeFabThen(() => homeController.addPayment());
+            },
             tooltip: 'Add payment',
             child: const Icon(Icons.payment_outlined),
           ),
@@ -85,6 +92,18 @@ class MainView extends BaseView<MainController> {
   @override
   FloatingActionButtonLocation floatingActionButtonLocation() {
     return ExpandableFab.location;
+  }
+
+  void _closeFabThen(VoidCallback action) {
+    final state = _expandableFabKey.currentState;
+    if (state != null && state.isOpen) {
+      state.toggle();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        action();
+      });
+    } else {
+      action();
+    }
   }
 
   @override

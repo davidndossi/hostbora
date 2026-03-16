@@ -77,16 +77,16 @@ class AuthController extends BaseController {
     if (connectivity != 'Mobile' && connectivity != 'Wifi') {
       final token = await _preferenceManager.getString(PreferenceManager.keyToken, defaultValue: '');
       final firstLogin = await _preferenceManager.getBool(PreferenceManager.keyFirstLogin, defaultValue: true);
-      if (token.isNotEmpty && !firstLogin) {
+      // if (token.isNotEmpty && !firstLogin) {
         Get.offAllNamed(Routes.MAIN);
         Get.snackbar(
           'Offline',
           'You\'re offline. Using your last session.',
           duration: const Duration(seconds: 3),
         );
-      } else {
-        showErrorMessage(appLocalization.noInternet);
-      }
+      // } else {
+      //   showErrorMessage(appLocalization.noInternet);
+      // }
       return;
     }
     final loginRequest = LoginRequest(
@@ -292,7 +292,7 @@ class AuthController extends BaseController {
             Get.offAllNamed(Routes.ADD_LISTING, arguments: {'from_first_login': true});
           } else {
             debugPrint('Go to welcome back');
-            Get.offAllNamed(Routes.WELCOME_BACK, arguments: {'from_password_login': true});
+            Get.offAllNamed(Routes.MAIN, arguments: {'from_password_login': true});
           }
         }
       } else {

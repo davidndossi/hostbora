@@ -47,7 +47,21 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
           _buildFilterTabs(context),
           Expanded(
             child: Obx(() {
-              final list = controller.filteredTasks;
+              if (controller.loading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final list = controller.tasks;
+              if (list.isEmpty) {
+                return Center(
+                  child: Text(
+                    'No tasks',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textColorSecondary,
+                    ),
+                  ),
+                );
+              }
               return ListView.separated(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
                 itemCount: list.length,

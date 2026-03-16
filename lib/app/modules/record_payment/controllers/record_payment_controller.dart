@@ -6,18 +6,23 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/pending_payments_store.dart';
 import '../../../data/model/record_payment_request.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../network/exceptions/unauthorize_exception.dart';
+import '../../../routes/app_pages.dart';
 
 enum PaymentStatus { paid, pending }
 
 class RecordPaymentController extends BaseController {
   RecordPaymentController()
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _preferenceManager = Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
         _pendingStore = PendingPaymentsStore();
 
   final AppRepository _repository;
+  final PreferenceManager _preferenceManager;
   final PendingPaymentsStore _pendingStore;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
@@ -39,10 +44,6 @@ class RecordPaymentController extends BaseController {
   String get paymentDateLabel => DateFormat(_dateFormat).format(paymentDate.value);
 
   void goBack() => Get.back();
-
-  void openMoreOptions() {
-    // TODO: show menu
-  }
 
   void selectPaymentMethod(String? value) {
     if (value != null) selectedPaymentMethod.value = value;
@@ -112,7 +113,7 @@ class RecordPaymentController extends BaseController {
 
   Future<void> recordPayment() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
-    final amountText = amountController.text.trim().replaceFirst(RegExp(r'\$'), '').trim();
+    final amountText = amountController.text.trim().replaceFirst(RegExp(r'^(TZS|\$)\s*'), '').trim();
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
       Get.snackbar('Invalid amount', 'Please enter a valid amount');
@@ -145,6 +146,17 @@ class RecordPaymentController extends BaseController {
         return;
       }
       await _syncPendingWhenOnline();
+      final token = await _preferenceManager.getString(PreferenceManager.keyToken, defaultValue: '');
+      if (token.isEmpty) {
+        Get.snackbar(
+          'Login required',
+          'Please log in to record payments.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        Get.offAllNamed(Routes.AUTH);
+        saving.value = false;
+        return;
+      }
       final res = await _repository.recordPayment(request);
       if (res.responseCode == '201' || res.responseCode == '200') {
         Get.back();
@@ -152,6 +164,13 @@ class RecordPaymentController extends BaseController {
       } else {
         Get.snackbar('Error', res.message ?? 'Could not record payment');
       }
+    } on UnauthorizedException catch (_) {
+      Get.snackbar(
+        'Session expired',
+        'Please log in again to record payments.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      Get.offAllNamed(Routes.AUTH);
     } catch (e) {
       Get.snackbar('Error', 'Failed to record payment: $e');
     } finally {

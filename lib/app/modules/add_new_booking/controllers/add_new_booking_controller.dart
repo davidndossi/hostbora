@@ -20,15 +20,6 @@ class ListingItem {
   final String propertyName;
 }
 
-/// AzamPay mobile money providers (Tanzania).
-const List<String> azamPayProviders = <String>[
-  'Mpesa',
-  'Airtel',
-  'Tigo',
-  'Halopesa',
-  'Azampesa',
-];
-
 class AddNewBookingController extends BaseController {
   AddNewBookingController()
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),

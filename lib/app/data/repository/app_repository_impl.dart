@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../model/add_listing_request.dart';
+import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
 import '../model/create_booking_request.dart';
 import '../model/add_expense_request.dart';
@@ -130,14 +131,39 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> publishListing(
     AddListingRequest request,
-    Map<String, List<String>> roomPhotoPaths,
-  ) {
-    return _remoteSource.publishListing(request, roomPhotoPaths);
+    Map<String, List<String>> roomPhotoPaths, {
+    String? coverPhotoPath,
+  }) {
+    return _remoteSource.publishListing(
+      request,
+      roomPhotoPaths,
+      coverPhotoPath: coverPhotoPath,
+    );
   }
 
   @override
-  Future<GeneralResponse> getMyListings() {
-    return _remoteSource.getMyListings();
+  Future<GeneralResponse> getMyListings({String? status}) {
+    return _remoteSource.getMyListings(status: status);
+  }
+
+  @override
+  Future<GeneralResponse> getListing(String listingId) {
+    return _remoteSource.getListing(listingId);
+  }
+
+  @override
+  Future<GeneralResponse> updateListing(
+    String listingId,
+    AddListingRequest request,
+    Map<String, List<String>> roomPhotoPaths, {
+    String? coverPhotoPath,
+  }) {
+    return _remoteSource.updateListing(
+      listingId,
+      request,
+      roomPhotoPaths,
+      coverPhotoPath: coverPhotoPath,
+    );
   }
 
   @override
@@ -153,5 +179,40 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]) {
     return _remoteSource.addExpense(request, receiptFilePath);
+  }
+
+  @override
+  Future<GeneralResponse> getHomeOverview() {
+    return _remoteSource.getHomeOverview();
+  }
+
+  @override
+  Future<GeneralResponse> getUpcomingBookings() {
+    return _remoteSource.getUpcomingBookings();
+  }
+
+  @override
+  Future<GeneralResponse> getAllBookings() {
+    return _remoteSource.getAllBookings();
+  }
+
+  @override
+  Future<GeneralResponse> getDashboard() {
+    return _remoteSource.getDashboard();
+  }
+
+  @override
+  Future<GeneralResponse> getTasks({String? status}) {
+    return _remoteSource.getTasks(status: status);
+  }
+
+  @override
+  Future<GeneralResponse> addTask(AddTaskRequest request) {
+    return _remoteSource.addTask(request);
+  }
+
+  @override
+  Future<GeneralResponse> getVaultDocuments(String directoryId) {
+    return _remoteSource.getVaultDocuments(directoryId);
   }
 }

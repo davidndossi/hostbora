@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../model/add_listing_request.dart';
+import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
 import '../model/create_booking_request.dart';
 import '../model/add_expense_request.dart';
@@ -301,8 +302,9 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   @override
   Future<GeneralResponse> publishListing(
     AddListingRequest request,
-    Map<String, List<String>> roomPhotoPaths,
-  ) async {
+    Map<String, List<String>> roomPhotoPaths, {
+    String? coverPhotoPath,
+  }) async {
     final endpoint = '${DioProvider.baseUrl}/api/listings';
     final formData = FormData.fromMap({
       'listing': MultipartFile.fromString(
@@ -310,6 +312,13 @@ class RemoteDataSourceImpl extends BaseRemoteSource
         filename: 'listing.json',
       ),
     });
+
+    if (coverPhotoPath != null && coverPhotoPath.isNotEmpty) {
+      formData.files.add(MapEntry(
+        'coverPhoto',
+        await MultipartFile.fromFile(coverPhotoPath, filename: 'cover.jpg'),
+      ));
+    }
 
     for (final entry in roomPhotoPaths.entries) {
       final roomKey = entry.key;
@@ -344,9 +353,72 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
-  Future<GeneralResponse> getMyListings() {
+  Future<GeneralResponse> getMyListings({String? status}) {
     final endpoint = '${DioProvider.baseUrl}/api/listings';
+    final queryParams = status != null && status.isNotEmpty ? {'status': status} : null;
+    final dioCall = dioClient.get(endpoint, queryParameters: queryParams);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getListing(String listingId) {
+    final endpoint = '${DioProvider.baseUrl}/api/listings/$listingId';
     final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateListing(
+    String listingId,
+    AddListingRequest request,
+    Map<String, List<String>> roomPhotoPaths, {
+    String? coverPhotoPath,
+  }) async {
+    final endpoint = '${DioProvider.baseUrl}/api/listings/$listingId';
+    final formData = FormData.fromMap({
+      'listing': MultipartFile.fromString(
+        jsonEncode(request.toJson()),
+        filename: 'listing.json',
+      ),
+    });
+    if (coverPhotoPath != null && coverPhotoPath.isNotEmpty) {
+      formData.files.add(MapEntry(
+        'coverPhoto',
+        await MultipartFile.fromFile(coverPhotoPath, filename: 'cover.jpg'),
+      ));
+    }
+    for (final entry in roomPhotoPaths.entries) {
+      final roomKey = entry.key;
+      final paths = entry.value;
+      for (var i = 0; i < paths.length; i++) {
+        formData.files.add(MapEntry(
+          roomKey,
+          await MultipartFile.fromFile(
+            paths[i],
+            filename: '${roomKey.replaceAll(' ', '_')}_$i.jpg',
+          ),
+        ));
+      }
+    }
+    final dioCall = dioClient.put(
+      endpoint,
+      data: formData,
+      options: Options(
+        contentType: 'multipart/form-data',
+        sendTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+    );
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));
@@ -411,6 +483,91 @@ class RemoteDataSourceImpl extends BaseRemoteSource
         receiveTimeout: const Duration(seconds: 30),
       ),
     );
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getHomeOverview() {
+    final endpoint = '${DioProvider.baseUrl}/api/home/overview';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getUpcomingBookings() {
+    final endpoint = '${DioProvider.baseUrl}/api/bookings/list?upcoming=true';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getAllBookings() {
+    final endpoint = '${DioProvider.baseUrl}/api/bookings/list';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getDashboard() {
+    final endpoint = '${DioProvider.baseUrl}/api/dashboard';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getTasks({String? status}) {
+    final endpoint = '${DioProvider.baseUrl}/api/tasks';
+    final queryParams = status != null && status.isNotEmpty ? {'status': status} : null;
+    final dioCall = dioClient.get(endpoint, queryParameters: queryParams);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> addTask(AddTaskRequest request) {
+    final endpoint = '${DioProvider.baseUrl}/api/tasks';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getVaultDocuments(String directoryId) {
+    final endpoint = '${DioProvider.baseUrl}/api/vault/documents';
+    final dioCall = dioClient.get(endpoint, queryParameters: {'directoryId': directoryId});
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));

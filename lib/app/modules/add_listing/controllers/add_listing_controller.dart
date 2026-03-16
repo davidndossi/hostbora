@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/draft_listing_store.dart';
 import '../../../data/local/pending_listings_store.dart';
 import '../../../data/model/add_listing_request.dart';
 import '../../../data/repository/app_repository.dart';
@@ -16,20 +17,28 @@ class AddListingController extends BaseController {
   AddListingController()
       : _nominatim = Get.find<NominatimService>(),
         _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
-        _pendingStore = PendingListingsStore();
+        _pendingStore = PendingListingsStore(),
+        _draftStore = DraftListingStore();
 
   final NominatimService _nominatim;
   final AppRepository _repository;
   final PendingListingsStore _pendingStore;
+  final DraftListingStore _draftStore;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   final formKey = GlobalKey<FormState>();
   final propertyNameController = TextEditingController();
   final streetAddressController = TextEditingController();
 
-  static const int totalSteps = 5;
+  static const int totalSteps = 7;
   final currentStep = 1.obs;
 
   bool get fromFirstLogin => Get.arguments?['from_first_login'] == true;
+
+  /// Edit mode: when opening from My Properties Manage.
+  final isEditMode = false.obs;
+  String? get listingId => _listingId;
+  String? _listingId;
+  final loadingListing = true.obs;
 
   final selectedPropertyType = Rx<String?>(null);
 
@@ -73,6 +82,21 @@ class AddListingController extends BaseController {
     selectedLat.value = null;
     selectedLon.value = null;
   }
+
+  /// Called when user taps on the map to set exact location. Updates lat/lon and optionally address.
+  Future<void> updateLocationFromMap(double lat, double lon) async {
+    selectedLat.value = lat;
+    selectedLon.value = lon;
+    try {
+      final place = await _nominatim.reverseGeocode(lat, lon);
+      if (place != null) {
+        streetAddressController.text = place.displayName;
+      }
+    } catch (_) {
+      // Keep current address text if reverse geocode fails
+    }
+  }
+
   final propertyTypes = [
     'Apartment',
     'House',
@@ -95,6 +119,34 @@ class AddListingController extends BaseController {
   static const String roomKeyKitchen = 'KITCHEN';
   static const String roomKeyBathroom = 'BATHROOM';
   static const int photoSlotsCount = 4;
+
+  /// Step 2: single cover photo for listing preview
+  final propertyCoverPhotoPath = Rxn<String>();
+
+  Future<void> pickCoverPhoto({required bool fromGallery}) async {
+    try {
+      final source = fromGallery ? ImageSource.gallery : ImageSource.camera;
+      final picked = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
+      if (picked != null && picked.path.isNotEmpty) {
+        propertyCoverPhotoPath.value = picked.path;
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Could not pick image: $e');
+    }
+  }
+
+  void clearCoverPhoto() {
+    propertyCoverPhotoPath.value = null;
+  }
+
+  /// Step 3: capacity (rooms, baths, guests)
+  final numberOfBedroomsController = TextEditingController(text: '1');
+  final numberOfBathsController = TextEditingController(text: '1');
+  final maxGuestsController = TextEditingController(text: '2');
 
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -165,7 +217,7 @@ class AddListingController extends BaseController {
     investmentItems.refresh();
   }
 
-  List<List<TextEditingController>> _investmentItemControllers = [];
+  final List<List<TextEditingController>> _investmentItemControllers = [];
 
   List<TextEditingController>? getInvestmentItemControllers(int index) {
     if (index >= 0 && index < _investmentItemControllers.length) {
@@ -239,9 +291,46 @@ class AddListingController extends BaseController {
     }
   }
 
-  void saveDraft() {
-    // TODO: persist draft and optionally go back
-    Get.back();
+  Future<void> saveDraft() async {
+    if (isEditMode.value) {
+      Get.snackbar('Draft', 'Editing an existing listing. Use Update to save changes.');
+      return;
+    }
+    final request = AddListingRequest(
+      propertyName: propertyNameController.text.trim().isEmpty
+          ? null
+          : propertyNameController.text.trim(),
+      propertyType: selectedPropertyType.value,
+      streetAddress: streetAddressController.text.trim().isEmpty
+          ? null
+          : streetAddressController.text.trim(),
+      latitude: selectedLat.value,
+      longitude: selectedLon.value,
+      numberOfBedrooms: _parseInt(numberOfBedroomsController.text.trim()),
+      numberOfBaths: _parseDouble(numberOfBathsController.text.trim()),
+      maxGuests: _parseInt(maxGuestsController.text.trim()),
+      baseNightlyRate: _parseDouble(baseNightlyRateController.text.trim()),
+      cleaningFee: _parseDouble(cleaningFeeController.text.trim()),
+      instantBook: instantBook.value,
+      petsAllowed: petsAllowed.value,
+    );
+    final roomPhotoPaths = <String, List<String>>{
+      for (final e in roomPhotos.entries) e.key: List<String>.from(e.value),
+    };
+    final coverPath = propertyCoverPhotoPath.value;
+    await _draftStore.save(
+      listingJson: request.toJson(),
+      roomPhotoPaths: roomPhotoPaths,
+      coverPhotoPath: coverPath,
+      currentStep: currentStep.value,
+    );
+    if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
+    Get.snackbar('Draft saved', 'You can resume this listing later from Add Listing.');
+    if (fromFirstLogin) {
+      Get.offAllNamed(Routes.MAIN, arguments: {'initialMenu': 'home'});
+    } else {
+      Get.back();
+    }
   }
 
   void nextStep() {
@@ -250,11 +339,25 @@ class AddListingController extends BaseController {
         currentStep.value = 2;
       }
     } else if (currentStep.value == 2) {
-      currentStep.value = 3;
+      if (propertyCoverPhotoPath.value != null && propertyCoverPhotoPath.value!.isNotEmpty) {
+        currentStep.value = 3;
+      } else {
+        Get.snackbar('Required', 'Please add a cover photo for your listing.');
+      }
     } else if (currentStep.value == 3) {
-      currentStep.value = 4;
+      if (_parseInt(numberOfBedroomsController.text) != null &&
+          _parseDouble(numberOfBathsController.text) != null &&
+          _parseInt(maxGuestsController.text) != null) {
+        currentStep.value = 4;
+      } else {
+        Get.snackbar('Required', 'Please enter rooms, baths, and max guests.');
+      }
     } else if (currentStep.value == 4) {
       currentStep.value = 5;
+    } else if (currentStep.value == 5) {
+      currentStep.value = 6;
+    } else if (currentStep.value == 6) {
+      currentStep.value = 7;
     } else {
       Get.back();
     }
@@ -264,14 +367,136 @@ class AddListingController extends BaseController {
   final syncing = false.obs;
 
   @override
+  void onInit() {
+    super.onInit();
+    final args = Get.arguments as Map<String, dynamic>?;
+    final id = args?['listing_id'] as String?;
+    if (id != null && id.isNotEmpty) {
+      _listingId = id;
+      isEditMode.value = true;
+    }
+  }
+
+  @override
   void onReady() {
     super.onReady();
+    if (isEditMode.value && _listingId != null) {
+      _loadListingForEdit();
+    } else {
+      _checkAndOfferResumeDraft();
+    }
     _syncPendingWhenOnline();
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
       if (results.any((r) => r == ConnectivityResult.wifi || r == ConnectivityResult.mobile)) {
         _syncPendingWhenOnline();
       }
     });
+  }
+
+  /// When not in edit mode, if a draft exists show a dialog to resume or start fresh.
+  Future<void> _checkAndOfferResumeDraft() async {
+    if (!_draftStore.hasDraft) {
+      loadingListing.value = false;
+      return;
+    }
+    final resume = await _showResumeDraftDialog();
+    if (resume == true) {
+      final draft = _draftStore.load();
+      if (draft != null) _applyDraft(draft);
+    } else if (resume == false) {
+      await _draftStore.clear();
+    }
+    loadingListing.value = false;
+  }
+
+  /// Returns true to resume, false to start fresh, null if dismissed.
+  Future<bool?> _showResumeDraftDialog() async {
+    return Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Resume draft?'),
+        content: const Text(
+          'You have a saved draft. Would you like to resume where you left off or start a new listing?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Start fresh'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Resume'),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  void _applyDraft(Map<String, dynamic> draft) {
+    final listing = draft['listing'] as Map<String, dynamic>?;
+    if (listing != null) _prefillFromMap(listing);
+    final pathsRaw = draft['roomPhotoPaths'];
+    final paths = _parseRoomPhotoPaths(pathsRaw);
+    for (final key in roomPhotos.keys) {
+      roomPhotos[key] = List<String>.from(paths[key] ?? []);
+    }
+    roomPhotos.refresh();
+    _updatePhotoSlotsFilled();
+    final coverPath = draft['coverPhotoPath'] as String?;
+    if (coverPath != null && coverPath.isNotEmpty) {
+      propertyCoverPhotoPath.value = coverPath;
+    }
+    final step = draft['currentStep'] as int?;
+    if (step != null && step >= 1 && step <= totalSteps) {
+      currentStep.value = step;
+    }
+  }
+
+  Future<void> _loadListingForEdit() async {
+    loadingListing.value = true;
+    try {
+      final res = await _repository.getListing(_listingId!);
+      if (res.responseCode == '0' && res.data != null) {
+        _prefillFromMap(res.data as Map<String, dynamic>);
+      } else {
+        final args = Get.arguments as Map<String, dynamic>?;
+        final listingData = args?['listing_data'] as Map<String, dynamic>?;
+        if (listingData != null) _prefillFromMap(listingData);
+      }
+    } catch (_) {
+      final args = Get.arguments as Map<String, dynamic>?;
+      final listingData = args?['listing_data'] as Map<String, dynamic>?;
+      if (listingData != null) _prefillFromMap(listingData);
+    } finally {
+      loadingListing.value = false;
+    }
+  }
+
+  void _prefillFromMap(Map<String, dynamic> data) {
+    final name = data['propertyName'] as String?;
+    if (name != null && name.isNotEmpty) propertyNameController.text = name;
+    final type = data['propertyType'] as String?;
+    if (type != null && type.isNotEmpty) selectedPropertyType.value = type;
+    final address = data['streetAddress'] as String?;
+    if (address != null && address.isNotEmpty) streetAddressController.text = address;
+    final lat = (data['latitude'] as num?)?.toDouble();
+    if (lat != null) selectedLat.value = lat;
+    final lon = (data['longitude'] as num?)?.toDouble();
+    if (lon != null) selectedLon.value = lon;
+    final rate = (data['baseNightlyRate'] as num?)?.toDouble();
+    if (rate != null) baseNightlyRateController.text = rate.toStringAsFixed(0);
+    final fee = (data['cleaningFee'] as num?)?.toDouble();
+    if (fee != null) cleaningFeeController.text = fee.toStringAsFixed(0);
+    final instant = data['instantBook'] as bool?;
+    if (instant != null) instantBook.value = instant;
+    final pets = data['petsAllowed'] as bool?;
+    if (pets != null) petsAllowed.value = pets;
+    final beds = data['numberOfBedrooms'] as int?;
+    if (beds != null) numberOfBedroomsController.text = beds.toString();
+    final baths = (data['numberOfBaths'] as num?)?.toDouble();
+    if (baths != null) numberOfBathsController.text = baths.toString();
+    final guests = data['maxGuests'] as int?;
+    if (guests != null) maxGuestsController.text = guests.toString();
   }
 
   Future<bool> _isOnline() async {
@@ -305,7 +530,12 @@ class AddListingController extends BaseController {
           if (listingMap == null) continue;
           final request = AddListingRequest.fromJson(listingMap);
           final paths = _parseRoomPhotoPaths(item['roomPhotoPaths']);
-          final res = await _repository.publishListing(request, paths);
+          final coverPath = item['coverPhotoPath'] as String?;
+          final res = await _repository.publishListing(
+            request,
+            paths,
+            coverPhotoPath: coverPath,
+          );
           if (res.responseCode == '200' || res.responseCode == '201') {
             synced++;
           } else {
@@ -338,6 +568,9 @@ class AddListingController extends BaseController {
           : streetAddressController.text.trim(),
       latitude: selectedLat.value,
       longitude: selectedLon.value,
+      numberOfBedrooms: _parseInt(numberOfBedroomsController.text.trim()),
+      numberOfBaths: _parseDouble(numberOfBathsController.text.trim()),
+      maxGuests: _parseInt(maxGuestsController.text.trim()),
       baseNightlyRate: _parseDouble(baseNightlyRateController.text.trim()),
       cleaningFee: _parseDouble(cleaningFeeController.text.trim()),
       instantBook: instantBook.value,
@@ -347,12 +580,42 @@ class AddListingController extends BaseController {
     final roomPhotoPaths = <String, List<String>>{
       for (final e in roomPhotos.entries) e.key: List<String>.from(e.value),
     };
+    final coverPath = propertyCoverPhotoPath.value;
 
     publishing.value = true;
     try {
+      if (isEditMode.value && _listingId != null) {
+        final online = await _isOnline();
+        if (!online) {
+          Get.snackbar('Offline', 'Please go online to update your listing.');
+          publishing.value = false;
+          return;
+        }
+        final response = await _repository.updateListing(
+          _listingId!,
+          request,
+          roomPhotoPaths,
+          coverPhotoPath: coverPath,
+        );
+        if (response.responseCode == '200' || response.responseCode == '201') {
+          Get.back();
+          Get.snackbar('Updated', 'Listing updated successfully.');
+        } else {
+          Get.snackbar(
+            'Update failed',
+            response.message ?? 'Could not update listing.',
+          );
+        }
+        return;
+      }
       final online = await _isOnline();
       if (!online) {
-        await _pendingStore.add(request.toJson(), roomPhotoPaths);
+        await _pendingStore.add(
+          request.toJson(),
+          roomPhotoPaths,
+          coverPhotoPath: coverPath,
+        );
+        await _draftStore.clear();
         Get.offNamed(Routes.LISTING_PUBLISHED);
         Get.snackbar(
           'Saved offline',
@@ -363,8 +626,13 @@ class AddListingController extends BaseController {
         return;
       }
       await _syncPendingWhenOnline();
-      final response = await _repository.publishListing(request, roomPhotoPaths);
+      final response = await _repository.publishListing(
+        request,
+        roomPhotoPaths,
+        coverPhotoPath: coverPath,
+      );
       if (response.responseCode == '200' || response.responseCode == '201') {
+        await _draftStore.clear();
         Get.offNamed(Routes.LISTING_PUBLISHED);
       } else {
         Get.snackbar(
@@ -373,7 +641,7 @@ class AddListingController extends BaseController {
         );
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to publish listing: $e');
+      Get.snackbar('Error', isEditMode.value ? 'Failed to update listing: $e' : 'Failed to publish listing: $e');
     } finally {
       publishing.value = false;
     }
@@ -382,6 +650,11 @@ class AddListingController extends BaseController {
   static double? _parseDouble(String value) {
     if (value.isEmpty) return null;
     return double.tryParse(value.replaceAll(RegExp(r'[^\d.]'), ''));
+  }
+
+  static int? _parseInt(String value) {
+    if (value.isEmpty) return null;
+    return int.tryParse(value.replaceAll(RegExp(r'[^\d]'), ''));
   }
 
   void editListingDetails() {
@@ -409,6 +682,9 @@ class AddListingController extends BaseController {
     _searchDebounce?.cancel();
     propertyNameController.dispose();
     streetAddressController.dispose();
+    numberOfBedroomsController.dispose();
+    numberOfBathsController.dispose();
+    maxGuestsController.dispose();
     approximateTotalCostController.dispose();
     baseNightlyRateController.dispose();
     cleaningFeeController.dispose();

@@ -19,6 +19,7 @@ class DashboardView extends BaseView<DashboardController> {
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
       appBarTitleText: appLocalization.dashboard,
+      isCentered: true,
       actions: [
         IconButton(
           onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
@@ -39,22 +40,29 @@ class DashboardView extends BaseView<DashboardController> {
         children: [
           _buildHeader(context),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSegmentedToggle(context),
-                  const SizedBox(height: 20),
-                  _buildPerformanceTrendsCard(context),
-                  const SizedBox(height: 16),
-                  _buildTotalRevenueCard(context),
-                  const SizedBox(height: 12),
-                  _buildMetricRow(context),
-                  const SizedBox(height: 20),
-                  _buildMonthlyGrowthSection(context),
-                ],
-              ),
+            child: Obx(
+              () {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSegmentedToggle(context),
+                      const SizedBox(height: 20),
+                      _buildPerformanceTrendsCard(context),
+                      const SizedBox(height: 16),
+                      _buildTotalRevenueCard(context),
+                      const SizedBox(height: 12),
+                      _buildMetricRow(context),
+                      const SizedBox(height: 20),
+                      _buildMonthlyGrowthSection(context),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -63,33 +71,30 @@ class DashboardView extends BaseView<DashboardController> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      child: Row(
-        children: [
-          _circleIconButton(
-            onPressed: controller.goBack,
-            icon: Icons.chevron_left,
-          ),
-          const Spacer(),
-          TextButton(
-            onPressed: controller.recordPayment,
-            child: Text(
-              'Record Payment',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.colorPrimary,
+    return Obx(
+      () {
+        final isIncome = controller.isIncomeSelected.value;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+          child: Row(
+            children: [
+              const Spacer(),
+              TextButton(
+                onPressed: isIncome ? controller.recordPayment : controller.addExpense,
+                child: Text(
+                  isIncome ? 'Record Payment' : 'Add Expense',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.colorPrimary,
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+            ],
           ),
-          const SizedBox(width: 8),
-          _circleIconButton(
-            onPressed: controller.openCalendar,
-            icon: Icons.calendar_today_outlined,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -154,16 +159,27 @@ class DashboardView extends BaseView<DashboardController> {
   }
 
   Widget _buildPerformanceTrendsCard(BuildContext context) {
-    final currentSpots = controller.currentTrendValues
-        .asMap()
-        .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
-        .toList();
-    final previousSpots = controller.previousTrendValues
-        .asMap()
-        .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
-        .toList();
+    return Obx(
+      () {
+        final isIncome = controller.isIncomeSelected.value;
+        final current = isIncome ? controller.currentTrendValues : controller.currentExpenseTrendValues;
+        final previous = isIncome ? controller.previousTrendValues : controller.previousExpenseTrendValues;
+        final currentSpots = current
+            .asMap()
+            .entries
+            .map((e) => FlSpot(e.key.toDouble(), e.value))
+            .toList();
+        final previousSpots = previous
+            .asMap()
+            .entries
+            .map((e) => FlSpot(e.key.toDouble(), e.value))
+            .toList();
+        return _performanceTrendsChart(currentSpots, previousSpots);
+      },
+    );
+  }
+
+  Widget _performanceTrendsChart(List<FlSpot> currentSpots, List<FlSpot> previousSpots) {
     final minY = 0.0;
     final maxY = 6.0;
 
@@ -337,141 +353,151 @@ class DashboardView extends BaseView<DashboardController> {
   }
 
   Widget _buildTotalRevenueCard(BuildContext context) {
-    return _MetricCard(
-      label: 'Total Revenue',
-      value: controller.totalRevenue,
-      change: controller.totalRevenueChange,
-      isPositive: controller.totalRevenueUp,
-      fullWidth: true,
+    return Obx(
+      () {
+        final isIncome = controller.isIncomeSelected.value;
+        return _MetricCard(
+          label: isIncome ? 'Total Revenue' : 'Total Expenses',
+          value: isIncome ? controller.totalRevenue.value : controller.totalExpenses.value,
+          change: isIncome ? controller.totalRevenueChange.value : controller.totalExpensesChange.value,
+          isPositive: isIncome ? controller.totalRevenueUp.value : controller.totalExpensesUp.value,
+          fullWidth: true,
+        );
+      },
     );
   }
 
   Widget _buildMetricRow(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _MetricCard(
-            label: 'Avg. Daily Rate',
-            value: controller.avgDailyRate,
-            change: controller.avgDailyRateChange,
-            isPositive: controller.avgDailyRateUp,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _MetricCard(
-            label: 'Net Profit',
-            value: controller.netProfit,
-            change: controller.netProfitChange,
-            isPositive: controller.netProfitUp,
-          ),
-        ),
-      ],
+    return Obx(
+      () {
+        final isIncome = controller.isIncomeSelected.value;
+        return Row(
+          children: [
+            Expanded(
+              child: _MetricCard(
+                label: isIncome ? 'Avg. Daily Rate' : 'Avg. Daily Expense',
+                value: isIncome ? controller.avgDailyRate.value : controller.avgDailyExpense.value,
+                change: isIncome ? controller.avgDailyRateChange.value : controller.avgDailyExpenseChange.value,
+                isPositive: isIncome ? controller.avgDailyRateUp.value : controller.avgDailyExpenseUp.value,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MetricCard(
+                label: isIncome ? 'Net Profit' : 'Month Change',
+                value: isIncome ? controller.netProfit.value : controller.totalExpensesChange.value,
+                change: isIncome ? controller.netProfitChange.value : 'vs. prev month',
+                isPositive: isIncome ? controller.netProfitUp.value : controller.totalExpensesUp.value,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildMonthlyGrowthSection(BuildContext context) {
-    final groupBars = controller.monthlyLabels.asMap().entries.map((e) {
-      final i = e.key;
-      return BarChartGroupData(
-        x: i,
-        barRods: [
-          BarChartRodData(
-            fromY: 0,
-            toY: controller.monthlyValuesA[i].toDouble(),
-            color: AppColors.designAccent.withOpacity(0.6),
-            width: 12,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-          ),
-          BarChartRodData(
-            fromY: 0,
-            toY: controller.monthlyValuesB[i].toDouble(),
-            color: AppColors.designAccent,
-            width: 12,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-          ),
-        ],
-        barsSpace: 6,
-      );
-    }).toList();
-
-    final maxY = (controller.monthlyValuesA
-        .reduce((a, b) => a > b ? a : b)
-        .toDouble())
-        .clamp(6.0, 10.0);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Monthly Growth',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textColorPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: AppDecorations.card,
-          child: SizedBox(
-            height: 200,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: maxY,
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final i = value.toInt();
-                        if (i >= 0 && i < controller.monthlyLabels.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              controller.monthlyLabels[i],
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textColorSecondary,
-                              ),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                      reservedSize: 28,
-                    ),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: AppColors.designInputBorder.withOpacity(0.5),
-                    strokeWidth: 1,
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                barGroups: groupBars,
+    return Obx(
+      () {
+        final labels = controller.monthlyLabels;
+        final valuesA = controller.monthlyValuesA;
+        final valuesB = controller.monthlyValuesB;
+        final isIncome = controller.isIncomeSelected.value;
+        final values = isIncome ? valuesA : valuesB;
+        final len = labels.length;
+        if (len == 0) return const SizedBox.shrink();
+        final groupBars = List.generate(len, (i) {
+          final v = i < values.length ? values[i] : 0.0;
+          return BarChartGroupData(
+            x: i,
+            barRods: [
+              BarChartRodData(
+                fromY: 0,
+                toY: v,
+                color: AppColors.designAccent.withOpacity(0.6),
+                width: 20,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
               ),
-              duration: const Duration(milliseconds: 150),
+            ],
+            showingTooltipIndicators: [],
+          );
+        });
+        final maxVal = values.fold<double>(0, (m, v) => v > m ? v : m);
+        final maxY = (maxVal > 0 ? maxVal : 6.0).clamp(6.0, 10.0);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Monthly Growth',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textColorPrimary,
+              ),
             ),
-          ),
-        ),
-      ],
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: AppDecorations.card,
+              child: SizedBox(
+                height: 200,
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: maxY,
+                    barTouchData: BarTouchData(enabled: false),
+                    titlesData: FlTitlesData(
+                      leftTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            final i = value.toInt();
+                            if (i >= 0 && i < labels.length) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  labels[i],
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textColorSecondary,
+                                  ),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                          reservedSize: 28,
+                        ),
+                      ),
+                    ),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      getDrawingHorizontalLine: (value) => FlLine(
+                        color: AppColors.designInputBorder.withOpacity(0.5),
+                        strokeWidth: 1,
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    barGroups: groupBars,
+                  ),
+                  duration: const Duration(milliseconds: 150),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

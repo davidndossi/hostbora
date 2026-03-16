@@ -89,7 +89,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                         controller: controller.amountController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: _inputDecoration(hint: '0.00').copyWith(
-                          prefixText: '\$ ',
+                          prefixText: 'TZS ',
                           prefixStyle: TextStyle(
                             fontSize: 16,
                             color: AppColors.textColorPrimary,

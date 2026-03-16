@@ -213,7 +213,7 @@ class RefineScanController extends BaseController {
 
   Future<void> saveToVault() async {
     await applyCrop();
-    Get.offAllNamed(Routes.LEGAL_DOCUMENTS);
+    Get.offAllNamed(Routes.DOCUMENTS);
   }
 
   /// Path to show in preview: displayPath if set, else scannedImagePath.

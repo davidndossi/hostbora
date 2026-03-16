@@ -1,4 +1,5 @@
 import '../model/add_listing_request.dart';
+import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
 import '../model/create_booking_request.dart';
 import '../model/add_expense_request.dart';
@@ -59,14 +60,26 @@ abstract class RemoteDataSource {
 
   Future<GeneralResponse> blockUser(String userId);
 
-  /// Submits new listing with all 5 steps data and room photos (multipart).
+  /// Submits new listing with steps data, optional cover photo, and room photos (multipart).
   Future<GeneralResponse> publishListing(
     AddListingRequest request,
-    Map<String, List<String>> roomPhotoPaths,
-  );
+    Map<String, List<String>> roomPhotoPaths, {
+    String? coverPhotoPath,
+  });
 
-  /// Fetches current user's listings (for add booking property dropdown).
-  Future<GeneralResponse> getMyListings();
+  /// Fetches current user's listings. Optional [status] to filter: ACTIVE, DRAFT, ARCHIVED.
+  Future<GeneralResponse> getMyListings({String? status});
+
+  /// Fetches a single listing by id (for edit).
+  Future<GeneralResponse> getListing(String listingId);
+
+  /// Updates an existing listing (multipart like create).
+  Future<GeneralResponse> updateListing(
+    String listingId,
+    AddListingRequest request,
+    Map<String, List<String>> roomPhotoPaths, {
+    String? coverPhotoPath,
+  });
 
   /// Creates a booking for a listing.
   Future<GeneralResponse> createBooking(CreateBookingRequest request);
@@ -77,4 +90,25 @@ abstract class RemoteDataSource {
   /// Adds an expense (amount, category, date, vendor, tax deductible).
   /// Optional [receiptFilePath] is uploaded as multipart when provided.
   Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]);
+
+  /// Home overview: activeBookings, monthlyRevenue, bookingsChange, revenueChange.
+  Future<GeneralResponse> getHomeOverview();
+
+  /// Upcoming check-ins (bookings with checkIn >= today).
+  Future<GeneralResponse> getUpcomingBookings();
+
+  /// All bookings for current user (descending order).
+  Future<GeneralResponse> getAllBookings();
+
+  /// Dashboard metrics: totalRevenue, avgDailyRate, netProfit, trends, monthly data.
+  Future<GeneralResponse> getDashboard();
+
+  /// List tasks for current user. Optional [status] to filter: PENDING, IN_PROGRESS, COMPLETED.
+  Future<GeneralResponse> getTasks({String? status});
+
+  /// Create a task (title, optional description, optional dueDate).
+  Future<GeneralResponse> addTask(AddTaskRequest request);
+
+  /// List documents in a vault directory (e.g. legal, tax, manuals).
+  Future<GeneralResponse> getVaultDocuments(String directoryId);
 }

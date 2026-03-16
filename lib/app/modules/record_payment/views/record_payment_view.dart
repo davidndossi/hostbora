@@ -61,7 +61,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               controller: controller.amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: _inputDecoration(hint: '0.00').copyWith(
-                prefixText: r'$ ',
+                prefixText: 'TZS ',
                 prefixStyle: const TextStyle(
                   color: AppColors.designPlaceholder,
                   fontSize: 16,
@@ -69,7 +69,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Amount is required';
-                final cleaned = v.replaceFirst(r'$', '').trim();
+                final cleaned = v.replaceFirst(RegExp(r'^(TZS|\$)\s*'), '').trim();
                 final n = double.tryParse(cleaned);
                 if (n == null || n <= 0) return 'Enter a valid amount';
                 return null;

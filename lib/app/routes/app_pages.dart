@@ -70,8 +70,8 @@ import '../modules/add_new_booking/bindings/add_new_booking_binding.dart';
 import '../modules/add_new_booking/views/add_new_booking_view.dart';
 import '../modules/record_payment/bindings/record_payment_binding.dart';
 import '../modules/record_payment/views/record_payment_view.dart';
-import '../modules/legal_documents/bindings/legal_documents_binding.dart';
-import '../modules/legal_documents/views/legal_documents_view.dart';
+import '../modules/documents/bindings/documents_binding.dart';
+import '../modules/documents/views/documents_view.dart';
 import '../modules/property_vault/bindings/property_vault_binding.dart';
 import '../modules/property_vault/views/property_vault_view.dart';
 import '../modules/document_scanner/bindings/document_scanner_binding.dart';
@@ -92,6 +92,10 @@ import '../modules/entry_logs/bindings/entry_logs_binding.dart';
 import '../modules/entry_logs/views/entry_logs_view.dart';
 import '../modules/add_expense/bindings/add_expense_binding.dart';
 import '../modules/add_expense/views/add_expense_view.dart';
+import '../modules/all_bookings/bindings/all_bookings_binding.dart';
+import '../modules/all_bookings/views/all_bookings_view.dart';
+import '../modules/add_task/bindings/add_task_binding.dart';
+import '../modules/add_task/views/add_task_view.dart';
 
 part 'app_routes.dart';
 
@@ -278,9 +282,9 @@ class AppPages {
       binding: RecordPaymentBinding(),
     ),
     GetPage(
-      name: _Paths.LEGAL_DOCUMENTS,
-      page: () => LegalDocumentsView(),
-      binding: LegalDocumentsBinding(),
+      name: _Paths.DOCUMENTS,
+      page: () => DocumentsView(),
+      binding: DocumentsBinding(),
     ),
     GetPage(
       name: _Paths.PROPERTY_VAULT,
@@ -331,6 +335,16 @@ class AppPages {
       name: _Paths.ADD_EXPENSE,
       page: () => AddExpenseView(),
       binding: AddExpenseBinding(),
+    ),
+    GetPage(
+      name: _Paths.ALL_BOOKINGS,
+      page: () => AllBookingsView(),
+      binding: AllBookingsBinding(),
+    ),
+    GetPage(
+      name: _Paths.ADD_TASK,
+      page: () => AddTaskView(),
+      binding: AddTaskBinding(),
     ),
   ];
 }

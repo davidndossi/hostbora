@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../routes/app_pages.dart';
@@ -61,7 +62,12 @@ class GuestAccessCodesController extends BaseController {
   }
 
   void shareCode(GuestAccessItem item) {
-    // TODO: share pin/code
+    final text = [
+      'Your access code: ${item.pinFull}',
+      if (item.guestName.isNotEmpty) 'Guest: ${item.guestName}',
+      'Valid: ${item.dateRange}',
+    ].join('\n');
+    Share.share(text, subject: 'Access code');
   }
 
   void copyCode(GuestAccessItem item) {

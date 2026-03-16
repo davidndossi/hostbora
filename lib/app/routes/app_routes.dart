@@ -39,7 +39,7 @@ abstract class Routes {
   static const EXPENSE_ANALYSIS = _Paths.EXPENSE_ANALYSIS;
   static const ADD_NEW_BOOKING = _Paths.ADD_NEW_BOOKING;
   static const RECORD_PAYMENT = _Paths.RECORD_PAYMENT;
-  static const LEGAL_DOCUMENTS = _Paths.LEGAL_DOCUMENTS;
+  static const DOCUMENTS = _Paths.DOCUMENTS;
   static const PROPERTY_VAULT = _Paths.PROPERTY_VAULT;
   static const DOCUMENT_SCANNER = _Paths.DOCUMENT_SCANNER;
   static const REFINE_SCAN = _Paths.REFINE_SCAN;
@@ -50,6 +50,8 @@ abstract class Routes {
   static const STAFF_DETAIL = _Paths.STAFF_DETAIL;
   static const ENTRY_LOGS = _Paths.ENTRY_LOGS;
   static const ADD_EXPENSE = _Paths.ADD_EXPENSE;
+  static const ALL_BOOKINGS = _Paths.ALL_BOOKINGS;
+  static const ADD_TASK = _Paths.ADD_TASK;
 }
 
 abstract class _Paths {
@@ -88,7 +90,7 @@ abstract class _Paths {
   static const EXPENSE_ANALYSIS = '/expense-analysis';
   static const ADD_NEW_BOOKING = '/add-new-booking';
   static const RECORD_PAYMENT = '/record-payment';
-  static const LEGAL_DOCUMENTS = '/legal-documents';
+  static const DOCUMENTS = '/documents';
   static const PROPERTY_VAULT = '/property-vault';
   static const DOCUMENT_SCANNER = '/document-scanner';
   static const REFINE_SCAN = '/refine-scan';
@@ -99,4 +101,6 @@ abstract class _Paths {
   static const STAFF_DETAIL = '/staff-detail';
   static const ENTRY_LOGS = '/entry-logs';
   static const ADD_EXPENSE = '/add-expense';
+  static const ALL_BOOKINGS = '/all-bookings';
+  static const ADD_TASK = '/add-task';
 }

@@ -87,23 +87,28 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
   }
 
   String encryptPayload(String payload, String secret) {
-    Uint8List iv = utf8.encode('d41cd772-cb57-412c-a864-6e40b2bd3e12'.substring(0, 16));
-    Uint8List kb = base64Decode(secret);
-    final cipher = PaddedBlockCipherImpl(
-      PKCS7Padding(),
-      CBCBlockCipher(AESEngine()),
-    );
+    final kb = Uint8List.fromList(base64Decode(secret));
+    final nonce = Uint8List.fromList(
+        List.generate(12, (_) => Random.secure().nextInt(256)));
 
-    final params = PaddedBlockCipherParameters<CipherParameters, CipherParameters>(
-      ParametersWithIV<KeyParameter>(KeyParameter(kb), iv),
-      null,
-    );
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(
+        true,
+        AEADParameters(
+          KeyParameter(kb),
+          128,
+          nonce,
+          Uint8List(0),
+        ),
+      );
 
-    cipher.init(true, params);
+    final payloadBytes = Uint8List.fromList(utf8.encode(payload));
+    final ciphertextWithTag = cipher.process(payloadBytes);
 
-    final payloadBytes = utf8.encode(payload);
-    final encryptedBytes = cipher.process(Uint8List.fromList(payloadBytes));
+    final result = Uint8List(nonce.length + ciphertextWithTag.length);
+    result.setRange(0, nonce.length, nonce);
+    result.setRange(nonce.length, result.length, ciphertextWithTag);
 
-    return base64Encode(encryptedBytes);
+    return base64Encode(result);
   }
 }

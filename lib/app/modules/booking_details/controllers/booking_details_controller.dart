@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../routes/app_pages.dart';
@@ -137,7 +138,15 @@ class BookingDetailsController extends BaseController {
   void goBack() => Get.back();
 
   void share() {
-    // TODO: share booking
+    final text = [
+      'Booking – ${propertyTitle.value}',
+      if (propertyLocation.value.isNotEmpty) propertyLocation.value,
+      'Check-in: $checkInDate $checkInTime',
+      'Check-out: $checkOutDate $checkOutTime',
+      'Guest: $guestName',
+      if (totalPayout.isNotEmpty) 'Total: $totalPayout',
+    ].join('\n');
+    Share.share(text, subject: 'Booking – ${propertyTitle.value}');
   }
 
   void moreOptions() {
@@ -150,22 +159,5 @@ class BookingDetailsController extends BaseController {
 
   void modifyBooking() {
     // TODO: navigate to modify booking
-  }
-
-  void onNavTap(int index) {
-    switch (index) {
-      case 0:
-        Get.offAllNamed(Routes.MAIN);
-        break;
-      case 1:
-        // Bookings - current screen
-        break;
-      case 2:
-        // TODO: Inbox
-        break;
-      case 3:
-        // TODO: Profile
-        break;
-    }
   }
 }

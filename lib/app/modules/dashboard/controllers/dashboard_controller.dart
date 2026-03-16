@@ -12,7 +12,7 @@ import '../../../routes/app_pages.dart';
 
 class DashboardController extends BaseController {
 
-  final isLoading = false.obs;
+  final isLoading = true.obs;
   final isMember = false.obs;
   final isLeader = false.obs;
   final isAdmin = false.obs;
@@ -45,32 +45,44 @@ class DashboardController extends BaseController {
 
   final isIncomeSelected = true.obs;
 
-  // Metric card data (Income view)
-  final totalRevenue = '\$12,450.00';
-  final totalRevenueChange = '+12.5%';
-  final totalRevenueUp = true;
+  // Metric card data (Income view) – from server
+  final totalRevenue = 'TZS 0'.obs;
+  final totalRevenueChange = '+0%'.obs;
+  final totalRevenueUp = true.obs;
 
-  final avgDailyRate = '\$215.00';
-  final avgDailyRateChange = '-2.3%';
-  final avgDailyRateUp = false;
+  final avgDailyRate = 'TZS 0'.obs;
+  final avgDailyRateChange = '+0%'.obs;
+  final avgDailyRateUp = true.obs;
 
-  final netProfit = '\$8,120.00';
-  final netProfitChange = '+8.1%';
-  final netProfitUp = true;
+  final netProfit = 'TZS 0'.obs;
+  final netProfitChange = '+0%'.obs;
+  final netProfitUp = true.obs;
 
-  // Performance trends - current period (teal), previous period (orange)
-  final currentTrendValues = [2.5, 3.2, 4.8, 3.5];
-  final previousTrendValues = [2.8, 3.0, 3.2, 2.9];
+  // Performance trends (income = revenue) – from server
+  final currentTrendValues = <double>[0, 0, 0, 0].obs;
+  final previousTrendValues = <double>[0, 0, 0, 0].obs;
+  // Performance trends (expenses) – from server
+  final currentExpenseTrendValues = <double>[0, 0, 0, 0].obs;
+  final previousExpenseTrendValues = <double>[0, 0, 0, 0].obs;
   static const trendLabels = ['WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4'];
 
-  // Monthly growth bar data (two bars per month: lighter teal, darker teal)
-  final monthlyLabels = ['MAR', 'APR', 'MAY', 'JUN', 'JUL'];
-  final monthlyValuesA = [4.0, 5.0, 4.5, 6.0, 5.5];
-  final monthlyValuesB = [3.0, 4.0, 4.0, 5.0, 5.0];
+  // Monthly: A = revenue, B = expenses – from server
+  final monthlyLabels = <String>['MAR', 'APR', 'MAY', 'JUN', 'JUL'].obs;
+  final monthlyValuesA = <double>[0, 0, 0, 0, 0].obs;
+  final monthlyValuesB = <double>[0, 0, 0, 0, 0].obs;
+
+  // Expense metrics – from server
+  final totalExpenses = 'TZS 0'.obs;
+  final totalExpensesChange = '+0%'.obs;
+  final totalExpensesUp = true.obs;
+  final avgDailyExpense = 'TZS 0'.obs;
+  final avgDailyExpenseChange = '+0%'.obs;
+  final avgDailyExpenseUp = true.obs;
 
   @override
   void onInit() {
     _bootstrap();
+    loadDashboard();
     super.onInit();
   }
 
@@ -90,13 +102,74 @@ class DashboardController extends BaseController {
     firebaseToken = await _preferenceManager.getString(PreferenceManager.keyFirebaseToken);
   }
 
-  void goBack() => Get.back();
-
-  void openCalendar() {
-    // TODO: date range picker
+  Future<void> loadDashboard() async {
+    isLoading.value = true;
+    try {
+      final res = await _repository.getDashboard();
+      if (res.responseCode == '0' && res.data != null) {
+        final data = res.data as Map<String, dynamic>;
+        totalRevenue.value = _string(data['totalRevenue']) ?? 'TZS 0';
+        totalRevenueChange.value = _string(data['totalRevenueChange']) ?? '+0%';
+        totalRevenueUp.value = data['totalRevenueUp'] == true;
+        avgDailyRate.value = _string(data['avgDailyRate']) ?? 'TZS 0';
+        avgDailyRateChange.value = _string(data['avgDailyRateChange']) ?? '+0%';
+        avgDailyRateUp.value = data['avgDailyRateUp'] == true;
+        netProfit.value = _string(data['netProfit']) ?? 'TZS 0';
+        netProfitChange.value = _string(data['netProfitChange']) ?? '+0%';
+        netProfitUp.value = data['netProfitUp'] == true;
+        final cur = data['currentTrendValues'];
+        if (cur is List) {
+          currentTrendValues.assignAll((cur as List).map((e) => (e is num) ? e.toDouble() : 0.0).take(4).toList());
+        }
+        final prev = data['previousTrendValues'];
+        if (prev is List) {
+          previousTrendValues.assignAll((prev as List).map((e) => (e is num) ? e.toDouble() : 0.0).take(4).toList());
+        }
+        final labels = data['monthlyLabels'];
+        if (labels is List) {
+          monthlyLabels.assignAll((labels as List).map((e) => e?.toString() ?? '').toList());
+        }
+        final ma = data['monthlyValuesA'];
+        if (ma is List) {
+          monthlyValuesA.assignAll((ma as List).map((e) => (e is num) ? e.toDouble() : 0.0).toList());
+        }
+        final mb = data['monthlyValuesB'];
+        if (mb is List) {
+          monthlyValuesB.assignAll((mb as List).map((e) => (e is num) ? e.toDouble() : 0.0).toList());
+        }
+        totalExpenses.value = _string(data['totalExpenses']) ?? 'TZS 0';
+        totalExpensesChange.value = _string(data['totalExpensesChange']) ?? '+0%';
+        totalExpensesUp.value = data['totalExpensesUp'] == true;
+        avgDailyExpense.value = _string(data['avgDailyExpense']) ?? 'TZS 0';
+        avgDailyExpenseChange.value = _string(data['avgDailyExpenseChange']) ?? '+0%';
+        avgDailyExpenseUp.value = data['avgDailyExpenseUp'] == true;
+        final curExp = data['currentExpenseTrendValues'];
+        if (curExp is List) {
+          currentExpenseTrendValues.assignAll((curExp as List).map((e) => (e is num) ? e.toDouble() : 0.0).take(4).toList());
+        }
+        final prevExp = data['previousExpenseTrendValues'];
+        if (prevExp is List) {
+          previousExpenseTrendValues.assignAll((prevExp as List).map((e) => (e is num) ? e.toDouble() : 0.0).take(4).toList());
+        }
+      }
+    } catch (_) {
+      // keep default/placeholder values
+    } finally {
+      isLoading.value = false;
+    }
   }
 
+  String? _string(dynamic v) {
+    if (v == null) return null;
+    if (v is String) return v;
+    return v.toString();
+  }
+
+  void goBack() => Get.back();
+
   void recordPayment() => Get.toNamed(Routes.RECORD_PAYMENT);
+
+  void addExpense() => Get.toNamed(Routes.ADD_EXPENSE);
 
   void selectIncome() => isIncomeSelected.value = true;
   void selectExpenses() => isIncomeSelected.value = false;

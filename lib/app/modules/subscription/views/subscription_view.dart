@@ -5,6 +5,8 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../data/service/azampay_service.dart';
+import '../../../data/service/subscription_service.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/subscription_controller.dart';
 
@@ -19,8 +21,136 @@ class SubscriptionView extends BaseView<SubscriptionController> {
     );
   }
 
+  void _showPaymentSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: AppValues.largePadding,
+          right: AppValues.largePadding,
+          top: AppValues.largePadding,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + AppValues.largePadding,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Pay with AzamPay',
+              style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Enter your mobile number and select your mobile money provider. '
+              'You will receive a payment request on your phone.',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textColorSecondary,
+              ),
+            ),
+            const SizedBox(height: AppValues.spacing_20),
+            TextField(
+              controller: controller.phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Phone number',
+                hintText: '0712 345 678 or 255712345678',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: AppValues.padding),
+            Obx(() => DropdownButtonFormField<String>(
+                  value: controller.selectedProvider.value,
+                  decoration: const InputDecoration(
+                    labelText: 'Mobile money provider',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: azamPayProviders
+                      .map((String p) => DropdownMenuItem<String>(
+                            value: p,
+                            child: Text(p),
+                          ))
+                      .toList(),
+                  onChanged: controller.setProvider,
+                )),
+            const SizedBox(height: AppValues.spacing_20),
+            Obx(() => SizedBox(
+                  height: AppValues.formButtonHeight,
+                  child: ElevatedButton(
+                    onPressed: controller.sendingPaymentRequest.value
+                        ? null
+                        : () async {
+                            final ok = await controller.requestPayment();
+                            if (ok && ctx.mounted) {
+                              Navigator.of(ctx).pop();
+                              _showCompletedPaymentDialog(ctx);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.colorPrimary,
+                    ),
+                    child: controller.sendingPaymentRequest.value
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Send payment request',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCompletedPaymentDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Complete payment'),
+        content: const Text(
+          'A payment request was sent to your phone. '
+          'Complete the payment in your mobile money app, then tap below to activate your subscription.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              controller.activateAfterPayment();
+            },
+            child: const Text("I've completed payment"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget body(BuildContext context) {
+    final priceStr = '${subscriptionMonthlyPriceTzs.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        )} TZS';
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -80,7 +210,7 @@ class SubscriptionView extends BaseView<SubscriptionController> {
                         child: Row(
                           children: [
                             Text(
-                              '15,000 TZS',
+                              priceStr,
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -152,11 +282,17 @@ class SubscriptionView extends BaseView<SubscriptionController> {
                 SizedBox(
                   height: AppValues.formButtonHeight,
                   child: ElevatedButton.icon(
-                    onPressed: () => controller.subscribe(),
+                    onPressed: () {
+                      if (controller.isAzamPayEnabled) {
+                        _showPaymentSheet(context);
+                      } else {
+                        controller.subscribe();
+                      }
+                    },
                     icon: const Icon(Icons.payment, size: 22),
-                    label: const Text(
-                      'Subscribe — 15,000 TZS / month',
-                      style: TextStyle(
+                    label: Text(
+                      'Subscribe — $priceStr / month',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -167,10 +303,12 @@ class SubscriptionView extends BaseView<SubscriptionController> {
                   ),
                 ),
                 const SizedBox(height: AppValues.halfPadding),
-                const Text(
-                  'Payment will be processed as per your operator. Subscription is valid for 30 days.',
+                Text(
+                  controller.isAzamPayEnabled
+                      ? 'Payment via AzamPay (mobile money). Subscription is valid for 30 days.'
+                      : 'Payment will be processed as per your operator. Subscription is valid for 30 days.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textColorSecondary,
                   ),

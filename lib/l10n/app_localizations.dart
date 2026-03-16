@@ -2648,6 +2648,12 @@ abstract class AppLocalizations {
   /// **'Payments'**
   String get payments;
 
+  /// No description provided for @listing.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing'**
+  String get listing;
+
   /// No description provided for @listings.
   ///
   /// In en, this message translates to:

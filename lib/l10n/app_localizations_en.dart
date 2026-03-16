@@ -803,10 +803,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get propertyVaultDescription => 'Documents, manuals, IDs';
 
   @override
-  String get legalDocuments => 'Legal Documents';
+  String get legalDocuments => 'Documents';
 
   @override
-  String get legalDocumentsDescription => 'Property deeds, insurance, IDs';
+  String get legalDocumentsDescription => 'Documents, manuals, IDs';
 
   @override
   String get about => 'About';
@@ -1310,6 +1310,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get payments => 'Payments';
+
+  @override
+  String get listing => 'Listing';
 
   @override
   String get listings => 'Listings';

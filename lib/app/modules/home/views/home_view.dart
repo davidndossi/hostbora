@@ -44,22 +44,32 @@ class HomeView extends BaseView<HomeController> {
   Widget body(BuildContext context) {
     final themeController = Get.find<ThemeController>();
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildThemeSwitch(context, themeController),
-            const SizedBox(height: 20),
-            _buildPropertyOverview(context),
-            const SizedBox(height: 24),
-            _buildUpcomingCheckIns(context),
-            const SizedBox(height: 24),
-            _buildQuickActions(context),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
+      child: Obx(() {
+        if (controller.homeLoading.value) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(48),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildThemeSwitch(context, themeController),
+              const SizedBox(height: 20),
+              _buildPropertyOverview(context),
+              const SizedBox(height: 24),
+              _buildUpcomingCheckIns(context),
+              const SizedBox(height: 24),
+              _buildQuickActions(context),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -141,25 +151,25 @@ class HomeView extends BaseView<HomeController> {
           ],
         ),
         const SizedBox(height: 12),
-        Row(
+        Obx(() => Row(
           children: [
             Expanded(
               child: _MetricCard(
                 title: 'Active Bookings',
-                value: '${controller.activeBookings}',
-                subtitle: controller.bookingsChange,
+                value: '${controller.activeBookings.value}',
+                subtitle: controller.bookingsChange.value,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _MetricCard(
                 title: 'Monthly Revenue',
-                value: controller.monthlyRevenue,
-                subtitle: controller.revenueChange,
+                value: controller.monthlyRevenue.value,
+                subtitle: controller.revenueChange.value,
               ),
             ),
           ],
-        ),
+        )),
       ],
     );
   }
@@ -193,21 +203,40 @@ class HomeView extends BaseView<HomeController> {
           ],
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 200,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: controller.checkIns.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final item = controller.checkIns[index];
-              return _CheckInCard(
-                item: item,
-                onTap: () => controller.openBookingDetails(item),
-              );
-            },
-          ),
-        ),
+        Obx(() {
+          final list = controller.checkIns;
+          if (list.isEmpty) {
+            return SizedBox(
+              height: 120,
+              child: Center(
+                child: Text(
+                  'No upcoming check-ins',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white54
+                        : AppColors.textColorSecondary,
+                  ),
+                ),
+              ),
+            );
+          }
+          return SizedBox(
+            height: 200,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: list.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final item = list[index];
+                return _CheckInCard(
+                  item: item,
+                  onTap: () => controller.openBookingDetails(item),
+                );
+              },
+            ),
+          );
+        }),
       ],
     );
   }
@@ -233,12 +262,12 @@ class HomeView extends BaseView<HomeController> {
           crossAxisSpacing: 12,
           childAspectRatio: 1.3,
           children: [
-            _QuickActionTile(icon: 'ic_add_property.svg', label: 'Add Listing', onTap: controller.addListing),
             _QuickActionTile(icon: 'ic_properties.svg', label: 'Properties', onTap: controller.properties),
+            _QuickActionTile(icon: 'ic_add_property.svg', label: 'Add Listing', onTap: controller.addListing),
             _QuickActionTile(icon: 'ic_calendar.svg', label: 'Add Booking', onTap: controller.addNewBooking),
-            _QuickActionTile(icon: 'ic_smart_key.svg', label: 'Smart Access', onTap: controller.smartAccess),
+            // _QuickActionTile(icon: 'ic_smart_key.svg', label: 'Smart Access', onTap: controller.smartAccess),
             _QuickActionTile(icon: 'ic_completion.svg', label: 'Maintenance & Tasks', onTap: controller.tasks),
-            _QuickActionTile(icon: 'ic_tasks.svg', label: 'Assign Tasks', onTap: controller.assignTasks),
+            // _QuickActionTile(icon: 'ic_tasks.svg', label: 'Assign Tasks', onTap: controller.assignTasks),
             _QuickActionTile(icon: 'ic_reports.svg', label: 'Reports', onTap: controller.reports),
             _QuickActionTile(icon: 'ic_vault.svg', label: 'Vault', onTap: controller.documents),
           ],
@@ -363,11 +392,18 @@ class _CheckInCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.network(
-                  item.imageUrl,
+                SizedBox(
                   height: 100,
                   width: double.infinity,
-                  fit: BoxFit.cover,
+                  child: item.imageUrl.isEmpty
+                      ? _imagePlaceholder(height: 100, width: double.infinity)
+                      : Image.network(
+                          item.imageUrl,
+                          height: 100,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _imagePlaceholder(height: 100, width: double.infinity),
+                        ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(12),

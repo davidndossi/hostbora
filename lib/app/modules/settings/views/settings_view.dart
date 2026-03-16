@@ -13,15 +13,14 @@ class SettingsView extends BaseView<SettingsController> {
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
-      appBarTitleText: appLocalization.settings
+      appBarTitleText: appLocalization.settings,
+      isCentered: true,
     );
   }
 
   @override
   Widget body(BuildContext context) {
     return Obx(() {
-      final showSendSms =
-          controller.isAdmin.value || controller.isLeader.value;
       return SettingsList(
         applicationType: ApplicationType.both,
         platform: DevicePlatform.device,
@@ -54,13 +53,12 @@ class SettingsView extends BaseView<SettingsController> {
                 title: Text(appLocalization.language),
                 value: Obx(() => Text(controller.language.value == 'en' ? appLocalization.english : appLocalization.swahili)),
               ),
-              if (showSendSms)
-                SettingsTile(
-                  onPressed: (context) => Get.toNamed(Routes.SEND_SMS),
-                  leading: const Icon(Icons.sms_outlined),
-                  title: Text(appLocalization.sendMessage),
-                  value: Text(appLocalization.sendSmsWhatsapp),
-                ),
+              SettingsTile(
+                onPressed: (context) => Get.toNamed(Routes.SEND_SMS),
+                leading: const Icon(Icons.sms_outlined),
+                title: Text(appLocalization.sendMessage),
+                value: Text(appLocalization.sendSmsWhatsapp),
+              ),
               SettingsTile(
                 onPressed: (context) => controller.toggleTheme(),
                 title: Text(appLocalization.theme),
@@ -135,7 +133,7 @@ class SettingsView extends BaseView<SettingsController> {
               trailing: const Icon(Icons.chevron_right_outlined),
             ),
             SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(Routes.LEGAL_DOCUMENTS),
+              onPressed: (context) => Get.toNamed(Routes.DOCUMENTS),
               leading: const Icon(Icons.folder_outlined),
               title: Text(appLocalization.legalDocuments),
               description: Text(appLocalization.legalDocumentsDescription),
@@ -179,14 +177,6 @@ class SettingsView extends BaseView<SettingsController> {
     });
   }
 
-  // Widget _getHorizontalDivider() {
-  //   return const Divider(height: 1);
-  // }
-
-  // void _onThemeItemClicked() {
-  //   showToast('Theme: Development in progress');
-  // }
-
   void showSignOutDialog(BuildContext context) {
     // set up the buttons
     Widget cancelButton = TextButton(
@@ -216,9 +206,5 @@ class SettingsView extends BaseView<SettingsController> {
       },
     );
   }
-
-  // void _onFontSizeItemClicked() {
-  //   showToast('Font Size: Development in progress');
-  // }
 
 }

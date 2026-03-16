@@ -1,4 +1,5 @@
 import '../model/add_listing_request.dart';
+import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
 import '../model/create_booking_request.dart';
 import '../model/add_expense_request.dart';
@@ -61,14 +62,38 @@ abstract class AppRepository {
 
   Future<GeneralResponse> publishListing(
     AddListingRequest request,
-    Map<String, List<String>> roomPhotoPaths,
-  );
+    Map<String, List<String>> roomPhotoPaths, {
+    String? coverPhotoPath,
+  });
 
-  Future<GeneralResponse> getMyListings();
+  Future<GeneralResponse> getMyListings({String? status});
+
+  Future<GeneralResponse> getListing(String listingId);
+
+  Future<GeneralResponse> updateListing(
+    String listingId,
+    AddListingRequest request,
+    Map<String, List<String>> roomPhotoPaths, {
+    String? coverPhotoPath,
+  });
 
   Future<GeneralResponse> createBooking(CreateBookingRequest request);
 
   Future<GeneralResponse> recordPayment(RecordPaymentRequest request);
 
   Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]);
+
+  Future<GeneralResponse> getHomeOverview();
+
+  Future<GeneralResponse> getUpcomingBookings();
+
+  Future<GeneralResponse> getAllBookings();
+
+  Future<GeneralResponse> getDashboard();
+
+  Future<GeneralResponse> getTasks({String? status});
+
+  Future<GeneralResponse> addTask(AddTaskRequest request);
+
+  Future<GeneralResponse> getVaultDocuments(String directoryId);
 }

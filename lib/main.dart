@@ -176,14 +176,14 @@ void requestUserPermission() async {
 void main() async {
   EnvConfig devConfig = EnvConfig(
     appName: 'Paa Yangu',
-    baseUrl: 'http://167.86.89.92:8081/paa_yangu-v1',
-    // baseUrl: 'http://172.20.10.3:8080',
+    // baseUrl: 'http://167.86.89.92:8081/paa_yangu-v1',
+    baseUrl: 'http://172.20.10.3:8081',
     shouldCollectCrashLog: true,
     // Optional: enable Push to Pay (AzamPay) in Add Booking. Get credentials from https://developerdocs.azampay.co.tz
-    // azamPayAppName: 'your-app-name',
-    // azamPayClientId: 'your-client-id',
-    // azamPayClientSecret: 'your-client-secret',
-    // azamPaySandbox: true,
+    azamPayAppName: 'AHADI',
+    azamPayClientId: '216c9880-2361-499a-b252-1a4c10415c05',
+    azamPayClientSecret: 'RYEW0PbvpM1a08dCxhFr8z/mw9krKBtA74hqpkW2oaf3clWkEi0KMo92NF8/+RGRs1QJUr+RsDBGhQw0FBZ/6b8rhnbNekKTpcxHtcDhVkcJMM4gRo6JiGdeYC80pVp8fobWQF7i6rzUuBkQ0tm/2iA7RBvP2D3L+vM0NGyhtp3rPSQIXKnmvNglB4dq9a165Vc0lFJWLyv/pxd2VyxtsC14xGfNhgD+UEgXxhdOQi2PxYBLK6DoLK/c1gutDfUjrWQiwZZuYVPYWd7VERoTIDeA8DE5AMsRjzQNVTkjxi+ltVowpM38TITT5ZLtZ20neJHWtIwsZdfrA7Ne1TZC9tV46UYUy35MIjzo1TECcH9mFXN3tQigIsVzgvrr7sORhN70cyARkCa/iQCIEjc66QdIGeMvEsyDmGKP12iUMr7CT4R2CAavI9X7fBGHWSF5/eButFCsKuIjRSPMyaCf/AMPlmASQ9jj/kaPH6tviXHxv6pu5I4zO1cqgnjr8KnCAlhIqB/e9NbgPDIKT+A9odmyKgAAX3a3nQzuGOKsyAzPu4w5aEpybyocP2er3SI0AfTGHBxgQPULzEfcCU8KNbTaOEAn5XnMMB7ZGPwr63UD6oJVhHetpbeBHTSw75JiuUjouyynTqnKfoES2vy5UdnwMavGO1bg69NrQJ+PaxI=',
+    azamPaySandbox: true,
   );
 
   BuildConfig.instantiate(

@@ -803,10 +803,10 @@ class AppLocalizationsSw extends AppLocalizations {
   String get propertyVaultDescription => 'Nyaraka, miongozo, vitambulisho';
 
   @override
-  String get legalDocuments => 'Nyaraka za Kisheria';
+  String get legalDocuments => 'Nyaraka';
 
   @override
-  String get legalDocumentsDescription => 'Hati za mali, bima, vitambulisho';
+  String get legalDocumentsDescription => 'Nyaraka, mwongozo, vitambulisho';
 
   @override
   String get about => 'Kuhusu';
@@ -1309,6 +1309,9 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get payments => 'Malipo';
+
+  @override
+  String get listing => 'Mjengo';
 
   @override
   String get listings => 'Orodha';
