@@ -52,6 +52,14 @@ abstract class Routes {
   static const ADD_EXPENSE = _Paths.ADD_EXPENSE;
   static const ALL_BOOKINGS = _Paths.ALL_BOOKINGS;
   static const ADD_TASK = _Paths.ADD_TASK;
+  static const INTERIOR_DESIGN_STUDIO = _Paths.INTERIOR_DESIGN_STUDIO;
+  static const AI_MANAGER = _Paths.AI_MANAGER;
+  static const AI_INSIGHTS = _Paths.AI_INSIGHTS;
+  static const AI_AUTOMATIONS = _Paths.AI_AUTOMATIONS;
+  static const DESIGN_MOODBOARD = _Paths.DESIGN_MOODBOARD;
+  static const DESIGN_MOODBOARDS = _Paths.DESIGN_MOODBOARDS;
+  static const PRICE_ANALYSIS = _Paths.PRICE_ANALYSIS;
+  static const AI_PRICING_OPTIMIZER = _Paths.AI_PRICING_OPTIMIZER;
 }
 
 abstract class _Paths {
@@ -103,4 +111,12 @@ abstract class _Paths {
   static const ADD_EXPENSE = '/add-expense';
   static const ALL_BOOKINGS = '/all-bookings';
   static const ADD_TASK = '/add-task';
+  static const INTERIOR_DESIGN_STUDIO = '/interior-design-studio';
+  static const AI_MANAGER = '/ai-manager';
+  static const AI_INSIGHTS = '/ai-insights';
+  static const AI_AUTOMATIONS = '/ai-automations';
+  static const DESIGN_MOODBOARD = '/design-moodboard';
+  static const DESIGN_MOODBOARDS = '/design-moodboards';
+  static const PRICE_ANALYSIS = '/price-analysis';
+  static const AI_PRICING_OPTIMIZER = '/ai-pricing-optimizer';
 }

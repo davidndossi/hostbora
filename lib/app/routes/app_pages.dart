@@ -96,6 +96,22 @@ import '../modules/all_bookings/bindings/all_bookings_binding.dart';
 import '../modules/all_bookings/views/all_bookings_view.dart';
 import '../modules/add_task/bindings/add_task_binding.dart';
 import '../modules/add_task/views/add_task_view.dart';
+import '../modules/interior_design_studio/bindings/interior_design_studio_binding.dart';
+import '../modules/interior_design_studio/views/interior_design_studio_view.dart';
+import '../modules/ai_manager/bindings/ai_manager_binding.dart';
+import '../modules/ai_manager/views/ai_manager_view.dart';
+import '../modules/ai_insights/bindings/ai_insights_binding.dart';
+import '../modules/ai_insights/views/ai_insights_view.dart';
+import '../modules/ai_automations/bindings/ai_automations_binding.dart';
+import '../modules/ai_automations/views/ai_automations_view.dart';
+import '../modules/design_moodboard/bindings/design_moodboard_binding.dart';
+import '../modules/design_moodboard/views/design_moodboard_view.dart';
+import '../modules/design_moodboards/bindings/design_moodboards_binding.dart';
+import '../modules/design_moodboards/views/design_moodboards_view.dart';
+import '../modules/price_analysis/bindings/price_analysis_binding.dart';
+import '../modules/price_analysis/views/price_analysis_view.dart';
+import '../modules/ai_pricing_optimizer/bindings/ai_pricing_optimizer_binding.dart';
+import '../modules/ai_pricing_optimizer/views/ai_pricing_optimizer_view.dart';
 
 part 'app_routes.dart';
 
@@ -345,6 +361,46 @@ class AppPages {
       name: _Paths.ADD_TASK,
       page: () => AddTaskView(),
       binding: AddTaskBinding(),
+    ),
+    GetPage(
+      name: _Paths.INTERIOR_DESIGN_STUDIO,
+      page: () => InteriorDesignStudioView(),
+      binding: InteriorDesignStudioBinding(),
+    ),
+    GetPage(
+      name: _Paths.AI_MANAGER,
+      page: () => AiManagerView(),
+      binding: AiManagerBinding(),
+    ),
+    GetPage(
+      name: _Paths.AI_INSIGHTS,
+      page: () => AiInsightsView(),
+      binding: AiInsightsBinding(),
+    ),
+    GetPage(
+      name: _Paths.AI_AUTOMATIONS,
+      page: () => AiAutomationsView(),
+      binding: AiAutomationsBinding(),
+    ),
+    GetPage(
+      name: _Paths.DESIGN_MOODBOARD,
+      page: () => DesignMoodboardView(),
+      binding: DesignMoodboardBinding(),
+    ),
+    GetPage(
+      name: _Paths.DESIGN_MOODBOARDS,
+      page: () => DesignMoodboardsView(),
+      binding: DesignMoodboardsBinding(),
+    ),
+    GetPage(
+      name: _Paths.PRICE_ANALYSIS,
+      page: () => PriceAnalysisView(),
+      binding: PriceAnalysisBinding(),
+    ),
+    GetPage(
+      name: _Paths.AI_PRICING_OPTIMIZER,
+      page: () => AiPricingOptimizerView(),
+      binding: AiPricingOptimizerBinding(),
     ),
   ];
 }

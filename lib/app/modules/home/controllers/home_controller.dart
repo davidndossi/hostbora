@@ -126,6 +126,16 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void reports() => Get.toNamed(Routes.EXPENSE_ANALYSIS);
 
+  void designStudio() => Get.toNamed(Routes.INTERIOR_DESIGN_STUDIO);
+
+  void designMoodboards() => Get.toNamed(Routes.DESIGN_MOODBOARDS);
+
+  void aiManager() => Get.toNamed(Routes.AI_MANAGER);
+
+  void aiInsights() => Get.toNamed(Routes.AI_INSIGHTS);
+
+  void aiAutomations() => Get.toNamed(Routes.AI_AUTOMATIONS);
+
   void documents() => Get.toNamed(Routes.PROPERTY_VAULT);
 
   void addExpense() => Get.toNamed(Routes.ADD_EXPENSE);

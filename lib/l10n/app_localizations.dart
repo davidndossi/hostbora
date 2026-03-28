@@ -1637,13 +1637,13 @@ abstract class AppLocalizations {
   /// No description provided for @legalDocuments.
   ///
   /// In en, this message translates to:
-  /// **'Legal Documents'**
+  /// **'Documents'**
   String get legalDocuments;
 
   /// No description provided for @legalDocumentsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Property deeds, insurance, IDs'**
+  /// **'Documents, manuals, IDs'**
   String get legalDocumentsDescription;
 
   /// No description provided for @about.
