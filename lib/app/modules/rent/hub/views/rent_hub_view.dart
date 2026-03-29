@@ -1,0 +1,830 @@
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../../../../core/base/base_view.dart';
+import '../../../../routes/app_pages.dart';
+import '../controllers/rent_hub_controller.dart';
+
+/// Evergreen Estate — Rent hub dashboard (monthly performance, listings, bottom nav).
+abstract class _HubTheme {
+  static const Color bg = Color(0xFFF9F8F4);
+  static const Color teal = Color(0xFF005F5F);
+  static const Color navy = Color(0xFF1B2838);
+  static const Color muted = Color(0xFF6B7280);
+  static const Color cardCream = Color(0xFFF0EDE6);
+  static const Color salmon = Color(0xFFFDE2D9);
+  static const Color expenseRed = Color(0xFFB91C1C);
+  static const Color chartMutedBar = Color(0xFFC5D4D6);
+  static const String serif = 'Georgia';
+}
+
+class RentHubView extends BaseView<RentHubController> {
+  RentHubView({super.key});
+
+  @override
+  Color pageBackgroundColor(BuildContext context) => _HubTheme.bg;
+
+  @override
+  PreferredSizeWidget? appBar(BuildContext context) => AppBar(
+        backgroundColor: _HubTheme.bg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: 12,
+        title: Row(
+          children: [
+            Icon(Icons.spa_rounded, color: _HubTheme.teal, size: 26),
+            const SizedBox(width: 8),
+            const Text(
+              'Evergreen Estate',
+              style: TextStyle(
+                fontFamily: _HubTheme.serif,
+                fontWeight: FontWeight.w700,
+                fontSize: 17,
+                color: _HubTheme.teal,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.menu, color: _HubTheme.navy, size: 26),
+          ),
+          const SizedBox(width: 4),
+        ],
+      );
+
+  @override
+  Widget body(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _financialOverviewHeader(context),
+          const SizedBox(height: 14),
+          _netProfitCard(),
+          const SizedBox(height: 12),
+          _incomeExpenseRow(),
+          const SizedBox(height: 20),
+          _revenueChartCard(),
+          const SizedBox(height: 16),
+          _managementTipsCard(),
+          const SizedBox(height: 12),
+          _conciergeSupportCard(),
+          const SizedBox(height: 24),
+          _listingsSection(),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget? bottomNavigationBar() {
+    return Obx(() {
+      final idx = controller.selectedBottomNavIndex.value;
+      return Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Color(0xFFE8E6E1))),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _BottomNavItem(
+                  label: 'DASHBOARD',
+                  icon: Icons.dashboard_rounded,
+                  selected: idx == 0,
+                  onTap: () => controller.onBottomNavTap(0),
+                ),
+                _BottomNavItem(
+                  label: 'LISTINGS',
+                  icon: Icons.apartment_rounded,
+                  selected: idx == 1,
+                  onTap: () => controller.onBottomNavTap(1),
+                ),
+                _BottomNavItem(
+                  label: 'FINANCIALS',
+                  icon: Icons.account_balance_wallet_outlined,
+                  selected: idx == 2,
+                  onTap: () => controller.onBottomNavTap(2),
+                ),
+                _BottomNavItem(
+                  label: 'SETTINGS',
+                  icon: Icons.settings_outlined,
+                  selected: idx == 3,
+                  onTap: () => controller.onBottomNavTap(3),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _financialOverviewHeader(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'FINANCIAL OVERVIEW',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  color: _HubTheme.muted.withValues(alpha: 0.9),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Monthly Performance',
+                style: TextStyle(
+                  fontFamily: _HubTheme.serif,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: _HubTheme.navy,
+                  height: 1.1,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Material(
+          color: _HubTheme.cardCream,
+          borderRadius: BorderRadius.circular(22),
+          child: InkWell(
+            onTap: () {
+              controller.onAddBooking();
+              Get.toNamed(Routes.ADD_NEW_BOOKING);
+            },
+            borderRadius: BorderRadius.circular(22),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_circle, color: Colors.green.shade700, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Add Booking',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: _HubTheme.navy.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _netProfitCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
+      decoration: BoxDecoration(
+        color: _HubTheme.teal,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: _HubTheme.teal.withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 22),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB8E8C8).withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.trending_up_rounded, size: 14, color: Colors.green.shade800),
+                    const SizedBox(width: 4),
+                    Text(
+                      controller.profitTrendLabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.green.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Monthly Net Profit',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.88),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            controller.netProfitLabel,
+            style: const TextStyle(
+              fontFamily: _HubTheme.serif,
+              fontSize: 30,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              height: 1.05,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _incomeExpenseRow() {
+    return Row(
+      children: [
+        Expanded(child: _metricTile(
+          label: 'TOTAL INCOME',
+          value: controller.totalIncomeLabel,
+          circleColor: const Color(0xFFD8EFEE),
+          icon: Icons.arrow_upward_rounded,
+          iconColor: _HubTheme.teal,
+        )),
+        const SizedBox(width: 10),
+        Expanded(child: _metricTile(
+          label: 'EXPENSES',
+          value: controller.expensesLabel,
+          circleColor: const Color(0xFFF5D5CE),
+          icon: Icons.arrow_downward_rounded,
+          iconColor: const Color(0xFF9A3412),
+        )),
+      ],
+    );
+  }
+
+  Widget _metricTile({
+    required String label,
+    required String value,
+    required Color circleColor,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+      decoration: BoxDecoration(
+        color: _HubTheme.cardCream,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.9,
+                    color: _HubTheme.muted.withValues(alpha: 0.95),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontFamily: _HubTheme.serif,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: _HubTheme.navy,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _revenueChartCard() {
+    final inc = controller.chartIncome;
+    final exp = controller.chartExpense;
+    final maxY = [
+      for (var i = 0; i < inc.length; i++) inc[i] > exp[i] ? inc[i] : exp[i],
+    ].reduce((a, b) => a > b ? a : b) * 1.15;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Revenue Insights',
+            style: TextStyle(
+              fontFamily: _HubTheme.serif,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: _HubTheme.navy,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _legendDot(_HubTheme.teal, 'Income'),
+              const SizedBox(width: 16),
+              _legendDot(_HubTheme.expenseRed, 'Expenses'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 200,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: maxY,
+                minY: 0,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: maxY / 4,
+                  getDrawingHorizontalLine: (v) => FlLine(
+                    color: const Color(0xFFE5E2DC),
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      interval: maxY / 4,
+                      getTitlesWidget: (v, m) => Text(
+                        v == v.roundToDouble() ? v.toInt().toString() : '',
+                        style: TextStyle(fontSize: 9, color: _HubTheme.muted.withValues(alpha: 0.8)),
+                      ),
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      getTitlesWidget: (v, m) {
+                        final i = v.toInt();
+                        if (i < 0 || i >= RentHubController.days.length) return const SizedBox();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            RentHubController.days[i],
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: _HubTheme.muted.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                barGroups: List.generate(7, (i) {
+                  return BarChartGroupData(
+                    x: i,
+                    barsSpace: 6,
+                    barRods: [
+                      BarChartRodData(
+                        toY: exp[i],
+                        color: _HubTheme.chartMutedBar,
+                        width: 7,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                      ),
+                      BarChartRodData(
+                        toY: inc[i],
+                        color: _HubTheme.teal,
+                        width: 7,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _legendDot(Color c, String label) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: _HubTheme.navy.withValues(alpha: 0.75), fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+
+  Widget _managementTipsCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: _HubTheme.salmon,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Property Management Excellence',
+            style: TextStyle(
+              fontFamily: _HubTheme.serif,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: _HubTheme.navy,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Stay ahead with proactive maintenance, clear tenant communication, and data-driven rent reviews.',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.45,
+              color: _HubTheme.navy.withValues(alpha: 0.72),
+            ),
+          ),
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: controller.onReadManagementTips,
+            child: Text(
+              'Read Management Tips',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: _HubTheme.teal,
+                decoration: TextDecoration.underline,
+                decorationColor: _HubTheme.teal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _conciergeSupportCard() {
+    return Material(
+      color: _HubTheme.cardCream,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: controller.onConciergeSupportTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.work_outline_rounded, color: _HubTheme.teal, size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Concierge Support',
+                      style: TextStyle(
+                        fontFamily: _HubTheme.serif,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: _HubTheme.navy,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Available 24/7 for you',
+                      style: TextStyle(fontSize: 12, color: _HubTheme.muted.withValues(alpha: 0.95)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _listingsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'YOUR PORTFOLIO',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.3,
+            color: _HubTheme.muted.withValues(alpha: 0.9),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            const Expanded(
+              child: Text(
+                'My Listings',
+                style: TextStyle(
+                  fontFamily: _HubTheme.serif,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: _HubTheme.navy,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                controller.onViewAllProperties();
+                Get.toNamed(Routes.RENT_LISTING_ANALYTICS_DASHBOARD);
+              },
+              child: const Text(
+                'View All Properties',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                  color: _HubTheme.teal,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 220,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: controller.listings.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final item = controller.listings[i];
+              return _ListingCard(
+                item: item,
+                onTap: () {
+                  controller.onListingTap(item);
+                  Get.toNamed(Routes.RENT_LISTING_DETAILS);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ListingCard extends StatelessWidget {
+  const _ListingCard({required this.item, required this.onTap});
+
+  final RentHubListingItem item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      elevation: 2,
+      shadowColor: Colors.black26,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: SizedBox(
+          width: 200,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                child: Stack(
+                  children: [
+                    Image.asset(
+                      item.imageAsset,
+                      height: 110,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 110,
+                        color: _HubTheme.cardCream,
+                        child: const Icon(Icons.home_work_outlined, color: _HubTheme.muted, size: 40),
+                      ),
+                    ),
+                    if (item.occupied)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'OCCUPIED',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.categoryLabel,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                        color: _HubTheme.muted.withValues(alpha: 0.9),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: _HubTheme.serif,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _HubTheme.navy,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'MONTHLY RENT',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                  color: _HubTheme.muted.withValues(alpha: 0.85),
+                                ),
+                              ),
+                              Text(
+                                item.monthlyRentLabel,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: _HubTheme.teal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: _HubTheme.muted, size: 20),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomNavItem extends StatelessWidget {
+  const _BottomNavItem({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = selected ? Colors.white : _HubTheme.muted;
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? _HubTheme.teal : Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 22, color: fg),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                    color: fg,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
