@@ -112,6 +112,106 @@ import '../modules/price_analysis/bindings/price_analysis_binding.dart';
 import '../modules/price_analysis/views/price_analysis_view.dart';
 import '../modules/ai_pricing_optimizer/bindings/ai_pricing_optimizer_binding.dart';
 import '../modules/ai_pricing_optimizer/views/ai_pricing_optimizer_view.dart';
+import '../modules/rent/concierge_inbox/bindings/rent_concierge_inbox_binding.dart';
+import '../modules/rent/concierge_inbox/views/rent_concierge_inbox_view.dart';
+import '../modules/rent/loyalty_thresholds/bindings/rent_loyalty_thresholds_binding.dart';
+import '../modules/rent/loyalty_thresholds/views/rent_loyalty_thresholds_view.dart';
+import '../modules/rent/estate_manager_dashboard/bindings/rent_estate_manager_dashboard_binding.dart';
+import '../modules/rent/estate_manager_dashboard/views/rent_estate_manager_dashboard_view.dart';
+import '../modules/rent/hub/bindings/rent_hub_binding.dart';
+import '../modules/rent/hub/views/rent_hub_view.dart';
+import '../modules/rent/listing_details/bindings/rent_listing_details_binding.dart';
+import '../modules/rent/listing_details/views/rent_listing_details_view.dart';
+import '../modules/rent/add_new_listing/bindings/rent_add_new_listing_binding.dart';
+import '../modules/rent/add_new_listing/views/rent_add_new_listing_view.dart';
+import '../modules/rent/listing_analytics_dashboard/bindings/rent_listing_analytics_dashboard_binding.dart'
+    as split_listing_analytics_binding;
+import '../modules/rent/listing_analytics_dashboard/views/rent_listing_analytics_dashboard_view.dart'
+    as split_listing_analytics_view;
+import '../modules/rent/add_income_form/bindings/rent_add_income_form_binding.dart'
+    as split_add_income_binding;
+import '../modules/rent/add_income_form/views/rent_add_income_form_view.dart'
+    as split_add_income_view;
+import '../modules/rent/add_new_expense/bindings/rent_add_new_expense_binding.dart'
+    as split_add_expense_binding;
+import '../modules/rent/add_new_expense/views/rent_add_new_expense_view.dart'
+    as split_add_expense_view;
+import '../modules/rent/add_tenant_form/bindings/rent_add_tenant_form_binding.dart'
+    as split_add_tenant_binding;
+import '../modules/rent/add_tenant_form/views/rent_add_tenant_form_view.dart'
+    as split_add_tenant_view;
+import '../modules/rent/monthly_pl_summary/bindings/rent_monthly_pl_summary_binding.dart'
+    as split_monthly_pl_binding;
+import '../modules/rent/monthly_pl_summary/views/rent_monthly_pl_summary_view.dart'
+    as split_monthly_pl_view;
+import '../modules/rent/staff_payroll_details/bindings/rent_staff_payroll_details_binding.dart'
+    as split_staff_payroll_binding;
+import '../modules/rent/staff_payroll_details/views/rent_staff_payroll_details_view.dart'
+    as split_staff_payroll_view;
+import '../modules/rent/lease_renewal_form/bindings/rent_lease_renewal_form_binding.dart'
+    as split_lease_renewal_binding;
+import '../modules/rent/lease_renewal_form/views/rent_lease_renewal_form_view.dart'
+    as split_lease_renewal_view;
+import '../modules/rent/share_renewed_lease/bindings/rent_share_renewed_lease_binding.dart'
+    as split_share_renewed_binding;
+import '../modules/rent/share_renewed_lease/views/rent_share_renewed_lease_view.dart'
+    as split_share_renewed_view;
+import '../modules/rent/contract_hub/bindings/rent_contract_hub_binding.dart'
+    as split_contract_hub_binding;
+import '../modules/rent/contract_hub/views/rent_contract_hub_view.dart'
+    as split_contract_hub_view;
+import '../modules/rent/property_roi_analysis/bindings/rent_property_roi_analysis_binding.dart'
+    as split_property_roi_binding;
+import '../modules/rent/property_roi_analysis/views/rent_property_roi_analysis_view.dart'
+    as split_property_roi_view;
+import '../modules/rent/maintenance_cost_analysis/bindings/rent_maintenance_cost_analysis_binding.dart'
+    as split_maintenance_cost_binding;
+import '../modules/rent/maintenance_cost_analysis/views/rent_maintenance_cost_analysis_view.dart'
+    as split_maintenance_cost_view;
+import '../modules/rent/financial_comparison/bindings/rent_financial_comparison_binding.dart'
+    as split_financial_comparison_binding;
+import '../modules/rent/financial_comparison/views/rent_financial_comparison_view.dart'
+    as split_financial_comparison_view;
+import '../modules/rent/staff_management/bindings/rent_staff_management_binding.dart'
+    as split_staff_management_binding;
+import '../modules/rent/staff_management/views/rent_staff_management_view.dart'
+    as split_staff_management_view;
+import '../modules/rent/schedule_maintenance_form/bindings/rent_schedule_maintenance_form_binding.dart'
+    as split_schedule_maintenance_binding;
+import '../modules/rent/schedule_maintenance_form/views/rent_schedule_maintenance_form_view.dart'
+    as split_schedule_maintenance_view;
+import '../modules/rent/define_tenant_charges/bindings/rent_define_tenant_charges_binding.dart'
+    as split_tenant_charges_binding;
+import '../modules/rent/define_tenant_charges/views/rent_define_tenant_charges_view.dart'
+    as split_tenant_charges_view;
+import '../modules/rent/tenant_residency_payment_tracker/bindings/rent_tenant_residency_payment_tracker_binding.dart'
+    as split_tenant_residency_binding;
+import '../modules/rent/tenant_residency_payment_tracker/views/rent_tenant_residency_payment_tracker_view.dart'
+    as split_tenant_residency_view;
+import '../modules/rent/tenant_ledger_occupancy/bindings/rent_tenant_ledger_occupancy_binding.dart'
+    as split_tenant_ledger_binding;
+import '../modules/rent/tenant_ledger_occupancy/views/rent_tenant_ledger_occupancy_view.dart'
+    as split_tenant_ledger_view;
+import '../modules/rent/schedule_payment_reminder/bindings/rent_schedule_payment_reminder_binding.dart'
+    as split_payment_reminder_binding;
+import '../modules/rent/schedule_payment_reminder/views/rent_schedule_payment_reminder_view.dart'
+    as split_payment_reminder_view;
+import '../modules/rent/host_dashboard_payment_alerts/bindings/rent_host_dashboard_payment_alerts_binding.dart'
+    as split_host_alerts_binding;
+import '../modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart'
+    as split_host_alerts_view;
+import '../modules/rent/profit_analysis_dashboard/bindings/rent_profit_analysis_dashboard_binding.dart'
+    as split_profit_analysis_binding;
+import '../modules/rent/profit_analysis_dashboard/views/rent_profit_analysis_dashboard_view.dart'
+    as split_profit_analysis_view;
+import '../modules/rent/define_loyalty_offers/bindings/rent_define_loyalty_offers_binding.dart'
+    as split_define_loyalty_binding;
+import '../modules/rent/define_loyalty_offers/views/rent_define_loyalty_offers_view.dart'
+    as split_define_loyalty_view;
+import '../modules/rent/active_loyalty_programs/bindings/rent_active_loyalty_programs_binding.dart'
+    as split_active_loyalty_binding;
+import '../modules/rent/active_loyalty_programs/views/rent_active_loyalty_programs_view.dart'
+    as split_active_loyalty_view;
 
 part 'app_routes.dart';
 
@@ -401,6 +501,146 @@ class AppPages {
       name: _Paths.AI_PRICING_OPTIMIZER,
       page: () => AiPricingOptimizerView(),
       binding: AiPricingOptimizerBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_HUB,
+      page: () => RentHubView(),
+      binding: RentHubBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_HOST_DASHBOARD_PAYMENT_ALERTS,
+      page: () => split_host_alerts_view.RentHostDashboardPaymentAlertsView(),
+      binding: split_host_alerts_binding.RentHostDashboardPaymentAlertsBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_PROFIT_ANALYSIS_DASHBOARD,
+      page: () => split_profit_analysis_view.RentProfitAnalysisDashboardView(),
+      binding: split_profit_analysis_binding.RentProfitAnalysisDashboardBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_LISTING_ANALYTICS_DASHBOARD,
+      page: () => split_listing_analytics_view.RentListingAnalyticsDashboardView(),
+      binding: split_listing_analytics_binding.RentListingAnalyticsDashboardBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_ADD_TENANT_FORM,
+      page: () => split_add_tenant_view.RentAddTenantFormView(),
+      binding: split_add_tenant_binding.RentAddTenantFormBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_ADD_INCOME_FORM,
+      page: () => split_add_income_view.RentAddIncomeFormView(),
+      binding: split_add_income_binding.RentAddIncomeFormBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_ADD_NEW_EXPENSE,
+      page: () => split_add_expense_view.RentAddNewExpenseView(),
+      binding: split_add_expense_binding.RentAddNewExpenseBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_MONTHLY_PL_SUMMARY,
+      page: () => split_monthly_pl_view.RentMonthlyPlSummaryView(),
+      binding: split_monthly_pl_binding.RentMonthlyPlSummaryBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_STAFF_PAYROLL_DETAILS,
+      page: () => split_staff_payroll_view.RentStaffPayrollDetailsView(),
+      binding: split_staff_payroll_binding.RentStaffPayrollDetailsBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_LEASE_RENEWAL_FORM,
+      page: () => split_lease_renewal_view.RentLeaseRenewalFormView(),
+      binding: split_lease_renewal_binding.RentLeaseRenewalFormBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_SHARE_RENEWED_LEASE,
+      page: () => split_share_renewed_view.RentShareRenewedLeaseView(),
+      binding: split_share_renewed_binding.RentShareRenewedLeaseBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_CONTRACT_HUB,
+      page: () => split_contract_hub_view.RentContractHubView(),
+      binding: split_contract_hub_binding.RentContractHubBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_PROPERTY_ROI_ANALYSIS,
+      page: () => split_property_roi_view.RentPropertyRoiAnalysisView(),
+      binding: split_property_roi_binding.RentPropertyRoiAnalysisBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_MAINTENANCE_COST_ANALYSIS,
+      page: () => split_maintenance_cost_view.RentMaintenanceCostAnalysisView(),
+      binding: split_maintenance_cost_binding.RentMaintenanceCostAnalysisBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_FINANCIAL_COMPARISON,
+      page: () => split_financial_comparison_view.RentFinancialComparisonView(),
+      binding: split_financial_comparison_binding.RentFinancialComparisonBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_STAFF_MANAGEMENT,
+      page: () => split_staff_management_view.RentStaffManagementView(),
+      binding: split_staff_management_binding.RentStaffManagementBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_SCHEDULE_MAINTENANCE_FORM,
+      page: () => split_schedule_maintenance_view.RentScheduleMaintenanceFormView(),
+      binding: split_schedule_maintenance_binding.RentScheduleMaintenanceFormBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_DEFINE_TENANT_CHARGES,
+      page: () => split_tenant_charges_view.RentDefineTenantChargesView(),
+      binding: split_tenant_charges_binding.RentDefineTenantChargesBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,
+      page: () => split_tenant_residency_view.RentTenantResidencyPaymentTrackerView(),
+      binding: split_tenant_residency_binding.RentTenantResidencyPaymentTrackerBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_TENANT_LEDGER_OCCUPANCY,
+      page: () => split_tenant_ledger_view.RentTenantLedgerOccupancyView(),
+      binding: split_tenant_ledger_binding.RentTenantLedgerOccupancyBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_SCHEDULE_PAYMENT_REMINDER,
+      page: () => split_payment_reminder_view.RentSchedulePaymentReminderView(),
+      binding: split_payment_reminder_binding.RentSchedulePaymentReminderBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_DEFINE_LOYALTY_OFFERS,
+      page: () => split_define_loyalty_view.RentDefineLoyaltyOffersView(),
+      binding: split_define_loyalty_binding.RentDefineLoyaltyOffersBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_ACTIVE_LOYALTY_PROGRAMS,
+      page: () => split_active_loyalty_view.RentActiveLoyaltyProgramsView(),
+      binding: split_active_loyalty_binding.RentActiveLoyaltyProgramsBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_CONCIERGE_INBOX,
+      page: () => RentConciergeInboxView(),
+      binding: RentConciergeInboxBinding()
+    ),
+    GetPage(
+      name: _Paths.RENT_LOYALTY_THRESHOLDS,
+      page: () => RentLoyaltyThresholdsView(),
+      binding: RentLoyaltyThresholdsBinding()
+    ),
+    GetPage(
+      name: _Paths.RENT_ESTATE_MANAGER_DASHBOARD,
+      page: () => RentEstateManagerDashboardView(),
+      binding: RentEstateManagerDashboardBinding()
+    ),
+    GetPage(
+      name: _Paths.RENT_ADD_NEW_LISTING,
+      page: () => RentAddNewListingView(),
+      binding: RentAddNewListingBinding()
+    ),
+    GetPage(
+      name: _Paths.RENT_LISTING_DETAILS,
+      page: () => RentListingDetailsView(),
+      binding: RentListingDetailsBinding(),
     ),
   ];
 }

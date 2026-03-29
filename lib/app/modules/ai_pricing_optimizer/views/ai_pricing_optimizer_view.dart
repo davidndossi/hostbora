@@ -4,237 +4,433 @@ import 'package:get/get.dart';
 import '../../../core/base/base_view.dart';
 import '../controllers/ai_pricing_optimizer_controller.dart';
 
+/// Pricing Rules screen — teal `#149C95`, cream `#F8F7F4`, navy `#0B1320`.
 class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
   AiPricingOptimizerView({super.key});
 
-  static const _teal = Color(0xFF0D6D6D);
-  static const _softTeal = Color(0x190D6D6D);
-  static const _muted = Color(0xFF6B7280);
+  static const Color _kBg = Color(0xFFF8F7F4);
+  static const Color _kTeal = Color(0xFF149C95);
+  static const Color _kNavy = Color(0xFF0B1320);
+  static const Color _kTitleNavy = Color(0xFF1B2838);
+  static const Color _kMuted = Color(0xFF6B7280);
+  static const Color _kBadgePosBg = Color(0xFFE8F5F4);
+  static const Color _kBadgeNegBg = Color(0xFFFFF4ED);
+  static const Color _kBadgeNegFg = Color(0xFFC45C2A);
+
+  @override
+  Color pageBackgroundColor(BuildContext context) => _kBg;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
 
   @override
   Widget body(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _circleIcon(Icons.arrow_back_ios_new_rounded, onTap: Get.back),
-            _recommendationCard(),
-            const SizedBox(height: 14),
-            _autoApplyCard(),
-            const SizedBox(height: 18),
-            Text(
-              'Pricing Forecast',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(child: _forecastCard(Icon(Icons.event_note_outlined, color: const Color(0xFFEA580C)), const Color(0xFFFFEDD5), 'WEEKEND', 'Tsh 150k', '+25% Increase', true)),
-                const SizedBox(width: 10),
-                Expanded(child: _forecastCard(Icon(Icons.ac_unit_outlined, color: const Color(0xFF2563EB)), const Color(0xFFDBEAFE),'LOW SEASON', 'Tsh 90k', '-25% Decrease', false)),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0x0C0D6D6D),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x190D6D6D)),
-              ),
-              child: Row(
+    return Column(
+      children: [
+        Expanded(
+          child: SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.lightbulb_outline, color: const Color(0xFF0D6D6D), size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'AI predicts a 15% surge in booking probability if you maintain this price for the next 48 hours.',
-                      style: TextStyle(
-                        color: const Color(0xFF0D6D6D),
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
+                  _buildAppBarRow(context),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Pricing Rules',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: _kTitleNavy,
+                      fontFamily: 'Times New Roman',
+                      height: 1.15,
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Configure how the AI adjusts your nightly rates based on market demand.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.45,
+                      color: _kMuted,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  ...List.generate(
+                    controller.rules.length,
+                    (i) => Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _ruleCard(i),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  _simulationCard(context),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
+        _buildBottomNav(context),
+      ],
     );
   }
 
-  Widget _circleIcon(IconData icon, {required VoidCallback onTap}) {
-    return Material(
-      color: Colors.white,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: Icon(icon, size: 20, color: Colors.black),
+  Widget _buildAppBarRow(BuildContext context) {
+    return Row(
+      children: [
+        Material(
+          color: Colors.white,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: Get.back,
+            child: const SizedBox(
+              width: 40,
+              height: 40,
+              child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: _kTitleNavy),
+            ),
+          ),
         ),
-      ),
+        Expanded(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.auto_awesome, size: 18, color: _kTeal),
+              const SizedBox(width: 6),
+              Text(
+                'AI POWERED',
+                style: TextStyle(
+                  fontSize: 12,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w700,
+                  color: _kTeal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          onPressed: controller.addRule,
+          icon: const Icon(Icons.add_circle_outline, color: _kTeal, size: 26),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+        ),
+      ],
     );
   }
 
-  Widget _recommendationCard() {
+  Widget _ruleCard(int index) {
+    final rule = controller.rules[index];
+    final badgePositive = rule.positiveBadge;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Current Recommendation',
-                style: TextStyle(fontSize: 14, color: _muted, fontWeight: FontWeight.w500),
-              ),
-              const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: _softTeal,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFC7DDD8)),
+                  color: badgePositive ? _kBadgePosBg : _kBadgeNegBg,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  '✧ AI OPTIMIZED',
-                  style: TextStyle(fontSize: 10, color: _teal, fontWeight: FontWeight.w700),
+                child: Text(
+                  rule.badge,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: badgePositive ? _kTeal : _kBadgeNegFg,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  rule.title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: _kTitleNavy,
+                  ),
+                ),
+              ),
+              Obx(
+                () => Switch(
+                  value: controller.ruleEnabled[index].value,
+                  onChanged: (v) => controller.setRuleEnabled(index, v),
+                  thumbColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) return Colors.white;
+                    return Colors.grey.shade400;
+                  }),
+                  trackColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return _kTeal.withValues(alpha: 0.55);
+                    }
+                    return Colors.grey.shade300;
+                  }),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Tsh 120,000',
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
-          ),
-          Text(
-            'Based on high local demand & seasonal trends',
-            style: TextStyle(fontSize: 12, color: _muted, fontWeight: FontWeight.w400),
-          ),
           const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Stack(
-              children: [
-                Image.asset('images/luxury_room_view.png', height: 192, width: double.infinity, fit: BoxFit.cover),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withOpacity(0.50)],
+          Text(
+            rule.description,
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.45,
+              color: _kMuted,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () => controller.editRule(index),
+            style: TextButton.styleFrom(
+              foregroundColor: _kTeal,
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            icon: const Icon(Icons.edit_outlined, size: 16, color: _kTeal),
+            label: const Text(
+              'Edit Rule',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _simulationCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+      decoration: BoxDecoration(
+        color: _kNavy,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            right: -8,
+            top: -12,
+            child: Icon(
+              Icons.calculate_outlined,
+              size: 100,
+              color: Colors.white.withValues(alpha: 0.06),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.show_chart_rounded, color: Colors.white.withValues(alpha: 0.9), size: 22),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Price Simulation',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Obx(
+                () => Material(
+                  color: const Color(0xFF1A2332),
+                  borderRadius: BorderRadius.circular(24),
+                  child: InkWell(
+                    onTap: () => controller.pickSimulationDate(context),
+                    borderRadius: BorderRadius.circular(24),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today_outlined, size: 18, color: Colors.white.withValues(alpha: 0.85)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'SAMPLE DATE',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    letterSpacing: 0.8,
+                                    color: Colors.white.withValues(alpha: 0.45),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  controller.formattedSimulationDate,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white.withValues(alpha: 0.7)),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                const Positioned(
-                  left: 14,
-                  bottom: 12,
-                  child: Text(
-                    'Property: Ocean View Penthouse',
-                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 18),
+              ...controller.simulationLines.map((line) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            line.label,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: line.isBase
+                                  ? Colors.white.withValues(alpha: 0.55)
+                                  : Colors.white.withValues(alpha: 0.75),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          line.amount,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: line.isBase
+                                ? Colors.white.withValues(alpha: 0.7)
+                                : _kTeal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Divider(color: Colors.white.withValues(alpha: 0.12), height: 1),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Estimated Total',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
+                  Text(
+                    '\$${controller.estimatedTotal.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: _kTeal,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: controller.applySettings,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _kTeal,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.check_rounded, size: 22),
+                  label: const Text(
+                    'Apply Settings',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNav(BuildContext context) {
+    Widget item(IconData icon, String label, bool active, VoidCallback onTap) {
+      final c = active ? _kTeal : _kMuted;
+      return Expanded(
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 22, color: c),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 10, fontWeight: active ? FontWeight.w700 : FontWeight.w500, color: c),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      );
+    }
 
-  Widget _autoApplyCard() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: _softTeal,
-              borderRadius: BorderRadius.circular(21),
-            ),
-            child: const Icon(Icons.bolt, color: _teal),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Enable Auto-Apply', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                SizedBox(height: 2),
-                Text('Let AI update your rates instantly', style: TextStyle(fontSize: 12, color: _muted)),
-              ],
-            ),
-          ),
-          Obx(
-            () => Switch(
-              value: controller.autoApplyEnabled.value,
-              onChanged: controller.setAutoApply,
-              activeTrackColor: _teal,
-              activeColor: Colors.white,
-              inactiveTrackColor: const Color(0xFFDCE3EA),
-              inactiveThumbColor: Colors.white,
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _forecastCard(Icon icon, Color iconBg, String label, String value, String delta, bool up) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Icon(emoji, style: const TextStyle(fontSize: 20)),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: iconBg,
-            child: icon,
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 12, color: _muted, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text(
-            delta,
-            style: TextStyle(fontSize: 10, color: up ? const Color(0xFF0D8F62) : const Color(0xFFC07038), fontWeight: FontWeight.w600),
-          ),
-        ],
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            item(Icons.grid_view_rounded, 'Overview', false, controller.goOverview),
+            item(Icons.calendar_today_outlined, 'Calendar', false, controller.goCalendar),
+            item(Icons.payments_outlined, 'Pricing', true, () {}),
+            item(Icons.insights_outlined, 'Insights', false, controller.goInsights),
+            item(Icons.person_outline, 'Profile', false, controller.goProfile),
+          ],
+        ),
       ),
     );
   }

@@ -130,6 +130,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void designMoodboards() => Get.toNamed(Routes.DESIGN_MOODBOARDS);
 
+  void rentHub() => Get.toNamed(Routes.RENT_HUB);
+
   void aiManager() => Get.toNamed(Routes.AI_MANAGER);
 
   void aiInsights() => Get.toNamed(Routes.AI_INSIGHTS);

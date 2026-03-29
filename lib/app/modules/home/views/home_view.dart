@@ -263,6 +263,7 @@ class HomeView extends BaseView<HomeController> {
           childAspectRatio: 1.3,
           children: [
             _QuickActionTile(icon: 'ic_properties.svg', label: 'Properties', onTap: controller.properties),
+            _QuickActionTile(icon: 'ic_home.svg', label: 'Rent', onTap: controller.rentHub),
             _QuickActionTile(icon: 'ic_add_property.svg', label: 'Add Listing', onTap: controller.addListing),
             _QuickActionTile(icon: 'ic_calendar.svg', label: 'Add Booking', onTap: controller.addNewBooking),
             // _QuickActionTile(icon: 'ic_smart_key.svg', label: 'Smart Access', onTap: controller.smartAccess),
