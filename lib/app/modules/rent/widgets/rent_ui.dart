@@ -1,25 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
-import '../rent_theme.dart';
+import '../../../core/widget/custom_app_bar.dart';
 
 PreferredSizeWidget rentAppBar(String title, {List<Widget>? actions}) {
-  return AppBar(
-    backgroundColor: RentTheme.bg,
-    elevation: 0,
-    leading: IconButton(
-      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: RentTheme.navy, size: 20),
-      onPressed: Get.back,
-    ),
-    title: Text(
-      title,
-      style: const TextStyle(
-        color: RentTheme.navy,
-        fontSize: 17,
-        fontWeight: FontWeight.w700,
-      ),
-    ),
-    centerTitle: false,
+  return CustomAppBar(
+    appBarTitleText: title,
     actions: actions,
   );
 }
@@ -29,7 +14,7 @@ Widget rentCard({required Widget child, EdgeInsetsGeometry? padding}) {
     width: double.infinity,
     padding: padding ?? const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: RentTheme.card,
+      color: Colors.white,
       borderRadius: BorderRadius.circular(16),
       boxShadow: [
         BoxShadow(
@@ -38,7 +23,6 @@ Widget rentCard({required Widget child, EdgeInsetsGeometry? padding}) {
           offset: const Offset(0, 4),
         ),
       ],
-      border: Border.all(color: RentTheme.border),
     ),
     child: child,
   );
@@ -53,7 +37,6 @@ Widget rentSectionLabel(String text) {
         fontSize: 11,
         letterSpacing: 1.2,
         fontWeight: FontWeight.w700,
-        color: RentTheme.teal,
       ),
     ),
   );
@@ -71,7 +54,7 @@ Widget rentTextField({
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, color: RentTheme.navy, fontSize: 13)),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -81,13 +64,6 @@ Widget rentTextField({
             hintText: hint,
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: RentTheme.border)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: RentTheme.border)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: RentTheme.teal, width: 1.5),
-            ),
           ),
         ),
       ],
@@ -101,13 +77,12 @@ Widget rentPrimaryButton({required String label, VoidCallback? onPressed, IconDa
     child: FilledButton.icon(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: RentTheme.teal,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       icon: icon != null ? Icon(icon, size: 20) : const SizedBox.shrink(),
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
     ),
   );
 }

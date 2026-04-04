@@ -85,6 +85,7 @@ abstract class Routes {
   static const RENT_TENANT_LEDGER_OCCUPANCY = _Paths.RENT_TENANT_LEDGER_OCCUPANCY;
   static const RENT_SCHEDULE_PAYMENT_REMINDER = _Paths.RENT_SCHEDULE_PAYMENT_REMINDER;
   static const RENT_DEFINE_LOYALTY_OFFERS = _Paths.RENT_DEFINE_LOYALTY_OFFERS;
+  static const RENT_DEFINE_ACTIVE_LOYALTY = _Paths.RENT_DEFINE_ACTIVE_LOYALTY;
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = _Paths.RENT_ACTIVE_LOYALTY_PROGRAMS;
   static const RENT_SMART_UTILITY_LUKU_DASHBOARD = _Paths.RENT_SMART_UTILITY_LUKU_DASHBOARD;
   static const RENT_NOTIFICATION_CENTER_MARK_ALL = _Paths.RENT_NOTIFICATION_CENTER_MARK_ALL;
@@ -178,6 +179,7 @@ abstract class _Paths {
   static const RENT_TENANT_LEDGER_OCCUPANCY = '/rent/tenant-ledger-occupancy';
   static const RENT_SCHEDULE_PAYMENT_REMINDER = '/rent/schedule-payment-reminder';
   static const RENT_DEFINE_LOYALTY_OFFERS = '/rent/define-loyalty-offers';
+  static const RENT_DEFINE_ACTIVE_LOYALTY = '/rent/define-active-loyalty';
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = '/rent/active-loyalty-programs';
   static const RENT_SMART_UTILITY_LUKU_DASHBOARD = '/rent/smart-utility-luku-dashboard';
   static const RENT_NOTIFICATION_CENTER_MARK_ALL = '/rent/notification-center-mark-all';

@@ -1,58 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:paa_yangu/app/core/values/app_colors.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_add_new_listing_controller.dart';
 
 /// Concierge “Add New Listing” — cream background, teal primary (#005D5D).
-abstract class _AddListingTheme {
-  static const Color bg = Color(0xFFF9F8F6);
-  static const Color teal = Color(0xFF005D5D);
-  static const Color card = Colors.white;
-  static const Color inputBg = Color(0xFFF1F1F1);
-  static const Color label = Color(0xFF3D3D3D);
-  static const Color body = Color(0xFF5C5C5C);
-  static const Color charcoal = Color(0xFF1A1A1A);
-  static const String serif = 'Georgia';
-}
+// abstract class _AddListingTheme {
+//   static const Color teal = Color(0xFF005D5D);
+//   static const Color card = Colors.white;
+//   static const Color inputBg = Color(0xFFF1F1F1);
+//   static const Color label = Color(0xFF3D3D3D);
+//   static const Color charcoal = Color(0xFF1A1A1A);
+//   static const String serif = 'Georgia';
+// }
 
 class RentAddNewListingView extends BaseView<RentAddNewListingController> {
   RentAddNewListingView({super.key});
 
   @override
-  Color pageBackgroundColor(BuildContext context) => _AddListingTheme.bg;
-
-  @override
-  PreferredSizeWidget? appBar(BuildContext context) => AppBar(
-        backgroundColor: _AddListingTheme.bg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leadingWidth: 48,
-        leading: IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.menu, color: _AddListingTheme.charcoal, size: 26),
-        ),
-        centerTitle: true,
-        title: const Text(
-          'The Concierge',
-          style: TextStyle(
-            fontFamily: _AddListingTheme.serif,
-            fontWeight: FontWeight.w700,
-            fontSize: 19,
-            color: _AddListingTheme.teal,
-          ),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 14),
-            child: CircleAvatar(
-              radius: 17,
-              backgroundColor: Color(0xFFE5E3DD),
-              child: Icon(Icons.person, size: 18, color: Color(0xFF2F2F2F)),
-            ),
-          ),
-        ],
-      );
+  PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
+    appBarTitleText: 'Add Property'
+  );
 
   @override
   Widget body(BuildContext context) {
@@ -64,202 +34,102 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'CURATING EXCELLENCE',
-                  style: TextStyle(
-                    fontSize: 10,
-                    letterSpacing: 2.2,
-                    fontWeight: FontWeight.w600,
-                    color: _AddListingTheme.body,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Add New Listing',
-                  style: TextStyle(
-                    fontFamily: _AddListingTheme.serif,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 28,
-                    height: 1.12,
-                    color: _AddListingTheme.charcoal,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Expand your portfolio by detailing your new premium space. We\'ve simplified the onboarding to let you focus on what matters: the guest experience.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.45,
-                    color: _AddListingTheme.body,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Get.back(),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF3A3A3A),
-                          backgroundColor: const Color(0xFFECEBE8),
-                          side: BorderSide.none,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () {},
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _AddListingTheme.teal,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: const Text('Save Property', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 22),
                 _whiteCard(
                   children: [
+                    const SizedBox(height: 14),
                     _fieldLabel('PROPERTY LOCATION'),
                     _inputRow(
                       icon: Icons.location_on_outlined,
-                      child: const Text(
-                        'Enter full street address or district',
-                        style: TextStyle(fontSize: 14, color: Color(0xFF7A7A7A)),
-                      ),
+                      fieldController: controller.propertyLocationController,
+                      hint: 'Enter full street address or district',
                     ),
                     const SizedBox(height: 16),
                     _fieldLabel('PROPERTY TYPE'),
-                    Obx(() => _dropdownTile(controller.propertyType.value)),
+                    Obx(() => _dropdownInput(
+                      value: controller.propertyType.value,
+                      options: controller.propertyTypeOptions,
+                      onChanged: controller.updatePropertyType,
+                    )),
+                    Obx(() {
+                      if (!controller.isApartmentProperty) {
+                        return const SizedBox.shrink();
+                      }
+                      return _addUnitsSection();
+                    }),
                     const SizedBox(height: 16),
-                    _fieldLabel('APARTMENT/SUITE NUMBER'),
-                    _plainInput(hint: 'e.g. 4B or Penthouse 1'),
-                    const SizedBox(height: 20),
-                    const Divider(height: 1, color: Color(0xFFEDEDED)),
-                    const SizedBox(height: 18),
-                    _fieldLabel('RENT AMOUNT'),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                            decoration: BoxDecoration(
-                              color: _AddListingTheme.inputBg,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              children: [
-                                Text('\$', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF4A4A4A))),
-                                SizedBox(width: 6),
-                                Text('0.00', style: TextStyle(fontSize: 16, color: Color(0xFF7A7A7A))),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 2,
-                          child: Obx(() => _dropdownTile(controller.rentFrequency.value, compact: true)),
-                        ),
-                      ],
+                    _fieldLabel('PROPERTY NAME/NUMBER'),
+                    _plainInput(
+                      fieldController: controller.apartmentSuiteController,
+                      hint: 'e.g. 4B or Penthouse 1',
                     ),
-                    const SizedBox(height: 16),
-                    _fieldLabel('MINIMUM RENTAL DURATION'),
-                    Obx(() => _dropdownTile(controller.minRentalDuration.value)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _whiteCard(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: SizedBox(
-                        height: 120,
-                        width: double.infinity,
-                        child: Stack(
-                          fit: StackFit.expand,
+                    Obx(() {
+                      if (controller.hideListingRentAmount) {
+                        return const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Image.asset(
-                              'images/luxury_room_view.png',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: const Color(0xFF1C1C1C),
-                                alignment: Alignment.center,
-                                child: Icon(Icons.photo_library_outlined, color: Colors.white.withValues(alpha: 0.4), size: 48),
-                              ),
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.15),
-                                    Colors.black.withValues(alpha: 0.55),
-                                  ],
+                            SizedBox(height: 20),
+                            Divider(height: 1, color: Color(0xFFEDEDED)),
+                            SizedBox(height: 18),
+                          ],
+                        );
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          const Divider(height: 1, color: Color(0xFFEDEDED)),
+                          const SizedBox(height: 18),
+                          _fieldLabel('RENT AMOUNT'),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: TextField(
+                                  controller: controller.rentAmountController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  textInputAction: TextInputAction.next,
+                                  style: const TextStyle(fontSize: 16, color: Color(0xFF2E2E2E)),
+                                  decoration: InputDecoration(
+                                    prefix: Text(
+                                      'Tshs ',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF4A4A4A)),
+                                    ),
+                                    hintText: '0.00',
+                                    hintStyle: TextStyle(fontSize: 16, color: Color(0xFF7A7A7A)),
+                                    isDense: false,
+                                    contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 4, bottom: 4),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF1F1F1),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.all(14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'VISUAL IDENTITY',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 9,
-                                      letterSpacing: 2,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Curated Spaces',
-                                    style: TextStyle(
-                                      fontFamily: _AddListingTheme.serif,
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 2,
+                                child: Obx(() => _dropdownInput(
+                                  value: controller.rentFrequency.value,
+                                  options: controller.rentFrequencyOptions,
+                                  onChanged: controller.updateRentFrequency,
+                                  compact: true,
+                                )),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Upload professional photography to increase your booking rate by up to 40%. Highlight natural light and unique architectural details.',
-                      style: TextStyle(fontSize: 13, height: 1.4, color: _AddListingTheme.body),
-                    ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _AddListingTheme.teal,
-                          side: const BorderSide(color: _AddListingTheme.teal, width: 1.4),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: const Text('ADD GALLERY', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.8, fontSize: 12)),
-                      ),
-                    ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    }),
+                    _fieldLabel('MINIMUM RENTAL DURATION'),
+                    Obx(() => _dropdownInput(
+                      value: controller.minRentalDuration.value,
+                      options: controller.minRentalDurationOptions,
+                      onChanged: controller.updateMinRentalDuration,
+                    )),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -267,7 +137,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: _AddListingTheme.teal,
+                    color: AppColors.designAccent,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -306,13 +176,198 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 100),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF3A3A3A),
+                          backgroundColor: const Color(0xFFECEBE8),
+                          side: BorderSide.none,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: controller.saveProperty,
+                        style: FilledButton.styleFrom(
+                          // backgroundColor: _AddListingTheme.teal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Save Property', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
-        _listingBottomNav(),
       ],
+    );
+  }
+
+  Widget _addUnitsSection() {
+    const fill = Color(0xFFF1F1F1);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        _fieldLabel('ADD UNIT'),
+        Obx(
+          () => Column(
+            children: List.generate(
+              controller.apartmentUnits.length,
+              (i) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _addedUnitTile(i),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        _fieldLabel('UNIT NAME'),
+        _plainInput(
+          fieldController: controller.draftUnitNameController,
+          hint: 'e.g. 4B or Penthouse 1',
+        ),
+        const SizedBox(height: 12),
+        _fieldLabel('UNIT RENT'),
+        TextField(
+          controller: controller.draftUnitRentController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.next,
+          style: const TextStyle(fontSize: 16, color: Color(0xFF2E2E2E)),
+          decoration: InputDecoration(
+            prefix: const Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: Text(
+                'Tshs ',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF4A4A4A)),
+              ),
+            ),
+            hintText: '0.00',
+            hintStyle: const TextStyle(fontSize: 16, color: Color(0xFF7A7A7A)),
+            filled: true,
+            fillColor: fill,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 14, bottom: 14),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: RichText(
+            text: const TextSpan(
+              style: TextStyle(
+                fontSize: 10,
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w700,
+              ),
+              children: [
+                TextSpan(text: 'UNIT DESCRIPTION'),
+                TextSpan(
+                  text: ' (optional)',
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF7A7A7A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        TextField(
+          controller: controller.draftUnitDescriptionController,
+          textInputAction: TextInputAction.done,
+          minLines: 2,
+          maxLines: 4,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF2E2E2E)),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: fill,
+            hintText: 'Short note for this unit',
+            hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF7A7A7A)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 12, bottom: 12),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: controller.addApartmentUnit,
+            icon: const Icon(Icons.add_circle_outline, size: 20),
+            label: const Text('Add unit', style: TextStyle(fontWeight: FontWeight.w700)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF2E2E2E),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _addedUnitTile(int index) {
+    final u = controller.apartmentUnits[index];
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEDEDED)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  u.unitName,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Tshs ${u.unitRent}',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                ),
+                if (u.unitDescription.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    u.unitDescription,
+                    style: const TextStyle(fontSize: 13, height: 1.35, color: Color(0xFF4B5563)),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => controller.removeApartmentUnit(index),
+            icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF)),
+            tooltip: 'Remove unit',
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
     );
   }
 
@@ -321,7 +376,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _AddListingTheme.card,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -344,112 +399,94 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
           fontSize: 10,
           letterSpacing: 1.2,
           fontWeight: FontWeight.w700,
-          color: _AddListingTheme.label,
+          // color: _AddListingTheme.label,
         ),
       ),
     );
   }
 
-  Widget _inputRow({required IconData icon, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: _AddListingTheme.inputBg,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: const Color(0xFF6B6B6B)),
-          const SizedBox(width: 8),
-          Expanded(child: child),
-        ],
+  Widget _inputRow({
+    required IconData icon,
+    required TextEditingController fieldController,
+    required String hint,
+  }) {
+    const fill = Color(0xFFF1F1F1);
+    return TextField(
+      controller: fieldController,
+      textInputAction: TextInputAction.next,
+      keyboardType: TextInputType.streetAddress,
+      minLines: 1,
+      maxLines: 3,
+      style: const TextStyle(fontSize: 14, color: Color(0xFF2E2E2E)),
+      decoration: InputDecoration(
+        // prefix: Icon(icon, size: 14, color: const Color(0xFF6B6B6B)),
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF7A7A7A)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        isDense: false,
+        contentPadding: const EdgeInsets.only(left: 12, right: 4, top: 4, bottom: 4),
+        fillColor: fill
       ),
     );
   }
 
-  Widget _plainInput({required String hint}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: _AddListingTheme.inputBg,
-        borderRadius: BorderRadius.circular(12),
+  Widget _plainInput({
+    required TextEditingController fieldController,
+    required String hint,
+  }) {
+    const fill = Color(0xFFF1F1F1);
+    return TextField(
+      controller: fieldController,
+      textInputAction: TextInputAction.next,
+      style: const TextStyle(fontSize: 14, color: Color(0xFF2E2E2E)),
+      decoration: InputDecoration(
+        isDense: false,
+        filled: true,
+        fillColor: fill,
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF7A7A7A)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.only(left: 12, right: 4, top: 4, bottom: 4),
       ),
-      alignment: Alignment.centerLeft,
-      child: Text(hint, style: const TextStyle(fontSize: 14, color: Color(0xFF7A7A7A))),
     );
   }
 
-  Widget _dropdownTile(String value, {bool compact = false}) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 12 : 14),
-      decoration: BoxDecoration(
-        color: _AddListingTheme.inputBg,
-        borderRadius: BorderRadius.circular(12),
+  Widget _dropdownInput({
+    required String value,
+    required List<String> options,
+    required ValueChanged<String?> onChanged,
+    bool compact = false,
+  }) {
+    return DropdownButtonFormField<String>(
+      initialValue: options.contains(value) ? value : null,
+      isExpanded: true,
+      icon: const Icon(Icons.expand_more, color: Color(0xFF3D3D3D)),
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFFF1F1F1),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 12 : 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
+      dropdownColor: Colors.white,
+      items: options
+          .map(
+            (item) => DropdownMenuItem<String>(
+              value: item,
+              child: Text(item),
             ),
-          ),
-          const Icon(Icons.expand_more, color: Color(0xFF3D3D3D)),
-        ],
-      ),
-    );
-  }
-
-  Widget _listingBottomNav() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE8E6E1))),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _navItem(icon: Icons.apartment_rounded, label: 'Properties', selected: true),
-            _navItem(icon: Icons.calendar_month_outlined, label: 'Bookings', selected: false),
-            _navItem(icon: Icons.chat_bubble_outline_outlined, label: 'Inbox', selected: false),
-            _navItem(icon: Icons.bar_chart_rounded, label: 'Insights', selected: false),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem({required IconData icon, required String label, required bool selected}) {
-    final c = selected ? Colors.white : const Color(0xFF7A7A7A);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? _AddListingTheme.teal : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 22, color: c),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.2, color: c),
-              ),
-            ],
-          ),
-        ),
-      ),
+          )
+          .toList(),
+      onChanged: onChanged,
     );
   }
 }

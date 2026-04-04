@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 
 import '../../hub/controllers/rent_hub_controller.dart';
 import '../../my_properties_hub/controllers/rent_my_properties_hub_controller.dart';
-import '../../staff_management/controllers/rent_staff_management_controller.dart';
+import '../../tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 import '../controllers/rent_base_shell_controller.dart';
 import '../controllers/rent_others_tab_controller.dart';
 
@@ -12,8 +12,8 @@ class RentBaseShellBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<RentBaseShellController>(() => RentBaseShellController());
     Get.lazyPut<RentHubController>(() => RentHubController());
-    Get.lazyPut<RentMyPropertiesHubController>(RentMyPropertiesHubController.new);
-    Get.lazyPut<RentStaffManagementController>(() => RentStaffManagementController());
+    Get.lazyPut<RentMyPropertiesHubController>(() => RentMyPropertiesHubController());
+    Get.lazyPut<RentTenantResidencyPaymentTrackerController>(() => RentTenantResidencyPaymentTrackerController());
     Get.lazyPut<RentOthersTabController>(() => RentOthersTabController());
   }
 }

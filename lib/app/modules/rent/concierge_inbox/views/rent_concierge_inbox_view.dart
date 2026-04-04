@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../widgets/rent_ui.dart';
 import '../controllers/rent_concierge_inbox_controller.dart';
 
 /// Evergreen Concierge Inbox — cream bg, deep teal accents, serif headings.
@@ -22,57 +23,7 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
   Color pageBackgroundColor(BuildContext context) => _InboxPalette.bg;
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight),
-      child: Obx(() {
-        final empty = !controller.hasNotifications;
-        return AppBar(
-          backgroundColor: _InboxPalette.bg,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          leading: IconButton(
-            onPressed: () => Get.back(),
-            icon: const Icon(Icons.menu, color: _InboxPalette.primaryTeal, size: 24),
-          ),
-          titleSpacing: 0,
-          centerTitle: true,
-          title: const Text(
-            'The Concierge',
-            style: TextStyle(
-              fontFamily: _InboxPalette.serif,
-              color: _InboxPalette.primaryTeal,
-              fontWeight: FontWeight.w700,
-              fontSize: 19,
-            ),
-          ),
-          actions: empty
-              ? [
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.search, color: _InboxPalette.primaryTeal, size: 24),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.notifications_none_rounded,
-                        color: _InboxPalette.primaryTeal, size: 24),
-                  ),
-                  const SizedBox(width: 6),
-                ]
-              : [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 14),
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: _InboxPalette.border,
-                      child: const Icon(Icons.person, size: 18, color: _InboxPalette.navy),
-                    ),
-                  ),
-                ],
-        );
-      }),
-    );
-  }
+  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Inbox');
 
   @override
   Widget body(BuildContext context) {
@@ -83,17 +34,6 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          const Text(
-            'Concierge Inbox',
-            style: TextStyle(
-              fontFamily: _InboxPalette.serif,
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: _InboxPalette.navy,
-              height: 1.15,
-            ),
-          ),
-          const SizedBox(height: 6),
           const Text(
             'Evergreen Estate Management Dashboard',
             style: TextStyle(
@@ -180,32 +120,6 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
         ],
       );
     });
-  }
-
-  @override
-  Widget? bottomNavigationBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: _InboxPalette.border)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 10, 4, 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: const [
-              _InboxTab(label: 'HERITAGE', icon: Icons.home_outlined),
-              _InboxTab(label: 'BOOKINGS', icon: Icons.event_note_outlined),
-              _InboxTab(label: 'INBOX', icon: Icons.mail_outline_rounded, selected: true),
-              _InboxTab(label: 'CALENDAR', icon: Icons.calendar_month_outlined),
-              _InboxTab(label: 'SETTINGS', icon: Icons.settings_outlined),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _urgentSectionHeader({required int criticalCount}) {
@@ -873,53 +787,6 @@ class _SquareIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(icon, size: 20, color: iconColor),
-    );
-  }
-}
-
-class _InboxTab extends StatelessWidget {
-  const _InboxTab({
-    required this.label,
-    required this.icon,
-    this.selected = false,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = selected ? Colors.white : _InboxPalette.muted;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? _InboxPalette.primaryTeal : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: fg),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
-                  color: fg,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

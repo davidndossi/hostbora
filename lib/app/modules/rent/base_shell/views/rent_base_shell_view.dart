@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:paa_yangu/app/modules/rent/tenant_residency_payment_tracker/views/rent_tenant_residency_payment_tracker_view.dart';
 
 import '../../../../core/base/base_view.dart';
 import '../../hub/views/rent_hub_view.dart';
@@ -32,7 +33,7 @@ class RentBaseShellView extends BaseView<RentBaseShellController> {
         children: [
           RentHubView(),
           RentMyPropertiesHubView(),
-          RentStaffManagementView(),
+          RentTenantResidencyPaymentTrackerView(),
           RentOthersTabView(),
         ],
       ),
@@ -67,13 +68,13 @@ class RentBaseShellView extends BaseView<RentBaseShellController> {
                   onTap: () => controller.setTab(1),
                 ),
                 _ShellTab(
-                  label: 'Staff',
+                  label: 'Tenants',
                   icon: Icons.groups_outlined,
                   selected: idx == 2,
                   onTap: () => controller.setTab(2),
                 ),
                 _ShellTab(
-                  label: 'Others',
+                  label: 'More',
                   icon: Icons.list_outlined,
                   selected: idx == 3,
                   onTap: () => controller.setTab(3),

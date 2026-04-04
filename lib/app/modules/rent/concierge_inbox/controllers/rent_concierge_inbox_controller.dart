@@ -77,6 +77,7 @@ class RentConciergeInboxController extends BaseController {
   final generalItems = <ConciergeGeneralItem>[].obs;
 
   /// True when any inbox section has items (urgent, renewals, maintenance, or general).
+  // final hasNotifications = false.obs;
   bool get hasNotifications =>
       urgentItems.isNotEmpty ||
       renewalItems.isNotEmpty ||

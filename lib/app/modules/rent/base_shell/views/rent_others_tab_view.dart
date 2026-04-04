@@ -21,8 +21,10 @@ class RentOthersTabView extends BaseView<RentOthersTabController> {
   Widget body(BuildContext context) {
     final items = <_OthersLink>[
       _OthersLink('Concierge Inbox', Icons.inbox_outlined, Routes.RENT_CONCIERGE_INBOX),
-      _OthersLink('Estate manager', Icons.business_outlined, Routes.RENT_ESTATE_MANAGER_DASHBOARD),
-      _OthersLink('Add new listing', Icons.add_home_rounded, Routes.RENT_ADD_NEW_LISTING),
+      _OthersLink('Schedule Maintenance', Icons.engineering_outlined, Routes.RENT_SCHEDULE_MAINTENANCE_FORM),
+      _OthersLink('Define Tenant Charges', Icons.payments_outlined, Routes.RENT_DEFINE_TENANT_CHARGES),
+      _OthersLink('Staff Management', Icons.badge_outlined, Routes.RENT_STAFF_MANAGEMENT),
+      _OthersLink('Define Loyalty Program', Icons.loyalty_outlined, Routes.RENT_DEFINE_LOYALTY_OFFERS),
       _OthersLink('Financial comparison', Icons.compare_arrows_rounded, Routes.RENT_FINANCIAL_COMPARISON),
       _OthersLink('Monthly P&L summary', Icons.summarize_outlined, Routes.RENT_MONTHLY_PL_SUMMARY),
       _OthersLink('Contract hub', Icons.article_outlined, Routes.RENT_CONTRACT_HUB),

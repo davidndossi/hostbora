@@ -118,8 +118,8 @@ import '../modules/rent/loyalty_thresholds/bindings/rent_loyalty_thresholds_bind
 import '../modules/rent/loyalty_thresholds/views/rent_loyalty_thresholds_view.dart';
 import '../modules/rent/estate_manager_dashboard/bindings/rent_estate_manager_dashboard_binding.dart';
 import '../modules/rent/estate_manager_dashboard/views/rent_estate_manager_dashboard_view.dart';
-import '../modules/rent/hub/bindings/rent_hub_binding.dart';
-import '../modules/rent/hub/views/rent_hub_view.dart';
+import '../modules/rent/base_shell/bindings/rent_base_shell_binding.dart';
+import '../modules/rent/base_shell/views/rent_base_shell_view.dart';
 import '../modules/rent/listing_details/bindings/rent_listing_details_binding.dart';
 import '../modules/rent/listing_details/views/rent_listing_details_view.dart';
 import '../modules/rent/add_new_listing/bindings/rent_add_new_listing_binding.dart';
@@ -504,8 +504,8 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.RENT_HUB,
-      page: () => RentHubView(),
-      binding: RentHubBinding(),
+      page: () => RentBaseShellView(),
+      binding: RentBaseShellBinding(),
     ),
     GetPage(
       name: _Paths.RENT_HOST_DASHBOARD_PAYMENT_ALERTS,

@@ -224,6 +224,9 @@ PODS:
   - SDWebImage/Core (5.21.7)
   - share_plus (0.0.1):
     - Flutter
+  - sqflite_darwin (0.0.4):
+    - Flutter
+    - FlutterMacOS
   - SwiftyGif (5.4.5)
   - ThingAudioEngineSDK (1.7.13):
     - ThingAvLoggerSDK
@@ -509,6 +512,7 @@ DEPENDENCIES:
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
+  - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - ThingSmartCameraKit (~> 6.7.0)
   - ThingSmartCryption (from `./ios_core_sdk`)
   - ThingSmartHomeKit (~> 6.7.0)
@@ -624,6 +628,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
+  sqflite_darwin:
+    :path: ".symlinks/plugins/sqflite_darwin/darwin"
   ThingSmartCryption:
     :path: "./ios_core_sdk"
   tuya_home_sdk_flutter:
@@ -670,6 +676,7 @@ SPEC CHECKSUMS:
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
+  sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
   ThingAudioEngineSDK: 8aa9a26019929d50c12cd4edb6e1a5b6fc793403
   ThingAvLoggerSDK: 796177d0575fe8a57a625909c2cbecdbe4d36d7b

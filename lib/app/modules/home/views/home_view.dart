@@ -22,6 +22,45 @@ class HomeView extends BaseView<HomeController> {
     return CustomAppBar(
       appBarTitleText: appLocalization.home,
       actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: () => Get.offNamed(Routes.RENT_HUB),
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    child: Text(
+                      'RENT',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        letterSpacing: 0.6,
+                        color: AppColors.textColorSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text('|', style: TextStyle(color: AppColors.textColorSecondary, fontSize: 13)),
+                ),
+                Text(
+                  'BnB',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    letterSpacing: 0.4,
+                    color: AppColors.colorPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         IconButton(
           onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
           icon: Obx(
@@ -263,16 +302,15 @@ class HomeView extends BaseView<HomeController> {
           childAspectRatio: 1.3,
           children: [
             _QuickActionTile(icon: 'ic_properties.svg', label: 'Properties', onTap: controller.properties),
-            _QuickActionTile(icon: 'ic_home.svg', label: 'Rent', onTap: controller.rentHub),
             _QuickActionTile(icon: 'ic_add_property.svg', label: 'Add Listing', onTap: controller.addListing),
             _QuickActionTile(icon: 'ic_calendar.svg', label: 'Add Booking', onTap: controller.addNewBooking),
             // _QuickActionTile(icon: 'ic_smart_key.svg', label: 'Smart Access', onTap: controller.smartAccess),
             _QuickActionTile(icon: 'ic_completion.svg', label: 'Maintenance & Tasks', onTap: controller.tasks),
-            _QuickActionTile(icon: 'ic_reports.svg', label: 'Design Studio', onTap: controller.designStudio),
-            _QuickActionTile(icon: 'ic_dashboard.svg', label: 'Moodboards', onTap: controller.designMoodboards),
-            _QuickActionTile(icon: 'ic_reports.svg', label: 'AI Manager', onTap: controller.aiManager),
-            _QuickActionTile(icon: 'ic_dashboard.svg', label: 'AI Insights', onTap: controller.aiInsights),
-            _QuickActionTile(icon: 'ic_tasks.svg', label: 'AI Automations', onTap: controller.aiAutomations),
+            _QuickActionTile(icon: 'ic_design_studio.svg', label: 'Design Studio', onTap: controller.designStudio),
+            _QuickActionTile(icon: 'ic_pinterest.svg', label: 'Moodboards', onTap: controller.designMoodboards),
+            _QuickActionTile(icon: 'ic_ai_manager.svg', label: 'AI Manager', onTap: controller.aiManager),
+            _QuickActionTile(icon: 'ic_ai_insights.svg', label: 'AI Insights', onTap: controller.aiInsights),
+            _QuickActionTile(icon: 'ic_robot.svg', label: 'AI Automations', onTap: controller.aiAutomations),
             _QuickActionTile(icon: 'ic_reports.svg', label: 'Reports', onTap: controller.reports),
             _QuickActionTile(icon: 'ic_vault.svg', label: 'Vault', onTap: controller.documents),
           ],

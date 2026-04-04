@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../routes/app_pages.dart';
 
 enum ListingUnitStatus { vacant, occupied, overdue }
 
@@ -74,10 +75,9 @@ class RentListingDetailsController extends BaseController {
 
   final quickActions = const <ListingQuickAction>[
     ListingQuickAction(label: 'Add Tenant', icon: Icons.person_add_alt_outlined),
-    ListingQuickAction(label: 'Add Income', icon: Icons.description_outlined),
+    ListingQuickAction(label: 'Add Income', icon: Icons.money_outlined),
     ListingQuickAction(label: 'Add Expenses', icon: Icons.receipt_long_outlined),
     ListingQuickAction(label: 'Schedule Maintenance', icon: Icons.calendar_month_outlined),
-    ListingQuickAction(label: 'Smart Lock Control', icon: Icons.lock_open_rounded),
     ListingQuickAction(label: 'Luku Dashboard', icon: Icons.bolt_outlined),
   ];
 
@@ -156,7 +156,9 @@ class RentListingDetailsController extends BaseController {
 
   void onQuickAction(int index) {}
 
-  void onUnitPrimaryAction(ListingDetailUnit unit) {}
+  void onUnitPrimaryAction(ListingDetailUnit unit) {
+    Get.toNamed(Routes.RENT_HOST_DASHBOARD_PAYMENT_ALERTS);
+  }
 
   void onReadUnitNote() {}
 }

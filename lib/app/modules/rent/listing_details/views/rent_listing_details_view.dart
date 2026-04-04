@@ -2,56 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/values/app_colors.dart';
+import '../../../../core/widget/custom_app_bar.dart';
 import '../../../../routes/app_pages.dart';
 import '../controllers/rent_listing_details_controller.dart';
 
 /// Evergreen Estate — listing detail (KPIs, quick actions, units, activity, staff).
 abstract class _DetailTheme {
-  static const Color bg = Color(0xFFFBF9F4);
   static const Color teal = Color(0xFF004743);
   static const Color navy = Color(0xFF1B2838);
   static const Color muted = Color(0xFF6B7280);
-  static const Color card = Colors.white;
   static const Color gridCell = Color(0xFFF3F0EA);
-  static const String serif = 'Georgia';
 }
 
 class RentListingDetailsView extends BaseView<RentListingDetailsController> {
   RentListingDetailsView({super.key});
 
   @override
-  Color pageBackgroundColor(BuildContext context) => _DetailTheme.bg;
-
-  @override
-  PreferredSizeWidget? appBar(BuildContext context) => AppBar(
-        backgroundColor: _DetailTheme.bg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          onPressed: () => Get.back(),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _DetailTheme.teal, size: 20),
-        ),
-        centerTitle: true,
-        title: Text(
-          controller.estateTitle,
-          style: const TextStyle(
-            fontFamily: _DetailTheme.serif,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            color: _DetailTheme.teal,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: const Color(0xFFE8E4DD),
-              child: Icon(Icons.person, size: 20, color: Colors.grey.shade700),
-            ),
-          ),
-        ],
-      );
+  PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
+    appBarTitleText: controller.estateTitle
+  );
 
   @override
   Widget body(BuildContext context) {
@@ -95,10 +65,8 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
               const Text(
                 'Staff Assigned',
                 style: TextStyle(
-                  fontFamily: _DetailTheme.serif,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: _DetailTheme.navy,
                 ),
               ),
               const SizedBox(width: 8),
@@ -118,7 +86,7 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text('MANAGE STAFF', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+              child: const Text('MANAGE STAFF', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
             ),
           ),
           const SizedBox(height: 22),
@@ -128,62 +96,62 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
     );
   }
 
-  @override
-  Widget? bottomNavigationBar() {
-    return Obx(() {
-      final idx = controller.selectedBottomNavIndex.value;
-      return Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE8E6E1))),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _BottomTab(
-                  label: 'DASHBOARD',
-                  icon: Icons.dashboard_rounded,
-                  selected: idx == 0,
-                  onTap: () {
-                    controller.onBottomNavTap(0);
-                    Get.offNamed(Routes.RENT_HUB);
-                  },
-                ),
-                _BottomTab(
-                  label: 'REAL ESTATE',
-                  icon: Icons.apartment_rounded,
-                  selected: idx == 1,
-                  onTap: () => controller.onBottomNavTap(1),
-                ),
-                _BottomTab(
-                  label: 'FINANCIALS',
-                  icon: Icons.account_balance_wallet_outlined,
-                  selected: idx == 2,
-                  onTap: () {
-                    controller.onBottomNavTap(2);
-                    Get.toNamed(Routes.RENT_FINANCIAL_COMPARISON);
-                  },
-                ),
-                _BottomTab(
-                  label: 'SETTINGS',
-                  icon: Icons.settings_outlined,
-                  selected: idx == 3,
-                  onTap: () {
-                    controller.onBottomNavTap(3);
-                    Get.toNamed(Routes.SETTINGS);
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    });
-  }
+  // @override
+  // Widget? bottomNavigationBar() {
+  //   return Obx(() {
+  //     final idx = controller.selectedBottomNavIndex.value;
+  //     return Container(
+  //       decoration: const BoxDecoration(
+  //         color: Colors.white,
+  //         border: Border(top: BorderSide(color: Color(0xFFE8E6E1))),
+  //       ),
+  //       child: SafeArea(
+  //         top: false,
+  //         child: Padding(
+  //           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+  //           child: Row(
+  //             mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //             children: [
+  //               _BottomTab(
+  //                 label: 'DASHBOARD',
+  //                 icon: Icons.dashboard_rounded,
+  //                 selected: idx == 0,
+  //                 onTap: () {
+  //                   controller.onBottomNavTap(0);
+  //                   Get.offNamed(Routes.RENT_HUB);
+  //                 },
+  //               ),
+  //               _BottomTab(
+  //                 label: 'REAL ESTATE',
+  //                 icon: Icons.apartment_rounded,
+  //                 selected: idx == 1,
+  //                 onTap: () => controller.onBottomNavTap(1),
+  //               ),
+  //               _BottomTab(
+  //                 label: 'FINANCIALS',
+  //                 icon: Icons.account_balance_wallet_outlined,
+  //                 selected: idx == 2,
+  //                 onTap: () {
+  //                   controller.onBottomNavTap(2);
+  //                   Get.toNamed(Routes.RENT_FINANCIAL_COMPARISON);
+  //                 },
+  //               ),
+  //               _BottomTab(
+  //                 label: 'SETTINGS',
+  //                 icon: Icons.settings_outlined,
+  //                 selected: idx == 3,
+  //                 onTap: () {
+  //                   controller.onBottomNavTap(3);
+  //                   Get.toNamed(Routes.SETTINGS);
+  //                 },
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     );
+  //   });
+  // }
 
   Widget _heroHeader() {
     return ClipRRect(
@@ -227,7 +195,6 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
                   controller.listingTitle,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontFamily: _DetailTheme.serif,
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -312,7 +279,7 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _DetailTheme.card,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -333,7 +300,6 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
           Text(
             value,
             style: const TextStyle(
-              fontFamily: _DetailTheme.serif,
               fontSize: 26,
               fontWeight: FontWeight.w700,
               color: _DetailTheme.teal,
@@ -353,25 +319,11 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
           child: Text(
             'Quick Management',
             style: TextStyle(
-              fontFamily: _DetailTheme.serif,
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: _DetailTheme.navy,
             ),
           ),
-        ),
-        TextButton(
-          onPressed: controller.onManageModules,
-          child: const Text(
-            'MANAGE MODULES',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.1,
-              color: _DetailTheme.teal,
-            ),
-          ),
-        ),
+        )
       ],
     );
   }
@@ -389,9 +341,10 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
       ),
       itemBuilder: (context, i) {
         final a = controller.quickActions[i];
-        return Material(
-          color: _DetailTheme.gridCell,
-          borderRadius: BorderRadius.circular(16),
+        return Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)
+          ),
           child: InkWell(
             onTap: () {
               controller.onQuickAction(i);
@@ -403,7 +356,7 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(a.icon, color: _DetailTheme.teal, size: 26),
+                  Icon(a.icon, color: AppColors.colorPrimary, size: 26),
                   const SizedBox(height: 8),
                   Text(
                     a.label.toUpperCase(),
@@ -414,7 +367,6 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.4,
-                      color: _DetailTheme.navy,
                       height: 1.2,
                     ),
                   ),
@@ -442,9 +394,6 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
         Get.toNamed(Routes.RENT_SCHEDULE_MAINTENANCE_FORM);
         break;
       case 4:
-        Get.toNamed(Routes.SMART_ACCESS);
-        break;
-      case 5:
         Get.toNamed(Routes.RENT_MONTHLY_PL_SUMMARY);
         break;
       default:
@@ -461,10 +410,8 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
           child: Text(
             title,
             style: const TextStyle(
-              fontFamily: _DetailTheme.serif,
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: _DetailTheme.navy,
             ),
           ),
         ),
@@ -476,7 +423,6 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1,
-              color: _DetailTheme.teal,
             ),
           ),
         ),
@@ -489,7 +435,7 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _DetailTheme.card,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
@@ -508,10 +454,8 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
                     Text(
                       u.title,
                       style: const TextStyle(
-                        fontFamily: _DetailTheme.serif,
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: _DetailTheme.navy,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -530,11 +474,11 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
             children: [
               Icon(Icons.bed_outlined, size: 16, color: _DetailTheme.muted),
               const SizedBox(width: 4),
-              Text('${u.beds} Bed', style: const TextStyle(fontSize: 12, color: _DetailTheme.navy)),
+              Text('${u.beds} Bed', style: const TextStyle(fontSize: 12)),
               const SizedBox(width: 12),
               Icon(Icons.bathtub_outlined, size: 16, color: _DetailTheme.muted),
               const SizedBox(width: 4),
-              Text('${u.baths} Bath', style: const TextStyle(fontSize: 12, color: _DetailTheme.navy)),
+              Text('${u.baths} Bath', style: const TextStyle(fontSize: 12)),
             ],
           ),
           const SizedBox(height: 12),
@@ -576,7 +520,7 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
             color: const Color(0xFFE5E7EB),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Text('VACANT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: _DetailTheme.navy)),
+          child: const Text('VACANT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800)),
         );
       case ListingUnitStatus.occupied:
         return Container(
@@ -603,7 +547,7 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: _DetailTheme.card,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFEEEAE4)),
       ),
@@ -619,9 +563,9 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(a.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: _DetailTheme.navy)),
+                Text(a.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 2),
-                Text(a.subtitle, style: TextStyle(fontSize: 11, color: _DetailTheme.muted.withValues(alpha: 0.95))),
+                Text(a.subtitle, style: TextStyle(fontSize: 12, color: _DetailTheme.muted.withValues(alpha: 0.95))),
               ],
             ),
           ),
@@ -654,7 +598,7 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(s.name, style: const TextStyle(fontWeight: FontWeight.w700, color: _DetailTheme.navy)),
+                Text(s.name, style: const TextStyle(fontWeight: FontWeight.w700)),
                 Text(s.role, style: TextStyle(fontSize: 12, color: _DetailTheme.muted.withValues(alpha: 0.95))),
               ],
             ),
@@ -684,7 +628,7 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
               children: [
                 Text(
                   controller.unitNoteTitle,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _DetailTheme.navy),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -695,57 +639,6 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _BottomTab extends StatelessWidget {
-  const _BottomTab({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = selected ? Colors.white : _DetailTheme.muted;
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: selected ? _DetailTheme.teal : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 22, color: fg),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                    color: fg,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

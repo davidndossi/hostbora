@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_listing_analytics_dashboard_controller.dart';
 
 class RentListingAnalyticsDashboardView
@@ -8,42 +9,9 @@ class RentListingAnalyticsDashboardView
   RentListingAnalyticsDashboardView({super.key});
 
   @override
-  Color pageBackgroundColor(BuildContext context) => const Color(0xFFF9F8F6);
-
-  @override
-  PreferredSizeWidget? appBar(BuildContext context) => AppBar(
-        backgroundColor: const Color(0xFFF9F8F6),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leadingWidth: 34,
-        leading: const SizedBox(),
-        titleSpacing: 0,
-        title: const Row(
-          children: [
-            CircleAvatar(
-              radius: 9,
-              backgroundColor: Color(0xFF0E3B5A),
-              child: Icon(Icons.person, size: 10, color: Colors.white),
-            ),
-            SizedBox(width: 6),
-            Text(
-              'Analytics',
-              style: TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF134B63),
-              ),
-            ),
-          ],
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(Icons.settings, size: 16, color: Color(0xFF005B60)),
-          ),
-        ],
-      );
+  PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
+    appBarTitleText: 'Analytics',
+  );
 
   @override
   Widget body(BuildContext context) {
@@ -68,7 +36,7 @@ class RentListingAnalyticsDashboardView
                 const Text(
                   'The Serengeti\nVista',
                   style: TextStyle(
-                    fontFamily: 'Georgia',
+                    
                     fontWeight: FontWeight.w700,
                     fontSize: 22,
                     height: 1.1,
@@ -107,12 +75,12 @@ class RentListingAnalyticsDashboardView
                       SizedBox(height: 8),
                       Text('92.4',
                           style: TextStyle(
-                              fontFamily: 'Georgia',
+                              
                               fontWeight: FontWeight.w700,
                               fontSize: 21)),
                       Text('%',
                           style: TextStyle(
-                              fontFamily: 'Georgia',
+                              
                               fontWeight: FontWeight.w700,
                               fontSize: 13)),
                       SizedBox(height: 2),
@@ -144,7 +112,7 @@ class RentListingAnalyticsDashboardView
                       Text('14,250,000',
                           style: TextStyle(
                               color: Colors.white,
-                              fontFamily: 'Georgia',
+                              
                               fontWeight: FontWeight.w700,
                               fontSize: 14)),
                       Text('Tsh',
@@ -175,7 +143,7 @@ class RentListingAnalyticsDashboardView
                       SizedBox(height: 7),
                       Text('425,000',
                           style: TextStyle(
-                              fontFamily: 'Georgia',
+                              
                               fontWeight: FontWeight.w700,
                               fontSize: 14)),
                       Text('Tsh', style: TextStyle(fontSize: 11)),
@@ -192,7 +160,7 @@ class RentListingAnalyticsDashboardView
                     children: [
                       const Text('Revenue Dynamics',
                           style: TextStyle(
-                              fontFamily: 'Georgia',
+                              
                               fontWeight: FontWeight.w700,
                               fontSize: 19)),
                       const Text('Performance trends for your luxury property',
@@ -273,7 +241,7 @@ class RentListingAnalyticsDashboardView
                     children: [
                       Text('Booking Channels',
                           style: TextStyle(
-                              fontFamily: 'Georgia',
+                              
                               fontWeight: FontWeight.w700,
                               fontSize: 19)),
                       Text('Distribution & Marketplace Performance',
@@ -330,7 +298,7 @@ class RentListingAnalyticsDashboardView
                     children: [
                       Text('Top Performing Months',
                           style: TextStyle(
-                              fontFamily: 'Georgia',
+                              
                               fontWeight: FontWeight.w700,
                               fontSize: 19)),
                       SizedBox(height: 10),
@@ -357,7 +325,7 @@ class RentListingAnalyticsDashboardView
                     children: [
                       const Text('Predictive Occupancy',
                           style: TextStyle(
-                              fontFamily: 'Georgia',
+                              
                               fontWeight: FontWeight.w700,
                               fontSize: 19)),
                       const SizedBox(height: 4),
@@ -390,7 +358,6 @@ class RentListingAnalyticsDashboardView
             ),
           ),
         ),
-        _analyticsBottomNav(),
       ],
     );
   }
@@ -429,29 +396,6 @@ Widget _analyticsDropdown(String text) {
                 style: const TextStyle(fontSize: 12, color: Color(0xFF444444)))),
         const Icon(Icons.expand_more, size: 16, color: Color(0xFF555555)),
       ],
-    ),
-  );
-}
-
-Widget _analyticsBottomNav() {
-  return Container(
-    padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      border: Border(top: BorderSide(color: Color(0xFFE8E6E1))),
-    ),
-    child: SafeArea(
-      top: false,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: const [
-          _AnalyticsNav(icon: Icons.home_outlined, label: 'PROPERTIES'),
-          _AnalyticsNav(icon: Icons.calendar_today_outlined, label: 'BOOKINGS'),
-          _AnalyticsNav(icon: Icons.insights_outlined, label: 'INSIGHTS'),
-          _AnalyticsNav(
-              icon: Icons.analytics_outlined, label: 'ANALYTICS', selected: true),
-        ],
-      ),
     ),
   );
 }
@@ -556,32 +500,11 @@ class _MonthTile extends StatelessWidget {
           const SizedBox(height: 3),
           Text(month,
               style: const TextStyle(
-                  fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.w700)),
+                   fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 2),
           Text(subtitle, style: const TextStyle(fontSize: 8, color: Color(0xFF6A6A6A))),
         ],
       ),
-    );
-  }
-}
-
-class _AnalyticsNav extends StatelessWidget {
-  const _AnalyticsNav({required this.icon, required this.label, this.selected = false});
-  final IconData icon;
-  final String label;
-  final bool selected;
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFF005D5D) : const Color(0xFF767676);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(height: 3),
-        Text(label,
-            style: TextStyle(
-                fontSize: 7.5, color: color, fontWeight: FontWeight.w700)),
-      ],
     );
   }
 }

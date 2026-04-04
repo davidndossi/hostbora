@@ -7,16 +7,16 @@ import '../../../../routes/app_pages.dart';
 import '../controllers/rent_my_properties_hub_controller.dart';
 
 /// Concierge management hub — property cards with quick actions, or empty add state.
-abstract class _HubTheme {
-  static const Color bg = Color(0xFFF9F8F4);
-  static const Color card = Colors.white;
-  static const Color teal = Color(0xFF004D4D);
-  static const Color hubRed = Color(0xFFB42318);
-  static const Color muted = Color(0xFF6B7280);
-  static const Color actionBg = Color(0xFFF5F5F3);
-  static const Color navy = Color(0xFF1A1A1A);
-  static const String serif = 'Georgia';
-}
+// abstract class _HubTheme {
+//   static const Color bg = Color(0xFFF9F8F4);
+//   static const Color card = Colors.white;
+//   static const Color teal = Color(0xFF004D4D);
+//   static const Color hubRed = Color(0xFFB42318);
+//   static const Color muted = Color(0xFF6B7280);
+//   static const Color actionBg = Color(0xFFF5F5F3);
+//   static const Color navy = Color(0xFF1A1A1A);
+//   static const String serif = 'Georgia';
+// }
 
 class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
   RentMyPropertiesHubView({super.key});
@@ -30,7 +30,7 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
   Widget body(BuildContext context) {
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator(color: _HubTheme.teal));
+        return const Center(child: CircularProgressIndicator());
       }
       if (controller.properties.isEmpty) {
         return _emptyState();
@@ -40,7 +40,15 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _hubHeader(),
+            Text(
+              'MANAGEMENT HUB',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.4,
+                // color: _HubTheme.hubRed.withValues(alpha: 0.95),
+              ),
+            ),
             const SizedBox(height: 16),
             _newPropertyButton(),
             const SizedBox(height: 22),
@@ -49,6 +57,10 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
                 padding: const EdgeInsets.only(bottom: 20),
                 child: _ManagementPropertyCard(
                   row: p,
+                  onOpenListing: () => Get.toNamed(
+                    Routes.RENT_LISTING_DETAILS,
+                    parameters: {'id': p.id},
+                  ),
                   onAddIncome: () => Get.toNamed(Routes.RENT_ADD_INCOME_FORM),
                   onAddExpense: () => Get.toNamed(Routes.RENT_ADD_NEW_EXPENSE),
                   onNewTenant: () => Get.toNamed(Routes.RENT_ADD_TENANT_FORM),
@@ -68,24 +80,24 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               onPressed: controller.addProperty,
               icon: const Icon(Icons.add_circle_outline, size: 72, color: Colors.grey),
               padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 72, minHeight: 72),
+              alignment: Alignment.center,
             ),
             const SizedBox(height: 12),
-            Center(
-              child: TextButton(
-                onPressed: controller.addProperty,
-                child: const Text(
-                  'Add property',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 17,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w500,
-                  ),
+            TextButton(
+              onPressed: controller.addProperty,
+              child: const Text(
+                'Add property',
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -95,41 +107,13 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
     );
   }
 
-  Widget _hubHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'MANAGEMENT HUB',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.4,
-            color: _HubTheme.hubRed.withValues(alpha: 0.95),
-          ),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          'Curated Estates & Asset Intelligence.',
-          style: TextStyle(
-            fontFamily: _HubTheme.serif,
-            fontSize: 26,
-            fontWeight: FontWeight.w700,
-            height: 1.15,
-            color: Color(0xFF0D3D2E),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _newPropertyButton() {
     return SizedBox(
       width: double.infinity,
       child: FilledButton.icon(
         onPressed: controller.addProperty,
         style: FilledButton.styleFrom(
-          backgroundColor: _HubTheme.teal,
+          // backgroundColor: _HubTheme.teal,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -147,6 +131,7 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
 class _ManagementPropertyCard extends StatelessWidget {
   const _ManagementPropertyCard({
     required this.row,
+    required this.onOpenListing,
     required this.onAddIncome,
     required this.onAddExpense,
     required this.onNewTenant,
@@ -154,6 +139,7 @@ class _ManagementPropertyCard extends StatelessWidget {
   });
 
   final RentHubPropertyRow row;
+  final VoidCallback onOpenListing;
   final VoidCallback onAddIncome;
   final VoidCallback onAddExpense;
   final VoidCallback onNewTenant;
@@ -161,20 +147,28 @@ class _ManagementPropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _HubTheme.card,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
-      child: Column(
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      child: InkWell(
+        onTap: onOpenListing,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _imageBlock(),
@@ -186,23 +180,26 @@ class _ManagementPropertyCard extends StatelessWidget {
                 Text(
                   row.title,
                   style: const TextStyle(
-                    fontFamily: _HubTheme.serif,
+                    // fontFamily: _HubTheme.serif,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: _HubTheme.navy,
+                    // color: _HubTheme.navy,
                     height: 1.2,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.person_outline_rounded, size: 18, color: _HubTheme.muted.withValues(alpha: 0.9)),
+                    Icon(
+                        Icons.person_outline_rounded, size: 18,
+                        // color: _HubTheme.muted.withValues(alpha: 0.9)
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       '${row.activeTenants} Active Tenants',
                       style: TextStyle(
                         fontSize: 13,
-                        color: _HubTheme.muted.withValues(alpha: 0.95),
+                        // color: _HubTheme.muted.withValues(alpha: 0.95),
                       ),
                     ),
                   ],
@@ -214,7 +211,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
-                    color: _HubTheme.muted.withValues(alpha: 0.85),
+                    // color: _HubTheme.muted.withValues(alpha: 0.85),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -223,6 +220,8 @@ class _ManagementPropertyCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }
@@ -257,7 +256,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.8,
-                color: _HubTheme.muted.withValues(alpha: 0.95),
+                // color: _HubTheme.muted.withValues(alpha: 0.95),
               ),
             ),
           ),
@@ -272,10 +271,11 @@ class _ManagementPropertyCard extends StatelessWidget {
       height: 180,
       width: double.infinity,
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => Container(
+      errorBuilder: (context, error, stackTrace) => const SizedBox(
         height: 180,
-        color: _HubTheme.actionBg,
-        child: const Icon(Icons.home_work_outlined, size: 48, color: _HubTheme.muted),
+        child: Center(
+          child: Icon(Icons.home_work_outlined, size: 48),
+        ),
       ),
     );
   }
@@ -283,7 +283,7 @@ class _ManagementPropertyCard extends StatelessWidget {
   Widget _quickGrid() {
     Widget cell(String label, IconData icon, Color iconColor, VoidCallback onTap) {
       return Material(
-        color: _HubTheme.actionBg,
+        // color: _HubTheme.actionBg,
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           onTap: onTap,
@@ -300,7 +300,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: _HubTheme.navy,
+                      // color: _HubTheme.navy,
                     ),
                   ),
                 ),
@@ -315,7 +315,7 @@ class _ManagementPropertyCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: cell('Add Income', Icons.add_circle_outline, _HubTheme.teal, onAddIncome)),
+            Expanded(child: cell('Add Income', Icons.add_circle_outline, const Color(0xFF15803D), onAddIncome)),
             const SizedBox(width: 10),
             Expanded(child: cell('Add Expense', Icons.remove_circle_outline, const Color(0xFF9B1C1C), onAddExpense)),
           ],
@@ -323,9 +323,10 @@ class _ManagementPropertyCard extends StatelessWidget {
         const SizedBox(height: 10),
         Row(
           children: [
-            Expanded(child: cell('New Tenant', Icons.person_add_alt_1_outlined, _HubTheme.muted, onNewTenant)),
+            Expanded(child: cell('New Tenant', Icons.person_add_alt_1_outlined, Color(0xFF6B7280), onNewTenant)),
             const SizedBox(width: 10),
-            Expanded(child: cell('Analytics', Icons.bar_chart_rounded, _HubTheme.muted, onAnalytics)),
+            Expanded(
+                child: cell('Analytics', Icons.bar_chart_rounded, Color(0xFF6B7280), onAnalytics)),
           ],
         ),
       ],
