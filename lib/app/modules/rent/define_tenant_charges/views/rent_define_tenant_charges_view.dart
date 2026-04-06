@@ -21,9 +21,11 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
   Widget body(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Form(
+        key: controller.formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           _newChargeCard(),
           const SizedBox(height: 18),
           _propertyBanner(),
@@ -32,6 +34,7 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
           const SizedBox(height: 20),
           _editorialInsight(),
         ],
+        ),
       ),
     );
   }
@@ -87,9 +90,11 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
           const SizedBox(height: 14),
           _capsLabel('AMOUNT'),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: controller.amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: controller.validateAmount,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             decoration: InputDecoration(
               filled: true,
@@ -112,10 +117,12 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
           const SizedBox(height: 14),
           _capsLabel('DESCRIPTION & TERMS'),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: controller.descriptionController,
             minLines: 4,
             maxLines: 8,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: controller.validateDescription,
             decoration: InputDecoration(
               filled: true,
               fillColor: _fieldFill,

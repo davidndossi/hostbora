@@ -10,7 +10,6 @@ import '../controllers/rent_tenant_ledger_occupancy_controller.dart';
 class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyController> {
   RentTenantLedgerOccupancyView({super.key});
 
-  static const _bg = Color(0xFFF9F8F3);
   static const _teal = Color(0xFF0E6666);
   static const _tealMid = Color(0xFF4A9B9B);
   static const _pinkBar = Color(0xFFFCE1D9);
@@ -44,9 +43,9 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
           const SizedBox(height: 16),
           _statusAlert(),
           const SizedBox(height: 20),
-          _tenancyCard(),
+          Obx(() => _tenancyCard()),
           const SizedBox(height: 14),
-          _financialBreakdownCard(currency),
+          Obx(() => _financialBreakdownCard(currency)),
           const SizedBox(height: 22),
           _paymentTimelineSection(),
           const SizedBox(height: 22),
@@ -163,7 +162,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
           ),
           const SizedBox(height: 4),
           Text(
-            '${RentTenantLedgerOccupancyController.currentStayMonths} Months',
+            '${controller.currentStayMonths} Months',
             style: const TextStyle(
               fontFamily: 'Georgia',
               fontSize: 26,
@@ -173,12 +172,12 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
           ),
           const SizedBox(height: 12),
           Text(
-            RentTenantLedgerOccupancyController.tenancyRangeLabel,
+            controller.tenancyRangeLabel,
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 4),
           Text(
-            'Current Lease: ${RentTenantLedgerOccupancyController.currentLeaseMonths} Months',
+            'Current Lease: ${controller.currentLeaseMonths} Months',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
           ),
         ],
@@ -213,7 +212,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
           ),
           const SizedBox(height: 6),
           Text(
-            currency.format(RentTenantLedgerOccupancyController.remainingBalanceTsh),
+            currency.format(controller.remainingBalanceTsh),
             style: const TextStyle(
               fontSize: 30,
               fontWeight: FontWeight.w700,
@@ -233,7 +232,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      currency.format(RentTenantLedgerOccupancyController.totalDueTsh),
+                      currency.format(controller.totalDueTsh),
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -253,7 +252,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      currency.format(RentTenantLedgerOccupancyController.totalPaidTsh),
+                      currency.format(controller.totalPaidTsh),
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -401,6 +400,54 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Obx(
+          () => Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE7E5E4)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Signed Contract / Lease',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  controller.contractFileName,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: controller.pickAndUploadSignedContract,
+                      icon: const Icon(Icons.upload_file, size: 18),
+                      label: const Text('Upload PDF/Word'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: controller.openSignedContract,
+                      icon: const Icon(Icons.open_in_new, size: 18),
+                      label: const Text('Open'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: controller.openEditLeaseTermsDialog,
+                      icon: const Icon(Icons.edit_calendar_outlined, size: 18),
+                      label: const Text('Edit lease terms'),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

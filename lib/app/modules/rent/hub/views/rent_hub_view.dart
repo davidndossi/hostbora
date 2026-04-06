@@ -124,6 +124,41 @@ class RentHubView extends BaseView<RentHubController> {
           ),
         ),
         const SizedBox(width: 8),
+        ElevatedButton.icon(
+          onPressed: () => Get.toNamed(Routes.RENT_ADD_NEW_EXPENSE),
+          icon: Icon(Icons.payment, size: 16),
+          label: Text(
+            'Add\nExpenses',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        ElevatedButton.icon(
+          onPressed: () => Get.toNamed(Routes.RENT_ADD_INCOME_FORM),
+          icon: Icon(Icons.payments, size: 16),
+          label: Text(
+            'Add\nIncome',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
       ],
     );
   }

@@ -20,19 +20,57 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
   Widget body(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 26),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Form(
+        key: controller.formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           const Text(
             'Record a payment for this property',
             style: TextStyle(fontSize: 18, color: Color(0xFF2E2E2E)),
           ),
           const SizedBox(height: 22),
+          _label('SELECT PROPERTY'),
+          Obx(
+            () {
+              final hasProperties = controller.hasProperties;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
+                        ? controller.selectedProperty.value
+                        : null,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'Choose property',
+                    ),
+                    validator: controller.validateSelectedProperty,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    items: controller.propertyOptions
+                        .map((p) => DropdownMenuItem<String>(value: p, child: Text(p)))
+                        .toList(),
+                    onChanged: hasProperties ? controller.updateSelectedProperty : null,
+                  ),
+                  if (!hasProperties)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6, left: 2),
+                      child: Text(
+                        'No properties yet - add property first.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF8A8A8A)),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
           _label('SELECT TENANT'),
           _field(
             controller.tenantController,
             hint: 'Choose a guest or long-term resident',
             suffix: Icons.expand_more,
+            validator: controller.validateTenant,
           ),
           const SizedBox(height: 16),
           _label('AMOUNT PAID'),
@@ -40,6 +78,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
             controller.amountController,
             hint: 'TZS 0.00',
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: controller.validateAmount,
           ),
           const SizedBox(height: 16),
           _label('DATE PAID'),
@@ -47,6 +86,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
             controller.datePaidController,
             hint: 'mm/dd/yyyy',
             suffix: Icons.calendar_today_outlined,
+            validator: controller.validateDatePaid,
           ),
           const SizedBox(height: 16),
           _label('CATEGORY'),
@@ -110,7 +150,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () {},
+              onPressed: controller.saveIncomeOffline,
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF006D73),
                 foregroundColor: Colors.white,
@@ -124,15 +164,26 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
             ),
           ),
           const SizedBox(height: 18),
-          const Align(
+          Align(
             alignment: Alignment.center,
-            child: Text('Cancel',
-                style: TextStyle(
+            child: InkWell(
+              onTap: () => Get.back(),
+              borderRadius: BorderRadius.circular(8),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
                     fontSize: 15,
                     color: Color(0xFF111111),
-                    fontWeight: FontWeight.w500)),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -153,6 +204,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
     bool isMultiline = false,
     double minHeight = 48,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
     const textColor = Color(0xFF5B5B5B);
     final hintStyle = TextStyle(
@@ -172,6 +224,8 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
         keyboardType: keyboardType ?? TextInputType.text,
         maxLines: isMultiline ? null : 1,
         minLines: isMultiline ? 3 : 1,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        validator: validator,
         style: TextStyle(
           fontSize: 14,
           color: textColor,

@@ -1,3 +1,11 @@
 import '../../../../core/base/base_controller.dart';
+import '../../rent_real_data_controller_mixin.dart';
 
-class RentListingAnalyticsDashboardController extends BaseController {}
+class RentListingAnalyticsDashboardController extends BaseController
+    with RentRealDataControllerMixin {
+  @override
+  void onReady() {
+    super.onReady();
+    loadRealDataSnapshot();
+  }
+}

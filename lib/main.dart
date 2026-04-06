@@ -13,6 +13,7 @@ import '/flavors/env_config.dart';
 import '/flavors/environment.dart';
 import 'app/core/config/tuya_config.dart';
 import 'app/data/local/service/storage_service.dart';
+import 'app/data/local/service/lease_reminder_workmanager.dart';
 import 'app/data/service/tuya_service.dart';
 import 'app/data/service/tuya_smart_lock_service.dart';
 import 'app/routes/app_pages.dart';
@@ -220,6 +221,10 @@ void main() async {
 
   await GetStorage.init();
   await Get.putAsync(() => StorageService().init());
+  await initializeLeaseReminderWorkmanager(
+    appName: devConfig.appName,
+    baseUrl: devConfig.baseUrl,
+  );
 
   // Tuya IoT + Smart Lock: initialize when config is provided (see TUYA_INTEGRATION.md)
   final tuyaConfig = TuyaConfig.fromEnvironment();

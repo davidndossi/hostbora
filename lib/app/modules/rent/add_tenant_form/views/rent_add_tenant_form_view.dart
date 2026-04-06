@@ -28,9 +28,11 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
   Widget body(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Form(
+        key: controller.formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           const SizedBox(height: 10),
           Obx(() {
             final name = controller.propertyContextLabel.value;
@@ -56,6 +58,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
                 controller: controller.tenantNameController,
                 hint: 'e.g. Julianne Moore',
                 textInputAction: TextInputAction.next,
+                validator: controller.validateTenantName,
               ),
               const SizedBox(height: 16),
               const Text('GENDER', style: _labelStyle),
@@ -79,10 +82,12 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: TextField(
+                    child: TextFormField(
                       controller: controller.rentAmountController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       textInputAction: TextInputAction.next,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: controller.validateRentAmount,
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
                       decoration: InputDecoration(
                         filled: true,
@@ -135,6 +140,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
                 hint: '+1 (555) 000-0000',
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.next,
+                validator: controller.validatePhone,
               ),
               const SizedBox(height: 16),
               RichText(
@@ -161,6 +167,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
                 hint: 'julianne@example.com',
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.done,
+                validator: controller.validateEmailOptional,
               ),
               const SizedBox(height: 14),
               Obx(
@@ -230,6 +237,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -313,11 +321,14 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
     required String hint,
     TextInputType? keyboardType,
     TextInputAction? textInputAction,
+    String? Function(String?)? validator,
   }) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: validator,
       style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937)),
       decoration: InputDecoration(
         filled: true,

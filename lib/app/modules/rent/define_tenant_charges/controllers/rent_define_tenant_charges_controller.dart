@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/rent_tenant_charge_local_data_source.dart';
 
 class TenantChargeEntry {
   TenantChargeEntry({
@@ -30,8 +31,13 @@ class TenantChargeEntry {
 }
 
 class RentDefineTenantChargesController extends BaseController {
+  RentDefineTenantChargesController()
+      : _local = Get.find<RentTenantChargeLocalDataSource>();
+
+  final RentTenantChargeLocalDataSource _local;
   final amountController = TextEditingController();
   final descriptionController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
 
   final selectedChargeType = 'Security Deposit'.obs;
 
@@ -79,7 +85,9 @@ class RentDefineTenantChargesController extends BaseController {
     if (v != null && v.isNotEmpty) selectedChargeType.value = v;
   }
 
-  void submitCharge({required bool addAnother}) {
+  Future<void> submitCharge({required bool addAnother}) async {
+    if (!(formKey.currentState?.validate() ?? false)) return;
+
     final amount = _parseAmount(amountController.text);
     if (amount == null || amount <= 0) {
       Get.snackbar('Error', 'Enter a valid amount');
@@ -90,6 +98,13 @@ class RentDefineTenantChargesController extends BaseController {
       Get.snackbar('Error', 'Enter description & terms');
       return;
     }
+
+    await _local.insert(
+      propertyLabel: selectedPropertyTitle.value,
+      chargeType: selectedChargeType.value,
+      amountTsh: amount,
+      description: desc,
+    );
 
     charges.add(
       TenantChargeEntry(
@@ -102,10 +117,23 @@ class RentDefineTenantChargesController extends BaseController {
     amountController.clear();
     descriptionController.clear();
     if (addAnother) {
-      showSuccessMessage('Charge added — add another');
+      showSuccessMessage('Charge saved offline — add another');
     } else {
-      showSuccessMessage('Charge saved');
+      showSuccessMessage('Charge saved offline');
     }
+  }
+
+  String? validateAmount(String? value) {
+    final amount = _parseAmount((value ?? '').trim());
+    if (amount == null || amount <= 0) return 'Enter a valid amount';
+    return null;
+  }
+
+  String? validateDescription(String? value) {
+    final v = (value ?? '').trim();
+    if (v.isEmpty) return 'Description is required';
+    if (v.length < 8) return 'Add more detail';
+    return null;
   }
 
   (Color bg, Color iconColor, IconData icon) styleForChargeType(String type) {

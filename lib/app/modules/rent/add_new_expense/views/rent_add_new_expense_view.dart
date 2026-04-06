@@ -17,10 +17,59 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
   Widget body(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Form(
+        key: controller.formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           const SizedBox(height: 14),
+          _expenseCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 6),
+                const Text(
+                  'Select Property',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 10),
+                Obx(
+                  () {
+                    final hasProperties = controller.hasProperties;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
+                              ? controller.selectedProperty.value
+                              : null,
+                          decoration: const InputDecoration(
+                            hintText: 'Choose property',
+                            border: InputBorder.none,
+                          ),
+                          validator: controller.validateSelectedProperty,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          items: controller.propertyOptions
+                              .map((p) => DropdownMenuItem<String>(value: p, child: Text(p)))
+                              .toList(),
+                          onChanged: hasProperties ? controller.updateSelectedProperty : null,
+                        ),
+                        if (!hasProperties)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 6, left: 2),
+                            child: Text(
+                              'No properties yet - add property first.',
+                              style: TextStyle(fontSize: 12, color: Color(0xFF8A8A8A)),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
           _expenseCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,6 +111,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
                   controller.amountController,
                   hint: 'Tsh 0.00',
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: controller.validateAmount,
                 ),
                 const SizedBox(height: 12),
                 const Text('Transaction Date',
@@ -72,7 +122,8 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
                   controller.datePaidController,
                   hint: 'dd/MM/yyyy',
                   keyboardType: TextInputType.datetime,
-                  suffix: Icons.calendar_month_rounded
+                  suffix: Icons.calendar_month_rounded,
+                  validator: controller.validateDatePaid,
                 ),
                 const SizedBox(height: 12),
                 const Text('Select Tenant (Optional)',
@@ -91,7 +142,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () {},
+              onPressed: controller.saveExpenseOffline,
               style: FilledButton.styleFrom(
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
@@ -190,6 +241,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
           // ),
           // const SizedBox(height: 86),
         ],
+        ),
       ),
     );
   }
@@ -219,6 +271,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
         bool isMultiline = false,
         double minHeight = 48,
         TextInputType? keyboardType,
+        String? Function(String?)? validator,
       }) {
     const textColor = Color(0xFF5B5B5B);
     final hintStyle = TextStyle(
@@ -238,6 +291,8 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
         keyboardType: keyboardType ?? TextInputType.text,
         maxLines: isMultiline ? null : 1,
         minLines: isMultiline ? 3 : 1,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        validator: validator,
         style: TextStyle(
           fontSize: 14,
           color: textColor,

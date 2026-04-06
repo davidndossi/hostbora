@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
-import '../../rent_theme.dart';
+import '../../widgets/rent_real_dashboard_sections.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_financial_comparison_controller.dart';
 
@@ -9,54 +10,29 @@ class RentFinancialComparisonView extends BaseView<RentFinancialComparisonContro
   RentFinancialComparisonView({super.key});
 
   @override
-  Color pageBackgroundColor(BuildContext context) => RentTheme.bg;
-
-  @override
   PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Financial comparison');
 
   @override
-  Widget body(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: rentCard(
-        child: Table(
-          border: TableBorder.all(
-            color: RentTheme.border,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          children: [
-            const TableRow(
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Text('Metric', style: TextStyle(fontWeight: FontWeight.w700)),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Text('This year'),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Text('Last year'),
-                ),
-              ],
-            ),
-            _tr('NOI', '12.4M', '11.1M'),
-            _tr('Opex ratio', '32%', '34%'),
-            _tr('Vacancy', '4%', '7%'),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget body(BuildContext context) => Obx(() {
+        if (controller.loadingRealData.value) return const Center(child: CircularProgressIndicator());
+        final d = controller.realData.value;
+        if (d == null) return const Center(child: Text('No financial data available yet.'));
+        final ratio = d.incomeTotal <= 0 ? 0.0 : (d.expenseTotal / d.incomeTotal) * 100;
 
-  TableRow _tr(String a, String b, String c) {
-    return TableRow(
-      children: [
-        Padding(padding: const EdgeInsets.all(8), child: Text(a)),
-        Padding(padding: const EdgeInsets.all(8), child: Text(b)),
-        Padding(padding: const EdgeInsets.all(8), child: Text(c)),
-      ],
-    );
-  }
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            rentSectionTitle('Finance', 'Comparison board', subtitle: 'Income and expense balance from recorded transactions.'),
+            const SizedBox(height: 12),
+            rentMetricGrid([
+              rentMetricTile(label: 'Income', value: 'TZS ${d.incomeTotal.toStringAsFixed(0)}', icon: Icons.south_west, accent: Colors.green),
+              rentMetricTile(label: 'Expense', value: 'TZS ${d.expenseTotal.toStringAsFixed(0)}', icon: Icons.north_east, accent: Colors.redAccent),
+              rentMetricTile(label: 'Net', value: 'TZS ${d.netProfit.toStringAsFixed(0)}', icon: Icons.account_balance_wallet_outlined, accent: Colors.blueGrey),
+              rentMetricTile(label: 'Expense ratio', value: '${ratio.toStringAsFixed(1)}%', icon: Icons.pie_chart_outline, accent: Colors.brown),
+            ]),
+            const SizedBox(height: 12),
+            rentCard(child: rentSplitBar(first: d.incomeTotal, second: d.expenseTotal)),
+          ],
+        );
+      });
 }

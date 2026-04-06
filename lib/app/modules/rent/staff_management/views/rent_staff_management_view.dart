@@ -59,9 +59,11 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
     const fill = Color(0xFFF1F1F1);
     return rentCard(
       padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Form(
+        key: controller.formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Icon(Icons.person_add_alt_1_rounded, color: _teal.withValues(alpha: 0.9), size: 22),
@@ -75,10 +77,12 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
           const SizedBox(height: 16),
           _capsLabel('FULL NAME'),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: controller.fullNameController,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
+            validator: controller.validateFullName,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: _fieldDeco(fill, hint: 'e.g. Zainab Hussein'),
           ),
           const SizedBox(height: 14),
@@ -113,10 +117,12 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
                     children: [
                       _capsLabel(controller.amountFieldLabel),
                       const SizedBox(height: 8),
-                      TextField(
+                      TextFormField(
                         controller: controller.amountController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         textInputAction: TextInputAction.next,
+                        validator: controller.validateAmount,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                         decoration: _fieldDeco(
                           fill,
                           hint: controller.amountHint,
@@ -134,10 +140,12 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
                   children: [
                     _capsLabel('PAYMENT DATE'),
                     const SizedBox(height: 8),
-                    TextField(
+                    TextFormField(
                       controller: controller.payDateController,
-                      keyboardType: TextInputType.text,
+                      keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.next,
+                      validator: controller.validatePayDate,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       decoration: _fieldDeco(fill, hint: '28'),
                     ),
                   ],
@@ -157,6 +165,8 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
                 decoration: _dropdownDeco(fill),
                 hint: const Text('Select a role...', style: TextStyle(color: Color(0xFF9CA3AF))),
                 isExpanded: true,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) => (value == null || value.isEmpty) ? 'Select a primary role' : null,
                 items: opts
                     .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
                     .toList(),
@@ -181,7 +191,8 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

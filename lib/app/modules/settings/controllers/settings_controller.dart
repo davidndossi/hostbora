@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../data/local/service/tenant_lease_reminder_service.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/repository/app_repository.dart';
@@ -8,6 +9,8 @@ import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
 
 class SettingsController extends BaseController {
+  static const tenantReminderTemplateKey = 'tenant_whatsapp_reminder_template';
+
   final PreferenceManager _preferenceManager = Get.find(tag: (PreferenceManager)
       .toString());
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
@@ -33,6 +36,8 @@ class SettingsController extends BaseController {
   var deathAnnouncements = false.obs;
   var eventReminders = false.obs;
   var receiveCommunityUpdates = false.obs;
+  final tenantReminderTemplate = ''.obs;
+  final runningLeaseReminderNow = false.obs;
 
   @override
   void onInit() {
@@ -145,6 +150,47 @@ class SettingsController extends BaseController {
     eventReminders.value = await _preferenceManager.getBool('event_reminders');
     receiveCommunityUpdates.value = await _preferenceManager.getBool('receive_community_updates');
     privacy.value = await _preferenceManager.getString('privacy');
+    tenantReminderTemplate.value = await _preferenceManager.getString(
+      tenantReminderTemplateKey,
+      defaultValue: '',
+    );
+  }
+
+  Future<void> saveTenantReminderTemplate(String value) async {
+    final trimmed = value.trim();
+    tenantReminderTemplate.value = trimmed;
+    await _preferenceManager.setString(tenantReminderTemplateKey, trimmed);
+    showSuccessMessage(
+      trimmed.isEmpty
+          ? 'Tenant reminder template cleared'
+          : 'Tenant reminder template saved',
+    );
+  }
+
+  String buildTenantReminderTemplatePreview(String template) {
+    final trimmed = template.trim();
+    if (trimmed.isEmpty) return '';
+    return trimmed
+        .replaceAll('{tenantName}', 'Amina Juma')
+        .replaceAll('{property}', 'Evergreen Estate Unit 4B')
+        .replaceAll('{rentAmount}', '450000')
+        .replaceAll('{rentFrequency}', 'Per Month')
+        .replaceAll('{leaseEnd}', '2026-04-01')
+        .replaceAll('{remainingBalance}', '300000');
+  }
+
+  Future<void> runLeaseReminderNow() async {
+    if (runningLeaseReminderNow.value) return;
+    runningLeaseReminderNow.value = true;
+    try {
+      final service = Get.find<TenantLeaseReminderService>();
+      await service.runNow();
+      showSuccessMessage('Lease reminder check completed');
+    } catch (_) {
+      showErrorMessage('Failed to run lease reminder check');
+    } finally {
+      runningLeaseReminderNow.value = false;
+    }
   }
 
   void savePreference() {

@@ -30,6 +30,7 @@ class RentStaffManagementController extends BaseController {
   RentStaffManagementController() : _local = Get.find<RentStaffLocalDataSource>();
 
   final RentStaffLocalDataSource _local;
+  final formKey = GlobalKey<FormState>();
 
   final staff = <RentStaffListItem>[].obs;
   final initialLoad = true.obs;
@@ -122,6 +123,29 @@ class RentStaffManagementController extends BaseController {
     return double.tryParse(cleaned);
   }
 
+  String? validateFullName(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Please enter full name';
+    if (v.length < 3) return 'Name is too short';
+    return null;
+  }
+
+  String? validateAmount(String? value) {
+    final parsed = _parseAmount(value ?? '');
+    if (parsed == null || parsed <= 0) return 'Please enter a valid amount';
+    return null;
+  }
+
+  String? validatePayDate(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Please enter payment date';
+    final day = int.tryParse(v);
+    if (day == null || day < 1 || day > 31) {
+      return 'Use a day between 1 and 31';
+    }
+    return null;
+  }
+
   void updatePaymentType(String? value) {
     if (value != null && value.isNotEmpty) {
       paymentType.value = value;
@@ -135,27 +159,17 @@ class RentStaffManagementController extends BaseController {
   }
 
   Future<void> registerStaff() async {
+    if (!(formKey.currentState?.validate() ?? false)) return;
     final name = fullNameController.text.trim();
     final payDay = payDateController.text.trim();
     final role = selectedPrimaryRole.value.trim();
     final amount = _parseAmount(amountController.text);
 
-    if (name.isEmpty) {
-      Get.snackbar('Error', 'Please enter full name');
-      return;
-    }
     if (role.isEmpty) {
       Get.snackbar('Error', 'Please select a primary role');
       return;
     }
-    if (amount == null || amount <= 0) {
-      Get.snackbar('Error', 'Please enter a valid amount');
-      return;
-    }
-    if (payDay.isEmpty) {
-      Get.snackbar('Error', 'Please enter payment date');
-      return;
-    }
+    if (amount == null) return;
 
     showLoading();
     try {

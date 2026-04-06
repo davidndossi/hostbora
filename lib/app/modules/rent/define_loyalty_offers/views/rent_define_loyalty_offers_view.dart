@@ -24,9 +24,11 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
   Widget body(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Form(
+        key: controller.formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Text.rich(
             TextSpan(
               style: const TextStyle(fontSize: 24, height: 1.15),
@@ -101,7 +103,25 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
           _offerTypeCard(),
           const SizedBox(height: 16),
           _termsCard(),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: controller.onDeploy,
+              style: FilledButton.styleFrom(
+                backgroundColor: _LoyaltyPalette.teal,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text(
+                'Deploy Loyalty Program',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+            ),
+          ),
         ],
+        ),
       ),
     );
   }
@@ -195,6 +215,7 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
             controller: controller.minStayController,
             hint: '12',
             suffix: 'Months',
+            validator: controller.validateMinStay,
           ),
           const SizedBox(height: 14),
           _fieldLabel('TOTAL REVENUE THRESHOLD (TSH)'),
@@ -203,6 +224,7 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
             controller: controller.revenueController,
             hint: '5,000,000',
             suffix: 'Tsh',
+            validator: controller.validateRevenue,
           ),
         ],
       ),
@@ -271,9 +293,11 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
           const SizedBox(height: 14),
           _fieldLabel('DESCRIPTION OF THE OFFER TERMS'),
           const SizedBox(height: 6),
-          TextField(
+          TextFormField(
             controller: controller.termsController,
             maxLines: 5,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: controller.validateTerms,
             style: const TextStyle(fontSize: 14, height: 1.4, color: _LoyaltyPalette.navy),
             decoration: InputDecoration(
               hintText:
@@ -309,9 +333,12 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
     required TextEditingController controller,
     required String hint,
     required String suffix,
+    String? Function(String?)? validator,
   }) {
-    return TextField(
+    return TextFormField(
       controller: controller,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: validator,
       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _LoyaltyPalette.navy),
       decoration: InputDecoration(
         hintText: hint,

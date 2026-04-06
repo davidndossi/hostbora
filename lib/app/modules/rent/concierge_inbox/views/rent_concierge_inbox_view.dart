@@ -64,11 +64,40 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          Obx(
+            () => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _FilterChip(
+                  label: 'All (${controller.allCount})',
+                  selected: controller.selectedFilter.value == 'all',
+                  onTap: () => controller.setFilter('all'),
+                ),
+                _FilterChip(
+                  label: 'Urgent (${controller.urgentCount})',
+                  selected: controller.selectedFilter.value == 'urgent',
+                  onTap: () => controller.setFilter('urgent'),
+                ),
+                _FilterChip(
+                  label: 'Maintenance (${controller.maintenanceCount})',
+                  selected: controller.selectedFilter.value == 'maintenance',
+                  onTap: () => controller.setFilter('maintenance'),
+                ),
+                _FilterChip(
+                  label: 'Unread (${controller.unreadCount})',
+                  selected: controller.selectedFilter.value == 'unread',
+                  onTap: () => controller.setFilter('unread'),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 20),
-          if (controller.urgentItems.isNotEmpty) ...[
-            _urgentSectionHeader(criticalCount: controller.urgentItems.length),
+          if (controller.filteredUrgentItems.isNotEmpty) ...[
+            _urgentSectionHeader(criticalCount: controller.filteredUrgentItems.length),
             const SizedBox(height: 12),
-            ...controller.urgentItems.map(
+            ...controller.filteredUrgentItems.map(
               (e) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _UrgentCard(
@@ -91,10 +120,10 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
               ),
             ),
           ],
-          if (controller.maintenanceItems.isNotEmpty) ...[
+          if (controller.filteredMaintenanceItems.isNotEmpty) ...[
             _sectionTitle(icon: Icons.build_circle_outlined, label: 'Scheduled Maintenance'),
             const SizedBox(height: 12),
-            ...controller.maintenanceItems.map(
+            ...controller.filteredMaintenanceItems.map(
               (e) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _MaintenanceCard(
@@ -787,6 +816,47 @@ class _SquareIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(icon, size: 20, color: iconColor),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? _InboxPalette.primaryTeal : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? _InboxPalette.primaryTeal : _InboxPalette.border,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: selected ? Colors.white : _InboxPalette.navy,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,6 @@
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+
+import 'app_local_database.dart';
 
 /// Local rent listing row persisted for the Rent hub (offline-first).
 class RentPropertyRecord {
@@ -54,9 +54,7 @@ class RentPropertyRecord {
 }
 
 class RentPropertyLocalDataSource {
-  static const _dbName = 'rent_properties.db';
-  static const _table = 'rent_properties';
-  static const _version = 2;
+  static const _table = AppLocalDatabase.rentPropertiesTable;
 
   Database? _db;
 
@@ -67,34 +65,7 @@ class RentPropertyLocalDataSource {
   }
 
   Future<Database> _open() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final path = p.join(dir.path, _dbName);
-    return openDatabase(
-      path,
-      version: _version,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE $_table (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            property_location TEXT NOT NULL,
-            apartment_suite TEXT NOT NULL DEFAULT '',
-            property_type TEXT NOT NULL DEFAULT '',
-            rent_amount TEXT NOT NULL DEFAULT '',
-            rent_frequency TEXT NOT NULL DEFAULT '',
-            min_rental_duration TEXT NOT NULL DEFAULT '',
-            created_at_ms INTEGER NOT NULL,
-            units_json TEXT NOT NULL DEFAULT ''
-          )
-        ''');
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute(
-            'ALTER TABLE $_table ADD COLUMN units_json TEXT NOT NULL DEFAULT ""',
-          );
-        }
-      },
-    );
+    return AppLocalDatabase.database;
   }
 
   Future<int> insert(RentPropertyRecord row) async {

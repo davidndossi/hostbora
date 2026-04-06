@@ -1,8 +1,7 @@
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '/app/modules/rent/staff_management/utils/rent_staff_pay_format.dart';
+import 'app_local_database.dart';
 
 class RentStaffRecord {
   const RentStaffRecord({
@@ -48,9 +47,7 @@ class RentStaffRecord {
 }
 
 class RentStaffLocalDataSource {
-  static const _dbName = 'rent_staff.db';
-  static const _table = 'rent_staff';
-  static const _version = 2;
+  static const _table = AppLocalDatabase.rentStaffTable;
 
   Database? _db;
 
@@ -61,36 +58,7 @@ class RentStaffLocalDataSource {
   }
 
   Future<Database> _open() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final path = p.join(dir.path, _dbName);
-    return openDatabase(
-      path,
-      version: _version,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE $_table (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            job_title TEXT NOT NULL DEFAULT '',
-            pay_amount_label TEXT NOT NULL DEFAULT '',
-            pay_day_label TEXT NOT NULL DEFAULT '',
-            created_at_ms INTEGER NOT NULL,
-            payment_type TEXT NOT NULL DEFAULT 'monthly',
-            amount_value REAL NOT NULL DEFAULT 0
-          )
-        ''');
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute(
-            "ALTER TABLE $_table ADD COLUMN payment_type TEXT NOT NULL DEFAULT 'monthly'",
-          );
-          await db.execute(
-            'ALTER TABLE $_table ADD COLUMN amount_value REAL NOT NULL DEFAULT 0',
-          );
-        }
-      },
-    );
+    return AppLocalDatabase.database;
   }
 
   Future<int> insert({

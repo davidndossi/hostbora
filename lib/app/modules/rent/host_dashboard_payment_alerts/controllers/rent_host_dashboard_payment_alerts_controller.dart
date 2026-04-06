@@ -2,16 +2,25 @@ import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../routes/app_pages.dart';
+import '../../rent_real_data_controller_mixin.dart';
 
-/// Host payment alerts hub — demo actions; replace with API / real navigation.
-class RentHostDashboardPaymentAlertsController extends BaseController {
+class RentHostDashboardPaymentAlertsController extends BaseController
+    with RentRealDataControllerMixin {
+  @override
+  void onReady() {
+    super.onReady();
+    loadRealDataSnapshot();
+  }
+
   void openSetReminder() {
+    final data = realData.value;
+    final tenantName = data != null && data.tenants > 0 ? 'Tenant payment reminder' : '';
     Get.toNamed(
       Routes.RENT_SCHEDULE_PAYMENT_REMINDER,
       parameters: {
-        'name': 'Amara Okafor',
-        'property': 'Premier Suite 402, Evergreen Estate',
-        'balance': '400000',
+        'name': tenantName,
+        'property': '',
+        'balance': '',
       },
     );
   }
@@ -25,7 +34,7 @@ class RentHostDashboardPaymentAlertsController extends BaseController {
   }
 
   void onViewAllDelinquencies() {
-    showSuccessMessage('Opening delinquencies');
+    showSuccessMessage('Opening real payment delinquencies');
   }
 
   void onSendLateNotice() {
@@ -33,6 +42,6 @@ class RentHostDashboardPaymentAlertsController extends BaseController {
   }
 
   void onMonitorNewTenant() {
-    showSuccessMessage('Monitor new tenant');
+    showSuccessMessage('Monitoring tenant payments');
   }
 }

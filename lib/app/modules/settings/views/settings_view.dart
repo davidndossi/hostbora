@@ -59,6 +59,31 @@ class SettingsView extends BaseView<SettingsController> {
                 title: Text(appLocalization.sendMessage),
                 value: Text(appLocalization.sendSmsWhatsapp),
               ),
+              SettingsTile.navigation(
+                onPressed: (context) => _showTenantReminderTemplateDialog(context),
+                leading: const Icon(Icons.chat_outlined),
+                title: const Text('Tenant reminder template'),
+                description: const Text('Used for automatic WhatsApp reminders when tenancy ends'),
+                value: Obx(
+                  () => Text(
+                    controller.tenantReminderTemplate.value.trim().isEmpty
+                        ? 'Not set'
+                        : 'Configured',
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile(
+                onPressed: (context) => controller.runLeaseReminderNow(),
+                leading: const Icon(Icons.play_circle_outline),
+                title: const Text('Run lease reminder now'),
+                description: const Text('Manually trigger one-month lease reminder check'),
+                value: Obx(
+                  () => Text(
+                    controller.runningLeaseReminderNow.value ? 'Running...' : 'Tap to run',
+                  ),
+                ),
+              ),
               SettingsTile(
                 onPressed: (context) => controller.toggleTheme(),
                 title: Text(appLocalization.theme),
@@ -203,6 +228,77 @@ class SettingsView extends BaseView<SettingsController> {
       context: context,
       builder: (BuildContext context) {
         return alert;
+      },
+    );
+  }
+
+  void _showTenantReminderTemplateDialog(BuildContext context) {
+    final textController = TextEditingController(
+      text: controller.tenantReminderTemplate.value,
+    );
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Tenant reminder template'),
+          content: TextField(
+            controller: textController,
+            minLines: 3,
+            maxLines: 6,
+            decoration: const InputDecoration(
+              hintText:
+                  'Example: Hello {tenantName}, your tenancy has ended. Please renew and pay your outstanding balance.',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await controller.saveTenantReminderTemplate('');
+                if (context.mounted) Navigator.of(context).pop();
+              },
+              child: const Text('Clear'),
+            ),
+            TextButton(
+              onPressed: () {
+                final preview = controller.buildTenantReminderTemplatePreview(
+                  textController.text,
+                );
+                if (preview.trim().isEmpty) {
+                  controller.showErrorMessage('Enter a template first to preview');
+                  return;
+                }
+                showDialog(
+                  context: context,
+                  builder: (ctx) {
+                    return AlertDialog(
+                      title: const Text('Template preview'),
+                      content: Text(preview),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: const Text('Preview'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                await controller.saveTenantReminderTemplate(textController.text);
+                if (context.mounted) Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
       },
     );
   }

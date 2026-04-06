@@ -31,9 +31,11 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(18, 6, 18, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            child: Form(
+              key: controller.formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 _whiteCard(
                   children: [
                     const SizedBox(height: 14),
@@ -85,10 +87,12 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
                             children: [
                               Expanded(
                                 flex: 3,
-                                child: TextField(
+                                child: TextFormField(
                                   controller: controller.rentAmountController,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   textInputAction: TextInputAction.next,
+                                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                                  validator: controller.validateRentAmount,
                                   style: const TextStyle(fontSize: 16, color: Color(0xFF2E2E2E)),
                                   decoration: InputDecoration(
                                     prefix: Text(
@@ -208,6 +212,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
                   ],
                 ),
               ],
+              ),
             ),
           ),
         ),
@@ -411,12 +416,14 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
     required String hint,
   }) {
     const fill = Color(0xFFF1F1F1);
-    return TextField(
+    return TextFormField(
       controller: fieldController,
       textInputAction: TextInputAction.next,
       keyboardType: TextInputType.streetAddress,
       minLines: 1,
       maxLines: 3,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: controller.validateLocation,
       style: const TextStyle(fontSize: 14, color: Color(0xFF2E2E2E)),
       decoration: InputDecoration(
         // prefix: Icon(icon, size: 14, color: const Color(0xFF6B6B6B)),

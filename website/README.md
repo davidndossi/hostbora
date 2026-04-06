@@ -25,4 +25,4 @@ Edit:
 - `website/styles.css`
 - `website/app.js`
 
-Assets live in `website/assets/`.
+Assets live in `website/assets/`, including **`logo.svg`** (header, footer, favicon, hero eyebrow). Replace `logo.svg` if you add an official brand pack.

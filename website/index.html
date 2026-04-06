@@ -4,15 +4,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#1C6E64" />
-    <meta name="description" content="Paa Yangu helps bnb hosts manage properties, bookings, payments, expenses, and tasks — in one place." />
+    <meta name="description" content="Host Bora helps bnb hosts manage properties, bookings, payments, expenses, and tasks — in one place." />
 
-    <title>Paa Yangu — Host smarter</title>
+    <meta property="og:title" content="Host Bora — Host smarter" />
+    <meta property="og:description" content="Host Bora helps bnb hosts manage properties, bookings, payments, expenses, and tasks — in one place." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="./assets/home_1.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Host Bora — Host smarter" />
+    <meta name="twitter:image" content="./assets/home_1.png" />
+
+    <title>Host Bora — Host smarter</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <link rel="icon" href="./assets/ic_vault.svg" type="image/svg+xml" />
+    <link rel="icon" href="./assets/logo.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="./assets/ic_vault.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -20,9 +29,9 @@
 
     <header class="header" id="top">
       <div class="container header__inner">
-        <a class="brand" href="#top" aria-label="Paa Yangu home">
-          <span class="brand__mark" aria-hidden="true"></span>
-          <span class="brand__name">Paa Yangu</span>
+        <a class="brand" href="#top" aria-label="Host Bora home">
+          <img class="brand__logo" src="./assets/logo.svg" width="34" height="34" alt="" aria-hidden="true" decoding="async" />
+          <span class="brand__name">Host Bora</span>
         </a>
 
         <button class="icon-btn header__menu" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
@@ -36,6 +45,7 @@
           <a href="#screens">Screens</a>
           <a href="#how">How it works</a>
           <a href="#faq">FAQ</a>
+          <a href="./privacy-policy.html">Privacy</a>
           <a class="btn btn--sm btn--ghost" href="#contact">Contact</a>
         </nav>
       </div>
@@ -45,10 +55,13 @@
       <section class="hero">
         <div class="container hero__grid">
           <div class="hero__copy">
-            <p class="eyebrow">All-in-one host toolkit</p>
+            <p class="eyebrow eyebrow--logo">
+              <img src="./assets/logo.svg" width="22" height="22" alt="" aria-hidden="true" class="eyebrow__mark" decoding="async" />
+              <span>All-in-one host toolkit</span>
+            </p>
             <h1>Run your properties with clarity — bookings, payments, expenses, and tasks.</h1>
             <p class="lead">
-              Paa Yangu helps bnb hosts stay organized. Track bookings, record payments, manage expenses, keep maintenance tasks on time, and store important documents.
+              Host Bora helps bnb hosts stay organized. Track bookings, record payments, manage expenses, keep maintenance tasks on time, and store important documents.
             </p>
 
             <div class="cta">
@@ -137,7 +150,7 @@
 
           <div class="screens">
             <figure class="shot">
-              <img src="./assets/figma_thumb.png" alt="Figma preview of Paa Yangu screens" loading="lazy" />
+              <img src="./assets/figma_thumb.png" alt="Figma preview of Host Bora screens" loading="lazy" />
               <figcaption>Preview from your design file</figcaption>
             </figure>
             <div class="shot__copy">
@@ -249,7 +262,7 @@
               </label>
               <label>
                 <span>Message</span>
-                <textarea name="message" rows="4" placeholder="What do you want to manage with Paa Yangu?"></textarea>
+                <textarea name="message" rows="4" placeholder="What do you want to manage with Host Bora?"></textarea>
               </label>
               <button class="btn" id="contactBtn" type="submit">Copy message</button>
               <p class="hint">This demo form copies a ready-to-send email to your clipboard.</p>
@@ -263,8 +276,8 @@
       <div class="container footer__inner">
         <div>
           <div class="brand brand--foot">
-            <span class="brand__mark" aria-hidden="true"></span>
-            <span class="brand__name">Paa Yangu</span>
+            <img class="brand__logo" src="./assets/logo.svg" width="28" height="28" alt="" aria-hidden="true" decoding="async" />
+            <span class="brand__name">Host Bora</span>
           </div>
           <p class="muted">An app for bnb hosts to manage their properties.</p>
         </div>
@@ -272,6 +285,7 @@
           <a href="#features">Features</a>
           <a href="#faq">FAQ</a>
           <a href="#contact">Contact</a>
+          <a href="./privacy-policy.html">Privacy Policy</a>
         </div>
       </div>
     </footer>

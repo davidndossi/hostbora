@@ -94,5 +94,9 @@
 		<string>bluetooth-peripheral</string>
 		<string>fetch</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>be.tramckrijte.workmanager.background.task</string>
+	</array>
 </dict>
 </plist>

@@ -21,6 +21,7 @@ class RentAddNewListingController extends BaseController {
   final propertyLocationController = TextEditingController();
   final apartmentSuiteController = TextEditingController();
   final rentAmountController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
 
   final apartmentUnits = <ApartmentUnitDraft>[].obs;
   final draftUnitNameController = TextEditingController();
@@ -89,10 +90,24 @@ class RentAddNewListingController extends BaseController {
   }
 
   Future<void> saveProperty() async {
+    if (!(formKey.currentState?.validate() ?? false)) return;
+
     final location = propertyLocationController.text.trim();
     if (location.isEmpty) {
       Get.snackbar('Error', 'Please enter a property location');
       return;
+    }
+    if (isApartmentProperty && apartmentUnits.isEmpty) {
+      Get.snackbar('Error', 'Add at least one apartment unit');
+      return;
+    }
+    if (!hideListingRentAmount) {
+      final rentRaw = rentAmountController.text.trim().replaceAll(',', '');
+      final rentValue = double.tryParse(rentRaw);
+      if (rentValue == null || rentValue <= 0) {
+        Get.snackbar('Error', 'Please enter a valid rent amount');
+        return;
+      }
     }
     showLoading();
     try {
@@ -117,6 +132,22 @@ class RentAddNewListingController extends BaseController {
     } finally {
       hideLoading();
     }
+  }
+
+  String? validateLocation(String? value) {
+    final v = (value ?? '').trim();
+    if (v.isEmpty) return 'Property location is required';
+    if (v.length < 3) return 'Enter a valid location';
+    return null;
+  }
+
+  String? validateRentAmount(String? value) {
+    if (hideListingRentAmount) return null;
+    final raw = (value ?? '').trim().replaceAll(',', '');
+    if (raw.isEmpty) return 'Rent amount is required';
+    final n = double.tryParse(raw);
+    if (n == null || n <= 0) return 'Enter a valid amount';
+    return null;
   }
 
   @override
