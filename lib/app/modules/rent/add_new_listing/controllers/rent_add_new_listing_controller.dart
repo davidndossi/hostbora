@@ -5,12 +5,21 @@ import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/preference/preference_manager.dart';
+import '../../../../data/local/service/workspace_context_service.dart';
 import '../models/apartment_unit_draft.dart';
 
 class RentAddNewListingController extends BaseController {
-  RentAddNewListingController() : _local = Get.find<RentPropertyLocalDataSource>();
+  RentAddNewListingController()
+      : _local = Get.find<RentPropertyLocalDataSource>(),
+        _preferenceManager = Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+        _workspaceContext = Get.find<WorkspaceContextService>();
 
   final RentPropertyLocalDataSource _local;
+  final PreferenceManager _preferenceManager;
+  final WorkspaceContextService _workspaceContext;
   final propertyType = 'Apartment'.obs;
   final rentFrequency = 'Per Month'.obs;
   final minRentalDuration = '6 Months'.obs;
@@ -111,6 +120,7 @@ class RentAddNewListingController extends BaseController {
     }
     showLoading();
     try {
+      final workspaceType = await _workspaceContext.getWorkspaceType();
       await _local.insert(
         RentPropertyRecord(
           id: 0,
@@ -120,6 +130,9 @@ class RentAddNewListingController extends BaseController {
           rentAmount: rentAmountController.text.trim(),
           rentFrequency: rentFrequency.value,
           minRentalDuration: minRentalDuration.value,
+          propertyRef: 'local_${DateTime.now().millisecondsSinceEpoch}',
+          ownerUserId: (await _preferenceManager.getUser()).id ?? '',
+          workspaceType: workspaceType,
           createdAtMs: DateTime.now().millisecondsSinceEpoch,
           unitsJson: _unitsJsonForSave(),
         ),

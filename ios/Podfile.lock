@@ -129,6 +129,8 @@ PODS:
     - Flutter
   - flutter_secure_storage (6.0.0):
     - Flutter
+  - flutter_timezone (0.0.1):
+    - Flutter
   - fluttertoast (0.0.2):
     - Flutter
   - GoogleAdsOnDeviceConversion (2.1.0):
@@ -492,6 +494,8 @@ PODS:
     - ThingSmartHomeKit (~> 6.7.0)
   - url_launcher_ios (0.0.1):
     - Flutter
+  - workmanager_apple (0.0.1):
+    - Flutter
   - YYModel (1.0.4)
 
 DEPENDENCIES:
@@ -505,6 +509,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
+  - flutter_timezone (from `.symlinks/plugins/flutter_timezone/ios`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - local_auth_darwin (from `.symlinks/plugins/local_auth_darwin/darwin`)
@@ -519,32 +524,9 @@ DEPENDENCIES:
   - ThingSmartLockKit (~> 6.7.0)
   - tuya_home_sdk_flutter (from `.symlinks/plugins/tuya_home_sdk_flutter/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
+  - workmanager_apple (from `.symlinks/plugins/workmanager_apple/ios`)
 
 SPEC REPOS:
-  https://github.com/CocoaPods/Specs.git:
-    - DKImagePickerController
-    - DKPhotoGallery
-    - Firebase
-    - FirebaseAnalytics
-    - FirebaseCore
-    - FirebaseCoreExtension
-    - FirebaseCoreInternal
-    - FirebaseCrashlytics
-    - FirebaseInstallations
-    - FirebaseMessaging
-    - FirebaseRemoteConfigInterop
-    - FirebaseSessions
-    - GoogleAdsOnDeviceConversion
-    - GoogleAppMeasurement
-    - GoogleDataTransport
-    - GoogleUtilities
-    - libwebp
-    - nanopb
-    - PromisesObjC
-    - PromisesSwift
-    - SDWebImage
-    - SwiftyGif
-    - YYModel
   https://github.com/tuya/tuya-pod-specs.git:
     - ThingAudioEngineSDK
     - ThingAvLoggerSDK
@@ -592,6 +574,30 @@ SPEC REPOS:
     - ThingSmartTimerKit
     - ThingSmartUtil
     - ThingVideoCodecSDK
+  trunk:
+    - DKImagePickerController
+    - DKPhotoGallery
+    - Firebase
+    - FirebaseAnalytics
+    - FirebaseCore
+    - FirebaseCoreExtension
+    - FirebaseCoreInternal
+    - FirebaseCrashlytics
+    - FirebaseInstallations
+    - FirebaseMessaging
+    - FirebaseRemoteConfigInterop
+    - FirebaseSessions
+    - GoogleAdsOnDeviceConversion
+    - GoogleAppMeasurement
+    - GoogleDataTransport
+    - GoogleUtilities
+    - libwebp
+    - nanopb
+    - PromisesObjC
+    - PromisesSwift
+    - SDWebImage
+    - SwiftyGif
+    - YYModel
 
 EXTERNAL SOURCES:
   camera_avfoundation:
@@ -614,6 +620,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   flutter_secure_storage:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
+  flutter_timezone:
+    :path: ".symlinks/plugins/flutter_timezone/ios"
   fluttertoast:
     :path: ".symlinks/plugins/fluttertoast/ios"
   image_picker_ios:
@@ -636,6 +644,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/tuya_home_sdk_flutter/ios"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
+  workmanager_apple:
+    :path: ".symlinks/plugins/workmanager_apple/ios"
 
 SPEC CHECKSUMS:
   camera_avfoundation: 281867ff09f1da66f031a184ecfbc6f2e625c9f5
@@ -660,6 +670,7 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_local_notifications: ff50f8405aaa0ccdc7dcfb9022ca192e8ad9688f
   flutter_secure_storage: d33dac7ae2ea08509be337e775f6b59f1ff45f12
+  flutter_timezone: ac3da59ac941ff1c98a2e1f0293420e020120282
   fluttertoast: 21eecd6935e7064cc1fcb733a4c5a428f3f24f0f
   GoogleAdsOnDeviceConversion: 2be6297a4f048459e0ae17fad9bfd2844e10cf64
   GoogleAppMeasurement: 700dce7541804bec33db590a5c496b663fbe2539
@@ -727,8 +738,9 @@ SPEC CHECKSUMS:
   ThingVideoCodecSDK: 857e79a3eaf4dacd6712d848be67b5e869427564
   tuya_home_sdk_flutter: 784e5919d81113f8dbfe30413a0f22e7b6d31034
   url_launcher_ios: bb13df5870e8c4234ca12609d04010a21be43dfa
+  workmanager_apple: 7bac258335c310689a641e2d66e88d4845d372e9
   YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
 
-PODFILE CHECKSUM: 385eaf78d016c4c8e18daff2dcc78fa961c5d189
+PODFILE CHECKSUM: 8785a6b2c475a5d65aa7d19b6c97bb2ff4b50f97
 
 COCOAPODS: 1.16.2

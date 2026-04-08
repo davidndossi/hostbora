@@ -9,7 +9,7 @@ class AppLocalDatabase {
   AppLocalDatabase._();
 
   static const dbName = 'paa_yangu_local.db';
-  static const dbVersion = 10;
+  static const dbVersion = 12;
 
   static const rentPropertiesTable = 'rent_properties';
   static const rentStaffTable = 'rent_staff';
@@ -21,6 +21,8 @@ class AppLocalDatabase {
   static const rentScheduledMaintenanceTable = 'rent_scheduled_maintenance';
   static const rentPaymentReminderTable = 'rent_payment_reminder';
   static const rentNotificationLogTable = 'rent_notification_log';
+  static const rentPropertyEstimateTable = 'rent_property_estimate';
+  static const propertyMembersTable = 'property_members';
   static const offlineSyncQueueTable = 'offline_sync_queue';
 
   static Database? _db;
@@ -52,6 +54,9 @@ class AppLocalDatabase {
         rent_amount TEXT NOT NULL DEFAULT '',
         rent_frequency TEXT NOT NULL DEFAULT '',
         min_rental_duration TEXT NOT NULL DEFAULT '',
+        property_ref TEXT NOT NULL DEFAULT '',
+        owner_user_id TEXT NOT NULL DEFAULT '',
+        workspace_type TEXT NOT NULL DEFAULT 'rent',
         created_at_ms INTEGER NOT NULL,
         units_json TEXT NOT NULL DEFAULT ''
       )
@@ -177,6 +182,38 @@ class AppLocalDatabase {
         created_at_ms INTEGER NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE $rentPropertyEstimateTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_ref TEXT NOT NULL UNIQUE,
+        property_label TEXT NOT NULL,
+        purchase_cost REAL NOT NULL DEFAULT 0,
+        renovation_cost REAL NOT NULL DEFAULT 0,
+        expected_monthly_income REAL NOT NULL DEFAULT 0,
+        expected_monthly_expense REAL NOT NULL DEFAULT 0,
+        target_occupancy_percent REAL NOT NULL DEFAULT 0,
+        created_at_ms INTEGER NOT NULL,
+        updated_at_ms INTEGER NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE $propertyMembersTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_ref TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        workspace_type TEXT NOT NULL DEFAULT 'rent',
+        role TEXT NOT NULL DEFAULT 'co_host',
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE UNIQUE INDEX idx_${propertyMembersTable}_unique ON $propertyMembersTable(property_ref, user_id, workspace_type)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_${propertyMembersTable}_workspace_user ON $propertyMembersTable(workspace_type, user_id)',
+    );
 
     await db.execute('''
       CREATE TABLE $offlineSyncQueueTable (
@@ -374,6 +411,56 @@ class AppLocalDatabase {
           created_at_ms INTEGER NOT NULL
         )
       ''');
+    }
+
+    // v11 introduces per-property ROI estimate table.
+    if (oldVersion < 11 && newVersion >= 11) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $rentPropertyEstimateTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          property_ref TEXT NOT NULL UNIQUE,
+          property_label TEXT NOT NULL,
+          purchase_cost REAL NOT NULL DEFAULT 0,
+          renovation_cost REAL NOT NULL DEFAULT 0,
+          expected_monthly_income REAL NOT NULL DEFAULT 0,
+          expected_monthly_expense REAL NOT NULL DEFAULT 0,
+          target_occupancy_percent REAL NOT NULL DEFAULT 0,
+          created_at_ms INTEGER NOT NULL,
+          updated_at_ms INTEGER NOT NULL
+        )
+      ''');
+    }
+
+    // v12 introduces property membership for co-hosting + workspace scoping.
+    if (oldVersion < 12 && newVersion >= 12) {
+      await _safeAlter(
+        db,
+        'ALTER TABLE $rentPropertiesTable ADD COLUMN property_ref TEXT NOT NULL DEFAULT ""',
+      );
+      await _safeAlter(
+        db,
+        'ALTER TABLE $rentPropertiesTable ADD COLUMN owner_user_id TEXT NOT NULL DEFAULT ""',
+      );
+      await _safeAlter(
+        db,
+        "ALTER TABLE $rentPropertiesTable ADD COLUMN workspace_type TEXT NOT NULL DEFAULT 'rent'",
+      );
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $propertyMembersTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          property_ref TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          workspace_type TEXT NOT NULL DEFAULT 'rent',
+          role TEXT NOT NULL DEFAULT 'co_host',
+          created_at_ms INTEGER NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_${propertyMembersTable}_unique ON $propertyMembersTable(property_ref, user_id, workspace_type)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_${propertyMembersTable}_workspace_user ON $propertyMembersTable(workspace_type, user_id)',
+      );
     }
   }
 

@@ -1,8 +1,15 @@
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/rent_expense_local_data_source.dart';
+import '../../../../data/local/db/rent_income_local_data_source.dart';
+import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/preference/preference_manager.dart';
+import '../../../../data/local/service/workspace_context_service.dart';
 
-/// Portfolio listing row for the hub carousel. Replace with API models later.
+/// Portfolio listing row for the hub carousel.
+/// Kept for backward compatibility in the view; populated from real data only.
 class RentHubListingItem {
   const RentHubListingItem({
     required this.imageAsset,
@@ -20,42 +27,135 @@ class RentHubListingItem {
 }
 
 class RentHubController extends BaseController {
+  RentHubController({
+    RentIncomeLocalDataSource? incomeLocal,
+    RentExpenseLocalDataSource? expenseLocal,
+    RentPropertyLocalDataSource? propertyLocal,
+    PreferenceManager? preferenceManager,
+    WorkspaceContextService? workspaceContext,
+  })  : _incomeLocal = incomeLocal ?? Get.find<RentIncomeLocalDataSource>(),
+        _expenseLocal = expenseLocal ?? Get.find<RentExpenseLocalDataSource>(),
+        _propertyLocal = propertyLocal ?? Get.find<RentPropertyLocalDataSource>(),
+        _preferenceManager = preferenceManager ??
+            Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
+        workspaceContext = workspaceContext ?? Get.find<WorkspaceContextService>();
+
   static const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  static final NumberFormat _money = NumberFormat('#,###', 'en_US');
 
-  /// Mock chart values (millions TZS scale for bar heights).
-  final List<double> chartIncome = const [4.2, 5.1, 3.8, 6.2, 5.5, 4.9, 5.8];
-  final List<double> chartExpense = const [2.1, 2.4, 1.9, 2.8, 2.3, 2.0, 2.5];
+  final RentIncomeLocalDataSource _incomeLocal;
+  final RentExpenseLocalDataSource _expenseLocal;
+  final RentPropertyLocalDataSource _propertyLocal;
+  final PreferenceManager _preferenceManager;
+  final WorkspaceContextService workspaceContext;
 
-  final String netProfitLabel = 'Tsh 4,850,000';
-  final String profitTrendLabel = '+12% from last month';
-  final String totalIncomeLabel = 'Tsh 7.2M';
-  final String expensesLabel = 'Tsh 2.35M';
+  final _chartIncome = List<double>.filled(7, 0).obs;
+  final _chartExpense = List<double>.filled(7, 0).obs;
+  final _incomeTotal = 0.0.obs;
+  final _expenseTotal = 0.0.obs;
+  final _profitTrendPercent = 0.0.obs;
 
-  final listings = const <RentHubListingItem>[
-    RentHubListingItem(
-      imageAsset: 'images/luxury_room_view.png',
-      categoryLabel: 'RESIDENCE',
-      title: 'Unit 401 — Serenity Penthouse',
-      monthlyRentLabel: 'Tsh 1,200,000',
-      occupied: true,
-    ),
-    RentHubListingItem(
-      imageAsset: 'images/mediterranean_living_room.png',
-      categoryLabel: 'RESIDENCE',
-      title: 'Garden Villa C9',
-      monthlyRentLabel: 'Tsh 890,000',
-      occupied: true,
-    ),
-    RentHubListingItem(
-      imageAsset: 'images/modern_minimalist.jpg',
-      categoryLabel: 'RESIDENCE',
-      title: 'Skyline Loft 1B',
-      monthlyRentLabel: 'Tsh 650,000',
-      occupied: false,
-    ),
-  ];
+  final listings = <RentHubListingItem>[].obs;
+
+  List<double> get chartIncome => _chartIncome;
+  List<double> get chartExpense => _chartExpense;
+
+  String get netProfitLabel => 'Tsh ${_money.format((_incomeTotal.value - _expenseTotal.value).round())}';
+  String get totalIncomeLabel => 'Tsh ${_money.format(_incomeTotal.value.round())}';
+  String get expensesLabel => 'Tsh ${_money.format(_expenseTotal.value.round())}';
+  String get profitTrendLabel {
+    final p = _profitTrendPercent.value;
+    final sign = p > 0 ? '+' : '';
+    return '$sign${p.toStringAsFixed(1)}%';
+  }
 
   final selectedBottomNavIndex = 0.obs;
+
+  @override
+  void onReady() {
+    super.onReady();
+    refreshDashboard();
+  }
+
+  Future<void> refreshDashboard() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final weekStart = today.subtract(const Duration(days: 6));
+
+    final incomeRows = await _incomeLocal.getAllNewestFirst();
+    final expenseRows = await _expenseLocal.getAllNewestFirst();
+
+    var incomeTotal = 0.0;
+    var expenseTotal = 0.0;
+    final weekIncome = List<double>.filled(7, 0);
+    final weekExpense = List<double>.filled(7, 0);
+    var thisMonthIncome = 0.0;
+    var thisMonthExpense = 0.0;
+    var lastMonthIncome = 0.0;
+    var lastMonthExpense = 0.0;
+
+    final thisMonthStart = DateTime(now.year, now.month, 1);
+    final lastMonthStart = DateTime(now.year, now.month - 1, 1);
+    final thisMonthEnd = DateTime(now.year, now.month + 1, 1);
+
+    for (final row in incomeRows) {
+      final d = _safeDate(row.datePaidIso, row.createdAtMs);
+      incomeTotal += row.amountValue;
+      if (!d.isBefore(weekStart) && !d.isAfter(today)) {
+        weekIncome[differenceInDays(weekStart, d)] += row.amountValue;
+      }
+      if (!d.isBefore(thisMonthStart) && d.isBefore(thisMonthEnd)) {
+        thisMonthIncome += row.amountValue;
+      } else if (!d.isBefore(lastMonthStart) && d.isBefore(thisMonthStart)) {
+        lastMonthIncome += row.amountValue;
+      }
+    }
+
+    for (final row in expenseRows) {
+      final d = _safeDate(row.datePaidIso, row.createdAtMs);
+      expenseTotal += row.amountValue;
+      if (!d.isBefore(weekStart) && !d.isAfter(today)) {
+        weekExpense[differenceInDays(weekStart, d)] += row.amountValue;
+      }
+      if (!d.isBefore(thisMonthStart) && d.isBefore(thisMonthEnd)) {
+        thisMonthExpense += row.amountValue;
+      } else if (!d.isBefore(lastMonthStart) && d.isBefore(thisMonthStart)) {
+        lastMonthExpense += row.amountValue;
+      }
+    }
+
+    final thisNet = thisMonthIncome - thisMonthExpense;
+    final lastNet = lastMonthIncome - lastMonthExpense;
+    final trend = lastNet.abs() < 0.01 ? (thisNet == 0 ? 0.0 : 100.0) : ((thisNet - lastNet) / lastNet.abs()) * 100.0;
+
+    _incomeTotal.value = incomeTotal;
+    _expenseTotal.value = expenseTotal;
+    _chartIncome.assignAll(weekIncome);
+    _chartExpense.assignAll(weekExpense);
+    _profitTrendPercent.value = trend;
+
+    final userId = (await _preferenceManager.getUser()).id ?? '';
+    final workspaceType = await workspaceContext.getWorkspaceType();
+    final propertyRows = await _propertyLocal.getAllVisibleNewestFirst(
+      userId: userId,
+      workspaceType: workspaceType,
+    );
+    listings.assignAll(
+      propertyRows.map((p) {
+        return RentHubListingItem(
+          imageAsset: '',
+          categoryLabel: p.propertyType.toUpperCase(),
+          title: p.apartmentSuite.trim().isNotEmpty
+              ? p.apartmentSuite
+              : p.propertyLocation,
+          monthlyRentLabel: p.rentAmount.trim().isEmpty
+              ? 'Tsh 0'
+              : 'Tsh ${p.rentAmount}',
+          occupied: true,
+        );
+      }),
+    );
+  }
 
   void onBottomNavTap(int index) => selectedBottomNavIndex.value = index;
 
@@ -68,4 +168,20 @@ class RentHubController extends BaseController {
   void onReadManagementTips() {}
 
   void onConciergeSupportTap() {}
+
+  int differenceInDays(DateTime start, DateTime end) {
+    final s = DateTime(start.year, start.month, start.day);
+    final e = DateTime(end.year, end.month, end.day);
+    return e.difference(s).inDays.clamp(0, 6);
+  }
+
+  DateTime _safeDate(String iso, int createdAtMs) {
+    try {
+      final parsed = DateTime.parse(iso);
+      return DateTime(parsed.year, parsed.month, parsed.day);
+    } catch (_) {
+      final fromMs = DateTime.fromMillisecondsSinceEpoch(createdAtMs);
+      return DateTime(fromMs.year, fromMs.month, fromMs.day);
+    }
+  }
 }

@@ -1,7 +1,10 @@
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/property_members_local_data_source.dart';
 import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/preference/preference_manager.dart';
+import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../../routes/app_pages.dart';
 
@@ -25,10 +28,18 @@ class RentHubPropertyRow {
 class RentMyPropertiesHubController extends BaseController {
   RentMyPropertiesHubController()
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
-        _localRent = Get.find<RentPropertyLocalDataSource>();
+        _localRent = Get.find<RentPropertyLocalDataSource>(),
+        _propertyMembers = Get.find<PropertyMembersLocalDataSource>(),
+        _preferenceManager = Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+        _workspaceContext = Get.find<WorkspaceContextService>();
 
   final AppRepository _repository;
   final RentPropertyLocalDataSource _localRent;
+  final PropertyMembersLocalDataSource _propertyMembers;
+  final PreferenceManager _preferenceManager;
+  final WorkspaceContextService _workspaceContext;
 
   final properties = <RentHubPropertyRow>[].obs;
   final loading = false.obs;
@@ -42,7 +53,12 @@ class RentMyPropertiesHubController extends BaseController {
   Future<void> loadProperties() async {
     loading.value = true;
     try {
-      final localRecords = await _localRent.getAllNewestFirst();
+      final currentUserId = (await _preferenceManager.getUser()).id ?? '';
+      final workspaceType = await _workspaceContext.getWorkspaceType();
+      final localRecords = await _localRent.getAllVisibleNewestFirst(
+        userId: currentUserId,
+        workspaceType: workspaceType,
+      );
       final localRows = localRecords.map(_rowFromLocal).toList();
 
       List<RentHubPropertyRow> remoteRows = [];
@@ -76,7 +92,7 @@ class RentMyPropertiesHubController extends BaseController {
     final suite = r.apartmentSuite.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : (loc.isNotEmpty ? loc : 'Property');
     return RentHubPropertyRow(
-      id: 'local_${r.id}',
+      id: r.propertyRef.isNotEmpty ? r.propertyRef : 'legacy_${r.id}',
       title: title,
       imageUrl: '',
       propertyTypeLabel: r.propertyType.toUpperCase(),
@@ -107,5 +123,46 @@ class RentMyPropertiesHubController extends BaseController {
         loadProperties();
       }
     });
+  }
+
+  Future<void> addCoHost({
+    required String propertyRef,
+    required String coHostUserId,
+  }) async {
+    final targetUser = coHostUserId.trim();
+    if (targetUser.isEmpty) {
+      Get.snackbar('Error', 'Co-host user ID is required');
+      return;
+    }
+    await _propertyMembers.upsertMember(
+      propertyRef: propertyRef,
+      userId: targetUser,
+      workspaceType: await _workspaceContext.getWorkspaceType(),
+      role: 'co_host',
+    );
+    Get.snackbar('Success', 'Co-host access granted');
+  }
+
+  Future<List<PropertyMemberRecord>> listCoHosts({
+    required String propertyRef,
+  }) async {
+    return _propertyMembers.listMembers(
+      propertyRef: propertyRef,
+      workspaceType: await _workspaceContext.getWorkspaceType(),
+    );
+  }
+
+  Future<void> removeCoHost({
+    required String propertyRef,
+    required String coHostUserId,
+  }) async {
+    final targetUser = coHostUserId.trim();
+    if (targetUser.isEmpty) return;
+    await _propertyMembers.removeMember(
+      propertyRef: propertyRef,
+      userId: targetUser,
+      workspaceType: await _workspaceContext.getWorkspaceType(),
+    );
+    Get.snackbar('Success', 'Co-host removed');
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
 import '../../rent_theme.dart';
@@ -7,12 +8,13 @@ import '../controllers/rent_staff_payroll_details_controller.dart';
 
 class RentStaffPayrollDetailsView extends BaseView<RentStaffPayrollDetailsController> {
   RentStaffPayrollDetailsView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   Color pageBackgroundColor(BuildContext context) => RentTheme.bg;
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Staff payroll');
+  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(_isSw ? 'Mishahara ya Wafanyakazi' : 'Staff payroll');
 
   @override
   Widget body(BuildContext context) {
@@ -31,9 +33,9 @@ class RentStaffPayrollDetailsView extends BaseView<RentStaffPayrollDetailsContro
           ),
         ),
         const SizedBox(height: 12),
-        rentSectionLabel('Pay period'),
-        const Text(
-          'March 1 – March 31, 2026',
+        rentSectionLabel(_isSw ? 'Kipindi cha malipo' : 'Pay period'),
+        Text(
+          _isSw ? 'Machi 1 – Machi 31, 2026' : 'March 1 – March 31, 2026',
           style: TextStyle(color: RentTheme.muted),
         ),
       ],

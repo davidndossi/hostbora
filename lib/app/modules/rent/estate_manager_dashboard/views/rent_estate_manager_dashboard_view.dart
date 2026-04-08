@@ -8,20 +8,32 @@ import '../controllers/rent_estate_manager_dashboard_controller.dart';
 
 class RentEstateManagerDashboardView extends BaseView<RentEstateManagerDashboardController> {
   RentEstateManagerDashboardView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Estate manager dashboard');
+  PreferredSizeWidget? appBar(BuildContext context) =>
+      rentAppBar(_isSw ? 'Dashibodi ya Meneja wa Majengo' : 'Estate manager dashboard');
 
   @override
   Widget body(BuildContext context) => Obx(() {
         if (controller.loadingRealData.value) return const Center(child: CircularProgressIndicator());
         final d = controller.realData.value;
-        if (d == null) return const Center(child: Text('No real data available yet.'));
+        if (d == null) {
+          return Center(
+            child: Text(_isSw ? 'Hakuna data halisi bado.' : 'No real data available yet.'),
+          );
+        }
 
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            rentSectionTitle('Overview', 'Estate pulse', subtitle: 'Operations snapshot from live portfolio records.'),
+            rentSectionTitle(
+              _isSw ? 'Muhtasari' : 'Overview',
+              _isSw ? 'Mdundo wa majengo' : 'Estate pulse',
+              subtitle: _isSw
+                  ? 'Muhtasari wa uendeshaji kutoka rekodi hai za portfolio.'
+                  : 'Operations snapshot from live portfolio records.',
+            ),
             const SizedBox(height: 12),
             rentMetricGrid([
               rentMetricTile(label: 'Properties', value: '${d.properties}', icon: Icons.home_work_outlined, accent: Colors.teal),

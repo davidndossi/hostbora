@@ -18,9 +18,11 @@ abstract class _ReminderPalette {
 class RentSchedulePaymentReminderView
     extends BaseView<RentSchedulePaymentReminderController> {
   RentSchedulePaymentReminderView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Set Payment Reminder');
+  PreferredSizeWidget? appBar(BuildContext context) =>
+      rentAppBar(_isSw ? 'Weka Kikumbusho cha Malipo' : 'Set Payment Reminder');
 
   @override
   Widget body(BuildContext context) {
@@ -62,12 +64,12 @@ class RentSchedulePaymentReminderView
                 color: Colors.grey.shade800,
               ),
               children: [
-                const TextSpan(text: 'Set follow-up for '),
+                TextSpan(text: _isSw ? 'Weka ufuatiliaji kwa ' : 'Set follow-up for '),
                 TextSpan(
                   text: "${controller.displayTenantName}'s",
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
-                const TextSpan(text: ' remaining balance of '),
+                TextSpan(text: _isSw ? ' salio lililosalia la ' : ' remaining balance of '),
                 TextSpan(
                   text: controller.formattedBalance,
                   style: const TextStyle(fontWeight: FontWeight.w800),
@@ -103,10 +105,10 @@ class RentSchedulePaymentReminderView
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CardTitle('Schedule'),
+          _CardTitle(_isSw ? 'Ratiba' : 'Schedule'),
           const SizedBox(height: 12),
           _labeledField(
-            label: 'REMINDER DATE',
+            label: _isSw ? 'TAREHE YA KIKUMBUSHO' : 'REMINDER DATE',
             child: Obx(
               () => _tappableField(
                 text: controller.dateFieldLabel,
@@ -118,7 +120,7 @@ class RentSchedulePaymentReminderView
           ),
           const SizedBox(height: 12),
           _labeledField(
-            label: 'REMINDER TIME',
+            label: _isSw ? 'MUDA WA KIKUMBUSHO' : 'REMINDER TIME',
             child: Obx(
               () => _tappableField(
                 text: controller.timeFieldLabel,
@@ -138,28 +140,28 @@ class RentSchedulePaymentReminderView
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CardTitle('Notification Channels'),
+          _CardTitle(_isSw ? 'Njia za Taarifa' : 'Notification Channels'),
           const SizedBox(height: 8),
           Obx(
             () => Column(
               children: [
                 _channelRow(
                   icon: Icons.notifications_outlined,
-                  label: 'Push Notification',
+                  label: _isSw ? 'Arifa ya Programu' : 'Push Notification',
                   value: controller.pushEnabled.value,
                   onChanged: (v) => controller.pushEnabled.value = v,
                 ),
                 const SizedBox(height: 8),
                 _channelRow(
                   icon: Icons.chat_bubble_outline_rounded,
-                  label: 'WhatsApp Reminder',
+                  label: _isSw ? 'Kikumbusho cha WhatsApp' : 'WhatsApp Reminder',
                   value: controller.whatsappEnabled.value,
                   onChanged: (v) => controller.whatsappEnabled.value = v,
                 ),
                 const SizedBox(height: 8),
                 _channelRow(
                   icon: Icons.email_outlined,
-                  label: 'Email',
+                  label: _isSw ? 'Barua pepe' : 'Email',
                   value: controller.emailEnabled.value,
                   onChanged: (v) => controller.emailEnabled.value = v,
                 ),
@@ -176,7 +178,7 @@ class RentSchedulePaymentReminderView
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CardTitle('Message Preview'),
+          _CardTitle(_isSw ? 'Hakiki ya Ujumbe' : 'Message Preview'),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
@@ -195,8 +197,8 @@ class RentSchedulePaymentReminderView
                     color: _ReminderPalette.teal,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text(
-                    'DRAFT MESSAGE',
+                  child: Text(
+                    _isSw ? 'UJUMBE RASIMU' : 'DRAFT MESSAGE',
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
@@ -217,7 +219,11 @@ class RentSchedulePaymentReminderView
                         fontStyle: FontStyle.italic,
                       ),
                       children: [
-                        TextSpan(text: 'Hello $first, a friendly reminder that your balance of '),
+                        TextSpan(
+                          text: _isSw
+                              ? 'Habari $first, kumbusho la kirafiki kuwa salio lako la '
+                              : 'Hello $first, a friendly reminder that your balance of ',
+                        ),
                         TextSpan(
                           text: controller.formattedBalance,
                           style: const TextStyle(
@@ -225,7 +231,7 @@ class RentSchedulePaymentReminderView
                             fontStyle: FontStyle.normal,
                           ),
                         ),
-                        const TextSpan(text: ' for '),
+                        TextSpan(text: _isSw ? ' kwa ' : ' for '),
                         TextSpan(
                           text: controller.displayPropertyTitle,
                           style: const TextStyle(
@@ -235,7 +241,9 @@ class RentSchedulePaymentReminderView
                         ),
                         TextSpan(
                           text:
-                              ' is due on ${controller.previewDateToken}.',
+                              _isSw
+                                  ? ' linatakiwa kulipwa tarehe ${controller.previewDateToken}.'
+                                  : ' is due on ${controller.previewDateToken}.',
                         ),
                       ],
                     ),
@@ -246,7 +254,9 @@ class RentSchedulePaymentReminderView
           ),
           const SizedBox(height: 10),
           Text(
-            'MESSAGE AUTOMATICALLY GENERATED BASED ON BOOKING DETAILS',
+            _isSw
+                ? 'UJUMBE UMEZALISHWA KIOTOMATIKI KUTOKANA NA MAELEZO YA UHIFADHI'
+                : 'MESSAGE AUTOMATICALLY GENERATED BASED ON BOOKING DETAILS',
             style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w600,
@@ -272,8 +282,8 @@ class RentSchedulePaymentReminderView
             borderRadius: BorderRadius.circular(14),
           ),
         ),
-        child: const Text(
-          'SCHEDULE REMINDER',
+        child: Text(
+          _isSw ? 'PANGA KIKUMBUSHO' : 'SCHEDULE REMINDER',
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 14,

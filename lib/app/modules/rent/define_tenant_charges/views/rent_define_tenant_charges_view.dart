@@ -8,6 +8,7 @@ import '../controllers/rent_define_tenant_charges_controller.dart';
 /// **Tenant Charges** — new charge form, property banner, defined charges, insight, bottom nav.
 class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesController> {
   RentDefineTenantChargesView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   static const _teal = Color(0xFF005D5D);
   static const _fieldFill = Color(0xFFEBEBEB);
@@ -15,7 +16,8 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
   static const _sectionGrey = Color(0xFFF0F0EE);
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Define Tenant Charges');
+  PreferredSizeWidget? appBar(BuildContext context) =>
+      rentAppBar(_isSw ? 'Bainisha Tozo za Mpangaji' : 'Define Tenant Charges');
 
   @override
   Widget body(BuildContext context) {
@@ -57,8 +59,8 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'New Charge Entry',
+          Text(
+            _isSw ? 'Ingizo Jipya la Tozo' : 'New Charge Entry',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -67,7 +69,9 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
           ),
           const SizedBox(height: 8),
           Text(
-            'Specify the financial obligations for the upcoming tenancy agreement.',
+            _isSw
+                ? 'Bainisha wajibu wa kifedha kwa mkataba unaokuja wa upangaji.'
+                : 'Specify the financial obligations for the upcoming tenancy agreement.',
             style: TextStyle(fontSize: 13, height: 1.4, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 18),
@@ -115,7 +119,7 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
             ),
           ),
           const SizedBox(height: 14),
-          _capsLabel('DESCRIPTION & TERMS'),
+          _capsLabel(_isSw ? 'MAELEZO NA MASHARTI' : 'DESCRIPTION & TERMS'),
           const SizedBox(height: 8),
           TextFormField(
             controller: controller.descriptionController,
@@ -127,7 +131,9 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
               filled: true,
               fillColor: _fieldFill,
               alignLabelWithHint: true,
-              hintText: 'Enter specific terms or breakdown of the charge...',
+              hintText: _isSw
+                  ? 'Weka masharti maalum au mgawanyo wa tozo...'
+                  : 'Enter specific terms or breakdown of the charge...',
               hintStyle: TextStyle(color: Colors.grey.shade500, height: 1.35),
               suffixIcon: Padding(
                 padding: const EdgeInsets.only(bottom: 8, right: 8),
@@ -156,8 +162,8 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text(
-                'Save Charge',
+              child: Text(
+                _isSw ? 'Hifadhi Tozo' : 'Save Charge',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
               ),
             ),
@@ -168,8 +174,8 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
             child: OutlinedButton.icon(
               onPressed: () => controller.submitCharge(addAnother: true),
               icon: const Icon(Icons.add, size: 20, color: _teal),
-              label: const Text(
-                'Add Another',
+              label: Text(
+                _isSw ? 'Ongeza Nyingine' : 'Add Another',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: _teal),
               ),
               style: OutlinedButton.styleFrom(
@@ -225,8 +231,8 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
                 color: _accentOrange,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
-                'SELECTED PROPERTY',
+              child: Text(
+                _isSw ? 'MALI ILIYOCHAGULIWA' : 'SELECTED PROPERTY',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 9,
@@ -271,9 +277,9 @@ class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesContro
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Defined Charges',
+                  _isSw ? 'Tozo Zilizobainishwa' : 'Defined Charges',
                   style: TextStyle(
                     
                     fontSize: 18,

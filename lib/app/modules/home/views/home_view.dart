@@ -9,6 +9,7 @@ import '../../../core/theme/theme_controller.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../data/local/service/workspace_context_service.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_view.dart';
 import '../controllers/home_controller.dart';
@@ -16,6 +17,8 @@ import '../controllers/home_controller.dart';
 // ignore: must_be_immutable
 class HomeView extends BaseView<HomeController> {
   HomeView({super.key});
+  final WorkspaceContextService _workspaceContext =
+      Get.find<WorkspaceContextService>();
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -28,8 +31,32 @@ class HomeView extends BaseView<HomeController> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Obx(
+                  () {
+                    final ws = _workspaceContext.currentWorkspace.value;
+                    final activeLabel = ws == 'bnb' ? 'BnB' : 'RENT';
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.colorPrimary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        activeLabel,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    );
+                  },
+                ),
                 InkWell(
-                  onTap: () => Get.offNamed(Routes.RENT_HUB),
+                  onTap: () async {
+                    await _workspaceContext.switchWorkspace('rent');
+                    Get.offNamed(Routes.RENT_HUB);
+                  },
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),

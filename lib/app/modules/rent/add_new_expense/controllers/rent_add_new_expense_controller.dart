@@ -5,14 +5,22 @@ import 'package:intl/intl.dart';
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/rent_expense_local_data_source.dart';
 import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/preference/preference_manager.dart';
+import '../../../../data/local/service/workspace_context_service.dart';
 
 class RentAddNewExpenseController extends BaseController {
   RentAddNewExpenseController()
       : _expenseLocal = Get.find<RentExpenseLocalDataSource>(),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>();
+        _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
+        _preferenceManager = Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+        _workspaceContext = Get.find<WorkspaceContextService>();
 
   final RentExpenseLocalDataSource _expenseLocal;
   final RentPropertyLocalDataSource _propertyLocal;
+  final PreferenceManager _preferenceManager;
+  final WorkspaceContextService _workspaceContext;
 
   final tenantController = TextEditingController();
   final amountController = TextEditingController();
@@ -43,7 +51,12 @@ class RentAddNewExpenseController extends BaseController {
   }
 
   Future<void> _loadProperties() async {
-    final rows = await _propertyLocal.getAllNewestFirst();
+    final userId = (await _preferenceManager.getUser()).id ?? '';
+    final workspaceType = await _workspaceContext.getWorkspaceType();
+    final rows = await _propertyLocal.getAllVisibleNewestFirst(
+      userId: userId,
+      workspaceType: workspaceType,
+    );
     final options = rows
         .map((e) => e.propertyLocation.trim())
         .where((e) => e.isNotEmpty)

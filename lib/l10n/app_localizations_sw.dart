@@ -1351,4 +1351,71 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get staffDetail => 'Maelezo ya Mfanyakazi';
+
+  @override
+  String get authUsePinToSignIn => 'Tumia PIN kuingia';
+
+  @override
+  String get authPinAvailableAfterFirstLogin =>
+      'PIN itapatikana baada ya kuingia mara ya kwanza';
+
+  @override
+  String get welcomeAuthenticatingBiometrics => 'Inathibitisha kwa biometria.';
+
+  @override
+  String get welcomeSignedInContinueMessage =>
+      'Umeingia. Bonyeza hapa chini kuendelea na programu.';
+
+  @override
+  String get resetLabel => 'Anza upya';
+
+  @override
+  String get tenantReminderTemplateTitle => 'Kiolezo cha ukumbusho wa mpangaji';
+
+  @override
+  String get tenantReminderTemplateDescription =>
+      'Hutumika kwa vikumbusho vya WhatsApp wakati upangaji unaisha';
+
+  @override
+  String get runLeaseReminderNowTitle => 'Endesha ukumbusho wa lease sasa';
+
+  @override
+  String get runLeaseReminderNowDescription =>
+      'Anzisha ukaguzi wa ukumbusho wa lease wa mwezi mmoja kwa mkono';
+
+  @override
+  String get changePinTitle => 'Badili PIN';
+
+  @override
+  String get changePinDescription =>
+      'Sasisha PIN ya tarakimu 4 inayotumika kuingia mara zinazofuata';
+
+  @override
+  String get templatePreviewTitle => 'Hakiki ya kiolezo';
+
+  @override
+  String get closeLabel => 'Funga';
+
+  @override
+  String get previewLabel => 'Hakiki';
+
+  @override
+  String get securityPriorityPrefix =>
+      'Usalama wako ni kipaumbele chetu. Soma ';
+
+  @override
+  String get securityPrioritySuffix =>
+      ' kujifunza jinsi tunavyolinda taarifa zako.';
+
+  @override
+  String get changeLabel => 'Badili';
+
+  @override
+  String get orLabel => 'AU';
+
+  @override
+  String get performance => 'Performance';
+
+  @override
+  String get addIncome => 'Add Income';
 }

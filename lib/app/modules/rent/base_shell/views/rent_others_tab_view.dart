@@ -10,24 +10,25 @@ import '../controllers/rent_others_tab_controller.dart';
 /// "Others" tab: shortcuts to additional rent flows (no duplicate bottom nav).
 class RentOthersTabView extends BaseView<RentOthersTabController> {
   RentOthersTabView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   Color pageBackgroundColor(BuildContext context) => RentTheme.bg;
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('More');
+  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(_isSw ? 'Zaidi' : 'More');
 
   @override
   Widget body(BuildContext context) {
     final items = <_OthersLink>[
-      _OthersLink('Concierge Inbox', Icons.inbox_outlined, Routes.RENT_CONCIERGE_INBOX),
-      _OthersLink('Schedule Maintenance', Icons.engineering_outlined, Routes.RENT_SCHEDULE_MAINTENANCE_FORM),
-      _OthersLink('Define Tenant Charges', Icons.payments_outlined, Routes.RENT_DEFINE_TENANT_CHARGES),
-      _OthersLink('Staff Management', Icons.badge_outlined, Routes.RENT_STAFF_MANAGEMENT),
-      _OthersLink('Define Loyalty Program', Icons.loyalty_outlined, Routes.RENT_DEFINE_LOYALTY_OFFERS),
-      _OthersLink('Financial comparison', Icons.compare_arrows_rounded, Routes.RENT_FINANCIAL_COMPARISON),
-      _OthersLink('Monthly P&L summary', Icons.summarize_outlined, Routes.RENT_MONTHLY_PL_SUMMARY),
-      _OthersLink('Contract hub', Icons.article_outlined, Routes.RENT_CONTRACT_HUB),
+      _OthersLink(_isSw ? 'Kikasha cha Concierge' : 'Concierge Inbox', Icons.inbox_outlined, Routes.RENT_CONCIERGE_INBOX),
+      _OthersLink(_isSw ? 'Panga Matengenezo' : 'Schedule Maintenance', Icons.engineering_outlined, Routes.RENT_SCHEDULE_MAINTENANCE_FORM),
+      _OthersLink(_isSw ? 'Bainisha Tozo za Mpangaji' : 'Define Tenant Charges', Icons.payments_outlined, Routes.RENT_DEFINE_TENANT_CHARGES),
+      _OthersLink(_isSw ? 'Usimamizi wa Wafanyakazi' : 'Staff Management', Icons.badge_outlined, Routes.RENT_STAFF_MANAGEMENT),
+      _OthersLink(_isSw ? 'Bainisha Programu ya Uaminifu' : 'Define Loyalty Program', Icons.loyalty_outlined, Routes.RENT_DEFINE_LOYALTY_OFFERS),
+      _OthersLink(_isSw ? 'Ulinganisho wa Fedha' : 'Financial comparison', Icons.compare_arrows_rounded, Routes.RENT_FINANCIAL_COMPARISON),
+      _OthersLink(_isSw ? 'Muhtasari wa Mwezi wa P&L' : 'Monthly P&L summary', Icons.summarize_outlined, Routes.RENT_MONTHLY_PL_SUMMARY),
+      _OthersLink(_isSw ? 'Kitovu cha Mikataba' : 'Contract hub', Icons.article_outlined, Routes.RENT_CONTRACT_HUB),
     ];
 
     return ListView.separated(

@@ -10,11 +10,12 @@ import '../controllers/rent_tenant_residency_payment_tracker_controller.dart';
 class RentTenantResidencyPaymentTrackerView
     extends BaseView<RentTenantResidencyPaymentTrackerController> {
   RentTenantResidencyPaymentTrackerView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   static const _teal = Color(0xFF004D40);
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Tenancy Insights');
+  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(_isSw ? 'Maarifa ya Upangaji' : 'Tenancy Insights');
 
   @override
   Widget body(BuildContext context) {
@@ -26,7 +27,7 @@ class RentTenantResidencyPaymentTrackerView
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'OVERVIEW',
+            _isSw ? 'MUHTASARI' : 'OVERVIEW',
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 1.4,
@@ -79,7 +80,7 @@ class RentTenantResidencyPaymentTrackerView
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ACTIVE LEASES',
+                  _isSw ? 'MIKATABA HAI' : 'ACTIVE LEASES',
                   style: TextStyle(
                     fontSize: 9,
                     letterSpacing: 1.1,
@@ -108,7 +109,7 @@ class RentTenantResidencyPaymentTrackerView
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'COLLECTION RATE',
+                    _isSw ? 'KIWANGO CHA MAKUSANYO' : 'COLLECTION RATE',
                     style: TextStyle(
                       fontSize: 9,
                       letterSpacing: 1.1,
@@ -146,7 +147,7 @@ class RentTenantResidencyPaymentTrackerView
               isDense: true,
               filled: true,
               fillColor: Colors.white,
-              hintText: 'Search tenants or properties',
+              hintText: _isSw ? 'Tafuta wapangaji au mali' : 'Search tenants or properties',
               hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
               prefixIcon: Icon(Icons.search, color: Colors.grey.shade500, size: 22),
               border: OutlineInputBorder(
@@ -245,7 +246,7 @@ class RentTenantResidencyPaymentTrackerView
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'TOTAL STAY DURATION',
+                    _isSw ? 'MUDA WA JUMLA WA UKAAJI' : 'TOTAL STAY DURATION',
                     style: TextStyle(
                       fontSize: 8,
                       letterSpacing: 0.6,
@@ -272,7 +273,7 @@ class RentTenantResidencyPaymentTrackerView
             children: [
               Expanded(
                 child: Text(
-                  'LEASE PROGRESS (${t.leasePeriodLabel})',
+                  (_isSw ? 'MAENDELEO YA MKATABA' : 'LEASE PROGRESS') + ' (${t.leasePeriodLabel})',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -282,7 +283,7 @@ class RentTenantResidencyPaymentTrackerView
                 ),
               ),
               Text(
-                '$pct% COMPLETE',
+                _isSw ? '$pct% IMEKAMILIKA' : '$pct% COMPLETE',
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
@@ -303,7 +304,7 @@ class RentTenantResidencyPaymentTrackerView
           ),
           const SizedBox(height: 16),
           Text(
-            'PAYMENT STATUS LEDGER (CURRENT TERM)',
+            _isSw ? 'DAFTARI LA HALI YA MALIPO (MUDA WA SASA)' : 'PAYMENT STATUS LEDGER (CURRENT TERM)',
             style: TextStyle(
               fontSize: 9,
               letterSpacing: 0.8,
@@ -415,8 +416,8 @@ class RentTenantResidencyPaymentTrackerView
         color: _teal.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Text(
-        'ON SCHEDULE',
+      child: Text(
+        _isSw ? 'KATIKA RATIBA' : 'ON SCHEDULE',
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w800,
@@ -433,9 +434,9 @@ class RentTenantResidencyPaymentTrackerView
       runSpacing: 6,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        _legendDot(_teal, 'PAID'),
-        _legendDot(const Color(0xFFFFCDD2), 'PARTIAL', dark: true),
-        _legendDot(const Color(0xFFE8E8E8), 'UPCOMING', dark: true),
+        _legendDot(_teal, _isSw ? 'IMELIPWA' : 'PAID'),
+        _legendDot(const Color(0xFFFFCDD2), _isSw ? 'SEHEMU' : 'PARTIAL', dark: true),
+        _legendDot(const Color(0xFFE8E8E8), _isSw ? 'INAKUJA' : 'UPCOMING', dark: true),
       ],
     );
   }

@@ -8,36 +8,55 @@ import '../controllers/rent_profit_analysis_dashboard_controller.dart';
 
 class RentProfitAnalysisDashboardView extends BaseView<RentProfitAnalysisDashboardController> {
   RentProfitAnalysisDashboardView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Profit analysis dashboard');
+  PreferredSizeWidget? appBar(BuildContext context) =>
+      rentAppBar(_isSw ? 'Dashibodi ya Uchambuzi wa Faida' : 'Profit analysis dashboard');
 
   @override
   Widget body(BuildContext context) => Obx(() {
         if (controller.loadingRealData.value) return const Center(child: CircularProgressIndicator());
         final d = controller.realData.value;
-        if (d == null) return const Center(child: Text('No profit data available yet.'));
+        if (d == null) {
+          return Center(
+            child: Text(_isSw ? 'Hakuna data ya faida bado.' : 'No profit data available yet.'),
+          );
+        }
         final margin = d.incomeTotal <= 0 ? 0.0 : (d.netProfit / d.incomeTotal) * 100;
 
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            rentSectionTitle('Profit', 'Analysis dashboard', subtitle: 'Margin and strategy insights from real portfolio figures.'),
+            rentSectionTitle(
+              _isSw ? 'Faida' : 'Profit',
+              _isSw ? 'Dashibodi ya uchambuzi' : 'Analysis dashboard',
+              subtitle: _isSw
+                  ? 'Maarifa ya margin na mikakati kutoka takwimu halisi za portfolio.'
+                  : 'Margin and strategy insights from real portfolio figures.',
+            ),
             const SizedBox(height: 12),
             rentMetricGrid([
-              rentMetricTile(label: 'Income', value: 'TZS ${d.incomeTotal.toStringAsFixed(0)}', icon: Icons.account_balance_outlined, accent: Colors.green),
-              rentMetricTile(label: 'Net profit', value: 'TZS ${d.netProfit.toStringAsFixed(0)}', icon: Icons.auto_graph_outlined, accent: Colors.indigo),
-              rentMetricTile(label: 'Profit margin', value: '${margin.toStringAsFixed(1)}%', icon: Icons.percent_outlined, accent: Colors.brown),
+              rentMetricTile(label: _isSw ? 'Mapato' : 'Income', value: 'TZS ${d.incomeTotal.toStringAsFixed(0)}', icon: Icons.account_balance_outlined, accent: Colors.green),
+              rentMetricTile(label: _isSw ? 'Faida halisi' : 'Net profit', value: 'TZS ${d.netProfit.toStringAsFixed(0)}', icon: Icons.auto_graph_outlined, accent: Colors.indigo),
+              rentMetricTile(label: _isSw ? 'Margin ya faida' : 'Profit margin', value: '${margin.toStringAsFixed(1)}%', icon: Icons.percent_outlined, accent: Colors.brown),
             ]),
             const SizedBox(height: 12),
             rentInsightCard(
-              title: 'AI-style insight',
+              title: _isSw ? 'Dokezo la mtindo wa AI' : 'AI-style insight',
               message: margin < 0
-                  ? 'Your portfolio is currently in negative margin. Review high recurring expenses and optimize occupancy.'
-                  : 'Current margin is positive. Keep improving renewals and maintenance efficiency to sustain growth.',
+                  ? (_isSw
+                      ? 'Portfolio yako kwa sasa iko kwenye margin hasi. Kagua gharama za mara kwa mara na boresha ujazaji.'
+                      : 'Your portfolio is currently in negative margin. Review high recurring expenses and optimize occupancy.')
+                  : (_isSw
+                      ? 'Margin ya sasa ni chanya. Endelea kuboresha upyaishaji na ufanisi wa matengenezo ili kudumisha ukuaji.'
+                      : 'Current margin is positive. Keep improving renewals and maintenance efficiency to sustain growth.'),
             ),
             const SizedBox(height: 12),
-            FilledButton(onPressed: controller.onApplyStrategy, child: const Text('Apply strategy')),
+            FilledButton(
+              onPressed: controller.onApplyStrategy,
+              child: Text(_isSw ? 'Tumia mkakati' : 'Apply strategy'),
+            ),
           ],
         );
       });

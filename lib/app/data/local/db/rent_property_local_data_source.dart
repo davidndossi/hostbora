@@ -12,6 +12,9 @@ class RentPropertyRecord {
     required this.rentAmount,
     required this.rentFrequency,
     required this.minRentalDuration,
+    this.propertyRef = '',
+    this.ownerUserId = '',
+    this.workspaceType = 'rent',
     required this.createdAtMs,
     this.unitsJson = '',
   });
@@ -23,6 +26,9 @@ class RentPropertyRecord {
   final String rentAmount;
   final String rentFrequency;
   final String minRentalDuration;
+  final String propertyRef;
+  final String ownerUserId;
+  final String workspaceType;
   final int createdAtMs;
   /// JSON array of apartment units when `propertyType` is Apartment.
   final String unitsJson;
@@ -36,6 +42,9 @@ class RentPropertyRecord {
       rentAmount: m['rent_amount'] as String? ?? '',
       rentFrequency: m['rent_frequency'] as String? ?? '',
       minRentalDuration: m['min_rental_duration'] as String? ?? '',
+      propertyRef: m['property_ref'] as String? ?? '',
+      ownerUserId: m['owner_user_id'] as String? ?? '',
+      workspaceType: m['workspace_type'] as String? ?? 'rent',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
       unitsJson: m['units_json'] as String? ?? '',
     );
@@ -48,6 +57,9 @@ class RentPropertyRecord {
         'rent_amount': rentAmount,
         'rent_frequency': rentFrequency,
         'min_rental_duration': minRentalDuration,
+        'property_ref': propertyRef,
+        'owner_user_id': ownerUserId,
+        'workspace_type': workspaceType,
         'created_at_ms': createdAtMs,
         'units_json': unitsJson,
       };
@@ -76,6 +88,46 @@ class RentPropertyLocalDataSource {
   Future<List<RentPropertyRecord>> getAllNewestFirst() async {
     final db = await database;
     final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
+    return maps.map(RentPropertyRecord.fromMap).toList();
+  }
+
+  Future<List<RentPropertyRecord>> getAllVisibleNewestFirst({
+    required String userId,
+    String workspaceType = 'rent',
+  }) async {
+    final db = await database;
+    if (userId.trim().isEmpty) {
+      final maps = await db.query(
+        _table,
+        where: 'workspace_type = ? OR workspace_type = ""',
+        whereArgs: [workspaceType],
+        orderBy: 'created_at_ms DESC',
+      );
+      return maps.map(RentPropertyRecord.fromMap).toList();
+    }
+    final maps = await db.rawQuery(
+      '''
+      SELECT p.*
+      FROM $_table p
+      WHERE (p.workspace_type = ? OR p.workspace_type = '')
+        AND (
+          p.owner_user_id = ?
+          OR p.owner_user_id = ''
+          OR EXISTS (
+            SELECT 1
+            FROM ${AppLocalDatabase.propertyMembersTable} m
+            WHERE m.property_ref = CASE
+              WHEN p.property_ref IS NULL OR p.property_ref = '' THEN 'legacy_' || p.id
+              ELSE p.property_ref
+            END
+            AND m.user_id = ?
+            AND m.workspace_type = ?
+          )
+        )
+      ORDER BY p.created_at_ms DESC
+      ''',
+      [workspaceType, userId, userId, workspaceType],
+    );
     return maps.map(RentPropertyRecord.fromMap).toList();
   }
 }

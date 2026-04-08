@@ -27,6 +27,8 @@ class AuthController extends BaseController {
   final password = ''.obs;
   final otp = ''.obs;
   final isLoading = false.obs;
+  final hasPinEnabled = false.obs;
+  String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
   final authFormKey = GlobalKey<FormState>();
 
   final Rx<LoginResponse> _loginResponse = LoginResponse().obs;
@@ -49,6 +51,7 @@ class AuthController extends BaseController {
   @override
   void onInit() {
     getFirebaseToken();
+    _loadPinStatus();
     super.onInit();
   }
 
@@ -67,6 +70,13 @@ class AuthController extends BaseController {
     super.onClose();
   }
 
+  Future<void> _loadPinStatus() async {
+    hasPinEnabled.value = await _preferenceManager.getBool(
+      PreferenceManager.keyPinEnabled,
+      defaultValue: false,
+    );
+  }
+
   void login() async {
     if (!authFormKey.currentState!.validate()) return;
 
@@ -75,18 +85,37 @@ class AuthController extends BaseController {
 
     final connectivity = await Util().checkConnectivity();
     if (connectivity != 'Mobile' && connectivity != 'Wifi') {
-      final token = await _preferenceManager.getString(PreferenceManager.keyToken, defaultValue: '');
-      final firstLogin = await _preferenceManager.getBool(PreferenceManager.keyFirstLogin, defaultValue: true);
-      // if (token.isNotEmpty && !firstLogin) {
-        Get.offAllNamed(Routes.MAIN);
-        Get.snackbar(
-          'Offline',
-          'You\'re offline. Using your last session.',
-          duration: const Duration(seconds: 3),
+      final pinEnabled = await _preferenceManager.getBool(
+        PreferenceManager.keyPinEnabled,
+        defaultValue: false,
+      );
+      final pinCode = await _preferenceManager.getString(
+        PreferenceManager.keyPinCode,
+        defaultValue: '',
+      );
+      final isFirstLogin = await _preferenceManager.getBool(
+        PreferenceManager.keyFirstLogin,
+        defaultValue: true,
+      );
+      final hasValidPin = pinEnabled && pinCode.length == 4;
+
+      // First login must happen online. Offline is allowed only after PIN is configured.
+      if (isFirstLogin || !hasValidPin) {
+        showErrorMessage(
+          _t(
+            'First login requires internet. Please connect and sign in.',
+            'Kuingia kwa mara ya kwanza kunahitaji intaneti. Tafadhali unganisha na uingie.',
+          ),
         );
-      // } else {
-      //   showErrorMessage(appLocalization.noInternet);
-      // }
+        return;
+      }
+
+      Get.offAllNamed(Routes.MAIN);
+      Get.snackbar(
+        _t('Offline', 'Nje ya mtandao'),
+        _t('You\'re offline. Using your last session.', 'Huna mtandao. Tunatumia kipindi chako cha mwisho.'),
+        duration: const Duration(seconds: 3),
+      );
       return;
     }
     final loginRequest = LoginRequest(
@@ -123,7 +152,7 @@ class AuthController extends BaseController {
   void useBiometrics() async {
     var a = await _preferenceManager.getString('userApp');
     if (a == '') {
-      showErrorMessage('Enter your PIN');
+      showErrorMessage(_t('Enter your PIN', 'Weka PIN yako'));
       return;
     }
     final LocalAuthentication auth = LocalAuthentication();
@@ -141,7 +170,10 @@ class AuthController extends BaseController {
         // Use checks like this with caution!
         try {
           final bool didAuthenticate = await auth.authenticate(
-              localizedReason: 'Scan your fingerprint (or face) to login',
+              localizedReason: _t(
+                'Scan your fingerprint (or face) to login',
+                'Weka alama ya kidole (au uso) ili kuingia',
+              ),
               options: const AuthenticationOptions(
                 biometricOnly: true,
                 stickyAuth: true,
@@ -162,10 +194,16 @@ class AuthController extends BaseController {
           }
         }
       } else {
-        showErrorMessage('Your phone does not support biometrics... enter your password');
+        showErrorMessage(_t(
+          'Your phone does not support biometrics... enter your password',
+          'Simu yako haitumii biometria... weka nenosiri lako',
+        ));
       }
     } else {
-      showErrorMessage('Cannot access biometrics... enter your password');
+      showErrorMessage(_t(
+        'Cannot access biometrics... enter your password',
+        'Hatuwezi kufikia biometria... weka nenosiri lako',
+      ));
     }
     // return canAuthenticate;
   }
@@ -181,8 +219,11 @@ class AuthController extends BaseController {
           borderRadius:
           BorderRadius.all(Radius.circular(15))),
         icon: SvgPicture.asset('images/info.svg'),
-        title: const Center(
-          child: Text('Enter OTP sent to your registered phone number to continue!')
+        title: Center(
+          child: Text(_t(
+            'Enter OTP sent to your registered phone number to continue!',
+            'Weka OTP iliyotumwa kwenye namba yako iliyosajiliwa ili kuendelea!',
+          ))
         ),
         titleTextStyle: const TextStyle(
           color: Colors.black,
@@ -278,22 +319,27 @@ class AuthController extends BaseController {
       await _preferenceManager.setUser('user', loginResponse.user);
       await _preferenceManager.setString('userApp', password.value);
       if (res.token != null) {
-        final isFirstLogin = await _preferenceManager.getBool(PreferenceManager.keyFirstLogin, defaultValue: true);
-        await _preferenceManager.setBool(PreferenceManager.keyFirstLogin, false);
-        if (Navigator.canPop(Get.context!)) {
-          debugPrint('Go back to previous page');
-          Navigator.pop(Get.context!);
+        final hasPinEnabled = await _preferenceManager.getBool(
+          PreferenceManager.keyPinEnabled,
+          defaultValue: false,
+        );
+        final storedPin = await _preferenceManager.getString(
+          PreferenceManager.keyPinCode,
+          defaultValue: '',
+        );
+        final hasValidPin = hasPinEnabled && storedPin.length == 4;
+
+        if (res.message == 'verify_code') {
+          debugPrint('Go to otp page');
+          Get.offAndToNamed(Routes.OTP);
+        } else if (!hasValidPin) {
+          debugPrint('PIN not configured yet: go to change pin setup');
+          Get.offAllNamed(
+            Routes.CHANGE_PIN,
+          );
         } else {
-          if (res.message == 'verify_code') {
-            debugPrint('Go to otp page');
-            Get.offAndToNamed(Routes.OTP);
-          } else if (isFirstLogin) {
-            debugPrint('First time user: go to add listing');
-            Get.offAllNamed(Routes.ADD_LISTING, arguments: {'from_first_login': true});
-          } else {
-            debugPrint('Go to welcome back');
-            Get.offAllNamed(Routes.MAIN, arguments: {'from_password_login': true});
-          }
+          debugPrint('PIN exists: continue to app');
+          Get.offAllNamed(Routes.MAIN, arguments: {'from_password_login': true});
         }
       } else {
         showErrorMessage(appLocalization.loginFailed);
@@ -345,13 +391,18 @@ class AuthController extends BaseController {
     // Tanzanian phone number validation: starts with 0, followed by 6, 7, or 8, then 8 digits
     final phonePattern = RegExp(r'^0[678]\d{8}$');
     if (value != null && !phonePattern.hasMatch(value)) {
-      return 'Please enter a valid phone number (e.g., 0612345678)';
+      return _t(
+        'Please enter a valid phone number (e.g., 0612345678)',
+        'Tafadhali weka namba sahihi ya simu (mf. 0612345678)',
+      );
     }
     return null;
   }
 
   String? passwordValidator(String? value) {
-    return (value ?? '').length >= 8 ? null : 'Password must be at least 8 characters';
+    return (value ?? '').length >= 8
+        ? null
+        : _t('Password must be at least 8 characters', 'Nenosiri lazima liwe na angalau herufi 8');
   }
 
   void checkMsisdn() {
@@ -359,7 +410,7 @@ class AuthController extends BaseController {
       Get.toNamed(Routes.CHANGE_PASSWORD,
           arguments: {'msisdn': msisdnController.text});
     } else {
-      errorText('Please input your phone first!');
+      errorText(_t('Please input your phone first!', 'Tafadhali weka namba yako ya simu kwanza!'));
     }
   }
 }

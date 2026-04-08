@@ -20,10 +20,11 @@ import '../controllers/rent_my_properties_hub_controller.dart';
 
 class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
   RentMyPropertiesHubView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
-    appBarTitleText: 'My Properties'
+    appBarTitleText: _isSw ? 'Mali Zangu' : 'My Properties'
   );
 
   @override
@@ -41,7 +42,7 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'MANAGEMENT HUB',
+              _isSw ? 'KITOVU CHA USIMAMIZI' : 'MANAGEMENT HUB',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -57,14 +58,26 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
                 padding: const EdgeInsets.only(bottom: 20),
                 child: _ManagementPropertyCard(
                   row: p,
+                  isSw: _isSw,
                   onOpenListing: () => Get.toNamed(
                     Routes.RENT_LISTING_DETAILS,
                     parameters: {'id': p.id},
+                  ),
+                  onAddEstimate: () => Get.toNamed(
+                    Routes.RENT_PROPERTY_ROI_ESTIMATE_FORM,
+                    parameters: {
+                      'propertyRef': p.id,
+                      'propertyLabel': p.title,
+                    },
                   ),
                   onAddIncome: () => Get.toNamed(Routes.RENT_ADD_INCOME_FORM),
                   onAddExpense: () => Get.toNamed(Routes.RENT_ADD_NEW_EXPENSE),
                   onNewTenant: () => Get.toNamed(Routes.RENT_ADD_TENANT_FORM),
                   onAnalytics: () => Get.toNamed(Routes.RENT_LISTING_ANALYTICS_DASHBOARD),
+                  onAddCoHost: () => _openAddCoHostDialog(
+                    propertyRef: p.id,
+                    propertyTitle: p.title,
+                  ),
                 ),
               ),
             ),
@@ -92,8 +105,8 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
             const SizedBox(height: 12),
             TextButton(
               onPressed: controller.addProperty,
-              child: const Text(
-                'Add property',
+              child: Text(
+                _isSw ? 'Ongeza mali' : 'Add property',
                 style: TextStyle(
                   fontSize: 17,
                   color: Colors.grey,
@@ -119,9 +132,121 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         icon: const Icon(Icons.add, size: 22),
-        label: const Text(
-          'New Property',
+        label: Text(
+          _isSw ? 'Mali Mpya' : 'New Property',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+        ),
+      ),
+    );
+  }
+
+  void _openAddCoHostDialog({
+    required String propertyRef,
+    required String propertyTitle,
+  }) {
+    final idController = TextEditingController();
+    Future<List<dynamic>> loadMembers() async {
+      final rows = await controller.listCoHosts(propertyRef: propertyRef);
+      return rows;
+    }
+    Future<List<dynamic>> membersFuture = loadMembers();
+    Get.dialog(
+      StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          title: Text(_isSw ? 'Ongeza Co-host' : 'Add Co-host'),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isSw
+                      ? 'Weka kitambulisho cha mtumiaji wa co-host kwa "$propertyTitle".'
+                      : 'Enter the co-host user ID for "$propertyTitle".',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: idController,
+                  decoration: InputDecoration(
+                    hintText: _isSw ? 'Mfano: user_123' : 'e.g. user_123',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _isSw ? 'Co-host waliopo' : 'Current co-hosts',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 220,
+                  child: FutureBuilder<List<dynamic>>(
+                    future: membersFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final items = snapshot.data ?? const [];
+                      if (items.isEmpty) {
+                        return Text(
+                          _isSw ? 'Hakuna co-host bado.' : 'No co-hosts yet.',
+                          style: const TextStyle(color: Colors.grey),
+                        );
+                      }
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: items.map((m) {
+                          final userId = (m.userId ?? '').toString();
+                          final role = (m.role ?? '').toString();
+                          return ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(userId),
+                            subtitle: Text(role),
+                            trailing: IconButton(
+                              tooltip: _isSw ? 'Ondoa co-host' : 'Remove co-host',
+                              onPressed: () async {
+                                await controller.removeCoHost(
+                                  propertyRef: propertyRef,
+                                  coHostUserId: userId,
+                                );
+                                setStateDialog(() {
+                                  membersFuture = loadMembers();
+                                });
+                              },
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: Text(_isSw ? 'Funga' : 'Close'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                await controller.addCoHost(
+                  propertyRef: propertyRef,
+                  coHostUserId: idController.text,
+                );
+                idController.clear();
+                setStateDialog(() {
+                  membersFuture = loadMembers();
+                });
+              },
+              child: Text(_isSw ? 'Ongeza' : 'Add'),
+            ),
+          ],
         ),
       ),
     );
@@ -131,19 +256,25 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
 class _ManagementPropertyCard extends StatelessWidget {
   const _ManagementPropertyCard({
     required this.row,
+    required this.isSw,
     required this.onOpenListing,
+    required this.onAddEstimate,
     required this.onAddIncome,
     required this.onAddExpense,
     required this.onNewTenant,
     required this.onAnalytics,
+    required this.onAddCoHost,
   });
 
   final RentHubPropertyRow row;
+  final bool isSw;
   final VoidCallback onOpenListing;
+  final VoidCallback onAddEstimate;
   final VoidCallback onAddIncome;
   final VoidCallback onAddExpense;
   final VoidCallback onNewTenant;
   final VoidCallback onAnalytics;
+  final VoidCallback onAddCoHost;
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +327,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '${row.activeTenants} Active Tenants',
+                      '${row.activeTenants} ${isSw ? 'Wapangaji Hai' : 'Active Tenants'}',
                       style: TextStyle(
                         fontSize: 13,
                         // color: _HubTheme.muted.withValues(alpha: 0.95),
@@ -206,7 +337,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'QUICK ACTIONS',
+                  isSw ? 'VITENDO VYA HARAKA' : 'QUICK ACTIONS',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
@@ -315,18 +446,44 @@ class _ManagementPropertyCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: cell('Add Income', Icons.add_circle_outline, const Color(0xFF15803D), onAddIncome)),
+            Expanded(child: cell(isSw ? 'Ongeza Mapato' : 'Add Income', Icons.add_circle_outline, const Color(0xFF15803D), onAddIncome)),
             const SizedBox(width: 10),
-            Expanded(child: cell('Add Expense', Icons.remove_circle_outline, const Color(0xFF9B1C1C), onAddExpense)),
+            Expanded(child: cell(isSw ? 'Ongeza Gharama' : 'Add Expense', Icons.remove_circle_outline, const Color(0xFF9B1C1C), onAddExpense)),
           ],
         ),
         const SizedBox(height: 10),
         Row(
           children: [
-            Expanded(child: cell('New Tenant', Icons.person_add_alt_1_outlined, Color(0xFF6B7280), onNewTenant)),
+            Expanded(child: cell(isSw ? 'Mpangaji Mpya' : 'New Tenant', Icons.person_add_alt_1_outlined, Color(0xFF6B7280), onNewTenant)),
             const SizedBox(width: 10),
             Expanded(
-                child: cell('Analytics', Icons.bar_chart_rounded, Color(0xFF6B7280), onAnalytics)),
+                child: cell(isSw ? 'Uchanganuzi' : 'Analytics', Icons.bar_chart_rounded, Color(0xFF6B7280), onAnalytics)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: cell(
+                isSw ? 'Ongeza Co-host' : 'Add Co-host',
+                Icons.group_add_outlined,
+                const Color(0xFF0F766E),
+                onAddCoHost,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: cell(
+                isSw ? 'Ongeza Makadirio ya ROI' : 'Add ROI Estimates',
+                Icons.calculate_outlined,
+                const Color(0xFF4C1D95),
+                onAddEstimate,
+              ),
+            ),
           ],
         ),
       ],

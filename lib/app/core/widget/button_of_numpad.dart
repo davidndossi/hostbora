@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class ButtonOfNumPad extends StatelessWidget {
-  const ButtonOfNumPad({Key? key, required this.num, this.onPressed}) : super(key: key);
+  const ButtonOfNumPad({super.key, required this.num, this.backgroundColor, this.onPressed});
 
   final String num;
+  final Color? backgroundColor;
   final VoidCallback? onPressed;
 
   @override
@@ -12,7 +13,7 @@ class ButtonOfNumPad extends StatelessWidget {
       child: FloatingActionButton.extended(
         heroTag: num,
         elevation: 0,
-        backgroundColor: const Color(0x36006141),
+        backgroundColor: backgroundColor ?? const Color(0x36006141),
         onPressed: onPressed,
         label: Text(
           num,

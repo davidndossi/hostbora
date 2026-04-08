@@ -11,6 +11,11 @@ abstract class PreferenceManager {
   static const keyRoles = 'roles';
   static const keyFirebaseToken = 'fcm_token';
   static const keyLang = 'language';
+  static const keyWorkspaceType = 'workspace_type';
+  static const keyPinCode = 'pin_code';
+  static const keyPinEnabled = 'pin_enabled';
+  static const keyPinFailedAttempts = 'pin_failed_attempts';
+  static const keyPinLockedUntilMs = 'pin_locked_until_ms';
 
   Future<String> getString(String key, {String defaultValue = ''});
 

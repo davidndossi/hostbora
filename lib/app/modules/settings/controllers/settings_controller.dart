@@ -47,7 +47,7 @@ class SettingsController extends BaseController {
 
   @override
   void onClose() {
-    savePreference();
+    // savePreference();
     super.onClose();
   }
 

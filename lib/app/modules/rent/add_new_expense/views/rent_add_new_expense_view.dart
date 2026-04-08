@@ -7,10 +7,11 @@ import '../controllers/rent_add_new_expense_controller.dart';
 
 class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
   RentAddNewExpenseView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
-    appBarTitleText: 'Add Expense'
+    appBarTitleText: _isSw ? 'Ongeza Gharama' : 'Add Expense'
   );
 
   @override
@@ -28,8 +29,8 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 6),
-                const Text(
-                  'Select Property',
+                Text(
+                  _isSw ? 'Chagua Mali' : 'Select Property',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 10),
@@ -43,8 +44,8 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
                           initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
                               ? controller.selectedProperty.value
                               : null,
-                          decoration: const InputDecoration(
-                            hintText: 'Choose property',
+                          decoration: InputDecoration(
+                            hintText: _isSw ? 'Chagua mali' : 'Choose property',
                             border: InputBorder.none,
                           ),
                           validator: controller.validateSelectedProperty,
@@ -55,10 +56,10 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
                           onChanged: hasProperties ? controller.updateSelectedProperty : null,
                         ),
                         if (!hasProperties)
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.only(top: 6, left: 2),
                             child: Text(
-                              'No properties yet - add property first.',
+                              _isSw ? 'Bado hakuna mali - ongeza mali kwanza.' : 'No properties yet - add property first.',
                               style: TextStyle(fontSize: 12, color: Color(0xFF8A8A8A)),
                             ),
                           ),
@@ -75,7 +76,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 6),
-                Text('Select Category',
+                Text(_isSw ? 'Chagua Kategoria' : 'Select Category',
                     style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500)),
@@ -103,7 +104,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 12),
-                const Text('Amount (Tsh)',
+                Text(_isSw ? 'Kiasi (Tsh)' : 'Amount (Tsh)',
                     style: TextStyle(fontSize: 16,
                         fontWeight: FontWeight.w500)),
                 const SizedBox(height: 7),
@@ -114,7 +115,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
                   validator: controller.validateAmount,
                 ),
                 const SizedBox(height: 12),
-                const Text('Transaction Date',
+                Text(_isSw ? 'Tarehe ya Muamala' : 'Transaction Date',
                     style: TextStyle(fontSize: 16,
                         fontWeight: FontWeight.w500)),
                 const SizedBox(height: 7),
@@ -126,7 +127,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
                   validator: controller.validateDatePaid,
                 ),
                 const SizedBox(height: 12),
-                const Text('Select Tenant (Optional)',
+                Text(_isSw ? 'Chagua Mpangaji (Hiari)' : 'Select Tenant (Optional)',
                     style: TextStyle(fontSize: 16,
                         fontWeight: FontWeight.w500)),
                 const SizedBox(height: 7),
@@ -150,7 +151,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
                 padding: const EdgeInsets.symmetric(vertical: 13),
               ),
               icon: const Icon(Icons.receipt_long_outlined, size: 20),
-              label: const Text('Record Transaction',
+              label: Text(_isSw ? 'Rekodi Muamala' : 'Record Transaction',
                   style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700)),
@@ -163,21 +164,21 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
           // ),
           const SizedBox(height: 14),
           _expenseCard(
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Monthly Context',
+                Text(_isSw ? 'Muktadha wa Mwezi' : 'Monthly Context',
                     style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14)),
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Expanded(child: _StatBlock(label: 'BUDGET USED', value: '64%')),
+                    Expanded(child: _StatBlock(label: _isSw ? 'BAJETI ILIYOTUMIKA' : 'BUDGET USED', value: '64%')),
                     Expanded(
                         child: _StatBlock(
-                            label: 'STATUS',
-                            value: 'Healthy',
+                            label: _isSw ? 'HALI' : 'STATUS',
+                            value: _isSw ? 'Nzuri' : 'Healthy',
                             alignEnd: true)),
                   ],
                 ),
@@ -396,7 +397,7 @@ class _StatBlock extends StatelessWidget {
           style: TextStyle(
             fontSize: 11.5,
             fontWeight: FontWeight.w800,
-            color: value == 'Healthy'
+            color: (value == 'Healthy' || value == 'Nzuri')
                 ? const Color(0xFF006D73)
                 : const Color(0xFF111111),
           ),

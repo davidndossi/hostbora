@@ -10,13 +10,14 @@ import '../utils/rent_staff_pay_format.dart';
 /// Concierge **Staff Registry** — form, payroll summary, active team list.
 class RentStaffManagementView extends BaseView<RentStaffManagementController> {
   RentStaffManagementView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   static const _teal = RentTheme.conciergeTeal;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return rentAppBar(
-      'Staff Registry',
+      _isSw ? 'Usajili wa Wafanyakazi' : 'Staff Registry',
       // actions: [
       //   IconButton(
       //     icon: const Icon(Icons.person_add_alt_1, color: _teal),
@@ -68,8 +69,8 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
             children: [
               Icon(Icons.person_add_alt_1_rounded, color: _teal.withValues(alpha: 0.9), size: 22),
               const SizedBox(width: 8),
-              const Text(
-                'New Staff Member',
+              Text(
+                _isSw ? 'Mfanyakazi Mpya' : 'New Staff Member',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
               ),
             ],
@@ -163,10 +164,15 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
               return DropdownButtonFormField<String>(
                 initialValue: role.isEmpty ? null : (opts.contains(role) ? role : null),
                 decoration: _dropdownDeco(fill),
-                hint: const Text('Select a role...', style: TextStyle(color: Color(0xFF9CA3AF))),
+                hint: Text(
+                  _isSw ? 'Chagua jukumu...' : 'Select a role...',
+                  style: const TextStyle(color: Color(0xFF9CA3AF)),
+                ),
                 isExpanded: true,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                validator: (value) => (value == null || value.isEmpty) ? 'Select a primary role' : null,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? (_isSw ? 'Chagua jukumu la msingi' : 'Select a primary role')
+                    : null,
                 items: opts
                     .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
                     .toList(),
@@ -185,8 +191,8 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text(
-                'REGISTER STAFF MEMBER',
+              child: Text(
+                _isSw ? 'SAJILI MTAFANYAKAZI' : 'REGISTER STAFF MEMBER',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.6),
               ),
             ),
@@ -233,10 +239,14 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
             const SizedBox(height: 6),
             Text(
               nMonthly > 0
-                  ? 'Monthly salary contracts: $nMonthly · $nAll active team member${nAll == 1 ? '' : 's'}'
+                  ? (_isSw
+                      ? 'Mikataba ya mishahara ya mwezi: $nMonthly · $nAll mwanatimu hai${nAll == 1 ? '' : ''}'
+                      : 'Monthly salary contracts: $nMonthly · $nAll active team member${nAll == 1 ? '' : 's'}')
                   : (nAll == 0
-                      ? 'Register staff to track payroll'
-                      : 'No monthly contracts yet — hourly / per-job rates listed per person'),
+                      ? (_isSw ? 'Sajili wafanyakazi kufuatilia mishahara' : 'Register staff to track payroll')
+                      : (_isSw
+                          ? 'Bado hakuna mikataba ya mwezi — viwango vya saa/kazi kwa kila mtu vimeorodheshwa.'
+                          : 'No monthly contracts yet — hourly / per-job rates listed per person')),
               style: TextStyle(
                 fontSize: 12,
                 height: 1.35,
@@ -253,9 +263,9 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
     return Obx(
       () => Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
-              'Active Service Team',
+              _isSw ? 'Timu Hai ya Huduma' : 'Active Service Team',
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
             ),
           ),
@@ -278,7 +288,7 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
         child: Text(
-          'No staff registered yet — use the form above.',
+          _isSw ? 'Bado hakuna wafanyakazi waliosajiliwa — tumia fomu hapo juu.' : 'No staff registered yet — use the form above.',
           style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
           textAlign: TextAlign.center,
         ),
@@ -365,9 +375,9 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
                   controller.removeStaff(m.id);
                 }
               },
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'remove', child: Text('Remove')),
+              itemBuilder: (context) => [
+                PopupMenuItem(value: 'edit', child: Text(_isSw ? 'Hariri' : 'Edit')),
+                PopupMenuItem(value: 'remove', child: Text(_isSw ? 'Ondoa' : 'Remove')),
               ],
             ),
           ],
@@ -394,7 +404,7 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Compliance Note',
+                  _isSw ? 'Kumbukumbu ya Uzingatiaji' : 'Compliance Note',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
@@ -403,7 +413,9 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Keep employment records and confidentiality agreements on file for each team member.',
+                  _isSw
+                      ? 'Hifadhi rekodi za ajira na makubaliano ya usiri kwenye faili kwa kila mwanatimu.'
+                      : 'Keep employment records and confidentiality agreements on file for each team member.',
                   style: TextStyle(fontSize: 13, height: 1.4, color: Colors.brown.shade700),
                 ),
               ],
@@ -432,7 +444,7 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Upcoming Payroll',
+                  _isSw ? 'Mishahara Inayokuja' : 'Upcoming Payroll',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
@@ -441,7 +453,9 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Disbursements follow the payment dates you set for each staff member.',
+                  _isSw
+                      ? 'Malipo hufuata tarehe za malipo ulizoweka kwa kila mfanyakazi.'
+                      : 'Disbursements follow the payment dates you set for each staff member.',
                   style: TextStyle(fontSize: 13, height: 1.4, color: Colors.grey.shade800),
                 ),
               ],

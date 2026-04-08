@@ -2731,6 +2731,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Staff Detail'**
   String get staffDetail;
+
+  /// No description provided for @authUsePinToSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Use PIN to sign in'**
+  String get authUsePinToSignIn;
+
+  /// No description provided for @authPinAvailableAfterFirstLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN available after first login'**
+  String get authPinAvailableAfterFirstLogin;
+
+  /// No description provided for @welcomeAuthenticatingBiometrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticating via Biometrics.'**
+  String get welcomeAuthenticatingBiometrics;
+
+  /// No description provided for @welcomeSignedInContinueMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re signed in. Tap below to continue to the app.'**
+  String get welcomeSignedInContinueMessage;
+
+  /// No description provided for @resetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get resetLabel;
+
+  /// No description provided for @tenantReminderTemplateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenant reminder template'**
+  String get tenantReminderTemplateTitle;
+
+  /// No description provided for @tenantReminderTemplateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Used for automatic WhatsApp reminders when tenancy ends'**
+  String get tenantReminderTemplateDescription;
+
+  /// No description provided for @runLeaseReminderNowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Run lease reminder now'**
+  String get runLeaseReminderNowTitle;
+
+  /// No description provided for @runLeaseReminderNowDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manually trigger one-month lease reminder check'**
+  String get runLeaseReminderNowDescription;
+
+  /// No description provided for @changePinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change PIN'**
+  String get changePinTitle;
+
+  /// No description provided for @changePinDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the 4-digit PIN used for subsequent logins'**
+  String get changePinDescription;
+
+  /// No description provided for @templatePreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Template preview'**
+  String get templatePreviewTitle;
+
+  /// No description provided for @closeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closeLabel;
+
+  /// No description provided for @previewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get previewLabel;
+
+  /// No description provided for @securityPriorityPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Your security is our priority. Read our '**
+  String get securityPriorityPrefix;
+
+  /// No description provided for @securityPrioritySuffix.
+  ///
+  /// In en, this message translates to:
+  /// **' to learn how we protect your data.'**
+  String get securityPrioritySuffix;
+
+  /// No description provided for @changeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get changeLabel;
+
+  /// No description provided for @orLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'OR'**
+  String get orLabel;
+
+  /// No description provided for @performance.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get performance;
+
+  /// No description provided for @addIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Income'**
+  String get addIncome;
 }
 
 class _AppLocalizationsDelegate

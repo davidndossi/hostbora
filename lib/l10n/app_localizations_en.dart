@@ -1352,4 +1352,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get staffDetail => 'Staff Detail';
+
+  @override
+  String get authUsePinToSignIn => 'Use PIN to sign in';
+
+  @override
+  String get authPinAvailableAfterFirstLogin =>
+      'PIN available after first login';
+
+  @override
+  String get welcomeAuthenticatingBiometrics =>
+      'Authenticating via Biometrics.';
+
+  @override
+  String get welcomeSignedInContinueMessage =>
+      'You’re signed in. Tap below to continue to the app.';
+
+  @override
+  String get resetLabel => 'Reset';
+
+  @override
+  String get tenantReminderTemplateTitle => 'Tenant reminder template';
+
+  @override
+  String get tenantReminderTemplateDescription =>
+      'Used for automatic WhatsApp reminders when tenancy ends';
+
+  @override
+  String get runLeaseReminderNowTitle => 'Run lease reminder now';
+
+  @override
+  String get runLeaseReminderNowDescription =>
+      'Manually trigger one-month lease reminder check';
+
+  @override
+  String get changePinTitle => 'Change PIN';
+
+  @override
+  String get changePinDescription =>
+      'Update the 4-digit PIN used for subsequent logins';
+
+  @override
+  String get templatePreviewTitle => 'Template preview';
+
+  @override
+  String get closeLabel => 'Close';
+
+  @override
+  String get previewLabel => 'Preview';
+
+  @override
+  String get securityPriorityPrefix =>
+      'Your security is our priority. Read our ';
+
+  @override
+  String get securityPrioritySuffix => ' to learn how we protect your data.';
+
+  @override
+  String get changeLabel => 'Change';
+
+  @override
+  String get orLabel => 'OR';
+
+  @override
+  String get performance => 'Performance';
+
+  @override
+  String get addIncome => 'Add Income';
 }

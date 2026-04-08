@@ -18,10 +18,11 @@ import '../controllers/rent_add_new_listing_controller.dart';
 
 class RentAddNewListingView extends BaseView<RentAddNewListingController> {
   RentAddNewListingView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
-    appBarTitleText: 'Add Property'
+    appBarTitleText: _isSw ? 'Ongeza Mali' : 'Add Property'
   );
 
   @override
@@ -43,7 +44,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
                     _inputRow(
                       icon: Icons.location_on_outlined,
                       fieldController: controller.propertyLocationController,
-                      hint: 'Enter full street address or district',
+                      hint: _isSw ? 'Weka anwani kamili ya mtaa au wilaya' : 'Enter full street address or district',
                     ),
                     const SizedBox(height: 16),
                     _fieldLabel('PROPERTY TYPE'),
@@ -59,10 +60,10 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
                       return _addUnitsSection();
                     }),
                     const SizedBox(height: 16),
-                    _fieldLabel('PROPERTY NAME/NUMBER'),
+                    _fieldLabel(_isSw ? 'JINA/NAMBA YA MALI' : 'PROPERTY NAME/NUMBER'),
                     _plainInput(
                       fieldController: controller.apartmentSuiteController,
-                      hint: 'e.g. 4B or Penthouse 1',
+                      hint: _isSw ? 'mf. 4B au Penthouse 1' : 'e.g. 4B or Penthouse 1',
                     ),
                     Obx(() {
                       if (controller.hideListingRentAmount) {
@@ -193,7 +194,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                        child: Text(_isSw ? 'Ghairi' : 'Cancel', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -206,7 +207,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('Save Property', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        child: Text(_isSw ? 'Hifadhi Mali' : 'Save Property', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                       ),
                     ),
                   ],
@@ -242,7 +243,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
         _fieldLabel('UNIT NAME'),
         _plainInput(
           fieldController: controller.draftUnitNameController,
-          hint: 'e.g. 4B or Penthouse 1',
+          hint: _isSw ? 'mf. 4B au Penthouse 1' : 'e.g. 4B or Penthouse 1',
         ),
         const SizedBox(height: 12),
         _fieldLabel('UNIT RENT'),
@@ -274,7 +275,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: RichText(
-            text: const TextSpan(
+            text: TextSpan(
               style: TextStyle(
                 fontSize: 10,
                 letterSpacing: 1.2,
@@ -283,7 +284,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
               children: [
                 TextSpan(text: 'UNIT DESCRIPTION'),
                 TextSpan(
-                  text: ' (optional)',
+                  text: _isSw ? ' (hiari)' : ' (optional)',
                   style: TextStyle(
                     fontStyle: FontStyle.italic,
                     fontWeight: FontWeight.w600,
@@ -303,7 +304,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
           decoration: InputDecoration(
             filled: true,
             fillColor: fill,
-            hintText: 'Short note for this unit',
+            hintText: _isSw ? 'Maelezo mafupi ya hiki chumba' : 'Short note for this unit',
             hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF7A7A7A)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -318,7 +319,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
           child: OutlinedButton.icon(
             onPressed: controller.addApartmentUnit,
             icon: const Icon(Icons.add_circle_outline, size: 20),
-            label: const Text('Add unit', style: TextStyle(fontWeight: FontWeight.w700)),
+            label: Text(_isSw ? 'Ongeza chumba' : 'Add unit', style: const TextStyle(fontWeight: FontWeight.w700)),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF2E2E2E),
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -368,7 +369,7 @@ class RentAddNewListingView extends BaseView<RentAddNewListingController> {
           IconButton(
             onPressed: () => controller.removeApartmentUnit(index),
             icon: const Icon(Icons.close_rounded, color: Color(0xFF9CA3AF)),
-            tooltip: 'Remove unit',
+            tooltip: _isSw ? 'Ondoa chumba' : 'Remove unit',
             visualDensity: VisualDensity.compact,
           ),
         ],

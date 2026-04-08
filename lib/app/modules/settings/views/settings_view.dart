@@ -62,8 +62,8 @@ class SettingsView extends BaseView<SettingsController> {
               SettingsTile.navigation(
                 onPressed: (context) => _showTenantReminderTemplateDialog(context),
                 leading: const Icon(Icons.chat_outlined),
-                title: const Text('Tenant reminder template'),
-                description: const Text('Used for automatic WhatsApp reminders when tenancy ends'),
+                title: Text(appLocalization.tenantReminderTemplateTitle),
+                description: Text(appLocalization.tenantReminderTemplateDescription),
                 value: Obx(
                   () => Text(
                     controller.tenantReminderTemplate.value.trim().isEmpty
@@ -76,8 +76,8 @@ class SettingsView extends BaseView<SettingsController> {
               SettingsTile(
                 onPressed: (context) => controller.runLeaseReminderNow(),
                 leading: const Icon(Icons.play_circle_outline),
-                title: const Text('Run lease reminder now'),
-                description: const Text('Manually trigger one-month lease reminder check'),
+                title: Text(appLocalization.runLeaseReminderNowTitle),
+                description: Text(appLocalization.runLeaseReminderNowDescription),
                 value: Obx(
                   () => Text(
                     controller.runningLeaseReminderNow.value ? 'Running...' : 'Tap to run',
@@ -119,6 +119,16 @@ class SettingsView extends BaseView<SettingsController> {
               leading: const Icon(Icons.security),
               title: Text(appLocalization.security),
               description: Text(appLocalization.securityDescription),
+              trailing: const Icon(Icons.chevron_right_outlined),
+            ),
+            SettingsTile.navigation(
+              onPressed: (context) => Get.toNamed(
+                Routes.CHANGE_PIN,
+                arguments: {'setup_pin': true, 'change_pin': true},
+              ),
+              leading: const Icon(Icons.pin_outlined),
+              title: Text(appLocalization.changePinTitle),
+              description: Text(appLocalization.changePinDescription),
               trailing: const Icon(Icons.chevron_right_outlined),
             ),
             SettingsTile.switchTile(
@@ -240,7 +250,7 @@ class SettingsView extends BaseView<SettingsController> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Tenant reminder template'),
+          title: Text(appLocalization.tenantReminderTemplateTitle),
           content: TextField(
             controller: textController,
             minLines: 3,
@@ -254,14 +264,14 @@ class SettingsView extends BaseView<SettingsController> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(appLocalization.cancel),
             ),
             TextButton(
               onPressed: () async {
                 await controller.saveTenantReminderTemplate('');
                 if (context.mounted) Navigator.of(context).pop();
               },
-              child: const Text('Clear'),
+              child: Text(appLocalization.clear),
             ),
             TextButton(
               onPressed: () {
@@ -276,26 +286,26 @@ class SettingsView extends BaseView<SettingsController> {
                   context: context,
                   builder: (ctx) {
                     return AlertDialog(
-                      title: const Text('Template preview'),
+                      title: Text(appLocalization.templatePreviewTitle),
                       content: Text(preview),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(ctx).pop(),
-                          child: const Text('Close'),
+                          child: Text(appLocalization.closeLabel),
                         ),
                       ],
                     );
                   },
                 );
               },
-              child: const Text('Preview'),
+              child: Text(appLocalization.previewLabel),
             ),
             FilledButton(
               onPressed: () async {
                 await controller.saveTenantReminderTemplate(textController.text);
                 if (context.mounted) Navigator.of(context).pop();
               },
-              child: const Text('Save'),
+              child: Text(appLocalization.save),
             ),
           ],
         );

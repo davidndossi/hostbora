@@ -7,13 +7,14 @@ import '../controllers/rent_add_income_form_controller.dart';
 
 class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
   RentAddIncomeFormView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   Color pageBackgroundColor(BuildContext context) => const Color(0xFFF9F8F6);
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
-    appBarTitleText: 'Add Income'
+    appBarTitleText: _isSw ? 'Ongeza Mapato' : 'Add Income'
   );
 
   @override
@@ -25,12 +26,12 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          const Text(
-            'Record a payment for this property',
+          Text(
+            _isSw ? 'Rekodi malipo kwa mali hii' : 'Record a payment for this property',
             style: TextStyle(fontSize: 18, color: Color(0xFF2E2E2E)),
           ),
           const SizedBox(height: 22),
-          _label('SELECT PROPERTY'),
+          _label(_isSw ? 'CHAGUA MALI' : 'SELECT PROPERTY'),
           Obx(
             () {
               final hasProperties = controller.hasProperties;
@@ -41,9 +42,9 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
                     initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
                         ? controller.selectedProperty.value
                         : null,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: 'Choose property',
+                      hintText: _isSw ? 'Chagua mali' : 'Choose property',
                     ),
                     validator: controller.validateSelectedProperty,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -53,10 +54,10 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
                     onChanged: hasProperties ? controller.updateSelectedProperty : null,
                   ),
                   if (!hasProperties)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 6, left: 2),
                       child: Text(
-                        'No properties yet - add property first.',
+                        _isSw ? 'Bado hakuna mali - ongeza mali kwanza.' : 'No properties yet - add property first.',
                         style: TextStyle(fontSize: 12, color: Color(0xFF8A8A8A)),
                       ),
                     ),
@@ -65,15 +66,15 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
             },
           ),
           const SizedBox(height: 16),
-          _label('SELECT TENANT'),
+          _label(_isSw ? 'CHAGUA MPANGAJI' : 'SELECT TENANT'),
           _field(
             controller.tenantController,
-            hint: 'Choose a guest or long-term resident',
+            hint: _isSw ? 'Chagua mgeni au mkazi wa muda mrefu' : 'Choose a guest or long-term resident',
             suffix: Icons.expand_more,
             validator: controller.validateTenant,
           ),
           const SizedBox(height: 16),
-          _label('AMOUNT PAID'),
+          _label(_isSw ? 'KIASI KILICHOLIPWA' : 'AMOUNT PAID'),
           _field(
             controller.amountController,
             hint: 'TZS 0.00',
@@ -81,15 +82,15 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
             validator: controller.validateAmount,
           ),
           const SizedBox(height: 16),
-          _label('DATE PAID'),
+          _label(_isSw ? 'TAREHE YA MALIPO' : 'DATE PAID'),
           _field(
             controller.datePaidController,
-            hint: 'mm/dd/yyyy',
+            hint: _isSw ? 'dd/mm/yyyy' : 'mm/dd/yyyy',
             suffix: Icons.calendar_today_outlined,
             validator: controller.validateDatePaid,
           ),
           const SizedBox(height: 16),
-          _label('CATEGORY'),
+          _label(_isSw ? 'KATEGORIA' : 'CATEGORY'),
           Obx(
             () => Wrap(
               spacing: 8,
@@ -105,10 +106,10 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
             ),
           ),
           const SizedBox(height: 18),
-          _label('NOTES (OPTIONAL)'),
+          _label(_isSw ? 'MAELEZO (HIARI)' : 'NOTES (OPTIONAL)'),
           _field(
             controller.notesController,
-            hint: 'Add any specific details regarding this transaction...',
+            hint: _isSw ? 'Ongeza maelezo yoyote maalum kuhusu muamala huu...' : 'Add any specific details regarding this transaction...',
             minHeight: 120,
             isMultiline: true,
           ),
@@ -120,7 +121,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
               color: const Color(0xFFF4F3EF),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _ImpactIcon(),
@@ -129,14 +130,16 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Impact on Performance',
+                      Text(_isSw ? 'Athari kwa Utendaji' : 'Impact on Performance',
                           style: TextStyle(
                               color: Color(0xFF0E0E0E),
                               fontSize: 16,
                               fontWeight: FontWeight.w700)),
                       SizedBox(height: 4),
                       Text(
-                        'Recording this income will\nimmediately update your monthly\nrevenue stats and occupancy value\nreports.',
+                        _isSw
+                            ? 'Kurekodi mapato haya\nkutasasisha mara moja\ntakwimu za mapato ya mwezi\nna ripoti za thamani ya ujazaji.'
+                            : 'Recording this income will\nimmediately update your monthly\nrevenue stats and occupancy value\nreports.',
                         style: TextStyle(
                             color: Color(0xFF2B2B2B), fontSize: 13, height: 1.35),
                       ),
@@ -159,7 +162,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
                     borderRadius: BorderRadius.circular(11)),
               ),
               icon: const Icon(Icons.check, size: 20),
-              label: const Text('Save Income',
+              label: Text(_isSw ? 'Hifadhi Mapato' : 'Save Income',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
             ),
           ),
@@ -169,10 +172,10 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
             child: InkWell(
               onTap: () => Get.back(),
               borderRadius: BorderRadius.circular(8),
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Text(
-                  'Cancel',
+                  _isSw ? 'Ghairi' : 'Cancel',
                   style: TextStyle(
                     fontSize: 15,
                     color: Color(0xFF111111),

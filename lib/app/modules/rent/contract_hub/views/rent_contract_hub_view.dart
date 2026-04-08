@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
 import '../../rent_theme.dart';
@@ -7,19 +8,20 @@ import '../controllers/rent_contract_hub_controller.dart';
 
 class RentContractHubView extends BaseView<RentContractHubController> {
   RentContractHubView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   Color pageBackgroundColor(BuildContext context) => RentTheme.bg;
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Contract hub');
+  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(_isSw ? 'Kitovu cha Mikataba' : 'Contract hub');
 
   @override
   Widget body(BuildContext context) {
     final items = [
-      'Lease - Masaki 2BR',
-      'Addendum - rent review',
-      'Termination notice - archive',
+      _isSw ? 'Mkataba - Masaki 2BR' : 'Lease - Masaki 2BR',
+      _isSw ? 'Nyongeza - mapitio ya kodi' : 'Addendum - rent review',
+      _isSw ? 'Notisi ya kusitisha - kumbukumbu' : 'Termination notice - archive',
     ];
     return ListView.separated(
       padding: const EdgeInsets.all(16),

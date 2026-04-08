@@ -9,6 +9,7 @@ import '../controllers/rent_schedule_maintenance_form_controller.dart';
 /// Concierge **Request Maintenance** — property, category, date, priority, description.
 class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFormController> {
   RentScheduleMaintenanceFormView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   static const _teal = RentTheme.conciergeTeal;
   static const _fill = Color(0xFFF1F1F1);
@@ -17,7 +18,8 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
   Color pageBackgroundColor(BuildContext context) => RentTheme.canvas;
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Schedule maintenance');
+  PreferredSizeWidget? appBar(BuildContext context) =>
+      rentAppBar(_isSw ? 'Panga Matengenezo' : 'Schedule maintenance');
 
   @override
   Widget body(BuildContext context) {
@@ -41,7 +43,7 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                     .toList(),
                 onChanged: controller.updateProperty,
-                validator: (v) => v == null || v.isEmpty ? 'Select a property' : null,
+                validator: (v) => v == null || v.isEmpty ? (_isSw ? 'Chagua mali' : 'Select a property') : null,
               ),
             ),
             const SizedBox(height: 16),
@@ -58,7 +60,7 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                     .toList(),
                 onChanged: controller.updateCategory,
-                validator: (v) => v == null || v.isEmpty ? 'Select a category' : null,
+                validator: (v) => v == null || v.isEmpty ? (_isSw ? 'Chagua kategoria' : 'Select a category') : null,
               ),
             ),
             const SizedBox(height: 16),
@@ -71,7 +73,7 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
               decoration: InputDecoration(
                 filled: true,
                 fillColor: _fill,
-                hintText: 'mm/dd/yyyy',
+                hintText: _isSw ? 'dd/mm/yyyy' : 'mm/dd/yyyy',
                 hintStyle: TextStyle(color: Colors.grey.shade500),
                 suffixIcon: Icon(Icons.calendar_today_outlined, color: _teal.withValues(alpha: 0.85), size: 20),
                 border: OutlineInputBorder(
@@ -80,7 +82,7 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
               ),
-              validator: (_) => controller.scheduleDate.value == null ? 'Pick a date' : null,
+              validator: (_) => controller.scheduleDate.value == null ? (_isSw ? 'Chagua tarehe' : 'Pick a date') : null,
             ),
             const SizedBox(height: 16),
             _capsLabel('PRIORITY LEVEL'),
@@ -97,7 +99,7 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
               decoration: InputDecoration(
                 filled: true,
                 fillColor: _fill,
-                hintText: 'Briefly describe the maintenance required...',
+                hintText: _isSw ? 'Elezea kwa ufupi matengenezo yanayohitajika...' : 'Briefly describe the maintenance required...',
                 hintStyle: TextStyle(color: Colors.grey.shade500),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -106,7 +108,7 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
                 contentPadding: const EdgeInsets.all(16),
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Describe the issue';
+                if (v == null || v.trim().isEmpty) return _isSw ? 'Elezea tatizo' : 'Describe the issue';
                 return null;
               },
             ),
@@ -116,8 +118,8 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
               child: FilledButton.icon(
                 onPressed: controller.scheduleTask,
                 icon: const Icon(Icons.event_available_rounded, size: 22),
-                label: const Text(
-                  'Schedule Task',
+                label: Text(
+                  _isSw ? 'Panga Kazi' : 'Schedule Task',
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: 0.3),
                 ),
                 style: FilledButton.styleFrom(
@@ -169,9 +171,9 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
 
     return Row(
       children: [
-        seg('low', 'Low'),
-        seg('medium', 'Medium'),
-        seg('high', 'High'),
+        seg('low', _isSw ? 'Chini' : 'Low'),
+        seg('medium', _isSw ? 'Wastani' : 'Medium'),
+        seg('high', _isSw ? 'Juu' : 'High'),
       ],
     );
   }
@@ -193,8 +195,8 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Premium Support',
+                Text(
+                  _isSw ? 'Msaada wa Kipaumbele' : 'Premium Support',
                   style: TextStyle(
                     
                     fontSize: 18,
@@ -204,7 +206,9 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'High priority tasks are routed to our rapid response team immediately upon scheduling.',
+                  _isSw
+                      ? 'Kazi za kipaumbele cha juu zinaelekezwa kwa timu yetu ya mwitikio wa haraka mara tu zinapopangwa.'
+                      : 'High priority tasks are routed to our rapid response team immediately upon scheduling.',
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.45,

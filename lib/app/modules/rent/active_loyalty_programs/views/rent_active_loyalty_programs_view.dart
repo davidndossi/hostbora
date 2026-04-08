@@ -16,10 +16,11 @@ abstract class _LoyaltyDash {
 
 class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsController> {
   RentActiveLoyaltyProgramsView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) =>
-      rentAppBar('Loyalty & Resident Programs');
+      rentAppBar(_isSw ? 'Uaminifu na Programu za Wakazi' : 'Loyalty & Resident Programs');
 
   @override
   Widget body(BuildContext context) {
@@ -33,7 +34,9 @@ class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsCo
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Programs below are loaded from your real loyalty offers data.',
+              _isSw
+                  ? 'Programu zilizo hapa chini zimepakuliwa kutoka data halisi ya ofa zako za uaminifu.'
+                  : 'Programs below are loaded from your real loyalty offers data.',
               style: TextStyle(
                 fontSize: 14,
                 height: 1.45,
@@ -54,8 +57,8 @@ class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsCo
                   ),
                 ),
                 icon: const Icon(Icons.add, size: 22),
-                label: const Text(
-                  'CREATE NEW OFFER',
+                label: Text(
+                  _isSw ? 'UNDA OFA MPYA' : 'CREATE NEW OFFER',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.8,
@@ -74,7 +77,7 @@ class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsCo
                   )),
             const SizedBox(height: 16),
             Text(
-              'Performance Insights',
+              _isSw ? 'Maarifa ya Utendaji' : 'Performance Insights',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
@@ -91,13 +94,13 @@ class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsCo
             _insightCard(
               value: '${controller.activeClaimsCount}',
               label: 'ACTIVE CLAIMS',
-              subtext: 'Derived from active offers',
+              subtext: _isSw ? 'Imechukuliwa kutoka ofa hai' : 'Derived from active offers',
             ),
             const SizedBox(height: 10),
             _insightCard(
               value: controller.valueDistributedLabel,
               label: 'VALUE DISTRIBUTED',
-              subtext: 'From current offer thresholds',
+              subtext: _isSw ? 'Kutoka vizingiti vya ofa za sasa' : 'From current offer thresholds',
             ),
           ],
         ),
@@ -140,19 +143,19 @@ class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsCo
               OutlinedButton.icon(
                 onPressed: () => controller.openEditOfferDialog(offer),
                 icon: const Icon(Icons.edit_outlined, size: 16),
-                label: const Text('Edit'),
+                label: Text(_isSw ? 'Hariri' : 'Edit'),
               ),
               const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: () => controller.deleteOffer(offer.id),
                 icon: const Icon(Icons.delete_outline, size: 16),
-                label: const Text('Delete'),
+                label: Text(_isSw ? 'Futa' : 'Delete'),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Text(
-            'THRESHOLD: ${offer.thresholdLabel}',
+            _isSw ? 'KIZINGITI: ${offer.thresholdLabel}' : 'THRESHOLD: ${offer.thresholdLabel}',
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -161,7 +164,7 @@ class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsCo
           ),
           const SizedBox(height: 4),
           Text(
-            'REWARD VALUE: ${offer.rewardLabel}',
+            _isSw ? 'THAMANI YA TUZO: ${offer.rewardLabel}' : 'REWARD VALUE: ${offer.rewardLabel}',
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -179,7 +182,7 @@ class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsCo
           ),
           const SizedBox(height: 10),
           Text(
-            'Created: $created',
+            _isSw ? 'Imeundwa: $created' : 'Created: $created',
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -200,8 +203,10 @@ class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsCo
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _LoyaltyDash.border),
       ),
-      child: const Text(
-        'No active loyalty offers found. Create a new offer to start tracking real program data.',
+      child: Text(
+        _isSw
+            ? 'Hakuna ofa hai za uaminifu zilizopatikana. Unda ofa mpya kuanza kufuatilia data halisi ya programu.'
+            : 'No active loyalty offers found. Create a new offer to start tracking real program data.',
         style: TextStyle(fontSize: 13, height: 1.4, color: _LoyaltyDash.muted),
       ),
     );

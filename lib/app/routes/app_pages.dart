@@ -44,6 +44,8 @@ import '../modules/welcome_back/bindings/welcome_back_binding.dart';
 import '../modules/welcome_back/views/welcome_back_view.dart';
 import '../modules/reset_password/bindings/reset_password_binding.dart';
 import '../modules/reset_password/views/reset_password_view.dart';
+import '../modules/change_pin/bindings/change_pin_binding.dart';
+import '../modules/change_pin/views/change_pin_view.dart';
 import '../modules/password_updated/bindings/password_updated_binding.dart';
 import '../modules/password_updated/views/password_updated_view.dart';
 import '../modules/add_listing/bindings/add_listing_binding.dart';
@@ -124,6 +126,8 @@ import '../modules/rent/listing_details/bindings/rent_listing_details_binding.da
 import '../modules/rent/listing_details/views/rent_listing_details_view.dart';
 import '../modules/rent/add_new_listing/bindings/rent_add_new_listing_binding.dart';
 import '../modules/rent/add_new_listing/views/rent_add_new_listing_view.dart';
+import '../modules/rent/property_roi_estimate_form/bindings/rent_property_roi_estimate_form_binding.dart';
+import '../modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart';
 import '../modules/rent/listing_analytics_dashboard/bindings/rent_listing_analytics_dashboard_binding.dart'
     as split_listing_analytics_binding;
 import '../modules/rent/listing_analytics_dashboard/views/rent_listing_analytics_dashboard_view.dart'
@@ -200,6 +204,10 @@ import '../modules/rent/host_dashboard_payment_alerts/bindings/rent_host_dashboa
     as split_host_alerts_binding;
 import '../modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart'
     as split_host_alerts_view;
+import '../modules/rent/host_calendar/bindings/rent_host_calendar_binding.dart'
+    as split_rent_host_calendar_binding;
+import '../modules/rent/host_calendar/views/rent_host_calendar_view.dart'
+    as split_rent_host_calendar_view;
 import '../modules/rent/profit_analysis_dashboard/bindings/rent_profit_analysis_dashboard_binding.dart'
     as split_profit_analysis_binding;
 import '../modules/rent/profit_analysis_dashboard/views/rent_profit_analysis_dashboard_view.dart'
@@ -331,6 +339,11 @@ class AppPages {
       name: _Paths.RESET_PASSWORD,
       page: () => ResetPasswordView(),
       binding: ResetPasswordBinding(),
+    ),
+    GetPage(
+      name: _Paths.CHANGE_PIN,
+      page: () => ChangePinView(),
+      binding: ChangePinBinding(),
     ),
     GetPage(
       name: _Paths.PASSWORD_UPDATED,
@@ -508,6 +521,11 @@ class AppPages {
       binding: RentBaseShellBinding(),
     ),
     GetPage(
+      name: _Paths.RENT_HOST_CALENDAR,
+      page: () => split_rent_host_calendar_view.RentHostCalendarView(),
+      binding: split_rent_host_calendar_binding.HostCalendarBinding(),
+    ),
+    GetPage(
       name: _Paths.RENT_HOST_DASHBOARD_PAYMENT_ALERTS,
       page: () => split_host_alerts_view.RentHostDashboardPaymentAlertsView(),
       binding: split_host_alerts_binding.RentHostDashboardPaymentAlertsBinding(),
@@ -641,6 +659,11 @@ class AppPages {
       name: _Paths.RENT_LISTING_DETAILS,
       page: () => RentListingDetailsView(),
       binding: RentListingDetailsBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_PROPERTY_ROI_ESTIMATE_FORM,
+      page: () => RentPropertyRoiEstimateFormView(),
+      binding: RentPropertyRoiEstimateFormBinding(),
     ),
   ];
 }

@@ -11,6 +11,7 @@ import '../controllers/rent_add_tenant_form_controller.dart';
 /// Concierge “Add New Tenant” — beige canvas, dark teal accents, serif headlines.
 class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
   RentAddTenantFormView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   static const _labelStyle = TextStyle(
     fontSize: 10,
@@ -21,7 +22,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
-    return CustomAppBar(appBarTitleText: 'Add tenant');
+    return CustomAppBar(appBarTitleText: _isSw ? 'Ongeza Mpangaji' : 'Add tenant');
   }
 
   @override
@@ -40,7 +41,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
               text: TextSpan(
                 style: const TextStyle(fontSize: 14, height: 1.4, color: Color(0xFF4B5563)),
                 children: [
-                  const TextSpan(text: 'Link a tenant to '),
+                  TextSpan(text: _isSw ? 'Unganisha mpangaji na ' : 'Link a tenant to '),
                   TextSpan(
                     text: name,
                     style: const TextStyle(fontWeight: FontWeight.w700),
@@ -56,7 +57,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
               const SizedBox(height: 8),
               _whiteField(
                 controller: controller.tenantNameController,
-                hint: 'e.g. Julianne Moore',
+                hint: _isSw ? 'mf. Julianne Moore' : 'e.g. Julianne Moore',
                 textInputAction: TextInputAction.next,
                 validator: controller.validateTenantName,
               ),
@@ -137,7 +138,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
               const SizedBox(height: 8),
               _whiteField(
                 controller: controller.phoneController,
-                hint: '+1 (555) 000-0000',
+                hint: _isSw ? '+255 7XX XXX XXX' : '+1 (555) 000-0000',
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.next,
                 validator: controller.validatePhone,
@@ -190,9 +191,9 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'This is my WhatsApp number',
+                            _isSw ? 'Hii ni namba yangu ya WhatsApp' : 'This is my WhatsApp number',
                             style: TextStyle(fontSize: 14, color: Color(0xFF374151)),
                           ),
                         ),
@@ -215,8 +216,8 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text(
-                'SAVE TENANT',
+              child: Text(
+                _isSw ? 'HIFADHI MPANGAJI' : 'SAVE TENANT',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: 0.8),
               ),
             ),
@@ -233,7 +234,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text('CANCEL', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              child: Text(_isSw ? 'GHAIRI' : 'CANCEL', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
             ),
           ),
         ],
@@ -254,7 +255,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
         label = '${dateFmt.format(start)} – ${dateFmt.format(end)}';
       } else {
         hasRange = false;
-        label = 'Lease start – end';
+        label = _isSw ? 'Mwanzo wa mkataba – mwisho' : 'Lease start – end';
       }
       return Material(
         color: Colors.white,
@@ -401,8 +402,8 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
                 child: const Icon(Icons.face_rounded, size: 44, color: Colors.white),
               ),
               const SizedBox(height: 14),
-              const Text(
-                'New Resident Entry',
+              Text(
+                _isSw ? 'Mpangaji Mpya Anaingia' : 'New Resident Entry',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   
@@ -414,7 +415,9 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Linking this tenant will automatically generate a welcome package and digital access keys for the property.',
+                _isSw
+                    ? 'Kuunganisha mpangaji huyu kutazalisha kiotomatiki kifurushi cha ukaribisho na funguo za kidijitali za mali.'
+                    : 'Linking this tenant will automatically generate a welcome package and digital access keys for the property.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,

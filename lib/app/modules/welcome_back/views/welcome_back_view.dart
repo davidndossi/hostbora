@@ -29,8 +29,8 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               child: Column(
                 children: [
                   const SizedBox(height: 24),
-                  const Text(
-                    'Welcome Back',
+                  Text(
+                    appLocalization.welcomeBackTitle,
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
@@ -38,18 +38,26 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Authenticating via Biometrics.',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: AppColors.designPlaceholder,
+                  Obx(
+                    () => Text(
+                      controller.setupPinMode.value
+                          ? controller.setupPrompt.value
+                          : appLocalization.welcomeAuthenticatingBiometrics,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: AppColors.designPlaceholder,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),
-                  _buildBiometricCircle(context),
+                  Obx(
+                    () => controller.setupPinMode.value
+                        ? const SizedBox.shrink()
+                        : _buildBiometricCircle(context),
+                  ),
                   const SizedBox(height: 28),
                   Text(
-                    'OR ENTER SECURE PIN',
+                    appLocalization.orEnterSecurePin,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -60,14 +68,34 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                   const SizedBox(height: 16),
                   _buildPinDots(),
                   const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: controller.forgotPin,
-                    child: const Text(
-                      'Forgot PIN?',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.designAccent,
+                  Obx(
+                    () => controller.lockoutMessage.value.isEmpty
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              controller.lockoutMessage.value,
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                  ),
+                  Obx(
+                    () => GestureDetector(
+                      onTap: controller.forgotPin,
+                      child: Text(
+                        controller.setupPinMode.value
+                            ? appLocalization.resetLabel
+                            : appLocalization.forgotPassword,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.designAccent,
+                        ),
                       ),
                     ),
                   ),
@@ -103,8 +131,8 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Welcome Back',
+            Text(
+              appLocalization.welcomeBackTitle,
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
@@ -114,7 +142,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
             ),
             const SizedBox(height: 8),
             Text(
-              'You’re signed in. Tap below to continue to the app.',
+              appLocalization.welcomeSignedInContinueMessage,
               style: TextStyle(
                 fontSize: 15,
                 color: AppColors.designPlaceholder,
@@ -134,8 +162,8 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                     borderRadius: BorderRadius.circular(AppValues.radius_6),
                   ),
                 ),
-                child: const Text(
-                  'Continue',
+                child: Text(
+                  appLocalization.proceed,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -169,8 +197,8 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                   ),
             GestureDetector(
               onTap: controller.help,
-              child: const Text(
-                'HELP',
+              child: Text(
+                appLocalization.help,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -294,7 +322,9 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => controller.onKeyTap(digit),
+        onTap: controller.lockoutMessage.value.isNotEmpty
+            ? null
+            : () => controller.onKeyTap(digit),
         borderRadius: BorderRadius.circular(28),
         child: SizedBox(
           width: 56,
@@ -318,7 +348,9 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: controller.onBackspace,
+        onTap: controller.lockoutMessage.value.isNotEmpty
+            ? null
+            : controller.onBackspace,
         borderRadius: BorderRadius.circular(28),
         child: SizedBox(
           width: 56,

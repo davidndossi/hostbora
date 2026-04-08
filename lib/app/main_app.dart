@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../l10n/app_localizations.dart';
@@ -26,6 +27,7 @@ class _MainAppState extends State<MainApp> {
   late AppLifecycleManager _lifecycleManager;
 
   bool _isLoggedIn = false;
+  bool _hasValidPin = false;
   bool _hasSeenOnboarding = true; // default true so we don't block on first run
   bool _loading = true;
 
@@ -67,15 +69,21 @@ class _MainAppState extends State<MainApp> {
       final results = await Future.wait([
         isSessionValid().timeout(_bootstrapTimeout),
         _preferenceManager.getBool('seen_onboarding', defaultValue: false).timeout(_bootstrapTimeout),
+        _preferenceManager.getBool(PreferenceManager.keyPinEnabled, defaultValue: false).timeout(_bootstrapTimeout),
+        _preferenceManager.getString(PreferenceManager.keyPinCode, defaultValue: '').timeout(_bootstrapTimeout),
       ]);
       final loggedIn = results[0] as bool;
       final hasSeenOnboarding = results[1] as bool;
+      final pinEnabled = results[2];
+      final pinCode = results[3] as String;
+      final hasValidPin = (pinEnabled as bool) && pinCode.length == 4;
 
       if (!mounted) return;
 
       setState(() {
         _isLoggedIn = loggedIn;
         _hasSeenOnboarding = hasSeenOnboarding;
+        _hasValidPin = hasValidPin;
         _loading = false;
       });
     } catch (e, stack) {
@@ -88,6 +96,7 @@ class _MainAppState extends State<MainApp> {
         _countryCode = 'US';
         _isLoggedIn = false;
         _hasSeenOnboarding = true; // on error, skip onboarding to avoid loop
+        _hasValidPin = false;
         _loading = false;
       });
     }
@@ -158,7 +167,9 @@ class _MainAppState extends State<MainApp> {
       () => GetMaterialApp(
         title: _envConfig.appName,
         initialRoute: _hasSeenOnboarding
-            ? (_isLoggedIn ? AppPages.initial : AppPages.auth)
+            ? (_isLoggedIn
+                ? (_hasValidPin ? Routes.MAIN : Routes.CHANGE_PIN)
+                : AppPages.auth)
             : Routes.ONBOARDING,
         initialBinding: InitialBinding(),
         getPages: AppPages.routes,
@@ -219,6 +230,11 @@ class _MainAppState extends State<MainApp> {
         ),
       ),
       appBarTheme: const AppBarTheme(
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark, // Android: black icons
+          statusBarBrightness: Brightness.light, // iOS: black icons
+        ),
         titleTextStyle: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
@@ -271,6 +287,11 @@ class _MainAppState extends State<MainApp> {
         labelStyle: const TextStyle(color: Color(0xFF8E8E93)),
       ),
       appBarTheme: const AppBarTheme(
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark, // Android: black icons
+          statusBarBrightness: Brightness.light, // iOS: black icons
+        ),
         titleTextStyle: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,

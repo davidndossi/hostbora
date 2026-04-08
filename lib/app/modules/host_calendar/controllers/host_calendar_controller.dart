@@ -116,20 +116,6 @@ class HostCalendarController extends BaseController {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '$name, ${months[d.month - 1]} ${d.day}';
   }
-
-  void onNavTap(int index) {
-    switch (index) {
-      case 0:
-        Get.offAllNamed(Routes.MAIN);
-        break;
-      case 1:
-        break; // Calendar - current
-      case 2:
-        break; // TODO: Inbox
-      case 3:
-        break; // TODO: Profile
-    }
-  }
 }
 
 enum CalendarEventType { checkIn, checkOut }

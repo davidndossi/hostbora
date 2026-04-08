@@ -39,18 +39,22 @@ class SecurityView extends BaseView<SecurityController> {
               onTap: controller.changePassword,
             ),
             const Divider(height: 1),
-            _SettingsRow(
-              icon: Icons.grid_view_rounded,
-              iconColor: AppColors.colorPrimary,
-              title: appLocalization.pinCode,
+            Obx(
+              () => _SettingsRow(
+                icon: Icons.grid_view_rounded,
+                iconColor: AppColors.colorPrimary,
+                title: appLocalization.pinCode,
                 trailing: Text(
-                  appLocalization.set,
+                  controller.pinEnabled.value
+                      ? appLocalization.changeLabel
+                      : appLocalization.set,
                   style: TextStyle(
-                  fontSize: 14,
-                  color: _secondaryText,
+                    fontSize: 14,
+                    color: _secondaryText,
+                  ),
                 ),
+                onTap: controller.openPinCode,
               ),
-              onTap: controller.openPinCode,
             ),
           ]),
           const SizedBox(height: 24),
@@ -201,7 +205,7 @@ class SecurityView extends BaseView<SecurityController> {
               height: 1.4,
             ),
             children: [
-              const TextSpan(text: 'Your security is our priority. Read our '),
+              TextSpan(text: appLocalization.securityPriorityPrefix),
               WidgetSpan(
                 child: GestureDetector(
                   onTap: controller.openPrivacyPolicy,
@@ -216,7 +220,7 @@ class SecurityView extends BaseView<SecurityController> {
                   ),
                 ),
               ),
-              const TextSpan(text: ' to learn how we protect your data.'),
+              TextSpan(text: appLocalization.securityPrioritySuffix),
             ],
           ),
         ),

@@ -16,9 +16,11 @@ abstract class _LoyaltyPalette {
 
 class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersController> {
   RentDefineLoyaltyOffersView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Resident Retention');
+  PreferredSizeWidget? appBar(BuildContext context) =>
+      rentAppBar(_isSw ? 'Uhifadhi wa Wakazi' : 'Resident Retention');
 
   @override
   Widget body(BuildContext context) {
@@ -32,13 +34,13 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
           Text.rich(
             TextSpan(
               style: const TextStyle(fontSize: 24, height: 1.15),
-              children: const [
+              children: [
                 TextSpan(
-                  text: 'Loyalty ',
+                  text: _isSw ? 'Uaminifu ' : 'Loyalty ',
                   style: TextStyle(fontWeight: FontWeight.w700, fontStyle: FontStyle.normal),
                 ),
                 TextSpan(
-                  text: 'Thresholds',
+                  text: _isSw ? 'Vizingiti' : 'Thresholds',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     color: _LoyaltyPalette.teal,
@@ -81,7 +83,7 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'View active loyalty programs',
+                            _isSw ? 'Tazama programu hai za uaminifu' : 'View active loyalty programs',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
@@ -114,8 +116,8 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text(
-                'Deploy Loyalty Program',
+              child: Text(
+                _isSw ? 'Tekeleza Programu ya Uaminifu' : 'Deploy Loyalty Program',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
             ),
@@ -151,7 +153,7 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Curation Logic',
+                _isSw ? 'Mantiki ya Uchambuzi' : 'Curation Logic',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -160,7 +162,9 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
               ),
               const SizedBox(height: 8),
               Text(
-                'Automated rewards reduce churn by 24% on average across premium properties.',
+                _isSw
+                    ? 'Tuzo za kiotomatiki hupunguza kuondoka kwa wapangaji kwa wastani wa 24% kwenye mali za hadhi.'
+                    : 'Automated rewards reduce churn by 24% on average across premium properties.',
                 style: TextStyle(fontSize: 13, height: 1.4, color: _LoyaltyPalette.muted),
               ),
               const SizedBox(height: 10),
@@ -170,7 +174,7 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'View Strategy Guide',
+                      _isSw ? 'Tazama Mwongozo wa Mkakati' : 'View Strategy Guide',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -199,7 +203,7 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
               Icon(Icons.edit_note_rounded, color: _LoyaltyPalette.teal, size: 26),
               const SizedBox(width: 8),
               Text(
-                'Offer Thresholds',
+                _isSw ? 'Vizingiti vya Ofa' : 'Offer Thresholds',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -209,21 +213,21 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
             ],
           ),
           const SizedBox(height: 16),
-          _fieldLabel('MINIMUM STAY DURATION (MONTHS)'),
+          _fieldLabel(_isSw ? 'MUDA WA CHINI WA UKAAJI (MIEZI)' : 'MINIMUM STAY DURATION (MONTHS)'),
           const SizedBox(height: 6),
           _suffixField(
             controller: controller.minStayController,
             hint: '12',
-            suffix: 'Months',
+            suffix: _isSw ? 'Miezi' : 'Months',
             validator: controller.validateMinStay,
           ),
           const SizedBox(height: 14),
-          _fieldLabel('TOTAL REVENUE THRESHOLD (TSH)'),
+          _fieldLabel(_isSw ? 'KIZINGITI CHA JUMLA YA MAPATO (TSH)' : 'TOTAL REVENUE THRESHOLD (TSH)'),
           const SizedBox(height: 6),
           _suffixField(
             controller: controller.revenueController,
             hint: '5,000,000',
-            suffix: 'Tsh',
+            suffix: _isSw ? 'Tsh' : 'Tsh',
             validator: controller.validateRevenue,
           ),
         ],
@@ -241,7 +245,7 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
               Icon(Icons.card_giftcard_rounded, color: _LoyaltyPalette.teal, size: 24),
               const SizedBox(width: 8),
               Text(
-                'Offer Type',
+                _isSw ? 'Aina ya Ofa' : 'Offer Type',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -281,7 +285,7 @@ class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersContro
               Icon(Icons.description_outlined, color: _LoyaltyPalette.teal, size: 24),
               const SizedBox(width: 8),
               Text(
-                'Terms & Description',
+                _isSw ? 'Masharti na Maelezo' : 'Terms & Description',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,

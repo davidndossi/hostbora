@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
@@ -14,6 +15,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   final PreferenceManager _preferenceManager =
       Get.find(tag: (PreferenceManager).toString());
+  final WorkspaceContextService _workspaceContext =
+      Get.find<WorkspaceContextService>();
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
 
   late String username;
@@ -40,6 +43,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   @override
   void onInit() {
     super.onInit();
+    _workspaceContext.switchWorkspace('bnb');
     loadHomeData();
   }
 

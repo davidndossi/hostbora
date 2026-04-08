@@ -5,11 +5,13 @@ import '/app/data/model/add_task_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/data/local/db/rent_payment_reminder_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
+import '/app/data/local/db/property_members_local_data_source.dart';
 import '/app/data/local/db/rent_expense_local_data_source.dart';
 import '/app/data/local/db/rent_income_local_data_source.dart';
 import '/app/data/local/db/rent_loyalty_offer_local_data_source.dart';
 import '/app/data/local/db/rent_notification_log_local_data_source.dart';
 import '/app/data/local/db/rent_property_local_data_source.dart';
+import '/app/data/local/db/rent_property_estimate_local_data_source.dart';
 import '/app/data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '/app/data/local/db/rent_staff_local_data_source.dart';
 import '/app/data/local/db/rent_tenant_charge_local_data_source.dart';
@@ -19,6 +21,7 @@ import '/app/data/local/service/offline_sync_worker_service.dart';
 import '/app/data/local/service/rent_real_data_snapshot_service.dart';
 import '/app/data/local/service/rent_notification_rules_service.dart';
 import '/app/data/local/service/tenant_lease_reminder_service.dart';
+import '/app/data/local/service/workspace_context_service.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/data/local/preference/preference_manager_impl.dart';
 
@@ -30,8 +33,24 @@ class LocalSourceBindings implements Bindings {
       tag: (PreferenceManager).toString(),
       fenix: true,
     );
+    Get.put<WorkspaceContextService>(
+      WorkspaceContextService(
+        preferenceManager: Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+      ),
+      permanent: true,
+    ).init();
     Get.lazyPut<RentPropertyLocalDataSource>(
       () => RentPropertyLocalDataSource(),
+      fenix: true,
+    );
+    Get.lazyPut<PropertyMembersLocalDataSource>(
+      () => PropertyMembersLocalDataSource(),
+      fenix: true,
+    );
+    Get.lazyPut<RentPropertyEstimateLocalDataSource>(
+      () => RentPropertyEstimateLocalDataSource(),
       fenix: true,
     );
     Get.lazyPut<RentStaffLocalDataSource>(

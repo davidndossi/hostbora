@@ -18,24 +18,28 @@ abstract class _InboxPalette {
 
 class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
   RentConciergeInboxView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   Color pageBackgroundColor(BuildContext context) => _InboxPalette.bg;
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Inbox');
+  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(_isSw ? 'Kikasha' : 'Inbox');
 
   @override
   Widget body(BuildContext context) {
     return Obx(() {
       if (!controller.hasNotifications) {
-        return _ConciergeInboxEmptyBody(onReturn: controller.returnToDashboard);
+        return _ConciergeInboxEmptyBody(
+          onReturn: controller.returnToDashboard,
+          isSw: _isSw,
+        );
       }
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          const Text(
-            'Evergreen Estate Management Dashboard',
+          Text(
+            _isSw ? 'Dashibodi ya Usimamizi wa Majengo ya Evergreen' : 'Evergreen Estate Management Dashboard',
             style: TextStyle(
               fontSize: 13,
               color: _InboxPalette.muted,
@@ -46,14 +50,14 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
           InkWell(
             onTap: controller.markAllAsRead,
             borderRadius: BorderRadius.circular(8),
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
                   Icon(Icons.done_all, color: _InboxPalette.primaryTeal, size: 18),
                   SizedBox(width: 8),
                   Text(
-                    'Mark all as read',
+                    _isSw ? 'Weka zote kama zimesomwa' : 'Mark all as read',
                     style: TextStyle(
                       color: _InboxPalette.navy,
                       fontWeight: FontWeight.w700,
@@ -71,22 +75,22 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
               runSpacing: 8,
               children: [
                 _FilterChip(
-                  label: 'All (${controller.allCount})',
+                  label: '${_isSw ? 'Zote' : 'All'} (${controller.allCount})',
                   selected: controller.selectedFilter.value == 'all',
                   onTap: () => controller.setFilter('all'),
                 ),
                 _FilterChip(
-                  label: 'Urgent (${controller.urgentCount})',
+                  label: '${_isSw ? 'Haraka' : 'Urgent'} (${controller.urgentCount})',
                   selected: controller.selectedFilter.value == 'urgent',
                   onTap: () => controller.setFilter('urgent'),
                 ),
                 _FilterChip(
-                  label: 'Maintenance (${controller.maintenanceCount})',
+                  label: '${_isSw ? 'Matengenezo' : 'Maintenance'} (${controller.maintenanceCount})',
                   selected: controller.selectedFilter.value == 'maintenance',
                   onTap: () => controller.setFilter('maintenance'),
                 ),
                 _FilterChip(
-                  label: 'Unread (${controller.unreadCount})',
+                  label: '${_isSw ? 'Hazijasomwa' : 'Unread'} (${controller.unreadCount})',
                   selected: controller.selectedFilter.value == 'unread',
                   onTap: () => controller.setFilter('unread'),
                 ),
@@ -108,7 +112,7 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
             ),
           ],
           if (controller.renewalItems.isNotEmpty) ...[
-            _sectionTitle(icon: Icons.sync_alt_rounded, label: 'Upcoming Renewals'),
+            _sectionTitle(icon: Icons.sync_alt_rounded, label: _isSw ? 'Mikataba Inayokaribia Kuisha' : 'Upcoming Renewals'),
             const SizedBox(height: 12),
             ...controller.renewalItems.map(
               (e) => Padding(
@@ -121,7 +125,7 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
             ),
           ],
           if (controller.filteredMaintenanceItems.isNotEmpty) ...[
-            _sectionTitle(icon: Icons.build_circle_outlined, label: 'Scheduled Maintenance'),
+            _sectionTitle(icon: Icons.build_circle_outlined, label: _isSw ? 'Matengenezo Yaliyopangwa' : 'Scheduled Maintenance'),
             const SizedBox(height: 12),
             ...controller.filteredMaintenanceItems.map(
               (e) => Padding(
@@ -134,7 +138,7 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
             ),
           ],
           if (controller.generalItems.isNotEmpty) ...[
-            _sectionTitle(icon: Icons.notifications_outlined, label: 'General Updates'),
+            _sectionTitle(icon: Icons.notifications_outlined, label: _isSw ? 'Sasisho za Jumla' : 'General Updates'),
             const SizedBox(height: 12),
             ...controller.generalItems.map(
               (e) => Padding(
@@ -159,7 +163,7 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            'Urgent Action',
+            _isSw ? 'Hatua ya Haraka' : 'Urgent Action',
             style: TextStyle(
               fontFamily: _InboxPalette.serif,
               fontSize: 20,
@@ -212,9 +216,10 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
 
 /// Empty inbox: illustration, headline, CTA, Evergreen identity footer.
 class _ConciergeInboxEmptyBody extends StatelessWidget {
-  const _ConciergeInboxEmptyBody({required this.onReturn});
+  const _ConciergeInboxEmptyBody({required this.onReturn, required this.isSw});
 
   final VoidCallback onReturn;
+  final bool isSw;
 
   @override
   Widget build(BuildContext context) {
@@ -228,8 +233,8 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
                 const SizedBox(height: 8),
                 _emptyGraphic(),
                 const SizedBox(height: 28),
-                const Text(
-                  'All Quiet Here',
+                Text(
+                  isSw ? 'Hakuna Taarifa Mpya' : 'All Quiet Here',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: _InboxPalette.serif,
@@ -241,7 +246,9 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  "You're all caught up. We'll let you know when something important needs your attention.",
+                  isSw
+                      ? 'Umesoma yote. Tutakujulisha pindi jambo muhimu litakapohitaji umakini wako.'
+                      : "You're all caught up. We'll let you know when something important needs your attention.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -261,8 +268,8 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text(
-                    'RETURN TO DASHBOARD',
+                  child: Text(
+                    isSw ? 'RUDI KWENYE DASHIBODI' : 'RETURN TO DASHBOARD',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 12,
@@ -281,7 +288,7 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'EVERGREEN ESTATE IDENTITY',
+                isSw ? 'UTAMBULISHO WA MAJENGO YA EVERGREEN' : 'EVERGREEN ESTATE IDENTITY',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,

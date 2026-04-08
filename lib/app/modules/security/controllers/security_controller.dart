@@ -1,10 +1,30 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/preference/preference_manager.dart';
 import '../../../routes/app_pages.dart';
 
 class SecurityController extends BaseController {
+  SecurityController()
+      : _preferenceManager =
+            Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
+
+  final PreferenceManager _preferenceManager;
   final faceIdEnabled = true.obs;
+  final pinEnabled = false.obs;
+  @override
+  void onInit() {
+    super.onInit();
+    _loadPinStatus();
+  }
+
+  Future<void> _loadPinStatus() async {
+    pinEnabled.value = await _preferenceManager.getBool(
+      PreferenceManager.keyPinEnabled,
+      defaultValue: false,
+    );
+  }
+
 
   final devices = <DeviceSession>[
     DeviceSession(
@@ -26,7 +46,10 @@ class SecurityController extends BaseController {
   void changePassword() => Get.toNamed(Routes.CHANGE_PASSWORD);
 
   void openPinCode() {
-    // TODO: navigate to PIN setup
+    Get.toNamed(
+      Routes.CHANGE_PIN,
+      arguments: {'setup_pin': true, 'change_pin': true},
+    );
   }
 
   void openTwoFactor() {

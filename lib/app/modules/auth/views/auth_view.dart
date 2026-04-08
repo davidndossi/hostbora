@@ -37,7 +37,7 @@ class AuthView extends BaseView<AuthController> {
             ),
             const SizedBox(height: 32),
             Text(
-              'Sign in',
+              appLocalization.login,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 26,
@@ -47,7 +47,7 @@ class AuthView extends BaseView<AuthController> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Use your phone and password, or sign in with PIN',
+              appLocalization.enterPasswordContinue,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -203,7 +203,7 @@ class AuthView extends BaseView<AuthController> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'OR',
+            appLocalization.orLabel,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -217,22 +217,28 @@ class AuthView extends BaseView<AuthController> {
   }
 
   Widget _buildUsePinButton(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: () => Get.toNamed(Routes.WELCOME_BACK),
-      icon: const Icon(Icons.pin_rounded, size: 22, color: AppColors.colorPrimary),
-      label: const Text(
-        'Use PIN to sign in',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: AppColors.colorPrimary,
+    return Obx(
+      () => OutlinedButton.icon(
+        onPressed: controller.hasPinEnabled.value
+            ? () => Get.toNamed(Routes.MAIN)
+            : null,
+        icon: const Icon(Icons.pin_rounded, size: 22, color: AppColors.colorPrimary),
+        label: Text(
+          controller.hasPinEnabled.value
+              ? appLocalization.authUsePinToSignIn
+              : appLocalization.authPinAvailableAfterFirstLogin,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.colorPrimary,
+          ),
         ),
-      ),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        side: const BorderSide(color: AppColors.colorPrimary),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppValues.radius_6),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          side: const BorderSide(color: AppColors.colorPrimary),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppValues.radius_6),
+          ),
         ),
       ),
     );
@@ -243,8 +249,8 @@ class AuthView extends BaseView<AuthController> {
       children: [
         TextButton(
           onPressed: () => Get.toNamed(Routes.CREATE_HOST_ACCOUNT),
-          child: const Text(
-            'Create host account',
+          child: Text(
+            appLocalization.createHostAccount,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,

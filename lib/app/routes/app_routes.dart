@@ -26,6 +26,7 @@ abstract class Routes {
   static const CREATE_HOST_ACCOUNT = _Paths.CREATE_HOST_ACCOUNT;
   static const WELCOME_BACK = _Paths.WELCOME_BACK;
   static const RESET_PASSWORD = _Paths.RESET_PASSWORD;
+  static const CHANGE_PIN = _Paths.CHANGE_PIN;
   static const PASSWORD_UPDATED = _Paths.PASSWORD_UPDATED;
   static const ADD_LISTING = _Paths.ADD_LISTING;
   static const TEAM_AND_STAFF = _Paths.TEAM_AND_STAFF;
@@ -61,6 +62,7 @@ abstract class Routes {
   static const PRICE_ANALYSIS = _Paths.PRICE_ANALYSIS;
   static const AI_PRICING_OPTIMIZER = _Paths.AI_PRICING_OPTIMIZER;
   static const RENT_HUB = _Paths.RENT_HUB;
+  static const RENT_HOST_CALENDAR = _Paths.RENT_HOST_CALENDAR;
   static const RENT_HOST_DASHBOARD_PAYMENT_ALERTS = _Paths.RENT_HOST_DASHBOARD_PAYMENT_ALERTS;
   static const RENT_PROFIT_ANALYSIS_DASHBOARD = _Paths.RENT_PROFIT_ANALYSIS_DASHBOARD;
   static const RENT_ADD_PROPERTY_EXPENSE = _Paths.RENT_ADD_PROPERTY_EXPENSE;
@@ -95,6 +97,7 @@ abstract class Routes {
   static const RENT_ESTATE_MANAGER_DASHBOARD = _Paths.RENT_ESTATE_MANAGER_DASHBOARD;
   static const RENT_ADD_NEW_LISTING = _Paths.RENT_ADD_NEW_LISTING;
   static const RENT_LISTING_DETAILS = _Paths.RENT_LISTING_DETAILS;
+  static const RENT_PROPERTY_ROI_ESTIMATE_FORM = _Paths.RENT_PROPERTY_ROI_ESTIMATE_FORM;
 }
 
 abstract class _Paths {
@@ -120,6 +123,7 @@ abstract class _Paths {
   static const CREATE_HOST_ACCOUNT = '/create-host-account';
   static const WELCOME_BACK = '/welcome-back';
   static const RESET_PASSWORD = '/reset-password';
+  static const CHANGE_PIN = '/change-pin';
   static const PASSWORD_UPDATED = '/password-updated';
   static const ADD_LISTING = '/add-listing';
   static const TEAM_AND_STAFF = '/team-and-staff';
@@ -155,6 +159,7 @@ abstract class _Paths {
   static const PRICE_ANALYSIS = '/price-analysis';
   static const AI_PRICING_OPTIMIZER = '/ai-pricing-optimizer';
   static const RENT_HUB = '/rent';
+  static const RENT_HOST_CALENDAR = '/rent/host-calendar';
   static const RENT_HOST_DASHBOARD_PAYMENT_ALERTS = '/rent/host-dashboard-payment-alerts';
   static const RENT_PROFIT_ANALYSIS_DASHBOARD = '/rent/profit-analysis-dashboard';
   static const RENT_ADD_PROPERTY_EXPENSE = '/rent/add-property-expense';
@@ -189,4 +194,5 @@ abstract class _Paths {
   static const RENT_ESTATE_MANAGER_DASHBOARD = '/rent/estate-manager-dashboard';
   static const RENT_ADD_NEW_LISTING = '/rent/add-new-listing';
   static const RENT_LISTING_DETAILS = '/rent/listing-details';
+  static const RENT_PROPERTY_ROI_ESTIMATE_FORM = '/rent/property-roi-estimate-form';
 }

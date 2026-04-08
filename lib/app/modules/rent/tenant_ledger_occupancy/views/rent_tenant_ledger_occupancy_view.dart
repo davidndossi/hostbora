@@ -9,6 +9,7 @@ import '../controllers/rent_tenant_ledger_occupancy_controller.dart';
 /// **Ledger overview** — tenancy, financial breakdown, payment timeline, CTA, residence card.
 class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyController> {
   RentTenantLedgerOccupancyView({super.key});
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   static const _teal = Color(0xFF0E6666);
   static const _tealMid = Color(0xFF4A9B9B);
@@ -16,7 +17,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
   static const _brownAlert = Color(0xFF5C4033);
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar('Tenant Ledger');
+  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(_isSw ? 'Daftari la Mpangaji' : 'Tenant Ledger');
 
   @override
   Widget body(BuildContext context) {
@@ -63,13 +64,15 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
       text: TextSpan(
         style: TextStyle(fontSize: 14, height: 1.45, color: Colors.grey.shade800),
         children: [
-          const TextSpan(text: 'Executive residency at '),
+          TextSpan(text: _isSw ? 'Makazi ya hadhi katika ' : 'Executive residency at '),
           TextSpan(
             text: bold,
             style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1A1A1A)),
           ),
-          const TextSpan(
-            text: '. Currently entering the fifth month of professional tenancy.',
+          TextSpan(
+            text: _isSw
+                ? '. Kwa sasa anaingia mwezi wa tano wa upangaji.'
+                : '. Currently entering the fifth month of professional tenancy.',
           ),
         ],
       ),
@@ -81,7 +84,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Current Status',
+          _isSw ? 'Hali ya Sasa' : 'Current Status',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -104,9 +107,9 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                 color: _brownAlert,
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'PARTIAL PAYMENT DETECTED',
+                  _isSw ? 'MALIPO YA SEHEMU YAMEGUNDULIWA' : 'PARTIAL PAYMENT DETECTED',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -157,7 +160,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
           ),
           const SizedBox(height: 12),
           Text(
-            'Current Stay',
+            _isSw ? 'Ukaaji wa Sasa' : 'Current Stay',
             style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
           ),
           const SizedBox(height: 4),
@@ -227,7 +230,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Total Due',
+                      _isSw ? 'Jumla Inayodaiwa' : 'Total Due',
                       style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.75)),
                     ),
                     const SizedBox(height: 4),
@@ -247,7 +250,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Total Paid',
+                      _isSw ? 'Jumla Iliyolipwa' : 'Total Paid',
                       style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.75)),
                     ),
                     const SizedBox(height: 4),
@@ -433,17 +436,17 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                     OutlinedButton.icon(
                       onPressed: controller.pickAndUploadSignedContract,
                       icon: const Icon(Icons.upload_file, size: 18),
-                      label: const Text('Upload PDF/Word'),
+                      label: Text(_isSw ? 'Pakia PDF/Word' : 'Upload PDF/Word'),
                     ),
                     OutlinedButton.icon(
                       onPressed: controller.openSignedContract,
                       icon: const Icon(Icons.open_in_new, size: 18),
-                      label: const Text('Open'),
+                      label: Text(_isSw ? 'Fungua' : 'Open'),
                     ),
                     OutlinedButton.icon(
                       onPressed: controller.openEditLeaseTermsDialog,
                       icon: const Icon(Icons.edit_calendar_outlined, size: 18),
-                      label: const Text('Edit lease terms'),
+                      label: Text(_isSw ? 'Hariri masharti ya mkataba' : 'Edit lease terms'),
                     ),
                   ],
                 ),
@@ -528,7 +531,7 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                     Icon(Icons.verified_user_outlined, size: 18, color: Colors.white.withValues(alpha: 0.9)),
                     const SizedBox(width: 6),
                     Text(
-                      'Premium Tenant',
+                      _isSw ? 'Mpangaji wa Hadhi' : 'Premium Tenant',
                       style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.92)),
                     ),
                   ],
