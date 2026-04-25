@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/rent_property_local_data_source.dart';
 import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/preference/preference_manager.dart';
+import '../../../../data/local/service/workspace_context_service.dart';
+import '../../add_new_listing/models/apartment_unit_draft.dart';
 
 class RentAddTenantFormController extends BaseController {
   RentAddTenantFormController()
-      : _tenantLocal = Get.find<RentTenantLocalDataSource>();
+      : _tenantLocal = Get.find<RentTenantLocalDataSource>(),
+        _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
+        _preferenceManager = Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+        _workspaceContext = Get.find<WorkspaceContextService>();
 
   final RentTenantLocalDataSource _tenantLocal;
+  final RentPropertyLocalDataSource _propertyLocal;
+  final PreferenceManager _preferenceManager;
+  final WorkspaceContextService _workspaceContext;
 
-  final propertyContextLabel = 'Evergreen Estate Unit 4B'.obs;
+  final propertyContextLabel = ''.obs;
+  final propertyRef = ''.obs;
+  final availableUnitDrafts = <ApartmentUnitDraft>[].obs;
+  /// Selected [ApartmentUnitDraft.selectionKey], or null until user picks.
+  final selectedUnitKey = RxnString();
   final formKey = GlobalKey<FormState>();
 
   final tenantNameController = TextEditingController();
@@ -29,12 +46,162 @@ class RentAddTenantFormController extends BaseController {
   static const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
   static const rentFrequencyOptions = ['Per Day', 'Per Week', 'Per Month', 'Per Year'];
 
+  List<String> get unitSelectionKeys =>
+      availableUnitDrafts.map((u) => u.selectionKey).toList();
+
+  String unitDisplayLabel(String selectionKey) {
+    for (final u in availableUnitDrafts) {
+      if (u.selectionKey == selectionKey) {
+        final rent = u.unitRent.trim();
+        if (rent.isEmpty) return u.unitName;
+        return '${u.unitName} (Tshs $rent)';
+      }
+    }
+    return selectionKey;
+  }
+
+  ApartmentUnitDraft? _draftForKey(String? key) {
+    if (key == null || key.isEmpty) return null;
+    for (final u in availableUnitDrafts) {
+      if (u.selectionKey == key) return u;
+    }
+    return null;
+  }
+
   @override
   void onInit() {
     super.onInit();
+    final ref = Get.parameters['propertyRef']?.trim();
+    if (ref != null && ref.isNotEmpty) {
+      propertyRef.value = ref;
+    }
     final fromRoute = Get.parameters['property']?.trim();
     if (fromRoute != null && fromRoute.isNotEmpty) {
       propertyContextLabel.value = fromRoute;
+    }
+    final paramUnitId = Get.parameters['unitId']?.trim() ?? '';
+    final paramUnitName = Get.parameters['unitName']?.trim() ?? '';
+    _loadPropertyUnits(
+      preferredUnitId: paramUnitId,
+      preferredUnitName: paramUnitName,
+    );
+  }
+
+  Future<void> _loadPropertyUnits({
+    String preferredUnitId = '',
+    String preferredUnitName = '',
+  }) async {
+    final userId = (await _preferenceManager.getUser()).id ?? '';
+    final workspaceType = await _workspaceContext.getWorkspaceType();
+    final properties = await _propertyLocal.getAllVisibleNewestFirst(
+      userId: userId,
+      workspaceType: workspaceType,
+    );
+
+    RentPropertyRecord? selected;
+    if (propertyRef.value.isNotEmpty) {
+      for (final p in properties) {
+        if (p.propertyRef == propertyRef.value || 'legacy_${p.id}' == propertyRef.value) {
+          selected = p;
+          break;
+        }
+      }
+    }
+    if (selected == null && propertyContextLabel.value.isNotEmpty) {
+      final wanted = propertyContextLabel.value.trim();
+      for (final p in properties) {
+        final composed = p.apartmentSuite.trim().isNotEmpty
+            ? '${p.propertyLocation.trim()} · ${p.apartmentSuite.trim()}'
+            : p.propertyLocation.trim();
+        final matches = composed == wanted ||
+            p.propertyLocation.trim() == wanted ||
+            p.apartmentSuite.trim() == wanted;
+        if (matches) {
+          selected = p;
+          break;
+        }
+      }
+    }
+    if (selected == null) {
+      availableUnitDrafts.clear();
+      selectedUnitKey.value = null;
+      return;
+    }
+
+    propertyRef.value =
+        selected.propertyRef.isNotEmpty ? selected.propertyRef : 'legacy_${selected.id}';
+    final composed = selected.apartmentSuite.trim().isNotEmpty
+        ? '${selected.propertyLocation.trim()} · ${selected.apartmentSuite.trim()}'
+        : selected.propertyLocation.trim();
+    if (composed.isNotEmpty) {
+      propertyContextLabel.value = composed;
+    }
+
+    final drafts = _parseUnitDrafts(selected.unitsJson);
+    availableUnitDrafts.assignAll(drafts);
+
+    if (drafts.isEmpty) {
+      selectedUnitKey.value = null;
+      return;
+    }
+
+    if (preferredUnitId.isNotEmpty) {
+      for (final u in drafts) {
+        if (u.unitId == preferredUnitId) {
+          selectedUnitKey.value = u.selectionKey;
+          _prefillRentFromUnit(u);
+          return;
+        }
+      }
+    }
+    if (preferredUnitName.isNotEmpty) {
+      for (final u in drafts) {
+        if (u.unitName.trim() == preferredUnitName) {
+          selectedUnitKey.value = u.selectionKey;
+          _prefillRentFromUnit(u);
+          return;
+        }
+      }
+    }
+    selectedUnitKey.value = drafts.length == 1 ? drafts.first.selectionKey : null;
+    if (drafts.length == 1) {
+      _prefillRentFromUnit(drafts.first);
+    }
+  }
+
+  void _prefillRentFromUnit(ApartmentUnitDraft u) {
+    final raw = u.unitRent.trim().replaceAll(',', '');
+    if (raw.isEmpty) return;
+    final n = double.tryParse(raw);
+    if (n != null && n > 0) {
+      rentAmountController.text = raw;
+    }
+  }
+
+  List<ApartmentUnitDraft> _parseUnitDrafts(String unitsJson) {
+    if (unitsJson.trim().isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(unitsJson);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((m) => ApartmentUnitDraft.fromJson(Map<String, dynamic>.from(m)))
+          .where((u) => u.unitName.trim().isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  void setSelectedUnitKey(String? key) {
+    if (key == null || key.isEmpty) {
+      selectedUnitKey.value = null;
+      return;
+    }
+    selectedUnitKey.value = key;
+    final d = _draftForKey(key);
+    if (d != null) {
+      _prefillRentFromUnit(d);
     }
   }
 
@@ -68,6 +235,12 @@ class RentAddTenantFormController extends BaseController {
       showErrorMessage('Lease period is required');
       return;
     }
+    if (availableUnitDrafts.isNotEmpty) {
+      if (selectedUnitKey.value == null || selectedUnitKey.value!.isEmpty) {
+        showErrorMessage('Please select a unit');
+        return;
+      }
+    }
 
     final amountRaw = rentAmountController.text.trim().replaceAll(',', '');
     final amount = double.tryParse(amountRaw);
@@ -76,8 +249,15 @@ class RentAddTenantFormController extends BaseController {
       return;
     }
 
+    final draft = _draftForKey(selectedUnitKey.value);
+    final unitLabel = draft?.unitName.trim() ?? '';
+    final apartmentUnitId = draft?.unitId.trim() ?? '';
+
     await _tenantLocal.insert(
       propertyLabel: propertyContextLabel.value.trim(),
+      propertyRef: propertyRef.value.trim(),
+      apartmentUnitId: apartmentUnitId,
+      unitLabel: unitLabel,
       tenantName: tenantNameController.text.trim(),
       gender: gender.value,
       rentAmountValue: amount,

@@ -14,6 +14,16 @@ const _hostCalendarManualRateBg = Color(0xFFE07A5F);
 class HostCalendarView extends BaseView<HostCalendarController> {
   HostCalendarView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -60,7 +70,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
       children: [
         Obx(
           () => Text(
-            _monthYear(controller.currentMonth.value),
+            _monthYear(context, controller.currentMonth.value),
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w600,
@@ -92,25 +102,60 @@ class HostCalendarView extends BaseView<HostCalendarController> {
     );
   }
 
-  String _monthYear(DateTime m) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+  String _monthYear(BuildContext context, DateTime m) {
+    const monthsEn = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
-    return '${months[m.month - 1]} ${m.year}';
+    const monthsSw = [
+      'Januari',
+      'Februari',
+      'Machi',
+      'Aprili',
+      'Mei',
+      'Juni',
+      'Julai',
+      'Agosti',
+      'Septemba',
+      'Oktoba',
+      'Novemba',
+      'Desemba',
+    ];
+    final isSw =
+        (Get.locale?.languageCode ??
+            Localizations.localeOf(context).languageCode) ==
+        'sw';
+    return '${(isSw ? monthsSw : monthsEn)[m.month - 1]} ${m.year}';
   }
 
   Widget _buildDynamicPricingRow(BuildContext context) {
+    final theme = Theme.of(context);
     return Obx(
       () => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.colorWhite,
+          color: _isDark(context)
+              ? theme.colorScheme.surfaceContainerHigh
+              : AppColors.colorWhite,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.designInputBorder),
+          border: Border.all(
+            color: _isDark(context)
+                ? theme.colorScheme.outlineVariant
+                : AppColors.designInputBorder,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -134,7 +179,9 @@ class HostCalendarView extends BaseView<HostCalendarController> {
               onChanged: (_) => controller.toggleDynamicPricing(),
               activeTrackColor: AppColors.colorPrimaryLight,
               thumbColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) return AppColors.colorPrimary;
+                if (states.contains(WidgetState.selected)) {
+                  return AppColors.colorPrimary;
+                }
                 return AppColors.designInputBorder;
               }),
             ),
@@ -145,6 +192,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   }
 
   Widget _buildPropertySelector(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -160,20 +208,33 @@ class HostCalendarView extends BaseView<HostCalendarController> {
         const SizedBox(height: 8),
         Obx(
           () => Material(
-            color: AppColors.colorWhite,
+            color: _isDark(context)
+                ? theme.colorScheme.surfaceContainerHigh
+                : AppColors.colorWhite,
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               onTap: () => _showPropertySheet(context),
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.designInputBorder),
+                  border: Border.all(
+                    color: _isDark(context)
+                        ? theme.colorScheme.outlineVariant
+                        : AppColors.designInputBorder,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.home_rounded, size: 24, color: AppColors.colorPrimary),
+                    Icon(
+                      Icons.home_rounded,
+                      size: 24,
+                      color: AppColors.colorPrimary,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -185,7 +246,10 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                         ),
                       ),
                     ),
-                    Icon(Icons.keyboard_arrow_down, color: AppColors.textColorSecondary),
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      color: AppColors.textColorSecondary,
+                    ),
                   ],
                 ),
               ),
@@ -197,9 +261,12 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   }
 
   void _showPropertySheet(BuildContext context) {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.colorWhite,
+      backgroundColor: _isDark(context)
+          ? theme.colorScheme.surfaceContainerHigh
+          : AppColors.colorWhite,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -209,7 +276,10 @@ class HostCalendarView extends BaseView<HostCalendarController> {
           children: controller.properties
               .map(
                 (p) => ListTile(
-                  title: Text(p, style: TextStyle(color: AppColors.textColorPrimary)),
+                  title: Text(
+                    p,
+                    style: TextStyle(color: AppColors.textColorPrimary),
+                  ),
                   onTap: () {
                     controller.selectProperty(p);
                     Navigator.pop(ctx);
@@ -279,11 +349,11 @@ class HostCalendarView extends BaseView<HostCalendarController> {
             color: AppColors.textColorSecondary,
           ),
           selectedDecoration: BoxDecoration(
-            color: AppColors.colorPrimaryLight.withOpacity(0.4),
+            color: AppColors.colorPrimaryLight.withValues(alpha: 0.4),
             borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
           todayDecoration: BoxDecoration(
-            color: AppColors.colorPrimaryLight.withOpacity(0.3),
+            color: AppColors.colorPrimaryLight.withValues(alpha: 0.3),
             borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
           cellMargin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
@@ -291,10 +361,12 @@ class HostCalendarView extends BaseView<HostCalendarController> {
         ),
         calendarBuilders: CalendarBuilders(
           defaultBuilder: (context, day, focusedDay) => _dayCell(
+            context,
             day,
             isCurrentMonth: day.month == focusedDay.month,
             price: controller.priceForDay(day),
-            isSelected: day.year == selected.year &&
+            isSelected:
+                day.year == selected.year &&
                 day.month == selected.month &&
                 day.day == selected.day,
             dayType: controller.typeForDay(day),
@@ -302,6 +374,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
             isDisabled: !controller.isDayEnabled(day),
           ),
           outsideBuilder: (context, day, focusedDay) => _dayCell(
+            context,
             day,
             isCurrentMonth: false,
             price: null,
@@ -316,6 +389,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   }
 
   Widget _dayCell(
+    BuildContext context,
     DateTime d, {
     required bool isCurrentMonth,
     String? price,
@@ -324,14 +398,17 @@ class HostCalendarView extends BaseView<HostCalendarController> {
     bool isBlocked = false,
     bool isDisabled = false,
   }) {
+    final theme = Theme.of(context);
     Color? bg;
     if (isCurrentMonth) {
       if (isBlocked) {
-        bg = Colors.grey.shade300;
+        bg = _isDark(context)
+            ? theme.colorScheme.surfaceContainerHighest
+            : Colors.grey.shade300;
       } else if (dayType == DayType.aiOptimized) {
-        bg = AppColors.colorPrimaryLight.withOpacity(0.6);
+        bg = AppColors.colorPrimaryLight.withValues(alpha: 0.6);
       } else if (dayType == DayType.manualRate) {
-        bg = _hostCalendarManualRateBg.withOpacity(0.5);
+        bg = _hostCalendarManualRateBg.withValues(alpha: 0.5);
       }
     }
     return GestureDetector(
@@ -344,53 +421,61 @@ class HostCalendarView extends BaseView<HostCalendarController> {
       child: Opacity(
         opacity: isDisabled ? 0.45 : 1,
         child: Container(
-        width: 44,
-        height: 52,
-        decoration: BoxDecoration(
-          color: bg,
-          shape: BoxShape.rectangle,
-          borderRadius: BorderRadius.circular(8),
-          border: isSelected
-              ? Border.all(color: AppColors.colorPrimary, width: 2)
-              : null,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '${d.day}',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isCurrentMonth
-                    ? (isBlocked ? AppColors.textColorSecondary : AppColors.textColorPrimary)
-                    : AppColors.textColorSecondary,
-                decoration: isBlocked ? TextDecoration.lineThrough : null,
-              ),
-            ),
-            if (price != null && !isBlocked) ...[
-              const SizedBox(height: 2),
+          width: 44,
+          height: 52,
+          decoration: BoxDecoration(
+            color: bg,
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(8),
+            border: isSelected
+                ? Border.all(color: AppColors.colorPrimary, width: 2)
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               Text(
-                price,
+                '${d.day}',
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                   color: isCurrentMonth
-                      ? (dayType == DayType.standard
-                          ? AppColors.colorPrimary
-                          : AppColors.textColorPrimary)
+                      ? (isBlocked
+                            ? AppColors.textColorSecondary
+                            : AppColors.textColorPrimary)
                       : AppColors.textColorSecondary,
+                  decoration: isBlocked ? TextDecoration.lineThrough : null,
                 ),
               ),
+              if (price != null && !isBlocked) ...[
+                const SizedBox(height: 2),
+                Text(
+                  price,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: isCurrentMonth
+                        ? (dayType == DayType.standard
+                              ? AppColors.colorPrimary
+                              : AppColors.textColorPrimary)
+                        : AppColors.textColorSecondary,
+                  ),
+                ),
+              ],
+              if (isBlocked && isCurrentMonth)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    _t(context, en: 'Blocked', sw: 'Imefungwa'),
+                    style: const TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
             ],
-            if (isBlocked && isCurrentMonth)
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Text('Blocked', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600)),
-              ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -458,7 +543,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                 ),
               ),
               Text(
-                '${events.length} EVENTS',
+                '${events.length} ${_t(context, en: 'EVENTS', sw: 'MATUKIO')}',
                 style: TextStyle(
                   fontSize: 13,
                   color: AppColors.textColorSecondary,
@@ -478,20 +563,28 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                   icon: Icon(
                     isBlocked ? Icons.lock_open_outlined : Icons.block_outlined,
                     size: 20,
-                    color: isBlocked ? AppColors.colorPrimary : AppColors.paaYanguAlert,
+                    color: isBlocked
+                        ? AppColors.colorPrimary
+                        : AppColors.paaYanguAlert,
                   ),
                   label: Text(
-                    isBlocked ? 'Unblock date' : 'Block date',
+                    isBlocked
+                        ? _t(context, en: 'Unblock date', sw: 'Fungua tarehe')
+                        : _t(context, en: 'Block date', sw: 'Funga tarehe'),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isBlocked ? AppColors.colorPrimary : AppColors.paaYanguAlert,
+                      color: isBlocked
+                          ? AppColors.colorPrimary
+                          : AppColors.paaYanguAlert,
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     side: BorderSide(
-                      color: isBlocked ? AppColors.colorPrimary : AppColors.paaYanguAlert,
+                      color: isBlocked
+                          ? AppColors.colorPrimary
+                          : AppColors.paaYanguAlert,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -500,10 +593,12 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                 ),
               ),
             ),
-          ...events.map((e) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _EventCard(event: e),
-              )),
+          ...events.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _EventCard(event: e, t: _t),
+            ),
+          ),
         ],
       );
     });
@@ -512,20 +607,34 @@ class HostCalendarView extends BaseView<HostCalendarController> {
 
 class _EventCard extends StatelessWidget {
   final CalendarEvent event;
+  final String Function(
+    BuildContext context, {
+    required String en,
+    required String sw,
+  })
+  t;
 
-  const _EventCard({required this.event});
+  const _EventCard({required this.event, required this.t});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHigh
+            : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
-        border: Border.all(color: AppColors.designInputBorder),
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outlineVariant
+              : AppColors.designInputBorder,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -537,7 +646,9 @@ class _EventCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                event.type == CalendarEventType.checkOut ? 'CHECK-OUT' : 'CHECK-IN',
+                event.type == CalendarEventType.checkOut
+                    ? t(context, en: 'CHECK-OUT', sw: 'KUONDOKA')
+                    : t(context, en: 'CHECK-IN', sw: 'KUINGIA'),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -567,25 +678,40 @@ class _EventCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.people_outline, size: 16, color: AppColors.textColorSecondary),
+              Icon(
+                Icons.people_outline,
+                size: 16,
+                color: AppColors.textColorSecondary,
+              ),
               const SizedBox(width: 6),
               Text(
-                '${event.guests} Guests',
-                style: TextStyle(fontSize: 13, color: AppColors.textColorSecondary),
+                '${event.guests} ${t(context, en: 'Guests', sw: 'Wageni')}',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textColorSecondary,
+                ),
               ),
               const SizedBox(width: 16),
               Icon(
-                event.subtitleHighlight ? Icons.cleaning_services : Icons.key_outlined,
+                event.subtitleHighlight
+                    ? Icons.cleaning_services
+                    : Icons.key_outlined,
                 size: 16,
-                color: event.subtitleHighlight ? AppColors.colorOrange : AppColors.textColorSecondary,
+                color: event.subtitleHighlight
+                    ? AppColors.colorOrange
+                    : AppColors.textColorSecondary,
               ),
               const SizedBox(width: 6),
               Text(
                 event.subtitle,
                 style: TextStyle(
                   fontSize: 13,
-                  color: event.subtitleHighlight ? AppColors.colorOrange : AppColors.textColorSecondary,
-                  fontWeight: event.subtitleHighlight ? FontWeight.w500 : FontWeight.normal,
+                  color: event.subtitleHighlight
+                      ? AppColors.colorOrange
+                      : AppColors.textColorSecondary,
+                  fontWeight: event.subtitleHighlight
+                      ? FontWeight.w500
+                      : FontWeight.normal,
                 ),
               ),
             ],

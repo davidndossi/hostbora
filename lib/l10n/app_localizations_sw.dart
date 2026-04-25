@@ -371,7 +371,7 @@ class AppLocalizationsSw extends AppLocalizations {
   String get enterCode => 'Ingiza nambari zilizotumwa kwenda';
 
   @override
-  String get requiredDigits => 'Tarakimu 6 zinahitajika!';
+  String get requiredDigits => 'Tarakimu 4 zinahitajika!';
 
   @override
   String get fillCells => '*Tafadhali jaza seli zote kwa usahihi';

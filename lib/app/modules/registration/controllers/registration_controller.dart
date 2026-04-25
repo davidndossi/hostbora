@@ -19,6 +19,7 @@ import '../../../network/exceptions/api_exception.dart';
 import '../../../routes/app_pages.dart';
 
 class RegistrationController extends BaseController {
+  String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
   final name = ''.obs;
   final msisdn = ''.obs;
   final email = ''.obs;
@@ -31,8 +32,9 @@ class RegistrationController extends BaseController {
   final Rx<GeneralResponse> _generalResponse = GeneralResponse().obs;
   GeneralResponse get generalResponse => _generalResponse.value;
 
-  final PreferenceManager _preferenceManager = Get.find(tag: (PreferenceManager)
-      .toString());
+  final PreferenceManager _preferenceManager = Get.find(
+    tag: (PreferenceManager).toString(),
+  );
 
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
 
@@ -45,7 +47,8 @@ class RegistrationController extends BaseController {
   late String firebaseToken;
 
   // ignore: close_sinks
-  StreamController<ErrorAnimationType>? errorController = StreamController<ErrorAnimationType>();
+  StreamController<ErrorAnimationType>? errorController =
+      StreamController<ErrorAnimationType>();
 
   @override
   void onInit() {
@@ -70,7 +73,10 @@ class RegistrationController extends BaseController {
     String firstName = '';
     String middleName = '';
     String lastName = '';
-    List<String> names = name.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+    List<String> names = name
+        .split(RegExp(r'\s+'))
+        .where((s) => s.isNotEmpty)
+        .toList();
     if (names.length >= 3) {
       firstName = names[0];
       middleName = names[1];
@@ -81,10 +87,10 @@ class RegistrationController extends BaseController {
     } else if (names.isNotEmpty) {
       firstName = names[0];
     }
-    String msisdn = msisdnController.text.trim();
+    String msisdnValue = msisdnController.text.trim();
     String emailStr = emailController.text.trim();
-    this.msisdn(msisdn);
-    this.email(emailStr);
+    msisdn(msisdnValue);
+    email(emailStr);
     String password = passwordController.text;
 
     Util().checkConnectivity().then((value) async {
@@ -96,12 +102,12 @@ class RegistrationController extends BaseController {
         firstName: firstName,
         middleName: middleName.isEmpty ? null : middleName,
         surname: lastName.isEmpty ? null : lastName,
-        mobileNumber: msisdn,
+        mobileNumber: msisdnValue,
         gender: selectedGender.value.isEmpty ? null : selectedGender.value,
         email: emailStr.isEmpty ? null : emailStr,
         password: password,
       );
-      _preferenceManager.setString(PreferenceManager.keyUsername, msisdn);
+      _preferenceManager.setString(PreferenceManager.keyUsername, msisdnValue);
       callDataService<GeneralResponse>(
         _repository.createUserProfile(regRequest),
         onStart: () => isLoading(true),
@@ -113,18 +119,23 @@ class RegistrationController extends BaseController {
   }
 
   Future<void> getFirebaseToken() async {
-    firebaseToken = await _preferenceManager.getString(PreferenceManager.keyFirebaseToken);
+    firebaseToken = await _preferenceManager.getString(
+      PreferenceManager.keyFirebaseToken,
+    );
   }
 
   void _handleRegistrationResponseSuccess(GeneralResponse res) async {
     _generalResponse(res);
     isLoading(false);
     if (res.responseCode == '0' || res.responseCode == null) {
-      Get.offAllNamed(Routes.OTP, arguments: {
-        'msisdn': msisdn.value,
-        'email': email.value,
-        'flow': 'registration',
-      });
+      Get.offAllNamed(
+        Routes.OTP,
+        arguments: {
+          'msisdn': msisdn.value,
+          'email': email.value,
+          'flow': 'registration',
+        },
+      );
     } else {
       showErrorMessage(res.message ?? appLocalization.loginFailed);
     }
@@ -144,11 +155,16 @@ class RegistrationController extends BaseController {
       context: Get.context!,
       builder: (BuildContext context) => AlertDialog(
         shape: const RoundedRectangleBorder(
-          borderRadius:
-          BorderRadius.all(Radius.circular(15))),
+          borderRadius: BorderRadius.all(Radius.circular(15)),
+        ),
         icon: SvgPicture.asset('images/info.svg'),
-        title: const Center(
-          child: Text('Enter OTP sent to your registered phone number to continue!')
+        title: Center(
+          child: Text(
+            _t(
+              'Enter OTP sent to your registered phone number to continue!',
+              'Weka OTP iliyotumwa kwenye namba yako ya simu iliyosajiliwa ili kuendelea!',
+            ),
+          ),
         ),
         titleTextStyle: const TextStyle(
           color: Colors.black,
@@ -177,13 +193,10 @@ class RegistrationController extends BaseController {
               shape: PinCodeFieldShape.underline,
               selectedColor: AppColors.colorPrimary,
               activeFillColor: Colors.black,
-              inactiveColor: Colors.black54
+              inactiveColor: Colors.black54,
             ),
             animationDuration: const Duration(milliseconds: 300),
-            textStyle: const TextStyle(
-              fontSize: 20,
-              height: 1.6
-            ),
+            textStyle: const TextStyle(fontSize: 20, height: 1.6),
             backgroundColor: Colors.transparent,
             enableActiveFill: false,
             errorAnimationController: errorController,
@@ -202,7 +215,7 @@ class RegistrationController extends BaseController {
               return true;
             },
             onTap: () => {},
-          )
+          ),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
@@ -213,9 +226,10 @@ class RegistrationController extends BaseController {
           TextButton(
             onPressed: () => Get.back(closeOverlays: true),
             child: Text(appLocalization.cancel),
-          )
+          ),
         ],
-      ));
+      ),
+    );
   }
 
   Future<void> proceedToLogin(LoginResponse res) async {
@@ -236,7 +250,7 @@ class RegistrationController extends BaseController {
     callDataService(
       _repository.getOtp(),
       onSuccess: _handleOtpResponseSuccess,
-      onError: _handleQueryResponseError
+      onError: _handleQueryResponseError,
     );
   }
 
@@ -244,21 +258,28 @@ class RegistrationController extends BaseController {
     Get.back(closeOverlays: true);
     if (res.respCode == '0') {
       Get.offAllNamed(Routes.AUTH);
-      showSuccessMessage('Registration successful. Please sign in with your phone and password.');
+      showSuccessMessage(
+        _t(
+          'Registration successful. Please sign in with your phone and password.',
+          'Usajili umefanikiwa. Tafadhali ingia kwa kutumia simu na nenosiri lako.',
+        ),
+      );
     } else {
-      showErrorMessage(res.respMsg ?? 'Verification failed');
+      showErrorMessage(
+        res.respMsg ?? _t('Verification failed', 'Uthibitishaji umeshindikana'),
+      );
     }
   }
 
   void validateOtp() {
     OtpRequest request = OtpRequest(
       msisdn: msisdnController.text,
-      otp: otp.value
+      otp: otp.value,
     );
     callDataService(
       _repository.verifyPhoneNumber(request),
       onSuccess: _handleOtpValidateResponseSuccess,
-      onError: _handleQueryResponseError
+      onError: _handleQueryResponseError,
     );
   }
 
@@ -269,12 +290,18 @@ class RegistrationController extends BaseController {
     // Check if value has at least 2 words (separated by spaces)
     final words = value?.trim().split(RegExp(r'\s+')) ?? [];
     if (words.length < 2) {
-      return 'Please enter at least two names (first name and last name)';
+      return _t(
+        'Please enter at least two names (first name and last name)',
+        'Tafadhali weka angalau majina mawili (jina la kwanza na la mwisho)',
+      );
     }
     // Check if each word has at least 2 characters
     for (var word in words) {
       if (word.length < 2) {
-        return 'Each name must be at least 2 characters long';
+        return _t(
+          'Each name must be at least 2 characters long',
+          'Kila jina lazima liwe na angalau herufi 2',
+        );
       }
     }
     return null;
@@ -287,7 +314,10 @@ class RegistrationController extends BaseController {
     // Tanzanian phone number validation: starts with 0, followed by 6, 7, or 8, then 8 digits
     final phonePattern = RegExp(r'^0[678]\d{8}$');
     if (value != null && !phonePattern.hasMatch(value)) {
-      return 'Please enter a valid phone number (e.g., 0612345678)';
+      return _t(
+        'Please enter a valid phone number (e.g., 0612345678)',
+        'Tafadhali weka namba sahihi ya simu (mf., 0612345678)',
+      );
     }
     return null;
   }
@@ -296,12 +326,17 @@ class RegistrationController extends BaseController {
     if (value == null || value.trim().isEmpty) return null;
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(value.trim())) {
-      return 'Enter a valid email address';
+      return _t('Enter a valid email address', 'Weka barua pepe sahihi');
     }
     return null;
   }
 
   String? passwordValidator(String? value) {
-    return (value ?? '').length >= 8 ? null : 'Password must be at least 8 characters';
+    return (value ?? '').length >= 8
+        ? null
+        : _t(
+            'Password must be at least 8 characters',
+            'Nenosiri lazima liwe na angalau herufi 8',
+          );
   }
 }

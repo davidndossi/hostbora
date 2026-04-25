@@ -9,8 +9,16 @@ import '../controllers/failed_controller.dart';
 class FailedView extends BaseView<FailedController> {
   FailedView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
+    final isDark = _isDark(context);
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -20,8 +28,8 @@ class FailedView extends BaseView<FailedController> {
       ),
       title: Text(
         appLocalization.failed,
-        style: const TextStyle(
-          color: AppColors.appBarTextColor,
+        style: TextStyle(
+          color: isDark ? Colors.white : AppColors.appBarTextColor,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
@@ -32,6 +40,7 @@ class FailedView extends BaseView<FailedController> {
 
   @override
   Widget body(BuildContext context) {
+    final isDark = _isDark(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppValues.padding),
       child: Column(
@@ -42,7 +51,7 @@ class FailedView extends BaseView<FailedController> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: AppColors.errorColor.withOpacity(0.12),
+              color: AppColors.errorColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -58,10 +67,10 @@ class FailedView extends BaseView<FailedController> {
                   ? controller.msg.value
                   : appLocalization.failed,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textColorPrimary,
+                color: isDark ? Colors.white : AppColors.textColorPrimary,
                 height: 1.4,
               ),
             ),
@@ -71,10 +80,12 @@ class FailedView extends BaseView<FailedController> {
                 ? Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      'Code: ${controller.responseCode.value}',
+                      '${_t(context, en: 'Code', sw: 'Msimbo')}: ${controller.responseCode.value}',
                       style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textColorSecondary,
+                        fontSize: 15,
+                        color: isDark
+                            ? Colors.white70
+                            : AppColors.textColorSecondary,
                       ),
                     ),
                   )
@@ -93,14 +104,14 @@ class FailedView extends BaseView<FailedController> {
                   borderRadius: BorderRadius.circular(AppValues.radius_6),
                 ),
               ),
-              child: const Text('Try Again'),
+              child: Text(_t(context, en: 'Try Again', sw: 'Jaribu Tena')),
             ),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: controller.goToHome,
             child: Text(
-              'Go to Home',
+              _t(context, en: 'Go to Home', sw: 'Nenda Mwanzo'),
               style: TextStyle(
                 color: AppColors.colorPrimary,
                 fontWeight: FontWeight.w600,

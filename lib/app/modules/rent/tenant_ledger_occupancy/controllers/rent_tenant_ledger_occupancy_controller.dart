@@ -5,15 +5,19 @@ import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/rent_income_local_data_source.dart';
 import '../../../../data/local/db/rent_tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/model/send_sms_request.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../../routes/app_pages.dart';
 
+enum LedgerPaymentStatus { fullyPaid, notPaid, partialPaid }
+
 class RentTenantLedgerOccupancyController extends BaseController {
   RentTenantLedgerOccupancyController()
       : _tenantLocal = Get.find<RentTenantLocalDataSource>(),
+        _incomeLocal = Get.find<RentIncomeLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
@@ -23,8 +27,11 @@ class RentTenantLedgerOccupancyController extends BaseController {
   static const _overdueReminderStampPrefix = 'tenant_overdue_reminder_sent_';
 
   final RentTenantLocalDataSource _tenantLocal;
+  final RentIncomeLocalDataSource _incomeLocal;
   final PreferenceManager _preferenceManager;
   final AppRepository _repository;
+
+  final totalPaidTshRx = 0.obs;
 
   final tenantName = ''.obs;
   final tenantId = 0.obs;
@@ -89,9 +96,55 @@ class RentTenantLedgerOccupancyController extends BaseController {
     return (units * rec.rentAmountValue).round();
   }
 
-  int get totalPaidTsh => 0;
+  int get totalPaidTsh => totalPaidTshRx.value;
 
   int get remainingBalanceTsh => (totalDueTsh - totalPaidTsh).clamp(0, totalDueTsh);
+
+  LedgerPaymentStatus get ledgerPaymentStatus {
+    final due = totalDueTsh;
+    final paid = totalPaidTsh;
+    if (due <= 0 || paid >= due) return LedgerPaymentStatus.fullyPaid;
+    if (paid <= 0) return LedgerPaymentStatus.notPaid;
+    return LedgerPaymentStatus.partialPaid;
+  }
+
+  String get ledgerPaymentStatusHeadline {
+    final isSw = Get.locale?.languageCode == 'sw';
+    switch (ledgerPaymentStatus) {
+      case LedgerPaymentStatus.fullyPaid:
+        return isSw ? 'MALIPO YAMEKAMILIKA' : 'FULLY PAID';
+      case LedgerPaymentStatus.notPaid:
+        return isSw ? 'HAKUNA MALIPO' : 'NOT PAID';
+      case LedgerPaymentStatus.partialPaid:
+        return isSw ? 'MALIPO YA SEHEMU' : 'PARTIAL PAID';
+    }
+  }
+
+  bool _incomeRowMatchesTenant(RentIncomeRecord r, RentTenantRecord t) {
+    if (r.tenantName.trim().toLowerCase() != t.tenantName.trim().toLowerCase()) {
+      return false;
+    }
+    final pl = t.propertyLabel.trim().toLowerCase();
+    if (pl.isEmpty) return true;
+    final ap = r.apartment.trim().toLowerCase();
+    final unit = r.apartmentUnit.trim().toLowerCase();
+    final blob = '$ap $unit'.trim();
+    return blob.contains(pl) || pl.contains(ap);
+  }
+
+  Future<void> _refreshPaidTotalFromIncome() async {
+    final rec = tenantRecord.value;
+    if (rec == null) {
+      totalPaidTshRx.value = 0;
+      return;
+    }
+    final rows = await _incomeLocal.getAllNewestFirst();
+    var sum = 0.0;
+    for (final r in rows) {
+      if (_incomeRowMatchesTenant(r, rec)) sum += r.amountValue;
+    }
+    totalPaidTshRx.value = sum.round();
+  }
 
   int get currentStayMonths {
     final rec = tenantRecord.value;
@@ -151,6 +204,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
       propertyLabel: displayPropertyFull,
     );
     tenantRecord.value = byId ?? byRoute ?? await _tenantLocal.findLatest();
+    await _refreshPaidTotalFromIncome();
     if (isTenancyFinished) {
       await _autoSendOverdueReminderIfNeeded();
       _showTenancyFinishedDialog();

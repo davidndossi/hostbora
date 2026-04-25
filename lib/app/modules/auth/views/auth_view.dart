@@ -10,6 +10,10 @@ import '../controllers/auth_controller.dart';
 class AuthView extends BaseView<AuthController> {
   AuthView({super.key});
 
+  String _t(BuildContext context, String en, String sw) {
+    return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return null;
@@ -93,9 +97,15 @@ class AuthView extends BaseView<AuthController> {
               () => TextFormField(
                 controller: controller.msisdnController,
                 keyboardType: TextInputType.phone,
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : AppColors.textColorPrimary,
+                ),
                 decoration: _inputDecoration(
+                  context: context,
                   label: appLocalization.msisdn,
-                  hint: 'e.g. 0712345678',
+                  hint: _t(context, 'e.g. 0712345678', 'mf. 0712345678'),
                   errorText: controller.errorText.value,
                 ),
                 validator: controller.validator,
@@ -106,7 +116,13 @@ class AuthView extends BaseView<AuthController> {
               controller: controller.passwordController,
               keyboardType: TextInputType.visiblePassword,
               obscureText: true,
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : AppColors.textColorPrimary,
+              ),
               decoration: _inputDecoration(
+                context: context,
                 label: appLocalization.password,
                 hint: '••••••••',
               ),
@@ -132,11 +148,15 @@ class AuthView extends BaseView<AuthController> {
               () => SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: controller.isLoading.isTrue ? null : controller.login,
+                  onPressed: controller.isLoading.isTrue
+                      ? null
+                      : controller.login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.colorPrimary,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.colorPrimary.withOpacity(0.6),
+                    disabledBackgroundColor: AppColors.colorPrimary.withOpacity(
+                      0.6,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppValues.radius_6),
                     ),
@@ -167,23 +187,33 @@ class AuthView extends BaseView<AuthController> {
   }
 
   InputDecoration _inputDecoration({
+    required BuildContext context,
     required String label,
     String? hint,
     String? errorText,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       labelText: label,
       hintText: hint,
       errorText: errorText,
       filled: true,
-      fillColor: AppColors.colorWhite,
+      fillColor: isDark ? const Color(0xFF2C2C2E) : AppColors.colorWhite,
+      labelStyle: TextStyle(
+        color: isDark ? const Color(0xFFB0B3BA) : AppColors.designPlaceholder,
+      ),
+      hintStyle: TextStyle(
+        color: isDark ? const Color(0xFF8E8E93) : AppColors.designPlaceholder,
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(
+          color: isDark ? const Color(0xFF3A3A3C) : AppColors.designInputBorder,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -220,9 +250,13 @@ class AuthView extends BaseView<AuthController> {
     return Obx(
       () => OutlinedButton.icon(
         onPressed: controller.hasPinEnabled.value
-            ? () => Get.toNamed(Routes.MAIN)
+            ? () => Get.toNamed(Routes.WELCOME_BACK)
             : null,
-        icon: const Icon(Icons.pin_rounded, size: 22, color: AppColors.colorPrimary),
+        icon: const Icon(
+          Icons.pin_rounded,
+          size: 22,
+          color: AppColors.colorPrimary,
+        ),
         label: Text(
           controller.hasPinEnabled.value
               ? appLocalization.authUsePinToSignIn
@@ -258,6 +292,18 @@ class AuthView extends BaseView<AuthController> {
             ),
           ),
         ),
+        // const SizedBox(height: 20),
+        // TextButton(
+        //   onPressed: controller.clearPrefs,
+        //   child: Text(
+        //     appLocalization.clear,
+        //     style: TextStyle(
+        //       fontSize: 15,
+        //       fontWeight: FontWeight.w600,
+        //       color: AppColors.colorPrimary,
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }

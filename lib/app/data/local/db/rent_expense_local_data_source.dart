@@ -10,6 +10,8 @@ class RentExpenseRecord {
     required this.datePaidIso,
     required this.category,
     required this.notes,
+    required this.apartment,
+    required this.apartmentUnit,
     required this.createdAtMs,
   });
 
@@ -19,6 +21,10 @@ class RentExpenseRecord {
   final String datePaidIso;
   final String category;
   final String notes;
+  /// Selected property location (building / listing line).
+  final String apartment;
+  /// Unit name when expense is allocated to a specific unit.
+  final String apartmentUnit;
   final int createdAtMs;
 
   factory RentExpenseRecord.fromMap(Map<String, Object?> m) {
@@ -29,6 +35,8 @@ class RentExpenseRecord {
       datePaidIso: m['date_paid_iso'] as String? ?? '',
       category: m['category'] as String? ?? '',
       notes: m['notes'] as String? ?? '',
+      apartment: m['apartment'] as String? ?? '',
+      apartmentUnit: m['apartment_unit'] as String? ?? '',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
     );
   }
@@ -51,6 +59,8 @@ class RentExpenseLocalDataSource {
     required String datePaidIso,
     required String category,
     String notes = '',
+    String apartment = '',
+    String apartmentUnit = '',
   }) async {
     final db = await database;
     return db.insert(_table, {
@@ -59,6 +69,8 @@ class RentExpenseLocalDataSource {
       'date_paid_iso': datePaidIso,
       'category': category,
       'notes': notes,
+      'apartment': apartment,
+      'apartment_unit': apartmentUnit,
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });
   }

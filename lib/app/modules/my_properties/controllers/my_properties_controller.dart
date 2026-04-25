@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/db/rent_property_local_data_source.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
@@ -8,45 +9,17 @@ class MyPropertiesController extends BaseController {
   final selectedFilterIndex = 0.obs;
   final filterLabels = ['All Listings', 'Active', 'Drafts', 'Archive'];
 
-  MyPropertiesController() : _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+  MyPropertiesController()
+      : _repository =
+            Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _local = Get.find<RentPropertyLocalDataSource>();
 
   final AppRepository _repository;
+  final RentPropertyLocalDataSource _local;
 
   /// Status sent to API for filter: null = all, ACTIVE, DRAFT, ARCHIVED.
   static const List<String?> _filterStatuses = [null, 'ACTIVE', 'DRAFT', 'ARCHIVED'];
 
-  // final properties = <PropertyListing>[
-  //   PropertyListing(
-  //     id: '1',
-  //     title: 'Azure Coastal Villa',
-  //     rating: 4.9,
-  //     location: 'Malibu, California',
-  //     pricePerNight: 450,
-  //     status: PropertyStatus.ready,
-  //     isFavorite: true,
-  //     imageUrl: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800',
-  //   ),
-  //   PropertyListing(
-  //     id: '2',
-  //     title: 'Manhattan Urban Loft',
-  //     rating: 4.7,
-  //     location: 'Downtown NY, New York',
-  //     pricePerNight: 210,
-  //     status: PropertyStatus.cleaning,
-  //     isFavorite: false,
-  //     imageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800',
-  //   ),
-  //   PropertyListing(
-  //     id: '3',
-  //     title: 'Aspen Peaks Cabin',
-  //     rating: 5.0,
-  //     location: 'Aspen, Colorado',
-  //     pricePerNight: 600,
-  //     status: PropertyStatus.ready,
-  //     isFavorite: false,
-  //     imageUrl: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800',
-  //   ),
-  // ].obs;
   final properties = <PropertyListing>[].obs;
   final loading = false.obs;
 
@@ -59,8 +32,9 @@ class MyPropertiesController extends BaseController {
   /// Fetches properties from service by current filter (All / Active / Drafts / Archive).
   Future<void> loadProperties() async {
     loading.value = true;
+    final status = _filterStatuses[selectedFilterIndex.value];
     try {
-      final status = _filterStatuses[selectedFilterIndex.value];
+      final localList = await _loadLocalListings(status: status);
       final res = await _repository.getMyListings(status: status);
       final data = res.data;
       List<dynamic> rawList = [];
@@ -78,14 +52,67 @@ class MyPropertiesController extends BaseController {
           return s == status;
         }).toList();
       }
-      final list = maps.map(_listingFromMap).where((e) => e.id.isNotEmpty).toList();
-      properties.assignAll(list);
+      final remoteList =
+          maps.map(_listingFromMap).where((e) => e.id.isNotEmpty).toList();
+      properties.assignAll(_mergeListings(localList, remoteList));
     } catch (e) {
-      properties.clear();
+      // Fall back to local rows so screen stays useful offline / API failure.
+      final localList = await _loadLocalListings(status: status);
+      properties.assignAll(localList);
       Get.snackbar('Error', 'Could not load properties');
     } finally {
       loading.value = false;
     }
+  }
+
+  Future<List<PropertyListing>> _loadLocalListings({
+    required String? status,
+  }) async {
+    final rows = await _local.getAllNewestFirst();
+    final local = rows.map(_listingFromLocal).toList();
+    if (status == null) return local;
+    if (status == 'ACTIVE') {
+      return local;
+    }
+    // Local table does not currently persist DRAFT / ARCHIVED status.
+    return const [];
+  }
+
+  static PropertyListing _listingFromLocal(RentPropertyRecord r) {
+    final title = r.apartmentSuite.trim().isNotEmpty
+        ? r.apartmentSuite.trim()
+        : (r.propertyLocation.trim().isNotEmpty
+            ? r.propertyLocation.trim()
+            : 'Property');
+    final price = int.tryParse(r.rentAmount.replaceAll(',', '').trim()) ?? 0;
+    final id = r.propertyRef.trim().isNotEmpty
+        ? r.propertyRef.trim()
+        : 'local_${r.id}';
+    return PropertyListing(
+      id: id,
+      title: title,
+      rating: 0,
+      location: r.propertyLocation,
+      pricePerNight: price,
+      status: PropertyStatus.ready,
+      isFavorite: false,
+      imageUrl: '',
+    );
+  }
+
+  static List<PropertyListing> _mergeListings(
+    List<PropertyListing> local,
+    List<PropertyListing> remote,
+  ) {
+    final byId = <String, PropertyListing>{};
+    // Keep remote as source of truth when same id exists.
+    for (final item in local) {
+      byId[item.id] = item;
+    }
+    for (final item in remote) {
+      byId[item.id] = item;
+    }
+    return byId.values.toList();
   }
 
   static PropertyListing _listingFromMap(Map<String, dynamic> m) {
@@ -107,18 +134,6 @@ class MyPropertiesController extends BaseController {
       isFavorite: false,
       imageUrl: imageUrl,
     );
-  }
-
-  void openDrawer() {
-    // TODO: open drawer / menu
-  }
-
-  void openSearch() {
-    // TODO: open search
-  }
-
-  void openFilter() {
-    // TODO: open filter
   }
 
   void selectFilter(int index) {

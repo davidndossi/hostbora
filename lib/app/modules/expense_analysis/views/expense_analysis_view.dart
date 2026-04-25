@@ -18,6 +18,13 @@ const _expenseAnalysisBlue = Color(0xFF2196F3);
 class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
   ExpenseAnalysisView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -26,7 +33,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
       actions: [
         IconButton(
           onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined)
+          icon: const Icon(Icons.more_vert_outlined),
         ),
       ],
     );
@@ -58,11 +65,8 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
       onPressed: controller.goToAddExpense,
       icon: const Icon(Icons.add, color: Colors.white),
       label: Text(
-        'Add Expense',
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        _t(Get.context!, en: 'Add Expense', sw: 'Ongeza Matumizi'),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -91,11 +95,14 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
 
   Widget _buildDonutChart(BuildContext context) {
     final categories = controller.expenseCategories;
-    final total = categories.fold<double>(0, (s, c) => s + c.value);
-    final colors = [_expenseChartCyan, _expenseChartPurple, _expenseChartGreen, _expenseChartOrange];
+    final colors = [
+      _expenseChartCyan,
+      _expenseChartPurple,
+      _expenseChartGreen,
+      _expenseChartOrange,
+    ];
 
     final sections = categories.asMap().entries.map((e) {
-      final i = e.key;
       final c = e.value;
       return PieChartSectionData(
         value: c.value,
@@ -108,11 +115,15 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: _isDark(context)
+            ? const Color(0xFF1F1F1F)
+            : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(
+              alpha: _isDark(context) ? 0.28 : 0.06,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -137,12 +148,14 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'TOTAL',
+                      _t(context, en: 'TOTAL', sw: 'JUMLA'),
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
-                        color: AppColors.textColorSecondary,
+                        color: _isDark(context)
+                            ? Colors.white70
+                            : AppColors.textColorSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -163,10 +176,22 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _LegendDot(_expenseChartCyan, 'Maintenance'),
-              _LegendDot(_expenseChartPurple, 'Utilities'),
-              _LegendDot(_expenseChartGreen, 'Staffing'),
-              _LegendDot(_expenseChartOrange, 'Supplies'),
+              _LegendDot(
+                _expenseChartCyan,
+                _t(context, en: 'Maintenance', sw: 'Matengenezo'),
+              ),
+              _LegendDot(
+                _expenseChartPurple,
+                _t(context, en: 'Utilities', sw: 'Huduma'),
+              ),
+              _LegendDot(
+                _expenseChartGreen,
+                _t(context, en: 'Staffing', sw: 'Wafanyakazi'),
+              ),
+              _LegendDot(
+                _expenseChartOrange,
+                _t(context, en: 'Supplies', sw: 'Vifaa'),
+              ),
             ],
           ),
         ],
@@ -182,19 +207,19 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Top Expenses',
+              _t(context, en: 'Top Expenses', sw: 'Matumizi Makuu'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textColorPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             GestureDetector(
               onTap: controller.viewAllExpenses,
               child: Text(
-                'View All',
+                _t(context, en: 'View All', sw: 'Ona Yote'),
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: _expenseAnalysisBlue,
                 ),
@@ -203,10 +228,14 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
           ],
         ),
         const SizedBox(height: 12),
-        ...controller.topExpenses.take(2).map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _TopExpenseCard(item: e),
-            )),
+        ...controller.topExpenses
+            .take(2)
+            .map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _TopExpenseCard(item: e),
+              ),
+            ),
       ],
     );
   }
@@ -216,13 +245,14 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: controller.downloadReport,
-        icon: Icon(Icons.download_rounded, size: 22),
+        icon: const Icon(Icons.download_rounded, size: 22),
         label: Text(
-          'Download Detailed Report',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+          _t(
+            context,
+            en: 'Download Detailed Report',
+            sw: 'Pakua Ripoti ya Kina',
           ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -249,8 +279,9 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: AppColors.colorWhite,
+      color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -259,7 +290,11 @@ class _FilterChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
-            border: Border.all(color: AppColors.designInputBorder),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : AppColors.designInputBorder,
+            ),
           ),
           child: Row(
             children: [
@@ -267,14 +302,18 @@ class _FilterChip extends StatelessWidget {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textColorPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(icon, size: 20, color: AppColors.textColorSecondary),
+              Icon(
+                icon,
+                size: 20,
+                color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+              ),
             ],
           ),
         ),
@@ -297,17 +336,16 @@ class _LegendDot extends StatelessWidget {
         Container(
           width: 10,
           height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            color: AppColors.textColorSecondary,
+            fontSize: 12,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white70
+                : AppColors.textColorSecondary,
           ),
         ),
       ],
@@ -322,14 +360,15 @@ class _TopExpenseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -343,7 +382,7 @@ class _TopExpenseCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: _expenseChartCyan.withOpacity(0.2),
+                  color: _expenseChartCyan.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(item.icon, size: 22, color: _expenseChartCyan),
@@ -358,14 +397,16 @@ class _TopExpenseCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textColorPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     Text(
                       item.subtitle,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textColorSecondary,
+                        fontSize: 14,
+                        color: isDark
+                            ? Colors.white70
+                            : AppColors.textColorSecondary,
                       ),
                     ),
                   ],
@@ -379,7 +420,7 @@ class _TopExpenseCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textColorPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   Row(
@@ -407,11 +448,11 @@ class _TopExpenseCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'THIS MO',
+            Get.locale?.languageCode == 'sw' ? 'MWEZI HUU' : 'THIS MO',
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppColors.textColorSecondary,
+              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -421,16 +462,18 @@ class _TopExpenseCard extends StatelessWidget {
               value: item.thisMonthRatio,
               minHeight: 6,
               backgroundColor: AppColors.lightGreyColor,
-              valueColor: const AlwaysStoppedAnimation<Color>(_expenseChartCyan),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                _expenseChartCyan,
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'LAST MO',
+            Get.locale?.languageCode == 'sw' ? 'MWEZI ULIOPITA' : 'LAST MO',
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppColors.textColorSecondary,
+              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -440,7 +483,9 @@ class _TopExpenseCard extends StatelessWidget {
               value: item.lastMonthRatio,
               minHeight: 6,
               backgroundColor: AppColors.lightGreyColor,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.textColorSecondary),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.textColorSecondary,
+              ),
             ),
           ),
         ],

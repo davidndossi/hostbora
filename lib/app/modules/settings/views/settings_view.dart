@@ -10,6 +10,42 @@ import '/app/modules/settings/controllers/settings_controller.dart';
 class SettingsView extends BaseView<SettingsController> {
   SettingsView({super.key});
 
+  String _t(BuildContext context, String en, String sw) {
+    return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
+  }
+
+  Text _tileTitle(BuildContext context, String value) {
+    final theme = Theme.of(context);
+    return Text(
+      value,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: theme.colorScheme.onSurface,
+      ),
+    );
+  }
+
+  Text _tileValue(BuildContext context, String value) {
+    final theme = Theme.of(context);
+    return Text(
+      value,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  Text _tileDescription(BuildContext context, String value) {
+    final theme = Theme.of(context);
+    return Text(
+      value,
+      style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant),
+    );
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -24,15 +60,19 @@ class SettingsView extends BaseView<SettingsController> {
       return SettingsList(
         applicationType: ApplicationType.both,
         platform: DevicePlatform.device,
-        lightTheme: const SettingsThemeData(
-          dividerColor: Colors.grey,
-          settingsListBackground: Colors.white70,
-          settingsSectionBackground: Colors.white,
+        lightTheme: SettingsThemeData(
+          dividerColor: Theme.of(context).dividerColor,
+          settingsListBackground: Theme.of(context).colorScheme.surface,
+          settingsSectionBackground: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerLow,
         ),
-        darkTheme: const SettingsThemeData(
-          dividerColor: Colors.white60,
-          settingsListBackground: Colors.black87,
-          settingsSectionBackground: Colors.black54,
+        darkTheme: SettingsThemeData(
+          dividerColor: Theme.of(context).dividerColor,
+          settingsListBackground: Theme.of(context).colorScheme.surface,
+          settingsSectionBackground: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerLow,
         ),
         sections: [
           // SettingsSection(
@@ -45,30 +85,45 @@ class SettingsView extends BaseView<SettingsController> {
           //   ],
           // ),
           SettingsSection(
-            title: Text(appLocalization.common),
+            title: _tileTitle(context, appLocalization.common),
             tiles: [
               SettingsTile(
                 onPressed: (context) => controller.setDefaultLocale(),
                 leading: const Icon(Icons.language),
-                title: Text(appLocalization.language),
-                value: Obx(() => Text(controller.language.value == 'en' ? appLocalization.english : appLocalization.swahili)),
+                title: _tileTitle(context, appLocalization.language),
+                value: Obx(
+                  () => _tileValue(
+                    context,
+                    controller.language.value == 'en'
+                        ? appLocalization.english
+                        : appLocalization.swahili,
+                  ),
+                ),
               ),
               SettingsTile(
                 onPressed: (context) => Get.toNamed(Routes.SEND_SMS),
                 leading: const Icon(Icons.sms_outlined),
-                title: Text(appLocalization.sendMessage),
-                value: Text(appLocalization.sendSmsWhatsapp),
+                title: _tileTitle(context, appLocalization.sendMessage),
+                value: _tileValue(context, appLocalization.sendSmsWhatsapp),
               ),
               SettingsTile.navigation(
-                onPressed: (context) => _showTenantReminderTemplateDialog(context),
+                onPressed: (context) =>
+                    _showTenantReminderTemplateDialog(context),
                 leading: const Icon(Icons.chat_outlined),
-                title: Text(appLocalization.tenantReminderTemplateTitle),
-                description: Text(appLocalization.tenantReminderTemplateDescription),
+                title: _tileTitle(
+                  context,
+                  appLocalization.tenantReminderTemplateTitle,
+                ),
+                description: _tileDescription(
+                  context,
+                  appLocalization.tenantReminderTemplateDescription,
+                ),
                 value: Obx(
-                  () => Text(
+                  () => _tileValue(
+                    context,
                     controller.tenantReminderTemplate.value.trim().isEmpty
-                        ? 'Not set'
-                        : 'Configured',
+                        ? _t(context, 'Not set', 'Haijawekwa')
+                        : _t(context, 'Configured', 'Imewekwa'),
                   ),
                 ),
                 trailing: const Icon(Icons.chevron_right_outlined),
@@ -76,139 +131,179 @@ class SettingsView extends BaseView<SettingsController> {
               SettingsTile(
                 onPressed: (context) => controller.runLeaseReminderNow(),
                 leading: const Icon(Icons.play_circle_outline),
-                title: Text(appLocalization.runLeaseReminderNowTitle),
-                description: Text(appLocalization.runLeaseReminderNowDescription),
+                title: _tileTitle(
+                  context,
+                  appLocalization.runLeaseReminderNowTitle,
+                ),
+                description: _tileDescription(
+                  context,
+                  appLocalization.runLeaseReminderNowDescription,
+                ),
                 value: Obx(
-                  () => Text(
-                    controller.runningLeaseReminderNow.value ? 'Running...' : 'Tap to run',
+                  () => _tileValue(
+                    context,
+                    controller.runningLeaseReminderNow.value
+                        ? _t(context, 'Running...', 'Inaendeshwa...')
+                        : _t(context, 'Tap to run', 'Gusa kuendesha'),
                   ),
                 ),
               ),
               SettingsTile(
                 onPressed: (context) => controller.toggleTheme(),
-                title: Text(appLocalization.theme),
-                value: Obx(() => Text(controller.themeDesc.value)),
+                title: _tileTitle(context, appLocalization.theme),
+                value: Obx(
+                  () => _tileValue(context, controller.themeDesc.value),
+                ),
                 leading: const Icon(Icons.brightness_6_outlined),
               ),
             ],
           ),
           SettingsSection(
-          title: Text(appLocalization.updates),
-          tiles: [
-            SettingsTile.switchTile(
-              onToggle: (_) => controller.toggleEnableNotifications(),
-              initialValue: controller.enableNotifications.value,
-              leading: const Icon(Icons.notifications_active),
-              title: Text(appLocalization.enableNotifications),
-              activeSwitchColor: AppColors.colorPrimary
-            ),
-            SettingsTile.switchTile(
-              onToggle: (_) => controller.toggleEventReminders(),
-              leading: const Icon(Icons.event_outlined),
-              initialValue: controller.eventReminders.value,
-              title: Text(appLocalization.eventReminders),
-              activeSwitchColor: AppColors.colorPrimary
-            ),
-          ]
-        ),
-        SettingsSection(
-          title: Text(appLocalization.security),
-          tiles: <SettingsTile>[
-            SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(Routes.SECURITY),
-              leading: const Icon(Icons.security),
-              title: Text(appLocalization.security),
-              description: Text(appLocalization.securityDescription),
-              trailing: const Icon(Icons.chevron_right_outlined),
-            ),
-            SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(
-                Routes.CHANGE_PIN,
-                arguments: {'setup_pin': true, 'change_pin': true},
+            title: _tileTitle(context, appLocalization.updates),
+            tiles: [
+              SettingsTile.switchTile(
+                onToggle: (_) => controller.toggleEnableNotifications(),
+                initialValue: controller.enableNotifications.value,
+                leading: const Icon(Icons.notifications_active),
+                title: _tileTitle(context, appLocalization.enableNotifications),
+                activeSwitchColor: AppColors.colorPrimary,
               ),
-              leading: const Icon(Icons.pin_outlined),
-              title: Text(appLocalization.changePinTitle),
-              description: Text(appLocalization.changePinDescription),
-              trailing: const Icon(Icons.chevron_right_outlined),
-            ),
-            SettingsTile.switchTile(
-              onToggle: (_) {
-                showToast('Lock app: Development in progress');
-              },
-              initialValue: true,
-              leading: const Icon(Icons.phonelink_lock),
-              title: Text(appLocalization.lockApp),
-              activeSwitchColor: AppColors.colorPrimary
-            ),
-            SettingsTile.switchTile(
-              onToggle: (_) {
-                showToast('Use fingerprint: Development in progress');
-              },
-              initialValue: true,
-              leading: const Icon(Icons.fingerprint),
-              title: Text(appLocalization.useFingerprint),
-              description: Text(appLocalization.useFingerprintDescription),
-              activeSwitchColor: AppColors.colorPrimary
-            ),
-            // SettingsTile.navigation(
-            //   onPressed: (context) => Get.toNamed(Routes.CHANGE_PASSWORD),
-            //   leading: const Icon(Icons.lock),
-            //   title: Text(appLocalization.changePin)
-            // )
-          ],
-        ),
-        SettingsSection(
-          title: Text(appLocalization.misc),
-          tiles: [
-            SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(Routes.PROPERTY_VAULT),
-              leading: const Icon(Icons.shield_outlined),
-              title: Text(appLocalization.propertyVault),
-              description: Text(appLocalization.propertyVaultDescription),
-              trailing: const Icon(Icons.chevron_right_outlined),
-            ),
-            SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(Routes.DOCUMENTS),
-              leading: const Icon(Icons.folder_outlined),
-              title: Text(appLocalization.legalDocuments),
-              description: Text(appLocalization.legalDocumentsDescription),
-              trailing: const Icon(Icons.chevron_right_outlined),
-            ),
-            SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(Routes.ABOUT),
-              leading: const Icon(Icons.info_outline),
-              title: Text(appLocalization.about),
-              trailing: const Icon(Icons.chevron_right_outlined),
-            ),
-            SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(Routes.SUPPORT),
-              leading: const Icon(Icons.help_outline),
-              title: Text(appLocalization.support),
-              trailing: const Icon(Icons.chevron_right_outlined),
-            ),
-            SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(Routes.PRIVACY),
-              leading: const Icon(Icons.privacy_tip_outlined),
-              title: Text(appLocalization.privacyPolicy),
-              trailing: const Icon(Icons.chevron_right_outlined),
-            ),
-            SettingsTile.navigation(
-              onPressed: (context) => Get.toNamed(Routes.TERMS),
-              leading: const Icon(Icons.description_outlined),
-              title: Text(appLocalization.termsOfService),
-              trailing: const Icon(Icons.chevron_right_outlined),
-            ),
-            SettingsTile.navigation(
-              title: Text(appLocalization.logout),
-              trailing: const Icon(Icons.power_settings_new_outlined),
-              onPressed: (context) {
-                showSignOutDialog(context);
-              },
-            ),
-          ],
-        ),
-      ],
-    );
+              SettingsTile.switchTile(
+                onToggle: (_) => controller.toggleEventReminders(),
+                leading: const Icon(Icons.event_outlined),
+                initialValue: controller.eventReminders.value,
+                title: _tileTitle(context, appLocalization.eventReminders),
+                activeSwitchColor: AppColors.colorPrimary,
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: _tileTitle(context, appLocalization.security),
+            tiles: <SettingsTile>[
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.SECURITY),
+                leading: const Icon(Icons.security),
+                title: _tileTitle(context, appLocalization.security),
+                description: _tileDescription(
+                  context,
+                  appLocalization.securityDescription,
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(
+                  Routes.CHANGE_PIN,
+                  arguments: {'setup_pin': true, 'change_pin': true},
+                ),
+                leading: const Icon(Icons.pin_outlined),
+                title: _tileTitle(context, appLocalization.changePinTitle),
+                description: _tileDescription(
+                  context,
+                  appLocalization.changePinDescription,
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => showToast(
+                  _t(
+                    context,
+                    'This feature is coming soon',
+                    'Huduma hii inakuja hivi karibuni',
+                  ),
+                ),
+                leading: const Icon(Icons.phonelink_lock),
+                title: _tileTitle(context, appLocalization.lockApp),
+                value: _tileValue(
+                  context,
+                  _t(context, 'Coming soon', 'Inakuja'),
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => showToast(
+                  _t(
+                    context,
+                    'This feature is coming soon',
+                    'Huduma hii inakuja hivi karibuni',
+                  ),
+                ),
+                leading: const Icon(Icons.fingerprint),
+                title: _tileTitle(context, appLocalization.useFingerprint),
+                description: _tileDescription(
+                  context,
+                  appLocalization.useFingerprintDescription,
+                ),
+                value: _tileValue(
+                  context,
+                  _t(context, 'Coming soon', 'Inakuja'),
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              // SettingsTile.navigation(
+              //   onPressed: (context) => Get.toNamed(Routes.CHANGE_PASSWORD),
+              //   leading: const Icon(Icons.lock),
+              //   title: Text(appLocalization.changePin)
+              // )
+            ],
+          ),
+          SettingsSection(
+            title: _tileTitle(context, appLocalization.misc),
+            tiles: [
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.PROPERTY_VAULT),
+                leading: const Icon(Icons.shield_outlined),
+                title: _tileTitle(context, appLocalization.propertyVault),
+                description: _tileDescription(
+                  context,
+                  appLocalization.propertyVaultDescription,
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.DOCUMENTS),
+                leading: const Icon(Icons.folder_outlined),
+                title: _tileTitle(context, appLocalization.legalDocuments),
+                description: _tileDescription(
+                  context,
+                  appLocalization.legalDocumentsDescription,
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.ABOUT),
+                leading: const Icon(Icons.info_outline),
+                title: _tileTitle(context, appLocalization.about),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.SUPPORT),
+                leading: const Icon(Icons.help_outline),
+                title: _tileTitle(context, appLocalization.support),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.PRIVACY),
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: _tileTitle(context, appLocalization.privacyPolicy),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.TERMS),
+                leading: const Icon(Icons.description_outlined),
+                title: _tileTitle(context, appLocalization.termsOfService),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                title: _tileTitle(context, appLocalization.logout),
+                trailing: const Icon(Icons.power_settings_new_outlined),
+                onPressed: (context) {
+                  showSignOutDialog(context);
+                },
+              ),
+            ],
+          ),
+        ],
+      );
     });
   }
 
@@ -227,10 +322,7 @@ class SettingsView extends BaseView<SettingsController> {
     AlertDialog alert = AlertDialog(
       title: Text(appLocalization.logout),
       content: Text(appLocalization.logoutConfirm),
-      actions: [
-        cancelButton,
-        continueButton,
-      ],
+      actions: [cancelButton, continueButton],
     );
 
     // show the dialog
@@ -255,9 +347,12 @@ class SettingsView extends BaseView<SettingsController> {
             controller: textController,
             minLines: 3,
             maxLines: 6,
-            decoration: const InputDecoration(
-              hintText:
-                  'Example: Hello {tenantName}, your tenancy has ended. Please renew and pay your outstanding balance.',
+            decoration: InputDecoration(
+              hintText: _t(
+                context,
+                'Example: Hello {tenantName}, your tenancy has ended. Please renew and pay your outstanding balance.',
+                'Mfano: Hujambo {tenantName}, muda wa upangaji umeisha. Tafadhali huisha mkataba na ulipie deni lililosalia.',
+              ),
               border: OutlineInputBorder(),
             ),
           ),
@@ -279,7 +374,13 @@ class SettingsView extends BaseView<SettingsController> {
                   textController.text,
                 );
                 if (preview.trim().isEmpty) {
-                  controller.showErrorMessage('Enter a template first to preview');
+                  controller.showErrorMessage(
+                    _t(
+                      context,
+                      'Enter a template first to preview',
+                      'Weka kwanza kiolezo ili kuona hakikisho',
+                    ),
+                  );
                   return;
                 }
                 showDialog(
@@ -302,7 +403,9 @@ class SettingsView extends BaseView<SettingsController> {
             ),
             FilledButton(
               onPressed: () async {
-                await controller.saveTenantReminderTemplate(textController.text);
+                await controller.saveTenantReminderTemplate(
+                  textController.text,
+                );
                 if (context.mounted) Navigator.of(context).pop();
               },
               child: Text(appLocalization.save),
@@ -312,5 +415,4 @@ class SettingsView extends BaseView<SettingsController> {
       },
     );
   }
-
 }

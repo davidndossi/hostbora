@@ -12,11 +12,23 @@ const Color _kTitleNavy = Color(0xFF1B2838);
 class DesignMoodboardView extends BaseView<DesignMoodboardController> {
   DesignMoodboardView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Column(
       children: [
         Expanded(
@@ -31,10 +43,10 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                   const SizedBox(height: 16),
                   Text(
                     controller.moodboardTitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.w700,
-                      color: _kTitleNavy,
+                      color: isDark ? theme.colorScheme.onSurface : _kTitleNavy,
                       height: 1.1,
                     ),
                   ),
@@ -44,20 +56,33 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.3,
-                      color: Colors.grey.shade600,
+                      color: theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 28),
-                  _sectionTitle('DESIGN CONCEPTS'),
+                  _sectionTitle(
+                    context,
+                    _t(context, en: 'DESIGN CONCEPTS', sw: 'DHANA ZA UBUNIFU'),
+                  ),
                   const SizedBox(height: 14),
                   _conceptsGrid(),
                   const SizedBox(height: 28),
-                  _sectionTitle('COLOR PALETTE'),
+                  _sectionTitle(
+                    context,
+                    _t(context, en: 'COLOR PALETTE', sw: 'PALETI YA RANGI'),
+                  ),
                   const SizedBox(height: 14),
-                  _paletteCard(),
+                  _paletteCard(context),
                   const SizedBox(height: 28),
-                  _sectionTitle('FURNITURE & TEXTURES'),
+                  _sectionTitle(
+                    context,
+                    _t(
+                      context,
+                      en: 'FURNITURE & TEXTURES',
+                      sw: 'SAMANI NA MICHORO',
+                    ),
+                  ),
                   const SizedBox(height: 14),
                   _texturesRow(),
                   const SizedBox(height: 24),
@@ -74,24 +99,36 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
   Widget _topBar(BuildContext context) {
     return Row(
       children: [
-        _roundIcon(Icons.arrow_back_ios_new_rounded, onTap: Get.back),
+        _roundIcon(context, Icons.arrow_back_ios_new_rounded, onTap: Get.back),
         const Spacer(),
-        _roundIcon(Icons.share_outlined, onTap: () async {
-          await Share.share(
-            '${controller.moodboardTitle} — ${controller.subtitleLine}',
-            subject: controller.moodboardTitle,
-          );
-        }),
+        _roundIcon(
+          context,
+          Icons.share_outlined,
+          onTap: () async {
+            await Share.share(
+              '${controller.moodboardTitle} — ${controller.subtitleLine}',
+              subject: controller.moodboardTitle,
+            );
+          },
+        ),
         const SizedBox(width: 10),
-        _roundIcon(Icons.more_vert, onTap: () => _showMoreMenu(context)),
+        _roundIcon(
+          context,
+          Icons.more_vert,
+          onTap: () => _showMoreMenu(context),
+        ),
       ],
     );
   }
 
   void _showMoreMenu(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: isDark
+          ? theme.colorScheme.surfaceContainerHigh
+          : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -100,13 +137,29 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.edit_outlined),
-              title: const Text('Rename moodboard'),
+              leading: Icon(
+                Icons.edit_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              title: Text(
+                _t(
+                  context,
+                  en: 'Rename moodboard',
+                  sw: 'Badili jina la moodboard',
+                ),
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              ),
               onTap: () => Navigator.pop(ctx),
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: const Text('Delete'),
+              leading: Icon(
+                Icons.delete_outline,
+                color: theme.colorScheme.error,
+              ),
+              title: Text(
+                _t(context, en: 'Delete', sw: 'Futa'),
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              ),
               onTap: () => Navigator.pop(ctx),
             ),
           ],
@@ -115,9 +168,15 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
     );
   }
 
-  Widget _roundIcon(IconData icon, {required VoidCallback onTap}) {
+  Widget _roundIcon(
+    BuildContext context,
+    IconData icon, {
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Material(
-      color: Colors.white,
+      color: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
       elevation: 0,
       shadowColor: Colors.transparent,
       shape: const CircleBorder(),
@@ -127,17 +186,22 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
         child: SizedBox(
           width: 40,
           height: 40,
-          child: Icon(icon, size: 20, color: _kTitleNavy),
+          child: Icon(
+            icon,
+            size: 20,
+            color: isDark ? theme.colorScheme.onSurface : _kTitleNavy,
+          ),
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String text) {
+  Widget _sectionTitle(BuildContext context, String text) {
+    final theme = Theme.of(context);
     return Text(
       text,
-      style: const TextStyle(
-        color: _kTealAccent,
+      style: TextStyle(
+        color: _isDark(context) ? theme.colorScheme.primary : _kTealAccent,
         fontSize: 12,
         letterSpacing: 1.6,
         fontWeight: FontWeight.w700,
@@ -167,9 +231,14 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                 item.image,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  color: const Color(0xFFE8E6E1),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                      : const Color(0xFFE8E6E1),
                   alignment: Alignment.center,
-                  child: Icon(Icons.image_not_supported_outlined, color: Colors.grey.shade500),
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Colors.grey.shade500,
+                  ),
                 ),
               ),
               Positioned.fill(
@@ -200,7 +269,11 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                       child: const SizedBox(
                         width: 36,
                         height: 36,
-                        child: Icon(Icons.edit_outlined, size: 18, color: _kTitleNavy),
+                        child: Icon(
+                          Icons.edit_outlined,
+                          size: 18,
+                          color: _kTitleNavy,
+                        ),
                       ),
                     ),
                   ),
@@ -216,9 +289,7 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     height: 1.2,
-                    shadows: [
-                      Shadow(color: Colors.black45, blurRadius: 8),
-                    ],
+                    shadows: [Shadow(color: Colors.black45, blurRadius: 8)],
                   ),
                 ),
               ),
@@ -229,12 +300,14 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
     );
   }
 
-  Widget _paletteCard() {
+  Widget _paletteCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -243,7 +316,11 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: const Color(0xFFE8E6E1)),
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outlineVariant
+              : const Color(0xFFE8E6E1),
+        ),
       ),
       child: Obx(() {
         final selected = controller.selectedPaletteIndex.value;
@@ -269,7 +346,9 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                           shape: BoxShape.circle,
                           color: fill,
                           border: Border.all(
-                            color: isSel ? _kTealAccent : const Color(0xFFE0DDD8),
+                            color: isSel
+                                ? _kTealAccent
+                                : const Color(0xFFE0DDD8),
                             width: isSel ? 3 : 1,
                           ),
                           boxShadow: isSel
@@ -292,7 +371,11 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
-                          color: isSel ? _kTealAccent : Colors.grey.shade700,
+                          color: isSel
+                              ? (isDark
+                                    ? theme.colorScheme.primary
+                                    : _kTealAccent)
+                              : theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       if (sw.label != null) ...[
@@ -304,7 +387,7 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 9,
-                            color: Colors.grey.shade500,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -335,9 +418,14 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
               controller.textures[index],
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
-                color: const Color(0xFFE8E6E1),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.surfaceContainerHighest
+                    : const Color(0xFFE8E6E1),
                 alignment: Alignment.center,
-                child: Icon(Icons.image_not_supported_outlined, color: Colors.grey.shade500),
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  color: Colors.grey.shade500,
+                ),
               ),
             ),
           ),
@@ -356,8 +444,12 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
           child: FilledButton.icon(
             onPressed: controller.generateMoreLikeThis,
             icon: const Icon(Icons.auto_awesome, size: 20, color: Colors.white),
-            label: const Text(
-              'Generate More Like This',
+            label: Text(
+              _t(
+                context,
+                en: 'Generate More Like This',
+                sw: 'Tengeneza Mengine Yanayofanana',
+              ),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,

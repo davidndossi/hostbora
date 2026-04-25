@@ -5,10 +5,14 @@ import 'dart:convert';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../../data/local/db/rent_property_local_data_source.dart';
 import '../../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
+import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
+import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../data/model/add_task_request.dart';
 import '../../../../data/repository/app_repository.dart';
+import '../../host_calendar/controllers/rent_host_calendar_controller.dart';
 
 class RentScheduleMaintenanceFormController extends BaseController {
   final formKey = GlobalKey<FormState>();
@@ -16,12 +20,7 @@ class RentScheduleMaintenanceFormController extends BaseController {
   final descriptionController = TextEditingController();
   final scheduleDateFieldController = TextEditingController();
 
-  final propertyOptions = const [
-    'The Azure Penthouse',
-    'Evergreen Estate Unit 4B',
-    'Harbor View Loft',
-    'Summit Gardens A2',
-  ];
+  final propertyOptions = <String>[].obs;
 
   final categoryOptions = const [
     'Plumbing',
@@ -33,15 +32,85 @@ class RentScheduleMaintenanceFormController extends BaseController {
     'General',
   ];
 
-  final selectedProperty = 'The Azure Penthouse'.obs;
+  final selectedProperty = ''.obs;
   final selectedCategory = 'Plumbing'.obs;
   final scheduleDate = Rx<DateTime?>(null);
   /// `low` | `medium` | `high`
   final priority = 'medium'.obs;
   final _maintenanceLocal = Get.find<RentScheduledMaintenanceLocalDataSource>();
+  final _propertyLocal = Get.find<RentPropertyLocalDataSource>();
+  final _preferenceManager =
+      Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
+  final _workspaceContext = Get.find<WorkspaceContextService>();
   final _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>();
   final _notificationScheduler = Get.find<LocalNotificationSchedulerService>();
   final _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+
+  bool get hasProperties => propertyOptions.isNotEmpty;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadPropertyOptions();
+  }
+
+  Future<void> _loadPropertyOptions() async {
+    final userId = (await _preferenceManager.getUser()).id ?? '';
+    final workspace = await _workspaceContext.getWorkspaceType();
+    final rows = await _propertyLocal.getAllVisibleNewestFirst(
+      userId: userId,
+      workspaceType: workspace,
+    );
+    final localNames = rows
+        .map((p) => p.apartmentSuite.trim().isNotEmpty
+            ? p.apartmentSuite.trim()
+            : p.propertyLocation.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    final remoteNames = await _loadRemotePropertyNames();
+    final merged = <String>{
+      ...localNames,
+      ...remoteNames,
+    }.toList();
+    merged.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    propertyOptions.assignAll(merged);
+    if (propertyOptions.isNotEmpty) {
+      selectedProperty.value = propertyOptions.first;
+    }
+  }
+
+  Future<List<String>> _loadRemotePropertyNames() async {
+    try {
+      final res = await _repository.getMyListings(status: null);
+      if (res.responseCode != '0' || res.data == null) return const [];
+      final list = _extractListingsFromResponse(res.data);
+      return list
+          .map((m) =>
+              (m['propertyName'] ?? m['title'] ?? m['name'])?.toString().trim() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  static List<Map<String, dynamic>> _extractListingsFromResponse(dynamic data) {
+    if (data is List) return data.whereType<Map<String, dynamic>>().toList();
+    if (data is Map && data['content'] is List) {
+      return (data['content'] as List).whereType<Map<String, dynamic>>().toList();
+    }
+    if (data is Map && data['listings'] is List) {
+      return (data['listings'] as List).whereType<Map<String, dynamic>>().toList();
+    }
+    return const [];
+  }
+
+  String? validateSelectedProperty(String? value) {
+    if (!hasProperties) return null;
+    final v = (value ?? selectedProperty.value).trim();
+    if (v.isEmpty) return 'Property is required';
+    return null;
+  }
 
   void updateProperty(String? v) {
     if (v != null && v.isNotEmpty) selectedProperty.value = v;
@@ -71,6 +140,10 @@ class RentScheduleMaintenanceFormController extends BaseController {
   }
 
   Future<void> scheduleTask() async {
+    if (!hasProperties) {
+      showErrorMessage('No properties yet — add a property first.');
+      return;
+    }
     if (!(formKey.currentState?.validate() ?? false)) return;
     final date = scheduleDate.value!;
     final scheduledAt = DateTime(date.year, date.month, date.day, 9, 0);
@@ -117,6 +190,10 @@ class RentScheduleMaintenanceFormController extends BaseController {
         }),
       );
       showSuccessMessage('Saved offline. Will sync when internet is available.');
+    }
+
+    if (Get.isRegistered<RentHostCalendarController>()) {
+      await Get.find<RentHostCalendarController>().loadCalendarData();
     }
   }
 

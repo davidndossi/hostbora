@@ -8,22 +8,41 @@ import '../../../core/widget/custom_app_bar.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/interior_design_studio_controller.dart';
 
-class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> {
+class InteriorDesignStudioView
+    extends BaseView<InteriorDesignStudioController> {
   InteriorDesignStudioView({super.key});
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
-      appBarTitleText: 'AI Interior Design Studio',
+      appBarTitleText: _t(
+        context,
+        en: 'AI Interior Design Studio',
+        sw: 'Studio ya Ubunifu wa Ndani ya AI',
+      ),
       isCentered: true,
     );
   }
 
   @override
-  Color pageBackgroundColor(BuildContext context) => AppColors.colorWhite;
+  Color pageBackgroundColor(BuildContext context) => _isDark(context)
+      ? Theme.of(context).colorScheme.surface
+      : AppColors.colorWhite;
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Column(
       children: [
         Expanded(
@@ -32,20 +51,26 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildUploadCard(),
+                _buildUploadCard(context),
                 const SizedBox(height: 18),
-                _buildStyleHeader(),
+                _buildStyleHeader(context),
                 const SizedBox(height: 10),
                 _buildStyleGrid(),
                 const SizedBox(height: 14),
-                _buildGenerateButton(),
+                _buildGenerateButton(context),
                 const SizedBox(height: 18),
                 Text(
-                  'Reimagined Results',
+                  _t(
+                    context,
+                    en: 'Reimagined Results',
+                    sw: 'Matokeo Yaliyoboreshwa',
+                  ),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textColorPrimary,
+                    color: isDark
+                        ? theme.colorScheme.onSurface
+                        : AppColors.textColorPrimary,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -58,14 +83,22 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
     );
   }
 
-  Widget _buildUploadCard() {
+  Widget _buildUploadCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
       decoration: BoxDecoration(
-        color: AppColors.pageBackground,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHigh
+            : AppColors.pageBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.designInputBorder),
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outlineVariant
+              : AppColors.designInputBorder,
+        ),
       ),
       child: Column(
         children: [
@@ -80,19 +113,31 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
           ),
           const SizedBox(height: 10),
           Text(
-            'Upload a photo of your room',
+            _t(
+              context,
+              en: 'Upload a photo of your room',
+              sw: 'Pakia picha ya chumba chako',
+            ),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: AppColors.textColorPrimary,
+              color: isDark
+                  ? theme.colorScheme.onSurface
+                  : AppColors.textColorPrimary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'For best results, ensure the room is well-lit',
+            _t(
+              context,
+              en: 'For best results, ensure the room is well-lit',
+              sw: 'Kwa matokeo bora, hakikisha chumba kina mwanga wa kutosha',
+            ),
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.textColorSecondary,
+              color: isDark
+                  ? theme.colorScheme.onSurfaceVariant
+                  : AppColors.textColorSecondary,
             ),
           ),
           const SizedBox(height: 12),
@@ -105,33 +150,40 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-              minimumSize: const Size(140, 48)
+              minimumSize: const Size(140, 48),
             ),
-            child: const Text('Select Photo', style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.35,
-            )),
+            child: Text(
+              _t(context, en: 'Select Photo', sw: 'Chagua Picha'),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.35,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStyleHeader() {
+  Widget _buildStyleHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Row(
       children: [
         Text(
-          'Select Style',
+          _t(context, en: 'Select Style', sw: 'Chagua Mtindo'),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.textColorPrimary,
+            color: isDark
+                ? theme.colorScheme.onSurface
+                : AppColors.textColorPrimary,
           ),
         ),
         const Spacer(),
         Text(
-          '4 STYLES AVAILABLE',
+          _t(context, en: '4 STYLES AVAILABLE', sw: 'MITINDO 4 INAPATIKANA'),
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -163,7 +215,9 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: selected ? AppColors.colorPrimary : AppColors.designInputBorder,
+                  color: selected
+                      ? AppColors.colorPrimary
+                      : AppColors.designInputBorder,
                   width: selected ? 2 : 1,
                 ),
               ),
@@ -178,7 +232,10 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.black.withOpacity(0.06), Colors.black.withOpacity(0.42)],
+                          colors: [
+                            Colors.black.withValues(alpha: 0.06),
+                            Colors.black.withValues(alpha: 0.42),
+                          ],
                         ),
                       ),
                     ),
@@ -204,24 +261,38 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
     });
   }
 
-  Widget _buildGenerateButton() {
+  Widget _buildGenerateButton(BuildContext context) {
     return Obx(() {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
-          onPressed: controller.generating.value ? null : controller.generateIdeas,
+          onPressed: controller.generating.value
+              ? null
+              : controller.generateIdeas,
           icon: controller.generating.value
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : const Icon(Icons.auto_awesome, size: 18),
-          label: Text(controller.generating.value ? 'Generating...' : 'Generate Design Ideas', style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.45,
-          )),
+          label: Text(
+            controller.generating.value
+                ? _t(context, en: 'Generating...', sw: 'Inatengeneza...')
+                : _t(
+                    context,
+                    en: 'Generate Design Ideas',
+                    sw: 'Tengeneza Mawazo ya Ubunifu',
+                  ),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.45,
+            ),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.colorPrimary,
             foregroundColor: Colors.white,
@@ -236,21 +307,31 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
   }
 
   Widget _buildResultList() {
+    final isDark = _isDark(Get.context!);
+    final theme = Theme.of(Get.context!);
     return Column(
       children: controller.results
           .map(
             (item) => Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: AppColors.colorWhite,
+                color: isDark
+                    ? theme.colorScheme.surfaceContainerHigh
+                    : AppColors.colorWhite,
                 borderRadius: BorderRadius.circular(AppValues.radius_12),
-                border: Border.all(color: AppColors.designInputBorder),
+                border: Border.all(
+                  color: isDark
+                      ? theme.colorScheme.outlineVariant
+                      : AppColors.designInputBorder,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(AppValues.radius_12)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(AppValues.radius_12),
+                    ),
                     child: Image.asset(
                       item.imagePath,
                       height: 150,
@@ -268,7 +349,9 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textColorPrimary,
+                              color: isDark
+                                  ? theme.colorScheme.onSurface
+                                  : AppColors.textColorPrimary,
                             ),
                           ),
                         ),
@@ -289,7 +372,9 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
                       item.subtitle,
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textColorSecondary,
+                        color: isDark
+                            ? theme.colorScheme.onSurfaceVariant
+                            : AppColors.textColorSecondary,
                       ),
                     ),
                   ),
@@ -302,18 +387,29 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
                       children: item.tags
                           .map(
                             (tag) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppColors.pageBackground,
+                                color: isDark
+                                    ? theme.colorScheme.surface
+                                    : AppColors.pageBackground,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.designInputBorder),
+                                border: Border.all(
+                                  color: isDark
+                                      ? theme.colorScheme.outlineVariant
+                                      : AppColors.designInputBorder,
+                                ),
                               ),
                               child: Text(
                                 tag,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textColorSecondary,
+                                  color: isDark
+                                      ? theme.colorScheme.onSurfaceVariant
+                                      : AppColors.textColorSecondary,
                                 ),
                               ),
                             ),
@@ -329,16 +425,30 @@ class InteriorDesignStudioView extends BaseView<InteriorDesignStudioController> 
                       child: OutlinedButton(
                         onPressed: () => Get.toNamed(Routes.DESIGN_MOODBOARD),
                         style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                          side: BorderSide(color: AppColors.designInputBorder),
-                          foregroundColor: AppColors.textColorPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          side: BorderSide(
+                            color: isDark
+                                ? theme.colorScheme.outlineVariant
+                                : AppColors.designInputBorder,
+                          ),
+                          foregroundColor: isDark
+                              ? theme.colorScheme.onSurface
+                              : AppColors.textColorPrimary,
                         ),
-                        child: const Text('View Material List', style: TextStyle(
-                          color: AppColors.colorPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          // height: 1.33,
-                        )),
+                        child: Text(
+                          _t(
+                            Get.context!,
+                            en: 'View Material List',
+                            sw: 'Tazama Orodha ya Vifaa',
+                          ),
+                          style: const TextStyle(
+                            color: AppColors.colorPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                   ),

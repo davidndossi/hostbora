@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:paa_yangu/app/modules/onboarding/views/explanation_view.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
@@ -12,25 +13,8 @@ class OnboardingController extends BaseController {
   final PageController pageController = PageController();
   final currentPage = 0.obs;
 
-  final List<OnboardingSlide> slides = [
-    OnboardingSlide(
-      title: 'Welcome to Paa Yangu',
-      description:
-          'Stay connected with your community. Get announcements, events, and resources in one place.',
-      icon: Icons.groups_rounded,
-    ),
-    OnboardingSlide(
-      title: 'Events & Announcements',
-      description:
-          'Never miss an event or important update. See what\'s happening in your community.',
-      icon: Icons.calendar_today_rounded,
-    ),
-    OnboardingSlide(
-      title: 'Join Communities',
-      description:
-          'Discover and join communities. Invite members and manage your groups easily.',
-      icon: Icons.people_alt_rounded,
-    ),
+  final List<Widget> slides = [
+    ExplanationView()
   ];
 
   void onPageChanged(int index) {
@@ -39,7 +23,7 @@ class OnboardingController extends BaseController {
 
   Future<void> completeOnboarding() async {
     await _preferenceManager.setBool('seen_onboarding', true);
-    Get.offAllNamed(Routes.AUTH);
+    Get.offAllNamed(Routes.CREATE_HOST_ACCOUNT);
   }
 
   @override
@@ -49,14 +33,3 @@ class OnboardingController extends BaseController {
   }
 }
 
-class OnboardingSlide {
-  final String title;
-  final String description;
-  final IconData icon;
-
-  OnboardingSlide({
-    required this.title,
-    required this.description,
-    required this.icon,
-  });
-}

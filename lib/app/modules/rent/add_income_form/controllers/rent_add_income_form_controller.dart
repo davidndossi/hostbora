@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -5,13 +7,16 @@ import 'package:intl/intl.dart';
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/rent_income_local_data_source.dart';
 import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/rent_tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
+import '../../add_new_listing/models/apartment_unit_draft.dart';
 
 class RentAddIncomeFormController extends BaseController {
   RentAddIncomeFormController()
       : _incomeLocal = Get.find<RentIncomeLocalDataSource>(),
         _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
+        _tenantLocal = Get.find<RentTenantLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
@@ -19,6 +24,7 @@ class RentAddIncomeFormController extends BaseController {
 
   final RentIncomeLocalDataSource _incomeLocal;
   final RentPropertyLocalDataSource _propertyLocal;
+  final RentTenantLocalDataSource _tenantLocal;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
 
@@ -34,9 +40,125 @@ class RentAddIncomeFormController extends BaseController {
   final selectedCategoryIndex = 0.obs;
   final propertyOptions = <String>[].obs;
   final selectedProperty = ''.obs;
+  /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
+  final selectedIncomeUnitKey = Rxn<String>();
+
+  List<RentPropertyRecord> _propertyRows = [];
 
   String get selectedCategory => categories[selectedCategoryIndex.value];
   bool get hasProperties => propertyOptions.isNotEmpty;
+
+  RentPropertyRecord? get selectedPropertyRecord {
+    selectedProperty.value;
+    final selected = selectedProperty.value.trim();
+    if (selected.isEmpty) return null;
+    for (final r in _propertyRows) {
+      final suite = r.apartmentSuite.trim();
+      final fallback = r.propertyLocation.trim();
+      if (suite == selected || fallback == selected) return r;
+    }
+    return null;
+  }
+
+  List<ApartmentUnitDraft> get incomeUnitsForSelectedProperty {
+    selectedProperty.value;
+    final r = selectedPropertyRecord;
+    if (r == null) return const [];
+    return _parseUnitsJson(r.unitsJson);
+  }
+
+  bool get showIncomeUnitPicker {
+    selectedProperty.value;
+    final r = selectedPropertyRecord;
+    if (r == null) return false;
+    if (r.propertyType.trim().toLowerCase() != 'apartment') return false;
+    return incomeUnitsForSelectedProperty.isNotEmpty;
+  }
+
+  static List<ApartmentUnitDraft> _parseUnitsJson(String unitsJson) {
+    final raw = unitsJson.trim();
+    if (raw.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((m) => ApartmentUnitDraft.fromJson(Map<String, dynamic>.from(m)))
+          .where((u) => u.unitName.trim().isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  String _optionalUnitNotesLine() {
+    final key = selectedIncomeUnitKey.value?.trim();
+    if (key == null || key.isEmpty) return '';
+    for (final u in incomeUnitsForSelectedProperty) {
+      if (u.selectionKey == key) {
+        return 'Unit: ${u.unitName.trim()}';
+      }
+    }
+    return '';
+  }
+
+  ApartmentUnitDraft? _draftForIncomeUnitKey(String? key) {
+    if (key == null || key.trim().isEmpty) return null;
+    for (final u in incomeUnitsForSelectedProperty) {
+      if (u.selectionKey == key) return u;
+    }
+    return null;
+  }
+
+  static bool _tenantMatchesProperty(
+    RentTenantRecord t,
+    RentPropertyRecord p,
+  ) {
+    final loc = p.propertyLocation.trim();
+    final suite = p.apartmentSuite.trim();
+    final title = suite.isNotEmpty ? '$loc · $suite' : loc;
+    final propertyRef = p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}';
+    final r = t.propertyRef.trim();
+    if (r.isNotEmpty) {
+      return r == propertyRef;
+    }
+    final pl = t.propertyLabel.trim();
+    if (pl == title) return true;
+    if (pl == loc) return true;
+    if (suite.isNotEmpty && pl == '$loc · $suite') return true;
+    return false;
+  }
+
+  static bool _tenantMatchesUnit(
+    RentTenantRecord t,
+    ApartmentUnitDraft u,
+    RentPropertyRecord p,
+  ) {
+    if (!_tenantMatchesProperty(t, p)) return false;
+    final tid = t.apartmentUnitId.trim();
+    final uid = u.unitId.trim();
+    if (tid.isNotEmpty && uid.isNotEmpty) return tid == uid;
+    return t.unitLabel.trim() == u.unitName.trim();
+  }
+
+  Future<void> _syncTenantFieldToSelectedUnit() async {
+    final key = selectedIncomeUnitKey.value?.trim();
+    final prop = selectedPropertyRecord;
+    if (key == null || key.isEmpty || prop == null) {
+      return;
+    }
+    final unit = _draftForIncomeUnitKey(key);
+    if (unit == null) return;
+
+    final tenants = await _tenantLocal.getAllNewestFirst();
+    for (final t in tenants) {
+      if (_tenantMatchesUnit(t, unit, prop)) {
+        tenantController.text = t.tenantName.trim();
+        return;
+      }
+    }
+    tenantController.clear();
+  }
 
   @override
   void onInit() {
@@ -57,8 +179,12 @@ class RentAddIncomeFormController extends BaseController {
       userId: userId,
       workspaceType: workspaceType,
     );
+    _propertyRows = rows;
     final options = rows
-        .map((e) => e.propertyLocation.trim())
+        .map((e) {
+          final suite = e.apartmentSuite.trim();
+          return suite.isNotEmpty ? suite : e.propertyLocation.trim();
+        })
         .where((e) => e.isNotEmpty)
         .toSet()
         .toList();
@@ -76,7 +202,17 @@ class RentAddIncomeFormController extends BaseController {
 
   void updateSelectedProperty(String? value) {
     if (value == null) return;
+    selectedIncomeUnitKey.value = null;
     selectedProperty.value = value;
+    tenantController.clear();
+  }
+
+  void updateSelectedIncomeUnit(String? unitKey) {
+    selectedIncomeUnitKey.value = unitKey;
+    if (unitKey == null || unitKey.trim().isEmpty) {
+      return;
+    }
+    _syncTenantFieldToSelectedUnit();
   }
 
   Future<void> saveIncomeOffline() async {
@@ -106,12 +242,25 @@ class RentAddIncomeFormController extends BaseController {
       return;
     }
 
+    final unitDraft = _draftForIncomeUnitKey(selectedIncomeUnitKey.value);
+    final unitName = unitDraft?.unitName.trim() ?? '';
+    final unitLine = _optionalUnitNotesLine();
+    final baseNotes = StringBuffer('Property: $property');
+    if (unitLine.isNotEmpty) {
+      baseNotes.writeln(unitLine);
+    }
+    if (notes.isNotEmpty) {
+      baseNotes.writeln(notes);
+    }
+
     await _incomeLocal.insert(
       tenantName: tenant,
       amountValue: amount,
       datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
       category: selectedCategory,
-      notes: notes.isEmpty ? 'Property: $property' : 'Property: $property\n$notes',
+      notes: baseNotes.toString().trim(),
+      apartment: property,
+      apartmentUnit: unitName,
     );
 
     showSuccessMessage('Income saved offline');

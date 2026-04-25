@@ -14,6 +14,13 @@ import '../controllers/ai_insights_controller.dart';
 class AiInsightsView extends BaseView<AiInsightsController> {
   AiInsightsView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
 
@@ -30,20 +37,20 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                 children: [
                   _buildHeader(context),
                   const SizedBox(height: 12),
-                  _buildAiSummary(),
+                  _buildAiSummary(context),
                   const SizedBox(height: 16),
-                  _buildRevenueAnalysis(),
+                  _buildRevenueAnalysis(context),
                   const SizedBox(height: 16),
                   Text(
-                    'Recommendations',
+                    _t(context, en: 'Recommendations', sw: 'Mapendekezo'),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textColorPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  _buildRecommendations(),
+                  _buildRecommendations(context),
                 ],
               ),
             ),
@@ -54,29 +61,36 @@ class AiInsightsView extends BaseView<AiInsightsController> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final period = DateFormat.yMMMM(Localizations.localeOf(context).toString())
-        .format(DateTime.now());
+    final period = DateFormat.yMMMM(
+      Localizations.localeOf(context).toString(),
+    ).format(DateTime.now());
     return Row(
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _circleIcon(Icons.arrow_back_ios_new_rounded, onTap: Get.back),
+              _circleIcon(
+                context,
+                Icons.arrow_back_ios_new_rounded,
+                onTap: Get.back,
+              ),
               Text(
-                'AI Insights',
+                _t(context, en: 'AI Insights', sw: 'Maarifa ya AI'),
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textColorPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
-                'Performance Report • $period',
+                '${_t(context, en: 'Performance Report', sw: 'Ripoti ya Utendaji')} • $period',
                 style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textColorSecondary,
+                  fontSize: 14,
+                  color: _isDark(context)
+                      ? Colors.white70
+                      : AppColors.textColorSecondary,
                 ),
               ),
             ],
@@ -88,7 +102,11 @@ class AiInsightsView extends BaseView<AiInsightsController> {
           decoration: BoxDecoration(
             color: const Color(0x190D6D6D),
             borderRadius: BorderRadius.circular(21),
-            border: Border.all(color: AppColors.designInputBorder),
+            border: Border.all(
+              color: _isDark(context)
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : AppColors.designInputBorder,
+            ),
           ),
           child: Icon(Icons.auto_awesome, color: AppColors.colorPrimary),
         ),
@@ -96,14 +114,20 @@ class AiInsightsView extends BaseView<AiInsightsController> {
     );
   }
 
-  Widget _buildAiSummary() {
+  Widget _buildAiSummary(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: _isDark(context)
+            ? const Color(0xFF1F1F1F)
+            : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
-        border: Border.all(color: AppColors.designInputBorder),
+        border: Border.all(
+          color: _isDark(context)
+              ? Colors.white.withValues(alpha: 0.18)
+              : AppColors.designInputBorder,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,10 +137,16 @@ class AiInsightsView extends BaseView<AiInsightsController> {
               SizedBox(
                 width: 24,
                 height: 24,
-                child: Center(child: SvgPicture.asset('images/ic_intelligence.svg', width: 12, height: 12))
+                child: Center(
+                  child: SvgPicture.asset(
+                    'images/ic_intelligence.svg',
+                    width: 12,
+                    height: 12,
+                  ),
+                ),
               ),
               Text(
-                'AI Summary',
+                _t(context, en: 'AI Summary', sw: 'Muhtasari wa AI'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -132,11 +162,17 @@ class AiInsightsView extends BaseView<AiInsightsController> {
               style: TextStyle(
                 fontSize: 14.5,
                 height: 1.65,
-                color: AppColors.textColorPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
               children: [
-                const TextSpan(text: 'This week, occupancy is up '),
+                TextSpan(
+                  text: _t(
+                    context,
+                    en: 'This week, occupancy is up ',
+                    sw: 'Wiki hii, kiwango cha ukodishaji kimeongezeka ',
+                  ),
+                ),
                 TextSpan(
                   text: '12%',
                   style: TextStyle(
@@ -144,9 +180,12 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const TextSpan(
-                  text:
-                      '. Guest sentiment remains high, specifically regarding your "Seamless Check-In" process. You are outperforming 85% of similar listings in your area.',
+                TextSpan(
+                  text: _t(
+                    context,
+                    en: '. Guest sentiment remains high, specifically regarding your "Seamless Check-In" process. You are outperforming 85% of similar listings in your area.',
+                    sw: '. Maoni ya wageni yanaendelea kuwa mazuri, hasa kuhusu mchakato wako wa "Kuingia Bila Usumbufu". Unafanya vizuri kuliko 85% ya matangazo yanayofanana katika eneo lako.',
+                  ),
                 ),
               ],
             ),
@@ -155,52 +194,66 @@ class AiInsightsView extends BaseView<AiInsightsController> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: [_tag('🚀 Growth'), _tag('💧 High Satisfaction')],
+            children: [
+              _tag(context, _t(context, en: '🚀 Growth', sw: '🚀 Ukuaji')),
+              _tag(
+                context,
+                _t(context, en: '💧 High Satisfaction', sw: '💧 Kuridhika Juu'),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _tag(String text) {
+  Widget _tag(BuildContext context, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.pageBackground,
+        color: _isDark(context)
+            ? Colors.white.withValues(alpha: 0.08)
+            : AppColors.pageBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.designInputBorder),
+        border: Border.all(
+          color: _isDark(context)
+              ? Colors.white.withValues(alpha: 0.18)
+              : AppColors.designInputBorder,
+        ),
       ),
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 11,
-          color: AppColors.textColorSecondary,
+          fontSize: 12,
+          color: _isDark(context)
+              ? Colors.white70
+              : AppColors.textColorSecondary,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
-  Widget _buildRevenueAnalysis() {
+  Widget _buildRevenueAnalysis(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              'Revenue Analysis',
+              _t(context, en: 'Revenue Analysis', sw: 'Uchambuzi wa Mapato'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textColorPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const Spacer(),
-            _rangePill(0, '1W'),
+            _rangePill(context, 0, '1W'),
             const SizedBox(width: 6),
-            _rangePill(1, '1M'),
+            _rangePill(context, 1, '1M'),
             const SizedBox(width: 6),
-            _rangePill(2, 'All'),
+            _rangePill(context, 2, _t(context, en: 'All', sw: 'Zote')),
           ],
         ),
         const SizedBox(height: 10),
@@ -208,9 +261,15 @@ class AiInsightsView extends BaseView<AiInsightsController> {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
           decoration: BoxDecoration(
-            color: AppColors.colorWhite,
+            color: _isDark(context)
+                ? const Color(0xFF1F1F1F)
+                : AppColors.colorWhite,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
-            border: Border.all(color: AppColors.designInputBorder),
+            border: Border.all(
+              color: _isDark(context)
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : AppColors.designInputBorder,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,16 +281,38 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'TOTAL REVENUE',
-                          style: TextStyle(fontSize: 11, color: AppColors.textColorSecondary, fontWeight: FontWeight.w600),
+                          _t(
+                            context,
+                            en: 'TOTAL REVENUE',
+                            sw: 'JUMLA YA MAPATO',
+                          ),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _isDark(context)
+                                ? Colors.white70
+                                : AppColors.textColorSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         Text(
                           '\$4,250.00',
-                          style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: AppColors.textColorPrimary),
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                         Text(
-                          '↗ 15.2% vs predicted',
-                          style: TextStyle(fontSize: 11, color: AppColors.colorSuccessGreen, fontWeight: FontWeight.w600),
+                          _t(
+                            context,
+                            en: '↗ 15.2% vs predicted',
+                            sw: '↗ 15.2% dhidi ya makadirio',
+                          ),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.colorSuccessGreen,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -239,9 +320,17 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _legendDot('PREDICTED', const Color(0xFF9EC8C1)),
+                      _legendDot(
+                        context,
+                        _t(context, en: 'PREDICTED', sw: 'MAKADIRIO'),
+                        const Color(0xFF9EC8C1),
+                      ),
                       const SizedBox(height: 4),
-                      _legendDot('ACTUAL', AppColors.colorPrimary),
+                      _legendDot(
+                        context,
+                        _t(context, en: 'ACTUAL', sw: 'HALISI'),
+                        AppColors.colorPrimary,
+                      ),
                     ],
                   ),
                 ],
@@ -251,7 +340,9 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                 height: 130,
                 width: double.infinity,
                 child: CustomPaint(
-                  painter: _RevenueChartPainter(controller.chartValues.toList()),
+                  painter: _RevenueChartPainter(
+                    controller.chartValues.toList(),
+                  ),
                 ),
               ),
               const SizedBox(height: 2),
@@ -261,7 +352,12 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                     .map(
                       (d) => Text(
                         d,
-                        style: TextStyle(fontSize: 10, color: AppColors.textColorSecondary),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _isDark(context)
+                              ? Colors.white70
+                              : AppColors.textColorSecondary,
+                        ),
                       ),
                     )
                     .toList(),
@@ -273,17 +369,30 @@ class AiInsightsView extends BaseView<AiInsightsController> {
     );
   }
 
-  Widget _legendDot(String text, Color color) {
+  Widget _legendDot(BuildContext context, String text, Color color) {
     return Row(
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 6),
-        Text(text, style: TextStyle(fontSize: 10, color: AppColors.textColorSecondary, fontWeight: FontWeight.w600)),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            color: _isDark(context)
+                ? Colors.white70
+                : AppColors.textColorSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _rangePill(int index, String label) {
+  Widget _rangePill(BuildContext context, int index, String label) {
     return Obx(() {
       final selected = controller.selectedRange.value == index;
       return GestureDetector(
@@ -291,16 +400,30 @@ class AiInsightsView extends BaseView<AiInsightsController> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: selected ? AppColors.colorWhite : Colors.transparent,
+            color: selected
+                ? (_isDark(context)
+                      ? const Color(0xFF1F1F1F)
+                      : AppColors.colorWhite)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? AppColors.designInputBorder : Colors.transparent),
+            border: Border.all(
+              color: selected
+                  ? (_isDark(context)
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : AppColors.designInputBorder)
+                  : Colors.transparent,
+            ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: selected ? AppColors.textColorPrimary : AppColors.textColorSecondary,
+              color: selected
+                  ? Theme.of(context).colorScheme.onSurface
+                  : (_isDark(context)
+                        ? Colors.white70
+                        : AppColors.textColorSecondary),
             ),
           ),
         ),
@@ -308,21 +431,33 @@ class AiInsightsView extends BaseView<AiInsightsController> {
     });
   }
 
-  Widget _buildRecommendations() {
+  Widget _buildRecommendations(BuildContext context) {
     return Column(
       children: controller.recommendations.map((item) {
         final (badge, badgeColor) = switch (item.impact) {
-          RecommendationImpact.highImpact => ('HIGH IMPACT', const Color(0xFFF3D89F)),
-          RecommendationImpact.observation => ('OBSERVATION', const Color(0xFFE1E7F8)),
+          RecommendationImpact.highImpact => (
+            'HIGH IMPACT',
+            const Color(0xFFF3D89F),
+          ),
+          RecommendationImpact.observation => (
+            'OBSERVATION',
+            const Color(0xFFE1E7F8),
+          ),
           RecommendationImpact.newItem => ('NEW', const Color(0xFFD9F4EA)),
         };
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.colorWhite,
+            color: _isDark(context)
+                ? const Color(0xFF1F1F1F)
+                : AppColors.colorWhite,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
-            border: Border.all(color: AppColors.designInputBorder),
+            border: Border.all(
+              color: _isDark(context)
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : AppColors.designInputBorder,
+            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,10 +466,14 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppColors.pageBackground,
+                  color: _isDark(context)
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : AppColors.pageBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(child: Text(item.icon, style: const TextStyle(fontSize: 18))),
+                child: Center(
+                  child: Text(item.icon, style: const TextStyle(fontSize: 18)),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -346,11 +485,18 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                         Expanded(
                           child: Text(
                             item.title,
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textColorPrimary),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: badgeColor,
                             borderRadius: BorderRadius.circular(10),
@@ -360,7 +506,9 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                             style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textColorPrimary,
+                              color: _isDark(context)
+                                  ? Colors.white
+                                  : AppColors.textColorPrimary,
                             ),
                           ),
                         ),
@@ -370,8 +518,10 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                     Text(
                       item.description,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textColorSecondary,
+                        fontSize: 14,
+                        color: _isDark(context)
+                            ? Colors.white70
+                            : AppColors.textColorSecondary,
                         height: 1.45,
                       ),
                     ),
@@ -379,25 +529,41 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: item.impact == RecommendationImpact.highImpact ? () => Get.toNamed(Routes.PRICE_ANALYSIS) : () {},
+                        onPressed:
+                            item.impact == RecommendationImpact.highImpact
+                            ? () => Get.toNamed(Routes.PRICE_ANALYSIS)
+                            : () {},
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: item.impact == RecommendationImpact.observation
+                          backgroundColor:
+                              item.impact == RecommendationImpact.observation
                               ? Colors.white
                               : AppColors.colorPrimary,
-                          foregroundColor: item.impact == RecommendationImpact.observation
-                              ? AppColors.textColorPrimary
+                          foregroundColor:
+                              item.impact == RecommendationImpact.observation
+                              ? (_isDark(context)
+                                    ? Colors.white
+                                    : AppColors.textColorPrimary)
                               : Colors.white,
                           elevation: 0,
                           side: BorderSide(
-                            color: item.impact == RecommendationImpact.observation
-                                ? AppColors.designInputBorder
+                            color:
+                                item.impact == RecommendationImpact.observation
+                                ? (_isDark(context)
+                                      ? Colors.white.withValues(alpha: 0.18)
+                                      : AppColors.designInputBorder)
                                 : Colors.transparent,
                           ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                         ),
-                        child: Text(item.cta, style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700)),
+                        child: Text(
+                          item.cta,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -410,9 +576,13 @@ class AiInsightsView extends BaseView<AiInsightsController> {
     );
   }
 
-  Widget _circleIcon(IconData icon, {required VoidCallback onTap}) {
+  Widget _circleIcon(
+    BuildContext context,
+    IconData icon, {
+    required VoidCallback onTap,
+  }) {
     return Material(
-      color: AppColors.colorWhite,
+      color: _isDark(context) ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -420,7 +590,11 @@ class AiInsightsView extends BaseView<AiInsightsController> {
         child: SizedBox(
           width: 36,
           height: 36,
-          child: Icon(icon, size: 20, color: AppColors.textColorPrimary),
+          child: Icon(
+            icon,
+            size: 20,
+            color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+          ),
         ),
       ),
     );
@@ -470,7 +644,10 @@ class _RevenueChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [AppColors.colorPrimary.withOpacity(0.20), AppColors.colorPrimary.withOpacity(0.02)],
+        colors: [
+          AppColors.colorPrimary.withValues(alpha: 0.20),
+          AppColors.colorPrimary.withValues(alpha: 0.02),
+        ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.fill;
 
@@ -490,5 +667,6 @@ class _RevenueChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _RevenueChartPainter oldDelegate) => oldDelegate.values != values;
+  bool shouldRepaint(covariant _RevenueChartPainter oldDelegate) =>
+      oldDelegate.values != values;
 }

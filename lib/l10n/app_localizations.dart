@@ -821,7 +821,7 @@ abstract class AppLocalizations {
   /// No description provided for @requiredDigits.
   ///
   /// In en, this message translates to:
-  /// **'6 digits required!'**
+  /// **'4 digits required!'**
   String get requiredDigits;
 
   /// No description provided for @fillCells.

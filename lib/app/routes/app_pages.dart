@@ -18,6 +18,8 @@ import '../modules/otp/bindings/otp_binding.dart';
 import '../modules/otp/views/otp_view.dart';
 import '../modules/registration/bindings/registration_binding.dart';
 import '../modules/registration/views/registration_view.dart';
+import '../modules/rent/smart_utility_dashboard/bindings/rent_smart_utility_dashboard_binding.dart';
+import '../modules/rent/smart_utility_dashboard/views/rent_smart_utility_dashboard_view.dart';
 import '../modules/send_sms/bindings/send_sms_binding.dart';
 import '../modules/send_sms/views/send_sms_view.dart';
 import '../modules/subscription/bindings/subscription_binding.dart';
@@ -220,6 +222,8 @@ import '../modules/rent/active_loyalty_programs/bindings/rent_active_loyalty_pro
     as split_active_loyalty_binding;
 import '../modules/rent/active_loyalty_programs/views/rent_active_loyalty_programs_view.dart'
     as split_active_loyalty_view;
+import '../modules/rent/whatsapp_template_builder/bindings/rent_whatsapp_template_builder_binding.dart';
+import '../modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart';
 
 part 'app_routes.dart';
 
@@ -664,6 +668,16 @@ class AppPages {
       name: _Paths.RENT_PROPERTY_ROI_ESTIMATE_FORM,
       page: () => RentPropertyRoiEstimateFormView(),
       binding: RentPropertyRoiEstimateFormBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_SMART_UTILITY_DASHBOARD,
+      page: () => RentSmartUtilityDashboardView(),
+      binding: RentSmartUtilityDashboardBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_WHATSAPP_TEMPLATE_BUILDER,
+      page: () => RentWhatsappTemplateBuilderView(),
+      binding: RentWhatsappTemplateBuilderBinding(),
     ),
   ];
 }

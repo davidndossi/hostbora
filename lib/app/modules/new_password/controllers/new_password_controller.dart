@@ -8,6 +8,7 @@ import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
 class NewPasswordController extends BaseController {
+  String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
   final formKey = GlobalKey<FormState>();
   final newPasswordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
@@ -27,22 +28,38 @@ class NewPasswordController extends BaseController {
   double get strength {
     _passwordTrigger.value;
     final p = newPasswordController.text;
-    if (p.isEmpty) return 0;
+    if (p.isEmpty) {
+      return 0;
+    }
     double s = 0;
-    if (p.length >= 8) s += 0.3;
-    if (p.length >= 12) s += 0.2;
-    if (RegExp(r'[0-9]').hasMatch(p)) s += 0.25;
+    if (p.length >= 8) {
+      s += 0.3;
+    }
+    if (p.length >= 12) {
+      s += 0.2;
+    }
+    if (RegExp(r'[0-9]').hasMatch(p)) {
+      s += 0.25;
+    }
     if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(p) ||
-        RegExp(r'[A-Z]').hasMatch(p) && RegExp(r'[a-z]').hasMatch(p)) s += 0.25;
+        RegExp(r'[A-Z]').hasMatch(p) && RegExp(r'[a-z]').hasMatch(p)) {
+      s += 0.25;
+    }
     return s.clamp(0.0, 1.0);
   }
 
   String get strengthLabel {
     _passwordTrigger.value;
-    if (strength >= 0.75) return 'STRONG';
-    if (strength >= 0.5) return 'GOOD';
-    if (strength >= 0.25) return 'FAIR';
-    return 'WEAK';
+    if (strength >= 0.75) {
+      return _t('STRONG', 'IMARA');
+    }
+    if (strength >= 0.5) {
+      return _t('GOOD', 'NZURI');
+    }
+    if (strength >= 0.25) {
+      return _t('FAIR', 'WASTANI');
+    }
+    return _t('WEAK', 'DHAIFU');
   }
 
   bool get hasMinLength {
@@ -53,7 +70,9 @@ class NewPasswordController extends BaseController {
   bool get hasNumberOrSymbol {
     _passwordTrigger.value;
     return RegExp(r'[0-9]').hasMatch(newPasswordController.text) ||
-        RegExp(r'''[!@#$%^&*(),.?":{}|<>_\-+=\[\];'\\]''').hasMatch(newPasswordController.text);
+        RegExp(
+          r'''[!@#$%^&*(),.?":{}|<>_\-+=\[\];'\\]''',
+        ).hasMatch(newPasswordController.text);
   }
 
   void goBack() => Get.back();
@@ -69,7 +88,12 @@ class NewPasswordController extends BaseController {
   void resetAndLogin() {
     if (!(formKey.currentState?.validate() ?? false)) return;
     if (msisdn.isEmpty || otp.isEmpty) {
-      showErrorMessage('Session expired. Please start reset password again.');
+      showErrorMessage(
+        _t(
+          'Session expired. Please start reset password again.',
+          'Kipindi kimeisha. Tafadhali anza tena kuweka upya nenosiri.',
+        ),
+      );
       return;
     }
     isLoading(true);
@@ -89,25 +113,42 @@ class NewPasswordController extends BaseController {
         if (res.responseCode == '0' || res.responseCode == null) {
           Get.offAllNamed(Routes.PASSWORD_UPDATED);
         } else {
-          showErrorMessage(res.message ?? 'Failed to update password');
+          showErrorMessage(
+            res.message ??
+                _t(
+                  'Failed to update password',
+                  'Imeshindikana kusasisha nenosiri',
+                ),
+          );
         }
       },
     );
   }
 
   String? validateNewPassword(String? value) {
-    if (value == null || value.isEmpty) return 'New password is required';
-    if (value.length < 8) return 'At least 8 characters';
+    if (value == null || value.isEmpty) {
+      return _t('New password is required', 'Nenosiri jipya linahitajika');
+    }
+    if (value.length < 8) {
+      return _t('At least 8 characters', 'Angalau herufi 8');
+    }
     if (!RegExp(r'[0-9]').hasMatch(value) &&
         !RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
-      return 'Include a number or symbol';
+      return _t('Include a number or symbol', 'Jumuisha namba au alama');
     }
     return null;
   }
 
   String? validateConfirm(String? value) {
-    if (value == null || value.isEmpty) return 'Please confirm your password';
-    if (value != newPasswordController.text) return 'Passwords do not match';
+    if (value == null || value.isEmpty) {
+      return _t(
+        'Please confirm your password',
+        'Tafadhali thibitisha nenosiri lako',
+      );
+    }
+    if (value != newPasswordController.text) {
+      return _t('Passwords do not match', 'Nenosiri halifanani');
+    }
     return null;
   }
 

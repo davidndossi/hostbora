@@ -13,6 +13,13 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
 
   static const _chartPreviousColor = Color(0xFFE07A5F);
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -57,6 +64,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
       child: Row(
         children: [
           _circleIconButton(
+            context: context,
             onPressed: controller.goBack,
             icon: Icons.chevron_left,
           ),
@@ -64,9 +72,9 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
           TextButton(
             onPressed: controller.recordPayment,
             child: Text(
-              'Record Payment',
+              _t(context, en: 'Record Payment', sw: 'Rekodi Malipo'),
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.colorPrimary,
               ),
@@ -74,6 +82,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
           ),
           const SizedBox(width: 8),
           _circleIconButton(
+            context: context,
             onPressed: controller.openCalendar,
             icon: Icons.calendar_today_outlined,
           ),
@@ -83,20 +92,26 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
   }
 
   Widget _circleIconButton({
+    required BuildContext context,
     required VoidCallback onPressed,
     required IconData icon,
   }) {
+    final isDark = _isDark(context);
     return Material(
-      color: AppColors.colorWhite,
+      color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
       shape: const CircleBorder(),
       elevation: 1,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
       child: InkWell(
         onTap: onPressed,
         customBorder: const CircleBorder(),
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Icon(icon, size: 24, color: AppColors.textColorPrimary),
+          child: Icon(
+            icon,
+            size: 24,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
       ),
     );
@@ -107,11 +122,11 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Financial Overview',
+          _t(context, en: 'Financial Overview', sw: 'Muhtasari wa Fedha'),
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: AppColors.textColorPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 16),
@@ -120,7 +135,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
             children: [
               Expanded(
                 child: _SegmentButton(
-                  label: 'Income',
+                  label: _t(context, en: 'Income', sw: 'Mapato'),
                   icon: Icons.description_outlined,
                   isSelected: controller.isIncomeSelected.value,
                   onTap: controller.selectIncome,
@@ -129,7 +144,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
               const SizedBox(width: 12),
               Expanded(
                 child: _SegmentButton(
-                  label: 'Expenses',
+                  label: _t(context, en: 'Expenses', sw: 'Matumizi'),
                   icon: Icons.account_balance_wallet_outlined,
                   isSelected: !controller.isIncomeSelected.value,
                   onTap: controller.selectExpenses,
@@ -159,11 +174,15 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: _isDark(context)
+            ? const Color(0xFF1F1F1F)
+            : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(
+              alpha: _isDark(context) ? 0.28 : 0.06,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -180,19 +199,29 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Performance Trends',
+                    _t(
+                      context,
+                      en: 'Performance Trends',
+                      sw: 'Mwelekeo wa Utendaji',
+                    ),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textColorPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Current vs. Previous Period',
+                    _t(
+                      context,
+                      en: 'Current vs. Previous Period',
+                      sw: 'Kipindi cha sasa dhidi ya kilichopita',
+                    ),
                     style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textColorSecondary,
+                      fontSize: 14,
+                      color: _isDark(context)
+                          ? Colors.white70
+                          : AppColors.textColorSecondary,
                     ),
                   ),
                 ],
@@ -202,22 +231,26 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   _legendDot(AppColors.designAccent),
                   const SizedBox(width: 6),
                   Text(
-                    'CURRENT',
+                    _t(context, en: 'CURRENT', sw: 'SASA'),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textColorSecondary,
+                      color: _isDark(context)
+                          ? Colors.white70
+                          : AppColors.textColorSecondary,
                     ),
                   ),
                   const SizedBox(width: 12),
                   _legendDot(_chartPreviousColor),
                   const SizedBox(width: 6),
                   Text(
-                    'PREVIOUS',
+                    _t(context, en: 'PREVIOUS', sw: 'KILICHOPITA'),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textColorSecondary,
+                      color: _isDark(context)
+                          ? Colors.white70
+                          : AppColors.textColorSecondary,
                     ),
                   ),
                 ],
@@ -238,7 +271,11 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   drawVerticalLine: false,
                   horizontalInterval: 1.5,
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: AppColors.designInputBorder.withOpacity(0.5),
+                    color:
+                        (_isDark(context)
+                                ? Colors.white
+                                : AppColors.designInputBorder)
+                            .withValues(alpha: 0.5),
                     strokeWidth: 1,
                   ),
                 ),
@@ -258,15 +295,21 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                       interval: 1,
                       getTitlesWidget: (value, meta) {
                         final i = value.toInt();
-                        if (i >= 0 && i < FinancialOverviewController.trendLabels.length) {
+                        if (i >= 0 &&
+                            i <
+                                FinancialOverviewController
+                                    .trendLabels
+                                    .length) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
                               FinancialOverviewController.trendLabels[i],
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textColorSecondary,
+                                color: _isDark(context)
+                                    ? Colors.white70
+                                    : AppColors.textColorSecondary,
                               ),
                             ),
                           );
@@ -288,11 +331,13 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                       show: true,
                       getDotPainter: (spot, percent, data, index) =>
                           FlDotCirclePainter(
-                        radius: 4,
-                        color: AppColors.designAccent,
-                        strokeWidth: 2,
-                        strokeColor: AppColors.colorWhite,
-                      ),
+                            radius: 4,
+                            color: AppColors.designAccent,
+                            strokeWidth: 2,
+                            strokeColor: _isDark(context)
+                                ? const Color(0xFF1F1F1F)
+                                : AppColors.colorWhite,
+                          ),
                     ),
                     belowBarData: BarAreaData(show: false),
                   ),
@@ -319,16 +364,13 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
     return Container(
       width: 10,
       height: 10,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 
   Widget _buildTotalRevenueCard(BuildContext context) {
     return _MetricCard(
-      label: 'Total Revenue',
+      label: _t(context, en: 'Total Revenue', sw: 'Jumla ya Mapato'),
       value: controller.totalRevenue,
       change: controller.totalRevenueChange,
       isPositive: controller.totalRevenueUp,
@@ -341,7 +383,11 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
       children: [
         Expanded(
           child: _MetricCard(
-            label: 'Avg. Daily Rate',
+            label: _t(
+              context,
+              en: 'Avg. Daily Rate',
+              sw: 'Wastani wa Bei ya Siku',
+            ),
             value: controller.avgDailyRate,
             change: controller.avgDailyRateChange,
             isPositive: controller.avgDailyRateUp,
@@ -350,7 +396,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
         const SizedBox(width: 12),
         Expanded(
           child: _MetricCard(
-            label: 'Net Profit',
+            label: _t(context, en: 'Net Profit', sw: 'Faida Halisi'),
             value: controller.netProfit,
             change: controller.netProfitChange,
             isPositive: controller.netProfitUp,
@@ -369,7 +415,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
           BarChartRodData(
             fromY: 0,
             toY: controller.monthlyValuesA[i].toDouble(),
-            color: AppColors.designAccent.withOpacity(0.6),
+            color: AppColors.designAccent.withValues(alpha: 0.6),
             width: 12,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
           ),
@@ -385,31 +431,34 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
       );
     }).toList();
 
-    final maxY = (controller.monthlyValuesA
-            .reduce((a, b) => a > b ? a : b)
-            .toDouble())
-        .clamp(6.0, 10.0);
+    final maxY =
+        (controller.monthlyValuesA.reduce((a, b) => a > b ? a : b).toDouble())
+            .clamp(6.0, 10.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Monthly Growth',
+          _t(context, en: 'Monthly Growth', sw: 'Ukuaji wa Kila Mwezi'),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColorPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.colorWhite,
+            color: _isDark(context)
+                ? const Color(0xFF1F1F1F)
+                : AppColors.colorWhite,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(
+                  alpha: _isDark(context) ? 0.28 : 0.06,
+                ),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -443,9 +492,11 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                             child: Text(
                               controller.monthlyLabels[i],
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textColorSecondary,
+                                color: _isDark(context)
+                                    ? Colors.white70
+                                    : AppColors.textColorSecondary,
                               ),
                             ),
                           );
@@ -460,7 +511,11 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: AppColors.designInputBorder.withOpacity(0.5),
+                    color:
+                        (_isDark(context)
+                                ? Colors.white
+                                : AppColors.designInputBorder)
+                            .withValues(alpha: 0.5),
                     strokeWidth: 1,
                   ),
                 ),
@@ -491,10 +546,11 @@ class _SegmentButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: isSelected
           ? AppColors.designAccent
-          : AppColors.colorWhite,
+          : (isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -505,7 +561,11 @@ class _SegmentButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppValues.radius_6),
             border: isSelected
                 ? null
-                : Border.all(color: AppColors.designInputBorder),
+                : Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : AppColors.designInputBorder,
+                  ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -519,11 +579,11 @@ class _SegmentButton extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: isSelected
                       ? Colors.white
-                      : AppColors.textColorPrimary,
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -551,6 +611,7 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final changeColor = isPositive
         ? AppColors.colorSuccessGreen
         : AppColors.paaYanguAlert;
@@ -558,11 +619,11 @@ class _MetricCard extends StatelessWidget {
       width: fullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -574,8 +635,8 @@ class _MetricCard extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textColorSecondary,
+              fontSize: 14,
+              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -585,7 +646,7 @@ class _MetricCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: AppColors.textColorPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 4),

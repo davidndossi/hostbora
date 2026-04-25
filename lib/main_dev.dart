@@ -126,6 +126,18 @@ void showAlert(RemoteMessage message) {
 /// Initialize the [FlutterLocalNotificationsPlugin] package.
 late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
+Future<String?> _waitForApnsToken({
+  int maxAttempts = 8,
+  Duration delay = const Duration(milliseconds: 500),
+}) async {
+  for (var i = 0; i < maxAttempts; i++) {
+    final token = await FirebaseMessaging.instance.getAPNSToken();
+    if (token != null && token.isNotEmpty) return token;
+    await Future.delayed(delay);
+  }
+  return null;
+}
+
 void requestUserPermission() async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   NotificationSettings settings = await messaging.requestPermission(
@@ -144,24 +156,27 @@ void requestUserPermission() async {
     if (kDebugMode) {
       print('Authorization status:${authStatus.name}');
     }
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      messaging.getAPNSToken().then((token) {
-        // _preferenceManager.setString('fcm_token', token!);
+    try {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final apns = await _waitForApnsToken();
         if (kDebugMode) {
-          print('FCM Token: $token');
+          print('APNS Token ready: ${apns != null && apns.isNotEmpty}');
         }
-
-        return token;
-      });
-    } else {
-      messaging.getToken().then((token) {
-        // _preferenceManager.setString('fcm_token', token!);
-        if (kDebugMode) {
-          print('FCM Token: $token');
+        // APNS may still be unavailable right after app start. Avoid crashing,
+        // onTokenRefresh below will pick up token updates later.
+        if (apns == null || apns.isEmpty) {
+          return;
         }
+      }
 
-        return token;
-      });
+      final token = await messaging.getToken();
+      if (kDebugMode) {
+        print('FCM Token: $token');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('FCM token fetch failed: $e');
+      }
     }
   }
   messaging.onTokenRefresh.listen((newToken) {
@@ -203,6 +218,8 @@ void main() async {
     name: 'paa_yangu',
     options: DefaultFirebaseOptions.currentPlatform
   );
+
+  await setupFlutterNotifications();
 
   requestUserPermission();
 

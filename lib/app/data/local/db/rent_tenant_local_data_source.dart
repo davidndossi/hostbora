@@ -6,6 +6,9 @@ class RentTenantRecord {
   const RentTenantRecord({
     required this.id,
     required this.propertyLabel,
+    required this.propertyRef,
+    required this.apartmentUnitId,
+    required this.unitLabel,
     required this.tenantName,
     required this.gender,
     required this.rentAmountValue,
@@ -22,6 +25,11 @@ class RentTenantRecord {
 
   final int id;
   final String propertyLabel;
+  /// Same hub id as [RentPropertyRecord.propertyRef] or `legacy_<id>`.
+  final String propertyRef;
+  /// Matches [ApartmentUnitDraft.unitId] in parent property [units_json].
+  final String apartmentUnitId;
+  final String unitLabel;
   final String tenantName;
   final String gender;
   final double rentAmountValue;
@@ -39,6 +47,9 @@ class RentTenantRecord {
     return RentTenantRecord(
       id: m['id']! as int,
       propertyLabel: m['property_label'] as String? ?? '',
+      propertyRef: m['property_ref'] as String? ?? '',
+      apartmentUnitId: m['apartment_unit_id'] as String? ?? '',
+      unitLabel: m['unit_label'] as String? ?? '',
       tenantName: m['tenant_name'] as String? ?? '',
       gender: m['gender'] as String? ?? '',
       rentAmountValue: (m['rent_amount_value'] as num?)?.toDouble() ?? 0,
@@ -68,6 +79,9 @@ class RentTenantLocalDataSource {
 
   Future<int> insert({
     required String propertyLabel,
+    String propertyRef = '',
+    String apartmentUnitId = '',
+    String unitLabel = '',
     required String tenantName,
     required String gender,
     required double rentAmountValue,
@@ -83,6 +97,9 @@ class RentTenantLocalDataSource {
     final db = await database;
     return db.insert(_table, {
       'property_label': propertyLabel,
+      'property_ref': propertyRef,
+      'apartment_unit_id': apartmentUnitId,
+      'unit_label': unitLabel,
       'tenant_name': tenantName,
       'gender': gender,
       'rent_amount_value': rentAmountValue,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -6,39 +7,76 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/db/rent_property_local_data_source.dart';
 import '../../../data/local/draft_listing_store.dart';
 import '../../../data/local/pending_listings_store.dart';
+import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/add_listing_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/service/nominatim_service.dart';
 import '../../../routes/app_pages.dart';
+import '../models/apartment_unit_draft.dart';
 
 class AddListingController extends BaseController {
   AddListingController()
       : _nominatim = Get.find<NominatimService>(),
+        _local = Get.find<RentPropertyLocalDataSource>(),
         _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _preferenceManager = Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+        _workspaceContext = Get.find<WorkspaceContextService>(),
         _pendingStore = PendingListingsStore(),
         _draftStore = DraftListingStore();
 
   final NominatimService _nominatim;
+  final RentPropertyLocalDataSource _local;
   final AppRepository _repository;
+  final PreferenceManager _preferenceManager;
+  final WorkspaceContextService _workspaceContext;
   final PendingListingsStore _pendingStore;
   final DraftListingStore _draftStore;
+
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
   final formKey = GlobalKey<FormState>();
   final propertyNameController = TextEditingController();
   final streetAddressController = TextEditingController();
+  final propertyLocationController = TextEditingController();
+  final apartmentSuiteController = TextEditingController();
+  final rentAmountController = TextEditingController();
+
+  final propertyType = 'Apartment'.obs;
+  final rentFrequency = 'Per Day'.obs;
+  final minRentalDuration = '2 Days'.obs;
+  final propertyTypeOptions = const ['Apartment', 'House', 'Office space', 'Room', 'Storage', 'Other'];
+  final minRentalDurationOptions = const ['1 Day', '2 Days', '1 Week', '1 Month'];
+
+  final apartmentUnits = <ApartmentUnitDraft>[].obs;
+  final draftUnitNameController = TextEditingController();
+  final draftUnitRentController = TextEditingController();
+  final draftUnitDescriptionController = TextEditingController();
+  final draftUnitRentFrequency = 'Per Day'.obs;
 
   static const int totalSteps = 7;
   final currentStep = 1.obs;
 
   bool get fromFirstLogin => Get.arguments?['from_first_login'] == true;
 
+  bool get isApartmentProperty => propertyType.value == 'Apartment';
+
+  bool get hideListingRentAmount => isApartmentProperty && apartmentUnits.isNotEmpty;
+
   /// Edit mode: when opening from My Properties Manage.
   final isEditMode = false.obs;
   String? get listingId => _listingId;
   String? _listingId;
   final loadingListing = true.obs;
+  final isEditing = false.obs;
+  final awaitingEditLoad = false.obs;
+
+  RentPropertyRecord? _editingOriginal;
 
   final selectedPropertyType = Rx<String?>(null);
 
@@ -50,6 +88,21 @@ class AddListingController extends BaseController {
   Timer? _searchDebounce;
 
   static const _searchDebounceDuration = Duration(milliseconds: 400);
+
+  String? validateRentAmount(String? value) {
+    if (hideListingRentAmount) return null;
+    final raw = (value ?? '').trim().replaceAll(',', '');
+    if (raw.isEmpty) return 'Rent amount is required';
+    final n = double.tryParse(raw);
+    if (n == null || n <= 0) return 'Enter a valid amount';
+    return null;
+  }
+
+  void updateMinRentalDuration(String? value) {
+    if (value != null && value.isNotEmpty) {
+      minRentalDuration.value = value;
+    }
+  }
 
   void onAddressQueryChanged(String query) {
     _searchDebounce?.cancel();
@@ -361,6 +414,150 @@ class AddListingController extends BaseController {
     } else {
       Get.back();
     }
+  }
+
+  String? validateDraftUnitRent(String? value) {
+    if (apartmentUnits.isNotEmpty) return null;
+    final raw = (value ?? '').trim().replaceAll(',', '');
+    if (raw.isEmpty) return 'Unit rent is required';
+    final n = double.tryParse(raw);
+    if (n == null || n <= 0) return 'Enter a valid amount';
+    return null;
+  }
+
+  Future<void> saveProperty() async {
+    if (!(formKey.currentState?.validate() ?? false)) return;
+
+    final location = propertyLocationController.text.trim();
+    if (location.isEmpty) {
+      Get.snackbar('Error', 'Please enter a property location');
+      return;
+    }
+    if (isApartmentProperty && apartmentUnits.isEmpty) {
+      Get.snackbar('Error', 'Add at least one apartment unit');
+      return;
+    }
+    if (!hideListingRentAmount) {
+      final rentRaw = rentAmountController.text.trim().replaceAll(',', '');
+      final rentValue = double.tryParse(rentRaw);
+      if (rentValue == null || rentValue <= 0) {
+        Get.snackbar('Error', 'Please enter a valid rent amount');
+        return;
+      }
+    }
+    showLoading();
+    try {
+      final original = _editingOriginal;
+      if (original != null) {
+        final rentOut = hideListingRentAmount ? '' : rentAmountController.text.trim();
+        await _local.update(
+          RentPropertyRecord(
+            id: original.id,
+            propertyLocation: location,
+            apartmentSuite: apartmentSuiteController.text.trim(),
+            propertyType: propertyType.value,
+            rentAmount: rentOut,
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            propertyRef: original.propertyRef,
+            ownerUserId: original.ownerUserId,
+            workspaceType: original.workspaceType,
+            createdAtMs: original.createdAtMs,
+            unitsJson: _unitsJsonForSave(),
+          ),
+        );
+        Get.back(result: true);
+        Get.snackbar('Saved', 'Property updated on this device');
+      } else {
+        final workspaceType = await _workspaceContext.getWorkspaceType();
+        await _local.insert(
+          RentPropertyRecord(
+            id: 0,
+            propertyLocation: location,
+            apartmentSuite: apartmentSuiteController.text.trim(),
+            propertyType: propertyType.value,
+            rentAmount: rentAmountController.text.trim(),
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            propertyRef: 'local_${DateTime.now().millisecondsSinceEpoch}',
+            ownerUserId: (await _preferenceManager.getUser()).id ?? '',
+            workspaceType: workspaceType,
+            createdAtMs: DateTime.now().millisecondsSinceEpoch,
+            unitsJson: _unitsJsonForSave(),
+          ),
+        );
+        Get.back(result: true);
+        Get.snackbar('Saved', 'Property saved on this device');
+      }
+    } catch (e, st) {
+      logger.e('saveProperty $e $st');
+      Get.snackbar('Error', 'Could not save property');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  String _newApartmentUnitId() =>
+      'u_${DateTime.now().microsecondsSinceEpoch}_${apartmentUnits.length}';
+
+  /// Ensures every unit has a persistent [ApartmentUnitDraft.unitId] in JSON.
+  void _ensureApartmentUnitIds() {
+    if (!isApartmentProperty || apartmentUnits.isEmpty) return;
+    final next = <ApartmentUnitDraft>[];
+    var changed = false;
+    for (final u in apartmentUnits) {
+      if (u.unitId.trim().isEmpty) {
+        next.add(
+          ApartmentUnitDraft(
+            unitId: _newApartmentUnitId(),
+            unitName: u.unitName,
+            unitRent: u.unitRent,
+            unitRentFrequency: rentFrequency.value,
+            unitDescription: u.unitDescription,
+          ),
+        );
+        changed = true;
+      } else {
+        next.add(u);
+      }
+    }
+    if (changed) apartmentUnits.assignAll(next);
+  }
+
+  void addApartmentUnit() {
+    final name = draftUnitNameController.text.trim();
+    final rent = draftUnitRentController.text.trim();
+    if (name.isEmpty || rent.isEmpty) {
+      Get.snackbar('Error', 'Unit name and rent are required');
+      return;
+    }
+    apartmentUnits.add(
+      ApartmentUnitDraft(
+        unitId: _newApartmentUnitId(),
+        unitName: name,
+        unitRent: rent,
+        unitRentFrequency: rentFrequency.value,
+        unitDescription: draftUnitDescriptionController.text.trim(),
+      ),
+    );
+    draftUnitNameController.clear();
+    draftUnitRentController.clear();
+    draftUnitDescriptionController.clear();
+    draftUnitRentFrequency.value = rentFrequency.value;
+  }
+
+  void removeApartmentUnit(int index) {
+    if (index >= 0 && index < apartmentUnits.length) {
+      apartmentUnits.removeAt(index);
+    }
+  }
+
+  String _unitsJsonForSave() {
+    if (!isApartmentProperty || apartmentUnits.isEmpty) {
+      return '';
+    }
+    _ensureApartmentUnitIds();
+    return jsonEncode(apartmentUnits.map((u) => u.toJson()).toList());
   }
 
   final publishing = false.obs;

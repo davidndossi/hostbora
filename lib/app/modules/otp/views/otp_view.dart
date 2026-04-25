@@ -13,11 +13,13 @@ class OtpView extends BaseView<OtpController> {
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
-    return CustomAppBar(appBarTitleText: '');
+    return null;
   }
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return SizedBox(
       width: MediaQuery.of(context).size.width,
       height: MediaQuery.of(context).size.height,
@@ -25,20 +27,17 @@ class OtpView extends BaseView<OtpController> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
-          children:[
+          children: [
             const SizedBox(height: 40),
             Text(
               appLocalization.enterYourOtp,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              )
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 20),
             Text(
               controller.otpSubtitle,
               style: blackSubTitleTextStyle,
-              textAlign: TextAlign.center
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
             SizedBox(
@@ -46,7 +45,7 @@ class OtpView extends BaseView<OtpController> {
               child: PinCodeTextField(
                 appContext: context,
                 pastedTextStyle: const TextStyle(
-                  color: Colors.black,
+                  color: AppColors.textColorPrimary,
                   fontWeight: FontWeight.bold,
                 ),
                 length: 4,
@@ -62,21 +61,22 @@ class OtpView extends BaseView<OtpController> {
                 pinTheme: PinTheme(
                   shape: PinCodeFieldShape.underline,
                   selectedColor: AppColors.colorPrimary,
-                  activeFillColor: Colors.black,
-                  inactiveColor: Colors.black54
+                  activeFillColor: isDark
+                      ? theme.colorScheme.onSurface
+                      : Colors.black,
+                  inactiveColor: isDark
+                      ? theme.colorScheme.onSurfaceVariant
+                      : Colors.black54,
                 ),
                 animationDuration: const Duration(milliseconds: 300),
-                textStyle: const TextStyle(
-                  fontSize: 20,
-                  height: 1.6
-                ),
+                textStyle: const TextStyle(fontSize: 20, height: 1.6),
                 backgroundColor: Colors.transparent,
                 enableActiveFill: false,
                 errorAnimationController: controller.errorController,
                 controller: controller.otpController,
                 keyboardType: TextInputType.number,
                 onCompleted: (v) {
-                  print(v);
+                  debugPrint(v);
                 },
                 onChanged: (value) {
                   controller.otp(value);
@@ -88,7 +88,7 @@ class OtpView extends BaseView<OtpController> {
                   return true;
                 },
                 onTap: () => {},
-              )
+              ),
             ),
             // Obx(
             //   () => Row(
@@ -122,32 +122,36 @@ class OtpView extends BaseView<OtpController> {
             //   ),
             // ),
             const SizedBox(height: 20),
-            RichText(text: TextSpan(
-              children: [
-                TextSpan(
-                  text: appLocalization.noCode,
-                  style: const TextStyle(
-                    color: Colors.black
-                  )
-                ),
-                const WidgetSpan(child: SizedBox(width: 6)),
-                WidgetSpan(
-                  alignment: PlaceholderAlignment.baseline,
-                  baseline: TextBaseline.alphabetic,
-                  child: InkWell(
-                    onTap: () => controller.resendOtp(),
-                    child: Text(
-                      appLocalization.resendOtp,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.colorPrimary,
-                        fontWeight: FontWeight.bold
-                      )
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: appLocalization.noCode,
+                    style: TextStyle(
+                      color: isDark
+                          ? theme.colorScheme.onSurface
+                          : Colors.black,
                     ),
-                  )
-                )
-              ]
-            )),
+                  ),
+                  const WidgetSpan(child: SizedBox(width: 6)),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.baseline,
+                    baseline: TextBaseline.alphabetic,
+                    child: InkWell(
+                      onTap: () => controller.resendOtp(),
+                      child: Text(
+                        appLocalization.resendOtp,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.colorPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 40),
             // // Number Pad
             // GridView.count(
@@ -186,29 +190,32 @@ class OtpView extends BaseView<OtpController> {
                       () => MaterialButton(
                         minWidth: 316,
                         onPressed: controller.otp.value.length == 4
-                            ?
-                        controller.validateOtp
-                            :
-                        null,
+                            ? controller.validateOtp
+                            : null,
                         color: AppColors.colorPrimary,
                         disabledColor: Colors.grey,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                        child: Obx(() => controller.isLoading.value
-                            ?
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            backgroundColor: Colors.white,
-                            color: Colors.black,
-                            strokeWidth: 2,
-                          ),
-                        )
-                            :
-                        Text(controller.appLocalization.verify, style: const TextStyle(color: Colors.white)),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 15,
+                          horizontal: 30,
+                        ),
+                        child: Obx(
+                          () => controller.isLoading.value
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    backgroundColor: Colors.white,
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  controller.appLocalization.verify,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                         ),
                       ),
                     ),
@@ -216,62 +223,44 @@ class OtpView extends BaseView<OtpController> {
                     RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
-                        style: const TextStyle(
-                          color: Colors.black
+                        style: TextStyle(
+                          color: isDark
+                              ? theme.colorScheme.onSurface
+                              : Colors.black,
                         ),
                         children: [
                           TextSpan(
                             text: appLocalization.acceptStatement,
-                            style: const TextStyle(
-                              fontSize: 10
-                            )
+                            style: const TextStyle(fontSize: 10),
                           ),
                           TextSpan(
                             text: appLocalization.terms,
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w400,
-                              decoration: TextDecoration.underline
-                            )
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
                           TextSpan(
                             text: appLocalization.andOur,
-                            style: const TextStyle(
-                              fontSize: 10
-                            )
+                            style: const TextStyle(fontSize: 10),
                           ),
                           TextSpan(
                             text: appLocalization.privacyPolicy,
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w400,
-                              decoration: TextDecoration.underline
-                            )
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
-                        ]
-                    ))
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDigitButton(String digit) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: MaterialButton(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        color: Colors.grey[200],
-        onPressed: () => controller.addDigit(digit),
-        child: Text(
-          digit,
-          style: const TextStyle(fontSize: 24),
         ),
       ),
     );

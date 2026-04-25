@@ -8,6 +8,16 @@ import '../controllers/design_moodboards_controller.dart';
 class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
   DesignMoodboardsView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
 
@@ -30,6 +40,8 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return SafeArea(
       bottom: false,
       child: Column(
@@ -39,25 +51,35 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
             child: Row(
               children: [
-                _circleIcon(Icons.arrow_back_ios_new_rounded, onTap: Get.back),
+                _circleIcon(
+                  context,
+                  Icons.arrow_back_ios_new_rounded,
+                  onTap: Get.back,
+                ),
                 const Spacer(),
-                _circleIcon(Icons.search_rounded, onTap: () {}),
+                _circleIcon(context, Icons.search_rounded, onTap: () {}),
               ],
             ),
           ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
             child: Text(
-              'My Design Moodboards',
+              _t(
+                context,
+                en: 'My Design Moodboards',
+                sw: 'Moodboard Zangu za Ubunifu',
+              ),
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A1A),
+                color: isDark
+                    ? theme.colorScheme.onSurface
+                    : const Color(0xFF1A1A1A),
                 height: 1.15,
               ),
             ),
           ),
-          _filterChips(),
+          _filterChips(context),
 
           Expanded(
             child: Obx(() {
@@ -76,6 +98,7 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
                   return _MoodboardCard(
                     item: item,
                     onTap: () => controller.openMoodboardDetail(item),
+                    t: _t,
                   );
                 },
               );
@@ -86,7 +109,7 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
     );
   }
 
-  Widget _filterChips() {
+  Widget _filterChips(BuildContext context) {
     return Obx(() {
       final f = controller.filter.value;
       return SingleChildScrollView(
@@ -95,19 +118,19 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
         child: Row(
           children: [
             _FilterChip(
-              label: 'All Boards',
+              label: _t(context, en: 'All Boards', sw: 'Bodi Zote'),
               selected: f == MoodboardFilter.all,
               onTap: () => controller.setFilter(MoodboardFilter.all),
             ),
             const SizedBox(width: 10),
             _FilterChip(
-              label: 'AI Concepts',
+              label: _t(context, en: 'AI Concepts', sw: 'Dhana za AI'),
               selected: f == MoodboardFilter.aiConcepts,
               onTap: () => controller.setFilter(MoodboardFilter.aiConcepts),
             ),
             const SizedBox(width: 10),
             _FilterChip(
-              label: 'Materials',
+              label: _t(context, en: 'Materials', sw: 'Vifaa'),
               selected: f == MoodboardFilter.materials,
               onTap: () => controller.setFilter(MoodboardFilter.materials),
             ),
@@ -117,9 +140,17 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
     });
   }
 
-  Widget _circleIcon(IconData icon, {required VoidCallback onTap}) {
+  Widget _circleIcon(
+    BuildContext context,
+    IconData icon, {
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Material(
-      color: AppColors.colorWhite,
+      color: isDark
+          ? theme.colorScheme.surfaceContainerHigh
+          : AppColors.colorWhite,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -127,7 +158,13 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
         child: SizedBox(
           width: 36,
           height: 36,
-          child: Icon(icon, size: 20, color: AppColors.textColorPrimary),
+          child: Icon(
+            icon,
+            size: 20,
+            color: isDark
+                ? theme.colorScheme.onSurface
+                : AppColors.textColorPrimary,
+          ),
         ),
       ),
     );
@@ -158,7 +195,9 @@ class _FilterChip extends StatelessWidget {
             color: selected ? AppColors.colorPrimary : Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: selected ? AppColors.colorPrimary : const Color(0xFFE8E4DC),
+              color: selected
+                  ? AppColors.colorPrimary
+                  : const Color(0xFFE8E4DC),
             ),
           ),
           child: Text(
@@ -179,13 +218,22 @@ class _MoodboardCard extends StatelessWidget {
   const _MoodboardCard({
     required this.item,
     required this.onTap,
+    required this.t,
   });
 
   final MoodboardListItem item;
   final VoidCallback onTap;
+  final String Function(
+    BuildContext context, {
+    required String en,
+    required String sw,
+  })
+  t;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -202,7 +250,9 @@ class _MoodboardCard extends StatelessWidget {
                       item.assetPath,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        color: const Color(0xFFE8E4DC),
+                        color: isDark
+                            ? theme.colorScheme.surfaceContainerHighest
+                            : const Color(0xFFE8E4DC),
                         alignment: Alignment.center,
                         child: const Icon(Icons.image_not_supported_outlined),
                       ),
@@ -214,7 +264,10 @@ class _MoodboardCard extends StatelessWidget {
                     top: 10,
                     right: 10,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.45),
                         borderRadius: BorderRadius.circular(20),
@@ -222,7 +275,11 @@ class _MoodboardCard extends StatelessWidget {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 14,
+                            color: Colors.white,
+                          ),
                           SizedBox(width: 4),
                           Text(
                             'AI',
@@ -244,18 +301,22 @@ class _MoodboardCard extends StatelessWidget {
             item.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
+              color: isDark
+                  ? theme.colorScheme.onSurface
+                  : const Color(0xFF1A1A1A),
             ),
           ),
           const SizedBox(height: 2),
           Text(
-            '${item.savedCount} Saved Items',
-            style: const TextStyle(
+            '${item.savedCount} ${t(context, en: 'Saved Items', sw: 'Vipengee Vilivyohifadhiwa')}',
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF8A8680),
+              color: isDark
+                  ? theme.colorScheme.onSurfaceVariant
+                  : const Color(0xFF8A8680),
             ),
           ),
         ],

@@ -11,10 +11,17 @@ import '../../../modules/home/controllers/home_controller.dart';
 class AllBookingsView extends BaseView<AllBookingsController> {
   AllBookingsView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
-      appBarTitleText: 'All Bookings',
+      appBarTitleText: _t(context, en: 'All Bookings', sw: 'Uhifadhi Wote'),
       isCentered: true,
     );
   }
@@ -31,10 +38,10 @@ class AllBookingsView extends BaseView<AllBookingsController> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'No bookings yet',
+              _t(context, en: 'No bookings yet', sw: 'Bado hakuna uhifadhi'),
               style: TextStyle(
                 fontSize: 16,
-                color: Theme.of(context).brightness == Brightness.dark
+                color: _isDark(context)
                     ? Colors.white54
                     : AppColors.textColorSecondary,
               ),
@@ -47,7 +54,7 @@ class AllBookingsView extends BaseView<AllBookingsController> {
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
           itemCount: list.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (_, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final item = list[index];
             return _BookingCard(
@@ -74,7 +81,9 @@ class _BookingCard extends StatelessWidget {
     final subTextColor = isDark ? Colors.white70 : AppColors.textColorSecondary;
     return Card(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppValues.radius_12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppValues.radius_12),
+      ),
       elevation: 0,
       color: Theme.of(context).cardColor,
       child: InkWell(
@@ -89,16 +98,26 @@ class _BookingCard extends StatelessWidget {
               child: item.imageUrl.isEmpty
                   ? Container(
                       color: AppColors.lightGreyColor,
-                      child: const Icon(Icons.image_not_supported, color: AppColors.textColorSecondary),
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: isDark
+                            ? Colors.white60
+                            : AppColors.textColorSecondary,
+                      ),
                     )
                   : Image.network(
                       item.imageUrl,
                       height: 100,
                       width: 120,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (context, error, stackTrace) => Container(
                         color: AppColors.lightGreyColor,
-                        child: const Icon(Icons.image_not_supported, color: AppColors.textColorSecondary),
+                        child: Icon(
+                          Icons.image_not_supported,
+                          color: isDark
+                              ? Colors.white60
+                              : AppColors.textColorSecondary,
+                        ),
                       ),
                     ),
             ),
@@ -118,8 +137,13 @@ class _BookingCard extends StatelessWidget {
                               : null,
                           child: item.guestAvatarUrl.isEmpty
                               ? Text(
-                                  item.guestName.isNotEmpty ? item.guestName[0].toUpperCase() : '?',
-                                  style: TextStyle(fontSize: 12, color: subTextColor),
+                                  item.guestName.isNotEmpty
+                                      ? item.guestName[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: subTextColor,
+                                  ),
                                 )
                               : null,
                         ),
@@ -137,15 +161,20 @@ class _BookingCard extends StatelessWidget {
                         ),
                         if (item.isConfirmed)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.colorPrimaryLight,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              'Confirmed',
+                              Get.locale?.languageCode == 'sw'
+                                  ? 'Imethibitishwa'
+                                  : 'Confirmed',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.colorPrimary,
                               ),
@@ -156,7 +185,7 @@ class _BookingCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       item.propertyType,
-                      style: TextStyle(fontSize: 13, color: textColor),
+                      style: TextStyle(fontSize: 14, color: textColor),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -169,9 +198,12 @@ class _BookingCard extends StatelessWidget {
                 ),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.only(right: 12, top: 12),
-              child: Icon(Icons.chevron_right, color: AppColors.textColorSecondary),
+            Padding(
+              padding: const EdgeInsets.only(right: 12, top: 12),
+              child: Icon(
+                Icons.chevron_right,
+                color: isDark ? Colors.white60 : AppColors.textColorSecondary,
+              ),
             ),
           ],
         ),

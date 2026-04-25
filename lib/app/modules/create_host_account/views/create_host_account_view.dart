@@ -11,6 +11,16 @@ import '../controllers/create_host_account_controller.dart';
 class CreateHostAccountView extends BaseView<CreateHostAccountController> {
   CreateHostAccountView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(appBarTitleText: '');
@@ -18,6 +28,8 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
@@ -27,78 +39,108 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: const Text(
-                  'Create Host Account',
+                child: Text(
+                  _t(
+                    context,
+                    en: 'Create Host Account',
+                    sw: 'Fungua Akaunti ya Mwenye Nyumba',
+                  ),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.designAccent,
+                    color: isDark
+                        ? theme.colorScheme.primary
+                        : AppColors.designAccent,
                     letterSpacing: -0.5,
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Join our community of premium property owners.',
+              Text(
+                _t(
+                  context,
+                  en: 'Join our community of premium property owners.',
+                  sw: 'Jiunge na jamii yetu ya wamiliki wa mali bora.',
+                ),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.designSecondaryText,
+                  color: isDark
+                      ? theme.colorScheme.onSurfaceVariant
+                      : AppColors.designSecondaryText,
                   height: 1.4,
                 ),
               ),
               const SizedBox(height: 32),
-              _buildLabel('Full Name'),
+              _buildLabel(
+                context,
+                _t(context, en: 'Full Name', sw: 'Jina Kamili'),
+              ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: controller.fullNameController,
-                decoration: _inputDecoration(hint: 'John Doe'),
-                validator: (v) =>
-                    controller.validateRequired(v, 'Full name'),
+                textCapitalization: TextCapitalization.words,
+                decoration: _inputDecoration(
+                  context,
+                  hint: _t(context, en: 'John Doe', sw: 'Juma Juma'),
+                ),
+                validator: (v) => controller.validateRequired(
+                  v,
+                  _t(context, en: 'Full name', sw: 'Jina kamili'),
+                ),
               ),
               const SizedBox(height: 20),
-              _buildLabel('Email Address'),
+              _buildLabel(
+                context,
+                _t(context, en: 'Email Address', sw: 'Barua Pepe'),
+              ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: controller.emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: _inputDecoration(hint: 'name@example.com'),
+                decoration: _inputDecoration(context, hint: 'name@example.com'),
                 validator: controller.validateEmail,
               ),
               const SizedBox(height: 20),
-              _buildLabel('Phone Number'),
+              _buildLabel(
+                context,
+                _t(context, en: 'Phone Number', sw: 'Namba ya Simu'),
+              ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: controller.phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: _inputDecoration(
-                  hint: '+255 (XXX) 000 000',
+                  context,
+                  hint: '0601000000',
                 ),
-                validator: (v) =>
-                    controller.validateRequired(v, 'Phone number'),
+                validator: (v) => controller.validateRequired(
+                  v,
+                  _t(context, en: 'Phone number', sw: 'Namba ya simu'),
+                ),
               ),
               const SizedBox(height: 20),
-              _buildLabel('Password'),
+              _buildLabel(context, _t(context, en: 'Password', sw: 'Nenosiri')),
               const SizedBox(height: 8),
               Obx(
                 () => TextFormField(
                   controller: controller.passwordController,
                   obscureText: controller.obscurePassword.value,
-                  decoration: _inputDecoration(hint: '••••••••')
+                  decoration: _inputDecoration(context, hint: '••••••••')
                       .copyWith(
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        controller.obscurePassword.value
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: AppColors.designPlaceholder,
-                        size: 22,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            controller.obscurePassword.value
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: AppColors.designPlaceholder,
+                            size: 22,
+                          ),
+                          onPressed: controller.togglePasswordVisibility,
+                        ),
                       ),
-                      onPressed: controller.togglePasswordVisibility,
-                    ),
-                  ),
                   validator: controller.validatePassword,
                 ),
               ),
@@ -107,41 +149,60 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                 child: RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.designSecondaryText,
+                      color: isDark
+                          ? theme.colorScheme.onSurfaceVariant
+                          : AppColors.designSecondaryText,
                       height: 1.4,
                     ),
                     children: [
-                      const TextSpan(
-                        text:
-                            'By signing up, you agree to our ',
+                      TextSpan(
+                        text: _t(
+                          context,
+                          en: 'By signing up, you agree to our ',
+                          sw: 'Kwa kujisajili, unakubali ',
+                        ),
                       ),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.baseline,
                         baseline: TextBaseline.alphabetic,
                         child: GestureDetector(
                           onTap: controller.goToTerms,
-                          child: const Text(
-                            'Terms of Service',
+                          child: Text(
+                            _t(
+                              context,
+                              en: 'Terms of Service',
+                              sw: 'Masharti ya Huduma',
+                            ),
                             style: TextStyle(
-                              color: AppColors.designAccent,
+                              color: isDark
+                                  ? theme.colorScheme.primary
+                                  : AppColors.designAccent,
                               fontWeight: FontWeight.w600,
                               decoration: TextDecoration.underline,
                             ),
                           ),
                         ),
                       ),
-                      const TextSpan(text: ' and '),
+                      TextSpan(
+                        text: _t(context, en: ' and ', sw: ' na '),
+                      ),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.baseline,
                         baseline: TextBaseline.alphabetic,
                         child: GestureDetector(
                           onTap: controller.goToPrivacy,
-                          child: const Text(
-                            'Privacy Policy',
+                          child: Text(
+                            _t(
+                              context,
+                              en: 'Privacy Policy',
+                              sw: 'Sera ya Faragha',
+                            ),
                             style: TextStyle(
-                              color: AppColors.designAccent,
+                              color: isDark
+                                  ? theme.colorScheme.primary
+                                  : AppColors.designAccent,
                               fontWeight: FontWeight.w600,
                               decoration: TextDecoration.underline,
                             ),
@@ -160,21 +221,18 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                 child: ElevatedButton(
                   onPressed: controller.signUp,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.designAccent,
+                    backgroundColor: isDark
+                        ? theme.colorScheme.primary
+                        : AppColors.designAccent,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppValues.radius_6,
-                      ),
+                      borderRadius: BorderRadius.circular(AppValues.radius_6),
                     ),
                   ),
-                  child: const Text(
-                    'Sign Up',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Text(
+                    _t(context, en: 'Sign Up', sw: 'Jisajili'),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -184,18 +242,26 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                   onTap: controller.goToLogin,
                   child: RichText(
                     text: TextSpan(
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
-                        color: AppColors.designSecondaryText,
+                        color: isDark
+                            ? theme.colorScheme.onSurfaceVariant
+                            : AppColors.designSecondaryText,
                       ),
                       children: [
-                        const TextSpan(
-                          text: 'Already have an account? ',
+                        TextSpan(
+                          text: _t(
+                            context,
+                            en: 'Already have an account? ',
+                            sw: 'Una akaunti tayari? ',
+                          ),
                         ),
-                        const TextSpan(
-                          text: 'Login',
+                        TextSpan(
+                          text: _t(context, en: 'Login', sw: 'Ingia'),
                           style: TextStyle(
-                            color: AppColors.designAccent,
+                            color: isDark
+                                ? theme.colorScheme.primary
+                                : AppColors.designAccent,
                             fontWeight: FontWeight.w600,
                             decoration: TextDecoration.underline,
                           ),
@@ -211,7 +277,9 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                   width: 64,
                   height: 4,
                   decoration: ShapeDecoration(
-                    color: const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? theme.colorScheme.outlineVariant
+                        : const Color(0xFFE2E8F0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(9999),
                     ),
@@ -219,7 +287,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                 ),
               ),
               const SizedBox(height: 32),
-              _buildBottomBanner(),
+              _buildBottomBanner(context),
             ],
           ),
         ),
@@ -227,38 +295,57 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(BuildContext context, String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: AppColors.designSecondaryText,
+        color: _isDark(context)
+            ? Theme.of(context).colorScheme.onSurfaceVariant
+            : AppColors.designSecondaryText,
       ),
     );
   }
 
-  InputDecoration _inputDecoration({required String hint}) {
+  InputDecoration _inputDecoration(
+    BuildContext context, {
+    required String hint,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.designPlaceholder),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
+      hintStyle: TextStyle(
+        color: isDark
+            ? theme.colorScheme.onSurfaceVariant
+            : AppColors.designPlaceholder,
       ),
+      filled: true,
+      fillColor: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(
+          color: isDark
+              ? theme.colorScheme.outlineVariant
+              : AppColors.designInputBorder,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(
+          color: isDark
+              ? theme.colorScheme.outlineVariant
+              : AppColors.designInputBorder,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designAccent, width: 1.5),
+        borderSide: BorderSide(
+          color: isDark ? theme.colorScheme.primary : AppColors.designAccent,
+          width: 1.5,
+        ),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -267,7 +354,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
     );
   }
 
-  Widget _buildBottomBanner() {
+  Widget _buildBottomBanner(BuildContext context) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -282,10 +369,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.designAccent,
-            AppColors.designAccentDark,
-          ],
+          colors: [AppColors.designAccent, AppColors.designAccentDark],
         ),
       ),
       child: Column(
@@ -296,11 +380,13 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
           //   size: 36,
           //   color: Colors.white,
           // ),
-          SvgPicture.asset(
-            'images/ic_bed.svg'
-          ),
-          const Text(
-            'Your journey as a host starts here.',
+          SvgPicture.asset('images/ic_bed.svg'),
+          Text(
+            _t(
+              context,
+              en: 'Your journey as a host starts here.',
+              sw: 'Safari yako ya kuwa mwenyeji inaanza hapa.',
+            ),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,

@@ -50,22 +50,9 @@ class RentDefineTenantChargesController extends BaseController {
   ];
 
   /// Property context (would come from route / selection).
-  final selectedPropertyTitle = 'The Azure Penthouse, Suite 402'.obs;
+  final selectedPropertyTitle = ''.obs;
 
-  final charges = <TenantChargeEntry>[
-    TenantChargeEntry(
-      id: '1',
-      chargeType: 'Security Deposit',
-      amountTsh: 1800000,
-      description: 'Refundable upon exit inspection',
-    ),
-    TenantChargeEntry(
-      id: '2',
-      chargeType: 'Cleaning Fee',
-      amountTsh: 650000,
-      description: 'Deep clean prior to occupancy',
-    ),
-  ].obs;
+  final charges = <TenantChargeEntry>[].obs;
 
   double get totalTsh =>
       charges.fold(0.0, (a, b) => a + b.amountTsh);

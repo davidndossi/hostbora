@@ -12,7 +12,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../core/utils/util.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/local/preference/preference_manager.dart';
-import '../../../data/model/community.dart';
+import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/login_request.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/model/otp_request.dart';
@@ -110,7 +110,7 @@ class AuthController extends BaseController {
         return;
       }
 
-      Get.offAllNamed(Routes.MAIN);
+      await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace();
       Get.snackbar(
         _t('Offline', 'Nje ya mtandao'),
         _t('You\'re offline. Using your last session.', 'Huna mtandao. Tunatumia kipindi chako cha mwisho.'),
@@ -137,6 +137,11 @@ class AuthController extends BaseController {
     firebaseToken = await _preferenceManager.getString(PreferenceManager.keyFirebaseToken);
   }
 
+  Future<void> clearPrefs() async {
+    await _preferenceManager.setBool('seen_onboarding', false);
+    await _preferenceManager.clear();
+  }
+
   void _handleLoginResponseSuccess(LoginResponse res) async {
     _loginResponse(res);
     proceedToLogin(res);
@@ -150,9 +155,10 @@ class AuthController extends BaseController {
   }
 
   void useBiometrics() async {
+    var phone = await _preferenceManager.getString(PreferenceManager.keyUsername);
     var a = await _preferenceManager.getString('userApp');
     if (a == '') {
-      showErrorMessage(_t('Enter your PIN', 'Weka PIN yako'));
+      showErrorMessage(_t('Login using phone/password first', 'Ingia kutumia namba ya simu/nywila kwanza'));
       return;
     }
     final LocalAuthentication auth = LocalAuthentication();
@@ -180,6 +186,7 @@ class AuthController extends BaseController {
               )
           );
           if (didAuthenticate) {
+            msisdn(phone);
             password(a.toString());
           } else {
             Get.back();
@@ -307,14 +314,7 @@ class AuthController extends BaseController {
           PreferenceManager.keyUsername, loginResponse.user?.msisdn ?? '');
       await _preferenceManager.setString(PreferenceManager.keyFullName,
           loginResponse.user?.fullName ?? '');
-      await _preferenceManager.setBool('isLeader', loginResponse.user?.isLeader ?? false);
       await _preferenceManager.setBool('isAdmin', loginResponse.user?.isAdmin ?? false);
-      if (res.user != null && res.user!.communities != null) {
-        final List<Community> communities = (res.user!.communities as List)
-            .map((e) => Community.fromJson(e as Map<String, dynamic>))
-            .toList();
-        _preferenceManager.saveUserCommunities(communities);
-      }
 
       await _preferenceManager.setUser('user', loginResponse.user);
       await _preferenceManager.setString('userApp', password.value);
@@ -336,10 +336,18 @@ class AuthController extends BaseController {
           debugPrint('PIN not configured yet: go to change pin setup');
           Get.offAllNamed(
             Routes.CHANGE_PIN,
+            arguments: {
+              WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,
+            },
           );
         } else {
           debugPrint('PIN exists: continue to app');
-          Get.offAllNamed(Routes.MAIN, arguments: {'from_password_login': true});
+          await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
+            arguments: {
+              'from_password_login': true,
+              WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,
+            },
+          );
         }
       } else {
         showErrorMessage(appLocalization.loginFailed);

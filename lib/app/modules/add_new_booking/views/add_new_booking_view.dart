@@ -13,35 +13,55 @@ const _bookingNavTeal = Color(0xFF1E8877);
 class AddNewBookingView extends BaseView<AddNewBookingController> {
   AddNewBookingView({super.key});
 
-  Widget _buildLabel(String text) {
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Widget _buildLabel(BuildContext context, String text) {
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 14,
+      style: TextStyle(
+        fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: AppColors.textColorPrimary,
+        color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
       ),
     );
   }
 
-  InputDecoration _inputDecoration({required String hint, Widget? suffixIcon}) {
+  InputDecoration _inputDecoration(
+    BuildContext context, {
+    required String hint,
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.designPlaceholder),
+      hintStyle: TextStyle(
+        color: _isDark(context) ? Colors.white70 : AppColors.designPlaceholder,
+      ),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: AppColors.colorWhite,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
-      ),
+      fillColor: _isDark(context)
+          ? const Color(0xFF1F1F1F)
+          : AppColors.colorWhite,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(
+          color: _isDark(context)
+              ? Colors.white.withValues(alpha: 0.18)
+              : AppColors.designInputBorder,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(
+          color: _isDark(context)
+              ? Colors.white.withValues(alpha: 0.18)
+              : AppColors.designInputBorder,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -73,7 +93,9 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                 )
               : const Icon(Icons.calendar_today, size: 20, color: Colors.white),
           label: Text(
-            isSaving ? 'Saving…' : 'Save Booking',
+            isSaving
+                ? _t(context, en: 'Saving...', sw: 'Inahifadhi...')
+                : _t(context, en: 'Save Booking', sw: 'Hifadhi Uhifadhi'),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -119,9 +141,11 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.colorPrimaryLight.withOpacity(0.4),
+                    color: AppColors.colorPrimaryLight.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(AppValues.radius_6),
-                    border: Border.all(color: AppColors.colorPrimary.withOpacity(0.5)),
+                    border: Border.all(
+                      color: AppColors.colorPrimary.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -134,12 +158,18 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                       Expanded(
                         child: Text(
                           syncing
-                              ? 'Syncing offline bookings…'
-                              : '$pending booking${pending == 1 ? '' : 's'} saved offline. Will sync when online.',
+                              ? _t(
+                                  context,
+                                  en: 'Syncing offline bookings...',
+                                  sw: 'Inasawazisha uhifadhi wa nje ya mtandao...',
+                                )
+                              : '$pending ${_t(context, en: 'booking', sw: 'uhifadhi')}${pending == 1 ? '' : 's'} ${_t(context, en: 'saved offline. Will sync when online.', sw: 'umehifadhiwa nje ya mtandao. Yatasawazishwa mtandaoni.')}',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: AppColors.textColorPrimary,
+                            color: _isDark(context)
+                                ? Colors.white
+                                : AppColors.textColorPrimary,
                           ),
                         ),
                       ),
@@ -149,29 +179,55 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
               }
               return const SizedBox.shrink();
             }),
-            _buildLabel('Guest Name'),
+            _buildLabel(
+              context,
+              _t(context, en: 'Guest Name', sw: 'Jina la Mgeni'),
+            ),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.guestNameController,
-              decoration: _inputDecoration(hint: "Enter guest's full name"),
-              validator: (v) =>
-              (v == null || v.trim().isEmpty)
-                  ? 'Guest name is required'
+              decoration: _inputDecoration(
+                context,
+                hint: _t(
+                  context,
+                  en: "Enter guest's full name",
+                  sw: 'Weka jina kamili la mgeni',
+                ),
+              ),
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? _t(
+                      context,
+                      en: 'Guest name is required',
+                      sw: 'Jina la mgeni linahitajika',
+                    )
                   : null,
             ),
             const SizedBox(height: 20),
-            _buildLabel('Phone Number'),
+            _buildLabel(
+              context,
+              _t(context, en: 'Phone Number', sw: 'Namba ya Simu'),
+            ),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.guestPhoneController,
               keyboardType: TextInputType.phone,
-              decoration: _inputDecoration(hint: 'e.g. 255 712 345 678').copyWith(
-                suffixIcon: Icon(
-                  Icons.phone_outlined,
-                  size: 22,
-                  color: AppColors.designPlaceholder,
-                ),
-              ),
+              decoration:
+                  _inputDecoration(
+                    context,
+                    hint: _t(
+                      context,
+                      en: 'e.g. 255 712 345 678',
+                      sw: 'mf. 255 712 345 678',
+                    ),
+                  ).copyWith(
+                    suffixIcon: Icon(
+                      Icons.phone_outlined,
+                      size: 22,
+                      color: _isDark(context)
+                          ? Colors.white70
+                          : AppColors.designPlaceholder,
+                    ),
+                  ),
             ),
             const SizedBox(height: 20),
             Obx(() {
@@ -201,7 +257,12 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                             !controller.sendPushToPay.value,
                           ),
                           child: _buildLabel(
-                            'Send Push to Pay to guest (AzamPay)',
+                            context,
+                            _t(
+                              context,
+                              en: 'Send Push to Pay to guest (AzamPay)',
+                              sw: 'Tuma ombi la Push to Pay kwa mgeni (AzamPay)',
+                            ),
                           ),
                         ),
                       ),
@@ -209,24 +270,47 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   ),
                   if (controller.sendPushToPay.value) ...[
                     const SizedBox(height: 12),
-                    _buildLabel('Amount (TZS)'),
+                    _buildLabel(
+                      context,
+                      _t(context, en: 'Amount (TZS)', sw: 'Kiasi (TZS)'),
+                    ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: controller.pushToPayAmountController,
                       keyboardType: TextInputType.number,
-                      decoration: _inputDecoration(hint: 'e.g. 50000'),
+                      decoration: _inputDecoration(
+                        context,
+                        hint: _t(context, en: 'e.g. 50000', sw: 'mf. 50000'),
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    _buildLabel('Mobile provider'),
+                    _buildLabel(
+                      context,
+                      _t(
+                        context,
+                        en: 'Mobile provider',
+                        sw: 'Mtoa huduma wa simu',
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: controller.selectedProvider.value,
-                      decoration: _inputDecoration(hint: 'Provider').copyWith(
-                        suffixIcon: const Icon(
-                          Icons.keyboard_arrow_down,
-                          color: AppColors.designPlaceholder,
-                        ),
-                      ),
+                      initialValue: controller.selectedProvider.value,
+                      decoration:
+                          _inputDecoration(
+                            context,
+                            hint: _t(
+                              context,
+                              en: 'Provider',
+                              sw: 'Mtoa huduma',
+                            ),
+                          ).copyWith(
+                            suffixIcon: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: _isDark(context)
+                                  ? Colors.white70
+                                  : AppColors.designPlaceholder,
+                            ),
+                          ),
                       isExpanded: true,
                       items: azamPayProviders
                           .map(
@@ -240,10 +324,16 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'A payment request will be sent to the guest\'s phone.',
+                      _t(
+                        context,
+                        en: 'A payment request will be sent to the guest\'s phone.',
+                        sw: 'Ombi la malipo litatumwa kwenye simu ya mgeni.',
+                      ),
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.designPlaceholder,
+                        color: _isDark(context)
+                            ? Colors.white70
+                            : AppColors.designPlaceholder,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -252,23 +342,41 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                 ],
               );
             }),
-            _buildLabel('Select Property'),
+            _buildLabel(
+              context,
+              _t(context, en: 'Select Property', sw: 'Chagua Mali'),
+            ),
             const SizedBox(height: 8),
             Obx(() {
               if (controller.listingsLoading.value) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.colorWhite,
-                    borderRadius: BorderRadius.circular(AppValues.radius_6),
-                    border: Border.all(color: AppColors.designInputBorder),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
-                  child: const Row(
+                  decoration: BoxDecoration(
+                    color: _isDark(context)
+                        ? const Color(0xFF1F1F1F)
+                        : AppColors.colorWhite,
+                    borderRadius: BorderRadius.circular(AppValues.radius_6),
+                    border: Border.all(
+                      color: _isDark(context)
+                          ? Colors.white.withValues(alpha: 0.18)
+                          : AppColors.designInputBorder,
+                    ),
+                  ),
+                  child: Row(
                     children: [
                       Text(
-                        'Loading properties…',
+                        _t(
+                          context,
+                          en: 'Loading properties...',
+                          sw: 'Inapakia mali...',
+                        ),
                         style: TextStyle(
-                          color: AppColors.designPlaceholder,
+                          color: _isDark(context)
+                              ? Colors.white70
+                              : AppColors.designPlaceholder,
                           fontSize: 16,
                         ),
                       ),
@@ -283,17 +391,29 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                 );
               }
               return DropdownButtonFormField<String>(
-                value: controller.selectedListingId.value,
-                decoration: _inputDecoration(hint: 'Choose a listing').copyWith(
-                  suffixIcon: const Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppColors.designPlaceholder,
-                  ),
-                ),
-                hint: const Text(
-                  'Choose a listing',
+                initialValue: controller.selectedListingId.value,
+                decoration:
+                    _inputDecoration(
+                      context,
+                      hint: _t(
+                        context,
+                        en: 'Choose a listing',
+                        sw: 'Chagua tangazo',
+                      ),
+                    ).copyWith(
+                      suffixIcon: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: _isDark(context)
+                            ? Colors.white70
+                            : AppColors.designPlaceholder,
+                      ),
+                    ),
+                hint: Text(
+                  _t(context, en: 'Choose a listing', sw: 'Chagua tangazo'),
                   style: TextStyle(
-                    color: AppColors.designPlaceholder,
+                    color: _isDark(context)
+                        ? Colors.white70
+                        : AppColors.designPlaceholder,
                     fontSize: 16,
                   ),
                 ),
@@ -308,8 +428,13 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                     )
                     .toList(),
                 onChanged: controller.selectProperty,
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Please select a property' : null,
+                validator: (v) => v == null || v.isEmpty
+                    ? _t(
+                        context,
+                        en: 'Please select a property',
+                        sw: 'Tafadhali chagua mali',
+                      )
+                    : null,
               );
             }),
             const SizedBox(height: 20),
@@ -320,7 +445,14 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel('Check-in Date'),
+                      _buildLabel(
+                        context,
+                        _t(
+                          context,
+                          en: 'Check-in Date',
+                          sw: 'Tarehe ya Kuingia',
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       _DateField(
                         label: controller.checkInLabel,
@@ -334,7 +466,14 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel('Check-out Date'),
+                      _buildLabel(
+                        context,
+                        _t(
+                          context,
+                          en: 'Check-out Date',
+                          sw: 'Tarehe ya Kutoka',
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       _DateField(
                         label: controller.checkOutLabel,
@@ -346,37 +485,59 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
               ],
             ),
             const SizedBox(height: 20),
-            _buildLabel('Number of Guests'),
+            _buildLabel(
+              context,
+              _t(context, en: 'Number of Guests', sw: 'Idadi ya Wageni'),
+            ),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.numberOfGuestsController,
               keyboardType: TextInputType.number,
-              decoration: _inputDecoration(hint: 'e.g. 2').copyWith(
-                suffixIcon: Icon(
-                  Icons.people_outline,
-                  size: 22,
-                  color: AppColors.designPlaceholder,
-                ),
-              ),
+              decoration:
+                  _inputDecoration(
+                    context,
+                    hint: _t(context, en: 'e.g. 2', sw: 'mf. 2'),
+                  ).copyWith(
+                    suffixIcon: Icon(
+                      Icons.people_outline,
+                      size: 22,
+                      color: _isDark(context)
+                          ? Colors.white70
+                          : AppColors.designPlaceholder,
+                    ),
+                  ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) {
-                  return 'Number of guests is required';
+                  return _t(
+                    context,
+                    en: 'Number of guests is required',
+                    sw: 'Idadi ya wageni inahitajika',
+                  );
                 }
                 final n = int.tryParse(v.trim());
                 if (n == null || n < 1) {
-                  return 'Enter a valid number';
+                  return _t(
+                    context,
+                    en: 'Enter a valid number',
+                    sw: 'Weka namba sahihi',
+                  );
                 }
                 return null;
               },
             ),
             const SizedBox(height: 20),
-            _buildLabel('Notes'),
+            _buildLabel(context, _t(context, en: 'Notes', sw: 'Maelezo')),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.notesController,
               maxLines: 3,
               decoration: _inputDecoration(
-                hint: 'Any special requests or details...',
+                context,
+                hint: _t(
+                  context,
+                  en: 'Any special requests or details...',
+                  sw: 'Mahitaji maalum au maelezo...',
+                ),
               ),
             ),
             const SizedBox(height: 28),
@@ -396,8 +557,10 @@ class _DateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSw = Get.locale?.languageCode == 'sw';
     return Material(
-      color: AppColors.colorWhite,
+      color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -406,25 +569,31 @@ class _DateField extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
-            border: Border.all(color: AppColors.designInputBorder),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : AppColors.designInputBorder,
+            ),
           ),
           child: Row(
             children: [
               Expanded(
                 child: Text(
-                  label,
+                  label == 'Select date' && isSw ? 'Chagua tarehe' : label,
                   style: TextStyle(
                     fontSize: 16,
-                    color: label == 'Select date'
-                        ? AppColors.designPlaceholder
-                        : AppColors.textColorPrimary,
+                    color: (label == 'Select date' || label == 'Chagua tarehe')
+                        ? (isDark
+                              ? Colors.white70
+                              : AppColors.designPlaceholder)
+                        : (isDark ? Colors.white : AppColors.textColorPrimary),
                   ),
                 ),
               ),
               Icon(
                 Icons.calendar_today_outlined,
                 size: 20,
-                color: AppColors.designPlaceholder,
+                color: isDark ? Colors.white70 : AppColors.designPlaceholder,
               ),
             ],
           ),

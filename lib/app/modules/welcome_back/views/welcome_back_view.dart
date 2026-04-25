@@ -9,6 +9,8 @@ import '../controllers/welcome_back_controller.dart';
 class WelcomeBackView extends BaseView<WelcomeBackController> {
   WelcomeBackView({super.key});
 
+  bool _isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return null;
@@ -34,7 +36,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.designSecondaryText,
+                      color: _isDark(context) ? Colors.white : AppColors.designSecondaryText,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -45,7 +47,9 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                           : appLocalization.welcomeAuthenticatingBiometrics,
                       style: TextStyle(
                         fontSize: 15,
-                        color: AppColors.designPlaceholder,
+                        color: _isDark(context)
+                            ? Colors.white70
+                            : AppColors.designPlaceholder,
                       ),
                     ),
                   ),
@@ -61,7 +65,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.designPlaceholder,
+                      color: _isDark(context) ? Colors.white70 : AppColors.designPlaceholder,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -121,7 +125,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.colorPrimaryLight.withOpacity(0.5),
+                color: AppColors.colorPrimaryLight.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -136,7 +140,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
-                color: AppColors.designSecondaryText,
+                color: _isDark(context) ? Colors.white : AppColors.designSecondaryText,
               ),
               textAlign: TextAlign.center,
             ),
@@ -145,7 +149,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               appLocalization.welcomeSignedInContinueMessage,
               style: TextStyle(
                 fontSize: 15,
-                color: AppColors.designPlaceholder,
+                color: _isDark(context) ? Colors.white70 : AppColors.designPlaceholder,
               ),
               textAlign: TextAlign.center,
             ),
@@ -190,7 +194,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                 : IconButton(
                     onPressed: controller.close,
                     icon: const Icon(Icons.close),
-                    color: AppColors.designSecondaryText,
+                    color: _isDark(context) ? Colors.white : AppColors.designSecondaryText,
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.transparent,
                     ),
@@ -230,7 +234,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                 color: AppColors.designAccent,
                 width: 2,
               ),
-              color: Colors.white,
+              color: _isDark(context) ? const Color(0xFF1F1F1F) : Colors.white,
             ),
             child: inProgress
                 ? const Padding(
@@ -280,11 +284,14 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _isDark(context) ? const Color(0xFF1B1B1B) : Colors.white,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
+        border: Border.all(
+          color: _isDark(context) ? const Color(0xFF333333) : AppColors.designInputBorder,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: _isDark(context) ? 0.2 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -292,18 +299,18 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
       ),
       child: Column(
         children: [
-          _buildKeypadRow(['1', '2', '3']),
+          _buildKeypadRow(context, ['1', '2', '3']),
           const SizedBox(height: 16),
-          _buildKeypadRow(['4', '5', '6']),
+          _buildKeypadRow(context, ['4', '5', '6']),
           const SizedBox(height: 16),
-          _buildKeypadRow(['7', '8', '9']),
+          _buildKeypadRow(context, ['7', '8', '9']),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               const SizedBox(width: 56, height: 56),
-              _buildKeypadButton('0'),
-              _buildBackspaceButton(),
+              _buildKeypadButton(context, '0'),
+              _buildBackspaceButton(context),
             ],
           ),
         ],
@@ -311,14 +318,14 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
     );
   }
 
-  Widget _buildKeypadRow(List<String> keys) {
+  Widget _buildKeypadRow(BuildContext context, List<String> keys) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: keys.map((key) => _buildKeypadButton(key)).toList(),
+      children: keys.map((key) => _buildKeypadButton(context, key)).toList(),
     );
   }
 
-  Widget _buildKeypadButton(String digit) {
+  Widget _buildKeypadButton(BuildContext context, String digit) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -332,10 +339,10 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
           child: Center(
             child: Text(
               digit,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                color: AppColors.designSecondaryText,
+                color: _isDark(context) ? Colors.white : AppColors.designSecondaryText,
               ),
             ),
           ),
@@ -344,7 +351,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
     );
   }
 
-  Widget _buildBackspaceButton() {
+  Widget _buildBackspaceButton(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -359,9 +366,9 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
           //   color: AppColors.designAccent,
           //   shape: BoxShape.circle,
           // ),
-          child: const Icon(
+          child: Icon(
             Icons.backspace_outlined,
-            color: AppColors.designAccent,
+            color: _isDark(context) ? Colors.white70 : AppColors.designAccent,
             size: 20,
           ),
         ),

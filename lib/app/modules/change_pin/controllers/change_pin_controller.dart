@@ -4,8 +4,8 @@ import 'package:get/get.dart';
 import 'package:local_auth/local_auth.dart';
 
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/general_response.dart';
-import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
 
 enum PINStatus { enterFirst, enterSecond, equals , unequals}
@@ -92,9 +92,20 @@ class ChangePinController extends BaseController {
           actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Get.back(closeOverlays: true);
-                Get.offAllNamed(Routes.MAIN);
+                final args = Get.arguments;
+                final redirect = args is Map &&
+                    args[WorkspaceContextService.rentHubRedirectListingsIfEmptyKey] ==
+                        true;
+                await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
+                  arguments: redirect
+                      ? {
+                          WorkspaceContextService.rentHubRedirectListingsIfEmptyKey:
+                              true,
+                        }
+                      : null,
+                );
               },
               child: const Text('OK'),
             )

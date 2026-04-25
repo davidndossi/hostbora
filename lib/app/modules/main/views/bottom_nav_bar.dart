@@ -24,15 +24,24 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     appLocalization = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    Color selectedItemColor = AppColors.colorPrimary;
-    Color unselectedItemColor = AppColors.slateBlueGrey;
+    Color selectedItemColor = isDark
+        ? theme.colorScheme.primary
+        : AppColors.colorPrimary;
+    Color unselectedItemColor = isDark
+        ? theme.colorScheme.onSurfaceVariant
+        : AppColors.slateBlueGrey;
+    final navBackgroundColor = isDark
+        ? theme.colorScheme.surfaceContainerHigh
+        : AppColors.colorWhite;
     List<BottomNavItem> navItems = _getNavItems();
 
     return Obx(
       () => Container(
         decoration: BoxDecoration(
-          color: AppColors.colorWhite,
+          color: navBackgroundColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
@@ -69,19 +78,23 @@ class BottomNavBar extends StatelessWidget {
       BottomNavItem(
         navTitle: appLocalization.home,
         iconSvgName: 'ic_home.svg',
-        menuCode: MenuCode.HOME),
+        menuCode: MenuCode.HOME,
+      ),
       BottomNavItem(
         navTitle: appLocalization.dashboard,
         iconSvgName: 'ic_dashboard.svg',
-        menuCode: MenuCode.DASHBOARD),
+        menuCode: MenuCode.DASHBOARD,
+      ),
       BottomNavItem(
         navTitle: appLocalization.calendar,
         iconSvgName: 'ic_booking.svg',
-        menuCode: MenuCode.CALENDAR),
+        menuCode: MenuCode.CALENDAR,
+      ),
       BottomNavItem(
         navTitle: appLocalization.settings,
         iconSvgName: 'ic_settings.svg',
-        menuCode: MenuCode.SETTINGS),
+        menuCode: MenuCode.SETTINGS,
+      ),
     ];
   }
 }
@@ -126,7 +139,7 @@ class _NavBarTile extends StatelessWidget {
               Text(
                 item.navTitle,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   color: color,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
@@ -171,14 +184,14 @@ class FabBottomAppBarClipper extends CustomClipper<Path> {
     path.quadraticBezierTo(0, 0, cornerRadius, 0);
 
     // Top straight line until just before the notch
-    path.lineTo(size.width - notchWidth - cornerRadius/2, 0);
+    path.lineTo(size.width - notchWidth - cornerRadius / 2, 0);
 
     // Notch top-left corner
     path.quadraticBezierTo(
       size.width - notchWidth,
       0,
       size.width - notchWidth,
-      cornerRadius/2,
+      cornerRadius / 2,
     );
 
     path.lineTo(size.width - notchWidth, notchHeight - cornerRadius);
@@ -191,30 +204,30 @@ class FabBottomAppBarClipper extends CustomClipper<Path> {
       notchHeight,
     );
 
-    path.lineTo(size.width - 1.5*cornerRadius, notchHeight);
+    path.lineTo(size.width - 1.5 * cornerRadius, notchHeight);
 
     // Notch bottom-right corner
     path.quadraticBezierTo(
-      size.width - cornerRadius/2,
+      size.width - cornerRadius / 2,
       notchHeight,
-      size.width - cornerRadius/2,
+      size.width - cornerRadius / 2,
       notchHeight - cornerRadius,
     );
 
     // Notch top-right corner
-    path.lineTo(size.width - cornerRadius/2, 0);
+    path.lineTo(size.width - cornerRadius / 2, 0);
 
     // Top-right rounded corner
-    path.quadraticBezierTo(
-      size.width,
-      0,
-      size.width,
-      cornerRadius,
-    );
+    path.quadraticBezierTo(size.width, 0, size.width, cornerRadius);
 
     // Right straight line and bottom-right rounded corner
     path.lineTo(size.width, size.height - cornerRadius);
-    path.quadraticBezierTo(size.width, size.height, size.width - cornerRadius, size.height);
+    path.quadraticBezierTo(
+      size.width,
+      size.height,
+      size.width - cornerRadius,
+      size.height,
+    );
 
     // Bottom straight line
     path.lineTo(cornerRadius, size.height);

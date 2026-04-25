@@ -10,6 +10,8 @@ class RentIncomeRecord {
     required this.datePaidIso,
     required this.category,
     required this.notes,
+    required this.apartment,
+    required this.apartmentUnit,
     required this.createdAtMs,
   });
 
@@ -19,6 +21,8 @@ class RentIncomeRecord {
   final String datePaidIso;
   final String category;
   final String notes;
+  final String apartment;
+  final String apartmentUnit;
   final int createdAtMs;
 
   factory RentIncomeRecord.fromMap(Map<String, Object?> m) {
@@ -29,6 +33,8 @@ class RentIncomeRecord {
       datePaidIso: m['date_paid_iso'] as String? ?? '',
       category: m['category'] as String? ?? '',
       notes: m['notes'] as String? ?? '',
+      apartment: m['apartment'] as String? ?? '',
+      apartmentUnit: m['apartment_unit'] as String? ?? '',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
     );
   }
@@ -51,6 +57,8 @@ class RentIncomeLocalDataSource {
     required String datePaidIso,
     required String category,
     String notes = '',
+    String apartment = '',
+    String apartmentUnit = '',
   }) async {
     final db = await database;
     return db.insert(_table, {
@@ -59,6 +67,8 @@ class RentIncomeLocalDataSource {
       'date_paid_iso': datePaidIso,
       'category': category,
       'notes': notes,
+      'apartment': apartment,
+      'apartment_unit': apartmentUnit,
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });
   }

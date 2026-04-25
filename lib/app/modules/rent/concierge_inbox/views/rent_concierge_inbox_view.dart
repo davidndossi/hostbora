@@ -7,13 +7,11 @@ import '../controllers/rent_concierge_inbox_controller.dart';
 
 /// Evergreen Concierge Inbox — cream bg, deep teal accents, serif headings.
 abstract class _InboxPalette {
-  static const Color bg = Color(0xFFF9F9F7);
   static const Color primaryTeal = Color(0xFF005F5F);
   static const Color navy = Color(0xFF1B2838);
   static const Color muted = Color(0xFF6B7280);
   static const Color border = Color(0xFFE8E6E1);
   static const Color card = Colors.white;
-  static const String serif = 'Georgia';
 }
 
 class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
@@ -21,13 +19,12 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  Color pageBackgroundColor(BuildContext context) => _InboxPalette.bg;
-
-  @override
   PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(_isSw ? 'Kikasha' : 'Inbox');
 
   @override
   Widget body(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : _InboxPalette.navy;
     return Obx(() {
       if (!controller.hasNotifications) {
         return _ConciergeInboxEmptyBody(
@@ -38,15 +35,6 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          Text(
-            _isSw ? 'Dashibodi ya Usimamizi wa Majengo ya Evergreen' : 'Evergreen Estate Management Dashboard',
-            style: TextStyle(
-              fontSize: 13,
-              color: _InboxPalette.muted,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
           InkWell(
             onTap: controller.markAllAsRead,
             borderRadius: BorderRadius.circular(8),
@@ -59,7 +47,7 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
                   Text(
                     _isSw ? 'Weka zote kama zimesomwa' : 'Mark all as read',
                     style: TextStyle(
-                      color: _InboxPalette.navy,
+                      color: titleColor,
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
                     ),
@@ -99,7 +87,8 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
           ),
           const SizedBox(height: 20),
           if (controller.filteredUrgentItems.isNotEmpty) ...[
-            _urgentSectionHeader(criticalCount: controller.filteredUrgentItems.length),
+            _urgentSectionHeader(context,
+                criticalCount: controller.filteredUrgentItems.length),
             const SizedBox(height: 12),
             ...controller.filteredUrgentItems.map(
               (e) => Padding(
@@ -112,7 +101,11 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
             ),
           ],
           if (controller.renewalItems.isNotEmpty) ...[
-            _sectionTitle(icon: Icons.sync_alt_rounded, label: _isSw ? 'Mikataba Inayokaribia Kuisha' : 'Upcoming Renewals'),
+            _sectionTitle(context,
+                icon: Icons.sync_alt_rounded,
+                label: _isSw
+                    ? 'Mikataba Inayokaribia Kuisha'
+                    : 'Upcoming Renewals'),
             const SizedBox(height: 12),
             ...controller.renewalItems.map(
               (e) => Padding(
@@ -125,7 +118,11 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
             ),
           ],
           if (controller.filteredMaintenanceItems.isNotEmpty) ...[
-            _sectionTitle(icon: Icons.build_circle_outlined, label: _isSw ? 'Matengenezo Yaliyopangwa' : 'Scheduled Maintenance'),
+            _sectionTitle(context,
+                icon: Icons.build_circle_outlined,
+                label: _isSw
+                    ? 'Matengenezo Yaliyopangwa'
+                    : 'Scheduled Maintenance'),
             const SizedBox(height: 12),
             ...controller.filteredMaintenanceItems.map(
               (e) => Padding(
@@ -138,7 +135,9 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
             ),
           ],
           if (controller.generalItems.isNotEmpty) ...[
-            _sectionTitle(icon: Icons.notifications_outlined, label: _isSw ? 'Sasisho za Jumla' : 'General Updates'),
+            _sectionTitle(context,
+                icon: Icons.notifications_outlined,
+                label: _isSw ? 'Sasisho za Jumla' : 'General Updates'),
             const SizedBox(height: 12),
             ...controller.generalItems.map(
               (e) => Padding(
@@ -155,7 +154,8 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
     });
   }
 
-  Widget _urgentSectionHeader({required int criticalCount}) {
+  Widget _urgentSectionHeader(BuildContext context, {required int criticalCount}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -165,10 +165,9 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
           child: Text(
             _isSw ? 'Hatua ya Haraka' : 'Urgent Action',
             style: TextStyle(
-              fontFamily: _InboxPalette.serif,
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: _InboxPalette.navy,
+              color: isDark ? Colors.white : _InboxPalette.navy,
             ),
           ),
         ),
@@ -192,7 +191,9 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
     );
   }
 
-  Widget _sectionTitle({required IconData icon, required String label}) {
+  Widget _sectionTitle(BuildContext context,
+      {required IconData icon, required String label}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 0),
       child: Row(
@@ -201,11 +202,10 @@ class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(
-              fontFamily: _InboxPalette.serif,
+            style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w700,
-              color: _InboxPalette.navy,
+              color: isDark ? Colors.white : _InboxPalette.navy,
             ),
           ),
         ],
@@ -223,6 +223,9 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : _InboxPalette.primaryTeal;
+    final bodyColor = isDark ? Colors.white70 : _InboxPalette.navy.withValues(alpha: 0.65);
     return Column(
       children: [
         Expanded(
@@ -231,16 +234,15 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: 8),
-                _emptyGraphic(),
+                _emptyGraphic(context),
                 const SizedBox(height: 28),
                 Text(
                   isSw ? 'Hakuna Taarifa Mpya' : 'All Quiet Here',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: _InboxPalette.serif,
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
-                    color: _InboxPalette.primaryTeal,
+                    color: titleColor,
                     height: 1.2,
                   ),
                 ),
@@ -253,7 +255,7 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.45,
-                    color: _InboxPalette.navy.withValues(alpha: 0.65),
+                    color: bodyColor,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -282,18 +284,23 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
             ),
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: _InboxPalette.border),
+        Divider(
+          height: 1,
+          thickness: 1,
+          color: isDark ? const Color(0xFF3A3A3C) : _InboxPalette.border,
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 14, 24, 10),
           child: Column(
             children: [
               Text(
-                isSw ? 'UTAMBULISHO WA MAJENGO YA EVERGREEN' : 'EVERGREEN ESTATE IDENTITY',
+                isSw ? '' : '',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 2.4,
-                  color: _InboxPalette.muted.withValues(alpha: 0.75),
+                  color: (isDark ? Colors.white70 : _InboxPalette.muted)
+                      .withValues(alpha: 0.75),
                 ),
               ),
               const SizedBox(height: 10),
@@ -301,7 +308,8 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
                 width: 2,
                 height: 14,
                 decoration: BoxDecoration(
-                  color: _InboxPalette.muted.withValues(alpha: 0.35),
+                  color: (isDark ? Colors.white54 : _InboxPalette.muted)
+                      .withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(1),
                 ),
               ),
@@ -312,7 +320,8 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
     );
   }
 
-  Widget _emptyGraphic() {
+  Widget _emptyGraphic(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       height: 210,
       width: double.infinity,
@@ -322,8 +331,8 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
           Container(
             width: 188,
             height: 188,
-            decoration: const BoxDecoration(
-              color: Color(0xFFEAEAE8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFEAEAE8),
               shape: BoxShape.circle,
             ),
           ),
@@ -335,11 +344,11 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
                 width: 118,
                 height: 118,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -386,14 +395,18 @@ class _UrgentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF2C2C2E) : _InboxPalette.card;
+    final titleColor = isDark ? Colors.white : _InboxPalette.navy;
+    final mutedColor = isDark ? Colors.white70 : _InboxPalette.muted;
     final teal = item.isPrimaryAction;
     return Container(
       decoration: BoxDecoration(
-        color: _InboxPalette.card,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -420,30 +433,29 @@ class _UrgentCard extends StatelessWidget {
                   children: [
                     Text(
                       item.tag,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.0,
-                        color: _InboxPalette.muted,
+                        color: mutedColor,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       item.title,
-                      style: const TextStyle(
-                        fontFamily: _InboxPalette.serif,
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: _InboxPalette.navy,
+                        color: titleColor,
                         height: 1.2,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       item.subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: _InboxPalette.muted,
+                        color: mutedColor,
                         height: 1.35,
                       ),
                     ),
@@ -459,8 +471,10 @@ class _UrgentCard extends StatelessWidget {
               onPressed: onAction,
               style: FilledButton.styleFrom(
                 backgroundColor:
-                    teal ? _InboxPalette.primaryTeal : const Color(0xFFECEAE4),
-                foregroundColor: teal ? Colors.white : _InboxPalette.navy,
+                    teal
+                        ? _InboxPalette.primaryTeal
+                        : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFECEAE4)),
+                foregroundColor: teal ? Colors.white : titleColor,
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
               ),
@@ -469,7 +483,7 @@ class _UrgentCard extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
-                  color: teal ? Colors.white : _InboxPalette.navy,
+                  color: teal ? Colors.white : titleColor,
                 ),
               ),
             ),
@@ -488,13 +502,17 @@ class _RenewalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF2C2C2E) : _InboxPalette.card;
+    final titleColor = isDark ? Colors.white : _InboxPalette.navy;
+    final mutedColor = isDark ? Colors.white70 : _InboxPalette.muted;
     return Container(
       decoration: BoxDecoration(
-        color: _InboxPalette.card,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -526,21 +544,20 @@ class _RenewalCard extends StatelessWidget {
                   children: [
                     Text(
                       item.unit,
-                      style: const TextStyle(
-                        fontFamily: _InboxPalette.serif,
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: _InboxPalette.navy,
+                        color: titleColor,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       item.propertyLine,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.8,
-                        color: _InboxPalette.muted,
+                        color: mutedColor,
                       ),
                     ),
                   ],
@@ -551,9 +568,9 @@ class _RenewalCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             item.body,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: _InboxPalette.muted,
+              color: mutedColor,
               height: 1.45,
             ),
           ),
@@ -562,9 +579,10 @@ class _RenewalCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F6F3),
+              color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF7F6F3),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _InboxPalette.border),
+              border: Border.all(
+                  color: isDark ? const Color(0xFF3A3A3C) : _InboxPalette.border),
             ),
             child: Row(
               children: [
@@ -574,11 +592,11 @@ class _RenewalCard extends StatelessWidget {
                     children: [
                       Text(
                         item.dueLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.9,
-                          color: _InboxPalette.muted,
+                          color: mutedColor,
                         ),
                       ),
                     ],
@@ -624,13 +642,17 @@ class _MaintenanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF2C2C2E) : _InboxPalette.card;
+    final titleColor = isDark ? Colors.white : _InboxPalette.navy;
+    final mutedColor = isDark ? Colors.white70 : _InboxPalette.muted;
     return Container(
       decoration: BoxDecoration(
-        color: _InboxPalette.card,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -646,37 +668,36 @@ class _MaintenanceCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5E9E2),
+                  color: isDark ? const Color(0xFF3A2E2A) : const Color(0xFFF5E9E2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   item.categoryPill,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.6,
-                    color: Color(0xFF6A473A),
+                    color: isDark ? const Color(0xFFF5C7B2) : const Color(0xFF6A473A),
                   ),
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.calendar_month_outlined, size: 20, color: _InboxPalette.muted),
+              Icon(Icons.calendar_month_outlined, size: 20, color: mutedColor),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             item.title,
-            style: const TextStyle(
-              fontFamily: _InboxPalette.serif,
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: _InboxPalette.navy,
+              color: titleColor,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             item.subtitle,
-            style: const TextStyle(fontSize: 12, color: _InboxPalette.muted),
+            style: TextStyle(fontSize: 12, color: mutedColor),
           ),
           const SizedBox(height: 12),
           Row(
@@ -688,20 +709,20 @@ class _MaintenanceCard extends StatelessWidget {
                   children: [
                     Text(
                       item.scheduledCaption,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.8,
-                        color: _InboxPalette.muted,
+                        color: mutedColor,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       item.dateLine,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: _InboxPalette.navy,
+                        color: titleColor,
                       ),
                     ),
                   ],
@@ -733,13 +754,17 @@ class _GeneralCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF2C2C2E) : _InboxPalette.card;
+    final titleColor = isDark ? Colors.white : _InboxPalette.navy;
+    final mutedColor = isDark ? Colors.white70 : _InboxPalette.muted;
     return Container(
       decoration: BoxDecoration(
-        color: _InboxPalette.card,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -755,7 +780,7 @@ class _GeneralCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F3F2),
+                  color: isDark ? const Color(0xFF1C3B3B) : const Color(0xFFE8F3F2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.meeting_room_outlined, color: _InboxPalette.primaryTeal, size: 22),
@@ -767,17 +792,16 @@ class _GeneralCard extends StatelessWidget {
                   children: [
                     Text(
                       item.title,
-                      style: const TextStyle(
-                        fontFamily: _InboxPalette.serif,
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: _InboxPalette.navy,
+                        color: titleColor,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       item.subtitle,
-                      style: const TextStyle(fontSize: 12, color: _InboxPalette.muted),
+                      style: TextStyle(fontSize: 12, color: mutedColor),
                     ),
                   ],
                 ),
@@ -840,8 +864,11 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: selected ? _InboxPalette.primaryTeal : Colors.white,
+      color: selected
+          ? _InboxPalette.primaryTeal
+          : (isDark ? const Color(0xFF2C2C2E) : Colors.white),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -851,7 +878,9 @@ class _FilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: selected ? _InboxPalette.primaryTeal : _InboxPalette.border,
+              color: selected
+                  ? _InboxPalette.primaryTeal
+                  : (isDark ? const Color(0xFF3A3A3C) : _InboxPalette.border),
             ),
           ),
           child: Text(
@@ -859,7 +888,9 @@ class _FilterChip extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: selected ? Colors.white : _InboxPalette.navy,
+              color: selected
+                  ? Colors.white
+                  : (isDark ? Colors.white : _InboxPalette.navy),
             ),
           ),
         ),

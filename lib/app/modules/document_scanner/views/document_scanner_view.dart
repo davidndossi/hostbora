@@ -15,10 +15,30 @@ const _scannerSecondary = Color(0xFF9CA3AF);
 class DocumentScannerView extends GetView<DocumentScannerController> {
   const DocumentScannerView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   Widget build(BuildContext context) {
+    final isDark = _isDark(context);
+    final scannerBg = isDark ? _scannerBg : const Color(0xFFF3F6F8);
+    final scannerPillBg = isDark
+        ? _scannerPillBg
+        : Colors.white.withValues(alpha: 0.92);
+    final scannerSecondary = isDark
+        ? _scannerSecondary
+        : AppColors.textColorSecondary;
+    final topIconColor = isDark ? Colors.white : AppColors.textColorPrimary;
+    final instructionTextColor = isDark
+        ? Colors.white
+        : AppColors.textColorPrimary;
+
     return Scaffold(
-      backgroundColor: _scannerBg,
+      backgroundColor: scannerBg,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -26,16 +46,18 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
         leading: IconButton(
           onPressed: controller.close,
           icon: const Icon(Icons.close, size: 28),
-          color: Colors.white,
+          color: topIconColor,
         ),
         actions: [
           IconButton(
             onPressed: controller.toggleFlash,
-            icon: Obx(() => Icon(
-                  controller.flashOn.value ? Icons.flash_on : Icons.flash_off,
-                  size: 26,
-                  color: Colors.white,
-                )),
+            icon: Obx(
+              () => Icon(
+                controller.flashOn.value ? Icons.flash_on : Icons.flash_off,
+                size: 26,
+                color: topIconColor,
+              ),
+            ),
           ),
           Obx(
             () => Padding(
@@ -43,9 +65,12 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
               child: GestureDetector(
                 onTap: controller.toggleAutoCapture,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: _scannerPillBg,
+                    color: scannerPillBg,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -64,12 +89,20 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
                       const SizedBox(width: 8),
                       Text(
                         controller.autoCaptureOn.value
-                            ? 'AUTO-CAPTURE ON'
-                            : 'AUTO-CAPTURE OFF',
-                        style: const TextStyle(
+                            ? _t(
+                                context,
+                                en: 'AUTO-CAPTURE ON',
+                                sw: 'KUNASA KIOTOMATIKI ON',
+                              )
+                            : _t(
+                                context,
+                                en: 'AUTO-CAPTURE OFF',
+                                sw: 'KUNASA KIOTOMATIKI OFF',
+                              ),
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: instructionTextColor,
                         ),
                       ),
                     ],
@@ -83,20 +116,28 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Positioned.fill(child: _buildCameraPreview()),
+          Positioned.fill(child: _buildCameraPreview(context, scannerBg)),
           _buildDocumentFrameOverlay(context),
-          _buildInstructionPill(context),
-          _buildBottomBar(context),
+          _buildInstructionPill(
+            context,
+            scannerPillBg: scannerPillBg,
+            textColor: instructionTextColor,
+          ),
+          _buildBottomBar(
+            context,
+            scannerPillBg: scannerPillBg,
+            scannerSecondary: scannerSecondary,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCameraPreview() {
+  Widget _buildCameraPreview(BuildContext context, Color scannerBg) {
     return Obx(() {
       if (controller.cameraError.value.isNotEmpty) {
         return Container(
-          color: _scannerBg,
+          color: scannerBg,
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -106,7 +147,12 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
                   Text(
                     controller.cameraError.value,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    style: TextStyle(
+                      color: _isDark(context)
+                          ? Colors.white70
+                          : AppColors.textColorSecondary,
+                      fontSize: 15,
+                    ),
                   ),
                 ],
               ),
@@ -114,9 +160,10 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
           ),
         );
       }
-      if (!controller.isCameraReady.value || controller.cameraController == null) {
+      if (!controller.isCameraReady.value ||
+          controller.cameraController == null) {
         return Container(
-          color: _scannerBg,
+          color: scannerBg,
           child: const Center(
             child: CircularProgressIndicator(color: _scannerTeal),
           ),
@@ -125,9 +172,15 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
       final ctrl = controller.cameraController!;
       final previewSize = ctrl.value.previewSize;
       if (previewSize == null) {
-        return Container(color: _scannerBg, child: const Center(child: CircularProgressIndicator(color: _scannerTeal)));
+        return Container(
+          color: scannerBg,
+          child: const Center(
+            child: CircularProgressIndicator(color: _scannerTeal),
+          ),
+        );
       }
-      final isPortrait = MediaQuery.orientationOf(Get.context!) == Orientation.portrait;
+      final isPortrait =
+          MediaQuery.orientationOf(context) == Orientation.portrait;
       final aspectRatio = isPortrait
           ? previewSize.height / previewSize.width
           : previewSize.width / previewSize.height;
@@ -174,7 +227,11 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
     );
   }
 
-  Widget _buildInstructionPill(BuildContext context) {
+  Widget _buildInstructionPill(
+    BuildContext context, {
+    required Color scannerPillBg,
+    required Color textColor,
+  }) {
     final size = MediaQuery.of(context).size;
     const inset = 32.0;
     final frameWidth = size.width - inset * 2;
@@ -189,15 +246,19 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: _scannerPillBg,
+            color: scannerPillBg,
             borderRadius: BorderRadius.circular(24),
           ),
-          child: const Text(
-            'Position the document within the frame',
+          child: Text(
+            _t(
+              context,
+              en: 'Position the document within the frame',
+              sw: 'Weka hati ndani ya fremu',
+            ),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.white,
+              color: textColor,
             ),
           ),
         ),
@@ -205,7 +266,11 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
     );
   }
 
-  Widget _buildBottomBar(BuildContext context) {
+  Widget _buildBottomBar(
+    BuildContext context, {
+    required Color scannerPillBg,
+    required Color scannerSecondary,
+  }) {
     return Positioned(
       left: 0,
       right: 0,
@@ -218,13 +283,17 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
             children: [
               _BottomAction(
                 icon: Icons.photo_library_outlined,
-                label: 'IMPORT',
+                label: _t(context, en: 'IMPORT', sw: 'INGIZA'),
+                scannerPillBg: scannerPillBg,
+                scannerSecondary: scannerSecondary,
                 onTap: controller.importFromGallery,
               ),
               _buildCaptureButton(context),
               _BottomAction(
                 icon: Icons.layers_outlined,
-                label: 'BATCH MODE',
+                label: _t(context, en: 'BATCH MODE', sw: 'HALI YA WINGI'),
+                scannerPillBg: scannerPillBg,
+                scannerSecondary: scannerSecondary,
                 onTap: controller.batchMode,
               ),
             ],
@@ -319,11 +388,15 @@ class _DocumentFramePainter extends CustomPainter {
 class _BottomAction extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color scannerPillBg;
+  final Color scannerSecondary;
   final VoidCallback onTap;
 
   const _BottomAction({
     required this.icon,
     required this.label,
+    required this.scannerPillBg,
+    required this.scannerSecondary,
     required this.onTap,
   });
 
@@ -338,18 +411,18 @@ class _BottomAction extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: _scannerPillBg,
+              color: scannerPillBg,
               borderRadius: BorderRadius.circular(AppValues.radius_6),
             ),
-            child: Icon(icon, size: 26, color: _scannerSecondary),
+            child: Icon(icon, size: 26, color: scannerSecondary),
           ),
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
+            style: TextStyle(
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: _scannerSecondary,
+              color: scannerSecondary,
             ),
           ),
         ],

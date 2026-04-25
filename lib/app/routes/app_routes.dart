@@ -84,12 +84,14 @@ abstract class Routes {
   static const RENT_SCHEDULE_MAINTENANCE_FORM = _Paths.RENT_SCHEDULE_MAINTENANCE_FORM;
   static const RENT_DEFINE_TENANT_CHARGES = _Paths.RENT_DEFINE_TENANT_CHARGES;
   static const RENT_TENANT_RESIDENCY_PAYMENT_TRACKER = _Paths.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER;
+  /// Same destination as [RENT_TENANT_RESIDENCY_PAYMENT_TRACKER]; use with `propertyRef` / `propertyTitle` parameters to scope by listing.
+  static const TENANTS = _Paths.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER;
   static const RENT_TENANT_LEDGER_OCCUPANCY = _Paths.RENT_TENANT_LEDGER_OCCUPANCY;
   static const RENT_SCHEDULE_PAYMENT_REMINDER = _Paths.RENT_SCHEDULE_PAYMENT_REMINDER;
   static const RENT_DEFINE_LOYALTY_OFFERS = _Paths.RENT_DEFINE_LOYALTY_OFFERS;
   static const RENT_DEFINE_ACTIVE_LOYALTY = _Paths.RENT_DEFINE_ACTIVE_LOYALTY;
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = _Paths.RENT_ACTIVE_LOYALTY_PROGRAMS;
-  static const RENT_SMART_UTILITY_LUKU_DASHBOARD = _Paths.RENT_SMART_UTILITY_LUKU_DASHBOARD;
+  static const RENT_SMART_UTILITY_DASHBOARD = _Paths.RENT_SMART_UTILITY_DASHBOARD;
   static const RENT_NOTIFICATION_CENTER_MARK_ALL = _Paths.RENT_NOTIFICATION_CENTER_MARK_ALL;
   static const RENT_NO_NOTIFICATIONS_EMPTY = _Paths.RENT_NO_NOTIFICATIONS_EMPTY;
   static const RENT_CONCIERGE_INBOX = _Paths.RENT_CONCIERGE_INBOX;
@@ -98,6 +100,7 @@ abstract class Routes {
   static const RENT_ADD_NEW_LISTING = _Paths.RENT_ADD_NEW_LISTING;
   static const RENT_LISTING_DETAILS = _Paths.RENT_LISTING_DETAILS;
   static const RENT_PROPERTY_ROI_ESTIMATE_FORM = _Paths.RENT_PROPERTY_ROI_ESTIMATE_FORM;
+  static const RENT_WHATSAPP_TEMPLATE_BUILDER = _Paths.RENT_WHATSAPP_TEMPLATE_BUILDER;
 }
 
 abstract class _Paths {
@@ -186,7 +189,7 @@ abstract class _Paths {
   static const RENT_DEFINE_LOYALTY_OFFERS = '/rent/define-loyalty-offers';
   static const RENT_DEFINE_ACTIVE_LOYALTY = '/rent/define-active-loyalty';
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = '/rent/active-loyalty-programs';
-  static const RENT_SMART_UTILITY_LUKU_DASHBOARD = '/rent/smart-utility-luku-dashboard';
+  static const RENT_SMART_UTILITY_DASHBOARD = '/rent/smart-utility-dashboard';
   static const RENT_NOTIFICATION_CENTER_MARK_ALL = '/rent/notification-center-mark-all';
   static const RENT_NO_NOTIFICATIONS_EMPTY = '/rent/no-notifications-empty';
   static const RENT_CONCIERGE_INBOX = '/rent/concierge-inbox';
@@ -195,4 +198,5 @@ abstract class _Paths {
   static const RENT_ADD_NEW_LISTING = '/rent/add-new-listing';
   static const RENT_LISTING_DETAILS = '/rent/listing-details';
   static const RENT_PROPERTY_ROI_ESTIMATE_FORM = '/rent/property-roi-estimate-form';
+  static const RENT_WHATSAPP_TEMPLATE_BUILDER = '/rent/whatsapp-template-builder';
 }

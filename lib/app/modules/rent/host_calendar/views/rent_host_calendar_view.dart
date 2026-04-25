@@ -41,13 +41,13 @@ class RentHostCalendarView extends BaseView<RentHostCalendarController> {
                   children: [
                     _buildHeader(context),
                     const SizedBox(height: 20),
-                    _buildDynamicPricingRow(context),
-                    const SizedBox(height: 20),
+                    // _buildDynamicPricingRow(context),
+                    // const SizedBox(height: 20),
                     _buildPropertySelector(context),
                     const SizedBox(height: 20),
                     _buildCalendarGrid(context),
-                    const SizedBox(height: 12),
-                    _buildLegend(context),
+                    // const SizedBox(height: 12),
+                    // _buildLegend(context),
                     const SizedBox(height: 24),
                     _buildEventsSection(context),
                   ],
@@ -566,6 +566,23 @@ class _EventCard extends StatelessWidget {
   bool get _isSw => Get.locale?.languageCode == 'sw';
   String _t(String en, String sw) => _isSw ? sw : en;
 
+  String _typeHeader() {
+    switch (event.type) {
+      case CalendarEventType.maintenance:
+        return _t('MAINTENANCE', 'MATENGENEZO');
+      case CalendarEventType.paymentReminder:
+        return _t('PAYMENT REMINDER', 'UKUMBUSHO WA MALIPO');
+      case CalendarEventType.leaseEnd:
+        return _t('LEASE END', 'MWISHO WA MKATABA');
+      case CalendarEventType.leaseStart:
+        return _t('LEASE START', 'MWANZO WA MKATABA');
+      case CalendarEventType.checkOut:
+        return _t('CHECK-OUT', 'TOKA');
+      case CalendarEventType.checkIn:
+        return _t('CHECK-IN', 'INGIA');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -588,14 +605,14 @@ class _EventCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                event.type == CalendarEventType.checkOut
-                    ? _t('CHECK-OUT', 'TOKA')
-                    : _t('CHECK-IN', 'INGIA'),
+                _typeHeader(),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
-                  color: AppColors.colorPrimary,
+                  color: event.type == CalendarEventType.maintenance
+                      ? AppColors.colorOrange
+                      : AppColors.colorPrimary,
                 ),
               ),
               const Spacer(),
@@ -618,31 +635,85 @@ class _EventCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.people_outline, size: 16, color: AppColors.textColorSecondary),
-              const SizedBox(width: 6),
-              Text(
-                '${event.guests} ${_t('Guests', 'Wageni')}',
-                style: TextStyle(fontSize: 13, color: AppColors.textColorSecondary),
-              ),
-              const SizedBox(width: 16),
-              Icon(
-                event.subtitleHighlight ? Icons.cleaning_services : Icons.key_outlined,
-                size: 16,
-                color: event.subtitleHighlight ? AppColors.colorOrange : AppColors.textColorSecondary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                event.subtitle,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: event.subtitleHighlight ? AppColors.colorOrange : AppColors.textColorSecondary,
-                  fontWeight: event.subtitleHighlight ? FontWeight.w500 : FontWeight.normal,
+          if (event.type == CalendarEventType.maintenance ||
+              event.type == CalendarEventType.paymentReminder)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.home_work_outlined, size: 16, color: AppColors.textColorSecondary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    event.propertyName.isEmpty ? '—' : event.propertyName,
+                    style: TextStyle(fontSize: 13, color: AppColors.textColorSecondary),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Icon(Icons.people_outline, size: 16, color: AppColors.textColorSecondary),
+                const SizedBox(width: 6),
+                Text(
+                  '${event.guests} ${_t('Guests', 'Wageni')}',
+                  style: TextStyle(fontSize: 13, color: AppColors.textColorSecondary),
+                ),
+                const SizedBox(width: 16),
+                Icon(
+                  event.subtitleHighlight ? Icons.cleaning_services : Icons.key_outlined,
+                  size: 16,
+                  color: event.subtitleHighlight ? AppColors.colorOrange : AppColors.textColorSecondary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    event.subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: event.subtitleHighlight ? AppColors.colorOrange : AppColors.textColorSecondary,
+                      fontWeight: event.subtitleHighlight ? FontWeight.w500 : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          if (event.type == CalendarEventType.maintenance && event.subtitle.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.notes_outlined, size: 16, color: AppColors.textColorSecondary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    event.subtitle,
+                    style: TextStyle(fontSize: 13, color: AppColors.textColorSecondary),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (event.type == CalendarEventType.paymentReminder && event.subtitle.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.payments_outlined, size: 16, color: AppColors.textColorSecondary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    event.subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textColorSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

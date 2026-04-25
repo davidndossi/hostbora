@@ -13,6 +13,16 @@ const _vaultTeal = Color(0xFF1C6E64);
 class PropertyVaultView extends BaseView<PropertyVaultController> {
   PropertyVaultView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -21,8 +31,8 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
       actions: [
         IconButton(
           onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined)
-        )
+          icon: const Icon(Icons.more_vert_outlined),
+        ),
       ],
     );
   }
@@ -50,28 +60,47 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
   Widget? floatingActionButton() => _buildFab(Get.context!);
 
   Widget _buildSearchBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHigh
+            : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
-        border: Border.all(color: AppColors.designInputBorder),
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outlineVariant
+              : AppColors.designInputBorder,
+        ),
       ),
       child: TextField(
         onChanged: controller.onSearchChanged,
         decoration: InputDecoration(
-          hintText: 'Search vault documents...',
+          hintText: _t(
+            context,
+            en: 'Search vault documents...',
+            sw: 'Tafuta nyaraka za vault...',
+          ),
           hintStyle: TextStyle(
-            color: AppColors.designPlaceholder,
+            color: isDark
+                ? theme.colorScheme.onSurfaceVariant
+                : AppColors.designPlaceholder,
             fontSize: 15,
           ),
           prefixIcon: Icon(
             Icons.search,
             size: 22,
-            color: AppColors.designPlaceholder,
+            color: isDark
+                ? theme.colorScheme.onSurfaceVariant
+                : AppColors.designPlaceholder,
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );
@@ -85,7 +114,11 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'RECENTLY ACCESSED',
+              _t(
+                context,
+                en: 'RECENTLY ACCESSED',
+                sw: 'ULIYOFUNGUA HIVI KARIBUNI',
+              ),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -96,7 +129,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
             TextButton(
               onPressed: controller.viewAllRecent,
               child: Text(
-                'View All',
+                _t(context, en: 'View All', sw: 'Tazama Zote'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -112,7 +145,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: controller.recentlyAccessed.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final item = controller.recentlyAccessed[index];
               return _RecentCard(item: item);
@@ -128,7 +161,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'MAIN DIRECTORIES',
+          _t(context, en: 'MAIN DIRECTORIES', sw: 'SARAKA KUU'),
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
@@ -158,11 +191,15 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
   }
 
   Widget _buildVaultSyncedCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _vaultTeal.withOpacity(0.12),
+        color: (isDark ? theme.colorScheme.primary : _vaultTeal).withValues(
+          alpha: 0.12,
+        ),
         borderRadius: BorderRadius.circular(AppValues.radius_12),
       ),
       child: Row(
@@ -174,7 +211,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Vault Synced',
+                  _t(context, en: 'Vault Synced', sw: 'Vault Imesawazishwa'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -183,10 +220,16 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'All documents are encrypted and secured.',
+                  _t(
+                    context,
+                    en: 'All documents are encrypted and secured.',
+                    sw: 'Nyaraka zote zimesimbwa na zinalindwa.',
+                  ),
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textColorSecondary,
+                    color: isDark
+                        ? theme.colorScheme.onSurfaceVariant
+                        : AppColors.textColorSecondary,
                   ),
                 ),
               ],
@@ -213,15 +256,19 @@ class _RecentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return SizedBox(
       width: 140,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.colorWhite,
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHigh
+              : AppColors.colorWhite,
           borderRadius: BorderRadius.circular(AppValues.radius_12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -233,7 +280,7 @@ class _RecentCard extends StatelessWidget {
             Container(
               height: 90,
               decoration: BoxDecoration(
-                color: AppColors.lightGreyColor.withOpacity(0.5),
+                color: AppColors.lightGreyColor.withValues(alpha: 0.5),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppValues.radius_12),
                 ),
@@ -301,8 +348,12 @@ class _DirectoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Material(
-      color: AppColors.colorWhite,
+      color: isDark
+          ? theme.colorScheme.surfaceContainerHigh
+          : AppColors.colorWhite,
       borderRadius: BorderRadius.circular(AppValues.radius_12),
       child: InkWell(
         onTap: onTap,
@@ -313,7 +364,7 @@ class _DirectoryCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppValues.radius_12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),

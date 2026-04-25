@@ -14,11 +14,24 @@ const _scheduledAmber = Color(0xFFE5A500);
 class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
   GuestAccessCodesView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
-  Color pageBackgroundColor(BuildContext context) => _screenBg;
+  Color pageBackgroundColor(BuildContext context) =>
+      _isDark(context) ? Theme.of(context).colorScheme.surface : _screenBg;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return CustomAppBar(
       appBarTitleText: appLocalization.guestAccessCodes,
       isCentered: true,
@@ -27,15 +40,16 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
           margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: _accessTeal.withOpacity(0.15),
+            color: (isDark ? theme.colorScheme.primary : _accessTeal)
+                .withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
           ),
           child: Text(
-            'TUYA CONNECTED',
+            _t(context, en: 'TUYA CONNECTED', sw: 'TUYA IMEUNGANISHWA'),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: _accessTeal,
+              color: isDark ? theme.colorScheme.primary : _accessTeal,
             ),
           ),
         ),
@@ -61,6 +75,8 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
   }
 
   Widget _buildActiveSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -68,19 +84,23 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'ACTIVE ACCESS',
+              _t(context, en: 'ACTIVE ACCESS', sw: 'UFIKIAJI HAI'),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
-                color: AppColors.textColorPrimary,
+                color: isDark
+                    ? theme.colorScheme.onSurface
+                    : AppColors.textColorPrimary,
               ),
             ),
             Text(
-              'Last synced: ${controller.lastSynced}',
+              '${_t(context, en: 'Last synced', sw: 'Mara ya mwisho kusawazishwa')}: ${controller.lastSynced}',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textColorSecondary,
+                color: isDark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.textColorSecondary,
               ),
             ),
           ],
@@ -97,6 +117,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
               onShare: () => controller.shareCode(item),
               onCopy: () => controller.copyCode(item),
               onOptions: () => controller.openOptions(item),
+              t: _t,
             ),
           ),
         ),
@@ -105,16 +126,20 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
   }
 
   Widget _buildUpcomingSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'UPCOMING ACCESS',
+          _t(context, en: 'UPCOMING ACCESS', sw: 'UFIKIAJI UJAO'),
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,
-            color: AppColors.textColorPrimary,
+            color: isDark
+                ? theme.colorScheme.onSurface
+                : AppColors.textColorPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -129,6 +154,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
               onShare: () => controller.shareCode(item),
               onCopy: () => controller.copyCode(item),
               onOptions: () => controller.openOptions(item),
+              t: _t,
             ),
           ),
         ),
@@ -142,9 +168,13 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
       height: 52,
       child: ElevatedButton.icon(
         onPressed: controller.createCustomCode,
-        icon: const Icon(Icons.add_circle_outline, size: 22, color: Colors.white),
-        label: const Text(
-          'Create Custom Code',
+        icon: const Icon(
+          Icons.add_circle_outline,
+          size: 22,
+          color: Colors.white,
+        ),
+        label: Text(
+          _t(context, en: 'Create Custom Code', sw: 'Tengeneza Msimbo Maalum'),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -172,6 +202,12 @@ class _AccessCard extends StatelessWidget {
   final VoidCallback onShare;
   final VoidCallback onCopy;
   final VoidCallback onOptions;
+  final String Function(
+    BuildContext context, {
+    required String en,
+    required String sw,
+  })
+  t;
 
   const _AccessCard({
     required this.item,
@@ -181,21 +217,30 @@ class _AccessCard extends StatelessWidget {
     required this.onShare,
     required this.onCopy,
     required this.onOptions,
+    required this.t,
   });
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = isActive ? AppColors.colorSuccessGreen : _scheduledAmber;
-    final statusLabel = isActive ? 'Active' : 'Scheduled';
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final statusColor = isActive
+        ? AppColors.colorSuccessGreen
+        : _scheduledAmber;
+    final statusLabel = isActive
+        ? t(context, en: 'Active', sw: 'Hai')
+        : t(context, en: 'Scheduled', sw: 'Imepangwa');
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHigh
+            : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -211,10 +256,12 @@ class _AccessCard extends StatelessWidget {
                   children: [
                     Text(
                       item.guestName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textColorPrimary,
+                        color: isDark
+                            ? theme.colorScheme.onSurface
+                            : AppColors.textColorPrimary,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -231,7 +278,9 @@ class _AccessCard extends StatelessWidget {
                       statusLabel,
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textColorPrimary,
+                        color: isDark
+                            ? theme.colorScheme.onSurface
+                            : AppColors.textColorPrimary,
                       ),
                     ),
                   ],
@@ -241,81 +290,106 @@ class _AccessCard extends StatelessWidget {
                 IconButton(
                   onPressed: () => onShare(),
                   icon: const Icon(Icons.share_outlined, size: 22),
-                  color: AppColors.textColorPrimary,
+                  color: isDark
+                      ? theme.colorScheme.onSurface
+                      : AppColors.textColorPrimary,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
                 )
               else
                 IconButton(
                   onPressed: onOptions,
                   icon: const Icon(Icons.more_vert, size: 22),
-                  color: AppColors.textColorPrimary,
+                  color: isDark
+                      ? theme.colorScheme.onSurface
+                      : AppColors.textColorPrimary,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
                 ),
             ],
           ),
           const SizedBox(height: 14),
           Text(
-            'ACCESS PIN',
+            t(context, en: 'ACCESS PIN', sw: 'NAMBARI YA UFIKIAJI'),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppColors.textColorSecondary,
+              color: isDark
+                  ? theme.colorScheme.onSurfaceVariant
+                  : AppColors.textColorSecondary,
             ),
           ),
           const SizedBox(height: 4),
-          Obx(
-            () {
-              final revealed = revealedGuestName.value == item.guestName;
-              final displayPin = revealed ? item.pinFull : '${item.pinVisible}•••';
-              return Row(
-                children: [
-                  Text(
-                    displayPin,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textColorPrimary,
-                      letterSpacing: 1,
+          Obx(() {
+            final revealed = revealedGuestName.value == item.guestName;
+            final displayPin = revealed
+                ? item.pinFull
+                : '${item.pinVisible}•••';
+            return Row(
+              children: [
+                Text(
+                  displayPin,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: isDark
+                        ? theme.colorScheme.onSurface
+                        : AppColors.textColorPrimary,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                if (isActive)
+                  GestureDetector(
+                    onTap: onReveal,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          revealed ? Icons.visibility_off : Icons.visibility,
+                          size: 18,
+                          color: isDark
+                              ? theme.colorScheme.primary
+                              : _accessTeal,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          revealed
+                              ? t(context, en: 'Hide', sw: 'Ficha')
+                              : t(context, en: 'Reveal', sw: 'Onyesha'),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? theme.colorScheme.primary
+                                : _accessTeal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  IconButton(
+                    onPressed: () => onCopy(),
+                    icon: const Icon(Icons.copy, size: 20),
+                    color: isDark
+                        ? theme.colorScheme.onSurface
+                        : AppColors.textColorPrimary,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  if (isActive)
-                    GestureDetector(
-                      onTap: onReveal,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            revealed ? Icons.visibility_off : Icons.visibility,
-                            size: 18,
-                            color: _accessTeal,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            revealed ? 'Hide' : 'Reveal',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: _accessTeal,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    IconButton(
-                      onPressed: () => onCopy(),
-                      icon: const Icon(Icons.copy, size: 20),
-                      color: AppColors.textColorPrimary,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    ),
-                ],
-              );
-            },
-          ),
+              ],
+            );
+          }),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -330,7 +404,9 @@ class _AccessCard extends StatelessWidget {
                   item.dateRange,
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textColorSecondary,
+                    color: isDark
+                        ? theme.colorScheme.onSurfaceVariant
+                        : AppColors.textColorSecondary,
                   ),
                 ),
               ),

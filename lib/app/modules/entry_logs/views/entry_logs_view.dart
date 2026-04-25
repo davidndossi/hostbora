@@ -12,8 +12,16 @@ const _teal = Color(0xFF0A6A69);
 class EntryLogsView extends BaseView<EntryLogsController> {
   EntryLogsView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
+    final isDark = _isDark(context);
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -21,7 +29,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
       leading: IconButton(
         onPressed: () => Get.back(),
         icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-        color: AppColors.textColorPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
       title: Column(
         mainAxisSize: MainAxisSize.min,
@@ -31,7 +39,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: AppColors.textColorPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 2),
@@ -39,35 +47,38 @@ class EntryLogsView extends BaseView<EntryLogsController> {
             '${controller.deviceName} • ${controller.locationName}',
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.textColorSecondary,
+              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
             ),
           ),
         ],
       ),
       centerTitle: true,
       actions: [
-        Obx(() => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: TextButton.icon(
-            onPressed: controller.refresh,
-            icon: const Icon(Icons.refresh, size: 18, color: _teal),
-            label: Text(
-              'SYNCED ${controller.lastSynced.value.toUpperCase()}',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: _teal,
-                letterSpacing: 0.3,
+        Obx(
+          () => Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton.icon(
+              onPressed: controller.refresh,
+              icon: const Icon(Icons.refresh, size: 18, color: _teal),
+              label: Text(
+                '${_t(context, en: 'SYNCED', sw: 'IMESAWAZISHWA')} ${controller.lastSynced.value.toUpperCase()}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: _teal,
+                  letterSpacing: 0.3,
+                ),
               ),
             ),
           ),
-        )),
+        ),
       ],
     );
   }
 
   @override
   Widget body(BuildContext context) {
+    final isDark = _isDark(context);
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,10 +90,12 @@ class EntryLogsView extends BaseView<EntryLogsController> {
               if (byDay.isEmpty) {
                 return Center(
                   child: Text(
-                    'No events',
+                    _t(context, en: 'No events', sw: 'Hakuna matukio'),
                     style: TextStyle(
-                      fontSize: 15,
-                      color: AppColors.textColorSecondary,
+                      fontSize: 16,
+                      color: isDark
+                          ? Colors.white70
+                          : AppColors.textColorSecondary,
                     ),
                   ),
                 );
@@ -101,9 +114,11 @@ class EntryLogsView extends BaseView<EntryLogsController> {
                         child: Text(
                           key,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textColorSecondary,
+                            color: isDark
+                                ? Colors.white70
+                                : AppColors.textColorSecondary,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -126,20 +141,22 @@ class EntryLogsView extends BaseView<EntryLogsController> {
       child: Row(
         children: [
           _FilterChip(
-            label: 'All Events',
+            label: _t(context, en: 'All Events', sw: 'Matukio Yote'),
             isSelected: controller.selectedFilter.value == EntryLogFilter.all,
             onTap: () => controller.setFilter(EntryLogFilter.all),
           ),
           const SizedBox(width: 8),
           _FilterChip(
-            label: 'APP Unlocks',
-            isSelected: controller.selectedFilter.value == EntryLogFilter.appUnlocks,
+            label: _t(context, en: 'APP Unlocks', sw: 'Fungua kwa APP'),
+            isSelected:
+                controller.selectedFilter.value == EntryLogFilter.appUnlocks,
             onTap: () => controller.setFilter(EntryLogFilter.appUnlocks),
           ),
           const SizedBox(width: 8),
           _FilterChip(
-            label: 'PIN Codes',
-            isSelected: controller.selectedFilter.value == EntryLogFilter.pinCodes,
+            label: _t(context, en: 'PIN Codes', sw: 'Namba za PIN'),
+            isSelected:
+                controller.selectedFilter.value == EntryLogFilter.pinCodes,
             onTap: () => controller.setFilter(EntryLogFilter.pinCodes),
           ),
         ],
@@ -161,8 +178,11 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: isSelected ? _teal.withOpacity(0.15) : AppColors.colorWhite,
+      color: isSelected
+          ? _teal.withValues(alpha: 0.15)
+          : (isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -172,15 +192,21 @@ class _FilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
             border: Border.all(
-              color: isSelected ? _teal : AppColors.designInputBorder,
+              color: isSelected
+                  ? _teal
+                  : (isDark
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : AppColors.designInputBorder),
             ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isSelected ? _teal : AppColors.textColorPrimary,
+              color: isSelected
+                  ? _teal
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -196,16 +222,21 @@ class _LogEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
-        border: Border.all(color: AppColors.designInputBorder),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.18)
+              : AppColors.designInputBorder,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -223,17 +254,19 @@ class _LogEntryCard extends StatelessWidget {
                 Text(
                   item.title,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textColorPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   item.detail,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textColorSecondary,
+                    fontSize: 13,
+                    color: isDark
+                        ? Colors.white70
+                        : AppColors.textColorSecondary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -243,7 +276,9 @@ class _LogEntryCard extends StatelessWidget {
                       item.time,
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textColorSecondary,
+                        color: isDark
+                            ? Colors.white70
+                            : AppColors.textColorSecondary,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -260,26 +295,47 @@ class _LogEntryCard extends StatelessWidget {
 
   Widget _iconWidget() {
     final (IconData icon, Color color) = switch (item.iconType) {
-      EntryLogIconType.phone => (Icons.smartphone, AppColors.textColorSecondary),
-      EntryLogIconType.lock => (Icons.lock_outline, AppColors.textColorSecondary),
+      EntryLogIconType.phone => (
+        Icons.smartphone,
+        AppColors.textColorSecondary,
+      ),
+      EntryLogIconType.lock => (
+        Icons.lock_outline,
+        AppColors.textColorSecondary,
+      ),
       EntryLogIconType.key => (Icons.key, AppColors.textColorSecondary),
       EntryLogIconType.keypad => (Icons.dialpad, AppColors.textColorSecondary),
-      EntryLogIconType.warning => (Icons.warning_amber_rounded, AppColors.paaYanguAlert),
+      EntryLogIconType.warning => (
+        Icons.warning_amber_rounded,
+        AppColors.paaYanguAlert,
+      ),
     };
     return Icon(icon, size: 24, color: color);
   }
 
   Widget _statusChip() {
     final (String label, Color color) = switch (item.status) {
-      EntryLogStatus.success => ('SUCCESS', AppColors.colorSuccessGreen),
-      EntryLogStatus.completed => ('COMPLETED', AppColors.textColorSecondary),
-      EntryLogStatus.manual => ('MANUAL', AppColors.textColorSecondary),
-      EntryLogStatus.alert => ('ALERT', AppColors.paaYanguAlert),
+      EntryLogStatus.success => (
+        Get.locale?.languageCode == 'sw' ? 'IMEFAULU' : 'SUCCESS',
+        AppColors.colorSuccessGreen,
+      ),
+      EntryLogStatus.completed => (
+        Get.locale?.languageCode == 'sw' ? 'IMEKAMILIKA' : 'COMPLETED',
+        AppColors.textColorSecondary,
+      ),
+      EntryLogStatus.manual => (
+        Get.locale?.languageCode == 'sw' ? 'MWONGOZO' : 'MANUAL',
+        AppColors.textColorSecondary,
+      ),
+      EntryLogStatus.alert => (
+        Get.locale?.languageCode == 'sw' ? 'TAHADHARI' : 'ALERT',
+        AppColors.paaYanguAlert,
+      ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(

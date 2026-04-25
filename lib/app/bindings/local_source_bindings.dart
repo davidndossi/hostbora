@@ -16,6 +16,8 @@ import '/app/data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '/app/data/local/db/rent_staff_local_data_source.dart';
 import '/app/data/local/db/rent_tenant_charge_local_data_source.dart';
 import '/app/data/local/db/rent_tenant_local_data_source.dart';
+import '/app/data/local/db/rent_utility_topup_local_data_source.dart';
+import '/app/data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '/app/data/local/service/local_notification_scheduler_service.dart';
 import '/app/data/local/service/offline_sync_worker_service.dart';
 import '/app/data/local/service/rent_real_data_snapshot_service.dart';
@@ -87,6 +89,14 @@ class LocalSourceBindings implements Bindings {
     );
     Get.lazyPut<RentNotificationLogLocalDataSource>(
       () => RentNotificationLogLocalDataSource(),
+      fenix: true,
+    );
+    Get.lazyPut<RentUtilityTopUpLocalDataSource>(
+      () => RentUtilityTopUpLocalDataSource(),
+      fenix: true,
+    );
+    Get.lazyPut<RentWhatsappTemplateLocalDataSource>(
+      () => RentWhatsappTemplateLocalDataSource(),
       fenix: true,
     );
     Get.lazyPut<RentRealDataSnapshotService>(

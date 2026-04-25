@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/theme/theme_controller.dart';
+import '../../../../core/values/app_colors.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../../../routes/app_pages.dart';
 import '../controllers/rent_hub_controller.dart';
@@ -21,13 +23,7 @@ abstract class _HubTheme {
 class RentHubView extends BaseView<RentHubController> {
   RentHubView({super.key});
 
-  @override
-  Widget? floatingActionButton() {
-    return FloatingActionButton(
-      onPressed: () => Get.toNamed(Routes.RENT_HOST_CALENDAR),
-      child: const Icon(Icons.calendar_month_outlined),
-    );
-  }
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -107,26 +103,35 @@ class RentHubView extends BaseView<RentHubController> {
 
   @override
   Widget body(BuildContext context) {
+    // final themeController = Get.find<ThemeController>();
     return Obx(
-      () => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _financialOverviewHeader(context),
-            const SizedBox(height: 14),
-            _netProfitCard(),
-            const SizedBox(height: 12),
-            _incomeExpenseRow(),
-            const SizedBox(height: 20),
-            _revenueChartCard(),
-            const SizedBox(height: 16),
-            // _managementTipsCard(),
-            // const SizedBox(height: 12),
-            // _conciergeSupportCard(),
-            // const SizedBox(height: 24),
-            // _listingsSection(),
-          ],
+      () => RefreshIndicator(
+        onRefresh: controller.refreshDashboard,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // _buildThemeSwitch(context, themeController),
+              // const SizedBox(height: 14),
+              _financialOverviewHeader(context),
+              const SizedBox(height: 14),
+              _hostDashboard(context),
+              const SizedBox(height: 12),
+              _netProfitCard(),
+              const SizedBox(height: 12),
+              _incomeExpenseRow(context),
+              const SizedBox(height: 20),
+              _revenueChartCard(context),
+              const SizedBox(height: 16),
+              // _managementTipsCard(),
+              // const SizedBox(height: 12),
+              // _conciergeSupportCard(),
+              // const SizedBox(height: 24),
+              // _listingsSection(),
+            ],
+          ),
         ),
       ),
     );
@@ -155,7 +160,6 @@ class RentHubView extends BaseView<RentHubController> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: _HubTheme.navy,
                   height: 1.1,
                 ),
               ),
@@ -289,39 +293,52 @@ class RentHubView extends BaseView<RentHubController> {
     );
   }
 
-  Widget _incomeExpenseRow() {
+  Widget _incomeExpenseRow(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Expanded(child: _metricTile(
-          label: appLocalization.income.toUpperCase(),
-          value: controller.totalIncomeLabel,
-          circleColor: const Color(0xFFD8EFEE),
-          icon: Icons.arrow_upward_rounded,
-          iconColor: _HubTheme.teal,
-        )),
+        Expanded(
+          child: _metricTile(
+            context,
+            label: appLocalization.income.toUpperCase(),
+            value: controller.totalIncomeLabel,
+            circleColor: isDark ? const Color(0xFF1A3D3D) : const Color(0xFFD8EFEE),
+            icon: Icons.arrow_upward_rounded,
+            iconColor: isDark ? const Color(0xFF5EC9C3) : _HubTheme.teal,
+          ),
+        ),
         const SizedBox(width: 10),
-        Expanded(child: _metricTile(
-          label: appLocalization.expenses.toUpperCase(),
-          value: controller.expensesLabel,
-          circleColor: const Color(0xFFF5D5CE),
-          icon: Icons.arrow_downward_rounded,
-          iconColor: const Color(0xFF9A3412),
-        )),
+        Expanded(
+          child: _metricTile(
+            context,
+            label: appLocalization.expenses.toUpperCase(),
+            value: controller.expensesLabel,
+            circleColor: isDark ? const Color(0xFF3D2520) : const Color(0xFFF5D5CE),
+            icon: Icons.arrow_downward_rounded,
+            iconColor: isDark ? const Color(0xFFFFAB91) : const Color(0xFF9A3412),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _metricTile({
+  Widget _metricTile(
+    BuildContext context, {
     required String label,
     required String value,
     required Color circleColor,
     required IconData icon,
     required Color iconColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF2C2C2E) : _HubTheme.cardCream;
+    final labelColor = isDark ? const Color(0xFF8E8E93) : _HubTheme.muted.withValues(alpha: 0.95);
+    final valueColor = isDark ? Colors.white : _HubTheme.navy;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
       decoration: BoxDecoration(
-        color: _HubTheme.cardCream,
+        color: cardBg,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -336,16 +353,16 @@ class RentHubView extends BaseView<RentHubController> {
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.9,
-                    color: _HubTheme.muted.withValues(alpha: 0.95),
+                    color: labelColor,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: _HubTheme.navy,
+                    color: valueColor,
                   ),
                 ),
               ],
@@ -362,7 +379,8 @@ class RentHubView extends BaseView<RentHubController> {
     );
   }
 
-  Widget _revenueChartCard() {
+  Widget _revenueChartCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final inc = controller.chartIncome;
     final exp = controller.chartExpense;
     final rawMaxY = [
@@ -371,14 +389,23 @@ class RentHubView extends BaseView<RentHubController> {
     final maxY = rawMaxY <= 0 ? 1.0 : rawMaxY * 1.15;
     final gridInterval = (maxY / 4).clamp(0.25, double.infinity);
 
+    final cardBg = isDark ? const Color(0xFF2C2C2E) : Colors.white;
+    final titleColor = isDark ? Colors.white : _HubTheme.navy;
+    final gridLineColor = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E2DC);
+    final axisMuted = isDark ? const Color(0xFF8E8E93) : _HubTheme.muted;
+    final shadowAlpha = isDark ? 0.28 : 0.05;
+    final expenseBarColor = isDark ? const Color(0xFF5C6368) : _HubTheme.chartMutedBar;
+    final incomeBarColor = isDark ? const Color(0xFF5EC9C3) : _HubTheme.teal;
+    final expenseLegendDot = isDark ? const Color(0xFFFF8A80) : _HubTheme.expenseRed;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: shadowAlpha),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -392,15 +419,15 @@ class RentHubView extends BaseView<RentHubController> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: _HubTheme.navy,
+              color: titleColor,
             ),
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              _legendDot(_HubTheme.teal, appLocalization.income),
+              _legendDot(context, incomeBarColor, appLocalization.income),
               const SizedBox(width: 16),
-              _legendDot(_HubTheme.expenseRed, appLocalization.expenses),
+              _legendDot(context, expenseLegendDot, appLocalization.expenses),
             ],
           ),
           const SizedBox(height: 8),
@@ -416,7 +443,7 @@ class RentHubView extends BaseView<RentHubController> {
                   drawVerticalLine: false,
                   horizontalInterval: gridInterval,
                   getDrawingHorizontalLine: (v) => FlLine(
-                    color: const Color(0xFFE5E2DC),
+                    color: gridLineColor,
                     strokeWidth: 1,
                   ),
                 ),
@@ -431,7 +458,7 @@ class RentHubView extends BaseView<RentHubController> {
                       interval: gridInterval,
                       getTitlesWidget: (v, m) => Text(
                         v == v.roundToDouble() ? v.toInt().toString() : '',
-                        style: TextStyle(fontSize: 9, color: _HubTheme.muted.withValues(alpha: 0.8)),
+                        style: TextStyle(fontSize: 9, color: axisMuted.withValues(alpha: 0.9)),
                       ),
                     ),
                   ),
@@ -449,7 +476,7 @@ class RentHubView extends BaseView<RentHubController> {
                             style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w700,
-                              color: _HubTheme.muted.withValues(alpha: 0.9),
+                              color: axisMuted.withValues(alpha: 0.95),
                             ),
                           ),
                         );
@@ -464,13 +491,13 @@ class RentHubView extends BaseView<RentHubController> {
                     barRods: [
                       BarChartRodData(
                         toY: exp[i],
-                        color: _HubTheme.chartMutedBar,
+                        color: expenseBarColor,
                         width: 7,
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                       ),
                       BarChartRodData(
                         toY: inc[i],
-                        color: _HubTheme.teal,
+                        color: incomeBarColor,
                         width: 7,
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                       ),
@@ -485,7 +512,9 @@ class RentHubView extends BaseView<RentHubController> {
     );
   }
 
-  Widget _legendDot(Color c, String label) {
+  Widget _legendDot(BuildContext context, Color c, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? Colors.white.withValues(alpha: 0.72) : _HubTheme.navy.withValues(alpha: 0.75);
     return Row(
       children: [
         Container(
@@ -496,9 +525,93 @@ class RentHubView extends BaseView<RentHubController> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: _HubTheme.navy.withValues(alpha: 0.75), fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 12, color: labelColor, fontWeight: FontWeight.w600),
         ),
       ],
+    );
+  }
+
+  Widget _hostDashboard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: isDark ? const Color(0xFF2C2C2E) : _HubTheme.cardCream,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: controller.openHostDashboard,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(Icons.dashboard_outlined, color: isDark ? const Color(0xFF4DB6AC) : _HubTheme.teal, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _isSw ? 'Dashibodi ya Mwenyeji' : 'Host Dashboard',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: isDark ? const Color(0xFF4DB6AC) : _HubTheme.teal,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: isDark ? const Color(0xFF4DB6AC) : _HubTheme.teal),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeSwitch(BuildContext context, ThemeController themeController) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF3A3A3C) : AppColors.designInputBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Theme.of(context).brightness == Brightness.dark ? Icons.dark_mode : Icons.light_mode,
+            size: 22,
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.colorPrimaryLight : AppColors.colorPrimary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Dark theme',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textColorPrimary,
+              ),
+            ),
+          ),
+          Obx(
+                () => Switch(
+              value: themeController.isDarkMode.value,
+              onChanged: (_) => themeController.toggleTheme(),
+              activeTrackColor: AppColors.colorPrimaryLight,
+              thumbColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) return AppColors.colorPrimary;
+                return AppColors.designInputBorder;
+              }),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -654,7 +767,13 @@ class RentHubView extends BaseView<RentHubController> {
                 item: item,
                 onTap: () {
                   controller.onListingTap(item);
-                  Get.toNamed(Routes.RENT_LISTING_DETAILS);
+                  Get.toNamed(
+                    Routes.RENT_LISTING_DETAILS,
+                    parameters: {
+                      if (item.hubId.trim().isNotEmpty) 'id': item.hubId.trim(),
+                      if (item.title.trim().isNotEmpty) 'title': item.title.trim(),
+                    },
+                  );
                 },
               );
             },
@@ -785,57 +904,6 @@ class _ListingCard extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  const _BottomNavItem({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = selected ? Colors.white : _HubTheme.muted;
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: selected ? _HubTheme.teal : Colors.transparent,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 22, color: fg),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
-                    color: fg,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),

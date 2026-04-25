@@ -12,10 +12,15 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   static const _teal = RentTheme.conciergeTeal;
-  static const _fill = Color(0xFFF1F1F1);
+  static const _fillLight = Color(0xFFF1F1F1);
+  static const _fillDark = Color(0xFF2C2C2E);
+  static const _canvasDark = Color(0xFF1C1C1E);
 
   @override
-  Color pageBackgroundColor(BuildContext context) => RentTheme.canvas;
+  Color pageBackgroundColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? _canvasDark : RentTheme.canvas;
+  }
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) =>
@@ -23,6 +28,16 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
 
   @override
   Widget body(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fill = isDark ? _fillDark : _fillLight;
+    final primaryText = isDark ? Colors.white : const Color(0xFF1F2937);
+    final hintColor = isDark ? const Color(0xFF8E8E93) : Colors.grey.shade500;
+    final chevronColor = isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D);
+    final dropdownMenuBg = isDark ? const Color(0xFF2C2C2E) : Colors.white;
+    final priorityIdleBg = isDark ? const Color(0xFF3A3A3C) : _fillLight;
+    final priorityIdleText = isDark ? const Color(0xFFE5E5EA) : const Color(0xFF374151);
+    final mutedSmall = isDark ? const Color(0xFF8E8E93) : Colors.grey.shade600;
+
     return Form(
       key: controller.formKey,
       child: SingleChildScrollView(
@@ -30,51 +45,111 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _capsLabel('SELECT PROPERTY'),
-            const SizedBox(height: 8),
-            Obx(
-              () => DropdownButtonFormField<String>(
-                initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
-                    ? controller.selectedProperty.value
-                    : controller.propertyOptions.first,
-                decoration: _dropdownDecoration(),
-                icon: const Icon(Icons.expand_more_rounded, color: Color(0xFF3D3D3D)),
-                items: controller.propertyOptions
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                    .toList(),
-                onChanged: controller.updateProperty,
-                validator: (v) => v == null || v.isEmpty ? (_isSw ? 'Chagua mali' : 'Select a property') : null,
+            // Text(
+            //   _isSw ? 'PANGA MAREKEBISHO' : 'REQUEST MAINTENANCE',
+            //   style: TextStyle(
+            //     fontSize: 24,
+            //     fontWeight: FontWeight.w800,
+            //     letterSpacing: 1.3,
+            //   ),
+            // ),
+            const SizedBox(height: 16),
+            Text(
+              _isSw ? 'Hakikisha mali yako inasalia katika hali safi. Jaza mahitaji hapa chini' : 'Ensure your properties remain in pristine condition. Fill the requirements below',
+              style: TextStyle(
+                fontSize: 14,
               ),
             ),
             const SizedBox(height: 16),
-            _capsLabel('CATEGORY'),
+            _capsLabel('SELECT PROPERTY', isDark: isDark),
+            const SizedBox(height: 8),
+            Obx(() {
+              final hasProperties = controller.hasProperties;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    key: ValueKey(
+                      '${controller.propertyOptions.length}:${controller.selectedProperty.value}',
+                    ),
+                    initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
+                        ? controller.selectedProperty.value
+                        : null,
+                    isExpanded: true,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: primaryText,
+                    ),
+                    dropdownColor: dropdownMenuBg,
+                    decoration: _dropdownDecoration(fill),
+                    icon: Icon(Icons.expand_more_rounded, color: chevronColor),
+                    items: controller.propertyOptions
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e,
+                            child: Text(e, style: TextStyle(color: primaryText)),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: hasProperties ? controller.updateProperty : null,
+                    validator: controller.validateSelectedProperty,
+                  ),
+                  if (!hasProperties)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, left: 2),
+                      child: Text(
+                        _isSw
+                            ? 'Bado hakuna mjengo — ongeza mjengo kwanza.'
+                            : 'No properties yet — add a property first.',
+                        style: TextStyle(fontSize: 12, color: mutedSmall),
+                      ),
+                    ),
+                ],
+              );
+            }),
+            const SizedBox(height: 16),
+            _capsLabel('CATEGORY', isDark: isDark),
             const SizedBox(height: 8),
             Obx(
               () => DropdownButtonFormField<String>(
                 initialValue: controller.categoryOptions.contains(controller.selectedCategory.value)
                     ? controller.selectedCategory.value
                     : controller.categoryOptions.first,
-                decoration: _dropdownDecoration(),
-                icon: const Icon(Icons.expand_more_rounded, color: Color(0xFF3D3D3D)),
+                isExpanded: true,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: primaryText,
+                ),
+                dropdownColor: dropdownMenuBg,
+                decoration: _dropdownDecoration(fill),
+                icon: Icon(Icons.expand_more_rounded, color: chevronColor),
                 items: controller.categoryOptions
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(e, style: TextStyle(color: primaryText)),
+                      ),
+                    )
                     .toList(),
                 onChanged: controller.updateCategory,
                 validator: (v) => v == null || v.isEmpty ? (_isSw ? 'Chagua kategoria' : 'Select a category') : null,
               ),
             ),
             const SizedBox(height: 16),
-            _capsLabel('SCHEDULE DATE'),
+            _capsLabel('SCHEDULE DATE', isDark: isDark),
             const SizedBox(height: 8),
             TextFormField(
               readOnly: true,
               controller: controller.scheduleDateFieldController,
+              style: TextStyle(color: primaryText),
               onTap: () => controller.pickScheduleDate(context),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: _fill,
+                fillColor: fill,
                 hintText: _isSw ? 'dd/mm/yyyy' : 'mm/dd/yyyy',
-                hintStyle: TextStyle(color: Colors.grey.shade500),
+                hintStyle: TextStyle(color: hintColor),
                 suffixIcon: Icon(Icons.calendar_today_outlined, color: _teal.withValues(alpha: 0.85), size: 20),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -85,22 +160,26 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
               validator: (_) => controller.scheduleDate.value == null ? (_isSw ? 'Chagua tarehe' : 'Pick a date') : null,
             ),
             const SizedBox(height: 16),
-            _capsLabel('PRIORITY LEVEL'),
+            _capsLabel('PRIORITY LEVEL', isDark: isDark),
             const SizedBox(height: 10),
-            Obx(() => _priorityRow()),
+            Obx(() => _priorityRow(
+                  priorityIdleBg: priorityIdleBg,
+                  priorityIdleText: priorityIdleText,
+                )),
             const SizedBox(height: 16),
-            _capsLabel('ISSUE DESCRIPTION'),
+            _capsLabel('ISSUE DESCRIPTION', isDark: isDark),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.descriptionController,
               minLines: 4,
               maxLines: 8,
+              style: TextStyle(color: primaryText),
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: _fill,
+                fillColor: fill,
                 hintText: _isSw ? 'Elezea kwa ufupi matengenezo yanayohitajika...' : 'Briefly describe the maintenance required...',
-                hintStyle: TextStyle(color: Colors.grey.shade500),
+                hintStyle: TextStyle(color: hintColor),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -138,7 +217,10 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
     );
   }
 
-  Widget _priorityRow() {
+  Widget _priorityRow({
+    required Color priorityIdleBg,
+    required Color priorityIdleText,
+  }) {
     final p = controller.priority.value;
     Widget seg(String key, String label) {
       final sel = p == key;
@@ -146,7 +228,7 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Material(
-            color: sel ? _teal : _fill,
+            color: sel ? _teal : priorityIdleBg,
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               onTap: () => controller.setPriority(key),
@@ -159,7 +241,7 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
-                    color: sel ? Colors.white : const Color(0xFF374151),
+                    color: sel ? Colors.white : priorityIdleText,
                   ),
                 ),
               ),
@@ -223,22 +305,22 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
     );
   }
 
-  Widget _capsLabel(String text) {
+  Widget _capsLabel(String text, {required bool isDark}) {
     return Text(
       text,
       style: TextStyle(
         fontSize: 10,
         letterSpacing: 1.15,
         fontWeight: FontWeight.w800,
-        color: Colors.grey.shade700,
+        color: isDark ? const Color(0xFFAEAEB2) : Colors.grey.shade700,
       ),
     );
   }
 
-  InputDecoration _dropdownDecoration() {
+  InputDecoration _dropdownDecoration(Color fill) {
     return InputDecoration(
       filled: true,
-      fillColor: _fill,
+      fillColor: fill,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,

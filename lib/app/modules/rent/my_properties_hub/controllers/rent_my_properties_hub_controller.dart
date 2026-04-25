@@ -1,12 +1,30 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/property_members_local_data_source.dart';
 import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/rent_tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../../routes/app_pages.dart';
+import '../../add_new_listing/models/apartment_unit_draft.dart';
+import '../../base_shell/controllers/rent_base_shell_controller.dart';
+
+/// One apartment unit on a local property (for per-unit tenant actions).
+class RentHubUnitSlot {
+  const RentHubUnitSlot({
+    required this.unitId,
+    required this.unitName,
+    required this.tenantCount,
+  });
+
+  final String unitId;
+  final String unitName;
+  final int tenantCount;
+}
 
 /// Property row for the concierge management hub cards (separate from [my_properties] models).
 class RentHubPropertyRow {
@@ -16,6 +34,8 @@ class RentHubPropertyRow {
     required this.imageUrl,
     required this.propertyTypeLabel,
     required this.activeTenants,
+    this.isLocal = false,
+    this.unitSlots = const [],
   });
 
   final String id;
@@ -23,12 +43,17 @@ class RentHubPropertyRow {
   final String imageUrl;
   final String propertyTypeLabel;
   final int activeTenants;
+  /// Stored in SQLite on this device — can open [Routes.RENT_ADD_NEW_LISTING] for editing.
+  final bool isLocal;
+  /// Populated for local apartments with [RentPropertyRecord.units_json].
+  final List<RentHubUnitSlot> unitSlots;
 }
 
 class RentMyPropertiesHubController extends BaseController {
   RentMyPropertiesHubController()
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
         _localRent = Get.find<RentPropertyLocalDataSource>(),
+        _tenantLocal = Get.find<RentTenantLocalDataSource>(),
         _propertyMembers = Get.find<PropertyMembersLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
@@ -37,6 +62,7 @@ class RentMyPropertiesHubController extends BaseController {
 
   final AppRepository _repository;
   final RentPropertyLocalDataSource _localRent;
+  final RentTenantLocalDataSource _tenantLocal;
   final PropertyMembersLocalDataSource _propertyMembers;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
@@ -52,14 +78,20 @@ class RentMyPropertiesHubController extends BaseController {
 
   Future<void> loadProperties() async {
     loading.value = true;
+    var loggedInUserId = '';
     try {
-      final currentUserId = (await _preferenceManager.getUser()).id ?? '';
+      loggedInUserId = ((await _preferenceManager.getUser()).id ?? '').trim();
+      final currentUserId = loggedInUserId;
       final workspaceType = await _workspaceContext.getWorkspaceType();
       final localRecords = await _localRent.getAllVisibleNewestFirst(
         userId: currentUserId,
         workspaceType: workspaceType,
       );
-      final localRows = localRecords.map(_rowFromLocal).toList();
+      final tenantRecords = await _tenantLocal.getAllNewestFirst();
+
+      final localRows = localRecords
+          .map((r) => _rowFromLocal(r, tenantRecords: tenantRecords))
+          .toList();
 
       List<RentHubPropertyRow> remoteRows = [];
       try {
@@ -84,19 +116,110 @@ class RentMyPropertiesHubController extends BaseController {
       Get.snackbar('Error', 'Could not load properties');
     } finally {
       loading.value = false;
+      _applyPostLoginRentListingsRedirectIfNeeded(loggedInUserId);
     }
   }
 
-  static RentHubPropertyRow _rowFromLocal(RentPropertyRecord r) {
+  /// After login, [RentBaseShellController] may request a one-shot switch to Listings when empty.
+  void _applyPostLoginRentListingsRedirectIfNeeded(String userId) {
+    if (!Get.isRegistered<RentBaseShellController>()) return;
+    final shell = Get.find<RentBaseShellController>();
+    if (!shell.pullPendingRentHubListingsRedirect()) return;
+    if (userId.isEmpty || properties.isNotEmpty) return;
+    if (shell.currentTab.value != RentBaseShellController.tabDashboard) return;
+    shell.setTab(RentBaseShellController.tabListings);
+  }
+
+  static List<ApartmentUnitDraft> _parseUnitsFromPropertyJson(String unitsJson) {
+    if (unitsJson.trim().isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(unitsJson);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((m) => ApartmentUnitDraft.fromJson(Map<String, dynamic>.from(m)))
+          .where((u) => u.unitName.trim().isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  static bool _tenantMatchesProperty(
+    RentTenantRecord t,
+    String propertyRef,
+    String title,
+    String loc,
+    String suite,
+  ) {
+    final r = t.propertyRef.trim();
+    if (r.isNotEmpty) {
+      return r == propertyRef;
+    }
+    final pl = t.propertyLabel.trim();
+    if (pl == title) return true;
+    if (pl == loc) return true;
+    if (suite.isNotEmpty && pl == '$loc · $suite') return true;
+    return false;
+  }
+
+  static bool _tenantMatchesUnit(
+    RentTenantRecord t,
+    ApartmentUnitDraft u,
+    String propertyRef,
+    String title,
+    String loc,
+    String suite,
+  ) {
+    if (!_tenantMatchesProperty(t, propertyRef, title, loc, suite)) return false;
+    final tid = t.apartmentUnitId.trim();
+    final uid = u.unitId.trim();
+    if (tid.isNotEmpty && uid.isNotEmpty) return tid == uid;
+    return t.unitLabel.trim() == u.unitName.trim();
+  }
+
+  static RentHubPropertyRow _rowFromLocal(
+    RentPropertyRecord r, {
+    required List<RentTenantRecord> tenantRecords,
+  }) {
     final loc = r.propertyLocation.trim();
     final suite = r.apartmentSuite.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : (loc.isNotEmpty ? loc : 'Property');
+    final propertyRef = r.propertyRef.isNotEmpty ? r.propertyRef : 'legacy_${r.id}';
+    final drafts = _parseUnitsFromPropertyJson(r.unitsJson);
+
+    if (drafts.isEmpty) {
+      final tenantCount = tenantRecords
+          .where((t) => _tenantMatchesProperty(t, propertyRef, title, loc, suite))
+          .length;
+      return RentHubPropertyRow(
+        id: propertyRef,
+        title: title,
+        imageUrl: '',
+        propertyTypeLabel: r.propertyType.toUpperCase(),
+        activeTenants: tenantCount,
+        isLocal: true,
+        unitSlots: const [],
+      );
+    }
+
+    final slots = <RentHubUnitSlot>[];
+    var total = 0;
+    for (final u in drafts) {
+      final n = tenantRecords
+          .where((t) => _tenantMatchesUnit(t, u, propertyRef, title, loc, suite))
+          .length;
+      slots.add(RentHubUnitSlot(unitId: u.unitId, unitName: u.unitName, tenantCount: n));
+      total += n;
+    }
     return RentHubPropertyRow(
-      id: r.propertyRef.isNotEmpty ? r.propertyRef : 'legacy_${r.id}',
+      id: propertyRef,
       title: title,
       imageUrl: '',
       propertyTypeLabel: r.propertyType.toUpperCase(),
-      activeTenants: 0,
+      activeTenants: total,
+      isLocal: true,
+      unitSlots: slots,
     );
   }
 
@@ -113,16 +236,49 @@ class RentMyPropertiesHubController extends BaseController {
       imageUrl: imageUrl,
       propertyTypeLabel: propertyTypeLabel,
       activeTenants: activeTenants,
+      isLocal: false,
+      unitSlots: const [],
     );
   }
 
-  void addProperty() {
-    final future = Get.toNamed(Routes.RENT_ADD_NEW_LISTING);
+  void addTenantForUnit({
+    required String propertyHubId,
+    required String propertyTitle,
+    required RentHubUnitSlot slot,
+  }) {
+    final future = Get.toNamed(
+      Routes.RENT_ADD_TENANT_FORM,
+      parameters: {
+        'property': propertyTitle,
+        'propertyRef': propertyHubId,
+        if (slot.unitId.trim().isNotEmpty) 'unitId': slot.unitId.trim(),
+        'unitName': slot.unitName.trim(),
+      },
+    );
     future?.then((value) {
       if (value == true) {
         loadProperties();
       }
     });
+  }
+
+  Future<void> addProperty() async {
+    final value = await Get.toNamed(Routes.RENT_ADD_NEW_LISTING);
+    if (value == true) {
+      showSuccessMessage('Listing saved');
+      await loadProperties();
+    }
+  }
+
+  Future<void> editProperty(String propertyHubId) async {
+    final value = await Get.toNamed(
+      Routes.RENT_ADD_NEW_LISTING,
+      parameters: {'propertyRef': propertyHubId},
+    );
+    if (value == true) {
+      showSuccessMessage('Listing updated');
+      await loadProperties();
+    }
   }
 
   Future<void> addCoHost({

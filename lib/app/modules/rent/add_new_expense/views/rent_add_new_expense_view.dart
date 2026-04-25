@@ -1,13 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/utils/thousand_separator.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_add_new_expense_controller.dart';
 
 class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
   RentAddNewExpenseView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
+
+  DateTime _parseExistingDate(String raw) {
+    final parts = raw.trim().split('/');
+    if (parts.length != 3) return DateTime.now();
+    final day = int.tryParse(parts[0]) ?? 0;
+    final month = int.tryParse(parts[1]) ?? 0;
+    final year = int.tryParse(parts[2]) ?? 0;
+    if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900) {
+      return DateTime.now();
+    }
+    return DateTime(year, month, day);
+  }
+
+  Future<void> _pickTransactionDate(BuildContext context) async {
+    final now = DateTime.now();
+    final initial = controller.datePaidController.text.trim().isEmpty
+        ? now
+        : _parseExistingDate(controller.datePaidController.text);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked == null) return;
+    final day = picked.day.toString().padLeft(2, '0');
+    final month = picked.month.toString().padLeft(2, '0');
+    final year = picked.year.toString();
+    controller.datePaidController.text = '$day/$month/$year';
+  }
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
@@ -16,6 +48,13 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
 
   @override
   Widget body(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sectionTitleStyle = TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: isDark ? Colors.white : const Color(0xFF1F2937),
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
       child: Form(
@@ -25,18 +64,22 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
           children: [
           const SizedBox(height: 14),
           _expenseCard(
+            isDark: isDark,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 6),
                 Text(
-                  _isSw ? 'Chagua Mali' : 'Select Property',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  _isSw ? 'Chagua Mjengo' : 'Select Property',
+                  style: sectionTitleStyle,
                 ),
                 const SizedBox(height: 10),
                 Obx(
                   () {
                     final hasProperties = controller.hasProperties;
+                    final hintColor =
+                        isDark ? const Color(0xFF8E8E93) : const Color(0xFF8A8A8A);
+                    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -44,43 +87,144 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
                           initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
                               ? controller.selectedProperty.value
                               : null,
+                          isExpanded: true,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: textColor,
+                          ),
+                          dropdownColor:
+                              isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                          icon: Icon(
+                            Icons.expand_more_rounded,
+                            color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D),
+                          ),
                           decoration: InputDecoration(
-                            hintText: _isSw ? 'Chagua mali' : 'Choose property',
+                            hintText: _isSw ? 'Chagua mjengo' : 'Choose property',
+                            hintStyle: TextStyle(color: hintColor, fontSize: 16),
                             border: InputBorder.none,
                           ),
                           validator: controller.validateSelectedProperty,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           items: controller.propertyOptions
-                              .map((p) => DropdownMenuItem<String>(value: p, child: Text(p)))
+                              .map(
+                                (p) => DropdownMenuItem<String>(
+                                  value: p,
+                                  child: Text(
+                                    p,
+                                    style: TextStyle(color: textColor),
+                                  ),
+                                ),
+                              )
                               .toList(),
                           onChanged: hasProperties ? controller.updateSelectedProperty : null,
                         ),
                         if (!hasProperties)
                           Padding(
-                            padding: EdgeInsets.only(top: 6, left: 2),
+                            padding: const EdgeInsets.only(top: 6, left: 2),
                             child: Text(
-                              _isSw ? 'Bado hakuna mali - ongeza mali kwanza.' : 'No properties yet - add property first.',
-                              style: TextStyle(fontSize: 12, color: Color(0xFF8A8A8A)),
+                              _isSw ? 'Bado hakuna mjengo - ongeza mjengo kwanza.' : 'No properties yet - add property first.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: hintColor,
+                              ),
                             ),
                           ),
                       ],
                     );
                   },
                 ),
+                Obx(() {
+                  if (!controller.showExpenseUnitPicker) {
+                    return const SizedBox.shrink();
+                  }
+                  final units = controller.expenseUnitsForSelectedProperty;
+                  if (units.isEmpty) return const SizedBox.shrink();
+
+                  final hintColor =
+                      isDark ? const Color(0xFF8E8E93) : const Color(0xFF8A8A8A);
+                  final textColor =
+                      isDark ? Colors.white : const Color(0xFF1F2937);
+                  final sel = controller.selectedExpenseUnitKey.value;
+                  final valid =
+                      sel != null && units.any((u) => u.selectionKey == sel);
+                  final value = valid ? sel : null;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _isSw ? 'KITENGO (si lazima)' : 'UNIT (optional)',
+                          style: sectionTitleStyle.copyWith(fontSize: 14),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String?>(
+                          initialValue: value,
+                          isExpanded: true,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: textColor,
+                          ),
+                          dropdownColor:
+                              isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                          icon: Icon(
+                            Icons.expand_more_rounded,
+                            color: isDark
+                                ? const Color(0xFFAEAEB2)
+                                : const Color(0xFF3D3D3D),
+                          ),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
+                          ),
+                          items: [
+                            DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text(
+                                _isSw
+                                    ? 'Sio lazima — gharama ya jumla'
+                                    : 'Optional — whole property',
+                                style: TextStyle(
+                                  color: hintColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            ...units.map(
+                              (u) => DropdownMenuItem<String?>(
+                                value: u.selectionKey,
+                                child: Text(
+                                  u.unitName,
+                                  style: TextStyle(color: textColor),
+                                ),
+                              ),
+                            ),
+                          ],
+                          onChanged: controller.updateSelectedExpenseUnit,
+                        ),
+                      ],
+                    ),
+                  );
+                }),
               ],
             ),
           ),
           const SizedBox(height: 10),
           _expenseCard(
+            isDark: isDark,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 6),
-                Text(_isSw ? 'Chagua Kategoria' : 'Select Category',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500)),
-                SizedBox(height: 10),
+                const SizedBox(height: 6),
+                Text(
+                  _isSw ? 'Chagua Kategoria' : 'Select Category',
+                  style: sectionTitleStyle,
+                ),
+                const SizedBox(height: 10),
                 Obx(
                   () => Wrap(
                     spacing: 8,
@@ -88,6 +232,7 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
                     children: List.generate(
                       controller.expenses.length,
                       (i) => _ExpenseChip(
+                        isDark: isDark,
                         label: controller.expenses[i],
                         selected: controller.selectedExpenseIndex.value == i,
                         onTap: () => controller.selectExpense(i),
@@ -100,41 +245,41 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
           ),
           const SizedBox(height: 10),
           _expenseCard(
+            isDark: isDark,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 12),
-                Text(_isSw ? 'Kiasi (Tsh)' : 'Amount (Tsh)',
-                    style: TextStyle(fontSize: 16,
-                        fontWeight: FontWeight.w500)),
+                Text(
+                  _isSw ? 'Kiasi (Tsh)' : 'Amount (Tsh)',
+                  style: sectionTitleStyle,
+                ),
                 const SizedBox(height: 7),
                 _field(
+                  isDark,
                   controller.amountController,
                   hint: 'Tsh 0.00',
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: controller.validateAmount,
+                  inputFormatters: [
+                    ThousandsSeparatorInputFormatter(),
+                  ],
                 ),
                 const SizedBox(height: 12),
-                Text(_isSw ? 'Tarehe ya Muamala' : 'Transaction Date',
-                    style: TextStyle(fontSize: 16,
-                        fontWeight: FontWeight.w500)),
+                Text(
+                  _isSw ? 'Tarehe ya Muamala' : 'Transaction Date',
+                  style: sectionTitleStyle,
+                ),
                 const SizedBox(height: 7),
                 _field(
+                  isDark,
                   controller.datePaidController,
                   hint: 'dd/MM/yyyy',
                   keyboardType: TextInputType.datetime,
                   suffix: Icons.calendar_month_rounded,
+                  readOnly: true,
+                  onTap: () => _pickTransactionDate(context),
                   validator: controller.validateDatePaid,
-                ),
-                const SizedBox(height: 12),
-                Text(_isSw ? 'Chagua Mpangaji (Hiari)' : 'Select Tenant (Optional)',
-                    style: TextStyle(fontSize: 16,
-                        fontWeight: FontWeight.w500)),
-                const SizedBox(height: 7),
-                _field(
-                  controller.tenantController,
-                  hint: 'Global Expense (No Tenant)',
-                  suffix: Icons.people_alt_outlined
                 ),
               ],
             ),
@@ -145,7 +290,8 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
             child: FilledButton.icon(
               onPressed: controller.saveExpenseOffline,
               style: FilledButton.styleFrom(
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(7)),
                 padding: const EdgeInsets.symmetric(vertical: 13),
@@ -164,25 +310,39 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
           // ),
           const SizedBox(height: 14),
           _expenseCard(
+            isDark: isDark,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_isSw ? 'Muktadha wa Mwezi' : 'Monthly Context',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14)),
-                SizedBox(height: 10),
+                Text(
+                  _isSw ? 'Muktadha wa Mwezi' : 'Monthly Context',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: isDark ? Colors.white : const Color(0xFF111111),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Row(
                   children: [
-                    Expanded(child: _StatBlock(label: _isSw ? 'BAJETI ILIYOTUMIKA' : 'BUDGET USED', value: '64%')),
                     Expanded(
-                        child: _StatBlock(
-                            label: _isSw ? 'HALI' : 'STATUS',
-                            value: _isSw ? 'Nzuri' : 'Healthy',
-                            alignEnd: true)),
+                      child: _StatBlock(
+                        isDark: isDark,
+                        label: _isSw ? 'BAJETI ILIYOTUMIKA' : 'BUDGET USED',
+                        value: '0%',
+                      ),
+                    ),
+                    Expanded(
+                      child: _StatBlock(
+                        isDark: isDark,
+                        label: _isSw ? 'HALI' : 'STATUS',
+                        value: _isSw ? 'Nzuri' : 'Healthy',
+                        alignEnd: true,
+                      ),
+                    ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
               ],
             ),
           ),
@@ -247,18 +407,20 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
     );
   }
 
-  Widget _expenseCard({required Widget child}) {
+  Widget _expenseCard({required bool isDark, required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: isDark ? Border.all(color: const Color(0xFF3A3A3C)) : null,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: child,
@@ -266,33 +428,47 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
   }
 
   Widget _field(
-      TextEditingController fieldController, {
-        required String hint,
-        IconData? suffix,
-        bool isMultiline = false,
-        double minHeight = 48,
-        TextInputType? keyboardType,
-        String? Function(String?)? validator,
-      }) {
-    const textColor = Color(0xFF5B5B5B);
+    bool isDark,
+    TextEditingController fieldController, {
+    required String hint,
+    IconData? suffix,
+    bool isMultiline = false,
+    double minHeight = 48,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
+    bool readOnly = false,
+    VoidCallback? onTap,
+  }) {
+    final textColor = isDark ? const Color(0xFFE8E8ED) : const Color(0xFF5B5B5B);
+    final hintColor =
+        isDark ? const Color(0xFF8E8E93) : const Color(0xFF5B5B5B).withValues(alpha: 0.72);
     final hintStyle = TextStyle(
       fontSize: 14,
-      color: textColor.withValues(alpha: 0.72),
+      color: hintColor,
       height: isMultiline ? 1.35 : 1.2,
     );
+    final suffixIconColor =
+        isDark ? const Color(0xFFAEAEB2) : const Color(0xFF2D2D2D);
+
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: minHeight),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF3A3A3C) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextFormField(
         controller: fieldController,
+        readOnly: readOnly,
+        onTap: onTap,
         keyboardType: keyboardType ?? TextInputType.text,
+        inputFormatters: inputFormatters,
         maxLines: isMultiline ? null : 1,
         minLines: isMultiline ? 3 : 1,
         autovalidateMode: AutovalidateMode.onUserInteraction,
+        textCapitalization: TextCapitalization.sentences,
         validator: validator,
         style: TextStyle(
           fontSize: 14,
@@ -307,13 +483,13 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
           suffixIcon: suffix == null
               ? null
               : Padding(
-            padding: EdgeInsets.only(left: 8, top: isMultiline ? 12 : 0),
-            child: Icon(
-              suffix,
-              size: 20,
-              color: const Color(0xFF2D2D2D),
-            ),
-          ),
+                  padding: EdgeInsets.only(left: 8, top: isMultiline ? 12 : 0),
+                  child: Icon(
+                    suffix,
+                    size: 20,
+                    color: suffixIconColor,
+                  ),
+                ),
           suffixIconConstraints: BoxConstraints(
             minWidth: suffix != null ? 40 : 0,
             minHeight: suffix != null ? (isMultiline ? 52 : 40) : 0,
@@ -324,32 +500,75 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
   }
 }
 
+class _StatBlock extends StatelessWidget {
+  const _StatBlock({
+    required this.isDark,
+    required this.label,
+    required this.value,
+    this.alignEnd = false,
+  });
+
+  final bool isDark;
+  final String label;
+  final String value;
+  final bool alignEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final labelColor =
+        isDark ? const Color(0xFF8E8E93) : const Color(0xFF8B8B8B);
+    final valueMuted = isDark ? Colors.white : const Color(0xFF111111);
+
+    return Column(
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: labelColor,
+            fontSize: 8,
+            letterSpacing: 1.2,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w800,
+            color: (value == 'Healthy' || value == 'Nzuri')
+                ? const Color(0xFF006D73)
+                : valueMuted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ExpenseChip extends StatelessWidget {
   const _ExpenseChip({
+    required this.isDark,
     required this.label,
     this.selected = false,
     required this.onTap,
   });
 
+  final bool isDark;
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    // return Container(
-    //   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    //   decoration: BoxDecoration(
-    //     color: selected ? const Color(0xFF005D5D) : const Color(0xFFF1F1EE),
-    //     borderRadius: BorderRadius.circular(8),
-    //   ),
-    //   child: Text(label,
-    //       style: TextStyle(
-    //           fontSize: 14,
-    //           fontWeight: FontWeight.w600,
-    //           color: selected ? Colors.white : const Color(0xFF353535))),
-    // );
-    final bg = selected ? const Color(0xFF006D73) : const Color(0xFFF1F1EE);
+    final bg = selected
+        ? const Color(0xFF006D73)
+        : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1EE));
+    final fg = selected
+        ? Colors.white
+        : (isDark ? const Color(0xFFE8E8ED) : const Color(0xFF1E1E1E));
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(9),
@@ -362,47 +581,13 @@ class _ExpenseChip extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? Colors.white : const Color(0xFF1E1E1E),
+              color: fg,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _StatBlock extends StatelessWidget {
-  const _StatBlock(
-      {required this.label, required this.value, this.alignEnd = false});
-  final String label;
-  final String value;
-  final bool alignEnd;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: const TextStyle(
-                color: Color(0xFF8B8B8B),
-                fontSize: 8,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w700)),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w800,
-            color: (value == 'Healthy' || value == 'Nzuri')
-                ? const Color(0xFF006D73)
-                : const Color(0xFF111111),
-          ),
-        ),
-      ],
     );
   }
 }

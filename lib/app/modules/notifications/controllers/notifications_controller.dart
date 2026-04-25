@@ -10,7 +10,6 @@ import '../../../data/model/notification.dart' as n;
 import '../../../data/model/page_request.dart';
 import '../../../data/model/page_response.dart';
 import '../../../data/repository/app_repository.dart';
-import '../../../routes/app_pages.dart';
 
 class NotificationsController extends BaseController {
   final _notifications = <n.Notification>[].obs;
@@ -174,10 +173,6 @@ class NotificationsController extends BaseController {
   }
 
   void _handleQueryResponseError(Exception e) {}
-
-  void returnToDashboard() {
-    Get.offAllNamed(Routes.MAIN);
-  }
 
   void _handleUpdateNotificationResponseSuccess(GeneralResponse res) {
     if (res.responseCode == '0') {

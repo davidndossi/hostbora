@@ -7,11 +7,13 @@ import '../../../../data/local/db/rent_income_local_data_source.dart';
 import '../../../../data/local/db/rent_property_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
+import '../../../../routes/app_pages.dart';
 
 /// Portfolio listing row for the hub carousel.
 /// Kept for backward compatibility in the view; populated from real data only.
 class RentHubListingItem {
   const RentHubListingItem({
+    required this.hubId,
     required this.imageAsset,
     required this.categoryLabel,
     required this.title,
@@ -19,6 +21,7 @@ class RentHubListingItem {
     this.occupied = true,
   });
 
+  final String hubId;
   final String imageAsset;
   final String categoryLabel;
   final String title;
@@ -143,6 +146,7 @@ class RentHubController extends BaseController {
     listings.assignAll(
       propertyRows.map((p) {
         return RentHubListingItem(
+          hubId: p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}',
           imageAsset: '',
           categoryLabel: p.propertyType.toUpperCase(),
           title: p.apartmentSuite.trim().isNotEmpty
@@ -168,6 +172,18 @@ class RentHubController extends BaseController {
   void onReadManagementTips() {}
 
   void onConciergeSupportTap() {}
+
+  Future<void> openHostDashboard() async {
+    final hostName = (await _preferenceManager.getString(
+      PreferenceManager.keyFullName,
+      defaultValue: '',
+    ))
+        .trim();
+    Get.toNamed(
+      Routes.RENT_HOST_DASHBOARD_PAYMENT_ALERTS,
+      parameters: {if (hostName.isNotEmpty) 'hostName': hostName},
+    );
+  }
 
   int differenceInDays(DateTime start, DateTime end) {
     final s = DateTime(start.year, start.month, start.day);

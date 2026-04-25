@@ -123,7 +123,7 @@
   "noInternet": "No internet connection!",
   "msisdnVerification": "Phone Number Verification",
   "enterCode": "Enter the code sent to",
-  "requiredDigits": "6 digits required!",
+  "requiredDigits": "4 digits required!",
   "fillCells": "*Please fill up all the cells properly",
   "noCode": "Didn't receive the code?",
   "resend": "RESEND",

@@ -21,6 +21,8 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -33,15 +35,19 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textColorPrimary,
+                color: isDark
+                    ? theme.colorScheme.onSurface
+                    : AppColors.textColorPrimary,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-                appLocalization.enterCodeSentToEmail,
-                style: TextStyle(
+              appLocalization.enterCodeSentToEmail,
+              style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textColorSecondary,
+                color: isDark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.textColorSecondary,
                 height: 1.4,
               ),
             ),
@@ -50,7 +56,9 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
               controller.maskedEmail,
               style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textColorSecondary,
+                color: isDark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.textColorSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -68,18 +76,28 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
                 fieldHeight: 52,
                 fieldWidth: 48,
                 activeColor: AppColors.colorSecondary,
-                activeFillColor: AppColors.colorWhite,
+                activeFillColor: isDark
+                    ? theme.colorScheme.surfaceContainerHigh
+                    : AppColors.colorWhite,
                 selectedColor: AppColors.colorSecondary,
-                selectedFillColor: AppColors.colorWhite,
-                inactiveColor: AppColors.designInputBorder,
-                inactiveFillColor: AppColors.colorWhite,
+                selectedFillColor: isDark
+                    ? theme.colorScheme.surfaceContainerHigh
+                    : AppColors.colorWhite,
+                inactiveColor: isDark
+                    ? theme.colorScheme.outlineVariant
+                    : AppColors.designInputBorder,
+                inactiveFillColor: isDark
+                    ? theme.colorScheme.surfaceContainerHigh
+                    : AppColors.colorWhite,
               ),
               // activeFillColor: AppColors.colorWhite,
               enableActiveFill: true,
               textStyle: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textColorPrimary,
+                color: isDark
+                    ? theme.colorScheme.onSurface
+                    : AppColors.textColorPrimary,
               ),
               onCompleted: (_) => controller.verify(),
               onChanged: (_) {},
@@ -89,7 +107,9 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
               appLocalization.noCode,
               style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textColorPrimary,
+                color: isDark
+                    ? theme.colorScheme.onSurface
+                    : AppColors.textColorPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -102,7 +122,9 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.colorPrimaryLight,
+                      color: isDark
+                          ? theme.colorScheme.surfaceContainerHighest
+                          : AppColors.colorPrimaryLight,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
@@ -118,13 +140,15 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
                           ),
                         ),
                         const SizedBox(height: 2),
-                          Text(
-                            appLocalization.secondsLeft,
-                            style: TextStyle(
+                        Text(
+                          appLocalization.secondsLeft,
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
-                            color: AppColors.textColorSecondary,
+                            color: isDark
+                                ? theme.colorScheme.onSurfaceVariant
+                                : AppColors.textColorSecondary,
                           ),
                         ),
                       ],
@@ -134,9 +158,9 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
                   if (controller.canResend)
                     GestureDetector(
                       onTap: controller.resendCode,
-                        child: Text(
-                          appLocalization.resendCode,
-                          style: TextStyle(
+                      child: Text(
+                        appLocalization.resendCode,
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: AppColors.colorSecondary,
@@ -157,8 +181,7 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppValues.radius_6),
+                    borderRadius: BorderRadius.circular(AppValues.radius_6),
                   ),
                   elevation: 0,
                 ),
@@ -175,7 +198,9 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
                     appLocalization.havingTrouble,
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textColorSecondary,
+                      color: isDark
+                          ? theme.colorScheme.onSurfaceVariant
+                          : AppColors.textColorSecondary,
                     ),
                   ),
                   GestureDetector(

@@ -10,6 +10,13 @@ import '../controllers/listing_published_controller.dart';
 class ListingPublishedView extends BaseView<ListingPublishedController> {
   ListingPublishedView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -26,6 +33,8 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -35,22 +44,30 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
             _buildImageSection(context),
             const SizedBox(height: 24),
             Text(
-              'Congratulations!',
+              _t(context, en: 'Congratulations!', sw: 'Hongera!'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textColorPrimary,
+                color: isDark
+                    ? theme.colorScheme.onSurface
+                    : AppColors.textColorPrimary,
                 letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Your listing is now live and ready for bookings.',
+              _t(
+                context,
+                en: 'Your listing is now live and ready for bookings.',
+                sw: 'Tangazo lako sasa lipo hewani na tayari kwa nafasi.',
+              ),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textColorSecondary,
+                color: isDark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.textColorSecondary,
                 height: 1.4,
               ),
             ),
@@ -59,8 +76,14 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: controller.viewListing,
-                icon: const Icon(Icons.visibility_outlined, size: 20, color: Colors.white),
-                label: const Text('View Listing'),
+                icon: const Icon(
+                  Icons.visibility_outlined,
+                  size: 20,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  _t(context, en: 'View Listing', sw: 'Tazama Tangazo'),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.colorPrimary,
                   foregroundColor: Colors.white,
@@ -78,14 +101,22 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
               child: OutlinedButton(
                 onPressed: controller.goToDashboard,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textColorPrimary,
-                  side: const BorderSide(color: AppColors.designInputBorder),
+                  foregroundColor: isDark
+                      ? theme.colorScheme.onSurface
+                      : AppColors.textColorPrimary,
+                  side: BorderSide(
+                    color: isDark
+                        ? theme.colorScheme.outlineVariant
+                        : AppColors.designInputBorder,
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppValues.radius_6),
                   ),
                 ),
-                child: const Text('Go to Dashboard'),
+                child: Text(
+                  _t(context, en: 'Go to Dashboard', sw: 'Nenda Dashibodi'),
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -93,14 +124,24 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.lightbulb_outline, size: 18, color: AppColors.textColorSecondary),
+                Icon(
+                  Icons.lightbulb_outline,
+                  size: 18,
+                  color: AppColors.textColorSecondary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Tip: Complete your profile to build trust',
+                    _t(
+                      context,
+                      en: 'Tip: Complete your profile to build trust',
+                      sw: 'Dokezo: Kamilisha wasifu wako kujenga uaminifu',
+                    ),
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textColorSecondary,
+                      color: isDark
+                          ? theme.colorScheme.onSurfaceVariant
+                          : AppColors.textColorSecondary,
                       height: 1.3,
                     ),
                   ),
@@ -115,13 +156,15 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
   }
 
   Widget _buildImageSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Stack(
       children: [
         Container(
           width: double.infinity,
           height: 220,
           decoration: BoxDecoration(
-            color: AppColors.lightGreyColor.withOpacity(0.5),
+            color: AppColors.lightGreyColor.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(AppValues.radius_12),
           ),
           child: Icon(
@@ -152,7 +195,7 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'LIVE',
+                  _t(context, en: 'LIVE', sw: 'HEWANI'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -170,10 +213,12 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
           child: Container(
             width: 44,
             height: 44,
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? theme.colorScheme.surfaceContainerHigh
+                  : Colors.white,
               shape: BoxShape.circle,
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
                   color: Color(0x1A000000),
                   blurRadius: 8,

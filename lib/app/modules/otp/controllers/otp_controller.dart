@@ -13,19 +13,22 @@ import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
 class OtpController extends BaseController {
+  String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
   final enteredPin = <String>[].obs;
   final selectedIndex = (-1).obs;
   final otp = ''.obs;
   final isLoading = false.obs;
 
-  final PreferenceManager _preferenceManager =
-  Get.find(tag: (PreferenceManager).toString());
+  final PreferenceManager _preferenceManager = Get.find(
+    tag: (PreferenceManager).toString(),
+  );
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
 
   TextEditingController otpController = TextEditingController();
 
   // ignore: close_sinks
-  StreamController<ErrorAnimationType>? errorController = StreamController<ErrorAnimationType>();
+  StreamController<ErrorAnimationType>? errorController =
+      StreamController<ErrorAnimationType>();
 
   late String msisdn;
   String get flow => Get.arguments?['flow']?.toString() ?? '';
@@ -33,7 +36,10 @@ class OtpController extends BaseController {
 
   String get otpSubtitle {
     if (flow == 'registration') {
-      return 'We sent a verification code to your email and phone number. Enter the code below.';
+      return _t(
+        'We sent a verification code to your email and phone number. Enter the code below.',
+        'Tumetuma msimbo wa uthibitisho kwenye barua pepe na namba yako ya simu. Weka msimbo hapa chini.',
+      );
     }
     return appLocalization.otpSubtitle;
   }
@@ -85,16 +91,21 @@ class OtpController extends BaseController {
         Get.offAndToNamed(AppPages.initial);
       }
     }
-    showErrorMessage('Invalid OTP or code');
+    showErrorMessage(_t('Invalid OTP or code', 'OTP au msimbo si sahihi'));
   }
 
   void _handleVerificationResponseSuccess(OtpResponse res) async {
     if (res.respCode == '0') {
       if (flow == 'reset_password') {
-        Get.offAllNamed(Routes.NEW_PASSWORD, arguments: {'msisdn': msisdn, 'otp': otp.value});
+        Get.offAllNamed(
+          Routes.NEW_PASSWORD,
+          arguments: {'msisdn': msisdn, 'otp': otp.value},
+        );
       } else if (flow == 'registration') {
         Get.offAllNamed(Routes.AUTH);
-        showSuccessMessage('Registration successful. Please sign in with your phone and password.');
+        showSuccessMessage(
+          'Registration successful. Please sign in with your phone and password.',
+        );
       } else {
         Get.until((route) => route.isFirst);
       }
@@ -108,11 +119,16 @@ class OtpController extends BaseController {
   }
 
   void _handleVerificationResponseError(Exception e) {
-    showErrorMessage('Invalid OTP or code');
+    showErrorMessage(_t('Invalid OTP or code', 'OTP au msimbo si sahihi'));
   }
 
   void _handleResendOtpResponseError(Exception e) {
-    showErrorMessage('Failed to resend OTP or code');
+    showErrorMessage(
+      _t(
+        'Failed to resend OTP or code',
+        'Imeshindikana kutuma tena OTP au msimbo',
+      ),
+    );
   }
 
   void validateOtp() {
@@ -133,9 +149,15 @@ class OtpController extends BaseController {
 
   void _handleVerifyForgotOtpSuccess(GeneralResponse res) {
     if (res.responseCode == '0' || res.responseCode == null) {
-      Get.offAllNamed(Routes.NEW_PASSWORD, arguments: {'msisdn': msisdn, 'otp': otp.value});
+      Get.offAllNamed(
+        Routes.NEW_PASSWORD,
+        arguments: {'msisdn': msisdn, 'otp': otp.value},
+      );
     } else {
-      showErrorMessage(res.message ?? 'Invalid or expired OTP');
+      showErrorMessage(
+        res.message ??
+            _t('Invalid or expired OTP', 'OTP si sahihi au muda wake umeisha'),
+      );
     }
   }
 
@@ -143,8 +165,9 @@ class OtpController extends BaseController {
     callDataService(
       _repository.resendOtp(OtpRequest(msisdn: msisdn, otp: otp.value)),
       onError: _handleResendOtpResponseError,
-      onSuccess: (_) => showSuccessMessage('OTP resent successfully'),
+      onSuccess: (_) => showSuccessMessage(
+        _t('OTP resent successfully', 'OTP imetumwa tena kwa mafanikio'),
+      ),
     );
   }
-
 }

@@ -6,25 +6,13 @@ import '../../../../core/widget/custom_app_bar.dart';
 import '../../../../routes/app_pages.dart';
 import '../controllers/rent_my_properties_hub_controller.dart';
 
-/// Concierge management hub — property cards with quick actions, or empty add state.
-// abstract class _HubTheme {
-//   static const Color bg = Color(0xFFF9F8F4);
-//   static const Color card = Colors.white;
-//   static const Color teal = Color(0xFF004D4D);
-//   static const Color hubRed = Color(0xFFB42318);
-//   static const Color muted = Color(0xFF6B7280);
-//   static const Color actionBg = Color(0xFFF5F5F3);
-//   static const Color navy = Color(0xFF1A1A1A);
-//   static const String serif = 'Georgia';
-// }
-
 class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
   RentMyPropertiesHubView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
-    appBarTitleText: _isSw ? 'Mali Zangu' : 'My Properties'
+    appBarTitleText: _isSw ? 'Mijengo Yangu' : 'My Properties'
   );
 
   @override
@@ -59,9 +47,18 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
                 child: _ManagementPropertyCard(
                   row: p,
                   isSw: _isSw,
+                  onEditProperty:
+                      p.isLocal ? () => controller.editProperty(p.id) : null,
+                  onTenantForUnit: p.unitSlots.isEmpty
+                      ? null
+                      : (slot) => controller.addTenantForUnit(
+                            propertyHubId: p.id,
+                            propertyTitle: p.title,
+                            slot: slot,
+                          ),
                   onOpenListing: () => Get.toNamed(
                     Routes.RENT_LISTING_DETAILS,
-                    parameters: {'id': p.id},
+                    parameters: {'id': p.id, 'title': p.title},
                   ),
                   onAddEstimate: () => Get.toNamed(
                     Routes.RENT_PROPERTY_ROI_ESTIMATE_FORM,
@@ -72,7 +69,8 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
                   ),
                   onAddIncome: () => Get.toNamed(Routes.RENT_ADD_INCOME_FORM),
                   onAddExpense: () => Get.toNamed(Routes.RENT_ADD_NEW_EXPENSE),
-                  onNewTenant: () => Get.toNamed(Routes.RENT_ADD_TENANT_FORM),
+                  onNewTenant: () => Get.toNamed(Routes.RENT_ADD_TENANT_FORM,
+                      parameters: {'property': p.title, 'propertyRef': p.id}),
                   onAnalytics: () => Get.toNamed(Routes.RENT_LISTING_ANALYTICS_DASHBOARD),
                   onAddCoHost: () => _openAddCoHostDialog(
                     propertyRef: p.id,
@@ -106,7 +104,7 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
             TextButton(
               onPressed: controller.addProperty,
               child: Text(
-                _isSw ? 'Ongeza mali' : 'Add property',
+                _isSw ? 'Ongeza mjengo' : 'Add property',
                 style: TextStyle(
                   fontSize: 17,
                   color: Colors.grey,
@@ -133,7 +131,7 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
         ),
         icon: const Icon(Icons.add, size: 22),
         label: Text(
-          _isSw ? 'Mali Mpya' : 'New Property',
+          _isSw ? 'Mjengo Mpya' : 'New Property',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
         ),
       ),
@@ -153,7 +151,7 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
     Get.dialog(
       StatefulBuilder(
         builder: (context, setStateDialog) => AlertDialog(
-          title: Text(_isSw ? 'Ongeza Co-host' : 'Add Co-host'),
+          title: Text(_isSw ? 'Ongeza Mwenzangu' : 'Add Co-host'),
           content: SizedBox(
             width: 420,
             child: Column(
@@ -174,7 +172,7 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  _isSw ? 'Co-host waliopo' : 'Current co-hosts',
+                  _isSw ? 'Wenzangu' : 'Current co-hosts',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
@@ -192,7 +190,7 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
                       final items = snapshot.data ?? const [];
                       if (items.isEmpty) {
                         return Text(
-                          _isSw ? 'Hakuna co-host bado.' : 'No co-hosts yet.',
+                          _isSw ? 'Sina mwenzangu bado.' : 'No co-hosts yet.',
                           style: const TextStyle(color: Colors.grey),
                         );
                       }
@@ -207,7 +205,7 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
                             title: Text(userId),
                             subtitle: Text(role),
                             trailing: IconButton(
-                              tooltip: _isSw ? 'Ondoa co-host' : 'Remove co-host',
+                              tooltip: _isSw ? 'Ondoa mwenzangu' : 'Remove co-host',
                               onPressed: () async {
                                 await controller.removeCoHost(
                                   propertyRef: propertyRef,
@@ -253,10 +251,173 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
   }
 }
 
+void _showMultiUnitPropertySheet(
+  BuildContext context, {
+  required RentHubPropertyRow row,
+  required bool isSw,
+  required VoidCallback onOpenListing,
+  required void Function(RentHubUnitSlot slot)? onTenantForUnit,
+}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (ctx) {
+      final maxListHeight = MediaQuery.sizeOf(ctx).height * 0.42;
+      return SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 16,
+            bottom: 16 + MediaQuery.of(ctx).padding.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E7EB),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                row.title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isSw
+                    ? '${row.unitSlots.length} vitengo'
+                    : '${row.unitSlots.length} units',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxListHeight),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: row.unitSlots.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) {
+                    final slot = row.unitSlots[i];
+                    return Material(
+                      color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    slot.unitName,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${slot.tenantCount} ${isSw ? 'wapangaji' : 'tenants'}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark
+                                          ? const Color(0xFF8E8E93)
+                                          : const Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(ctx).pop();
+                                Get.toNamed(
+                                  Routes.RENT_LISTING_DETAILS,
+                                  parameters: {
+                                    'id': row.id,
+                                    'title': row.title,
+                                    if (slot.unitId.trim().isNotEmpty) 'unitId': slot.unitId.trim(),
+                                    'unitName': slot.unitName.trim(),
+                                  },
+                                );
+                              },
+                              child: Text(isSw ? 'Maelezo' : 'View details'),
+                            ),
+                            if (onTenantForUnit != null)
+                              IconButton(
+                                tooltip: isSw ? 'Ongeza mpangaji' : 'Add tenant',
+                                onPressed: () {
+                                  Navigator.of(ctx).pop();
+                                  onTenantForUnit(slot);
+                                },
+                                icon: Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                  color: isDark
+                                      ? const Color(0xFF5EC9C3)
+                                      : const Color(0xFF0D9488),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  onOpenListing();
+                },
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  isSw ? 'Angalia maelezo ya mjengo' : 'View property details',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class _ManagementPropertyCard extends StatelessWidget {
   const _ManagementPropertyCard({
     required this.row,
     required this.isSw,
+    this.onEditProperty,
+    this.onTenantForUnit,
     required this.onOpenListing,
     required this.onAddEstimate,
     required this.onAddIncome,
@@ -268,6 +429,10 @@ class _ManagementPropertyCard extends StatelessWidget {
 
   final RentHubPropertyRow row;
   final bool isSw;
+  /// Local SQLite property only — opens rent add/edit form.
+  final VoidCallback? onEditProperty;
+  /// Per apartment unit — add tenant scoped to that unit.
+  final void Function(RentHubUnitSlot slot)? onTenantForUnit;
   final VoidCallback onOpenListing;
   final VoidCallback onAddEstimate;
   final VoidCallback onAddIncome;
@@ -276,23 +441,43 @@ class _ManagementPropertyCard extends StatelessWidget {
   final VoidCallback onAnalytics;
   final VoidCallback onAddCoHost;
 
+  bool get _hasMultipleUnits => row.unitSlots.length > 1;
+
+  bool get _isApartmentProperty =>
+      row.propertyTypeLabel.trim().toUpperCase() == 'APARTMENT';
+
+  void _onCardTap(BuildContext context) {
+    if (_hasMultipleUnits) {
+      _showMultiUnitPropertySheet(
+        context,
+        row: row,
+        isSw: isSw,
+        onOpenListing: onOpenListing,
+        onTenantForUnit: onTenantForUnit,
+      );
+    } else {
+      onOpenListing();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: Colors.white,
+      color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       elevation: 0,
       shadowColor: Colors.transparent,
       child: InkWell(
-        onTap: onOpenListing,
+        onTap: () => _onCardTap(context),
         borderRadius: BorderRadius.circular(20),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
+                color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.06),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -302,7 +487,7 @@ class _ManagementPropertyCard extends StatelessWidget {
           child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _imageBlock(),
+          _imageBlock(isDark: isDark),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Column(
@@ -327,7 +512,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '${row.activeTenants} ${isSw ? 'Wapangaji Hai' : 'Active Tenants'}',
+                      '${row.activeTenants} ${isSw ? 'Wapangaji' : 'Tenants'}',
                       style: TextStyle(
                         fontSize: 13,
                         // color: _HubTheme.muted.withValues(alpha: 0.95),
@@ -335,6 +520,96 @@ class _ManagementPropertyCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                // Single unit only on-card; multiple units open from card tap (bottom sheet).
+                if (row.unitSlots.length == 1 && onTenantForUnit != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    isSw ? 'KITENGO' : 'UNIT',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => onTenantForUnit!(row.unitSlots.first),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF3A3A3C)
+                              : const Color(0xFFE5E7EB),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  row.unitSlots.first.unitName,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${row.unitSlots.first.tenantCount} ${isSw ? 'wapangaji' : 'tenants'}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark
+                                        ? const Color(0xFF8E8E93)
+                                        : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (row.unitSlots.first.tenantCount != 1)
+                            Icon(
+                              Icons.person_add_alt_1_outlined,
+                              size: 22,
+                              color: isDark
+                                  ? const Color(0xFF5EC9C3)
+                                  : const Color(0xFF0D9488),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                if (_hasMultipleUnits) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.touch_app_outlined,
+                        size: 16,
+                        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          isSw
+                              ? 'Gusa kadi kuona vitengo na maelezo'
+                              : 'Tap card to see units & view details',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Text(
                   isSw ? 'VITENDO VYA HARAKA' : 'QUICK ACTIONS',
@@ -357,7 +632,7 @@ class _ManagementPropertyCard extends StatelessWidget {
     );
   }
 
-  Widget _imageBlock() {
+  Widget _imageBlock({required bool isDark}) {
     return Stack(
       children: [
         ClipRRect(
@@ -378,7 +653,9 @@ class _ManagementPropertyCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
+              color: isDark
+                  ? const Color(0xFF1F2937).withValues(alpha: 0.92)
+                  : Colors.white.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -387,7 +664,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.8,
-                // color: _HubTheme.muted.withValues(alpha: 0.95),
+                color: isDark ? Colors.white : const Color(0xFF4B5563),
               ),
             ),
           ),
@@ -444,6 +721,21 @@ class _ManagementPropertyCard extends StatelessWidget {
 
     return Column(
       children: [
+        if (onEditProperty != null) ...[
+          Row(
+            children: [
+              Expanded(
+                child: cell(
+                  isSw ? 'Hariri mjengo' : 'Edit property',
+                  Icons.edit_outlined,
+                  const Color(0xFF0D9488),
+                  onEditProperty!,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+        ],
         Row(
           children: [
             Expanded(child: cell(isSw ? 'Ongeza Mapato' : 'Add Income', Icons.add_circle_outline, const Color(0xFF15803D), onAddIncome)),
@@ -451,41 +743,56 @@ class _ManagementPropertyCard extends StatelessWidget {
             Expanded(child: cell(isSw ? 'Ongeza Gharama' : 'Add Expense', Icons.remove_circle_outline, const Color(0xFF9B1C1C), onAddExpense)),
           ],
         ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(child: cell(isSw ? 'Mpangaji Mpya' : 'New Tenant', Icons.person_add_alt_1_outlined, Color(0xFF6B7280), onNewTenant)),
-            const SizedBox(width: 10),
-            Expanded(
-                child: cell(isSw ? 'Uchanganuzi' : 'Analytics', Icons.bar_chart_rounded, Color(0xFF6B7280), onAnalytics)),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: cell(
-                isSw ? 'Ongeza Co-host' : 'Add Co-host',
-                Icons.group_add_outlined,
-                const Color(0xFF0F766E),
-                onAddCoHost,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: cell(
-                isSw ? 'Ongeza Makadirio ya ROI' : 'Add ROI Estimates',
-                Icons.calculate_outlined,
-                const Color(0xFF4C1D95),
-                onAddEstimate,
-              ),
-            ),
-          ],
-        ),
+        // const SizedBox(height: 10),
+        // Row(
+        //   children: [
+        //     if (!_isApartmentProperty) ...[
+        //       Expanded(
+        //         child: cell(
+        //           isSw ? 'Mpangaji Mpya' : 'New Tenant',
+        //           Icons.person_add_alt_1_outlined,
+        //           const Color(0xFF6B7280),
+        //           onNewTenant,
+        //         ),
+        //       ),
+        //       const SizedBox(width: 10),
+        //     ],
+        //     Expanded(
+        //       child: cell(
+        //         isSw ? 'Uchanganuzi' : 'Analytics',
+        //         Icons.bar_chart_rounded,
+        //         const Color(0xFF6B7280),
+        //         onAnalytics,
+        //       ),
+        //     ),
+        //   ],
+        // ),
+        // const SizedBox(height: 10),
+        // Row(
+        //   children: [
+        //     Expanded(
+        //       child: cell(
+        //         isSw ? 'Ongeza Co-host' : 'Add Co-host',
+        //         Icons.group_add_outlined,
+        //         const Color(0xFF0F766E),
+        //         onAddCoHost,
+        //       ),
+        //     ),
+        //   ],
+        // ),
+        // const SizedBox(height: 10),
+        // Row(
+        //   children: [
+        //     Expanded(
+        //       child: cell(
+        //         isSw ? 'Ongeza Makadirio ya ROI' : 'Add ROI Estimates',
+        //         Icons.calculate_outlined,
+        //         const Color(0xFF4C1D95),
+        //         onAddEstimate,
+        //       ),
+        //     ),
+        //   ],
+        // ),
       ],
     );
   }

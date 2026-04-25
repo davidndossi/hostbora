@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/modules/rent/tenant_residency_payment_tracker/views/rent_tenant_residency_payment_tracker_view.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../routes/app_pages.dart';
 import '../../hub/views/rent_hub_view.dart';
 import '../../my_properties_hub/views/rent_my_properties_hub_view.dart';
-import '../../staff_management/views/rent_staff_management_view.dart';
+import '../../tenant_residency_payment_tracker/views/rent_tenant_residency_payment_tracker_view.dart';
 import '../controllers/rent_base_shell_controller.dart';
 import 'rent_others_tab_view.dart';
 
@@ -17,9 +17,6 @@ abstract class _ShellTheme {
 
 class RentBaseShellView extends BaseView<RentBaseShellController> {
   RentBaseShellView({super.key});
-
-  @override
-  Color pageBackgroundColor(BuildContext context) => Colors.transparent;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
@@ -44,10 +41,18 @@ class RentBaseShellView extends BaseView<RentBaseShellController> {
   Widget? bottomNavigationBar() {
     return Obx(() {
       final idx = controller.currentTab.value;
+      final isDark = Theme.of(Get.context!).brightness == Brightness.dark;
+      final navBg = isDark ? const Color(0xFF2C2C2E) : Colors.white;
+      final navBorder = isDark
+          ? const Color(0xFF3A3A3C)
+          : const Color(0xFFE8E6E1);
+      final selectedBg = isDark ? const Color(0xFF0A7A7A) : _ShellTheme.teal;
+      final selectedFg = Colors.white;
+      final unselectedFg = isDark ? const Color(0xFFB0B3BA) : _ShellTheme.muted;
       return Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE8E6E1))),
+        decoration: BoxDecoration(
+          color: navBg,
+          border: Border(top: BorderSide(color: navBorder)),
         ),
         child: SafeArea(
           top: false,
@@ -59,24 +64,36 @@ class RentBaseShellView extends BaseView<RentBaseShellController> {
                   label: 'Dashboard',
                   icon: Icons.dashboard_rounded,
                   selected: idx == 0,
+                  selectedBg: selectedBg,
+                  selectedFg: selectedFg,
+                  unselectedFg: unselectedFg,
                   onTap: () => controller.setTab(0),
                 ),
                 _ShellTab(
                   label: 'Listings',
                   icon: Icons.apartment_outlined,
                   selected: idx == 1,
+                  selectedBg: selectedBg,
+                  selectedFg: selectedFg,
+                  unselectedFg: unselectedFg,
                   onTap: () => controller.setTab(1),
                 ),
                 _ShellTab(
                   label: 'Tenants',
                   icon: Icons.groups_outlined,
                   selected: idx == 2,
+                  selectedBg: selectedBg,
+                  selectedFg: selectedFg,
+                  unselectedFg: unselectedFg,
                   onTap: () => controller.setTab(2),
                 ),
                 _ShellTab(
                   label: 'More',
                   icon: Icons.list_outlined,
                   selected: idx == 3,
+                  selectedBg: selectedBg,
+                  selectedFg: selectedFg,
+                  unselectedFg: unselectedFg,
                   onTap: () => controller.setTab(3),
                 ),
               ],
@@ -86,6 +103,22 @@ class RentBaseShellView extends BaseView<RentBaseShellController> {
       );
     });
   }
+
+  @override
+  Widget? floatingActionButton() {
+    return Obx(() {
+      if (controller.currentTab.value != 0) return const SizedBox.shrink();
+      return FloatingActionButton(
+        onPressed: () => Get.toNamed(Routes.RENT_HOST_CALENDAR),
+        child: const Icon(Icons.calendar_month_outlined),
+      );
+    });
+  }
+
+  @override
+  FloatingActionButtonLocation floatingActionButtonLocation() {
+    return FloatingActionButtonLocation.endFloat;
+  }
 }
 
 class _ShellTab extends StatelessWidget {
@@ -93,17 +126,23 @@ class _ShellTab extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.selected,
+    required this.selectedBg,
+    required this.selectedFg,
+    required this.unselectedFg,
     required this.onTap,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
+  final Color selectedBg;
+  final Color selectedFg;
+  final Color unselectedFg;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final fg = selected ? Colors.white : _ShellTheme.muted;
+    final fg = selected ? selectedFg : unselectedFg;
     return Expanded(
       child: Material(
         color: Colors.transparent,
@@ -113,7 +152,7 @@ class _ShellTab extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: selected ? _ShellTheme.teal : Colors.transparent,
+              color: selected ? selectedBg : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -124,7 +163,7 @@ class _ShellTab extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.2,
                     color: fg,

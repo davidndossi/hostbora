@@ -13,10 +13,18 @@ import '../model/maintenance_task.dart';
 class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
   MaintenanceTasksView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
-      appBarTitleText: appLocalization.maintenanceAndTasks, //'Maintenance & Tasks'
+      appBarTitleText:
+          appLocalization.maintenanceAndTasks, //'Maintenance & Tasks'
       isCentered: true,
       actions: [
         Padding(
@@ -29,7 +37,11 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
               customBorder: const CircleBorder(),
               child: const Padding(
                 padding: EdgeInsets.all(12),
-                child: Icon(Icons.add, color: AppColors.textColorWhite, size: 24),
+                child: Icon(
+                  Icons.add,
+                  color: AppColors.textColorWhite,
+                  size: 24,
+                ),
               ),
             ),
           ),
@@ -54,10 +66,12 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
               if (list.isEmpty) {
                 return Center(
                   child: Text(
-                    'No tasks',
+                    _t(context, en: 'No tasks', sw: 'Hakuna kazi'),
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.textColorSecondary,
+                      color: _isDark(context)
+                          ? Colors.white70
+                          : AppColors.textColorSecondary,
                     ),
                   ),
                 );
@@ -65,10 +79,11 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
               return ListView.separated(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
                 itemCount: list.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) => _TaskCard(
                   task: list[index],
-                  onToggleComplete: () => controller.toggleComplete(list[index]),
+                  onToggleComplete: () =>
+                      controller.toggleComplete(list[index]),
                   onTap: () => controller.openTaskDetail(list[index]),
                 ),
               );
@@ -84,18 +99,39 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: Obx(() => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _FilterChip(label: 'All', isSelected: controller.selectedFilter.value == TaskFilter.all, onTap: () => controller.setFilter(TaskFilter.all)),
-            const SizedBox(width: 8),
-            _FilterChip(label: 'Pending', isSelected: controller.selectedFilter.value == TaskFilter.pending, onTap: () => controller.setFilter(TaskFilter.pending)),
-            const SizedBox(width: 8),
-            _FilterChip(label: 'In Progress', isSelected: controller.selectedFilter.value == TaskFilter.inProgress, onTap: () => controller.setFilter(TaskFilter.inProgress)),
-            const SizedBox(width: 8),
-            _FilterChip(label: 'Completed', isSelected: controller.selectedFilter.value == TaskFilter.completed, onTap: () => controller.setFilter(TaskFilter.completed)),
-          ],
-        )),
+        child: Obx(
+          () => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _FilterChip(
+                label: _t(context, en: 'All', sw: 'Zote'),
+                isSelected: controller.selectedFilter.value == TaskFilter.all,
+                onTap: () => controller.setFilter(TaskFilter.all),
+              ),
+              const SizedBox(width: 8),
+              _FilterChip(
+                label: _t(context, en: 'Pending', sw: 'Inasubiri'),
+                isSelected:
+                    controller.selectedFilter.value == TaskFilter.pending,
+                onTap: () => controller.setFilter(TaskFilter.pending),
+              ),
+              const SizedBox(width: 8),
+              _FilterChip(
+                label: _t(context, en: 'In Progress', sw: 'Inaendelea'),
+                isSelected:
+                    controller.selectedFilter.value == TaskFilter.inProgress,
+                onTap: () => controller.setFilter(TaskFilter.inProgress),
+              ),
+              const SizedBox(width: 8),
+              _FilterChip(
+                label: _t(context, en: 'Completed', sw: 'Imekamilika'),
+                isSelected:
+                    controller.selectedFilter.value == TaskFilter.completed,
+                onTap: () => controller.setFilter(TaskFilter.completed),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -106,12 +142,19 @@ class _FilterChip extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.isSelected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: isSelected ? AppColors.colorPrimary : AppColors.colorWhite,
+      color: isSelected
+          ? AppColors.colorPrimary
+          : (isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -120,14 +163,22 @@ class _FilterChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
-            border: isSelected ? null : Border.all(color: AppColors.designInputBorder),
+            border: isSelected
+                ? null
+                : Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : AppColors.designInputBorder,
+                  ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: isSelected ? AppColors.textColorWhite : AppColors.textColorPrimary,
+              color: isSelected
+                  ? AppColors.textColorWhite
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -149,6 +200,7 @@ class _TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCompleted = task.isCompleted;
     final opacity = isCompleted ? 0.6 : 1.0;
 
@@ -159,11 +211,25 @@ class _TaskCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         child: Container(
           padding: const EdgeInsets.all(16),
-          decoration: AppDecorations.card,
+          decoration: AppDecorations.card.copyWith(
+            color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : Colors.transparent,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildCheckbox(isCompleted),
+              _buildCheckbox(context, isCompleted),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -174,16 +240,22 @@ class _TaskCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textColorPrimary.withOpacity(opacity),
-                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        color:
+                            (isDark ? Colors.white : AppColors.textColorPrimary)
+                                .withValues(alpha: opacity),
+                        decoration: isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Assigned to ${task.assignee}',
+                      '${Get.locale?.languageCode == 'sw' ? 'Amepewa' : 'Assigned to'} ${task.assignee}',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.colorPrimary.withOpacity(opacity),
+                        fontSize: 14,
+                        color: AppColors.colorPrimary.withValues(
+                          alpha: opacity,
+                        ),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -191,13 +263,25 @@ class _TaskCard extends StatelessWidget {
                     if (isCompleted && task.completedAt != null)
                       Row(
                         children: [
-                          Icon(Icons.check_circle_outline, size: 16, color: AppColors.textColorSecondary.withOpacity(opacity)),
+                          Icon(
+                            Icons.check_circle_outline,
+                            size: 16,
+                            color:
+                                (isDark
+                                        ? Colors.white70
+                                        : AppColors.textColorSecondary)
+                                    .withValues(alpha: opacity),
+                          ),
                           const SizedBox(width: 6),
                           Text(
-                            'Completed ${_formatCompletedAgo(task.completedAt!)}',
+                            '${Get.locale?.languageCode == 'sw' ? 'Imekamilika' : 'Completed'} ${_formatCompletedAgo(task.completedAt!)}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textColorSecondary.withOpacity(opacity),
+                              color:
+                                  (isDark
+                                          ? Colors.white70
+                                          : AppColors.textColorSecondary)
+                                      .withValues(alpha: opacity),
                             ),
                           ),
                         ],
@@ -205,13 +289,29 @@ class _TaskCard extends StatelessWidget {
                     else
                       Row(
                         children: [
-                          Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.textColorSecondary.withOpacity(opacity)),
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 16,
+                            color:
+                                (isDark
+                                        ? Colors.white70
+                                        : AppColors.textColorSecondary)
+                                    .withValues(alpha: opacity),
+                          ),
                           const SizedBox(width: 6),
                           Text(
-                            task.dueDate != null ? _formatDueDate(task.dueDate!) : 'No date',
+                            task.dueDate != null
+                                ? _formatDueDate(task.dueDate!)
+                                : (Get.locale?.languageCode == 'sw'
+                                      ? 'Hakuna tarehe'
+                                      : 'No date'),
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textColorSecondary.withOpacity(opacity),
+                              color:
+                                  (isDark
+                                          ? Colors.white70
+                                          : AppColors.textColorSecondary)
+                                      .withValues(alpha: opacity),
                             ),
                           ),
                         ],
@@ -223,7 +323,12 @@ class _TaskCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: AppColors.textColorSecondary.withOpacity(opacity), size: 24),
+              Icon(
+                Icons.chevron_right,
+                color: (isDark ? Colors.white70 : AppColors.textColorSecondary)
+                    .withValues(alpha: opacity),
+                size: 24,
+              ),
             ],
           ),
         ),
@@ -231,7 +336,8 @@ class _TaskCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCheckbox(bool isCompleted) {
+  Widget _buildCheckbox(BuildContext context, bool isCompleted) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onToggleComplete,
       behavior: HitTestBehavior.opaque,
@@ -243,7 +349,11 @@ class _TaskCard extends StatelessWidget {
           color: isCompleted ? AppColors.colorPrimary : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isCompleted ? AppColors.colorPrimary : AppColors.designInputBorder,
+            color: isCompleted
+                ? AppColors.colorPrimary
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : AppColors.designInputBorder),
             width: 2,
           ),
         ),
@@ -260,16 +370,30 @@ class _TaskCard extends StatelessWidget {
     final tomorrow = today.add(const Duration(days: 1));
     final taskDate = DateTime(d.year, d.month, d.day);
     final time = DateFormat.jm().format(d);
-    if (taskDate == today) return 'Today, $time';
-    if (taskDate == tomorrow) return 'Tomorrow, $time';
+    if (taskDate == today) {
+      return Get.locale?.languageCode == 'sw' ? 'Leo, $time' : 'Today, $time';
+    }
+    if (taskDate == tomorrow) {
+      return Get.locale?.languageCode == 'sw'
+          ? 'Kesho, $time'
+          : 'Tomorrow, $time';
+    }
     return '${DateFormat('EEEE').format(d)}, $time';
   }
 
   String _formatCompletedAgo(DateTime completedAt) {
     final diff = DateTime.now().difference(completedAt);
-    if (diff.inHours > 0) return '${diff.inHours}h ago';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
-    return 'Just now';
+    if (diff.inHours > 0) {
+      return Get.locale?.languageCode == 'sw'
+          ? 'saa ${diff.inHours} zilizopita'
+          : '${diff.inHours}h ago';
+    }
+    if (diff.inMinutes > 0) {
+      return Get.locale?.languageCode == 'sw'
+          ? 'dakika ${diff.inMinutes} zilizopita'
+          : '${diff.inMinutes}m ago';
+    }
+    return Get.locale?.languageCode == 'sw' ? 'Sasa hivi' : 'Just now';
   }
 }
 
@@ -281,9 +405,23 @@ class _PriorityLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (String label, Color bg, Color fg) = switch (priority) {
-      TaskPriority.high => ('HIGH PRIORITY', const Color(0xFFE07A5F), AppColors.textColorWhite),
-      TaskPriority.medium => ('MEDIUM', const Color(0xFFF5A623), AppColors.textColorPrimary),
-      TaskPriority.low => ('LOW', AppColors.slateBlueGrey.withOpacity(0.3), AppColors.textColorPrimary),
+      TaskPriority.high => (
+        Get.locale?.languageCode == 'sw'
+            ? 'KIPAUMBELE CHA JUU'
+            : 'HIGH PRIORITY',
+        const Color(0xFFE07A5F),
+        AppColors.textColorWhite,
+      ),
+      TaskPriority.medium => (
+        Get.locale?.languageCode == 'sw' ? 'WASTANI' : 'MEDIUM',
+        const Color(0xFFF5A623),
+        AppColors.textColorPrimary,
+      ),
+      TaskPriority.low => (
+        Get.locale?.languageCode == 'sw' ? 'CHINI' : 'LOW',
+        AppColors.slateBlueGrey.withValues(alpha: 0.3),
+        AppColors.textColorPrimary,
+      ),
     };
 
     return Container(
@@ -294,11 +432,7 @@ class _PriorityLabel extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: fg,
-        ),
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg),
       ),
     );
   }

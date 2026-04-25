@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../../core/widget/custom_app_bar.dart';
 
-PreferredSizeWidget rentAppBar(String title, {List<Widget>? actions}) {
+PreferredSizeWidget rentAppBar(
+  String title, {
+  List<Widget>? actions,
+  Widget? leading,
+}) {
   return CustomAppBar(
     appBarTitleText: title,
     actions: actions,
+    leading: leading,
+    isBackButtonEnabled: leading == null,
   );
 }
 

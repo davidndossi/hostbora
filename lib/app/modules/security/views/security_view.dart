@@ -16,6 +16,13 @@ class SecurityView extends BaseView<SecurityController> {
   static const _bodyText = Color(0xFF333333);
   static const _secondaryText = Color(0xFFA0A0A0);
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -49,33 +56,33 @@ class SecurityView extends BaseView<SecurityController> {
                       ? appLocalization.changeLabel
                       : appLocalization.set,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: _secondaryText,
+                    fontSize: 15,
+                    color: _isDark(context) ? Colors.white70 : _secondaryText,
                   ),
                 ),
                 onTap: controller.openPinCode,
               ),
             ),
-          ]),
+          ], context),
           const SizedBox(height: 24),
           _buildSection(appLocalization.accessControl, [
             Obx(
               () => _SettingsRow(
                 icon: Icons.face_rounded,
                 iconColor: AppColors.colorPrimary,
-                title: 'FaceID/TouchID',
+                title: _t(context, en: 'FaceID/TouchID', sw: 'FaceID/TouchID'),
                 subtitle: appLocalization.fastLoginVerification,
                 trailing: Switch(
                   value: controller.faceIdEnabled.value,
-                  onChanged: (_) =>
-                      controller.faceIdEnabled.value = !controller.faceIdEnabled.value,
-                  activeColor: Colors.white,
+                  onChanged: (_) => controller.faceIdEnabled.value =
+                      !controller.faceIdEnabled.value,
+                  activeThumbColor: Colors.white,
                   activeTrackColor: AppColors.colorPrimary,
                 ),
                 onTap: null,
               ),
             ),
-          ]),
+          ], context),
           const SizedBox(height: 24),
           _buildSection(appLocalization.additionalProtection, [
             _SettingsRow(
@@ -85,47 +92,55 @@ class SecurityView extends BaseView<SecurityController> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                    Text(
-                      appLocalization.enabled,
-                      style: TextStyle(
-                      fontSize: 14,
+                  Text(
+                    appLocalization.enabled,
+                    style: TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: AppColors.colorPrimary,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.chevron_right, color: _bodyText, size: 22),
+                  Icon(
+                    Icons.chevron_right,
+                    color: _isDark(context) ? Colors.white : _bodyText,
+                    size: 22,
+                  ),
                 ],
               ),
               onTap: controller.openTwoFactor,
             ),
-          ]),
+          ], context),
           const SizedBox(height: 24),
-          _buildDeviceSection(),
+          _buildDeviceSection(context),
           const SizedBox(height: 24),
-          _buildFooter(),
+          _buildFooter(context),
         ],
       ),
     );
   }
 
-  Widget _buildSection(String title, List<Widget> children) {
+  Widget _buildSection(
+    String title,
+    List<Widget> children,
+    BuildContext context,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
-            color: _sectionTitle,
+            color: _isDark(context) ? Colors.white70 : _sectionTitle,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: _cardBg,
+            color: _isDark(context) ? const Color(0xFF1F1F1F) : _cardBg,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
           ),
           child: Column(children: children),
@@ -134,7 +149,7 @@ class SecurityView extends BaseView<SecurityController> {
     );
   }
 
-  Widget _buildDeviceSection() {
+  Widget _buildDeviceSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -144,10 +159,10 @@ class SecurityView extends BaseView<SecurityController> {
             Text(
               appLocalization.deviceManagement,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
-                color: _sectionTitle,
+                color: _isDark(context) ? Colors.white70 : _sectionTitle,
               ),
             ),
             GestureDetector(
@@ -155,7 +170,7 @@ class SecurityView extends BaseView<SecurityController> {
               child: Text(
                 appLocalization.logOutAll,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: AppColors.paaYanguAlert,
                 ),
@@ -166,7 +181,7 @@ class SecurityView extends BaseView<SecurityController> {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: _cardBg,
+            color: _isDark(context) ? const Color(0xFF1F1F1F) : _cardBg,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
           ),
           child: Column(
@@ -179,6 +194,7 @@ class SecurityView extends BaseView<SecurityController> {
                   children: [
                     _DeviceRow(
                       device: d,
+                      isDark: _isDark(context),
                       onLogout: () => controller.logoutDevice(d),
                     ),
                     if (!isLast) const Divider(height: 1),
@@ -192,7 +208,7 @@ class SecurityView extends BaseView<SecurityController> {
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -200,8 +216,8 @@ class SecurityView extends BaseView<SecurityController> {
           textAlign: TextAlign.center,
           text: TextSpan(
             style: TextStyle(
-              fontSize: 13,
-              color: _bodyText,
+              fontSize: 14,
+              color: _isDark(context) ? Colors.white : _bodyText,
               height: 1.4,
             ),
             children: [
@@ -248,6 +264,7 @@ class _SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -262,10 +279,10 @@ class _SettingsRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF333333),
+                      color: isDark ? Colors.white : const Color(0xFF333333),
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -273,17 +290,21 @@ class _SettingsRow extends StatelessWidget {
                     Text(
                       subtitle!,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: _secondaryText,
+                        fontSize: 14,
+                        color: isDark ? Colors.white70 : _secondaryText,
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            if (trailing != null) trailing!,
+            ...[trailing].whereType<Widget>(),
             if (onTap != null && trailing == null)
-              Icon(Icons.chevron_right, color: _bodyText, size: 22),
+              Icon(
+                Icons.chevron_right,
+                color: isDark ? Colors.white : _bodyText,
+                size: 22,
+              ),
           ],
         ),
       ),
@@ -296,10 +317,12 @@ const _secondaryText = Color(0xFFA0A0A0);
 
 class _DeviceRow extends StatelessWidget {
   final DeviceSession device;
+  final bool isDark;
   final VoidCallback onLogout;
 
   const _DeviceRow({
     required this.device,
+    required this.isDark,
     required this.onLogout,
   });
 
@@ -312,7 +335,7 @@ class _DeviceRow extends StatelessWidget {
           Icon(
             device.name.contains('Mac') ? Icons.laptop_mac : Icons.phone_iphone,
             size: 22,
-            color: _bodyText,
+            color: isDark ? Colors.white : _bodyText,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -323,10 +346,10 @@ class _DeviceRow extends StatelessWidget {
                   children: [
                     Text(
                       device.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF333333),
+                        color: isDark ? Colors.white : const Color(0xFF333333),
                       ),
                     ),
                     if (device.isCurrent) ...[
@@ -356,8 +379,8 @@ class _DeviceRow extends StatelessWidget {
                 Text(
                   '${device.location} • ${device.lastActive}',
                   style: TextStyle(
-                    fontSize: 13,
-                    color: _secondaryText,
+                    fontSize: 14,
+                    color: isDark ? Colors.white70 : _secondaryText,
                   ),
                 ),
               ],
@@ -366,7 +389,11 @@ class _DeviceRow extends StatelessWidget {
           if (!device.isCurrent)
             IconButton(
               onPressed: onLogout,
-              icon: Icon(Icons.logout, size: 20, color: _bodyText),
+              icon: Icon(
+                Icons.logout,
+                size: 20,
+                color: isDark ? Colors.white : _bodyText,
+              ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
             ),

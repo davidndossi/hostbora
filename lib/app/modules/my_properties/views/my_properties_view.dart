@@ -10,6 +10,16 @@ import '../controllers/my_properties_controller.dart';
 class MyPropertiesView extends BaseView<MyPropertiesController> {
   MyPropertiesView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -20,41 +30,41 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       children: [
         _buildFilterTabs(context),
         Expanded(
-          child: Obx(
-            () {
-              if (controller.loading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (controller.properties.isEmpty) {
-                return Center(
-                  child: Text(
-                    'No properties',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textColorSecondary,
-                    ),
+          child: Obx(() {
+            if (controller.loading.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (controller.properties.isEmpty) {
+              return Center(
+                child: Text(
+                  _t(context, en: 'No properties', sw: 'Hakuna mali'),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                );
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-                itemCount: controller.properties.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final p = controller.properties[index];
-                  return _PropertyCard(
-                    listing: p,
-                    onFavorite: () => controller.toggleFavorite(p),
-                    onManage: () => controller.manageProperty(p),
-                  );
-                },
+                ),
               );
-            },
-          ),
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+              itemCount: controller.properties.length,
+              separatorBuilder: (_, index) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                final p = controller.properties[index];
+                return _PropertyCard(
+                  listing: p,
+                  onFavorite: () => controller.toggleFavorite(p),
+                  onManage: () => controller.manageProperty(p),
+                  t: _t,
+                );
+              },
+            );
+          }),
         ),
       ],
     );
@@ -67,8 +77,9 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
     child: const Icon(Icons.add, size: 28),
   );
 
-
   Widget _buildFilterTabs(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Obx(
       () => SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -80,7 +91,9 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
               padding: const EdgeInsets.only(right: 10),
               child: Material(
                 color: index == controller.selectedFilterIndex.value
-                    ? AppColors.colorWhite
+                    ? (isDark
+                          ? theme.colorScheme.surfaceContainerHighest
+                          : AppColors.colorWhite)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
                 child: InkWell(
@@ -97,8 +110,8 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: index == controller.selectedFilterIndex.value
-                            ? Colors.black
-                            : Colors.black54,
+                            ? theme.colorScheme.onSurface
+                            : theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -116,18 +129,29 @@ class _PropertyCard extends StatelessWidget {
   final PropertyListing listing;
   final VoidCallback onFavorite;
   final VoidCallback onManage;
+  final String Function(
+    BuildContext context, {
+    required String en,
+    required String sw,
+  })
+  t;
 
   const _PropertyCard({
     required this.listing,
     required this.onFavorite,
     required this.onManage,
+    required this.t,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHigh
+            : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
       ),
       clipBehavior: Clip.antiAlias,
@@ -136,18 +160,18 @@ class _PropertyCard extends StatelessWidget {
         children: [
           Stack(
             children: [
-              Image.network(
-                listing.imageUrl,
+              Image.asset(
+                'images/bedroom.jpg',
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (context, error, stackTrace) => Container(
                   height: 200,
                   color: AppColors.designAccent,
-                  child: const Icon(
+                  child: Icon(
                     Icons.home_work_outlined,
                     size: 48,
-                    color: Colors.black54,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -230,14 +254,16 @@ class _PropertyCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.colorPrimaryLight,
+                        color: isDark
+                            ? theme.colorScheme.primary
+                            : AppColors.colorPrimaryLight,
                       ),
                     ),
                     Text(
-                      ' / night',
+                      t(context, en: ' / night', sw: ' / usiku'),
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textColorSecondary,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const Spacer(),
@@ -247,7 +273,7 @@ class _PropertyCard extends StatelessWidget {
                       child: InkWell(
                         onTap: onManage,
                         borderRadius: BorderRadius.circular(8),
-                        child: const Padding(
+                        child: Padding(
                           padding: EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 10,
@@ -256,7 +282,7 @@ class _PropertyCard extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Manage',
+                                t(context, en: 'Manage', sw: 'Simamia'),
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -290,15 +316,20 @@ class _StatusBadge extends StatelessWidget {
 
   const _StatusBadge({required this.status});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isReady = status == PropertyStatus.ready;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isReady
-            ? AppColors.colorSuccessGreen
-            : AppColors.colorYellow,
+        color: isReady ? AppColors.colorSuccessGreen : AppColors.colorYellow,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -307,15 +338,17 @@ class _StatusBadge extends StatelessWidget {
           Icon(
             isReady ? Icons.check : Icons.cleaning_services,
             size: 16,
-            // color: Colors.white,
+            color: isReady ? Colors.white : Colors.black87,
           ),
           const SizedBox(width: 6),
           Text(
-            isReady ? 'READY' : 'CLEANING',
-            style: const TextStyle(
+            isReady
+                ? _t(context, en: 'READY', sw: 'TAYARI')
+                : _t(context, en: 'CLEANING', sw: 'USAFISHAJI'),
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              // color: Colors.white,
+              color: isReady ? Colors.white : Colors.black87,
             ),
           ),
         ],

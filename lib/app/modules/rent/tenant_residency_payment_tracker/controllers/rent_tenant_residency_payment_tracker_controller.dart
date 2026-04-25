@@ -64,14 +64,50 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
   List<TenantInsight> get filteredTenants {
     final q = searchQuery.value.trim().toLowerCase();
-    if (q.isEmpty) return tenants.toList();
-    return tenants
-        .where(
-          (t) =>
-              t.name.toLowerCase().contains(q) ||
-              t.propertyLine.toLowerCase().contains(q),
-        )
-        .toList();
+    final base = tenants.toList();
+    final searched = q.isEmpty
+        ? base
+        : base
+            .where(
+              (t) =>
+                  t.name.toLowerCase().contains(q) ||
+                  t.propertyLine.toLowerCase().contains(q),
+            )
+            .toList();
+    return searched;
+  }
+
+  /// App bar label; includes listing name when opened with `propertyTitle` from listing details.
+  String get tenantsScreenTitle {
+    final isSw = Get.locale?.languageCode == 'sw';
+    final t = Get.parameters['propertyTitle']?.trim() ?? '';
+    if (t.isEmpty) return isSw ? 'Maarifa ya Upangaji' : 'Tenancy Insights';
+    return isSw ? 'Wapangaji — $t' : 'Tenants — $t';
+  }
+
+  static bool _recordMatchesListingFilter(RentTenantRecord t) {
+    final ref = Get.parameters['propertyRef']?.trim() ?? '';
+    final title = Get.parameters['propertyTitle']?.trim() ?? '';
+    final loc = Get.parameters['propertyLoc']?.trim() ?? '';
+    final suite = Get.parameters['propertySuite']?.trim() ?? '';
+    final hasFilter = ref.isNotEmpty || title.isNotEmpty || loc.isNotEmpty;
+    if (!hasFilter) return true;
+
+    final r = t.propertyRef.trim();
+    if (ref.isNotEmpty && r.isNotEmpty && r == ref) return true;
+
+    final pl = t.propertyLabel.trim();
+    if (ref.isNotEmpty && r.isEmpty) {
+      if (title.isNotEmpty && pl == title) return true;
+      if (loc.isNotEmpty && pl == loc) return true;
+      if (loc.isNotEmpty && suite.isNotEmpty && pl == '$loc · $suite') return true;
+    }
+    if (ref.isEmpty) {
+      if (title.isNotEmpty && pl == title) return true;
+      if (loc.isNotEmpty && pl == loc) return true;
+      if (loc.isNotEmpty && suite.isNotEmpty && pl == '$loc · $suite') return true;
+    }
+    return false;
   }
 
   void onSearchChanged(String value) {
@@ -95,8 +131,9 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
   Future<void> loadTenants() async {
     final rows = await _tenantLocal.getAllNewestFirst();
+    final scoped = rows.where(_recordMatchesListingFilter).toList();
     final fmt = DateFormat('MMM yyyy');
-    tenants.assignAll(rows.map((r) {
+    tenants.assignAll(scoped.map((r) {
       final start = _parseDate(r.leaseStartIso) ?? DateTime.now();
       final end = _parseDate(r.leaseEndIso) ?? DateTime.now().add(const Duration(days: 30));
       final now = DateTime.now();

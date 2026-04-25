@@ -16,11 +16,23 @@ const _imageBlue = Color(0xFF1976D2);
 class DocumentsView extends BaseView<DocumentsController> {
   DocumentsView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     final title = controller.directoryName?.isNotEmpty == true
         ? controller.directoryName!
-        : appLocalization.legalDocuments;
+        : _t(
+            context,
+            en: appLocalization.legalDocuments,
+            sw: 'Nyaraka za kisheria',
+          );
+    final isDark = _isDark(context);
     return CustomAppBar(
       appBarTitleText: title,
       isCentered: true,
@@ -29,8 +41,10 @@ class DocumentsView extends BaseView<DocumentsController> {
           onPressed: controller.openSearch,
           icon: const Icon(Icons.search),
           style: IconButton.styleFrom(
-            backgroundColor: AppColors.lightGreyColor.withOpacity(0.5),
-            foregroundColor: AppColors.textColorPrimary,
+            backgroundColor: isDark
+                ? Colors.white.withValues(alpha: 0.14)
+                : AppColors.lightGreyColor.withValues(alpha: 0.5),
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -39,6 +53,7 @@ class DocumentsView extends BaseView<DocumentsController> {
 
   @override
   Widget body(BuildContext context) {
+    final isDark = _isDark(context);
     return Column(
       children: [
         _buildFilterChips(context),
@@ -50,10 +65,12 @@ class DocumentsView extends BaseView<DocumentsController> {
             if (controller.documents.isEmpty) {
               return Center(
                 child: Text(
-                  'No documents',
+                  _t(context, en: 'No documents', sw: 'Hakuna nyaraka'),
                   style: TextStyle(
                     fontSize: 16,
-                    color: AppColors.textColorSecondary,
+                    color: isDark
+                        ? Colors.white70
+                        : AppColors.textColorSecondary,
                   ),
                 ),
               );
@@ -70,8 +87,14 @@ class DocumentsView extends BaseView<DocumentsController> {
                     itemBuilder: (context, index) {
                       return _DocumentCard(
                         item: controller.documents[index],
-                        onOptionsTap: () =>
-                            controller.openDocumentOptions(controller.documents[index]),
+                        syncedText: _t(
+                          context,
+                          en: 'SYNCED',
+                          sw: 'IMESAWAZISHWA',
+                        ),
+                        onOptionsTap: () => controller.openDocumentOptions(
+                          controller.documents[index],
+                        ),
                       );
                     },
                   ),
@@ -95,14 +118,15 @@ class DocumentsView extends BaseView<DocumentsController> {
         () => Row(
           children: [
             _FilterChip(
-              label: 'All',
+              label: _t(context, en: 'All', sw: 'Zote'),
               isSelected: controller.selectedFilter.value == DocumentFilter.all,
               onTap: () => controller.selectFilter(DocumentFilter.all),
             ),
             const SizedBox(width: 10),
             _FilterChip(
-              label: 'Urgent',
-              isSelected: controller.selectedFilter.value == DocumentFilter.urgent,
+              label: _t(context, en: 'Urgent', sw: 'Haraka'),
+              isSelected:
+                  controller.selectedFilter.value == DocumentFilter.urgent,
               leadingIcon: Icons.circle,
               leadingIconColor: AppColors.paaYanguAlert,
               leadingIconSize: 8,
@@ -110,16 +134,18 @@ class DocumentsView extends BaseView<DocumentsController> {
             ),
             const SizedBox(width: 10),
             _FilterChip(
-              label: 'Verified',
-              isSelected: controller.selectedFilter.value == DocumentFilter.verified,
+              label: _t(context, en: 'Verified', sw: 'Imethibitishwa'),
+              isSelected:
+                  controller.selectedFilter.value == DocumentFilter.verified,
               leadingIcon: Icons.check_circle_outline,
               leadingIconColor: _vaultTeal,
               onTap: () => controller.selectFilter(DocumentFilter.verified),
             ),
             const SizedBox(width: 10),
             _FilterChip(
-              label: 'More',
-              isSelected: controller.selectedFilter.value == DocumentFilter.more,
+              label: _t(context, en: 'More', sw: 'Zaidi'),
+              isSelected:
+                  controller.selectedFilter.value == DocumentFilter.more,
               leadingIcon: Icons.format_list_bulleted,
               leadingIconColor: AppColors.textColorSecondary,
               onTap: () => controller.selectFilter(DocumentFilter.more),
@@ -137,8 +163,8 @@ class DocumentsView extends BaseView<DocumentsController> {
       child: ElevatedButton.icon(
         onPressed: controller.uploadDocument,
         icon: const Icon(Icons.upload_outlined, size: 22, color: Colors.white),
-        label: const Text(
-          'Upload Document',
+        label: Text(
+          _t(context, en: 'Upload Document', sw: 'Pakia Nyaraka'),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -177,8 +203,13 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: isSelected ? _vaultTeal : AppColors.lightGreyColor.withOpacity(0.4),
+      color: isSelected
+          ? _vaultTeal
+          : (isDark
+                ? Colors.white.withValues(alpha: 0.12)
+                : AppColors.lightGreyColor.withValues(alpha: 0.4)),
       borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
       child: InkWell(
         onTap: onTap,
@@ -201,11 +232,11 @@ class _FilterChip extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: isSelected
                       ? Colors.white
-                      : AppColors.textColorPrimary,
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -219,22 +250,13 @@ class _FilterChip extends StatelessWidget {
 class _DocumentCard extends StatelessWidget {
   final DocumentItem item;
   final VoidCallback onOptionsTap;
+  final String syncedText;
 
   const _DocumentCard({
     required this.item,
     required this.onOptionsTap,
+    required this.syncedText,
   });
-
-  Color get _fileTypeColor {
-    switch (item.fileType) {
-      case DocumentFileType.pdf:
-        return _pdfRed;
-      case DocumentFileType.xlsx:
-        return _excelGreen;
-      case DocumentFileType.image:
-        return _imageBlue;
-    }
-  }
 
   Widget get _fileTypeIcon {
     switch (item.fileType) {
@@ -243,7 +265,7 @@ class _DocumentCard extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: _pdfRed.withOpacity(0.15),
+            color: _pdfRed.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(AppValues.radius_6),
           ),
           child: Center(
@@ -262,7 +284,7 @@ class _DocumentCard extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: _excelGreen.withOpacity(0.15),
+            color: _excelGreen.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(AppValues.radius_6),
           ),
           child: Icon(Icons.grid_on, color: _excelGreen, size: 24),
@@ -272,7 +294,7 @@ class _DocumentCard extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: _imageBlue.withOpacity(0.15),
+            color: _imageBlue.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(AppValues.radius_6),
           ),
           child: Icon(Icons.image_outlined, color: _imageBlue, size: 24),
@@ -282,17 +304,20 @@ class _DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final displayName = item.name.length > 28
         ? '${item.name.substring(0, 25)}...'
         : item.name;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.28)
+                : Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -308,10 +333,10 @@ class _DocumentCard extends StatelessWidget {
               children: [
                 Text(
                   displayName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textColorPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -323,7 +348,9 @@ class _DocumentCard extends StatelessWidget {
                       item.size,
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textColorSecondary,
+                        color: isDark
+                            ? Colors.white70
+                            : AppColors.textColorSecondary,
                       ),
                     ),
                     if (item.synced) ...[
@@ -335,7 +362,7 @@ class _DocumentCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'SYNCED',
+                        syncedText,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -351,7 +378,7 @@ class _DocumentCard extends StatelessWidget {
           IconButton(
             onPressed: onOptionsTap,
             icon: const Icon(Icons.more_vert),
-            color: AppColors.textColorSecondary,
+            color: isDark ? Colors.white70 : AppColors.textColorSecondary,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),

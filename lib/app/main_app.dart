@@ -31,10 +31,12 @@ class _MainAppState extends State<MainApp> {
   bool _hasSeenOnboarding = true; // default true so we don't block on first run
   bool _loading = true;
 
-  final PreferenceManager _preferenceManager =
-  Get.put<PreferenceManager>(
+  /// BnB shell vs Rent shell when session is restored (matches [PreferenceManager.keyWorkspaceType]).
+  String _sessionHomeRoute = Routes.RENT_HUB;
+
+  final PreferenceManager _preferenceManager = Get.put<PreferenceManager>(
     PreferenceManagerImpl(),
-    tag: (PreferenceManager).toString()
+    tag: (PreferenceManager).toString(),
   );
   final EnvConfig _envConfig = BuildConfig.instance.config;
 
@@ -44,8 +46,14 @@ class _MainAppState extends State<MainApp> {
   }
 
   Future<bool> isSessionValid() async {
-    final accessToken = await _preferenceManager.getString('token', defaultValue: '');
-    final expiryTime = await _preferenceManager.getString('expiry_time', defaultValue: '');
+    final accessToken = await _preferenceManager.getString(
+      'token',
+      defaultValue: '',
+    );
+    final expiryTime = await _preferenceManager.getString(
+      'expiry_time',
+      defaultValue: '',
+    );
 
     if (accessToken == '' || expiryTime == '') return false;
 
@@ -68,15 +76,28 @@ class _MainAppState extends State<MainApp> {
       await loadLanguage().timeout(_bootstrapTimeout);
       final results = await Future.wait([
         isSessionValid().timeout(_bootstrapTimeout),
-        _preferenceManager.getBool('seen_onboarding', defaultValue: false).timeout(_bootstrapTimeout),
-        _preferenceManager.getBool(PreferenceManager.keyPinEnabled, defaultValue: false).timeout(_bootstrapTimeout),
-        _preferenceManager.getString(PreferenceManager.keyPinCode, defaultValue: '').timeout(_bootstrapTimeout),
+        _preferenceManager
+            .getBool('seen_onboarding', defaultValue: false)
+            .timeout(_bootstrapTimeout),
+        _preferenceManager
+            .getBool(PreferenceManager.keyPinEnabled, defaultValue: false)
+            .timeout(_bootstrapTimeout),
+        _preferenceManager
+            .getString(PreferenceManager.keyPinCode, defaultValue: '')
+            .timeout(_bootstrapTimeout),
+        _preferenceManager
+            .getString(PreferenceManager.keyWorkspaceType, defaultValue: 'rent')
+            .timeout(_bootstrapTimeout),
       ]);
       final loggedIn = results[0] as bool;
       final hasSeenOnboarding = results[1] as bool;
       final pinEnabled = results[2];
       final pinCode = results[3] as String;
+      final workspacePref = (results[4] as String).trim().toLowerCase();
       final hasValidPin = (pinEnabled as bool) && pinCode.length == 4;
+      final sessionHome = workspacePref == 'bnb'
+          ? Routes.MAIN
+          : Routes.RENT_HUB;
 
       if (!mounted) return;
 
@@ -84,11 +105,16 @@ class _MainAppState extends State<MainApp> {
         _isLoggedIn = loggedIn;
         _hasSeenOnboarding = hasSeenOnboarding;
         _hasValidPin = hasValidPin;
+        _sessionHomeRoute = sessionHome;
         _loading = false;
       });
     } catch (e, stack) {
       if (BuildConfig.instance.config.shouldCollectCrashLog) {
-        BuildConfig.instance.config.logger.e('Bootstrap failed', error: e, stackTrace: stack);
+        BuildConfig.instance.config.logger.e(
+          'Bootstrap failed',
+          error: e,
+          stackTrace: stack,
+        );
       }
       if (!mounted) return;
       setState(() {
@@ -97,6 +123,7 @@ class _MainAppState extends State<MainApp> {
         _isLoggedIn = false;
         _hasSeenOnboarding = true; // on error, skip onboarding to avoid loop
         _hasValidPin = false;
+        _sessionHomeRoute = Routes.RENT_HUB;
         _loading = false;
       });
     }
@@ -141,7 +168,7 @@ class _MainAppState extends State<MainApp> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Loading...',
+                  _lang == 'sw' ? 'Inapakia...' : 'Loading...',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.textColorSecondary,
@@ -168,15 +195,17 @@ class _MainAppState extends State<MainApp> {
         title: _envConfig.appName,
         initialRoute: _hasSeenOnboarding
             ? (_isLoggedIn
-                ? (_hasValidPin ? Routes.MAIN : Routes.CHANGE_PIN)
-                : AppPages.auth)
+                  ? (_hasValidPin ? _sessionHomeRoute : Routes.CHANGE_PIN)
+                  : (_hasValidPin ? Routes.WELCOME_BACK : AppPages.auth))
             : Routes.ONBOARDING,
         initialBinding: InitialBinding(),
         getPages: AppPages.routes,
         locale: Locale(_lang, _countryCode),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: _getSupportedLocal(),
-        themeMode: themeController.isDarkMode.value ? ThemeMode.dark : ThemeMode.light,
+        themeMode: themeController.isDarkMode.value
+            ? ThemeMode.dark
+            : ThemeMode.light,
         theme: _lightTheme(),
         darkTheme: _darkTheme(),
         debugShowCheckedModeBanner: false,
@@ -206,15 +235,23 @@ class _MainAppState extends State<MainApp> {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.colorWhite,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppValues.radius_6)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppValues.radius_6),
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppValues.radius_6),
           borderSide: const BorderSide(color: AppColors.designInputBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppValues.radius_6),
-          borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.colorPrimary,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -270,15 +307,23 @@ class _MainAppState extends State<MainApp> {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: darkCard,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppValues.radius_6)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppValues.radius_6),
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppValues.radius_6),
           borderSide: const BorderSide(color: Color(0xFF3A3A3C)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppValues.radius_6),
-          borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.colorPrimary,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -310,9 +355,6 @@ class _MainAppState extends State<MainApp> {
   }
 
   List<Locale> _getSupportedLocal() {
-    return [
-      const Locale('en', 'US'),
-      const Locale('sw', 'TZ'),
-    ];
+    return [const Locale('en', 'US'), const Locale('sw', 'TZ')];
   }
 }

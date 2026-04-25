@@ -15,6 +15,11 @@ const _colorButtonTeal = Color(0xFF1E6E66);
 class PasswordUpdatedView extends BaseView<PasswordUpdatedController> {
   PasswordUpdatedView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code = Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return null;
@@ -22,8 +27,10 @@ class PasswordUpdatedView extends BaseView<PasswordUpdatedController> {
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
-      color: _colorBackground,
+      color: isDark ? theme.colorScheme.surface : _colorBackground,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -32,28 +39,38 @@ class PasswordUpdatedView extends BaseView<PasswordUpdatedController> {
               const SizedBox(height: 40),
               _buildSuccessIcon(),
               const SizedBox(height: 24),
-              const Text(
-                'Password Updated',
+              Text(
+                _t(
+                  context,
+                  en: 'Password Updated',
+                  sw: 'Nenosiri Limesasishwa',
+                ),
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
-                  color: _colorHeadline,
+                  color: isDark ? theme.colorScheme.onSurface : _colorHeadline,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
-                'Your password has been changed successfully. You can now log in to your account.',
+                _t(
+                  context,
+                  en: 'Your password has been changed successfully. You can now log in to your account.',
+                  sw: 'Nenosiri lako limebadilishwa kwa mafanikio. Sasa unaweza kuingia kwenye akaunti yako.',
+                ),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: _colorBodyText,
+                  color: isDark
+                      ? theme.colorScheme.onSurfaceVariant
+                      : _colorBodyText,
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              _buildPlaceholderBox(),
+              _buildPlaceholderBox(context),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -61,19 +78,18 @@ class PasswordUpdatedView extends BaseView<PasswordUpdatedController> {
                 child: ElevatedButton(
                   onPressed: controller.backToLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _colorButtonTeal,
+                    backgroundColor: isDark
+                        ? theme.colorScheme.primary
+                        : _colorButtonTeal,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text(
-                    'Back to Login',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Text(
+                    _t(context, en: 'Back to Login', sw: 'Rudi Kuingia'),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -82,20 +98,28 @@ class PasswordUpdatedView extends BaseView<PasswordUpdatedController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Need help? ',
+                    _t(context, en: 'Need help? ', sw: 'Unahitaji msaada? '),
                     style: TextStyle(
                       fontSize: 15,
-                      color: _colorBodyText,
+                      color: isDark
+                          ? theme.colorScheme.onSurfaceVariant
+                          : _colorBodyText,
                     ),
                   ),
                   GestureDetector(
                     onTap: controller.contactSupport,
-                    child: const Text(
-                      'Contact support',
+                    child: Text(
+                      _t(
+                        context,
+                        en: 'Contact support',
+                        sw: 'Wasiliana na msaada',
+                      ),
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: _colorButtonTeal,
+                        color: isDark
+                            ? theme.colorScheme.primary
+                            : _colorButtonTeal,
                         decoration: TextDecoration.underline,
                       ),
                     ),
@@ -150,22 +174,22 @@ class PasswordUpdatedView extends BaseView<PasswordUpdatedController> {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.check_rounded,
-            size: 48,
-            color: Colors.white,
-          ),
+          child: const Icon(Icons.check_rounded, size: 48, color: Colors.white),
         ),
       ],
     );
   }
 
-  Widget _buildPlaceholderBox() {
+  Widget _buildPlaceholderBox(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(minHeight: 180),
       decoration: BoxDecoration(
-        color: _colorPlaceholderBox,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHigh
+            : _colorPlaceholderBox,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -179,7 +203,8 @@ class PasswordUpdatedView extends BaseView<PasswordUpdatedController> {
         child: Icon(
           Icons.lock_rounded,
           size: 56,
-          color: _colorSuccessGreen.withValues(alpha: 0.5),
+          color: (isDark ? theme.colorScheme.primary : _colorSuccessGreen)
+              .withValues(alpha: 0.5),
         ),
       ),
     );

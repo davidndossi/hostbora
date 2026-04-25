@@ -15,6 +15,13 @@ class DashboardView extends BaseView<DashboardController> {
 
   static const _chartPreviousColor = Color(0xFFE07A5F);
 
+  String _t(BuildContext context, String en, String sw) {
+    return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -27,9 +34,9 @@ class DashboardView extends BaseView<DashboardController> {
         ),
         IconButton(
           onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined)
-        )
-      ]
+          icon: const Icon(Icons.more_vert_outlined),
+        ),
+      ],
     );
   }
 
@@ -40,30 +47,28 @@ class DashboardView extends BaseView<DashboardController> {
         children: [
           _buildHeader(context),
           Expanded(
-            child: Obx(
-              () {
-                if (controller.isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSegmentedToggle(context),
-                      const SizedBox(height: 20),
-                      _buildPerformanceTrendsCard(context),
-                      const SizedBox(height: 16),
-                      _buildTotalRevenueCard(context),
-                      const SizedBox(height: 12),
-                      _buildMetricRow(context),
-                      const SizedBox(height: 20),
-                      _buildMonthlyGrowthSection(context),
-                    ],
-                  ),
-                );
-              },
-            ),
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSegmentedToggle(context),
+                    const SizedBox(height: 20),
+                    _buildPerformanceTrendsCard(context),
+                    const SizedBox(height: 16),
+                    _buildTotalRevenueCard(context),
+                    const SizedBox(height: 12),
+                    _buildMetricRow(context),
+                    const SizedBox(height: 20),
+                    _buildMonthlyGrowthSection(context),
+                  ],
+                ),
+              );
+            }),
           ),
         ],
       ),
@@ -71,51 +76,33 @@ class DashboardView extends BaseView<DashboardController> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Obx(
-      () {
-        final isIncome = controller.isIncomeSelected.value;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-          child: Row(
-            children: [
-              const Spacer(),
-              TextButton(
-                onPressed: isIncome ? controller.recordPayment : controller.addExpense,
-                child: Text(
-                  isIncome ? 'Record Payment' : 'Add Expense',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.colorPrimary,
-                  ),
+    return Obx(() {
+      final isIncome = controller.isIncomeSelected.value;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+        child: Row(
+          children: [
+            const Spacer(),
+            TextButton(
+              onPressed: isIncome
+                  ? controller.recordPayment
+                  : controller.addExpense,
+              child: Text(
+                isIncome
+                    ? _t(context, 'Record Payment', 'Rekodi Malipo')
+                    : _t(context, 'Add Expense', 'Ongeza Gharama'),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.colorPrimary,
                 ),
               ),
-              const SizedBox(width: 8),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _circleIconButton({
-    required VoidCallback onPressed,
-    required IconData icon,
-  }) {
-    return Material(
-      color: AppColors.colorWhite,
-      shape: const CircleBorder(),
-      elevation: 1,
-      shadowColor: Colors.black.withOpacity(0.1),
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Icon(icon, size: 24, color: AppColors.textColorPrimary),
+            ),
+            const SizedBox(width: 8),
+          ],
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildSegmentedToggle(BuildContext context) {
@@ -123,11 +110,11 @@ class DashboardView extends BaseView<DashboardController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Financial Overview',
+          _t(context, 'Financial Overview', 'Muhtasari wa Fedha'),
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: AppColors.textColorPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 16),
@@ -136,7 +123,7 @@ class DashboardView extends BaseView<DashboardController> {
             children: [
               Expanded(
                 child: _SegmentButton(
-                  label: 'Income',
+                  label: _t(context, 'Income', 'Mapato'),
                   icon: Icons.description_outlined,
                   isSelected: controller.isIncomeSelected.value,
                   onTap: controller.selectIncome,
@@ -145,7 +132,7 @@ class DashboardView extends BaseView<DashboardController> {
               const SizedBox(width: 12),
               Expanded(
                 child: _SegmentButton(
-                  label: 'Expenses',
+                  label: _t(context, 'Expenses', 'Gharama'),
                   icon: Icons.account_balance_wallet_outlined,
                   isSelected: !controller.isIncomeSelected.value,
                   onTap: controller.selectExpenses,
@@ -159,27 +146,33 @@ class DashboardView extends BaseView<DashboardController> {
   }
 
   Widget _buildPerformanceTrendsCard(BuildContext context) {
-    return Obx(
-      () {
-        final isIncome = controller.isIncomeSelected.value;
-        final current = isIncome ? controller.currentTrendValues : controller.currentExpenseTrendValues;
-        final previous = isIncome ? controller.previousTrendValues : controller.previousExpenseTrendValues;
-        final currentSpots = current
-            .asMap()
-            .entries
-            .map((e) => FlSpot(e.key.toDouble(), e.value))
-            .toList();
-        final previousSpots = previous
-            .asMap()
-            .entries
-            .map((e) => FlSpot(e.key.toDouble(), e.value))
-            .toList();
-        return _performanceTrendsChart(currentSpots, previousSpots);
-      },
-    );
+    return Obx(() {
+      final isIncome = controller.isIncomeSelected.value;
+      final current = isIncome
+          ? controller.currentTrendValues
+          : controller.currentExpenseTrendValues;
+      final previous = isIncome
+          ? controller.previousTrendValues
+          : controller.previousExpenseTrendValues;
+      final currentSpots = current
+          .asMap()
+          .entries
+          .map((e) => FlSpot(e.key.toDouble(), e.value))
+          .toList();
+      final previousSpots = previous
+          .asMap()
+          .entries
+          .map((e) => FlSpot(e.key.toDouble(), e.value))
+          .toList();
+      return _performanceTrendsChart(context, currentSpots, previousSpots);
+    });
   }
 
-  Widget _performanceTrendsChart(List<FlSpot> currentSpots, List<FlSpot> previousSpots) {
+  Widget _performanceTrendsChart(
+    BuildContext context,
+    List<FlSpot> currentSpots,
+    List<FlSpot> previousSpots,
+  ) {
     final minY = 0.0;
     final maxY = 6.0;
 
@@ -189,7 +182,25 @@ class DashboardView extends BaseView<DashboardController> {
         width: 700,
         child: Container(
           padding: const EdgeInsets.all(16),
-          decoration: AppDecorations.card,
+          decoration: AppDecorations.card.copyWith(
+            color: _isDark(context)
+                ? const Color(0xFF1F1F1F)
+                : AppColors.colorWhite,
+            border: Border.all(
+              color: _isDark(context)
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : Colors.transparent,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: _isDark(context) ? 0.28 : 0.06,
+                ),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,19 +214,29 @@ class DashboardView extends BaseView<DashboardController> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Performance Trends',
+                        _t(
+                          context,
+                          'Performance Trends',
+                          'Mwelekeo wa Utendaji',
+                        ),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textColorPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Current vs. Previous Period',
+                        _t(
+                          context,
+                          'Current vs. Previous Period',
+                          'Kipindi hiki dhidi ya kilichopita',
+                        ),
                         style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textColorSecondary,
+                          fontSize: 14,
+                          color: _isDark(context)
+                              ? Colors.white70
+                              : AppColors.textColorSecondary,
                         ),
                       ),
                     ],
@@ -225,22 +246,26 @@ class DashboardView extends BaseView<DashboardController> {
                       _legendDot(AppColors.designAccent),
                       const SizedBox(width: 6),
                       Text(
-                        'CURRENT',
+                        _t(context, 'CURRENT', 'SASA'),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textColorSecondary,
+                          color: _isDark(context)
+                              ? Colors.white70
+                              : AppColors.textColorSecondary,
                         ),
                       ),
                       const SizedBox(width: 12),
                       _legendDot(_chartPreviousColor),
                       const SizedBox(width: 6),
                       Text(
-                        'PREVIOUS',
+                        _t(context, 'PREVIOUS', 'KABLA'),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textColorSecondary,
+                          color: _isDark(context)
+                              ? Colors.white70
+                              : AppColors.textColorSecondary,
                         ),
                       ),
                     ],
@@ -262,7 +287,11 @@ class DashboardView extends BaseView<DashboardController> {
                       drawVerticalLine: false,
                       horizontalInterval: 1.5,
                       getDrawingHorizontalLine: (value) => FlLine(
-                        color: AppColors.designInputBorder.withOpacity(0.5),
+                        color:
+                            (_isDark(context)
+                                    ? Colors.white
+                                    : AppColors.designInputBorder)
+                                .withValues(alpha: 0.5),
                         strokeWidth: 1,
                       ),
                     ),
@@ -282,15 +311,20 @@ class DashboardView extends BaseView<DashboardController> {
                           interval: 1,
                           getTitlesWidget: (value, meta) {
                             final i = value.toInt();
-                            if (i >= 0 && i < DashboardController.trendLabels.length) {
+                            if (i >= 0 &&
+                                i < DashboardController.trendLabels.length) {
                               return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
                                 child: Text(
                                   DashboardController.trendLabels[i],
                                   style: TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: AppColors.textColorSecondary,
+                                    color: _isDark(context)
+                                        ? Colors.white70
+                                        : AppColors.textColorSecondary,
                                   ),
                                 ),
                               );
@@ -315,7 +349,9 @@ class DashboardView extends BaseView<DashboardController> {
                                 radius: 4,
                                 color: AppColors.designAccent,
                                 strokeWidth: 2,
-                                strokeColor: AppColors.colorWhite,
+                                strokeColor: _isDark(context)
+                                    ? const Color(0xFF1F1F1F)
+                                    : AppColors.colorWhite,
                               ),
                         ),
                         belowBarData: BarAreaData(show: false),
@@ -345,160 +381,209 @@ class DashboardView extends BaseView<DashboardController> {
     return Container(
       width: 10,
       height: 10,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 
   Widget _buildTotalRevenueCard(BuildContext context) {
-    return Obx(
-      () {
-        final isIncome = controller.isIncomeSelected.value;
-        return _MetricCard(
-          label: isIncome ? 'Total Revenue' : 'Total Expenses',
-          value: isIncome ? controller.totalRevenue.value : controller.totalExpenses.value,
-          change: isIncome ? controller.totalRevenueChange.value : controller.totalExpensesChange.value,
-          isPositive: isIncome ? controller.totalRevenueUp.value : controller.totalExpensesUp.value,
-          fullWidth: true,
-        );
-      },
-    );
+    return Obx(() {
+      final isIncome = controller.isIncomeSelected.value;
+      return _MetricCard(
+        label: isIncome
+            ? _t(context, 'Total Revenue', 'Jumla ya Mapato')
+            : _t(context, 'Total Expenses', 'Jumla ya Gharama'),
+        value: isIncome
+            ? controller.totalRevenue.value
+            : controller.totalExpenses.value,
+        change: isIncome
+            ? controller.totalRevenueChange.value
+            : controller.totalExpensesChange.value,
+        isPositive: isIncome
+            ? controller.totalRevenueUp.value
+            : controller.totalExpensesUp.value,
+        fullWidth: true,
+      );
+    });
   }
 
   Widget _buildMetricRow(BuildContext context) {
-    return Obx(
-      () {
-        final isIncome = controller.isIncomeSelected.value;
-        return Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                label: isIncome ? 'Avg. Daily Rate' : 'Avg. Daily Expense',
-                value: isIncome ? controller.avgDailyRate.value : controller.avgDailyExpense.value,
-                change: isIncome ? controller.avgDailyRateChange.value : controller.avgDailyExpenseChange.value,
-                isPositive: isIncome ? controller.avgDailyRateUp.value : controller.avgDailyExpenseUp.value,
-              ),
+    return Obx(() {
+      final isIncome = controller.isIncomeSelected.value;
+      return Row(
+        children: [
+          Expanded(
+            child: _MetricCard(
+              label: isIncome
+                  ? _t(
+                      context,
+                      'Avg. Daily Rate',
+                      'Wastani wa Kiwango kwa Siku',
+                    )
+                  : _t(
+                      context,
+                      'Avg. Daily Expense',
+                      'Wastani wa Gharama kwa Siku',
+                    ),
+              value: isIncome
+                  ? controller.avgDailyRate.value
+                  : controller.avgDailyExpense.value,
+              change: isIncome
+                  ? controller.avgDailyRateChange.value
+                  : controller.avgDailyExpenseChange.value,
+              isPositive: isIncome
+                  ? controller.avgDailyRateUp.value
+                  : controller.avgDailyExpenseUp.value,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                label: isIncome ? 'Net Profit' : 'Month Change',
-                value: isIncome ? controller.netProfit.value : controller.totalExpensesChange.value,
-                change: isIncome ? controller.netProfitChange.value : 'vs. prev month',
-                isPositive: isIncome ? controller.netProfitUp.value : controller.totalExpensesUp.value,
-              ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _MetricCard(
+              label: isIncome
+                  ? _t(context, 'Net Profit', 'Faida Halisi')
+                  : _t(context, 'Month Change', 'Mabadiliko ya Mwezi'),
+              value: isIncome
+                  ? controller.netProfit.value
+                  : controller.totalExpensesChange.value,
+              change: isIncome
+                  ? controller.netProfitChange.value
+                  : _t(context, 'vs. prev month', 'dhidi ya mwezi uliopita'),
+              isPositive: isIncome
+                  ? controller.netProfitUp.value
+                  : controller.totalExpensesUp.value,
             ),
-          ],
-        );
-      },
-    );
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildMonthlyGrowthSection(BuildContext context) {
-    return Obx(
-      () {
-        final labels = controller.monthlyLabels;
-        final valuesA = controller.monthlyValuesA;
-        final valuesB = controller.monthlyValuesB;
-        final isIncome = controller.isIncomeSelected.value;
-        final values = isIncome ? valuesA : valuesB;
-        final len = labels.length;
-        if (len == 0) return const SizedBox.shrink();
-        final groupBars = List.generate(len, (i) {
-          final v = i < values.length ? values[i] : 0.0;
-          return BarChartGroupData(
-            x: i,
-            barRods: [
-              BarChartRodData(
-                fromY: 0,
-                toY: v,
-                color: AppColors.designAccent.withOpacity(0.6),
-                width: 20,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-              ),
-            ],
-            showingTooltipIndicators: [],
-          );
-        });
-        final maxVal = values.fold<double>(0, (m, v) => v > m ? v : m);
-        final maxY = (maxVal > 0 ? maxVal : 6.0).clamp(6.0, 10.0);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Monthly Growth',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textColorPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: AppDecorations.card,
-              child: SizedBox(
-                height: 200,
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    maxY: maxY,
-                    barTouchData: BarTouchData(enabled: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            final i = value.toInt();
-                            if (i >= 0 && i < labels.length) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  labels[i],
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textColorSecondary,
-                                  ),
-                                ),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                          reservedSize: 28,
-                        ),
-                      ),
-                    ),
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      getDrawingHorizontalLine: (value) => FlLine(
-                        color: AppColors.designInputBorder.withOpacity(0.5),
-                        strokeWidth: 1,
-                      ),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    barGroups: groupBars,
-                  ),
-                  duration: const Duration(milliseconds: 150),
-                ),
+    return Obx(() {
+      final labels = controller.monthlyLabels;
+      final valuesA = controller.monthlyValuesA;
+      final valuesB = controller.monthlyValuesB;
+      final isIncome = controller.isIncomeSelected.value;
+      final values = isIncome ? valuesA : valuesB;
+      final len = labels.length;
+      if (len == 0) return const SizedBox.shrink();
+      final groupBars = List.generate(len, (i) {
+        final v = i < values.length ? values[i] : 0.0;
+        return BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              fromY: 0,
+              toY: v,
+              color: AppColors.designAccent.withValues(alpha: 0.6),
+              width: 20,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(4),
               ),
             ),
           ],
+          showingTooltipIndicators: [],
         );
-      },
-    );
+      });
+      final maxVal = values.fold<double>(0, (m, v) => v > m ? v : m);
+      final maxY = (maxVal > 0 ? maxVal : 6.0).clamp(6.0, 10.0);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _t(context, 'Monthly Growth', 'Ukuaji wa Mwezi'),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: AppDecorations.card.copyWith(
+              color: _isDark(context)
+                  ? const Color(0xFF1F1F1F)
+                  : AppColors.colorWhite,
+              border: Border.all(
+                color: _isDark(context)
+                    ? Colors.white.withValues(alpha: 0.18)
+                    : Colors.transparent,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: _isDark(context) ? 0.28 : 0.06,
+                  ),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: SizedBox(
+              height: 200,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: maxY,
+                  barTouchData: BarTouchData(enabled: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final i = value.toInt();
+                          if (i >= 0 && i < labels.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                labels[i],
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _isDark(context)
+                                      ? Colors.white70
+                                      : AppColors.textColorSecondary,
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                        reservedSize: 28,
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color:
+                          (_isDark(context)
+                                  ? Colors.white
+                                  : AppColors.designInputBorder)
+                              .withValues(alpha: 0.5),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  barGroups: groupBars,
+                ),
+                duration: const Duration(milliseconds: 150),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
 
@@ -517,10 +602,11 @@ class _SegmentButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: isSelected
           ? AppColors.designAccent
-          : AppColors.colorWhite,
+          : (isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -531,7 +617,11 @@ class _SegmentButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppValues.radius_6),
             border: isSelected
                 ? null
-                : Border.all(color: AppColors.designInputBorder),
+                : Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : AppColors.designInputBorder,
+                  ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -545,11 +635,11 @@ class _SegmentButton extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: isSelected
                       ? Colors.white
-                      : AppColors.textColorPrimary,
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -577,21 +667,36 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final changeColor = isPositive
         ? AppColors.colorSuccessGreen
         : AppColors.paaYanguAlert;
     return Container(
       width: fullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(16),
-      decoration: AppDecorations.card,
+      decoration: AppDecorations.card.copyWith(
+        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.18)
+              : Colors.transparent,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textColorSecondary,
+              fontSize: 14,
+              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -601,7 +706,7 @@ class _MetricCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: AppColors.textColorPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 4),

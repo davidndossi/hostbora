@@ -23,7 +23,7 @@ class RentAddNewListingController extends BaseController {
   final propertyType = 'Apartment'.obs;
   final rentFrequency = 'Per Month'.obs;
   final minRentalDuration = '6 Months'.obs;
-  final propertyTypeOptions = const ['Apartment', 'House', 'Studio', 'Villa'];
+  final propertyTypeOptions = const ['Apartment', 'House', 'Office space', 'Room', 'Storage', 'Other'];
   final rentFrequencyOptions = const ['Per Day', 'Per Week', 'Per Month', 'Per Year'];
   final minRentalDurationOptions = const ['1 Month', '3 Months', '6 Months', '12 Months'];
 
@@ -36,6 +36,14 @@ class RentAddNewListingController extends BaseController {
   final draftUnitNameController = TextEditingController();
   final draftUnitRentController = TextEditingController();
   final draftUnitDescriptionController = TextEditingController();
+  final draftUnitRentFrequency = 'Per Month'.obs;
+
+  /// True after a local property is loaded for editing (route param `propertyRef`).
+  final isEditing = false.obs;
+  /// Full-screen load while resolving `propertyRef` (only when that param is present).
+  final awaitingEditLoad = false.obs;
+
+  RentPropertyRecord? _editingOriginal;
 
   bool get isApartmentProperty => propertyType.value == 'Apartment';
 
@@ -50,8 +58,38 @@ class RentAddNewListingController extends BaseController {
         draftUnitNameController.clear();
         draftUnitRentController.clear();
         draftUnitDescriptionController.clear();
+        draftUnitRentFrequency.value =
+            _coerceOption(rentFrequency.value, rentFrequencyOptions);
       }
     }
+  }
+
+  String _newApartmentUnitId() =>
+      'u_${DateTime.now().microsecondsSinceEpoch}_${apartmentUnits.length}';
+
+  /// Ensures every unit has a persistent [ApartmentUnitDraft.unitId] in JSON.
+  void _ensureApartmentUnitIds() {
+    if (!isApartmentProperty || apartmentUnits.isEmpty) return;
+    final next = <ApartmentUnitDraft>[];
+    var changed = false;
+    for (final u in apartmentUnits) {
+      if (u.unitId.trim().isEmpty) {
+        next.add(
+          ApartmentUnitDraft(
+            unitId: _newApartmentUnitId(),
+            unitName: u.unitName,
+            unitRent: u.unitRent,
+            unitRentFrequency:
+                _coerceOption(u.unitRentFrequency, rentFrequencyOptions),
+            unitDescription: u.unitDescription,
+          ),
+        );
+        changed = true;
+      } else {
+        next.add(u);
+      }
+    }
+    if (changed) apartmentUnits.assignAll(next);
   }
 
   void addApartmentUnit() {
@@ -63,14 +101,19 @@ class RentAddNewListingController extends BaseController {
     }
     apartmentUnits.add(
       ApartmentUnitDraft(
+        unitId: _newApartmentUnitId(),
         unitName: name,
         unitRent: rent,
+        unitRentFrequency:
+            _coerceOption(draftUnitRentFrequency.value, rentFrequencyOptions),
         unitDescription: draftUnitDescriptionController.text.trim(),
       ),
     );
     draftUnitNameController.clear();
     draftUnitRentController.clear();
     draftUnitDescriptionController.clear();
+    draftUnitRentFrequency.value =
+        _coerceOption(rentFrequency.value, rentFrequencyOptions);
   }
 
   void removeApartmentUnit(int index) {
@@ -83,6 +126,7 @@ class RentAddNewListingController extends BaseController {
     if (!isApartmentProperty || apartmentUnits.isEmpty) {
       return '';
     }
+    _ensureApartmentUnitIds();
     return jsonEncode(apartmentUnits.map((u) => u.toJson()).toList());
   }
 
@@ -92,10 +136,92 @@ class RentAddNewListingController extends BaseController {
     }
   }
 
+  void updateDraftUnitRentFrequency(String? value) {
+    if (value != null && value.isNotEmpty) {
+      draftUnitRentFrequency.value = value;
+    }
+  }
+
   void updateMinRentalDuration(String? value) {
     if (value != null && value.isNotEmpty) {
       minRentalDuration.value = value;
     }
+  }
+
+  String _coerceOption(String raw, List<String> options) {
+    final v = raw.trim();
+    if (options.contains(v)) return v;
+    return options.first;
+  }
+
+  Future<void> _loadPropertyForEdit(String hubId) async {
+    try {
+      final row = await _local.findByHubId(hubId);
+      if (row == null) {
+        Get.snackbar(
+          'Error',
+          'This property can only be edited if it was saved on this device.',
+        );
+        if (hubId.isNotEmpty) {
+          Future.microtask(() => Get.back());
+        }
+        return;
+      }
+      _editingOriginal = row;
+      isEditing.value = true;
+      propertyLocationController.text = row.propertyLocation;
+      apartmentSuiteController.text = row.apartmentSuite;
+      propertyType.value = _coerceOption(row.propertyType, propertyTypeOptions);
+      rentFrequency.value = _coerceOption(row.rentFrequency, rentFrequencyOptions);
+      minRentalDuration.value = _coerceOption(row.minRentalDuration, minRentalDurationOptions);
+      rentAmountController.text = row.rentAmount;
+      draftUnitRentFrequency.value =
+          _coerceOption(rentFrequency.value, rentFrequencyOptions);
+      apartmentUnits.clear();
+      final unitsRaw = row.unitsJson.trim();
+      if (unitsRaw.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(unitsRaw);
+          if (decoded is List) {
+            for (final e in decoded) {
+              if (e is Map) {
+                final draft =
+                    ApartmentUnitDraft.fromJson(Map<String, dynamic>.from(e));
+                apartmentUnits.add(
+                  ApartmentUnitDraft(
+                    unitId: draft.unitId,
+                    unitName: draft.unitName,
+                    unitRent: draft.unitRent,
+                    unitRentFrequency: _coerceOption(
+                      draft.unitRentFrequency,
+                      rentFrequencyOptions,
+                    ),
+                    unitDescription: draft.unitDescription,
+                  ),
+                );
+              }
+            }
+          }
+        } catch (e, st) {
+          logger.e('parse unitsJson $e $st');
+        }
+      }
+      _ensureApartmentUnitIds();
+    } catch (e, st) {
+      logger.e('_loadPropertyForEdit $e $st');
+      Get.snackbar('Error', 'Could not load property');
+    }
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    final hubId = Get.parameters['propertyRef']?.trim() ?? '';
+    if (hubId.isEmpty) return;
+    awaitingEditLoad.value = true;
+    _loadPropertyForEdit(hubId).whenComplete(() {
+      awaitingEditLoad.value = false;
+    });
   }
 
   Future<void> saveProperty() async {
@@ -120,25 +246,48 @@ class RentAddNewListingController extends BaseController {
     }
     showLoading();
     try {
-      final workspaceType = await _workspaceContext.getWorkspaceType();
-      await _local.insert(
-        RentPropertyRecord(
-          id: 0,
-          propertyLocation: location,
-          apartmentSuite: apartmentSuiteController.text.trim(),
-          propertyType: propertyType.value,
-          rentAmount: rentAmountController.text.trim(),
-          rentFrequency: rentFrequency.value,
-          minRentalDuration: minRentalDuration.value,
-          propertyRef: 'local_${DateTime.now().millisecondsSinceEpoch}',
-          ownerUserId: (await _preferenceManager.getUser()).id ?? '',
-          workspaceType: workspaceType,
-          createdAtMs: DateTime.now().millisecondsSinceEpoch,
-          unitsJson: _unitsJsonForSave(),
-        ),
-      );
-      Get.back(result: true);
-      Get.snackbar('Saved', 'Property saved on this device');
+      final original = _editingOriginal;
+      if (original != null) {
+        final rentOut = hideListingRentAmount ? '' : rentAmountController.text.trim();
+        await _local.update(
+          RentPropertyRecord(
+            id: original.id,
+            propertyLocation: location,
+            apartmentSuite: apartmentSuiteController.text.trim(),
+            propertyType: propertyType.value,
+            rentAmount: rentOut,
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            propertyRef: original.propertyRef,
+            ownerUserId: original.ownerUserId,
+            workspaceType: original.workspaceType,
+            createdAtMs: original.createdAtMs,
+            unitsJson: _unitsJsonForSave(),
+          ),
+        );
+        Get.back(result: true);
+        Get.snackbar('Saved', 'Property updated on this device');
+      } else {
+        final workspaceType = await _workspaceContext.getWorkspaceType();
+        await _local.insert(
+          RentPropertyRecord(
+            id: 0,
+            propertyLocation: location,
+            apartmentSuite: apartmentSuiteController.text.trim(),
+            propertyType: propertyType.value,
+            rentAmount: rentAmountController.text.trim(),
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            propertyRef: 'local_${DateTime.now().millisecondsSinceEpoch}',
+            ownerUserId: (await _preferenceManager.getUser()).id ?? '',
+            workspaceType: workspaceType,
+            createdAtMs: DateTime.now().millisecondsSinceEpoch,
+            unitsJson: _unitsJsonForSave(),
+          ),
+        );
+        Get.back(result: true);
+        Get.snackbar('Saved', 'Property saved on this device');
+      }
     } catch (e, st) {
       logger.e('saveProperty $e $st');
       Get.snackbar('Error', 'Could not save property');
@@ -158,6 +307,15 @@ class RentAddNewListingController extends BaseController {
     if (hideListingRentAmount) return null;
     final raw = (value ?? '').trim().replaceAll(',', '');
     if (raw.isEmpty) return 'Rent amount is required';
+    final n = double.tryParse(raw);
+    if (n == null || n <= 0) return 'Enter a valid amount';
+    return null;
+  }
+
+  String? validateDraftUnitRent(String? value) {
+    if (apartmentUnits.isNotEmpty) return null;
+    final raw = (value ?? '').trim().replaceAll(',', '');
+    if (raw.isEmpty) return 'Unit rent is required';
     final n = double.tryParse(raw);
     if (n == null || n <= 0) return 'Enter a valid amount';
     return null;

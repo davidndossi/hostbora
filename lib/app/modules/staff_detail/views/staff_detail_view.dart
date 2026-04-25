@@ -12,6 +12,13 @@ import '../controllers/staff_detail_controller.dart';
 class StaffDetailView extends BaseView<StaffDetailController> {
   StaffDetailView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -20,8 +27,8 @@ class StaffDetailView extends BaseView<StaffDetailController> {
       actions: [
         IconButton(
           onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined)
-        )
+          icon: const Icon(Icons.more_vert_outlined),
+        ),
       ],
     );
   }
@@ -37,15 +44,37 @@ class StaffDetailView extends BaseView<StaffDetailController> {
             const SizedBox(height: 24),
             _buildStatsRow(context),
             const SizedBox(height: 24),
-            _buildSectionTitle('Contact Information'),
+            _buildSectionTitle(
+              context,
+              _t(
+                context,
+                en: 'Contact Information',
+                sw: 'Taarifa za Mawasiliano',
+              ),
+            ),
             const SizedBox(height: 12),
-            _buildContactRow(Icons.email_outlined, 'Email Address', controller.email, controller.openEmail),
+            _buildContactRow(
+              context,
+              Icons.email_outlined,
+              _t(context, en: 'Email Address', sw: 'Barua Pepe'),
+              controller.email,
+              controller.openEmail,
+            ),
             const SizedBox(height: 8),
-            _buildContactRow(Icons.phone_outlined, 'Phone Number', controller.phone, controller.openPhone),
+            _buildContactRow(
+              context,
+              Icons.phone_outlined,
+              _t(context, en: 'Phone Number', sw: 'Namba ya Simu'),
+              controller.phone,
+              controller.openPhone,
+            ),
             const SizedBox(height: 24),
             _buildAssignedProperties(context),
             const SizedBox(height: 24),
-            _buildSectionTitle('Recent Tasks'),
+            _buildSectionTitle(
+              context,
+              _t(context, en: 'Recent Tasks', sw: 'Kazi za Hivi Karibuni'),
+            ),
             const SizedBox(height: 12),
             _buildRecentTasks(context),
             const SizedBox(height: 24),
@@ -54,7 +83,9 @@ class StaffDetailView extends BaseView<StaffDetailController> {
               child: ElevatedButton.icon(
                 onPressed: controller.assignNewTask,
                 icon: const Icon(Icons.add, size: 20, color: Colors.white),
-                label: const Text('Assign New Task'),
+                label: Text(
+                  _t(context, en: 'Assign New Task', sw: 'Pangia Kazi Mpya'),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.colorPrimary,
                   foregroundColor: Colors.white,
@@ -70,7 +101,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
             GestureDetector(
               onTap: controller.removeFromTeam,
               child: Text(
-                'Remove from Team',
+                _t(context, en: 'Remove from Team', sw: 'Ondoa Kwenye Timu'),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -129,7 +160,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
                 Icon(Icons.check, size: 16, color: AppColors.colorPrimary),
                 const SizedBox(width: 6),
                 Text(
-                  'PRIMARY ROLE',
+                  _t(context, en: 'PRIMARY ROLE', sw: 'WAJIBU MKUU'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -142,11 +173,8 @@ class StaffDetailView extends BaseView<StaffDetailController> {
           ),
         const SizedBox(height: 8),
         Text(
-          'Joined ${controller.joinedDate} • ${controller.performanceStatus}',
-          style: TextStyle(
-            fontSize: 13,
-            color: AppColors.textColorSecondary,
-          ),
+          '${_t(context, en: 'Joined', sw: 'Amejiunga')} ${controller.joinedDate} • ${controller.performanceStatus}',
+          style: TextStyle(fontSize: 13, color: AppColors.textColorSecondary),
         ),
       ],
     );
@@ -161,13 +189,17 @@ class StaffDetailView extends BaseView<StaffDetailController> {
             decoration: AppDecorations.card,
             child: Row(
               children: [
-                Icon(Icons.check_circle, size: 28, color: AppColors.colorPrimary),
+                Icon(
+                  Icons.check_circle,
+                  size: 28,
+                  color: AppColors.colorPrimary,
+                ),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'TOTAL TASKS',
+                      _t(context, en: 'TOTAL TASKS', sw: 'JUMLA YA KAZI'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -203,7 +235,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'RATING',
+                      _t(context, en: 'RATING', sw: 'UKADIRIAJI'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -230,7 +262,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
@@ -245,7 +277,13 @@ class StaffDetailView extends BaseView<StaffDetailController> {
     );
   }
 
-  Widget _buildContactRow(IconData icon, String label, String value, VoidCallback onTap) {
+  Widget _buildContactRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+    VoidCallback onTap,
+  ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -281,7 +319,11 @@ class StaffDetailView extends BaseView<StaffDetailController> {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, size: 20, color: AppColors.textColorSecondary),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.textColorSecondary,
+              ),
             ],
           ),
         ),
@@ -296,11 +338,14 @@ class StaffDetailView extends BaseView<StaffDetailController> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildSectionTitle('Assigned Properties'),
+            _buildSectionTitle(
+              context,
+              _t(context, en: 'Assigned Properties', sw: 'Mali Zilizopangiwa'),
+            ),
             GestureDetector(
               onTap: controller.manageProperties,
               child: Text(
-                'Manage',
+                _t(context, en: 'Manage', sw: 'Simamia'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -316,7 +361,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: controller.assignedProperties.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final p = controller.assignedProperties[index];
               return SizedBox(
@@ -330,8 +375,14 @@ class StaffDetailView extends BaseView<StaffDetailController> {
                       Expanded(
                         child: Container(
                           width: double.infinity,
-                          color: AppColors.lightGreyColor.withOpacity(0.5),
-                          child: Icon(Icons.home_work_outlined, size: 32, color: AppColors.designPlaceholder),
+                          color: AppColors.lightGreyColor.withValues(
+                            alpha: 0.5,
+                          ),
+                          child: Icon(
+                            Icons.home_work_outlined,
+                            size: 32,
+                            color: AppColors.designPlaceholder,
+                          ),
                         ),
                       ),
                       Padding(
@@ -398,7 +449,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Completed • ${t.completedAt}',
+                      '${_t(context, en: 'Completed', sw: 'Imekamilika')} • ${t.completedAt}',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textColorSecondary,

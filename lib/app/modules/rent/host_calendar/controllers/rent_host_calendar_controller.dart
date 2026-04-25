@@ -1,7 +1,10 @@
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/rent_payment_reminder_local_data_source.dart';
 import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '../../../../data/local/db/rent_tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
@@ -18,11 +21,17 @@ class RentHostCalendarController extends BaseController {
     AppRepository? repository,
     RentPropertyLocalDataSource? propertyLocal,
     RentTenantLocalDataSource? tenantLocal,
+    RentScheduledMaintenanceLocalDataSource? maintenanceLocal,
+    RentPaymentReminderLocalDataSource? paymentReminderLocal,
     PreferenceManager? preferenceManager,
     WorkspaceContextService? workspaceContext,
   })  : _repository = repository ?? Get.find<AppRepository>(tag: (AppRepository).toString()),
         _propertyLocal = propertyLocal ?? Get.find<RentPropertyLocalDataSource>(),
         _tenantLocal = tenantLocal ?? Get.find<RentTenantLocalDataSource>(),
+        _maintenanceLocal =
+            maintenanceLocal ?? Get.find<RentScheduledMaintenanceLocalDataSource>(),
+        _paymentReminderLocal =
+            paymentReminderLocal ?? Get.find<RentPaymentReminderLocalDataSource>(),
         _preferenceManager = preferenceManager ??
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
         _workspaceContext = workspaceContext ?? Get.find<WorkspaceContextService>() {
@@ -33,6 +42,8 @@ class RentHostCalendarController extends BaseController {
   final AppRepository _repository;
   final RentPropertyLocalDataSource _propertyLocal;
   final RentTenantLocalDataSource _tenantLocal;
+  final RentScheduledMaintenanceLocalDataSource _maintenanceLocal;
+  final RentPaymentReminderLocalDataSource _paymentReminderLocal;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
 
@@ -70,7 +81,14 @@ class RentHostCalendarController extends BaseController {
 
       final localEvents = await _loadLocalTenantEvents();
       final remoteEvents = await _loadRemoteBookingEvents();
-      final combined = <CalendarEvent>[...localEvents, ...remoteEvents];
+      final maintenanceEvents = await _loadLocalMaintenanceEvents();
+      final paymentReminderEvents = await _loadLocalPaymentReminderEvents();
+      final combined = <CalendarEvent>[
+        ...localEvents,
+        ...remoteEvents,
+        ...maintenanceEvents,
+        ...paymentReminderEvents,
+      ];
       _indexEvents(combined);
     } finally {
       loading.value = false;
@@ -107,36 +125,125 @@ class RentHostCalendarController extends BaseController {
     }
   }
 
+  /// Same label as [_loadLocalPropertyNames] / property filter so tenant events stay visible.
+  static String _hubPropertyName(RentPropertyRecord p) {
+    final suite = p.apartmentSuite.trim();
+    return suite.isNotEmpty ? suite : p.propertyLocation.trim();
+  }
+
+  static String _calendarPropertyNameForTenant(
+    RentTenantRecord t,
+    List<RentPropertyRecord> visibleProperties,
+  ) {
+    final ref = t.propertyRef.trim();
+    if (ref.isNotEmpty) {
+      for (final p in visibleProperties) {
+        final legacy = 'legacy_${p.id}';
+        final pRef = p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : legacy;
+        if (pRef == ref || legacy == ref) {
+          return _hubPropertyName(p);
+        }
+      }
+    }
+    final label = t.propertyLabel.trim();
+    const sep = ' · ';
+    if (label.contains(sep)) {
+      return label.split(sep).last.trim();
+    }
+    return label;
+  }
+
   Future<List<CalendarEvent>> _loadLocalTenantEvents() async {
+    final userId = (await _preferenceManager.getUser()).id ?? '';
+    final workspace = await _workspaceContext.getWorkspaceType();
+    final props = await _propertyLocal.getAllVisibleNewestFirst(
+      userId: userId,
+      workspaceType: workspace,
+    );
+
     final tenants = await _tenantLocal.getAllNewestFirst();
     final out = <CalendarEvent>[];
     for (final t in tenants) {
+      final propertyName = _calendarPropertyNameForTenant(t, props);
       final checkIn = _tryDate(t.leaseStartIso);
       final checkOut = _tryDate(t.leaseEndIso);
       if (checkIn != null) {
         out.add(CalendarEvent(
-          type: CalendarEventType.checkIn,
+          type: CalendarEventType.leaseStart,
           guestName: t.tenantName.isEmpty ? 'Tenant' : t.tenantName,
           time: '03:00 PM',
           guests: 1,
           subtitle: 'Lease start',
           subtitleHighlight: false,
-          propertyName: t.propertyLabel,
+          propertyName: propertyName,
           eventDate: checkIn,
         ));
       }
       if (checkOut != null) {
         out.add(CalendarEvent(
-          type: CalendarEventType.checkOut,
+          type: CalendarEventType.leaseEnd,
           guestName: t.tenantName.isEmpty ? 'Tenant' : t.tenantName,
           time: '11:00 AM',
           guests: 1,
           subtitle: 'Lease end',
           subtitleHighlight: false,
-          propertyName: t.propertyLabel,
+          propertyName: propertyName,
           eventDate: checkOut,
         ));
       }
+    }
+    return out;
+  }
+
+  Future<List<CalendarEvent>> _loadLocalMaintenanceEvents() async {
+    final records = await _maintenanceLocal.getAllNewestFirst();
+    final out = <CalendarEvent>[];
+    for (final r in records) {
+      final d = _tryDate(r.scheduledDateIso);
+      if (d == null) continue;
+      out.add(
+        CalendarEvent(
+          type: CalendarEventType.maintenance,
+          guestName: r.category.isEmpty ? 'Maintenance' : r.category,
+          time: '09:00 AM',
+          guests: 0,
+          subtitle: r.description.isEmpty ? r.priority : r.description,
+          subtitleHighlight: false,
+          propertyName: r.propertyLabel,
+          eventDate: d,
+        ),
+      );
+    }
+    return out;
+  }
+
+  Future<List<CalendarEvent>> _loadLocalPaymentReminderEvents() async {
+    final currency = NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0);
+    final timeFmt = DateFormat('hh:mm a');
+    final records = await _paymentReminderLocal.getAllNewestFirst();
+    final out = <CalendarEvent>[];
+    for (final r in records) {
+      final raw = r.reminderAtIso.trim();
+      if (raw.isEmpty) continue;
+      DateTime? dt;
+      try {
+        dt = DateTime.parse(raw);
+      } catch (_) {
+        continue;
+      }
+      final day = DateTime(dt.year, dt.month, dt.day);
+      out.add(
+        CalendarEvent(
+          type: CalendarEventType.paymentReminder,
+          guestName: r.tenantName.isEmpty ? 'Tenant' : r.tenantName,
+          time: timeFmt.format(dt),
+          guests: 0,
+          subtitle: currency.format(r.balanceTsh),
+          subtitleHighlight: false,
+          propertyName: r.propertyLabel,
+          eventDate: day,
+        ),
+      );
     }
     return out;
   }
@@ -308,7 +415,14 @@ class RentHostCalendarController extends BaseController {
   }
 }
 
-enum CalendarEventType { checkIn, checkOut }
+enum CalendarEventType {
+  checkIn,
+  checkOut,
+  leaseStart,
+  leaseEnd,
+  maintenance,
+  paymentReminder,
+}
 
 class CalendarEvent {
   final CalendarEventType type;

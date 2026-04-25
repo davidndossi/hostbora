@@ -85,6 +85,56 @@ class RentPropertyLocalDataSource {
     return db.insert(_table, row.toInsertMap());
   }
 
+  /// Updates an existing row by primary key [RentPropertyRecord.id].
+  Future<int> update(RentPropertyRecord row) async {
+    final db = await database;
+    return db.update(
+      _table,
+      row.toInsertMap(),
+      where: 'id = ?',
+      whereArgs: [row.id],
+    );
+  }
+
+  Future<RentPropertyRecord?> getById(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return RentPropertyRecord.fromMap(maps.first);
+  }
+
+  Future<RentPropertyRecord?> getByPropertyRef(String propertyRef) async {
+    final ref = propertyRef.trim();
+    if (ref.isEmpty) return null;
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      where: 'property_ref = ?',
+      whereArgs: [ref],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return RentPropertyRecord.fromMap(maps.first);
+  }
+
+  /// Resolves management hub id: `legacy_<sqliteId>` or stored `property_ref`.
+  Future<RentPropertyRecord?> findByHubId(String hubId) async {
+    final id = hubId.trim();
+    if (id.isEmpty) return null;
+    const legacy = 'legacy_';
+    if (id.startsWith(legacy)) {
+      final n = int.tryParse(id.substring(legacy.length));
+      if (n == null) return null;
+      return getById(n);
+    }
+    return getByPropertyRef(id);
+  }
+
   Future<List<RentPropertyRecord>> getAllNewestFirst() async {
     final db = await database;
     final maps = await db.query(_table, orderBy: 'created_at_ms DESC');

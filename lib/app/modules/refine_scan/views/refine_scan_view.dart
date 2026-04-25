@@ -12,8 +12,20 @@ import '../controllers/refine_scan_controller.dart';
 class RefineScanView extends BaseView<RefineScanController> {
   RefineScanView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
-  Color pageBackgroundColor(BuildContext context) => AppColors.colorWhite;
+  Color pageBackgroundColor(BuildContext context) => _isDark(context)
+      ? Theme.of(context).colorScheme.surface
+      : AppColors.colorWhite;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -32,7 +44,7 @@ class RefineScanView extends BaseView<RefineScanController> {
         children: [
           _buildPreviewWithCrop(context),
           const SizedBox(height: 10),
-          _buildCropHint(),
+          _buildCropHint(context),
           const SizedBox(height: 20),
           _buildAdjustmentButtons(context),
           const SizedBox(height: 24),
@@ -45,18 +57,25 @@ class RefineScanView extends BaseView<RefineScanController> {
   }
 
   Widget _buildPreviewWithCrop(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final height = width * (11 / 8.5);
-        const inset = 16.0;
         return Container(
           width: width,
           height: height,
           decoration: BoxDecoration(
-            color: AppColors.colorWhite,
+            color: isDark
+                ? theme.colorScheme.surfaceContainerHigh
+                : AppColors.colorWhite,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
-            border: Border.all(color: AppColors.designInputBorder),
+            border: Border.all(
+              color: isDark
+                  ? theme.colorScheme.outlineVariant
+                  : AppColors.designInputBorder,
+            ),
           ),
           child: Stack(
             clipBehavior: Clip.none,
@@ -85,7 +104,11 @@ class RefineScanView extends BaseView<RefineScanController> {
     );
   }
 
-  Widget _buildPreviewContent(BuildContext context, double maxWidth, double maxHeight) {
+  Widget _buildPreviewContent(
+    BuildContext context,
+    double maxWidth,
+    double maxHeight,
+  ) {
     return Obx(() {
       final path = controller.pathToDisplay;
       final processing = controller.isProcessing.value;
@@ -123,7 +146,9 @@ class RefineScanView extends BaseView<RefineScanController> {
         width: maxWidth,
         height: maxHeight,
         decoration: BoxDecoration(
-          color: AppColors.pageBackground,
+          color: _isDark(context)
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : AppColors.pageBackground,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
@@ -131,11 +156,13 @@ class RefineScanView extends BaseView<RefineScanController> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'CONTRACT',
+                _t(context, en: 'CONTRACT', sw: 'MKATABA'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textColorPrimary,
+                  color: _isDark(context)
+                      ? Theme.of(context).colorScheme.onSurface
+                      : AppColors.textColorPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -151,9 +178,12 @@ class RefineScanView extends BaseView<RefineScanController> {
     });
   }
 
-  Widget _buildCropHint() {
+  Widget _buildCropHint(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Obx(() {
-      final hasCrop = controller.cropRect.value.left > 0 ||
+      final hasCrop =
+          controller.cropRect.value.left > 0 ||
           controller.cropRect.value.top > 0 ||
           controller.cropRect.value.right < 1 ||
           controller.cropRect.value.bottom < 1;
@@ -161,20 +191,31 @@ class RefineScanView extends BaseView<RefineScanController> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'ADJUST CORNERS TO CROP',
+            Text(
+              _t(
+                context,
+                en: 'ADJUST CORNERS TO CROP',
+                sw: 'REKEBISHA PEMBE KUKATA',
+              ),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
-                color: AppColors.textColorSecondary,
+                color: isDark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.textColorSecondary,
               ),
             ),
             if (hasCrop) ...[
               const SizedBox(width: 12),
               TextButton(
-                onPressed: controller.isProcessing.value ? null : () => controller.applyCrop(),
-                child: const Text('Apply crop', style: TextStyle(fontSize: 12)),
+                onPressed: controller.isProcessing.value
+                    ? null
+                    : () => controller.applyCrop(),
+                child: Text(
+                  _t(context, en: 'Apply crop', sw: 'Tumia ukataji'),
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
             ],
           ],
@@ -184,56 +225,60 @@ class RefineScanView extends BaseView<RefineScanController> {
   }
 
   Widget _buildAdjustmentButtons(BuildContext context) {
-    return Obx(
-      () {
-        final processing = controller.isProcessing.value;
-        return Row(
-          children: [
-            Expanded(
-              child: _AdjustButton(
-                icon: Icons.rotate_right,
-                label: 'Rotate',
-                onTap: processing ? () {} : () => controller.rotate(),
-              ),
+    return Obx(() {
+      final processing = controller.isProcessing.value;
+      return Row(
+        children: [
+          Expanded(
+            child: _AdjustButton(
+              icon: Icons.rotate_right,
+              label: _t(context, en: 'Rotate', sw: 'Zungusha'),
+              onTap: processing ? () {} : () => controller.rotate(),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _AdjustButton(
-                icon: Icons.auto_fix_high,
-                label: 'Enhance',
-                onTap: processing ? () {} : () => controller.enhance(),
-              ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _AdjustButton(
+              icon: Icons.auto_fix_high,
+              label: _t(context, en: 'Enhance', sw: 'Boresha'),
+              onTap: processing ? () {} : () => controller.enhance(),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _AdjustButton(
-                icon: Icons.contrast,
-                label: 'B&W',
-                onTap: processing ? () {} : controller.toggleBlackAndWhite,
-                isActive: controller.blackAndWhiteOn.value,
-              ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _AdjustButton(
+              icon: Icons.contrast,
+              label: _t(context, en: 'B&W', sw: 'Nyeusi/Nyeupe'),
+              onTap: processing ? () {} : controller.toggleBlackAndWhite,
+              isActive: controller.blackAndWhiteOn.value,
             ),
-          ],
-        );
-      },
-    );
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildDestinationFolder(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Destination Folder',
+        Text(
+          _t(context, en: 'Destination Folder', sw: 'Kabrasha Lengwa'),
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColorPrimary,
+            color: isDark
+                ? theme.colorScheme.onSurface
+                : AppColors.textColorPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Material(
-          color: AppColors.colorWhite,
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHigh
+              : AppColors.colorWhite,
           borderRadius: BorderRadius.circular(AppValues.radius_6),
           child: InkWell(
             onTap: controller.selectDestinationFolder,
@@ -242,19 +287,35 @@ class RefineScanView extends BaseView<RefineScanController> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppValues.radius_6),
-                border: Border.all(color: AppColors.designInputBorder),
+                border: Border.all(
+                  color: isDark
+                      ? theme.colorScheme.outlineVariant
+                      : AppColors.designInputBorder,
+                ),
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: Obx(
                       () => Text(
-                        controller.destinationFolder.value,
+                        controller.destinationFolder.value == 'Select folder'
+                            ? _t(
+                                context,
+                                en: 'Select folder',
+                                sw: 'Chagua kabrasha',
+                              )
+                            : controller.destinationFolder.value,
                         style: TextStyle(
                           fontSize: 16,
-                          color: controller.destinationFolder.value == 'Select folder'
-                              ? AppColors.designPlaceholder
-                              : AppColors.textColorPrimary,
+                          color:
+                              controller.destinationFolder.value ==
+                                  'Select folder'
+                              ? (isDark
+                                    ? theme.colorScheme.onSurfaceVariant
+                                    : AppColors.designPlaceholder)
+                              : (isDark
+                                    ? theme.colorScheme.onSurface
+                                    : AppColors.textColorPrimary),
                         ),
                       ),
                     ),
@@ -273,25 +334,30 @@ class RefineScanView extends BaseView<RefineScanController> {
   }
 
   Widget _buildBottomButtons(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
             onPressed: controller.retake,
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textColorPrimary,
-              side: BorderSide(color: AppColors.designInputBorder),
+              foregroundColor: isDark
+                  ? theme.colorScheme.onSurface
+                  : AppColors.textColorPrimary,
+              side: BorderSide(
+                color: isDark
+                    ? theme.colorScheme.outlineVariant
+                    : AppColors.designInputBorder,
+              ),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppValues.radius_6),
               ),
             ),
-            child: const Text(
-              'Retake',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Text(
+              _t(context, en: 'Retake', sw: 'Piga Tena'),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -308,12 +374,9 @@ class RefineScanView extends BaseView<RefineScanController> {
               ),
               elevation: 0,
             ),
-            child: const Text(
-              'Save to Vault',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Text(
+              _t(context, en: 'Save to Vault', sw: 'Hifadhi Kwenye Vault'),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -383,28 +446,32 @@ class _CropOverlay extends StatelessWidget {
             hitSlop: hitSlop,
             left: cropLeft - half,
             top: cropTop - half,
-            onPanUpdate: (overlayX, overlayY) => _updateCrop(controller, 0, overlayX, overlayY, imageRect),
+            onPanUpdate: (overlayX, overlayY) =>
+                _updateCrop(controller, 0, overlayX, overlayY, imageRect),
           ),
           _CornerHandle(
             size: handleSize,
             hitSlop: hitSlop,
             left: cropRight - half,
             top: cropTop - half,
-            onPanUpdate: (overlayX, overlayY) => _updateCrop(controller, 1, overlayX, overlayY, imageRect),
+            onPanUpdate: (overlayX, overlayY) =>
+                _updateCrop(controller, 1, overlayX, overlayY, imageRect),
           ),
           _CornerHandle(
             size: handleSize,
             hitSlop: hitSlop,
             left: cropRight - half,
             top: cropBottom - half,
-            onPanUpdate: (overlayX, overlayY) => _updateCrop(controller, 2, overlayX, overlayY, imageRect),
+            onPanUpdate: (overlayX, overlayY) =>
+                _updateCrop(controller, 2, overlayX, overlayY, imageRect),
           ),
           _CornerHandle(
             size: handleSize,
             hitSlop: hitSlop,
             left: cropLeft - half,
             top: cropBottom - half,
-            onPanUpdate: (overlayX, overlayY) => _updateCrop(controller, 3, overlayX, overlayY, imageRect),
+            onPanUpdate: (overlayX, overlayY) =>
+                _updateCrop(controller, 3, overlayX, overlayY, imageRect),
           ),
         ],
       );
@@ -456,14 +523,22 @@ class _CropFramePainter extends CustomPainter {
     final dim = Paint()
       ..color = Colors.black38
       ..style = PaintingStyle.fill;
-    final fullPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-    final cropPath = Path()..addRRect(RRect.fromRectAndRadius(cropRect, const Radius.circular(8)));
-    canvas.drawPath(Path.combine(PathOperation.difference, fullPath, cropPath), dim);
+    final fullPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final cropPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(cropRect, const Radius.circular(8)));
+    canvas.drawPath(
+      Path.combine(PathOperation.difference, fullPath, cropPath),
+      dim,
+    );
     final border = Paint()
       ..color = AppColors.designAccent
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    canvas.drawRRect(RRect.fromRectAndRadius(cropRect, const Radius.circular(8)), border);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(cropRect, const Radius.circular(8)),
+      border,
+    );
   }
 
   @override
@@ -539,10 +614,13 @@ class _AdjustButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: isActive
-          ? AppColors.designAccent.withOpacity(0.12)
-          : AppColors.lightGreyColor.withOpacity(0.4),
+          ? AppColors.designAccent.withValues(alpha: 0.12)
+          : (isDark
+                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                : AppColors.lightGreyColor.withValues(alpha: 0.4)),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -555,7 +633,9 @@ class _AdjustButton extends StatelessWidget {
               Icon(
                 icon,
                 size: 24,
-                color: isActive ? AppColors.designAccent : AppColors.textColorPrimary,
+                color: isActive
+                    ? AppColors.designAccent
+                    : AppColors.textColorPrimary,
               ),
               const SizedBox(height: 6),
               Text(
@@ -563,7 +643,9 @@ class _AdjustButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isActive ? AppColors.designAccent : AppColors.textColorPrimary,
+                  color: isActive
+                      ? AppColors.designAccent
+                      : AppColors.textColorPrimary,
                 ),
               ),
             ],

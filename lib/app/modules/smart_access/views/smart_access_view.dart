@@ -15,8 +15,19 @@ const _screenBg = Color(0xFFF5F5F5);
 class SmartAccessView extends BaseView<SmartAccessController> {
   SmartAccessView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  String _t(BuildContext context, {required String en, required String sw}) {
+    final code =
+        Get.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+    return code == 'sw' ? sw : en;
+  }
+
   @override
-  Color pageBackgroundColor(BuildContext context) => _screenBg;
+  Color pageBackgroundColor(BuildContext context) =>
+      _isDark(context) ? Theme.of(context).colorScheme.surface : _screenBg;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -26,8 +37,8 @@ class SmartAccessView extends BaseView<SmartAccessController> {
       actions: [
         IconButton(
           onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined)
-        )
+          icon: const Icon(Icons.more_vert_outlined),
+        ),
       ],
     );
   }
@@ -38,7 +49,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
       child: Column(
         children: [
-          _buildConnectedBadge(),
+          _buildConnectedBadge(context),
           const SizedBox(height: 28),
           _buildLockStatus(context),
           const SizedBox(height: 28),
@@ -50,11 +61,13 @@ class SmartAccessView extends BaseView<SmartAccessController> {
     );
   }
 
-  Widget _buildConnectedBadge() {
+  Widget _buildConnectedBadge(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: _connectedGreen.withOpacity(0.2),
+        color: _connectedGreen.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
       ),
       child: Row(
@@ -70,11 +83,11 @@ class SmartAccessView extends BaseView<SmartAccessController> {
           ),
           const SizedBox(width: 8),
           Text(
-            'CONNECTED',
+            _t(context, en: 'CONNECTED', sw: 'IMEUNGANISHWA'),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: _connectedGreen,
+              color: isDark ? theme.colorScheme.primary : _connectedGreen,
             ),
           ),
         ],
@@ -83,6 +96,8 @@ class SmartAccessView extends BaseView<SmartAccessController> {
   }
 
   Widget _buildLockStatus(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Column(
       children: [
         Stack(
@@ -93,7 +108,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _accessTeal.withOpacity(0.08),
+                color: _accessTeal.withValues(alpha: 0.08),
               ),
             ),
             Container(
@@ -101,7 +116,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
               height: 160,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _accessTeal.withOpacity(0.12),
+                color: _accessTeal.withValues(alpha: 0.12),
               ),
             ),
             Container(
@@ -109,7 +124,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _accessTeal.withOpacity(0.18),
+                color: _accessTeal.withValues(alpha: 0.18),
               ),
             ),
             Obx(
@@ -124,21 +139,27 @@ class SmartAccessView extends BaseView<SmartAccessController> {
         const SizedBox(height: 16),
         Obx(
           () => Text(
-            controller.isLocked.value ? 'Locked' : 'Unlocked',
-            style: const TextStyle(
+            controller.isLocked.value
+                ? _t(context, en: 'Locked', sw: 'Imefungwa')
+                : _t(context, en: 'Unlocked', sw: 'Imefunguliwa'),
+            style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w700,
-              color: AppColors.textColorPrimary,
+              color: isDark
+                  ? theme.colorScheme.onSurface
+                  : AppColors.textColorPrimary,
             ),
           ),
         ),
         const SizedBox(height: 4),
         Obx(
           () => Text(
-            'UPDATED ${controller.lastUpdated}',
+            '${_t(context, en: 'UPDATED', sw: 'IMESASISHWA')} ${controller.lastUpdated}',
             style: TextStyle(
               fontSize: 13,
-              color: AppColors.textColorSecondary,
+              color: isDark
+                  ? theme.colorScheme.onSurfaceVariant
+                  : AppColors.textColorSecondary,
             ),
           ),
         ),
@@ -147,6 +168,8 @@ class SmartAccessView extends BaseView<SmartAccessController> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Column(
       children: [
         Obx(
@@ -163,7 +186,9 @@ class SmartAccessView extends BaseView<SmartAccessController> {
                 color: Colors.white,
               ),
               label: Text(
-                controller.isLocked.value ? 'Unlock Door' : 'Lock Door',
+                controller.isLocked.value
+                    ? _t(context, en: 'Unlock Door', sw: 'Fungua Mlango')
+                    : _t(context, en: 'Lock Door', sw: 'Funga Mlango'),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -187,17 +212,27 @@ class SmartAccessView extends BaseView<SmartAccessController> {
           height: 52,
           child: OutlinedButton.icon(
             onPressed: controller.generateGuestCode,
-            icon: Icon(Icons.vpn_key, size: 22, color: _accessTeal),
+            icon: Icon(
+              Icons.vpn_key,
+              size: 22,
+              color: isDark ? theme.colorScheme.primary : _accessTeal,
+            ),
             label: Text(
-              'Generate Guest Code',
+              _t(
+                context,
+                en: 'Generate Guest Code',
+                sw: 'Tengeneza Msimbo wa Mgeni',
+              ),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: _accessTeal,
+                color: isDark ? theme.colorScheme.primary : _accessTeal,
               ),
             ),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: _accessTeal),
+              side: BorderSide(
+                color: isDark ? theme.colorScheme.primary : _accessTeal,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppValues.radius_12),
               ),
@@ -209,15 +244,19 @@ class SmartAccessView extends BaseView<SmartAccessController> {
   }
 
   Widget _buildRecentActivity(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = _isDark(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHigh
+            : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -229,22 +268,28 @@ class SmartAccessView extends BaseView<SmartAccessController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Recent Activity',
+              Text(
+                _t(
+                  context,
+                  en: 'Recent Activity',
+                  sw: 'Shughuli za Hivi Karibuni',
+                ),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textColorPrimary,
+                  color: isDark
+                      ? theme.colorScheme.onSurface
+                      : AppColors.textColorPrimary,
                 ),
               ),
               TextButton(
                 onPressed: controller.viewAllActivity,
                 child: Text(
-                  'View All',
+                  _t(context, en: 'View All', sw: 'Tazama Zote'),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: _accessTeal,
+                    color: isDark ? theme.colorScheme.primary : _accessTeal,
                   ),
                 ),
               ),
@@ -267,11 +312,13 @@ class SmartAccessView extends BaseView<SmartAccessController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Guest: ${e.guestName}',
-                          style: const TextStyle(
+                          '${_t(context, en: 'Guest', sw: 'Mgeni')}: ${e.guestName}',
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textColorPrimary,
+                            color: isDark
+                                ? theme.colorScheme.onSurface
+                                : AppColors.textColorPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -279,7 +326,9 @@ class SmartAccessView extends BaseView<SmartAccessController> {
                           '${e.detail} • ${e.time}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textColorSecondary,
+                            color: isDark
+                                ? theme.colorScheme.onSurfaceVariant
+                                : AppColors.textColorSecondary,
                           ),
                         ),
                       ],

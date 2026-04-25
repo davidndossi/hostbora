@@ -10,16 +10,27 @@ import '../controllers/add_task_controller.dart';
 class AddTaskView extends BaseView<AddTaskController> {
   AddTaskView({super.key});
 
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
-    return CustomAppBar(
-      appBarTitleText: 'Add Task',
-      isCentered: true,
-    );
+    return CustomAppBar(appBarTitleText: 'Add Task', isCentered: true);
   }
 
   @override
   Widget body(BuildContext context) {
+    final isDark = _isDark(context);
+    final labelColor = isDark ? Colors.white : AppColors.textColorPrimary;
+    final valueColor = isDark ? Colors.white : AppColors.textColorPrimary;
+    final hintColor = isDark
+        ? const Color(0xFF8E8E93)
+        : AppColors.designPlaceholder;
+    final containerBg = isDark ? const Color(0xFF2C2C2E) : AppColors.colorWhite;
+    final borderColor = isDark
+        ? const Color(0xFF3A3A3C)
+        : AppColors.designInputBorder;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
       child: Form(
@@ -33,13 +44,14 @@ class AddTaskView extends BaseView<AddTaskController> {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
-                color: AppColors.textColorPrimary,
+                color: labelColor,
               ),
             ),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.titleController,
-              decoration: _decoration(hint: 'e.g. Clean Beach House'),
+              style: TextStyle(color: valueColor),
+              decoration: _decoration(context, hint: 'e.g. Clean Beach House'),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Title is required';
                 return null;
@@ -52,14 +64,15 @@ class AddTaskView extends BaseView<AddTaskController> {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
-                color: AppColors.textColorPrimary,
+                color: labelColor,
               ),
             ),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.descriptionController,
               maxLines: 3,
-              decoration: _decoration(hint: 'Add details...'),
+              style: TextStyle(color: valueColor),
+              decoration: _decoration(context, hint: 'Add details...'),
             ),
             const SizedBox(height: 20),
             Text(
@@ -68,7 +81,7 @@ class AddTaskView extends BaseView<AddTaskController> {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
-                color: AppColors.textColorPrimary,
+                color: labelColor,
               ),
             ),
             const SizedBox(height: 8),
@@ -78,23 +91,30 @@ class AddTaskView extends BaseView<AddTaskController> {
                 onTap: () => controller.pickDueDate(context),
                 borderRadius: BorderRadius.circular(AppValues.radius_6),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.colorWhite,
+                    color: containerBg,
                     borderRadius: BorderRadius.circular(AppValues.radius_6),
-                    border: Border.all(color: AppColors.designInputBorder),
+                    border: Border.all(color: borderColor),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_outlined, size: 20, color: AppColors.designPlaceholder),
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 20,
+                        color: hintColor,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         label,
                         style: TextStyle(
                           fontSize: 16,
                           color: controller.dueDate.value != null
-                              ? AppColors.textColorPrimary
-                              : AppColors.designPlaceholder,
+                              ? valueColor
+                              : hintColor,
                         ),
                       ),
                       const Spacer(),
@@ -114,48 +134,59 @@ class AddTaskView extends BaseView<AddTaskController> {
               );
             }),
             const SizedBox(height: 32),
-            Obx(() => SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: controller.saving.value ? null : controller.submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.colorPrimary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppValues.radius_6),
-                      ),
-                      elevation: 0,
+            Obx(
+              () => SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: controller.saving.value ? null : controller.submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.colorPrimary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppValues.radius_6),
                     ),
-                    child: controller.saving.value
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Add Task'),
+                    elevation: 0,
                   ),
-                )),
+                  child: controller.saving.value
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Add Task'),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  InputDecoration _decoration({required String hint}) {
+  InputDecoration _decoration(BuildContext context, {required String hint}) {
+    final isDark = _isDark(context);
+    final borderColor = isDark
+        ? const Color(0xFF3A3A3C)
+        : AppColors.designInputBorder;
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.designPlaceholder),
+      hintStyle: TextStyle(
+        color: isDark ? const Color(0xFF8E8E93) : AppColors.designPlaceholder,
+      ),
       filled: true,
-      fillColor: AppColors.colorWhite,
+      fillColor: isDark ? const Color(0xFF2C2C2E) : AppColors.colorWhite,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),

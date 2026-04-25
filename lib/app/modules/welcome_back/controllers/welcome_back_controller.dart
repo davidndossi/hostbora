@@ -5,12 +5,22 @@ import 'package:local_auth/error_codes.dart' as auth_error;
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/workspace_context_service.dart';
+import '../../../data/model/login_request.dart';
+import '../../../data/model/login_response.dart';
+import '../../../data/repository/app_repository.dart';
+import '../../../network/exceptions/api_exception.dart';
 import '../../../routes/app_pages.dart';
 
 class WelcomeBackController extends BaseController {
   WelcomeBackController()
       : _preferenceManager =
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
+
+  final Rx<LoginResponse> _loginResponse = LoginResponse().obs;
+  LoginResponse get loginResponse => _loginResponse.value;
+
+  final AppRepository _repository = Get.find(tag: (AppRepository).toString());
 
   final PreferenceManager _preferenceManager;
   final pinLength = 4;
@@ -22,8 +32,12 @@ class WelcomeBackController extends BaseController {
   final setupStep = 1.obs;
   final setupPrompt = 'Create a 4-digit PIN'.obs;
   final lockoutMessage = ''.obs;
+  final msisdn = ''.obs;
+  final password = ''.obs;
   String _firstPin = '';
   String _storedPin = '';
+
+  late String firebaseToken;
 
   String _t(String en, String sw) =>
       Get.locale?.languageCode == 'sw' ? sw : en;
@@ -60,6 +74,10 @@ class WelcomeBackController extends BaseController {
     );
   }
 
+  Future<void> getFirebaseToken() async {
+    firebaseToken = await _preferenceManager.getString(PreferenceManager.keyFirebaseToken);
+  }
+
   Future<void> _checkBiometricsAvailable() async {
     try {
       final auth = LocalAuthentication();
@@ -93,6 +111,68 @@ class WelcomeBackController extends BaseController {
     }
   }
 
+  void _handleLoginResponseSuccess(LoginResponse res) async {
+    _loginResponse(res);
+    proceedToLogin(res);
+  }
+
+  void _handleLoginResponseError(Exception? e) {
+    if (e is ApiException && (e.message).isNotEmpty) {
+      showErrorMessage(e.message);
+    }
+  }
+
+  Future<void> proceedToLogin(LoginResponse res) async {
+    if (res.message == 'expired_version') {
+      showErrorMessage(appLocalization.expiredVersion);
+    } else if (res.message == 'auth_success') {
+      final expiresIn = res.expiresIn ?? 0;
+      final expiryTime = DateTime.now().add(Duration(minutes: expiresIn)).toIso8601String();
+      await _preferenceManager.setString(
+          PreferenceManager.keyToken, loginResponse.token!);
+      await _preferenceManager.setString(
+          PreferenceManager.keyExpiryTime, expiryTime);
+      await _preferenceManager.setBool('isAdmin', loginResponse.user?.isAdmin ?? false);
+
+      await _preferenceManager.setUser('user', loginResponse.user);
+      if (res.token != null) {
+        await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
+          arguments: {
+            'initialMenu': 'home',
+            'from_password_login': true,
+            WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,
+          },
+        );
+      } else {
+        showErrorMessage(appLocalization.loginFailed);
+      }
+    } else {
+      showErrorMessage(appLocalization.loginFailed);
+    }
+  }
+
+  void loginUsingSavedCredentials() {
+    final loginRequest = LoginRequest(
+      username: msisdn.value,
+      password: password.value,
+      verified: true,
+      firebaseToken: firebaseToken.isNotEmpty ? firebaseToken : null,
+    );
+    callDataService<LoginResponse>(
+      _repository.signIn(loginRequest),
+      onError: _handleLoginResponseError,
+      onSuccess: _handleLoginResponseSuccess,
+    );
+  }
+
+  void loadCredentials() async {
+    var phone = await _preferenceManager.getString(PreferenceManager.keyUsername);
+    var a = await _preferenceManager.getString('userApp');
+    msisdn(phone);
+    password(a.toString());
+    loginUsingSavedCredentials();
+  }
+
   void _validateAndNavigate() {
     if (_storedPin.isEmpty) {
       showErrorMessage(_t('PIN is not set yet. Sign in first.', 'PIN bado haijawekwa. Ingia kwanza.'));
@@ -106,7 +186,7 @@ class WelcomeBackController extends BaseController {
     }
     _resetFailedAttempts();
     enteredPin.value = '';
-    Get.offAllNamed(Routes.MAIN, arguments: {'initialMenu': 'home'});
+    loadCredentials();
   }
 
   Future<void> _handleFailedPinAttempt() async {
@@ -160,6 +240,7 @@ class WelcomeBackController extends BaseController {
     if (!_isLockedSync(lockedUntilMs)) {
       lockoutMessage.value = '';
       await _preferenceManager.setInt(PreferenceManager.keyPinLockedUntilMs, 0);
+      getFirebaseToken();
       return;
     }
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -172,49 +253,60 @@ class WelcomeBackController extends BaseController {
   }
 
   Future<void> _setupPin() async {
-    if (changePinMode.value && setupStep.value == 1) {
-      if (_storedPin.isEmpty || enteredPin.value != _storedPin) {
-        showErrorMessage(_t('Current PIN is incorrect', 'PIN ya sasa si sahihi'));
-        enteredPin.value = '';
-        return;
-      }
-      enteredPin.value = '';
-      setupStep.value = 2;
-      setupPrompt.value = _t('Create a new 4-digit PIN', 'Tengeneza PIN mpya ya tarakimu 4');
-      return;
-    }
-
-    if (_firstPin.isEmpty) {
-      _firstPin = enteredPin.value;
-      enteredPin.value = '';
-      setupStep.value = changePinMode.value ? 3 : 2;
-      setupPrompt.value = _t('Confirm your 4-digit PIN', 'Thibitisha PIN yako ya tarakimu 4');
-      return;
-    }
-    if (enteredPin.value != _firstPin) {
-      showErrorMessage(_t('PINs do not match. Try again.', 'PIN hazifanani. Jaribu tena.'));
-      _firstPin = '';
-      enteredPin.value = '';
-      setupStep.value = 1;
-      setupPrompt.value = _t('Create a 4-digit PIN', 'Tengeneza PIN ya tarakimu 4');
-      return;
-    }
-    await _preferenceManager.setString(PreferenceManager.keyPinCode, _firstPin);
-    await _preferenceManager.setBool(PreferenceManager.keyPinEnabled, true);
-    await _preferenceManager.setBool(PreferenceManager.keyFirstLogin, false);
-    await _resetFailedAttempts();
-    showSuccessMessage(
-      changePinMode.value
-          ? _t('PIN changed successfully', 'PIN imebadilishwa kwa mafanikio')
-          : _t('PIN set successfully', 'PIN imewekwa kwa mafanikio'),
+  //   if (changePinMode.value && setupStep.value == 1) {
+  //     if (_storedPin.isEmpty || enteredPin.value != _storedPin) {
+  //       showErrorMessage(_t('Current PIN is incorrect', 'PIN ya sasa si sahihi'));
+  //       enteredPin.value = '';
+  //       return;
+  //     }
+  //     enteredPin.value = '';
+  //     setupStep.value = 2;
+  //     setupPrompt.value = _t('Create a new 4-digit PIN', 'Tengeneza PIN mpya ya tarakimu 4');
+  //     return;
+  //   }
+  //
+  //   if (_firstPin.isEmpty) {
+  //     _firstPin = enteredPin.value;
+  //     enteredPin.value = '';
+  //     setupStep.value = changePinMode.value ? 3 : 2;
+  //     setupPrompt.value = _t('Confirm your 4-digit PIN', 'Thibitisha PIN yako ya tarakimu 4');
+  //     return;
+  //   }
+  //   if (enteredPin.value != _firstPin) {
+  //     showErrorMessage(_t('PINs do not match. Try again.', 'PIN hazifanani. Jaribu tena.'));
+  //     _firstPin = '';
+  //     enteredPin.value = '';
+  //     setupStep.value = 1;
+  //     setupPrompt.value = _t('Create a 4-digit PIN', 'Tengeneza PIN ya tarakimu 4');
+  //     return;
+  //   }
+  //   await _preferenceManager.setString(PreferenceManager.keyPinCode, _firstPin);
+  //   await _preferenceManager.setBool(PreferenceManager.keyPinEnabled, true);
+  //   await _preferenceManager.setBool(PreferenceManager.keyFirstLogin, false);
+  //   await _resetFailedAttempts();
+  //   showSuccessMessage(
+  //     changePinMode.value
+  //         ? _t('PIN changed successfully', 'PIN imebadilishwa kwa mafanikio')
+  //         : _t('PIN set successfully', 'PIN imewekwa kwa mafanikio'),
+  //   );
+  //   Get.offAllNamed(Routes.MAIN, arguments: {'initialMenu': 'home'});
+    Get.toNamed(
+      Routes.CHANGE_PIN,
+      arguments: {
+        WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,
+      },
     );
-    Get.offAllNamed(Routes.MAIN, arguments: {'initialMenu': 'home'});
   }
 
   void close() => Get.back();
 
-  void continueToApp() {
-    Get.offAllNamed(Routes.MAIN, arguments: {'initialMenu': 'home'});
+  Future<void> continueToApp() async {
+    await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
+      arguments: {
+        'initialMenu': 'home',
+        WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,
+      },
+    );
   }
 
   void help() => Get.toNamed(Routes.SUPPORT);
@@ -255,7 +347,7 @@ class WelcomeBackController extends BaseController {
         ),
       );
       if (didAuthenticate) {
-        Get.offAllNamed(Routes.MAIN, arguments: {'initialMenu': 'home'});
+        loadCredentials();
       }
     } on PlatformException catch (e) {
       if (e.code == auth_error.notAvailable) {

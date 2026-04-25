@@ -92,4 +92,10 @@ class RentPaymentReminderLocalDataSource {
       whereArgs: [id],
     );
   }
+
+  Future<List<RentPaymentReminderRecord>> getAllNewestFirst() async {
+    final db = await database;
+    final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
+    return maps.map(RentPaymentReminderRecord.fromMap).toList();
+  }
 }

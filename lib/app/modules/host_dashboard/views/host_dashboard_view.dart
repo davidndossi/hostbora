@@ -8,6 +8,13 @@ import '../controllers/host_dashboard_controller.dart';
 class HostDashboardView extends BaseView<HostDashboardController> {
   HostDashboardView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -51,21 +58,23 @@ class HostDashboardView extends BaseView<HostDashboardController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Property Overview',
+              _t(context, en: 'Property Overview', sw: 'Muhtasari wa Mali'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textColorPrimary,
+                color: _isDark(context)
+                    ? Colors.white
+                    : AppColors.textColorPrimary,
               ),
             ),
             TextButton(
               onPressed: controller.viewTrends,
               child: Text(
-                'View Trends',
+                _t(context, en: 'View Trends', sw: 'Angalia Mwelekeo'),
                 style: TextStyle(
                   color: AppColors.colorPrimary,
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: 15,
                 ),
               ),
             ),
@@ -76,7 +85,7 @@ class HostDashboardView extends BaseView<HostDashboardController> {
           children: [
             Expanded(
               child: _MetricCard(
-                title: 'Active Bookings',
+                title: _t(context, en: 'Active Bookings', sw: 'Uhifadhi Hai'),
                 value: '${controller.activeBookings}',
                 subtitle: controller.bookingsChange,
               ),
@@ -84,7 +93,11 @@ class HostDashboardView extends BaseView<HostDashboardController> {
             const SizedBox(width: 12),
             Expanded(
               child: _MetricCard(
-                title: 'Monthly Revenue',
+                title: _t(
+                  context,
+                  en: 'Monthly Revenue',
+                  sw: 'Mapato ya Mwezi',
+                ),
                 value: controller.monthlyRevenue,
                 subtitle: controller.revenueChange,
               ),
@@ -103,21 +116,27 @@ class HostDashboardView extends BaseView<HostDashboardController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Upcoming Check-ins',
+              _t(
+                context,
+                en: 'Upcoming Check-ins',
+                sw: 'Wanaoingia Hivi Karibuni',
+              ),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textColorPrimary,
+                color: _isDark(context)
+                    ? Colors.white
+                    : AppColors.textColorPrimary,
               ),
             ),
             TextButton(
               onPressed: controller.seeAllCheckIns,
               child: Text(
-                'See All',
+                _t(context, en: 'See All', sw: 'Ona Yote'),
                 style: TextStyle(
                   color: AppColors.colorPrimary,
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: 15,
                 ),
               ),
             ),
@@ -129,7 +148,7 @@ class HostDashboardView extends BaseView<HostDashboardController> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: controller.checkIns.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final item = controller.checkIns[index];
               return _CheckInCard(
@@ -148,11 +167,11 @@ class HostDashboardView extends BaseView<HostDashboardController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick Actions',
+          _t(context, en: 'Quick Actions', sw: 'Vitendo vya Haraka'),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColorPrimary,
+            color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -166,32 +185,32 @@ class HostDashboardView extends BaseView<HostDashboardController> {
           children: [
             _QuickActionTile(
               icon: Icons.add_home_work_outlined,
-              label: 'Add Listing',
+              label: _t(context, en: 'Add Listing', sw: 'Ongeza Tangazo'),
               onTap: controller.addListing,
             ),
             _QuickActionTile(
               icon: Icons.calendar_today_outlined,
-              label: 'Add Booking',
+              label: _t(context, en: 'Add Booking', sw: 'Ongeza Uhifadhi'),
               onTap: controller.addNewBooking,
             ),
             _QuickActionTile(
               icon: Icons.key,
-              label: 'Smart Access',
+              label: _t(context, en: 'Smart Access', sw: 'Ufikiaji Mahiri'),
               onTap: controller.smartAccess,
             ),
             _QuickActionTile(
               icon: Icons.calendar_month_outlined,
-              label: 'View Calendar',
+              label: _t(context, en: 'View Calendar', sw: 'Angalia Kalenda'),
               onTap: controller.viewCalendar,
             ),
             _QuickActionTile(
               icon: Icons.assignment_outlined,
-              label: 'Assign Tasks',
+              label: _t(context, en: 'Assign Tasks', sw: 'Panga Kazi'),
               onTap: controller.assignTasks,
             ),
             _QuickActionTile(
               icon: Icons.bar_chart_outlined,
-              label: 'Reports',
+              label: _t(context, en: 'Reports', sw: 'Ripoti'),
               onTap: controller.reports,
             ),
           ],
@@ -214,14 +233,15 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -233,8 +253,8 @@ class _MetricCard extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textColorSecondary,
+              fontSize: 14,
+              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -244,15 +264,15 @@ class _MetricCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: AppColors.textColorPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 11,
-              color: AppColors.textColorSecondary,
+              fontSize: 12,
+              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -271,13 +291,14 @@ class _CheckInCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       width: 280,
       child: Card(
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 0,
-        color: AppColors.colorWhite,
+        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
@@ -289,10 +310,15 @@ class _CheckInCard extends StatelessWidget {
                 height: 100,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (context, error, stackTrace) => Container(
                   height: 100,
                   color: AppColors.lightGreyColor,
-                  child: const Icon(Icons.image_not_supported),
+                  child: Icon(
+                    Icons.image_not_supported,
+                    color: isDark
+                        ? Colors.white60
+                        : AppColors.textColorSecondary,
+                  ),
                 ),
               ),
               Padding(
@@ -315,7 +341,9 @@ class _CheckInCard extends StatelessWidget {
                                       : '?',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textColorSecondary,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : AppColors.textColorSecondary,
                                   ),
                                 )
                               : null,
@@ -326,8 +354,8 @@ class _CheckInCard extends StatelessWidget {
                             item.guestName,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: AppColors.textColorPrimary,
+                              fontSize: 15,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -343,9 +371,12 @@ class _CheckInCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              'Confirmed',
+                              Localizations.localeOf(context).languageCode ==
+                                      'sw'
+                                  ? 'Imethibitishwa'
+                                  : 'Confirmed',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.colorPrimary,
                               ),
@@ -357,15 +388,17 @@ class _CheckInCard extends StatelessWidget {
                     Text(
                       item.propertyType,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textColorPrimary,
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     Text(
                       item.dates,
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textColorSecondary,
+                        color: isDark
+                            ? Colors.white70
+                            : AppColors.textColorSecondary,
                       ),
                     ),
                   ],
@@ -374,7 +407,7 @@ class _CheckInCard extends StatelessWidget {
             ],
           ),
         ),
-      )
+      ),
     );
   }
 }
@@ -392,13 +425,14 @@ class _QuickActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.colorWhite,
+        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -420,9 +454,9 @@ class _QuickActionTile extends StatelessWidget {
                   label,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textColorPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],

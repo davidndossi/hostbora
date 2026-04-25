@@ -9,19 +9,33 @@ import '../controllers/reset_password_controller.dart';
 class ResetPasswordView extends BaseView<ResetPasswordController> {
   ResetPasswordView({super.key});
 
+  String _t(BuildContext context, String en, String sw) {
+    return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return AppBar(
-      backgroundColor: AppColors.pageBackground,
+      backgroundColor: isDark
+          ? theme.colorScheme.surface
+          : AppColors.pageBackground,
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
         onPressed: controller.goBack,
         icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 22),
-        color: AppColors.textColorPrimary,
+        color: isDark
+            ? theme.colorScheme.onSurface
+            : AppColors.textColorPrimary,
         style: IconButton.styleFrom(
-          backgroundColor: AppColors.colorWhite,
-          foregroundColor: AppColors.textColorPrimary,
+          backgroundColor: isDark
+              ? theme.colorScheme.surfaceContainerHigh
+              : AppColors.colorWhite,
+          foregroundColor: isDark
+              ? theme.colorScheme.onSurface
+              : AppColors.textColorPrimary,
           shape: const CircleBorder(),
         ),
       ),
@@ -30,6 +44,8 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return SafeArea(
       child: Column(
         children: [
@@ -43,85 +59,106 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
                   children: [
                     const SizedBox(height: 16),
                     Text(
-                      'Reset Password',
+                      _t(context, 'Reset Password', 'Weka Upya Nenosiri'),
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textColorPrimary,
+                        color: isDark
+                            ? theme.colorScheme.onSurface
+                            : AppColors.textColorPrimary,
                         letterSpacing: -0.5,
                         height: 1.2,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Enter your registered phone number and we will send you a verification code.',
+                      _t(
+                        context,
+                        'Enter your registered phone number and we will send you a verification code.',
+                        'Weka namba yako ya simu iliyosajiliwa, tutakutumia msimbo wa uthibitisho.',
+                      ),
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
-                        color: AppColors.textColorSecondary,
+                        color: isDark
+                            ? theme.colorScheme.onSurfaceVariant
+                            : AppColors.textColorSecondary,
                         height: 1.4,
                       ),
                     ),
                     const SizedBox(height: 32),
                     Text(
-                      'Phone Number',
+                      _t(context, 'Phone Number', 'Namba ya Simu'),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textColorPrimary,
+                        color: isDark
+                            ? theme.colorScheme.onSurface
+                            : AppColors.textColorPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: controller.msisdnController,
                       keyboardType: TextInputType.phone,
-                      decoration: _inputDecoration(hint: 'e.g. 0712345678'),
+                      decoration: _inputDecoration(
+                        context,
+                        hint: _t(context, 'e.g. 0712345678', 'mf. 0712345678'),
+                      ),
                       validator: controller.validateMsisdn,
                     ),
                     const SizedBox(height: 32),
-                    Obx(() => SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: controller.isLoading.isTrue ? null : controller.sendCode,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.colorPrimary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppValues.radius_6),
-                          ),
-                        ),
-                        child: controller.isLoading.isTrue
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text(
-                                    'Send Code',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 20,
-                                    color: Colors.white.withOpacity(0.95),
-                                  ),
-                                ],
+                    Obx(
+                      () => SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: controller.isLoading.isTrue
+                              ? null
+                              : controller.sendCode,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.colorPrimary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppValues.radius_6,
                               ),
+                            ),
+                          ),
+                          child: controller.isLoading.isTrue
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      _t(context, 'Send Code', 'Tuma Msimbo'),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 20,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.95,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
                       ),
-                    )),
+                    ),
                   ],
                 ),
               ),
@@ -136,8 +173,8 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
                 size: 18,
                 color: AppColors.colorPrimary,
               ),
-              label: const Text(
-                'Back to Login',
+              label: Text(
+                _t(context, 'Back to Login', 'Rudi Kuingia'),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -151,24 +188,46 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
     );
   }
 
-  InputDecoration _inputDecoration({required String hint}) {
+  InputDecoration _inputDecoration(
+    BuildContext context, {
+    required String hint,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.designPlaceholder),
+      hintStyle: TextStyle(
+        color: isDark
+            ? theme.colorScheme.onSurfaceVariant
+            : AppColors.designPlaceholder,
+      ),
       filled: true,
-      fillColor: AppColors.colorWhite,
+      fillColor: isDark
+          ? theme.colorScheme.surfaceContainerHigh
+          : AppColors.colorWhite,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(
+          color: isDark
+              ? theme.colorScheme.outlineVariant
+              : AppColors.designInputBorder,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(
+          color: isDark
+              ? theme.colorScheme.outlineVariant
+              : AppColors.designInputBorder,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
+        borderSide: BorderSide(
+          color: isDark ? theme.colorScheme.primary : AppColors.colorPrimary,
+          width: 1.5,
+        ),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),

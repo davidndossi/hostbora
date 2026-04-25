@@ -20,6 +20,13 @@ class HomeView extends BaseView<HomeController> {
   final WorkspaceContextService _workspaceContext =
       Get.find<WorkspaceContextService>();
 
+  String _t(BuildContext context, String en, String sw) {
+    return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -31,27 +38,28 @@ class HomeView extends BaseView<HomeController> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Obx(
-                  () {
-                    final ws = _workspaceContext.currentWorkspace.value;
-                    final activeLabel = ws == 'bnb' ? 'BnB' : 'RENT';
-                    return Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.colorPrimary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
+                Obx(() {
+                  final ws = _workspaceContext.currentWorkspace.value;
+                  final activeLabel = ws == 'bnb' ? 'BnB' : 'RENT';
+                  return Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.colorPrimary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      activeLabel,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
                       ),
-                      child: Text(
-                        activeLabel,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                }),
                 InkWell(
                   onTap: () async {
                     await _workspaceContext.switchWorkspace('rent');
@@ -59,7 +67,10 @@ class HomeView extends BaseView<HomeController> {
                   },
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
                     child: Text(
                       'RENT',
                       style: TextStyle(
@@ -73,7 +84,13 @@ class HomeView extends BaseView<HomeController> {
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text('|', style: TextStyle(color: AppColors.textColorSecondary, fontSize: 13)),
+                  child: Text(
+                    '|',
+                    style: TextStyle(
+                      color: AppColors.textColorSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
                 Text(
                   'BnB',
@@ -88,20 +105,20 @@ class HomeView extends BaseView<HomeController> {
             ),
           ),
         ),
-        IconButton(
-          onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
-          icon: Obx(
-            () => controller.unreadCount.value > 0
-                ? Badge.count(
-                    count: controller.unreadCount.value,
-                    child: const Icon(Icons.notifications_none_outlined))
-                : const Icon(Icons.notifications_none_outlined),
-          ),
-        ),
-        IconButton(
-          onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined)
-        )
+        // IconButton(
+        //   onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
+        //   icon: Obx(
+        //     () => controller.unreadCount.value > 0
+        //         ? Badge.count(
+        //             count: controller.unreadCount.value,
+        //             child: const Icon(Icons.notifications_none_outlined))
+        //         : const Icon(Icons.notifications_none_outlined),
+        //   ),
+        // ),
+        // IconButton(
+        //   onPressed: () => Get.toNamed(Routes.SETTINGS),
+        //   icon: const Icon(Icons.more_vert_outlined)
+        // )
       ],
     );
   }
@@ -139,16 +156,23 @@ class HomeView extends BaseView<HomeController> {
     );
   }
 
-  Widget _buildThemeSwitch(BuildContext context, ThemeController themeController) {
+  Widget _buildThemeSwitch(
+    BuildContext context,
+    ThemeController themeController,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF3A3A3C) : AppColors.designInputBorder),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF3A3A3C)
+              : AppColors.designInputBorder,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -157,18 +181,24 @@ class HomeView extends BaseView<HomeController> {
       child: Row(
         children: [
           Icon(
-            Theme.of(context).brightness == Brightness.dark ? Icons.dark_mode : Icons.light_mode,
+            Theme.of(context).brightness == Brightness.dark
+                ? Icons.dark_mode
+                : Icons.light_mode,
             size: 22,
-            color: Theme.of(context).brightness == Brightness.dark ? AppColors.colorPrimaryLight : AppColors.colorPrimary,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.colorPrimaryLight
+                : AppColors.colorPrimary,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Dark theme',
+              _t(context, 'Dark theme', 'Mandhari ya giza'),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textColorPrimary,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : AppColors.textColorPrimary,
               ),
             ),
           ),
@@ -178,7 +208,9 @@ class HomeView extends BaseView<HomeController> {
               onChanged: (_) => themeController.toggleTheme(),
               activeTrackColor: AppColors.colorPrimaryLight,
               thumbColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) return AppColors.colorPrimary;
+                if (states.contains(WidgetState.selected)) {
+                  return AppColors.colorPrimary;
+                }
                 return AppColors.designInputBorder;
               }),
             ),
@@ -196,17 +228,19 @@ class HomeView extends BaseView<HomeController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Property Overview',
+              _t(context, 'Property Overview', 'Muhtasari wa Mali'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textColorPrimary,
+                color: _isDark(context)
+                    ? Colors.white
+                    : AppColors.textColorPrimary,
               ),
             ),
             TextButton(
               onPressed: controller.viewTrends,
               child: Text(
-                'View Trends',
+                _t(context, 'View Trends', 'Angalia Mwelekeo'),
                 style: TextStyle(
                   color: AppColors.colorPrimary,
                   fontWeight: FontWeight.w600,
@@ -217,25 +251,27 @@ class HomeView extends BaseView<HomeController> {
           ],
         ),
         const SizedBox(height: 12),
-        Obx(() => Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                title: 'Active Bookings',
-                value: '${controller.activeBookings.value}',
-                subtitle: controller.bookingsChange.value,
+        Obx(
+          () => Row(
+            children: [
+              Expanded(
+                child: _MetricCard(
+                  title: _t(context, 'Active Bookings', 'Uhifadhi Hai'),
+                  value: '${controller.activeBookings.value}',
+                  subtitle: controller.bookingsChange.value,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                title: 'Monthly Revenue',
-                value: controller.monthlyRevenue.value,
-                subtitle: controller.revenueChange.value,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricCard(
+                  title: _t(context, 'Monthly Revenue', 'Mapato ya Mwezi'),
+                  value: controller.monthlyRevenue.value,
+                  subtitle: controller.revenueChange.value,
+                ),
               ),
-            ),
-          ],
-        )),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -248,17 +284,19 @@ class HomeView extends BaseView<HomeController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Upcoming Check-ins',
+              _t(context, 'Upcoming Check-ins', 'Wanaoingia Hivi Karibuni'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textColorPrimary,
+                color: _isDark(context)
+                    ? Colors.white
+                    : AppColors.textColorPrimary,
               ),
             ),
             TextButton(
               onPressed: controller.seeAllCheckIns,
               child: Text(
-                'See All',
+                _t(context, 'See All', 'Ona Yote'),
                 style: TextStyle(
                   color: AppColors.colorPrimary,
                   fontWeight: FontWeight.w600,
@@ -276,7 +314,11 @@ class HomeView extends BaseView<HomeController> {
               height: 120,
               child: Center(
                 child: Text(
-                  'No upcoming check-ins',
+                  _t(
+                    context,
+                    'No upcoming check-ins',
+                    'Hakuna wanaoingia hivi karibuni',
+                  ),
                   style: TextStyle(
                     fontSize: 14,
                     color: Theme.of(context).brightness == Brightness.dark
@@ -292,7 +334,7 @@ class HomeView extends BaseView<HomeController> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              separatorBuilder: (_, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final item = list[index];
                 return _CheckInCard(
@@ -312,11 +354,11 @@ class HomeView extends BaseView<HomeController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick Actions',
+          _t(context, 'Quick Actions', 'Vitendo vya Haraka'),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textColorPrimary,
+            color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -328,24 +370,47 @@ class HomeView extends BaseView<HomeController> {
           crossAxisSpacing: 12,
           childAspectRatio: 1.3,
           children: [
-            _QuickActionTile(icon: 'ic_properties.svg', label: 'Properties', onTap: controller.properties),
-            _QuickActionTile(icon: 'ic_add_property.svg', label: 'Add Listing', onTap: controller.addListing),
-            _QuickActionTile(icon: 'ic_calendar.svg', label: 'Add Booking', onTap: controller.addNewBooking),
+            _QuickActionTile(
+              icon: 'ic_properties.svg',
+              label: _t(context, 'Properties', 'Mali'),
+              onTap: controller.properties,
+            ),
+            _QuickActionTile(
+              icon: 'ic_add_property.svg',
+              label: _t(context, 'Add Listing', 'Ongeza Tangazo'),
+              onTap: controller.addListing,
+            ),
+            _QuickActionTile(
+              icon: 'ic_calendar.svg',
+              label: _t(context, 'Add Booking', 'Ongeza Uhifadhi'),
+              onTap: controller.addNewBooking,
+            ),
             // _QuickActionTile(icon: 'ic_smart_key.svg', label: 'Smart Access', onTap: controller.smartAccess),
-            _QuickActionTile(icon: 'ic_completion.svg', label: 'Maintenance & Tasks', onTap: controller.tasks),
-            _QuickActionTile(icon: 'ic_design_studio.svg', label: 'Design Studio', onTap: controller.designStudio),
-            _QuickActionTile(icon: 'ic_pinterest.svg', label: 'Moodboards', onTap: controller.designMoodboards),
-            _QuickActionTile(icon: 'ic_ai_manager.svg', label: 'AI Manager', onTap: controller.aiManager),
-            _QuickActionTile(icon: 'ic_ai_insights.svg', label: 'AI Insights', onTap: controller.aiInsights),
-            _QuickActionTile(icon: 'ic_robot.svg', label: 'AI Automations', onTap: controller.aiAutomations),
-            _QuickActionTile(icon: 'ic_reports.svg', label: 'Reports', onTap: controller.reports),
-            _QuickActionTile(icon: 'ic_vault.svg', label: 'Vault', onTap: controller.documents),
+            _QuickActionTile(
+              icon: 'ic_completion.svg',
+              label: _t(context, 'Maintenance & Tasks', 'Matengenezo na Kazi'),
+              onTap: controller.tasks,
+            ),
+            // _QuickActionTile(icon: 'ic_design_studio.svg', label: 'Design Studio', onTap: controller.designStudio),
+            // _QuickActionTile(icon: 'ic_pinterest.svg', label: 'Moodboards', onTap: controller.designMoodboards),
+            // _QuickActionTile(icon: 'ic_ai_manager.svg', label: 'AI Manager', onTap: controller.aiManager),
+            // _QuickActionTile(icon: 'ic_ai_insights.svg', label: 'AI Insights', onTap: controller.aiInsights),
+            // _QuickActionTile(icon: 'ic_robot.svg', label: 'AI Automations', onTap: controller.aiAutomations),
+            _QuickActionTile(
+              icon: 'ic_reports.svg',
+              label: _t(context, 'Reports', 'Ripoti'),
+              onTap: controller.reports,
+            ),
+            _QuickActionTile(
+              icon: 'ic_vault.svg',
+              label: _t(context, 'Vault', 'Hifadhi'),
+              onTap: controller.documents,
+            ),
           ],
         ),
       ],
     );
   }
-
 }
 
 class _MetricCard extends StatelessWidget {
@@ -369,7 +434,7 @@ class _MetricCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -381,8 +446,10 @@ class _MetricCard extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 13,
-              color: isDark ? AppColors.textColorSecondary : AppColors.textColorSecondary,
+              fontSize: 14,
+              color: isDark
+                  ? AppColors.textColorSecondary
+                  : AppColors.textColorSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -399,8 +466,10 @@ class _MetricCard extends StatelessWidget {
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 11,
-              color: isDark ? AppColors.textColorSecondary : AppColors.textColorSecondary,
+              fontSize: 12,
+              color: isDark
+                  ? AppColors.textColorSecondary
+                  : AppColors.textColorSecondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -440,7 +509,10 @@ class _CheckInCard extends StatelessWidget {
       height: height,
       width: width,
       color: AppColors.lightGreyColor,
-      child: const Icon(Icons.image_not_supported, color: AppColors.textColorSecondary),
+      child: const Icon(
+        Icons.image_not_supported,
+        color: AppColors.textColorSecondary,
+      ),
     );
   }
 
@@ -452,109 +524,105 @@ class _CheckInCard extends StatelessWidget {
     return SizedBox(
       width: 280,
       child: Card(
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
-          color: Theme.of(context).cardColor,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 100,
-                  width: double.infinity,
-                  child: item.imageUrl.isEmpty
-                      ? _imagePlaceholder(height: 100, width: double.infinity)
-                      : Image.network(
-                          item.imageUrl,
-                          height: 100,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _imagePlaceholder(height: 100, width: double.infinity),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0,
+        color: Theme.of(context).cardColor,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 100,
+                width: double.infinity,
+                child: item.imageUrl.isEmpty
+                    ? _imagePlaceholder(height: 100, width: double.infinity)
+                    : _buildNetworkImage(
+                        url: item.imageUrl,
+                        height: 100,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.lightGreyColor,
+                          backgroundImage: item.guestAvatarUrl.isNotEmpty
+                              ? NetworkImage(item.guestAvatarUrl)
+                              : null,
+                          child: item.guestAvatarUrl.isEmpty
+                              ? Text(
+                                  item.guestName.isNotEmpty
+                                      ? item.guestName[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: subTextColor,
+                                  ),
+                                )
+                              : null,
                         ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 14,
-                            backgroundColor: AppColors.lightGreyColor,
-                            backgroundImage: item.guestAvatarUrl.isNotEmpty
-                                ? NetworkImage(item.guestAvatarUrl)
-                                : null,
-                            child: item.guestAvatarUrl.isEmpty
-                                ? Text(
-                              item.guestName.isNotEmpty
-                                  ? item.guestName[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: subTextColor,
-                              ),
-                            )
-                                : null,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item.guestName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: textColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
+                        ),
+                        if (item.isConfirmed)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.colorPrimaryLight,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             child: Text(
-                              item.guestName,
+                              Localizations.localeOf(context).languageCode ==
+                                      'sw'
+                                  ? 'Imethibitishwa'
+                                  : 'Confirmed',
                               style: TextStyle(
+                                fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                color: textColor,
+                                color: AppColors.colorPrimary,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (item.isConfirmed)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.colorPrimaryLight,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'Confirmed',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.colorPrimary,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.propertyType,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: textColor,
-                        ),
-                      ),
-                      Text(
-                        item.dates,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: subTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.propertyType,
+                      style: TextStyle(fontSize: 13, color: textColor),
+                    ),
+                    Text(
+                      item.dates,
+                      style: TextStyle(fontSize: 12, color: subTextColor),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        )
+        ),
+      ),
     );
   }
 }
@@ -584,13 +652,16 @@ class _NetworkImageFromUrlState extends State<_NetworkImageFromUrl> {
   Uint8List? _svgBytes;
   bool _failed = false;
 
-  static final Dio _dio = Dio(BaseOptions(
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-      'Accept': 'image/*,*/*',
-    },
-    validateStatus: (status) => status != null && status! < 400,
-  ));
+  static final Dio _dio = Dio(
+    BaseOptions(
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        'Accept': 'image/*,*/*',
+      },
+      validateStatus: (status) => status != null && status < 400,
+    ),
+  );
 
   @override
   void initState() {
@@ -619,13 +690,35 @@ class _NetworkImageFromUrlState extends State<_NetworkImageFromUrl> {
 
   /// Returns true if bytes look like a raster image (JPEG, PNG, GIF, WebP).
   bool _isRasterImageBytes(Uint8List bytes) {
-    if (bytes.length < 4) return false;
-    if (bytes[0] == 0xFF && bytes[1] == 0xD8) return true;
-    if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) return true;
-    if (bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x38) return true;
+    if (bytes.length < 4) {
+      return false;
+    }
+    if (bytes[0] == 0xFF && bytes[1] == 0xD8) {
+      return true;
+    }
+    if (bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47) {
+      return true;
+    }
+    if (bytes[0] == 0x47 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x38) {
+      return true;
+    }
     if (bytes.length >= 12 &&
-        bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
-        bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50) return true;
+        bytes[0] == 0x52 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x46 &&
+        bytes[8] == 0x57 &&
+        bytes[9] == 0x45 &&
+        bytes[10] == 0x42 &&
+        bytes[11] == 0x50) {
+      return true;
+    }
     return false;
   }
 
@@ -695,7 +788,7 @@ class _NetworkImageFromUrlState extends State<_NetworkImageFromUrl> {
       height: widget.height,
       width: widget.width,
       fit: widget.fit,
-      errorBuilder: (_, __, ___) => SizedBox(
+      errorBuilder: (context, error, stackTrace) => SizedBox(
         height: widget.height,
         width: widget.width,
         child: widget.placeholder,
@@ -724,7 +817,7 @@ class _QuickActionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

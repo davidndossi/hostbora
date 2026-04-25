@@ -515,7 +515,7 @@
 				DEVELOPMENT_TEAM = BQ3C6YX428;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Paa Yangu";
+				INFOPLIST_KEY_CFBundleDisplayName = "Host Bora";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -702,7 +702,7 @@
 				DEVELOPMENT_TEAM = BQ3C6YX428;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Paa Yangu";
+				INFOPLIST_KEY_CFBundleDisplayName = "Host Bora";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -729,7 +729,7 @@
 				DEVELOPMENT_TEAM = BQ3C6YX428;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Paa Yangu";
+				INFOPLIST_KEY_CFBundleDisplayName = "Host Bora";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

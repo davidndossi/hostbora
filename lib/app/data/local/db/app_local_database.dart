@@ -9,7 +9,7 @@ class AppLocalDatabase {
   AppLocalDatabase._();
 
   static const dbName = 'paa_yangu_local.db';
-  static const dbVersion = 12;
+  static const dbVersion = 18;
 
   static const rentPropertiesTable = 'rent_properties';
   static const rentStaffTable = 'rent_staff';
@@ -22,6 +22,8 @@ class AppLocalDatabase {
   static const rentPaymentReminderTable = 'rent_payment_reminder';
   static const rentNotificationLogTable = 'rent_notification_log';
   static const rentPropertyEstimateTable = 'rent_property_estimate';
+  static const rentUtilityTopupTable = 'rent_utility_topup';
+  static const rentWhatsappTemplateTable = 'rent_whatsapp_template';
   static const propertyMembersTable = 'property_members';
   static const offlineSyncQueueTable = 'offline_sync_queue';
 
@@ -83,6 +85,8 @@ class AppLocalDatabase {
         date_paid_iso TEXT NOT NULL,
         category TEXT NOT NULL,
         notes TEXT NOT NULL DEFAULT '',
+        apartment TEXT NOT NULL DEFAULT '',
+        apartment_unit TEXT NOT NULL DEFAULT '',
         created_at_ms INTEGER NOT NULL
       )
     ''');
@@ -95,6 +99,8 @@ class AppLocalDatabase {
         date_paid_iso TEXT NOT NULL,
         category TEXT NOT NULL,
         notes TEXT NOT NULL DEFAULT '',
+        apartment TEXT NOT NULL DEFAULT '',
+        apartment_unit TEXT NOT NULL DEFAULT '',
         created_at_ms INTEGER NOT NULL
       )
     ''');
@@ -103,6 +109,9 @@ class AppLocalDatabase {
       CREATE TABLE $rentTenantTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         property_label TEXT NOT NULL,
+        property_ref TEXT NOT NULL DEFAULT '',
+        apartment_unit_id TEXT NOT NULL DEFAULT '',
+        unit_label TEXT NOT NULL DEFAULT '',
         tenant_name TEXT NOT NULL,
         gender TEXT NOT NULL,
         rent_amount_value REAL NOT NULL,
@@ -197,6 +206,47 @@ class AppLocalDatabase {
         updated_at_ms INTEGER NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE $rentUtilityTopupTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL,
+        units_added REAL NOT NULL,
+        amount_tsh REAL NOT NULL DEFAULT 0,
+        provider TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        property_label TEXT NOT NULL DEFAULT '',
+        date_iso TEXT NOT NULL,
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_${rentUtilityTopupTable}_kind_date ON $rentUtilityTopupTable(kind, date_iso)',
+    );
+
+    await db.execute('''
+      CREATE TABLE $rentWhatsappTemplateTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'utility',
+        language TEXT NOT NULL DEFAULT 'en_US',
+        header_type TEXT NOT NULL DEFAULT 'none',
+        header_text TEXT NOT NULL DEFAULT '',
+        body_text TEXT NOT NULL,
+        footer_text TEXT NOT NULL DEFAULT '',
+        buttons_json TEXT NOT NULL DEFAULT '',
+        sample_variables_json TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'draft',
+        submitted_at_ms INTEGER NOT NULL DEFAULT 0,
+        approved_at_ms INTEGER NOT NULL DEFAULT 0,
+        rejection_reason TEXT NOT NULL DEFAULT '',
+        created_at_ms INTEGER NOT NULL,
+        updated_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE UNIQUE INDEX idx_${rentWhatsappTemplateTable}_name ON $rentWhatsappTemplateTable(name, language)',
+    );
 
     await db.execute('''
       CREATE TABLE $propertyMembersTable (
@@ -315,6 +365,7 @@ class AppLocalDatabase {
         CREATE TABLE IF NOT EXISTS $rentTenantTable (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           property_label TEXT NOT NULL,
+          unit_label TEXT NOT NULL DEFAULT '',
           tenant_name TEXT NOT NULL,
           gender TEXT NOT NULL,
           rent_amount_value REAL NOT NULL,
@@ -460,6 +511,97 @@ class AppLocalDatabase {
       );
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_${propertyMembersTable}_workspace_user ON $propertyMembersTable(workspace_type, user_id)',
+      );
+    }
+
+    // v13 attaches tenant to apartment unit when applicable.
+    if (oldVersion < 13 && newVersion >= 13) {
+      await _safeAlter(
+        db,
+        'ALTER TABLE $rentTenantTable ADD COLUMN unit_label TEXT NOT NULL DEFAULT ""',
+      );
+    }
+
+    // v14 links tenant rows to property_ref + apartment unit id (see units_json on rent_properties).
+    if (oldVersion < 14 && newVersion >= 14) {
+      await _safeAlter(
+        db,
+        'ALTER TABLE $rentTenantTable ADD COLUMN property_ref TEXT NOT NULL DEFAULT ""',
+      );
+      await _safeAlter(
+        db,
+        'ALTER TABLE $rentTenantTable ADD COLUMN apartment_unit_id TEXT NOT NULL DEFAULT ""',
+      );
+    }
+
+    // v15 adds apartment / unit columns on rent_expense.
+    if (oldVersion < 15 && newVersion >= 15) {
+      await _safeAlter(
+        db,
+        'ALTER TABLE $rentExpenseTable ADD COLUMN apartment TEXT NOT NULL DEFAULT ""',
+      );
+      await _safeAlter(
+        db,
+        'ALTER TABLE $rentExpenseTable ADD COLUMN apartment_unit TEXT NOT NULL DEFAULT ""',
+      );
+    }
+
+    // v16 adds apartment / unit columns on rent_income.
+    if (oldVersion < 16 && newVersion >= 16) {
+      await _safeAlter(
+        db,
+        'ALTER TABLE $rentIncomeTable ADD COLUMN apartment TEXT NOT NULL DEFAULT ""',
+      );
+      await _safeAlter(
+        db,
+        'ALTER TABLE $rentIncomeTable ADD COLUMN apartment_unit TEXT NOT NULL DEFAULT ""',
+      );
+    }
+
+    // v17 adds utility top-up ledger (LUKU electricity + water recharges).
+    if (oldVersion < 17 && newVersion >= 17) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $rentUtilityTopupTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          kind TEXT NOT NULL,
+          units_added REAL NOT NULL,
+          amount_tsh REAL NOT NULL DEFAULT 0,
+          provider TEXT NOT NULL DEFAULT '',
+          notes TEXT NOT NULL DEFAULT '',
+          property_label TEXT NOT NULL DEFAULT '',
+          date_iso TEXT NOT NULL,
+          created_at_ms INTEGER NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_${rentUtilityTopupTable}_kind_date ON $rentUtilityTopupTable(kind, date_iso)',
+      );
+    }
+
+    // v18 adds WhatsApp approved-template builder catalog.
+    if (oldVersion < 18 && newVersion >= 18) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $rentWhatsappTemplateTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          category TEXT NOT NULL DEFAULT 'utility',
+          language TEXT NOT NULL DEFAULT 'en_US',
+          header_type TEXT NOT NULL DEFAULT 'none',
+          header_text TEXT NOT NULL DEFAULT '',
+          body_text TEXT NOT NULL,
+          footer_text TEXT NOT NULL DEFAULT '',
+          buttons_json TEXT NOT NULL DEFAULT '',
+          sample_variables_json TEXT NOT NULL DEFAULT '',
+          status TEXT NOT NULL DEFAULT 'draft',
+          submitted_at_ms INTEGER NOT NULL DEFAULT 0,
+          approved_at_ms INTEGER NOT NULL DEFAULT 0,
+          rejection_reason TEXT NOT NULL DEFAULT '',
+          created_at_ms INTEGER NOT NULL,
+          updated_at_ms INTEGER NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_${rentWhatsappTemplateTable}_name ON $rentWhatsappTemplateTable(name, language)',
       );
     }
   }

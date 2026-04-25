@@ -372,7 +372,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterCode => 'Enter the code sent to';
 
   @override
-  String get requiredDigits => '6 digits required!';
+  String get requiredDigits => '4 digits required!';
 
   @override
   String get fillCells => '*Please fill up all the cells properly';

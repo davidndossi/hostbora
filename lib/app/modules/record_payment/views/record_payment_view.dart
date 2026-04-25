@@ -13,6 +13,13 @@ const _transactionTeal = Color(0xFF1E8877);
 class RecordPaymentView extends BaseView<RecordPaymentController> {
   RecordPaymentView({super.key});
 
+  String _t(BuildContext context, {required String en, required String sw}) {
+    return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -21,14 +28,15 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
       actions: [
         IconButton(
           onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined)
-        )
+          icon: const Icon(Icons.more_vert_outlined),
+        ),
       ],
     );
   }
 
   @override
   Widget body(BuildContext context) {
+    final isDark = _isDark(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
       child: Form(
@@ -36,94 +44,133 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Record New Payment',
+            Text(
+              _t(context, en: 'Record New Payment', sw: 'Rekodi Malipo Mapya'),
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textColorPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Log a payment received from a guest for your property.',
+              _t(
+                context,
+                en: 'Log a payment received from a guest for your property.',
+                sw: 'Andika malipo yaliyopokelewa kutoka kwa mgeni wa mali yako.',
+              ),
               style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textColorSecondary,
+                color: isDark ? Colors.white70 : AppColors.textColorSecondary,
                 height: 1.4,
               ),
             ),
             const SizedBox(height: 24),
-            _buildLabel('Amount'),
+            _buildLabel(context, _t(context, en: 'Amount', sw: 'Kiasi')),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: _inputDecoration(hint: '0.00').copyWith(
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: _inputDecoration(context, hint: '0.00').copyWith(
                 prefixText: 'TZS ',
-                prefixStyle: const TextStyle(
-                  color: AppColors.designPlaceholder,
+                prefixStyle: TextStyle(
+                  color: isDark ? Colors.white70 : AppColors.designPlaceholder,
                   fontSize: 16,
                 ),
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Amount is required';
-                final cleaned = v.replaceFirst(RegExp(r'^(TZS|\$)\s*'), '').trim();
+                if (v == null || v.trim().isEmpty) {
+                  return _t(
+                    context,
+                    en: 'Amount is required',
+                    sw: 'Kiasi kinahitajika',
+                  );
+                }
+                final cleaned = v
+                    .replaceFirst(RegExp(r'^(TZS|\$)\s*'), '')
+                    .trim();
                 final n = double.tryParse(cleaned);
-                if (n == null || n <= 0) return 'Enter a valid amount';
+                if (n == null || n <= 0) {
+                  return _t(
+                    context,
+                    en: 'Enter a valid amount',
+                    sw: 'Weka kiasi sahihi',
+                  );
+                }
                 return null;
               },
             ),
             const SizedBox(height: 20),
-            _buildLabel('Payment Method'),
+            _buildLabel(
+              context,
+              _t(context, en: 'Payment Method', sw: 'Njia ya Malipo'),
+            ),
             const SizedBox(height: 8),
             Obx(
               () => DropdownButtonFormField<String>(
-                value: controller.selectedPaymentMethod.value,
-                decoration: _inputDecoration(hint: 'Select method').copyWith(
-                  suffixIcon: const Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppColors.designPlaceholder,
-                  ),
-                ),
+                initialValue: controller.selectedPaymentMethod.value,
+                decoration:
+                    _inputDecoration(
+                      context,
+                      hint: _t(context, en: 'Select method', sw: 'Chagua njia'),
+                    ).copyWith(
+                      suffixIcon: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: isDark
+                            ? Colors.white70
+                            : AppColors.designPlaceholder,
+                      ),
+                    ),
                 icon: const SizedBox.shrink(),
                 isExpanded: true,
                 items: controller.paymentMethods
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(e),
-                      ),
-                    )
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                     .toList(),
                 onChanged: controller.selectPaymentMethod,
               ),
             ),
             const SizedBox(height: 20),
-            _buildLabel('Linked Booking'),
+            _buildLabel(
+              context,
+              _t(context, en: 'Linked Booking', sw: 'Uhifadhi Uliounganishwa'),
+            ),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.linkedBookingController,
-              decoration: _inputDecoration(
-                hint: 'Search guest name or booking ID...',
-              ).copyWith(
-                prefixIcon: Icon(
-                  Icons.search,
-                  size: 22,
-                  color: AppColors.designPlaceholder,
-                ),
-              ),
+              decoration:
+                  _inputDecoration(
+                    context,
+                    hint: _t(
+                      context,
+                      en: 'Search guest name or booking ID...',
+                      sw: 'Tafuta jina la mgeni au ID ya uhifadhi...',
+                    ),
+                  ).copyWith(
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: 22,
+                      color: isDark
+                          ? Colors.white70
+                          : AppColors.designPlaceholder,
+                    ),
+                  ),
             ),
             const SizedBox(height: 20),
-            _buildLabel('Payment Date'),
+            _buildLabel(
+              context,
+              _t(context, en: 'Payment Date', sw: 'Tarehe ya Malipo'),
+            ),
             const SizedBox(height: 8),
             _DateField(
               label: controller.paymentDateLabel,
               onTap: controller.pickPaymentDate,
+              isDark: isDark,
             ),
             const SizedBox(height: 20),
-            _buildLabel('Status'),
+            _buildLabel(context, _t(context, en: 'Status', sw: 'Hali')),
             const SizedBox(height: 8),
             Obx(() => _buildStatusToggle(context)),
             const SizedBox(height: 28),
@@ -134,35 +181,47 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(BuildContext context, String text) {
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 14,
+      style: TextStyle(
+        fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: AppColors.textColorPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
 
-  InputDecoration _inputDecoration({required String hint, Widget? prefixIcon}) {
+  InputDecoration _inputDecoration(
+    BuildContext context, {
+    required String hint,
+    Widget? prefixIcon,
+  }) {
+    final isDark = _isDark(context);
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.designPlaceholder),
+      hintStyle: TextStyle(
+        color: isDark ? Colors.white70 : AppColors.designPlaceholder,
+      ),
       prefixIcon: prefixIcon,
       filled: true,
-      fillColor: AppColors.colorWhite,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
-      ),
+      fillColor: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.18)
+              : AppColors.designInputBorder,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designInputBorder),
+        borderSide: BorderSide(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.18)
+              : AppColors.designInputBorder,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -180,7 +239,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
       children: [
         Expanded(
           child: _StatusChip(
-            label: 'Paid',
+            label: _t(context, en: 'Paid', sw: 'Imelipwa'),
             isSelected: controller.status.value == PaymentStatus.paid,
             icon: Icons.check,
             onTap: () => controller.setStatus(PaymentStatus.paid),
@@ -189,7 +248,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
         const SizedBox(width: 12),
         Expanded(
           child: _StatusChip(
-            label: 'Pending',
+            label: _t(context, en: 'Pending', sw: 'Inasubiri'),
             isSelected: controller.status.value == PaymentStatus.pending,
             onTap: () => controller.setStatus(PaymentStatus.pending),
           ),
@@ -215,10 +274,16 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                     color: Colors.white,
                   ),
                 )
-              : const Icon(Icons.check_circle_outline, size: 20, color: Colors.white),
+              : const Icon(
+                  Icons.check_circle_outline,
+                  size: 20,
+                  color: Colors.white,
+                ),
           label: Text(
-            isSaving ? 'Recording…' : 'Record Payment',
-            style: const TextStyle(
+            isSaving
+                ? _t(context, en: 'Recording...', sw: 'Inarekodiwa...')
+                : _t(context, en: 'Record Payment', sw: 'Rekodi Malipo'),
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Colors.white,
@@ -241,13 +306,18 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
 class _DateField extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
+  final bool isDark;
 
-  const _DateField({required this.label, required this.onTap});
+  const _DateField({
+    required this.label,
+    required this.onTap,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.colorWhite,
+      color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -256,23 +326,27 @@ class _DateField extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
-            border: Border.all(color: AppColors.designInputBorder),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : AppColors.designInputBorder,
+            ),
           ),
           child: Row(
             children: [
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: AppColors.textColorPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
               Icon(
                 Icons.calendar_today_outlined,
                 size: 20,
-                color: AppColors.designPlaceholder,
+                color: isDark ? Colors.white70 : AppColors.designPlaceholder,
               ),
             ],
           ),
@@ -297,8 +371,13 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: isSelected ? _transactionTeal : AppColors.lightGreyColor.withOpacity(0.4),
+      color: isSelected
+          ? _transactionTeal
+          : (isDark
+                ? Colors.white.withValues(alpha: 0.12)
+                : AppColors.lightGreyColor.withValues(alpha: 0.4)),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -315,9 +394,13 @@ class _StatusChip extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : AppColors.textColorSecondary,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                            ? Colors.white70
+                            : AppColors.textColorSecondary),
                 ),
               ),
             ],
