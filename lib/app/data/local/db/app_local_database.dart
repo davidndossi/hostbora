@@ -9,13 +9,15 @@ class AppLocalDatabase {
   AppLocalDatabase._();
 
   static const dbName = 'paa_yangu_local.db';
-  static const dbVersion = 18;
+  static const dbVersion = 21;
 
   static const rentPropertiesTable = 'rent_properties';
+  static const bnbPropertiesTable = 'bnb_properties';
   static const rentStaffTable = 'rent_staff';
   static const rentIncomeTable = 'rent_income';
   static const rentExpenseTable = 'rent_expense';
   static const rentTenantTable = 'rent_tenant';
+  static const bnbTenantTable = 'bnb_tenant';
   static const rentLoyaltyOfferTable = 'rent_loyalty_offer';
   static const rentTenantChargeTable = 'rent_tenant_charge';
   static const rentScheduledMaintenanceTable = 'rent_scheduled_maintenance';
@@ -63,6 +65,24 @@ class AppLocalDatabase {
         units_json TEXT NOT NULL DEFAULT ''
       )
     ''');
+    await db.execute('''
+      CREATE TABLE $bnbPropertiesTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        listing_id TEXT NOT NULL DEFAULT '',
+        property_name TEXT NOT NULL,
+        property_type TEXT NOT NULL DEFAULT '',
+        street_address TEXT NOT NULL DEFAULT '',
+        base_nightly_rate REAL NOT NULL DEFAULT 0,
+        max_guests INTEGER NOT NULL DEFAULT 0,
+        owner_user_id TEXT NOT NULL DEFAULT '',
+        workspace_type TEXT NOT NULL DEFAULT 'bnb',
+        rooms_json TEXT NOT NULL DEFAULT '',
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_${bnbPropertiesTable}_listing_workspace ON $bnbPropertiesTable(listing_id, workspace_type)',
+    );
 
     await db.execute('''
       CREATE TABLE $rentStaffTable (
@@ -126,6 +146,27 @@ class AppLocalDatabase {
         created_at_ms INTEGER NOT NULL
       )
     ''');
+    await db.execute('''
+      CREATE TABLE $bnbTenantTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        listing_id TEXT NOT NULL DEFAULT '',
+        property_label TEXT NOT NULL DEFAULT '',
+        unit_label TEXT NOT NULL DEFAULT '',
+        guest_name TEXT NOT NULL,
+        phone_number TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        check_in_iso TEXT NOT NULL,
+        check_out_iso TEXT NOT NULL,
+        amount_paid REAL NOT NULL DEFAULT 0,
+        payment_status TEXT NOT NULL DEFAULT 'pending',
+        booking_source TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_${bnbTenantTable}_listing_dates ON $bnbTenantTable(listing_id, check_in_iso, check_out_iso)',
+    );
 
     await db.execute('''
       CREATE TABLE $rentLoyaltyOfferTable (
@@ -602,6 +643,53 @@ class AppLocalDatabase {
       ''');
       await db.execute(
         'CREATE UNIQUE INDEX IF NOT EXISTS idx_${rentWhatsappTemplateTable}_name ON $rentWhatsappTemplateTable(name, language)',
+      );
+    }
+
+    // v19 adds BnB tenant local table for short-stay guests.
+    if (oldVersion < 19 && newVersion >= 19) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $bnbTenantTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          listing_id TEXT NOT NULL DEFAULT '',
+          property_label TEXT NOT NULL DEFAULT '',
+          unit_label TEXT NOT NULL DEFAULT '',
+          guest_name TEXT NOT NULL,
+          phone_number TEXT NOT NULL DEFAULT '',
+          email TEXT NOT NULL DEFAULT '',
+          check_in_iso TEXT NOT NULL,
+          check_out_iso TEXT NOT NULL,
+          amount_paid REAL NOT NULL DEFAULT 0,
+          payment_status TEXT NOT NULL DEFAULT 'pending',
+          booking_source TEXT NOT NULL DEFAULT '',
+          notes TEXT NOT NULL DEFAULT '',
+          created_at_ms INTEGER NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_${bnbTenantTable}_listing_dates ON $bnbTenantTable(listing_id, check_in_iso, check_out_iso)',
+      );
+    }
+
+    // v20 adds BnB property local table for short-stay listings.
+    if (oldVersion < 20 && newVersion >= 20) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $bnbPropertiesTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          listing_id TEXT NOT NULL DEFAULT '',
+          property_name TEXT NOT NULL,
+          property_type TEXT NOT NULL DEFAULT '',
+          street_address TEXT NOT NULL DEFAULT '',
+          base_nightly_rate REAL NOT NULL DEFAULT 0,
+          max_guests INTEGER NOT NULL DEFAULT 0,
+          owner_user_id TEXT NOT NULL DEFAULT '',
+          workspace_type TEXT NOT NULL DEFAULT 'bnb',
+          rooms_json TEXT NOT NULL DEFAULT '',
+          created_at_ms INTEGER NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_${bnbPropertiesTable}_listing_workspace ON $bnbPropertiesTable(listing_id, workspace_type)',
       );
     }
   }

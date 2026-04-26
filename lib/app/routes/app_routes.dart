@@ -35,9 +35,11 @@ abstract class Routes {
   static const VERIFY_IDENTITY = _Paths.VERIFY_IDENTITY;
   static const HOST_CALENDAR = _Paths.HOST_CALENDAR;
   static const MY_PROPERTIES = _Paths.MY_PROPERTIES;
+  static const LISTING_DETAILS = _Paths.LISTING_DETAILS;
   static const SECURITY = _Paths.SECURITY;
   static const NEW_PASSWORD = _Paths.NEW_PASSWORD;
   static const EXPENSE_ANALYSIS = _Paths.EXPENSE_ANALYSIS;
+  static const ADD_NEW_TENANT = _Paths.ADD_NEW_TENANT;
   static const ADD_NEW_BOOKING = _Paths.ADD_NEW_BOOKING;
   static const RECORD_PAYMENT = _Paths.RECORD_PAYMENT;
   static const DOCUMENTS = _Paths.DOCUMENTS;
@@ -135,9 +137,11 @@ abstract class _Paths {
   static const VERIFY_IDENTITY = '/verify-identity';
   static const HOST_CALENDAR = '/host-calendar';
   static const MY_PROPERTIES = '/my-properties';
+  static const LISTING_DETAILS = '/listing-details';
   static const SECURITY = '/security';
   static const NEW_PASSWORD = '/new-password';
   static const EXPENSE_ANALYSIS = '/expense-analysis';
+  static const ADD_NEW_TENANT = '/add-new-tenant';
   static const ADD_NEW_BOOKING = '/add-new-booking';
   static const RECORD_PAYMENT = '/record-payment';
   static const DOCUMENTS = '/documents';

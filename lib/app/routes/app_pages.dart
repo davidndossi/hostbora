@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
+import 'package:paa_yangu/app/modules/add_tenant_form/views/add_tenant_form_view.dart';
 
+import '../modules/add_tenant_form/bindings/add_tenant_form_binding.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/auth_view.dart';
 import '../modules/change_password/bindings/change_password_binding.dart';
@@ -8,6 +10,8 @@ import '../modules/failed/bindings/failed_binding.dart';
 import '../modules/failed/views/failed_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
+import '../modules/listing_details/bindings/listing_details_binding.dart';
+import '../modules/listing_details/views/listing_details_view.dart';
 import '../modules/main/bindings/main_binding.dart';
 import '../modules/main/views/main_view.dart';
 import '../modules/notifications/bindings/notifications_binding.dart';
@@ -390,6 +394,11 @@ class AppPages {
       binding: MyPropertiesBinding(),
     ),
     GetPage(
+      name: _Paths.LISTING_DETAILS,
+      page: () => ListingDetailsView(),
+      binding: ListingDetailsBinding(),
+    ),
+    GetPage(
       name: _Paths.SECURITY,
       page: () => SecurityView(),
       binding: SecurityBinding(),
@@ -403,6 +412,11 @@ class AppPages {
       name: _Paths.EXPENSE_ANALYSIS,
       page: () => ExpenseAnalysisView(),
       binding: ExpenseAnalysisBinding(),
+    ),
+    GetPage(
+      name: _Paths.ADD_NEW_TENANT,
+      page: () => AddTenantFormView(),
+      binding: AddTenantFormBinding(),
     ),
     GetPage(
       name: _Paths.ADD_NEW_BOOKING,

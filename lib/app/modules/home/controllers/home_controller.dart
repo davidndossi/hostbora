@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
@@ -13,8 +12,8 @@ import '/app/core/base/base_controller.dart';
 class HomeController extends BaseController with GetTickerProviderStateMixin {
   final unreadCount = 0.obs;
 
-  final PreferenceManager _preferenceManager =
-      Get.find(tag: (PreferenceManager).toString());
+  // final PreferenceManager _preferenceManager =
+  //     Get.find(tag: (PreferenceManager).toString());
   final WorkspaceContextService _workspaceContext =
       Get.find<WorkspaceContextService>();
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
@@ -28,7 +27,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final isAdmin = false.obs;
   final isLeader = false.obs;
 
-  Timer? _debounce;
+  // Timer? _debounce;
 
   final showList = false.obs;
 
@@ -120,7 +119,13 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void properties() => Get.toNamed(Routes.MY_PROPERTIES);
 
-  void addNewBooking() => Get.toNamed(Routes.ADD_NEW_BOOKING);
+  Future<void> addNewBooking() async {
+    await _guardPropertyBeforeAction(
+      onProceed: () async {
+        await Get.toNamed(Routes.ADD_NEW_BOOKING);
+      },
+    );
+  }
 
   void smartAccess() => Get.toNamed(Routes.SMART_ACCESS);
 
@@ -144,14 +149,82 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void documents() => Get.toNamed(Routes.PROPERTY_VAULT);
 
-  void addExpense() => Get.toNamed(Routes.ADD_EXPENSE);
+  Future<void> addExpense() async {
+    await _guardPropertyBeforeAction(
+      onProceed: () async {
+        await Get.toNamed(Routes.ADD_EXPENSE);
+      },
+    );
+  }
 
-  void addPayment() => Get.toNamed(Routes.RECORD_PAYMENT);
+  Future<void> addPayment() async {
+    await _guardPropertyBeforeAction(
+      onProceed: () async {
+        await Get.toNamed(Routes.RECORD_PAYMENT);
+      },
+    );
+  }
 
   void openNotifications() => Get.toNamed(Routes.NOTIFICATIONS);
 
   void openBookingDetails(CheckInItem item) =>
       Get.toNamed(Routes.BOOKING_DETAILS, arguments: item);
+
+  Future<void> _guardPropertyBeforeAction({
+    required FutureOr<void> Function() onProceed,
+  }) async {
+    final hasProperty = await _hasAtLeastOneProperty();
+    if (hasProperty) {
+      await onProceed();
+      return;
+    }
+    final goToAddListing = await _showAddPropertyRequiredDialog();
+    if (goToAddListing == true) {
+      await Get.toNamed(Routes.ADD_LISTING);
+    }
+  }
+
+  Future<bool> _hasAtLeastOneProperty() async {
+    try {
+      final res = await _repository.getMyListings();
+      if (res.responseCode != '0' || res.data == null) return false;
+      final data = res.data;
+      if (data is List) return data.isNotEmpty;
+      if (data is Map && data['content'] is List) {
+        return (data['content'] as List).isNotEmpty;
+      }
+      if (data is Map && data['listings'] is List) {
+        return (data['listings'] as List).isNotEmpty;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool?> _showAddPropertyRequiredDialog() {
+    final isSw = Get.locale?.languageCode == 'sw';
+    return Get.dialog<bool>(
+      AlertDialog(
+        title: Text(isSw ? 'Ongeza Mali Kwanza' : 'Add Property First'),
+        content: Text(
+          isSw
+              ? 'Huwezi kuendelea bila mali. Tafadhali ongeza listing kwanza.'
+              : 'You need at least one property before continuing. Please add a listing first.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(isSw ? 'Ghairi' : 'Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(isSw ? 'Ongeza Mali' : 'Add Listing'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class CheckInItem {

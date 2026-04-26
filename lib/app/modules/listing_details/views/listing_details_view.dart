@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:paa_yangu/app/core/values/app_values.dart';
+import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/values/app_colors.dart';
 import '../controllers/listing_details_controller.dart';
 
 class _ListingUi {
@@ -28,13 +31,12 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => null;
-
-  @override
-  Color pageBackgroundColor(BuildContext context) => _ListingUi(context).bg;
-
-  @override
-  Widget? bottomNavigationBar() => _bottomNav();
+  PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
+    appBarTitleText: controller.listingTitle.value.isEmpty
+      ? (_isSw ? 'Maelezo ya Mali' : 'Listing Details')
+      : controller.listingTitle.value,
+      isCentered: true,
+    );
 
   @override
   Widget body(BuildContext context) {
@@ -46,7 +48,6 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         );
       }
       return RefreshIndicator(
-        color: _ListingUi.forest,
         onRefresh: () async {
           await Future.wait([
             controller.loadListingDetail(),
@@ -57,8 +58,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           controller: controller.listingScrollController,
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
           children: [
-            _topHeader(u),
-            const SizedBox(height: 8),
+            const SizedBox(height: 14),
             _hero(u),
             const SizedBox(height: 12),
             _kpiMinimal(
@@ -74,6 +74,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               label: _isSw ? 'MAPATO YA MWEZI' : 'MONTHLY REVENUE',
               value: controller.monthlyRevenueLabel.value,
               prefix: 'TZS',
+              progress: controller.monthlyRevenueProgress.value,
             ),
             const SizedBox(height: 14),
             _quickManagement(u),
@@ -91,41 +92,6 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     });
   }
 
-  Widget _topHeader(_ListingUi u) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.only(right: 6),
-          decoration: const BoxDecoration(
-            color: _ListingUi.forest,
-            shape: BoxShape.circle,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            controller.listingTitle.value.isEmpty
-                ? 'Evergreen Estate'
-                : controller.listingTitle.value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: u.text,
-            ),
-          ),
-        ),
-        const CircleAvatar(
-          radius: 10,
-          backgroundColor: Color(0xFFE8E3D9),
-          child: Icon(Icons.person, size: 12, color: Color(0xFF6A4F3A)),
-        ),
-      ],
-    );
-  }
-
   Widget _hero(_ListingUi u) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -135,7 +101,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           fit: StackFit.expand,
           children: [
             Image.asset(
-              'images/luxury_room_view.png',
+              'images/bedroom.jpg',
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: u.soft,
@@ -191,7 +157,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                       child: Text(
                         _isSw ? 'Hariri listing' : 'Edit Listing',
                         style: const TextStyle(
-                          fontSize: 10,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -214,76 +180,6 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     String suffix = '',
     double? progress,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 8.5,
-            fontWeight: FontWeight.w800,
-            letterSpacing: .9,
-            color: u.muted,
-          ),
-        ),
-        const SizedBox(height: 3),
-        if (prefix.isNotEmpty)
-          Text(
-            prefix,
-            style: TextStyle(fontSize: 8.5, color: u.muted, fontWeight: FontWeight.w700),
-          ),
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: value,
-                style: TextStyle(
-                  fontFamily: 'serif',
-                  fontSize: 34,
-                  fontWeight: FontWeight.w700,
-                  height: 1,
-                  color: u.text,
-                ),
-              ),
-              if (suffix.isNotEmpty)
-                TextSpan(
-                  text: suffix,
-                  style: TextStyle(
-                    fontFamily: 'serif',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: u.text,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          height: 2,
-          color: u.line,
-          child: progress == null
-              ? null
-              : FractionallySizedBox(
-                  widthFactor: progress.clamp(0, 1),
-                  alignment: Alignment.centerLeft,
-                  child: const ColoredBox(color: _ListingUi.forest),
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _quickManagement(_ListingUi u) {
-    final items = <(IconData, String, int)>[
-      (Icons.person_add_alt_1_outlined, _isSw ? 'ADD TENANT' : 'ADD TENANT', 0),
-      (Icons.payments_outlined, _isSw ? 'ADD INCOME' : 'ADD INCOME', 1),
-      (Icons.receipt_long_outlined, _isSw ? 'ADD EXPENSE' : 'ADD EXPENSE', 2),
-      (Icons.calendar_month_outlined, _isSw ? 'SCHEDULE\nMAINTENANCE' : 'SCHEDULE\nMAINTENANCE', 3),
-      (Icons.home_work_outlined, _isSw ? 'UNIT LOCK\nCONTROL' : 'UNIT LOCK\nCONTROL', 4),
-      (Icons.bolt_outlined, _isSw ? 'UTILITY\nDASHBOARD' : 'UTILITY\nDASHBOARD', 5),
-    ];
-
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -292,78 +188,147 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         border: Border.all(color: u.line),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _isSw ? 'Quick Management' : 'Quick Management',
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: u.muted,
+            ),
+          ),
+          const SizedBox(height: 3),
+          if (prefix.isNotEmpty)
+            Text(
+              prefix,
+              style: TextStyle(fontSize: 12, color: u.muted, fontWeight: FontWeight.w700),
+            ),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
                   style: TextStyle(
                     fontFamily: 'serif',
-                    fontSize: 24,
+                    fontSize: 34,
                     fontWeight: FontWeight.w700,
+                    height: 1,
                     color: u.text,
                   ),
                 ),
-              ),
-              Text(
-                _isSw ? '6 ACTIVE\nMODULES' : '6 ACTIVE\nMODULES',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 7.5,
-                  height: 1.2,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: .8,
-                  color: u.muted,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 0.95,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+                if (suffix.isNotEmpty)
+                  TextSpan(
+                    text: suffix,
+                    style: TextStyle(
+                      fontFamily: 'serif',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: u.text,
+                    ),
+                  ),
+              ],
             ),
-            itemBuilder: (context, i) {
-              final item = items[i];
-              return InkWell(
-                onTap: () => controller.onQuickAction(item.$3),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: u.soft,
-                    borderRadius: BorderRadius.circular(12),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            height: 2,
+            color: u.line,
+            child: progress == null
+                ? null
+                : FractionallySizedBox(
+                    widthFactor: progress.clamp(0, 1),
+                    alignment: Alignment.centerLeft,
+                    child: const ColoredBox(color: AppColors.colorPrimaryDark),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(item.$1, size: 17, color: _ListingUi.forest),
-                      const SizedBox(height: 6),
-                      Text(
-                        item.$2,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 7.5,
-                          height: 1.2,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: .45,
-                          color: u.text,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
           ),
         ],
       ),
+    );
+  }
+
+  Widget _quickManagement(_ListingUi u) {
+    final items = <(IconData, String, int)>[
+      (Icons.person_add_alt_1_outlined, _isSw ? 'ADD TENANT' : 'ADD TENANT', 0),
+      (Icons.payments_outlined, _isSw ? 'ADD INCOME' : 'ADD INCOME', 1),
+      (Icons.receipt_long_outlined, _isSw ? 'ADD EXPENSE' : 'ADD EXPENSE', 2),
+      (Icons.calendar_today_outlined, _isSw ? 'SCHEDULE\nMAINTENANCE' : 'SCHEDULE\nMAINTENANCE', 3),
+      (Icons.lock_open, _isSw ? 'UNIT LOCK\nCONTROL' : 'UNIT LOCK\nCONTROL', 4),
+      (Icons.bolt_outlined, _isSw ? 'UTILITY\nDASHBOARD' : 'UTILITY\nDASHBOARD', 5),
+    ];
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _isSw ? 'Quick Management' : 'Quick Management',
+                style: TextStyle(
+                  fontFamily: 'serif',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: u.text,
+                ),
+              ),
+            ),
+            Text(
+              _isSw ? '6 ACTIVE\nMODULES' : '6 ACTIVE\nMODULES',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.2,
+                fontWeight: FontWeight.w700,
+                letterSpacing: .8,
+                color: u.muted,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 0.95,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemBuilder: (context, i) {
+            final item = items[i];
+            return InkWell(
+              onTap: () => controller.onQuickAction(item.$3),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: u.card,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(item.$1, size: 24, color: AppColors.colorPrimary),
+                    const SizedBox(height: 6),
+                    Text(
+                      item.$2,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.2,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .45,
+                        color: u.text,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -378,7 +343,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 _isSw ? 'Property Units' : 'Property Units',
                 style: TextStyle(
                   fontFamily: 'serif',
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: u.text,
                 ),
@@ -388,7 +353,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               onPressed: controller.onAddNewUnit,
               child: Text(
                 _isSw ? 'ADD NEW UNIT' : 'ADD NEW UNIT',
-                style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ),
           ],
@@ -399,7 +364,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           if (rows.isEmpty) {
             return Text(
               _isSw ? 'Hakuna units.' : 'No units listed.',
-              style: TextStyle(fontSize: 11, color: u.muted),
+              style: TextStyle(fontSize: 12, color: u.muted),
             );
           }
           return Column(
@@ -457,16 +422,16 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 ),
                 child: Text(
                   badgeText,
-                  style: TextStyle(fontSize: 7.5, letterSpacing: .45, fontWeight: FontWeight.w800, color: badgeFg),
+                  style: TextStyle(fontSize: 12, letterSpacing: .45, fontWeight: FontWeight.w800, color: badgeFg),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 3),
-          Text(row.subtitle, style: TextStyle(fontSize: 9.5, color: u.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(row.subtitle, style: TextStyle(fontSize: 14, color: u.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 8),
           SizedBox(
-            height: 24,
+            height: 40,
             width: double.infinity,
             child: FilledButton.tonal(
               onPressed: () => controller.onUnitPrimaryAction(row),
@@ -474,19 +439,19 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 backgroundColor: due
                     ? const Color(0xFFFFF3F2)
                     : occupied
-                        ? _ListingUi.forest
+                        ? AppColors.colorPrimary
                         : u.soft,
                 foregroundColor: due
                     ? const Color(0xFFB42318)
                     : occupied
                         ? Colors.white
-                        : _ListingUi.forest,
+                        : AppColors.colorPrimary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 padding: EdgeInsets.zero,
               ),
               child: Text(
                 controller.primaryButtonLabel(row, _isSw),
-                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
+                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -504,14 +469,14 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             Expanded(
               child: Text(
                 _isSw ? 'Recent Activity' : 'Recent Activity',
-                style: TextStyle(fontFamily: 'serif', fontSize: 20, fontWeight: FontWeight.w700, color: u.text),
+                style: TextStyle(fontFamily: 'serif', fontSize: 22, fontWeight: FontWeight.w700, color: u.text),
               ),
             ),
             TextButton(
               onPressed: controller.onViewAllLog,
               child: const Text(
                 'VIEW ALL LOG',
-                style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ),
           ],
@@ -519,7 +484,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         Obx(() {
           final rows = controller.recentActivity;
           if (rows.isEmpty) {
-            return Text('No recent activity', style: TextStyle(fontSize: 10, color: u.muted));
+            return Text('No recent activity', style: TextStyle(fontSize: 14, color: u.muted));
           }
           return Column(
             children: rows
@@ -538,16 +503,16 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(a.title, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: u.text)),
-                                Text(a.subtitle, style: TextStyle(fontSize: 8.5, color: u.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                Text(a.title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: u.text)),
+                                Text(a.subtitle, style: TextStyle(fontSize: 13, color: u.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
                               ],
                             ),
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(a.trailing, style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w700, color: u.text)),
-                              Text(a.timeLabel, style: TextStyle(fontSize: 8, color: u.muted)),
+                              Text(a.trailing, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: u.text)),
+                              Text(a.timeLabel, style: TextStyle(fontSize: 12, color: u.muted)),
                             ],
                           ),
                         ],
@@ -569,18 +534,18 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             Expanded(
               child: Text(
                 _isSw ? 'Staff Assigned' : 'Staff Assigned',
-                style: TextStyle(fontFamily: 'serif', fontSize: 20, fontWeight: FontWeight.w700, color: u.text),
+                style: TextStyle(fontFamily: 'serif', fontSize: 22, fontWeight: FontWeight.w700, color: u.text),
               ),
             ),
             TextButton(
               onPressed: controller.onManageStaff,
-              child: const Text('ALL', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800)),
+              child: const Text('ALL', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
             ),
           ],
         ),
         Obx(() {
           final staff = controller.staffPreview;
-          if (staff.isEmpty) return Text('No staff', style: TextStyle(fontSize: 10, color: u.muted));
+          if (staff.isEmpty) return Text('No staff', style: TextStyle(fontSize: 14, color: u.muted));
           return Column(
             children: staff
                 .take(2)
@@ -593,13 +558,13 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                         backgroundColor: u.soft,
                         child: Text(
                           s.name.isEmpty ? '?' : s.name[0].toUpperCase(),
-                          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _ListingUi.forest),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _ListingUi.forest),
                         ),
                       ),
-                      title: Text(s.name, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: u.text)),
+                      title: Text(s.name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: u.text)),
                       subtitle: Text(
                         s.jobTitle.isEmpty ? 'Staff' : s.jobTitle,
-                        style: TextStyle(fontSize: 8.5, color: u.muted),
+                        style: TextStyle(fontSize: 12, color: u.muted),
                       ),
                     ))
                 .toList(),
@@ -607,19 +572,18 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         }),
         const SizedBox(height: 6),
         SizedBox(
-          height: 25,
           width: double.infinity,
           child: OutlinedButton(
             onPressed: controller.onManageStaff,
             style: OutlinedButton.styleFrom(
-              foregroundColor: _ListingUi.forest,
-              side: BorderSide(color: _ListingUi.forest.withValues(alpha: .55)),
+              foregroundColor: AppColors.colorPrimary,
+              side: BorderSide(color: AppColors.colorPrimaryDark.withValues(alpha: .55)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              padding: EdgeInsets.zero,
+              padding: EdgeInsets.all(AppValues.padding),
             ),
             child: Text(
               _isSw ? 'MANAGE STAFF' : 'MANAGE STAFF',
-              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
             ),
           ),
         ),
@@ -644,71 +608,10 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               _isSw
                   ? 'Kumbukumbu za malipo zinahitaji ufuatiliaji wa karibu.'
                   : 'Payment records in this listing need close follow-up.',
-              style: const TextStyle(fontSize: 8.8, height: 1.25, color: Color(0xFF92400E)),
+              style: const TextStyle(fontSize: 13, height: 1.25, color: Color(0xFF92400E)),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _bottomNav() {
-    final items = [
-      (Icons.grid_view_rounded, 'SET', 0),
-      (Icons.home_work_rounded, 'HOME', 1),
-      (Icons.account_balance_wallet_rounded, 'SET', 2),
-      (Icons.settings_rounded, 'SET', 3),
-    ];
-
-    const selected = 1;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE8E6E1))),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Row(
-            children: items
-                .map(
-                  (e) => Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () {
-                        if (e.$3 == 0) Get.back();
-                        if (e.$3 == 2) controller.onAnalyticsQuickAction(1);
-                        if (e.$3 == 3) controller.showSuccessMessage('Settings');
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        decoration: BoxDecoration(
-                          color: e.$3 == selected ? _ListingUi.forest : Colors.transparent,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(e.$1, size: 15, color: e.$3 == selected ? Colors.white : const Color(0xFF6B7280)),
-                            const SizedBox(height: 1),
-                            Text(
-                              e.$2,
-                              style: TextStyle(
-                                fontSize: 7,
-                                fontWeight: FontWeight.w800,
-                                color: e.$3 == selected ? Colors.white : const Color(0xFF6B7280),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'dart:convert';
 import '/app/data/model/add_task_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/data/local/db/rent_payment_reminder_local_data_source.dart';
+import '/app/data/local/db/bnb_tenant_local_data_source.dart';
+import '/app/data/local/db/bnb_property_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
 import '/app/data/local/db/property_members_local_data_source.dart';
 import '/app/data/local/db/rent_expense_local_data_source.dart';
@@ -47,6 +49,10 @@ class LocalSourceBindings implements Bindings {
       () => RentPropertyLocalDataSource(),
       fenix: true,
     );
+    Get.lazyPut<BnBPropertyLocalDataSource>(
+      () => BnBPropertyLocalDataSource(),
+      fenix: true,
+    );
     Get.lazyPut<PropertyMembersLocalDataSource>(
       () => PropertyMembersLocalDataSource(),
       fenix: true,
@@ -69,6 +75,10 @@ class LocalSourceBindings implements Bindings {
     );
     Get.lazyPut<RentTenantLocalDataSource>(
       () => RentTenantLocalDataSource(),
+      fenix: true,
+    );
+    Get.lazyPut<BnBTenantLocalDataSource>(
+      () => BnBTenantLocalDataSource(),
       fenix: true,
     );
     Get.lazyPut<RentLoyaltyOfferLocalDataSource>(

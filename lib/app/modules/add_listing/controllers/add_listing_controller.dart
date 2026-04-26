@@ -454,7 +454,7 @@ class AddListingController extends BaseController {
           RentPropertyRecord(
             id: original.id,
             propertyLocation: location,
-            apartmentSuite: apartmentSuiteController.text.trim(),
+            apartmentSuite: propertyNameController.text.trim(),
             propertyType: propertyType.value,
             rentAmount: rentOut,
             rentFrequency: rentFrequency.value,
@@ -474,7 +474,7 @@ class AddListingController extends BaseController {
           RentPropertyRecord(
             id: 0,
             propertyLocation: location,
-            apartmentSuite: apartmentSuiteController.text.trim(),
+            apartmentSuite: propertyNameController.text.trim(),
             propertyType: propertyType.value,
             rentAmount: rentAmountController.text.trim(),
             rentFrequency: rentFrequency.value,

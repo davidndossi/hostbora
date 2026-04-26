@@ -75,6 +75,16 @@ class RentScheduleMaintenanceFormController extends BaseController {
     merged.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     propertyOptions.assignAll(merged);
     if (propertyOptions.isNotEmpty) {
+      final requested = Get.parameters['property']?.trim() ?? '';
+      if (requested.isNotEmpty) {
+        final match = propertyOptions.firstWhereOrNull(
+          (p) => p.toLowerCase() == requested.toLowerCase(),
+        );
+        if (match != null) {
+          selectedProperty.value = match;
+          return;
+        }
+      }
       selectedProperty.value = propertyOptions.first;
     }
   }

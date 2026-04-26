@@ -165,14 +165,13 @@ class MyPropertiesController extends BaseController {
 
   void manageProperty(PropertyListing p) {
     Get.toNamed(
-      Routes.ADD_LISTING,
+      Routes.LISTING_DETAILS,
       arguments: {
-        'listing_id': p.id,
-        'listing_data': {
-          'propertyName': p.title,
-          'streetAddress': p.location,
-          'baseNightlyRate': p.pricePerNight,
-        },
+        'property_id': p.id,
+        'property_name': p.title,
+        'property_location': p.location,
+        'property_price': p.pricePerNight,
+        'property_image': p.imageUrl,
       },
     );
   }

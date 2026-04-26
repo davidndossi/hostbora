@@ -141,8 +141,6 @@ class HomeView extends BaseView<HomeController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildThemeSwitch(context, themeController),
-              const SizedBox(height: 20),
               _buildPropertyOverview(context),
               const SizedBox(height: 24),
               _buildUpcomingCheckIns(context),
