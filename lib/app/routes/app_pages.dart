@@ -56,6 +56,8 @@ import '../modules/password_updated/bindings/password_updated_binding.dart';
 import '../modules/password_updated/views/password_updated_view.dart';
 import '../modules/add_listing/bindings/add_listing_binding.dart';
 import '../modules/add_listing/views/add_listing_view.dart';
+import '../modules/edit_listing/bindings/edit_listing_binding.dart';
+import '../modules/edit_listing/views/edit_listing_view.dart';
 import '../modules/team_and_staff/bindings/team_and_staff_binding.dart';
 import '../modules/team_and_staff/views/team_and_staff_view.dart';
 import '../modules/booking_details/bindings/booking_details_binding.dart';
@@ -362,6 +364,11 @@ class AppPages {
       name: _Paths.ADD_LISTING,
       page: () => AddListingView(),
       binding: AddListingBinding(),
+    ),
+    GetPage(
+      name: _Paths.EDIT_LISTING,
+      page: () => EditListingView(),
+      binding: EditListingBinding(),
     ),
     GetPage(
       name: _Paths.TEAM_AND_STAFF,

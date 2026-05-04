@@ -2,8 +2,8 @@ import 'package:sqflite/sqflite.dart';
 
 import 'app_local_database.dart';
 
-class RentTenantRecord {
-  const RentTenantRecord({
+class TenantRecord {
+  const TenantRecord({
     required this.id,
     required this.propertyLabel,
     required this.propertyRef,
@@ -25,7 +25,7 @@ class RentTenantRecord {
 
   final int id;
   final String propertyLabel;
-  /// Same hub id as [RentPropertyRecord.propertyRef] or `legacy_<id>`.
+  /// Same hub id as [PropertyRecord.propertyRef] or `legacy_<id>`.
   final String propertyRef;
   /// Matches [ApartmentUnitDraft.unitId] in parent property [units_json].
   final String apartmentUnitId;
@@ -43,8 +43,8 @@ class RentTenantRecord {
   final String contractFileName;
   final int createdAtMs;
 
-  factory RentTenantRecord.fromMap(Map<String, Object?> m) {
-    return RentTenantRecord(
+  factory TenantRecord.fromMap(Map<String, Object?> m) {
+    return TenantRecord(
       id: m['id']! as int,
       propertyLabel: m['property_label'] as String? ?? '',
       propertyRef: m['property_ref'] as String? ?? '',
@@ -66,8 +66,8 @@ class RentTenantRecord {
   }
 }
 
-class RentTenantLocalDataSource {
-  static const _table = AppLocalDatabase.rentTenantTable;
+class TenantLocalDataSource {
+  static const _table = AppLocalDatabase.tenantTable;
 
   Database? _db;
 
@@ -115,13 +115,13 @@ class RentTenantLocalDataSource {
     });
   }
 
-  Future<List<RentTenantRecord>> getAllNewestFirst() async {
+  Future<List<TenantRecord>> getAllNewestFirst() async {
     final db = await database;
     final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
-    return maps.map(RentTenantRecord.fromMap).toList();
+    return maps.map(TenantRecord.fromMap).toList();
   }
 
-  Future<RentTenantRecord?> findByNameAndProperty({
+  Future<TenantRecord?> findByNameAndProperty({
     required String tenantName,
     required String propertyLabel,
   }) async {
@@ -134,17 +134,17 @@ class RentTenantLocalDataSource {
       limit: 1,
     );
     if (maps.isEmpty) return null;
-    return RentTenantRecord.fromMap(maps.first);
+    return TenantRecord.fromMap(maps.first);
   }
 
-  Future<RentTenantRecord?> findLatest() async {
+  Future<TenantRecord?> findLatest() async {
     final db = await database;
     final maps = await db.query(_table, orderBy: 'created_at_ms DESC', limit: 1);
     if (maps.isEmpty) return null;
-    return RentTenantRecord.fromMap(maps.first);
+    return TenantRecord.fromMap(maps.first);
   }
 
-  Future<RentTenantRecord?> findById(int id) async {
+  Future<TenantRecord?> findById(int id) async {
     final db = await database;
     final maps = await db.query(
       _table,
@@ -153,7 +153,7 @@ class RentTenantLocalDataSource {
       limit: 1,
     );
     if (maps.isEmpty) return null;
-    return RentTenantRecord.fromMap(maps.first);
+    return TenantRecord.fromMap(maps.first);
   }
 
   Future<void> updateLeaseEndIso({

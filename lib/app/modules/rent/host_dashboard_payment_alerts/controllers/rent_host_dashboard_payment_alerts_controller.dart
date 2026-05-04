@@ -2,9 +2,9 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_income_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/income_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
@@ -31,17 +31,17 @@ class HostPaymentAlertItem {
 class RentHostDashboardPaymentAlertsController extends BaseController
     with RentRealDataControllerMixin {
   RentHostDashboardPaymentAlertsController()
-      : _incomeLocal = Get.find<RentIncomeLocalDataSource>(),
-        _tenantLocal = Get.find<RentTenantLocalDataSource>(),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>();
+      : _incomeLocal = Get.find<IncomeLocalDataSource>(),
+        _tenantLocal = Get.find<TenantLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>();
 
-  final RentIncomeLocalDataSource _incomeLocal;
-  final RentTenantLocalDataSource _tenantLocal;
-  final RentPropertyLocalDataSource _propertyLocal;
+  final IncomeLocalDataSource _incomeLocal;
+  final TenantLocalDataSource _tenantLocal;
+  final PropertyLocalDataSource _propertyLocal;
 
-  final incomes = <RentIncomeRecord>[].obs;
-  final tenants = <RentTenantRecord>[].obs;
-  final properties = <RentPropertyRecord>[].obs;
+  final incomes = <IncomeRecord>[].obs;
+  final tenants = <TenantRecord>[].obs;
+  final properties = <PropertyRecord>[].obs;
   final urgentAlerts = <HostPaymentAlertItem>[].obs;
   final hostDisplayName = 'Estate Manager'.obs;
 
@@ -66,11 +66,11 @@ class RentHostDashboardPaymentAlertsController extends BaseController
     final results = await Future.wait([
       _tenantLocal.getAllNewestFirst(),
       _propertyLocal.getAllNewestFirst(),
-      _incomeLocal.getAllNewestFirst(),
+      _incomeLocal.getAllNewestFirst(workspaceType: 'rent'),
     ]);
-    final t = results[0] as List<RentTenantRecord>;
-    final p = results[1] as List<RentPropertyRecord>;
-    final i = results[2] as List<RentIncomeRecord>;
+    final t = results[0] as List<TenantRecord>;
+    final p = results[1] as List<PropertyRecord>;
+    final i = results[2] as List<IncomeRecord>;
     tenants.assignAll(t);
     properties.assignAll(p);
     incomes.assignAll(i);
@@ -116,7 +116,7 @@ class RentHostDashboardPaymentAlertsController extends BaseController
   }
 
   double _sumTenantPaidForWindow({
-    required RentTenantRecord tenant,
+    required TenantRecord tenant,
     required DateTime? startInclusive,
     required DateTime? endInclusive,
   }) {
@@ -150,7 +150,7 @@ class RentHostDashboardPaymentAlertsController extends BaseController
   }
 
   double _expectedAmountForLease(
-    RentTenantRecord tenant,
+    TenantRecord tenant,
     DateTime? start,
     DateTime? end,
   ) {

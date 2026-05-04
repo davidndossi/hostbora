@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/property_members_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../data/repository/app_repository.dart';
@@ -45,15 +45,15 @@ class RentHubPropertyRow {
   final int activeTenants;
   /// Stored in SQLite on this device — can open [Routes.RENT_ADD_NEW_LISTING] for editing.
   final bool isLocal;
-  /// Populated for local apartments with [RentPropertyRecord.units_json].
+  /// Populated for local apartments with [PropertyRecord.units_json].
   final List<RentHubUnitSlot> unitSlots;
 }
 
 class RentMyPropertiesHubController extends BaseController {
   RentMyPropertiesHubController()
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
-        _localRent = Get.find<RentPropertyLocalDataSource>(),
-        _tenantLocal = Get.find<RentTenantLocalDataSource>(),
+        _localRent = Get.find<PropertyLocalDataSource>(),
+        _tenantLocal = Get.find<TenantLocalDataSource>(),
         _propertyMembers = Get.find<PropertyMembersLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
@@ -61,8 +61,8 @@ class RentMyPropertiesHubController extends BaseController {
         _workspaceContext = Get.find<WorkspaceContextService>();
 
   final AppRepository _repository;
-  final RentPropertyLocalDataSource _localRent;
-  final RentTenantLocalDataSource _tenantLocal;
+  final PropertyLocalDataSource _localRent;
+  final TenantLocalDataSource _tenantLocal;
   final PropertyMembersLocalDataSource _propertyMembers;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
@@ -146,7 +146,7 @@ class RentMyPropertiesHubController extends BaseController {
   }
 
   static bool _tenantMatchesProperty(
-    RentTenantRecord t,
+    TenantRecord t,
     String propertyRef,
     String title,
     String loc,
@@ -164,7 +164,7 @@ class RentMyPropertiesHubController extends BaseController {
   }
 
   static bool _tenantMatchesUnit(
-    RentTenantRecord t,
+    TenantRecord t,
     ApartmentUnitDraft u,
     String propertyRef,
     String title,
@@ -179,11 +179,11 @@ class RentMyPropertiesHubController extends BaseController {
   }
 
   static RentHubPropertyRow _rowFromLocal(
-    RentPropertyRecord r, {
-    required List<RentTenantRecord> tenantRecords,
+    PropertyRecord r, {
+    required List<TenantRecord> tenantRecords,
   }) {
     final loc = r.propertyLocation.trim();
-    final suite = r.apartmentSuite.trim();
+    final suite = r.propertyName.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : (loc.isNotEmpty ? loc : 'Property');
     final propertyRef = r.propertyRef.isNotEmpty ? r.propertyRef : 'legacy_${r.id}';
     final drafts = _parseUnitsFromPropertyJson(r.unitsJson);

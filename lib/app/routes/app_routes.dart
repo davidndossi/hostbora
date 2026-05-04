@@ -29,6 +29,7 @@ abstract class Routes {
   static const CHANGE_PIN = _Paths.CHANGE_PIN;
   static const PASSWORD_UPDATED = _Paths.PASSWORD_UPDATED;
   static const ADD_LISTING = _Paths.ADD_LISTING;
+  static const EDIT_LISTING = _Paths.EDIT_LISTING;
   static const TEAM_AND_STAFF = _Paths.TEAM_AND_STAFF;
   static const BOOKING_DETAILS = _Paths.BOOKING_DETAILS;
   static const FINANCIAL_OVERVIEW = _Paths.FINANCIAL_OVERVIEW;
@@ -131,6 +132,7 @@ abstract class _Paths {
   static const CHANGE_PIN = '/change-pin';
   static const PASSWORD_UPDATED = '/password-updated';
   static const ADD_LISTING = '/add-listing';
+  static const EDIT_LISTING = '/edit-listing';
   static const TEAM_AND_STAFF = '/team-and-staff';
   static const BOOKING_DETAILS = '/booking-details';
   static const FINANCIAL_OVERVIEW = '/financial-overview';

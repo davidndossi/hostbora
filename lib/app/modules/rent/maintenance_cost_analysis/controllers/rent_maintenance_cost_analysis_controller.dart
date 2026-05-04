@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_expense_local_data_source.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
 /// One row in the expense categorization table (estimated vs actual vs variance).
@@ -28,11 +28,11 @@ class RentExpenseCategoryLine {
 class RentMaintenanceCostAnalysisController extends BaseController
     with RentRealDataControllerMixin {
   RentMaintenanceCostAnalysisController()
-      : _expenseLocal = Get.find<RentExpenseLocalDataSource>();
+      : _expenseLocal = Get.find<ExpenseLocalDataSource>();
 
-  final RentExpenseLocalDataSource _expenseLocal;
+  final ExpenseLocalDataSource _expenseLocal;
 
-  final expenses = <RentExpenseRecord>[].obs;
+  final expenses = <ExpenseRecord>[].obs;
   final trendHorizonMonths = 6.obs;
 
   @override
@@ -49,7 +49,7 @@ class RentMaintenanceCostAnalysisController extends BaseController
   }
 
   Future<void> _loadExpenses() async {
-    expenses.value = await _expenseLocal.getAllNewestFirst();
+    expenses.value = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
   }
 
   int get currentQuarter {
@@ -147,7 +147,7 @@ class RentMaintenanceCostAnalysisController extends BaseController
       ? 0
       : (maintenanceReserveLiquidity / maintenanceReserveGoal).clamp(0.0, 1.0);
 
-  RentExpenseRecord? get lastMaintenanceExpense {
+  ExpenseRecord? get lastMaintenanceExpense {
     final list =
         expenses.where((e) => e.category.trim() == 'Maintenance').toList();
     list.sort((a, b) {

@@ -5,11 +5,11 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
-import '../../../data/local/db/rent_expense_local_data_source.dart';
-import '../../../data/local/db/rent_income_local_data_source.dart';
-import '../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/db/expense_local_data_source.dart';
+import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
-import '../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
@@ -20,11 +20,15 @@ class ListingUnitRowVm {
     required this.name,
     required this.subtitle,
     required this.status,
+    this.tenantName = '',
+    this.tenantId,
   });
 
   final String name;
   final String subtitle;
   final ListingUnitStatus status;
+  final String tenantName;
+  final int? tenantId;
 }
 
 class ListingActivityVm {
@@ -54,18 +58,18 @@ class ListingDetailsController extends BaseController {
   ListingDetailsController()
       : _repository =
             Get.find<AppRepository>(tag: (AppRepository).toString()),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
-        _incomeLocal = Get.find<RentIncomeLocalDataSource>(),
-        _expenseLocal = Get.find<RentExpenseLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
+        _incomeLocal = Get.find<IncomeLocalDataSource>(),
+        _expenseLocal = Get.find<ExpenseLocalDataSource>(),
         _staffLocal = Get.find<RentStaffLocalDataSource>(),
-        _tenantLocal = Get.find<RentTenantLocalDataSource>();
+        _tenantLocal = Get.find<TenantLocalDataSource>();
 
   final AppRepository _repository;
-  final RentPropertyLocalDataSource _propertyLocal;
-  final RentIncomeLocalDataSource _incomeLocal;
-  final RentExpenseLocalDataSource _expenseLocal;
+  final PropertyLocalDataSource _propertyLocal;
+  final IncomeLocalDataSource _incomeLocal;
+  final ExpenseLocalDataSource _expenseLocal;
   final RentStaffLocalDataSource _staffLocal;
-  final RentTenantLocalDataSource _tenantLocal;
+  final TenantLocalDataSource _tenantLocal;
 
   final loadingListing = true.obs;
   final listingTitle = ''.obs;
@@ -141,8 +145,25 @@ class ListingDetailsController extends BaseController {
         staff = await _loadStaffFromLocal();
       }
       staffPreview.assignAll(staff);
+      await _syncListingTitlesFromLocal();
     } finally {
       loadingListing.value = false;
+    }
+  }
+
+  /// Refreshes app bar + hero from local [PropertyRecord] after edits or pull-to-refresh.
+  Future<void> _syncListingTitlesFromLocal() async {
+    final row = await _findLocalPropertyRowForListing();
+    if (row == null) return;
+    final name = row.propertyName.trim();
+    final location = row.propertyLocation.trim();
+    if (name.isEmpty && location.isEmpty) return;
+    if (name.isNotEmpty) {
+      listingTitle.value = name;
+      heroOverlayTitle.value = location.isEmpty ? name : '$name • $location';
+    } else {
+      listingTitle.value = location;
+      heroOverlayTitle.value = location;
     }
   }
 
@@ -159,13 +180,13 @@ class ListingDetailsController extends BaseController {
       }
     }
 
-    final incomes = await _incomeLocal.getAllNewestFirst();
+    final incomes = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 1);
     double total = 0;
 
-    bool matchesListingScope(RentIncomeRecord row) {
+    bool matchesListingScope(IncomeRecord row) {
       final apt = row.apartment.trim().toLowerCase();
       final unit = row.apartmentUnit.trim().toLowerCase();
       final notes = row.notes.trim().toLowerCase();
@@ -307,7 +328,7 @@ class ListingDetailsController extends BaseController {
     final tenants = await _tenantLocal.getAllNewestFirst();
     if (tenants.isEmpty) return 0;
 
-    bool matchesListing(RentTenantRecord t) {
+    bool matchesListing(TenantRecord t) {
       final ref = t.propertyRef.trim();
       if (_propertyId.isNotEmpty && ref.isNotEmpty) {
         if (ref == _propertyId) return true;
@@ -423,8 +444,8 @@ class ListingDetailsController extends BaseController {
 
   Future<List<ListingActivityVm>> _loadActivityFromLocal() async {
     final out = <ListingActivityVm>[];
-    final incomes = await _incomeLocal.getAllNewestFirst();
-    final expenses = await _expenseLocal.getAllNewestFirst();
+    final incomes = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
+    final expenses = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
     final propNameLc = _propertyName.toLowerCase();
 
     bool matchProperty(String apartment, String notes) {
@@ -482,7 +503,7 @@ class ListingDetailsController extends BaseController {
       final rows = await _propertyLocal.getAllNewestFirst();
       if (rows.isEmpty) return const [];
 
-      RentPropertyRecord? target;
+      PropertyRecord? target;
       if (_propertyId.isNotEmpty) {
         for (final r in rows) {
           final localId = 'local_${r.id}';
@@ -499,16 +520,46 @@ class ListingDetailsController extends BaseController {
         (r) => _propertyName.isNotEmpty && r.propertyLocation.trim() == _propertyName,
       );
       target ??= rows.first;
+      final tenants = await _tenantLocal.getAllNewestFirst();
+      final listingRef = target.propertyRef.trim().isNotEmpty
+          ? target.propertyRef.trim()
+          : 'local_${target.id}';
+      final listingName = target.apartmentSuite.trim().isNotEmpty
+          ? target.apartmentSuite.trim()
+          : target.propertyLocation.trim();
+      final listingLoc = target.propertyLocation.trim();
+
+      bool tenantMatchesListing(TenantRecord t) {
+        final ref = t.propertyRef.trim();
+        if (ref.isNotEmpty && ref == listingRef) return true;
+        final label = t.propertyLabel.trim().toLowerCase();
+        if (listingName.isNotEmpty &&
+            label.contains(listingName.toLowerCase())) {
+          return true;
+        }
+        if (listingLoc.isNotEmpty &&
+            label.contains(listingLoc.toLowerCase())) {
+          return true;
+        }
+        return false;
+      }
+
+      final listingTenants = tenants.where(tenantMatchesListing).toList();
 
       final unitsRaw = target.unitsJson.trim();
       if (unitsRaw.isEmpty) {
+        final attachedTenant = listingTenants.isEmpty ? null : listingTenants.first;
         return [
           ListingUnitRowVm(
             name: target.apartmentSuite.trim().isNotEmpty
                 ? target.apartmentSuite.trim()
                 : target.propertyLocation.trim(),
             subtitle: _isSw ? 'Inasubiri mpangaji' : 'Awaiting tenant',
-            status: ListingUnitStatus.short,
+            status: attachedTenant == null
+                ? ListingUnitStatus.short
+                : ListingUnitStatus.occupied,
+            tenantName: attachedTenant?.tenantName ?? '',
+            tenantId: attachedTenant?.id,
           ),
         ];
       }
@@ -519,12 +570,32 @@ class ListingDetailsController extends BaseController {
         final m = Map<String, dynamic>.from(e);
         final unitName = (m['unitName'] ?? m['name'] ?? '').toString().trim();
         if (unitName.isEmpty) continue;
+        final unitId = (m['unitId'] ?? m['id'] ?? '').toString().trim();
+        TenantRecord? attachedTenant;
+        for (final t in listingTenants) {
+          final tid = t.apartmentUnitId.trim();
+          final tName = t.unitLabel.trim();
+          if (unitId.isNotEmpty && tid.isNotEmpty && tid == unitId) {
+            attachedTenant = t;
+            break;
+          }
+          if (unitName.isNotEmpty &&
+              tName.isNotEmpty &&
+              tName.toLowerCase() == unitName.toLowerCase()) {
+            attachedTenant = t;
+            break;
+          }
+        }
         final rent = (m['unitRent'] ?? m['rent'] ?? '').toString().trim();
         out.add(
           ListingUnitRowVm(
             name: unitName,
             subtitle: rent.isEmpty ? (_isSw ? 'Inasubiri mpangaji' : 'Awaiting tenant') : 'Rent TZS $rent',
-            status: ListingUnitStatus.short,
+            status: attachedTenant == null
+                ? ListingUnitStatus.short
+                : ListingUnitStatus.occupied,
+            tenantName: attachedTenant?.tenantName ?? '',
+            tenantId: attachedTenant?.id,
           ),
         );
       }
@@ -557,8 +628,17 @@ class ListingDetailsController extends BaseController {
       final name = (m['unitName'] ?? m['name'] ?? m['label'] ?? '').toString().trim();
       if (name.isEmpty) continue;
       final rent = (m['unitRent'] ?? m['rent'] ?? m['price'] ?? '').toString().trim();
+      final tenantName = (m['tenantName'] ??
+              m['occupantName'] ??
+              m['guestName'] ??
+              m['tenant'])
+          ?.toString()
+          .trim() ??
+          '';
       final occupied =
-          (m['occupied'] == true) || (m['status']?.toString().toLowerCase() == 'occupied');
+          (m['occupied'] == true) ||
+          (m['status']?.toString().toLowerCase() == 'occupied') ||
+          tenantName.isNotEmpty;
       final dueDate =
           m['status']?.toString().toLowerCase() == 'due_date' ||
           m['status']?.toString().toLowerCase() == 'overdue';
@@ -573,6 +653,7 @@ class ListingDetailsController extends BaseController {
               ? 'Rent TZS $rent'
               : (_isSw ? 'Inasubiri mpangaji' : 'Awaiting tenant'),
           status: status,
+          tenantName: tenantName,
         ),
       );
     }
@@ -595,19 +676,88 @@ class ListingDetailsController extends BaseController {
     // Kept for refresh compatibility with the view.
   }
 
-  Future<void> onEditListing() async {
+  Future<PropertyRecord?> _findLocalPropertyRowForListing() async {
+    try {
+      final rows = await _propertyLocal.getAllNewestFirst();
+      if (rows.isEmpty) return null;
+      PropertyRecord? target;
+      if (_propertyId.isNotEmpty) {
+        for (final r in rows) {
+          final localId = 'local_${r.id}';
+          if (r.propertyRef.trim() == _propertyId || localId == _propertyId) {
+            target = r;
+            break;
+          }
+        }
+      }
+      target ??= rows.firstWhereOrNull(
+        (r) => _propertyName.isNotEmpty && r.apartmentSuite.trim() == _propertyName,
+      );
+      target ??= rows.firstWhereOrNull(
+        (r) => _propertyName.isNotEmpty && r.propertyLocation.trim() == _propertyName,
+      );
+      return target;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _propertyLabelForEstimate() {
+    final overlay = heroOverlayTitle.value.trim();
+    if (overlay.isNotEmpty) return overlay;
+    final title = listingTitle.value.trim();
+    if (title.isNotEmpty) return title;
+    if (_propertyName.isNotEmpty && _propertyLocation.isNotEmpty) {
+      return '$_propertyName · $_propertyLocation';
+    }
+    return _propertyName.isNotEmpty ? _propertyName : 'Property';
+  }
+
+  Future<void> onAddPropertyEstimationCosts() async {
+    var ref = _propertyId;
+    if (ref.isEmpty) {
+      final row = await _findLocalPropertyRowForListing();
+      if (row != null) {
+        ref = row.propertyRef.trim().isNotEmpty ? row.propertyRef.trim() : 'local_${row.id}';
+      }
+    }
+    if (ref.isEmpty) {
+      showErrorMessage(
+        _isSw
+            ? 'Hakuna kitambulisho cha mali kwa makadirio ya gharama.'
+            : 'No property reference is available for cost estimates.',
+      );
+      return;
+    }
     await Get.toNamed(
-      Routes.ADD_LISTING,
-      arguments: {
-        'isEditMode': true,
-        if (_propertyId.isNotEmpty) 'listing_id': _propertyId,
-        if (_propertyName.isNotEmpty)
-          'listing_data': {
-            'propertyName': _propertyName,
-            'streetAddress': _propertyLocation,
-          },
+      Routes.RENT_PROPERTY_ROI_ESTIMATE_FORM,
+      parameters: {
+        'propertyRef': ref,
+        'propertyLabel': _propertyLabelForEstimate(),
       },
     );
+    await loadListingDetail();
+  }
+
+  Future<void> onEditListing() async {
+    if (_propertyId.isEmpty) {
+      Get.snackbar(
+        _isSw ? 'Haiwezekani' : 'Unavailable',
+        _isSw
+            ? 'Hakuna kitambulisho cha mali cha kuhariri.'
+            : 'No property id is available to edit.',
+      );
+      return;
+    }
+    final localRow = await _findLocalPropertyRowForListing();
+    final ref = (localRow?.propertyRef.trim().isNotEmpty == true)
+        ? localRow!.propertyRef.trim()
+        : _propertyId;
+    await Get.toNamed(
+      Routes.EDIT_LISTING,
+      arguments: {'property_ref': ref},
+    );
+    await loadListingDetail();
   }
 
   Future<void> onAddNewUnit() async {
@@ -639,7 +789,11 @@ class ListingDetailsController extends BaseController {
             if (_propertyName.isNotEmpty) 'property': _propertyName,
             if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
           },
-        );
+        )?.then((result) {
+          if (result == true) {
+            loadListingDetail();
+          }
+        });
         break;
       case 1:
         Get.toNamed(
@@ -690,8 +844,21 @@ class ListingDetailsController extends BaseController {
         showSuccessMessage(_isSw ? 'Tuma ankara' : 'Send invoice');
         break;
       case ListingUnitStatus.occupied:
-      case ListingUnitStatus.short:
         showSuccessMessage(_isSw ? 'Angalia maelezo' : 'View details');
+        break;
+      case ListingUnitStatus.short:
+        Get.toNamed(
+          Routes.RENT_ADD_TENANT_FORM,
+          parameters: {
+            if (_propertyName.isNotEmpty) 'property': _propertyName,
+            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+            'unitName': row.name,
+          },
+        )?.then((result) {
+          if (result == true) {
+            loadListingDetail();
+          }
+        });
         break;
     }
   }

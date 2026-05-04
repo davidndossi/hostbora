@@ -250,6 +250,23 @@ class SettingsView extends BaseView<SettingsController> {
             title: _tileTitle(context, appLocalization.misc),
             tiles: [
               SettingsTile.navigation(
+                onPressed: (context) => controller.promptClearOfflineLocalData(),
+                leading: const Icon(Icons.delete_sweep_outlined),
+                title: _tileTitle(
+                  context,
+                  _t(context, 'Clear offline data', 'Futa data ya ndani'),
+                ),
+                description: _tileDescription(
+                  context,
+                  _t(
+                    context,
+                    'Erase all local database rows and offline queues on this device. Your sign-in session stays active.',
+                    'Futa rekodi zote za hifadhidata na foleni za ndani kwenye simu. Kipindi chako cha kuingia kitaendelea.',
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
                 onPressed: (context) => Get.toNamed(Routes.PROPERTY_VAULT),
                 leading: const Icon(Icons.shield_outlined),
                 title: _tileTitle(context, appLocalization.propertyVault),

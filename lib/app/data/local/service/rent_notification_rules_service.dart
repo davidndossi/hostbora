@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 import '/app/data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '/app/data/local/db/rent_staff_local_data_source.dart';
-import '/app/data/local/db/rent_tenant_local_data_source.dart';
+import '/app/data/local/db/tenant_local_data_source.dart';
 import '/app/data/local/db/rent_notification_log_local_data_source.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/data/local/service/local_notification_scheduler_service.dart';
@@ -16,7 +16,7 @@ import '/app/data/local/service/local_notification_scheduler_service.dart';
 /// - Scheduled maintenance: 1 day prior
 class RentNotificationRulesService extends GetxService {
   RentNotificationRulesService({
-    required RentTenantLocalDataSource tenantLocal,
+    required TenantLocalDataSource tenantLocal,
     required RentStaffLocalDataSource staffLocal,
     required RentScheduledMaintenanceLocalDataSource maintenanceLocal,
     required RentNotificationLogLocalDataSource notificationLogLocal,
@@ -29,7 +29,7 @@ class RentNotificationRulesService extends GetxService {
         _preferenceManager = preferenceManager,
         _notificationScheduler = notificationScheduler;
 
-  final RentTenantLocalDataSource _tenantLocal;
+  final TenantLocalDataSource _tenantLocal;
   final RentStaffLocalDataSource _staffLocal;
   final RentScheduledMaintenanceLocalDataSource _maintenanceLocal;
   final RentNotificationLogLocalDataSource _notificationLogLocal;

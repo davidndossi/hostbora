@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../data/local/db/app_local_database.dart';
+import '../../../data/local/draft_listing_store.dart';
+import '../../../data/local/pending_bookings_store.dart';
+import '../../../data/local/pending_expenses_store.dart';
+import '../../../data/local/pending_listings_store.dart';
+import '../../../data/local/pending_payments_store.dart';
 import '../../../data/local/service/tenant_lease_reminder_service.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
@@ -177,6 +183,53 @@ class SettingsController extends BaseController {
         .replaceAll('{rentFrequency}', 'Per Month')
         .replaceAll('{leaseEnd}', '2026-04-01')
         .replaceAll('{remainingBalance}', '300000');
+  }
+
+  /// Clears SQLite (all tables) and offline GetStorage queues. Login session is kept.
+  Future<void> promptClearOfflineLocalData() async {
+    final isSw = Get.locale?.languageCode == 'sw';
+    final title = isSw ? 'Futa data ya ndani?' : 'Clear offline data?';
+    final body = isSw
+        ? 'Hii inafuta mali, mapato, matumizi, wapangaji, foleni za usawazishi, na miruko ya orodha/alipayo iliyohifadhiwa kwenye simu. Huwezi kurudisha.'
+        : 'This removes all properties, income, expenses, tenants, sync queues, and offline listing/booking/expense queues stored on this device. This cannot be undone.';
+    final confirmLabel = isSw ? 'Futa' : 'Erase';
+    final cancelLabel = isSw ? 'Ghairi' : 'Cancel';
+
+    final ok = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(cancelLabel),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+    if (ok != true) return;
+
+    showLoading();
+    try {
+      await AppLocalDatabase.deleteAllRows();
+      await PendingBookingsStore().save([]);
+      await PendingPaymentsStore().save([]);
+      await PendingExpensesStore().save([]);
+      await PendingListingsStore().save([]);
+      await DraftListingStore().clear();
+      showSuccessMessage(
+        isSw ? 'Data ya ndani imefutwa.' : 'Offline data cleared.',
+      );
+    } catch (e) {
+      showErrorMessage(e.toString());
+    } finally {
+      hideLoading();
+    }
   }
 
   Future<void> runLeaseReminderNow() async {

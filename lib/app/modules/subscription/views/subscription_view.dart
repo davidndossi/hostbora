@@ -81,8 +81,8 @@ class SubscriptionView extends BaseView<SubscriptionController> {
                 labelText: _t(context, en: 'Phone number', sw: 'Namba ya simu'),
                 hintText: _t(
                   context,
-                  en: '0712 345 678 or 255712345678',
-                  sw: '0712 345 678 au 255712345678',
+                  en: '0712345678',
+                  sw: '0712345678',
                 ),
                 border: OutlineInputBorder(),
               ),

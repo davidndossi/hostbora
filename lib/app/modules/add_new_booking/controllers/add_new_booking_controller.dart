@@ -1,12 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../flavors/build_config.dart';
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/model/create_booking_request.dart';
 import '../../../data/repository/app_repository.dart';
@@ -20,16 +22,25 @@ class ListingItem {
   final String propertyName;
 }
 
+class BookingUnitItem {
+  BookingUnitItem({required this.id, required this.unitName});
+  final String id;
+  final String unitName;
+}
+
 class AddNewBookingController extends BaseController {
   AddNewBookingController()
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
+        _propertyUnitLocal = Get.find<PropertyUnitLocalDataSource>(),
         _azamPay = AzamPayService(),
         _pendingStore = PendingBookingsStore();
 
   final AppRepository _repository;
+  final PropertyLocalDataSource _propertyLocal;
+  final PropertyUnitLocalDataSource _propertyUnitLocal;
   final AzamPayService _azamPay;
   final PendingBookingsStore _pendingStore;
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   final formKey = GlobalKey<FormState>();
   final guestNameController = TextEditingController();
@@ -37,10 +48,14 @@ class AddNewBookingController extends BaseController {
   final notesController = TextEditingController();
   final numberOfGuestsController = TextEditingController();
   final pushToPayAmountController = TextEditingController();
+  final checkInDateController = TextEditingController(text: 'Select date');
+  final checkOutDateController = TextEditingController(text: 'Select date');
 
   final listings = <ListingItem>[].obs;
   final listingsLoading = false.obs;
   final selectedListingId = Rx<String?>(null);
+  final propertyUnits = <BookingUnitItem>[].obs;
+  final selectedUnitId = Rx<String?>(null);
   final checkInDate = Rx<DateTime?>(null);
   final checkOutDate = Rx<DateTime?>(null);
   final saving = false.obs;
@@ -70,83 +85,76 @@ class AddNewBookingController extends BaseController {
     super.onReady();
     loadListings();
     _updatePendingCount();
-    _syncPendingWhenOnline();
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
-      if (_hasConnectivity(results)) _syncPendingWhenOnline();
-    });
-  }
-
-  bool _hasConnectivity(List<ConnectivityResult> results) {
-    return results.any((r) => r == ConnectivityResult.wifi || r == ConnectivityResult.mobile);
-  }
-
-  Future<bool> _isOnline() async {
-    final results = await Connectivity().checkConnectivity();
-    return _hasConnectivity(results);
   }
 
   void _updatePendingCount() {
     pendingCount.value = _pendingStore.count;
   }
 
-  /// Syncs pending bookings to the server. Call when online.
-  Future<void> _syncPendingWhenOnline() async {
-    if (syncing.value) return;
-    if (!await _isOnline()) return;
-    final list = _pendingStore.load();
-    if (list.isEmpty) return;
-    syncing.value = true;
-    try {
-      final toKeep = <Map<String, dynamic>>[];
-      var synced = 0;
-      for (final item in list) {
-        try {
-          final request = CreateBookingRequest.fromJson(item);
-          final res = await _repository.createBooking(request);
-          if (res.responseCode == '200' || res.responseCode == '201') {
-            synced++;
-          } else {
-            toKeep.add(item);
-          }
-        } catch (_) {
-          toKeep.add(item);
-        }
-      }
-      await _pendingStore.save(toKeep);
-      _updatePendingCount();
-      if (synced > 0) {
-        if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
-        Get.snackbar('Synced', synced == 1 ? 'Offline booking synced.' : '$synced offline bookings synced.');
-      }
-    } finally {
-      syncing.value = false;
-    }
-  }
-
   Future<void> loadListings() async {
     listingsLoading.value = true;
     try {
+      final localRows = await _propertyLocal.getAllNewestFirst();
+      final localItems = localRows
+          .map(
+            (r) => ListingItem(
+              id: r.propertyRef.trim().isNotEmpty ? r.propertyRef.trim() : 'local_${r.id}',
+              propertyName: r.propertyName.trim().isNotEmpty
+                  ? r.propertyName.trim()
+                  : (r.propertyLocation.trim().isNotEmpty ? r.propertyLocation.trim() : 'Property'),
+            ),
+          )
+          .where((e) => e.id.isNotEmpty)
+          .toList();
+
       final res = await _repository.getMyListings();
       final data = res.data;
+      final merged = <String, ListingItem>{
+        for (final item in localItems) item.id: item,
+      };
       if (data is List) {
+        final remoteItems = data
+            .map(
+              (e) => ListingItem(
+                id: (e is Map ? e['id'] : null)?.toString() ?? '',
+                propertyName: (e is Map ? e['propertyName'] : null)?.toString() ??
+                    (e is Map ? e['id'] : null)?.toString() ??
+                    'Property',
+              ),
+            )
+            .where((e) => e.id.isNotEmpty);
+        for (final item in remoteItems) {
+          merged[item.id] = item;
+        }
+      }
+      listings.assignAll(merged.values.toList());
+      if (listings.isNotEmpty && selectedListingId.value == null) {
+        selectedListingId.value = listings.first.id;
+      }
+      await _loadUnitsForListing(selectedListingId.value);
+    } catch (e) {
+      try {
+        final localRows = await _propertyLocal.getAllNewestFirst();
         listings.assignAll(
-          (data as List)
-              .map((e) => ListingItem(
-                    id: (e is Map ? e['id'] : null)?.toString() ?? '',
-                    propertyName:
-                        (e is Map ? e['propertyName'] : null)?.toString() ??
-                            (e is Map ? e['id'] : null)?.toString() ??
-                            'Property',
-                  ))
+          localRows
+              .map(
+                (r) => ListingItem(
+                  id: r.propertyRef.trim().isNotEmpty ? r.propertyRef.trim() : 'local_${r.id}',
+                  propertyName: r.propertyName.trim().isNotEmpty
+                      ? r.propertyName.trim()
+                      : (r.propertyLocation.trim().isNotEmpty ? r.propertyLocation.trim() : 'Property'),
+                ),
+              )
               .where((e) => e.id.isNotEmpty)
               .toList(),
         );
         if (listings.isNotEmpty && selectedListingId.value == null) {
           selectedListingId.value = listings.first.id;
         }
+        await _loadUnitsForListing(selectedListingId.value);
+      } catch (_) {
+        Get.snackbar('Error', 'Could not load properties: $e');
       }
-    } catch (e) {
-      Get.snackbar('Error', 'Could not load properties: $e');
     } finally {
       listingsLoading.value = false;
     }
@@ -154,8 +162,61 @@ class AddNewBookingController extends BaseController {
 
   void goBack() => Get.back();
 
-  void selectProperty(String? listingId) {
+  Future<void> selectProperty(String? listingId) async {
     selectedListingId.value = listingId;
+    await _loadUnitsForListing(listingId);
+  }
+
+  Future<void> _loadUnitsForListing(String? listingId) async {
+    final id = (listingId ?? '').trim();
+    propertyUnits.clear();
+    selectedUnitId.value = null;
+    if (id.isEmpty) return;
+
+    final units = <BookingUnitItem>[];
+    try {
+      final unitRows = await _propertyUnitLocal.getAllNewestFirst();
+      for (final row in unitRows) {
+        if (row.propertyRef.trim() != id) continue;
+        final unitName = row.unitName.trim();
+        if (unitName.isEmpty) continue;
+        units.add(
+          BookingUnitItem(
+            id: row.propertyUnitRef.trim().isNotEmpty ? row.propertyUnitRef.trim() : '${row.id}',
+            unitName: unitName,
+          ),
+        );
+      }
+
+      if (units.isEmpty) {
+        final localRows = await _propertyLocal.getAllNewestFirst();
+        final target = localRows.firstWhereOrNull(
+          (r) => r.propertyRef.trim() == id || 'local_${r.id}' == id,
+        );
+        if (target != null && target.unitsJson.trim().isNotEmpty) {
+          final decoded = jsonDecode(target.unitsJson);
+          if (decoded is List) {
+            for (final e in decoded.whereType<Map>()) {
+              final m = Map<String, dynamic>.from(e);
+              final unitName = (m['unitName'] ?? m['name'] ?? '').toString().trim();
+              if (unitName.isEmpty) continue;
+              final unitId = (m['unitId'] ?? '').toString().trim();
+              units.add(
+                BookingUnitItem(
+                  id: unitId.isNotEmpty ? unitId : '__n:$unitName',
+                  unitName: unitName,
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    propertyUnits.assignAll(units);
+    if (units.length == 1) {
+      selectedUnitId.value = units.first.id;
+    }
   }
 
   Future<void> pickCheckIn() async {
@@ -166,7 +227,16 @@ class AddNewBookingController extends BaseController {
       firstDate: now,
       lastDate: now.add(const Duration(days: 365 * 2)),
     );
-    if (picked != null) checkInDate.value = picked;
+    if (picked != null) {
+      checkInDate.value = picked;
+      checkInDateController.text = DateFormat(_dateFormat).format(picked);
+      if (checkOutDate.value != null &&
+          (checkOutDate.value!.isBefore(picked) ||
+              checkOutDate.value!.isAtSameMomentAs(picked))) {
+        checkOutDate.value = null;
+        checkOutDateController.text = 'Select date';
+      }
+    }
   }
 
   Future<void> pickCheckOut() async {
@@ -177,7 +247,10 @@ class AddNewBookingController extends BaseController {
       firstDate: from,
       lastDate: from.add(const Duration(days: 365 * 2)),
     );
-    if (picked != null) checkOutDate.value = picked;
+    if (picked != null) {
+      checkOutDate.value = picked;
+      checkOutDateController.text = DateFormat(_dateFormat).format(picked);
+    }
   }
 
   Future<void> saveBooking() async {
@@ -185,6 +258,11 @@ class AddNewBookingController extends BaseController {
     final listingId = selectedListingId.value;
     if (listingId == null || listingId.isEmpty) {
       Get.snackbar('Required', 'Please select a property');
+      return;
+    }
+    if (propertyUnits.length > 1 &&
+        (selectedUnitId.value == null || selectedUnitId.value!.isEmpty)) {
+      Get.snackbar('Required', 'Please select a property unit');
       return;
     }
     if (checkInDate.value == null) {
@@ -217,6 +295,9 @@ class AddNewBookingController extends BaseController {
     final guestPhone = guestPhoneController.text.trim();
     final request = CreateBookingRequest(
       listingId: listingId,
+      unitId: (selectedUnitId.value != null && selectedUnitId.value!.trim().isNotEmpty)
+          ? selectedUnitId.value!.trim()
+          : null,
       guestName: guestNameController.text.trim(),
       checkIn: DateFormat(_isoDateFormat).format(checkInDate.value!),
       checkOut: DateFormat(_isoDateFormat).format(checkOutDate.value!),
@@ -229,42 +310,23 @@ class AddNewBookingController extends BaseController {
 
     saving.value = true;
     try {
-      final online = await _isOnline();
-      if (!online) {
-        await _pendingStore.add(request.toJson());
-        _updatePendingCount();
-        Get.back();
-        Get.snackbar(
-          'Saved offline',
-          'Booking will sync when you\'re back online.',
-          duration: const Duration(seconds: 4),
+      await _pendingStore.add(request.toJson());
+      _updatePendingCount();
+      final bookingId = DateTime.now().millisecondsSinceEpoch.toString();
+      if (sendPushToPay.value &&
+          guestPhone.isNotEmpty &&
+          isAzamPayEnabled &&
+          pushToPayAmountController.text.trim().isNotEmpty) {
+        await _sendPushToPay(
+          customerPhone: guestPhone,
+          amount: pushToPayAmountController.text.trim(),
+          externalId: bookingId,
         );
-        saving.value = false;
-        return;
       }
-      await _syncPendingWhenOnline();
-      final res = await _repository.createBooking(request);
-      if (res.responseCode == '201' || res.responseCode == '200') {
-        final bookingId = res.data is Map
-            ? (res.data as Map)['id']?.toString()
-            : DateTime.now().millisecondsSinceEpoch.toString();
-        if (sendPushToPay.value &&
-            guestPhone.isNotEmpty &&
-            isAzamPayEnabled &&
-            pushToPayAmountController.text.trim().isNotEmpty) {
-          await _sendPushToPay(
-            customerPhone: guestPhone,
-            amount: pushToPayAmountController.text.trim(),
-            externalId: bookingId ?? '',
-          );
-        }
-        Get.back();
-        Get.snackbar('Success', 'Booking created');
-      } else {
-        Get.snackbar('Error', res.message ?? 'Could not create booking');
-      }
+      Get.back();
+      Get.snackbar('Saved', 'Booking saved on this device');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to create booking: $e');
+      Get.snackbar('Error', 'Failed to save booking: $e');
     } finally {
       saving.value = false;
     }
@@ -320,12 +382,13 @@ class AddNewBookingController extends BaseController {
 
   @override
   void onClose() {
-    _connectivitySubscription?.cancel();
     guestNameController.dispose();
     guestPhoneController.dispose();
     notesController.dispose();
     numberOfGuestsController.dispose();
     pushToPayAmountController.dispose();
+    checkInDateController.dispose();
+    checkOutDateController.dispose();
     super.onClose();
   }
 }

@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 
 class ContractCardVm {
@@ -38,9 +38,9 @@ class ContractCardVm {
 }
 
 class RentContractHubController extends BaseController {
-  RentContractHubController() : _tenantLocal = Get.find<RentTenantLocalDataSource>();
+  RentContractHubController() : _tenantLocal = Get.find<TenantLocalDataSource>();
 
-  final RentTenantLocalDataSource _tenantLocal;
+  final TenantLocalDataSource _tenantLocal;
 
   final loading = true.obs;
   final searchQuery = ''.obs;

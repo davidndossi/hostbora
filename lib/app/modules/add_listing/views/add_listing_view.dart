@@ -58,22 +58,8 @@ class AddListingView extends BaseView<AddListingController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 14),
-                    // Obx(
-                    //   () => Text(
-                    //     controller.isEditMode.value
-                    //         ? _t(context, en: 'Edit Property', sw: 'Hariri Mali')
-                    //         : _t(context, en: 'Add New Property', sw: 'Ongeza Mali Mpya'),
-                    //     style: TextStyle(
-                    //       fontSize: 26,
-                    //       fontWeight: FontWeight.w700,
-                    //       color: _isDark(context)
-                    //           ? Colors.white
-                    //           : AppColors.textColorPrimary,
-                    //       letterSpacing: -0.5,
-                    //     ),
-                    //   ),
-                    // ),
                     _buildLabel(_t(context, en: 'PROPERTY LOCATION', sw: 'MAHALI ILIPO JENGO')),
+                    const SizedBox(height: 8),
                     TextFormField(
                       controller: controller.propertyLocationController,
                       textInputAction: TextInputAction.next,
@@ -82,7 +68,7 @@ class AddListingView extends BaseView<AddListingController> {
                       minLines: 1,
                       maxLines: 3,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         color: _isDark(context) ? Colors.white : const Color(0xFF2E2E2E),
                       ),
                       decoration: _inputDecoration(
@@ -414,7 +400,6 @@ class AddListingView extends BaseView<AddListingController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
         _buildLabel('ADD UNIT'),
         const SizedBox(height: 8),
         Obx(
@@ -431,7 +416,7 @@ class AddListingView extends BaseView<AddListingController> {
         _formCard(
           isDark: isDark,
           children: [
-            const SizedBox(height: 8),
+            // const SizedBox(height: 8),
             Text(
               'UNIT NAME',
               style: TextStyle(
@@ -519,7 +504,7 @@ class AddListingView extends BaseView<AddListingController> {
                     TextSpan(
                       text: _t(Get.context!, en: ' (optional)', sw: ' (hiari)'),
                       style: TextStyle(
-                        fontStyle: FontStyle.italic,
+                        // fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.w600,
                         color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
                       ),
@@ -535,7 +520,7 @@ class AddListingView extends BaseView<AddListingController> {
               minLines: 2,
               maxLines: 4,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 color: isDark ? Colors.white : const Color(0xFF2E2E2E),
               ),
               decoration: InputDecoration(
@@ -543,7 +528,7 @@ class AddListingView extends BaseView<AddListingController> {
                 fillColor: fill,
                 hintText: _t(Get.context!, en: 'Short note for this unit', sw: 'Maelezo mafupi ya hiki chumba'),
                 hintStyle: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
                 ),
                 border: OutlineInputBorder(
@@ -559,7 +544,7 @@ class AddListingView extends BaseView<AddListingController> {
               child: OutlinedButton.icon(
                 onPressed: controller.addApartmentUnit,
                 icon: Icon(Icons.add_circle_outline, size: 20, color: isDark ? const Color(0xFF5EC9C3) : null),
-                label: Text(_t(Get.context!, en: 'Add unit', sw: 'Ongeza chumba'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                label: Text(_t(Get.context!, en: 'Add Unit', sw: 'Ongeza Chumba'), style: const TextStyle(fontWeight: FontWeight.w700)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: isDark ? const Color(0xFF5EC9C3) : const Color(0xFF2E2E2E),
                   side: BorderSide(

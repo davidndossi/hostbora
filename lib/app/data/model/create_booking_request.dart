@@ -2,6 +2,7 @@
 class CreateBookingRequest {
   CreateBookingRequest({
     required this.listingId,
+    this.unitId,
     required this.guestName,
     required this.checkIn,
     required this.checkOut,
@@ -11,6 +12,8 @@ class CreateBookingRequest {
   });
 
   final String listingId;
+  /// Optional property unit reference when booking a multi-unit property.
+  final String? unitId;
   final String guestName;
   /// ISO date string (yyyy-MM-dd).
   final String checkIn;
@@ -24,6 +27,7 @@ class CreateBookingRequest {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'listingId': listingId,
+      if (unitId != null && unitId!.trim().isNotEmpty) 'unitId': unitId!.trim(),
       'guestName': guestName,
       'checkIn': checkIn,
       'checkOut': checkOut,
@@ -37,6 +41,7 @@ class CreateBookingRequest {
   static CreateBookingRequest fromJson(Map<String, dynamic> json) {
     return CreateBookingRequest(
       listingId: json['listingId'] as String? ?? '',
+      unitId: json['unitId'] as String?,
       guestName: json['guestName'] as String? ?? '',
       checkIn: json['checkIn'] as String? ?? '',
       checkOut: json['checkOut'] as String? ?? '',

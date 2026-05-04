@@ -5,7 +5,7 @@ import 'dart:convert';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
@@ -38,7 +38,7 @@ class RentScheduleMaintenanceFormController extends BaseController {
   /// `low` | `medium` | `high`
   final priority = 'medium'.obs;
   final _maintenanceLocal = Get.find<RentScheduledMaintenanceLocalDataSource>();
-  final _propertyLocal = Get.find<RentPropertyLocalDataSource>();
+  final _propertyLocal = Get.find<PropertyLocalDataSource>();
   final _preferenceManager =
       Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
   final _workspaceContext = Get.find<WorkspaceContextService>();
@@ -62,8 +62,8 @@ class RentScheduleMaintenanceFormController extends BaseController {
       workspaceType: workspace,
     );
     final localNames = rows
-        .map((p) => p.apartmentSuite.trim().isNotEmpty
-            ? p.apartmentSuite.trim()
+        .map((p) => p.propertyName.trim().isNotEmpty
+            ? p.propertyName.trim()
             : p.propertyLocation.trim())
         .where((e) => e.isNotEmpty)
         .toList();

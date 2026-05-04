@@ -4,20 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/property_listing_units_sync.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../models/apartment_unit_draft.dart';
 
 class RentAddNewListingController extends BaseController {
   RentAddNewListingController()
-      : _local = Get.find<RentPropertyLocalDataSource>(),
+      : _local = Get.find<PropertyLocalDataSource>(),
+        _unitLocal = Get.find<PropertyUnitLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
         _workspaceContext = Get.find<WorkspaceContextService>();
 
-  final RentPropertyLocalDataSource _local;
+  final PropertyLocalDataSource _local;
+  final PropertyUnitLocalDataSource _unitLocal;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
   final propertyType = 'Apartment'.obs;
@@ -43,7 +47,7 @@ class RentAddNewListingController extends BaseController {
   /// Full-screen load while resolving `propertyRef` (only when that param is present).
   final awaitingEditLoad = false.obs;
 
-  RentPropertyRecord? _editingOriginal;
+  PropertyRecord? _editingOriginal;
 
   bool get isApartmentProperty => propertyType.value == 'Apartment';
 
@@ -128,6 +132,13 @@ class RentAddNewListingController extends BaseController {
     }
     _ensureApartmentUnitIds();
     return jsonEncode(apartmentUnits.map((u) => u.toJson()).toList());
+  }
+
+  int _listedUnitCount() {
+    if (isApartmentProperty && apartmentUnits.isNotEmpty) {
+      return apartmentUnits.length;
+    }
+    return 1;
   }
 
   void updateRentFrequency(String? value) {
@@ -247,43 +258,77 @@ class RentAddNewListingController extends BaseController {
     showLoading();
     try {
       final original = _editingOriginal;
+      final unitsJson = _unitsJsonForSave();
       if (original != null) {
         final rentOut = hideListingRentAmount ? '' : rentAmountController.text.trim();
         await _local.update(
-          RentPropertyRecord(
+          PropertyRecord(
             id: original.id,
             propertyLocation: location,
-            apartmentSuite: apartmentSuiteController.text.trim(),
+            propertyName: apartmentSuiteController.text.trim(),
             propertyType: propertyType.value,
-            rentAmount: rentOut,
-            rentFrequency: rentFrequency.value,
-            minRentalDuration: minRentalDuration.value,
             propertyRef: original.propertyRef,
+            tenants: original.tenants,
+            units: _listedUnitCount(),
             ownerUserId: original.ownerUserId,
             workspaceType: original.workspaceType,
             createdAtMs: original.createdAtMs,
-            unitsJson: _unitsJsonForSave(),
+            rentAmount: rentOut,
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            unitsJson: unitsJson,
           ),
+        );
+        await syncPropertyUnitsForListingSave(
+          unitLocal: _unitLocal,
+          propertyRef: original.propertyRef,
+          isApartment: isApartmentProperty,
+          apartmentUnitMaps: isApartmentProperty && apartmentUnits.isNotEmpty
+              ? apartmentUnits.map((u) => u.toJson()).toList()
+              : const [],
+          minRentalDuration: minRentalDuration.value,
+          listingRentFrequency: rentFrequency.value,
+          listingRentRaw: rentAmountController.text.trim(),
+          singleUnitName: apartmentSuiteController.text.trim(),
+          rooms: 0,
+          maxGuests: 0,
         );
         Get.back(result: true);
         Get.snackbar('Saved', 'Property updated on this device');
       } else {
         final workspaceType = await _workspaceContext.getWorkspaceType();
+        final propertyRef = 'local_${DateTime.now().millisecondsSinceEpoch}';
         await _local.insert(
-          RentPropertyRecord(
+          PropertyRecord(
             id: 0,
             propertyLocation: location,
-            apartmentSuite: apartmentSuiteController.text.trim(),
+            propertyName: apartmentSuiteController.text.trim(),
             propertyType: propertyType.value,
-            rentAmount: rentAmountController.text.trim(),
-            rentFrequency: rentFrequency.value,
-            minRentalDuration: minRentalDuration.value,
-            propertyRef: 'local_${DateTime.now().millisecondsSinceEpoch}',
+            propertyRef: propertyRef,
+            tenants: 0,
+            units: _listedUnitCount(),
             ownerUserId: (await _preferenceManager.getUser()).id ?? '',
             workspaceType: workspaceType,
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
-            unitsJson: _unitsJsonForSave(),
+            rentAmount: rentAmountController.text.trim(),
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            unitsJson: unitsJson,
           ),
+        );
+        await syncPropertyUnitsForListingSave(
+          unitLocal: _unitLocal,
+          propertyRef: propertyRef,
+          isApartment: isApartmentProperty,
+          apartmentUnitMaps: isApartmentProperty && apartmentUnits.isNotEmpty
+              ? apartmentUnits.map((u) => u.toJson()).toList()
+              : const [],
+          minRentalDuration: minRentalDuration.value,
+          listingRentFrequency: rentFrequency.value,
+          listingRentRaw: rentAmountController.text.trim(),
+          singleUnitName: apartmentSuiteController.text.trim(),
+          rooms: 0,
+          maxGuests: 0,
         );
         Get.back(result: true);
         Get.snackbar('Saved', 'Property saved on this device');

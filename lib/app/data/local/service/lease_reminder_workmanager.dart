@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:workmanager/workmanager.dart';
 
-import '/app/data/local/db/rent_tenant_local_data_source.dart';
+import '/app/data/local/db/tenant_local_data_source.dart';
 import '/app/data/local/db/rent_staff_local_data_source.dart';
 import '/app/data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '/app/data/local/db/rent_notification_log_local_data_source.dart';
@@ -63,7 +63,7 @@ void leaseReminderCallbackDispatcher() {
     }
 
     final service = TenantLeaseReminderService(
-      tenantLocal: RentTenantLocalDataSource(),
+      tenantLocal: TenantLocalDataSource(),
       preferenceManager: Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
       repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
     );
@@ -72,7 +72,7 @@ void leaseReminderCallbackDispatcher() {
       await service.runNow();
       final notificationScheduler = LocalNotificationSchedulerService();
       final rulesService = RentNotificationRulesService(
-        tenantLocal: RentTenantLocalDataSource(),
+        tenantLocal: TenantLocalDataSource(),
         staffLocal: RentStaffLocalDataSource(),
         maintenanceLocal: RentScheduledMaintenanceLocalDataSource(),
         notificationLogLocal: RentNotificationLogLocalDataSource(),
@@ -84,7 +84,7 @@ void leaseReminderCallbackDispatcher() {
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
-        print('Workmanager lease reminder failed: $e');
+        print('Work manager lease reminder failed: $e');
       }
       return false;
     }

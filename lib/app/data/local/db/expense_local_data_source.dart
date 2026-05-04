@@ -2,8 +2,8 @@ import 'package:sqflite/sqflite.dart';
 
 import 'app_local_database.dart';
 
-class RentIncomeRecord {
-  const RentIncomeRecord({
+class ExpenseRecord {
+  const ExpenseRecord({
     required this.id,
     required this.tenantName,
     required this.amountValue,
@@ -12,6 +12,7 @@ class RentIncomeRecord {
     required this.notes,
     required this.apartment,
     required this.apartmentUnit,
+    required this.workspaceType,
     required this.createdAtMs,
   });
 
@@ -21,12 +22,15 @@ class RentIncomeRecord {
   final String datePaidIso;
   final String category;
   final String notes;
+  /// Selected property location (building / listing line).
   final String apartment;
+  /// Unit name when expense is allocated to a specific unit.
   final String apartmentUnit;
+  final String workspaceType;
   final int createdAtMs;
 
-  factory RentIncomeRecord.fromMap(Map<String, Object?> m) {
-    return RentIncomeRecord(
+  factory ExpenseRecord.fromMap(Map<String, Object?> m) {
+    return ExpenseRecord(
       id: m['id']! as int,
       tenantName: m['tenant_name'] as String? ?? '',
       amountValue: (m['amount_value'] as num?)?.toDouble() ?? 0,
@@ -35,13 +39,15 @@ class RentIncomeRecord {
       notes: m['notes'] as String? ?? '',
       apartment: m['apartment'] as String? ?? '',
       apartmentUnit: m['apartment_unit'] as String? ?? '',
+      workspaceType: m['workspace_type'] as String? ?? 'rent',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
     );
   }
 }
 
-class RentIncomeLocalDataSource {
-  static const _table = AppLocalDatabase.rentIncomeTable;
+/// Offline expense rows stored in the shared [AppLocalDatabase.expenseTable].
+class ExpenseLocalDataSource {
+  static const _table = AppLocalDatabase.expenseTable;
 
   Database? _db;
 
@@ -51,11 +57,15 @@ class RentIncomeLocalDataSource {
     return _db!;
   }
 
+  static String _normalizeWorkspace(String w) =>
+      w.trim().toLowerCase() == 'bnb' ? 'bnb' : 'rent';
+
   Future<int> insert({
     required String tenantName,
     required double amountValue,
     required String datePaidIso,
     required String category,
+    required String workspaceType,
     String notes = '',
     String apartment = '',
     String apartmentUnit = '',
@@ -69,13 +79,26 @@ class RentIncomeLocalDataSource {
       'notes': notes,
       'apartment': apartment,
       'apartment_unit': apartmentUnit,
+      'workspace_type': _normalizeWorkspace(workspaceType),
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });
   }
 
-  Future<List<RentIncomeRecord>> getAllNewestFirst() async {
+  /// See [RentIncomeLocalDataSource.getAllNewestFirst].
+  Future<List<ExpenseRecord>> getAllNewestFirst({String? workspaceType}) async {
     final db = await database;
-    final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
-    return maps.map(RentIncomeRecord.fromMap).toList();
+    if (workspaceType == null) {
+      final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
+      return maps.map(ExpenseRecord.fromMap).toList();
+    }
+    final w = _normalizeWorkspace(workspaceType);
+    final maps = await db.query(
+      _table,
+      where:
+          "lower(trim(coalesce(nullif(trim(workspace_type), ''), 'rent'))) = ?",
+      whereArgs: [w],
+      orderBy: 'created_at_ms DESC',
+    );
+    return maps.map(ExpenseRecord.fromMap).toList();
   }
 }

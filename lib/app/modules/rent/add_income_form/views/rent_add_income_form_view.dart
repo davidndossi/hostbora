@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
-import '../../../../core/utils/thousand_separator.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_add_income_form_controller.dart';
 
@@ -99,17 +98,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
                     ),
                     validator: controller.validateSelectedProperty,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
-                    items: controller.propertyOptions
-                        .map(
-                          (p) => DropdownMenuItem<String>(
-                            value: p,
-                            child: Text(
-                              p,
-                              style: TextStyle(color: dropdownText),
-                            ),
-                          ),
-                        )
-                        .toList(),
+                    items: controller.propertyDropdownMenuItems(dropdownText),
                     onChanged: hasProperties ? controller.updateSelectedProperty : null,
                   ),
                   if (!hasProperties)
@@ -156,34 +145,13 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
                     hintText: _isSw ? 'Chagua kitengo' : 'Select unit',
                     hintStyle: TextStyle(color: hintMuted, fontSize: 15),
                   ),
-                  items: [
-                    DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text(
-                        _isSw
-                            ? 'Sio lazima — mjengo wote'
-                            : 'Optional — whole property',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: hintMuted,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    ...units.map(
-                      (u) => DropdownMenuItem<String?>(
-                        value: u.selectionKey,
-                        child: Text(
-                          u.unitName,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: dropdownText,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  items: controller.unitIncomeDropdownMenuItems(
+                    itemColor: dropdownText,
+                    hintColor: hintMuted,
+                    optionalWholePropertyLabel: _isSw
+                        ? 'Sio lazima — mjengo wote'
+                        : 'Optional — whole property',
+                  ),
                   onChanged: controller.updateSelectedIncomeUnit,
                 ),
               ],
@@ -206,9 +174,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
             hint: 'TZS 0.00',
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             validator: controller.validateAmount,
-            inputFormatters: [
-              ThousandsSeparatorInputFormatter(),
-            ],
+            inputFormatters: [controller.amountThousandsFormatter],
           ),
           const SizedBox(height: 16),
           _label(_isSw ? 'TAREHE YA MALIPO' : 'DATE PAID', isDark: isDark),

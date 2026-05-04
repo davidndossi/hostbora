@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_income_local_data_source.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/income_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/model/send_sms_request.dart';
 import '../../../../data/repository/app_repository.dart';
@@ -16,8 +16,8 @@ enum LedgerPaymentStatus { fullyPaid, notPaid, partialPaid }
 
 class RentTenantLedgerOccupancyController extends BaseController {
   RentTenantLedgerOccupancyController()
-      : _tenantLocal = Get.find<RentTenantLocalDataSource>(),
-        _incomeLocal = Get.find<RentIncomeLocalDataSource>(),
+      : _tenantLocal = Get.find<TenantLocalDataSource>(),
+        _incomeLocal = Get.find<IncomeLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
@@ -26,8 +26,8 @@ class RentTenantLedgerOccupancyController extends BaseController {
   static const reminderTemplateKey = 'tenant_whatsapp_reminder_template';
   static const _overdueReminderStampPrefix = 'tenant_overdue_reminder_sent_';
 
-  final RentTenantLocalDataSource _tenantLocal;
-  final RentIncomeLocalDataSource _incomeLocal;
+  final TenantLocalDataSource _tenantLocal;
+  final IncomeLocalDataSource _incomeLocal;
   final PreferenceManager _preferenceManager;
   final AppRepository _repository;
 
@@ -36,7 +36,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
   final tenantName = ''.obs;
   final tenantId = 0.obs;
   final propertyLine = ''.obs;
-  final tenantRecord = Rxn<RentTenantRecord>();
+  final tenantRecord = Rxn<TenantRecord>();
 
   final customReminderController = TextEditingController();
   final amountPaidController = TextEditingController();
@@ -120,7 +120,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
     }
   }
 
-  bool _incomeRowMatchesTenant(RentIncomeRecord r, RentTenantRecord t) {
+  bool _incomeRowMatchesTenant(IncomeRecord r, TenantRecord t) {
     if (r.tenantName.trim().toLowerCase() != t.tenantName.trim().toLowerCase()) {
       return false;
     }
@@ -138,7 +138,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
       totalPaidTshRx.value = 0;
       return;
     }
-    final rows = await _incomeLocal.getAllNewestFirst();
+    final rows = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
     var sum = 0.0;
     for (final r in rows) {
       if (_incomeRowMatchesTenant(r, rec)) sum += r.amountValue;
@@ -542,7 +542,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
   }
 
   Future<void> _sendUpdatedLeaseDocumentMessage({
-    required RentTenantRecord tenant,
+    required TenantRecord tenant,
     required String updatedStartIso,
     required String updatedEndIso,
   }) async {
@@ -591,7 +591,7 @@ Reference: $contractName
     }
   }
 
-  Duration? _leaseRangeDays(RentTenantRecord rec) {
+  Duration? _leaseRangeDays(TenantRecord rec) {
     final start = _parseIsoDate(rec.leaseStartIso);
     final end = _parseIsoDate(rec.leaseEndIso);
     if (start == null || end == null) return null;

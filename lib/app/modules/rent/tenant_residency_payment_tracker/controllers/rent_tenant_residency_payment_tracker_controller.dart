@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 
 /// Payment box state for M1…M6 ledger.
@@ -42,9 +42,9 @@ class TenantInsight {
 
 class RentTenantResidencyPaymentTrackerController extends BaseController {
   RentTenantResidencyPaymentTrackerController()
-      : _tenantLocal = Get.find<RentTenantLocalDataSource>();
+      : _tenantLocal = Get.find<TenantLocalDataSource>();
 
-  final RentTenantLocalDataSource _tenantLocal;
+  final TenantLocalDataSource _tenantLocal;
   final searchController = TextEditingController();
   final searchQuery = ''.obs;
   final tenants = <TenantInsight>[].obs;
@@ -85,7 +85,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     return isSw ? 'Wapangaji — $t' : 'Tenants — $t';
   }
 
-  static bool _recordMatchesListingFilter(RentTenantRecord t) {
+  static bool _recordMatchesListingFilter(TenantRecord t) {
     final ref = Get.parameters['propertyRef']?.trim() ?? '';
     final title = Get.parameters['propertyTitle']?.trim() ?? '';
     final loc = Get.parameters['propertyLoc']?.trim() ?? '';

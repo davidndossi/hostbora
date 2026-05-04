@@ -2,22 +2,22 @@ import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/rent_property_estimate_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
 class RentPropertyRoiAnalysisController extends BaseController
     with RentRealDataControllerMixin {
   RentPropertyRoiAnalysisController()
       : _estimateLocal = Get.find<RentPropertyEstimateLocalDataSource>(),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>();
+        _propertyLocal = Get.find<PropertyLocalDataSource>();
 
   final RentPropertyEstimateLocalDataSource _estimateLocal;
-  final RentPropertyLocalDataSource _propertyLocal;
+  final PropertyLocalDataSource _propertyLocal;
 
   final selectedPropertyLabel = ''.obs;
   final selectedPropertyRef = ''.obs;
   final estimate = Rxn<RentPropertyEstimateRecord>();
-  final portfolio = <RentPropertyRecord>[].obs;
+  final portfolio = <PropertyRecord>[].obs;
   final trendRangeIndex = 2.obs; // reserved for future granularity
 
   @override
@@ -87,7 +87,7 @@ class RentPropertyRoiAnalysisController extends BaseController
     return (incomeTotal / p) * 100;
   }
 
-  String? roiLabelForProperty(RentPropertyRecord p) {
+  String? roiLabelForProperty(PropertyRecord p) {
     if (hasEstimate &&
         p.propertyRef.trim().isNotEmpty &&
         p.propertyRef.trim() == selectedPropertyRef.value.trim()) {

@@ -186,6 +186,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.guestNameController,
+              textCapitalization: TextCapitalization.words,
               decoration: _inputDecoration(
                 context,
                 hint: _t(
@@ -216,8 +217,8 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                     context,
                     hint: _t(
                       context,
-                      en: 'e.g. 255 712 345 678',
-                      sw: 'mf. 255 712 345 678',
+                      en: 'e.g. 0712345678',
+                      sw: 'mf. 0712345678',
                     ),
                   ).copyWith(
                     suffixIcon: Icon(
@@ -230,9 +231,8 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   ),
             ),
             const SizedBox(height: 20),
-            Obx(() {
-              if (!controller.isAzamPayEnabled) return const SizedBox.shrink();
-              return Column(
+            controller.isAzamPayEnabled
+                ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -340,8 +340,8 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   ] else
                     const SizedBox(height: 20),
                 ],
-              );
-            }),
+              )
+                : const SizedBox.shrink(),
             _buildLabel(
               context,
               _t(context, en: 'Select Property', sw: 'Chagua Mali'),
@@ -438,6 +438,65 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
               );
             }),
             const SizedBox(height: 20),
+            Obx(() {
+              if (controller.propertyUnits.length <= 1) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel(
+                    context,
+                    _t(context, en: 'Select Property Unit', sw: 'Chagua Unit ya Mali'),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    initialValue: controller.selectedUnitId.value,
+                    decoration:
+                        _inputDecoration(
+                          context,
+                          hint: _t(context, en: 'Choose a unit', sw: 'Chagua unit'),
+                        ).copyWith(
+                          suffixIcon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: _isDark(context)
+                                ? Colors.white70
+                                : AppColors.designPlaceholder,
+                          ),
+                        ),
+                    hint: Text(
+                      _t(context, en: 'Choose a unit', sw: 'Chagua unit'),
+                      style: TextStyle(
+                        color: _isDark(context)
+                            ? Colors.white70
+                            : AppColors.designPlaceholder,
+                        fontSize: 16,
+                      ),
+                    ),
+                    icon: const SizedBox.shrink(),
+                    isExpanded: true,
+                    items: controller.propertyUnits
+                        .map(
+                          (u) => DropdownMenuItem<String>(
+                            value: u.id,
+                            child: Text(u.unitName),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => controller.selectedUnitId.value = v,
+                    validator: (v) => controller.propertyUnits.length > 1 &&
+                            (v == null || v.isEmpty)
+                        ? _t(
+                            context,
+                            en: 'Please select a property unit',
+                            sw: 'Tafadhali chagua unit ya mali',
+                          )
+                        : null,
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              );
+            }),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -454,9 +513,23 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _DateField(
-                        label: controller.checkInLabel,
+                      TextFormField(
+                        readOnly: true,
                         onTap: controller.pickCheckIn,
+                        controller: controller.checkInDateController,
+                        decoration:
+                            _inputDecoration(
+                              context,
+                              hint: _t(context, en: 'Select date', sw: 'Chagua tarehe'),
+                            ).copyWith(
+                              suffixIcon: Icon(
+                                Icons.calendar_today_outlined,
+                                size: 20,
+                                color: _isDark(context)
+                                    ? Colors.white70
+                                    : AppColors.designPlaceholder,
+                              ),
+                            ),
                       ),
                     ],
                   ),
@@ -475,9 +548,23 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _DateField(
-                        label: controller.checkOutLabel,
+                      TextFormField(
+                        readOnly: true,
                         onTap: controller.pickCheckOut,
+                        controller: controller.checkOutDateController,
+                        decoration:
+                          _inputDecoration(
+                            context,
+                            hint: _t(context, en: 'Select date', sw: 'Chagua tarehe'),
+                          ).copyWith(
+                            suffixIcon: Icon(
+                              Icons.calendar_today_outlined,
+                              size: 20,
+                              color: _isDark(context)
+                                  ? Colors.white70
+                                  : AppColors.designPlaceholder,
+                            ),
+                          ),
                       ),
                     ],
                   ),
@@ -543,60 +630,6 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
             const SizedBox(height: 28),
             _buildSaveButton(context),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DateField extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _DateField({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isSw = Get.locale?.languageCode == 'sw';
-    return Material(
-      color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
-      borderRadius: BorderRadius.circular(AppValues.radius_6),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppValues.radius_6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppValues.radius_6),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.18)
-                  : AppColors.designInputBorder,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label == 'Select date' && isSw ? 'Chagua tarehe' : label,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: (label == 'Select date' || label == 'Chagua tarehe')
-                        ? (isDark
-                              ? Colors.white70
-                              : AppColors.designPlaceholder)
-                        : (isDark ? Colors.white : AppColors.textColorPrimary),
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.calendar_today_outlined,
-                size: 20,
-                color: isDark ? Colors.white70 : AppColors.designPlaceholder,
-              ),
-            ],
-          ),
         ),
       ),
     );

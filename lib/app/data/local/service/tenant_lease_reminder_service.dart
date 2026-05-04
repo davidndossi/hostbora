@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 
-import '/app/data/local/db/rent_tenant_local_data_source.dart';
+import '/app/data/local/db/tenant_local_data_source.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/data/model/send_sms_request.dart';
 import '/app/data/repository/app_repository.dart';
@@ -13,14 +13,14 @@ class TenantLeaseReminderService extends GetxService {
   static const _stampPrefix = 'tenant_one_month_reminder_sent_';
 
   TenantLeaseReminderService({
-    required RentTenantLocalDataSource tenantLocal,
+    required TenantLocalDataSource tenantLocal,
     required PreferenceManager preferenceManager,
     required AppRepository repository,
   })  : _tenantLocal = tenantLocal,
         _preferenceManager = preferenceManager,
         _repository = repository;
 
-  final RentTenantLocalDataSource _tenantLocal;
+  final TenantLocalDataSource _tenantLocal;
   final PreferenceManager _preferenceManager;
   final AppRepository _repository;
 
@@ -86,7 +86,7 @@ class TenantLeaseReminderService extends GetxService {
     }
   }
 
-  String _resolveTemplate(String template, RentTenantRecord tenant) {
+  String _resolveTemplate(String template, TenantRecord tenant) {
     return template
         .replaceAll('{tenantName}', tenant.tenantName)
         .replaceAll('{property}', tenant.propertyLabel)

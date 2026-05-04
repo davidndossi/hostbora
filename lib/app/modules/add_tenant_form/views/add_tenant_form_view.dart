@@ -173,7 +173,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
               _whiteField(
                 isDark: isDark,
                 controller: controller.phoneController,
-                hint: '+255 7XX XXX XXX',
+                hint: '07XXXXXXXX',
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.next,
                 validator: controller.validatePhone,

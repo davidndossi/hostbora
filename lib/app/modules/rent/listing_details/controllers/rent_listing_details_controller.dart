@@ -5,11 +5,11 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_expense_local_data_source.dart';
-import '../../../../data/local/db/rent_income_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
+import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/rent_staff_local_data_source.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../../routes/app_pages.dart';
 
@@ -54,18 +54,18 @@ class RentListingDetailsController extends BaseController {
   RentListingDetailsController()
       : _repository =
   Get.find<AppRepository>(tag: (AppRepository).toString()),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
-        _incomeLocal = Get.find<RentIncomeLocalDataSource>(),
-        _expenseLocal = Get.find<RentExpenseLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
+        _incomeLocal = Get.find<IncomeLocalDataSource>(),
+        _expenseLocal = Get.find<ExpenseLocalDataSource>(),
         _staffLocal = Get.find<RentStaffLocalDataSource>(),
-        _tenantLocal = Get.find<RentTenantLocalDataSource>();
+        _tenantLocal = Get.find<TenantLocalDataSource>();
 
   final AppRepository _repository;
-  final RentPropertyLocalDataSource _propertyLocal;
-  final RentIncomeLocalDataSource _incomeLocal;
-  final RentExpenseLocalDataSource _expenseLocal;
+  final PropertyLocalDataSource _propertyLocal;
+  final IncomeLocalDataSource _incomeLocal;
+  final ExpenseLocalDataSource _expenseLocal;
   final RentStaffLocalDataSource _staffLocal;
-  final RentTenantLocalDataSource _tenantLocal;
+  final TenantLocalDataSource _tenantLocal;
 
   final loadingListing = true.obs;
   final listingTitle = ''.obs;
@@ -159,13 +159,13 @@ class RentListingDetailsController extends BaseController {
       }
     }
 
-    final incomes = await _incomeLocal.getAllNewestFirst();
+    final incomes = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 1);
     double total = 0;
 
-    bool matchesListingScope(RentIncomeRecord row) {
+    bool matchesListingScope(IncomeRecord row) {
       final apt = row.apartment.trim().toLowerCase();
       final unit = row.apartmentUnit.trim().toLowerCase();
       final notes = row.notes.trim().toLowerCase();
@@ -244,7 +244,7 @@ class RentListingDetailsController extends BaseController {
         return (_propertyId.isNotEmpty &&
             (r.propertyRef.trim() == _propertyId || localId == _propertyId)) ||
             (_propertyName.isNotEmpty &&
-                (r.apartmentSuite.trim() == _propertyName ||
+                (r.propertyName.trim() == _propertyName ||
                     r.propertyLocation.trim() == _propertyName));
       }) ??
           rows.first;
@@ -307,7 +307,7 @@ class RentListingDetailsController extends BaseController {
     final tenants = await _tenantLocal.getAllNewestFirst();
     if (tenants.isEmpty) return 0;
 
-    bool matchesListing(RentTenantRecord t) {
+    bool matchesListing(TenantRecord t) {
       final ref = t.propertyRef.trim();
       if (_propertyId.isNotEmpty && ref.isNotEmpty) {
         if (ref == _propertyId) return true;
@@ -423,8 +423,8 @@ class RentListingDetailsController extends BaseController {
 
   Future<List<ListingActivityVm>> _loadActivityFromLocal() async {
     final out = <ListingActivityVm>[];
-    final incomes = await _incomeLocal.getAllNewestFirst();
-    final expenses = await _expenseLocal.getAllNewestFirst();
+    final incomes = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
+    final expenses = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
     final propNameLc = _propertyName.toLowerCase();
 
     bool matchProperty(String apartment, String notes) {
@@ -482,7 +482,7 @@ class RentListingDetailsController extends BaseController {
       final rows = await _propertyLocal.getAllNewestFirst();
       if (rows.isEmpty) return const [];
 
-      RentPropertyRecord? target;
+      PropertyRecord? target;
       if (_propertyId.isNotEmpty) {
         for (final r in rows) {
           final localId = 'local_${r.id}';
@@ -493,7 +493,7 @@ class RentListingDetailsController extends BaseController {
         }
       }
       target ??= rows.firstWhereOrNull(
-            (r) => _propertyName.isNotEmpty && r.apartmentSuite.trim() == _propertyName,
+            (r) => _propertyName.isNotEmpty && r.propertyName.trim() == _propertyName,
       );
       target ??= rows.firstWhereOrNull(
             (r) => _propertyName.isNotEmpty && r.propertyLocation.trim() == _propertyName,
@@ -504,8 +504,8 @@ class RentListingDetailsController extends BaseController {
       if (unitsRaw.isEmpty) {
         return [
           ListingUnitRowVm(
-            name: target.apartmentSuite.trim().isNotEmpty
-                ? target.apartmentSuite.trim()
+            name: target.propertyName.trim().isNotEmpty
+                ? target.propertyName.trim()
                 : target.propertyLocation.trim(),
             subtitle: _isSw ? 'Inasubiri mpangaji' : 'Awaiting tenant',
             status: ListingUnitStatus.short,

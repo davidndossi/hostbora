@@ -26,27 +26,6 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
       appBarTitleText:
           appLocalization.maintenanceAndTasks, //'Maintenance & Tasks'
       isCentered: true,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Material(
-            color: AppColors.colorPrimary,
-            shape: const CircleBorder(),
-            child: InkWell(
-              onTap: controller.addTask,
-              customBorder: const CircleBorder(),
-              child: const Padding(
-                padding: EdgeInsets.all(12),
-                child: Icon(
-                  Icons.add,
-                  color: AppColors.textColorWhite,
-                  size: 24,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -93,6 +72,13 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
       ),
     );
   }
+
+  @override
+  Widget? floatingActionButton() => FloatingActionButton(
+    onPressed: controller.addTask,
+    backgroundColor: AppColors.designAccent,
+    child: const Icon(Icons.add, color: AppColors.textColorWhite, size: 28),
+  );
 
   Widget _buildFilterTabs(BuildContext context) {
     return Padding(

@@ -72,7 +72,7 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
 
   @override
   Widget? floatingActionButton() => FloatingActionButton(
-    onPressed: controller.addProperty,
+    onPressed: () => controller.addProperty(),
     backgroundColor: AppColors.designAccent,
     child: const Icon(Icons.add, size: 28),
   );
@@ -215,16 +215,16 @@ class _PropertyCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      Icons.star_rounded,
+                      Icons.bed,
                       size: 18,
                       color: AppColors.textColorSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${listing.rating}',
+                      '${listing.unitSlots} ${t(context, en: 'Unit(s)', sw: 'V(k)itengo')}',
                       style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textColorSecondary,
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -249,20 +249,17 @@ class _PropertyCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Text(
-                      '\$${listing.pricePerNight}',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: isDark
-                            ? theme.colorScheme.primary
-                            : AppColors.colorPrimaryLight,
-                      ),
+                    Icon(
+                      Icons.person_outline_rounded, size: 18,
+                      color: isDark
+                          ? theme.colorScheme.primary
+                          : AppColors.colorPrimaryLight,
                     ),
+                    const SizedBox(width: 6),
                     Text(
-                      t(context, en: ' / night', sw: ' / usiku'),
+                      '${listing.activeTenants} ${t(context, en: 'Tenants', sw: 'Wapangaji')}',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),

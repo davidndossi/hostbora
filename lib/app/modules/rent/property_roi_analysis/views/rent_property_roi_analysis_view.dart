@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_view.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 import '../controllers/rent_property_roi_analysis_controller.dart';
 
@@ -183,39 +183,39 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
     });
   }
 
-  Widget _headerRow(_RoiUi u) {
-    return Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: _RoiUi.forest,
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            _isSw ? 'Muhtasari wa Fedha' : 'Financial Overview',
-            style: TextStyle(
-              fontFamily: 'serif',
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: u.onSurface,
-            ),
-          ),
-        ),
-        Icon(Icons.tune_rounded, color: u.muted, size: 22),
-        const SizedBox(width: 8),
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: u.cardMuted,
-          child: Icon(Icons.person_outline_rounded, size: 18, color: u.onSurface),
-        ),
-      ],
-    );
-  }
+  // Widget _headerRow(_RoiUi u) {
+  //   return Row(
+  //     children: [
+  //       Container(
+  //         width: 28,
+  //         height: 28,
+  //         decoration: BoxDecoration(
+  //           color: _RoiUi.forest,
+  //           borderRadius: BorderRadius.circular(6),
+  //         ),
+  //       ),
+  //       const SizedBox(width: 10),
+  //       Expanded(
+  //         child: Text(
+  //           _isSw ? 'Muhtasari wa Fedha' : 'Financial Overview',
+  //           style: TextStyle(
+  //             fontFamily: 'serif',
+  //             fontSize: 20,
+  //             fontWeight: FontWeight.w700,
+  //             color: u.onSurface,
+  //           ),
+  //         ),
+  //       ),
+  //       Icon(Icons.tune_rounded, color: u.muted, size: 22),
+  //       const SizedBox(width: 8),
+  //       CircleAvatar(
+  //         radius: 16,
+  //         backgroundColor: u.cardMuted,
+  //         child: Icon(Icons.person_outline_rounded, size: 18, color: u.onSurface),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _incomeCard(_RoiUi u, double incomeTotal, double yieldPct) {
     return Container(
@@ -580,7 +580,7 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
 
   static const _badges = ['HIGH YIELD', 'COMMERCIAL', 'GROWTH ASSET'];
 
-  Widget _propertyCard(_RoiUi u, RentPropertyRecord p) {
+  Widget _propertyCard(_RoiUi u, PropertyRecord p) {
     final loc = p.propertyLocation.trim();
     final suite = p.apartmentSuite.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : (loc.isNotEmpty ? loc : 'Property');

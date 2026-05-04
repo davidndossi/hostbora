@@ -1,12 +1,12 @@
 import 'package:get/get.dart';
 
-import '/app/data/local/db/rent_expense_local_data_source.dart';
-import '/app/data/local/db/rent_income_local_data_source.dart';
+import '../db/property_local_data_source.dart';
+import '/app/data/local/db/expense_local_data_source.dart';
+import '/app/data/local/db/income_local_data_source.dart';
 import '/app/data/local/db/rent_loyalty_offer_local_data_source.dart';
-import '/app/data/local/db/rent_property_local_data_source.dart';
 import '/app/data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '/app/data/local/db/rent_staff_local_data_source.dart';
-import '/app/data/local/db/rent_tenant_local_data_source.dart';
+import '/app/data/local/db/tenant_local_data_source.dart';
 
 class RentRealDataSnapshot {
   const RentRealDataSnapshot({
@@ -34,11 +34,11 @@ class RentRealDataSnapshot {
 
 class RentRealDataSnapshotService extends GetxService {
   RentRealDataSnapshotService({
-    required RentPropertyLocalDataSource propertyLocal,
-    required RentTenantLocalDataSource tenantLocal,
+    required PropertyLocalDataSource propertyLocal,
+    required TenantLocalDataSource tenantLocal,
     required RentStaffLocalDataSource staffLocal,
-    required RentIncomeLocalDataSource incomeLocal,
-    required RentExpenseLocalDataSource expenseLocal,
+    required IncomeLocalDataSource incomeLocal,
+    required ExpenseLocalDataSource expenseLocal,
     required RentLoyaltyOfferLocalDataSource loyaltyLocal,
     required RentScheduledMaintenanceLocalDataSource maintenanceLocal,
   })  : _propertyLocal = propertyLocal,
@@ -49,11 +49,11 @@ class RentRealDataSnapshotService extends GetxService {
         _loyaltyLocal = loyaltyLocal,
         _maintenanceLocal = maintenanceLocal;
 
-  final RentPropertyLocalDataSource _propertyLocal;
-  final RentTenantLocalDataSource _tenantLocal;
+  final PropertyLocalDataSource _propertyLocal;
+  final TenantLocalDataSource _tenantLocal;
   final RentStaffLocalDataSource _staffLocal;
-  final RentIncomeLocalDataSource _incomeLocal;
-  final RentExpenseLocalDataSource _expenseLocal;
+  final IncomeLocalDataSource _incomeLocal;
+  final ExpenseLocalDataSource _expenseLocal;
   final RentLoyaltyOfferLocalDataSource _loyaltyLocal;
   final RentScheduledMaintenanceLocalDataSource _maintenanceLocal;
 
@@ -61,8 +61,8 @@ class RentRealDataSnapshotService extends GetxService {
     final properties = await _propertyLocal.getAllNewestFirst();
     final tenants = await _tenantLocal.getAllNewestFirst();
     final staff = await _staffLocal.getAllNewestFirst();
-    final income = await _incomeLocal.getAllNewestFirst();
-    final expense = await _expenseLocal.getAllNewestFirst();
+    final income = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
+    final expense = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
     final loyalty = await _loyaltyLocal.getAllNewestFirst();
     final maintenance = await _maintenanceLocal.getAllNewestFirst();
 

@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_expense_local_data_source.dart';
-import '../../../../data/local/db/rent_income_local_data_source.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
+import '../../../../data/local/db/income_local_data_source.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
 class PlExpenseLineVm {
@@ -25,11 +25,11 @@ class PlExpenseLineVm {
 class RentMonthlyPlSummaryController extends BaseController
     with RentRealDataControllerMixin {
   RentMonthlyPlSummaryController()
-      : _incomeLocal = Get.find<RentIncomeLocalDataSource>(),
-        _expenseLocal = Get.find<RentExpenseLocalDataSource>();
+      : _incomeLocal = Get.find<IncomeLocalDataSource>(),
+        _expenseLocal = Get.find<ExpenseLocalDataSource>();
 
-  final RentIncomeLocalDataSource _incomeLocal;
-  final RentExpenseLocalDataSource _expenseLocal;
+  final IncomeLocalDataSource _incomeLocal;
+  final ExpenseLocalDataSource _expenseLocal;
 
   final selectedMonth = DateTime(DateTime.now().year, DateTime.now().month).obs;
   final loadingMonth = true.obs;
@@ -82,7 +82,7 @@ class RentMonthlyPlSummaryController extends BaseController
   }
 
   static void _addToExpenseBucket(
-    RentExpenseRecord e,
+    ExpenseRecord e,
     void Function(String bucket, double v) sink,
   ) {
     final v = e.amountValue;
@@ -117,8 +117,8 @@ class RentMonthlyPlSummaryController extends BaseController
   Future<void> loadMonthData() async {
     loadingMonth.value = true;
     try {
-      final incomes = await _incomeLocal.getAllNewestFirst();
-      final expenses = await _expenseLocal.getAllNewestFirst();
+      final incomes = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
+      final expenses = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
 
       double rent = 0, service = 0;
       var rentCount = 0;
@@ -182,8 +182,8 @@ class RentMonthlyPlSummaryController extends BaseController
 
   Future<void> _loadTrendAndInsights(
     double utilThisMonth,
-    List<RentIncomeRecord> allIncome,
-    List<RentExpenseRecord> allExpense,
+    List<IncomeRecord> allIncome,
+    List<ExpenseRecord> allExpense,
   ) async {
     final prevStart = DateTime(_monthStart.year, _monthStart.month - 1);
     final prevEnd = _monthStart;

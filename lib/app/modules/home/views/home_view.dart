@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
-import '../../../core/theme/theme_controller.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
@@ -125,7 +124,6 @@ class HomeView extends BaseView<HomeController> {
 
   @override
   Widget body(BuildContext context) {
-    final themeController = Get.find<ThemeController>();
     return SafeArea(
       child: Obx(() {
         if (controller.homeLoading.value) {
@@ -151,70 +149,6 @@ class HomeView extends BaseView<HomeController> {
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildThemeSwitch(
-    BuildContext context,
-    ThemeController themeController,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF3A3A3C)
-              : AppColors.designInputBorder,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Theme.of(context).brightness == Brightness.dark
-                ? Icons.dark_mode
-                : Icons.light_mode,
-            size: 22,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AppColors.colorPrimaryLight
-                : AppColors.colorPrimary,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _t(context, 'Dark theme', 'Mandhari ya giza'),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : AppColors.textColorPrimary,
-              ),
-            ),
-          ),
-          Obx(
-            () => Switch(
-              value: themeController.isDarkMode.value,
-              onChanged: (_) => themeController.toggleTheme(),
-              activeTrackColor: AppColors.colorPrimaryLight,
-              thumbColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return AppColors.colorPrimary;
-                }
-                return AppColors.designInputBorder;
-              }),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

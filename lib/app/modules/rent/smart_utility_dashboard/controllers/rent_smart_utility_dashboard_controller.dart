@@ -2,8 +2,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_expense_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/rent_utility_topup_local_data_source.dart';
 
 enum UtilityActivityType { lukuTopUp, waterBill, other }
@@ -28,12 +28,12 @@ class UtilityActivityItem {
 
 class RentSmartUtilityDashboardController extends BaseController {
   RentSmartUtilityDashboardController()
-      : _expenseLocal = Get.find<RentExpenseLocalDataSource>(),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
+      : _expenseLocal = Get.find<ExpenseLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _topUpLocal = Get.find<RentUtilityTopUpLocalDataSource>();
 
-  final RentExpenseLocalDataSource _expenseLocal;
-  final RentPropertyLocalDataSource _propertyLocal;
+  final ExpenseLocalDataSource _expenseLocal;
+  final PropertyLocalDataSource _propertyLocal;
   final RentUtilityTopUpLocalDataSource _topUpLocal;
 
   final loading = true.obs;
@@ -122,7 +122,7 @@ class RentSmartUtilityDashboardController extends BaseController {
 
       // Fall back to utility expenses for any remaining activity context.
       if (activities.isEmpty) {
-        final expenses = await _expenseLocal.getAllNewestFirst();
+        final expenses = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
         final utilityExpenses =
             expenses.where((e) => e.category.trim() == 'Utilities').toList();
         if (utilityExpenses.isNotEmpty) {
@@ -181,7 +181,7 @@ class RentSmartUtilityDashboardController extends BaseController {
     activities.assignAll(items);
   }
 
-  void _buildActivityFromExpenses(List<RentExpenseRecord> utilityExpenses) {
+  void _buildActivityFromExpenses(List<ExpenseRecord> utilityExpenses) {
     final items = <UtilityActivityItem>[];
     final money = NumberFormat('#,###', 'en_US');
 

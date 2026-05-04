@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_view.dart';
-import '../../../../data/local/db/rent_expense_local_data_source.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
 import '../controllers/rent_maintenance_cost_analysis_controller.dart';
 
 class _McaUi {
@@ -130,42 +130,42 @@ class RentMaintenanceCostAnalysisView extends BaseView<RentMaintenanceCostAnalys
     });
   }
 
-  Widget _headerRow(_McaUi u) {
-    return Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: _McaUi.forest,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: const Text(
-            'C',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 14,
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            _isSw ? 'Muhtasari wa Fedha' : 'Financial Overview',
-            style: TextStyle(
-              fontFamily: 'serif',
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: u.onSurface,
-            ),
-          ),
-        ),
-        Icon(Icons.query_stats_rounded, color: u.muted, size: 24),
-      ],
-    );
-  }
+  // Widget _headerRow(_McaUi u) {
+  //   return Row(
+  //     children: [
+  //       Container(
+  //         width: 28,
+  //         height: 28,
+  //         alignment: Alignment.center,
+  //         decoration: BoxDecoration(
+  //           color: _McaUi.forest,
+  //           borderRadius: BorderRadius.circular(6),
+  //         ),
+  //         child: const Text(
+  //           'C',
+  //           style: TextStyle(
+  //             color: Colors.white,
+  //             fontWeight: FontWeight.w800,
+  //             fontSize: 14,
+  //           ),
+  //         ),
+  //       ),
+  //       const SizedBox(width: 10),
+  //       Expanded(
+  //         child: Text(
+  //           _isSw ? 'Muhtasari wa Fedha' : 'Financial Overview',
+  //           style: TextStyle(
+  //             fontFamily: 'serif',
+  //             fontSize: 20,
+  //             fontWeight: FontWeight.w700,
+  //             color: u.onSurface,
+  //           ),
+  //         ),
+  //       ),
+  //       Icon(Icons.query_stats_rounded, color: u.muted, size: 24),
+  //     ],
+  //   );
+  // }
 
   Widget _totalExpensesCard(_McaUi u) {
     final total = controller.displayQuarterTotal;
@@ -614,7 +614,7 @@ class RentMaintenanceCostAnalysisView extends BaseView<RentMaintenanceCostAnalys
     );
   }
 
-  String _repairTitle(RentExpenseRecord? e) {
+  String _repairTitle(ExpenseRecord? e) {
     if (e == null) {
       return _isSw ? 'Hakuna rekodi ya matengenezo' : 'No maintenance expense yet';
     }
@@ -627,7 +627,7 @@ class RentMaintenanceCostAnalysisView extends BaseView<RentMaintenanceCostAnalys
     return _isSw ? 'Matengenezo' : 'Maintenance';
   }
 
-  String _repairDate(RentExpenseRecord? e) {
+  String _repairDate(ExpenseRecord? e) {
     if (e == null) return '';
     final d = DateTime.tryParse(e.datePaidIso);
     if (d == null) return '';

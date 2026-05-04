@@ -2,10 +2,10 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_expense_local_data_source.dart';
-import '../../../../data/local/db/rent_income_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
+import '../../../../data/local/db/income_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
@@ -45,15 +45,15 @@ class TenantProfitVm {
 class RentFinancialComparisonController extends BaseController
     with RentRealDataControllerMixin {
   RentFinancialComparisonController()
-      : _incomeLocal = Get.find<RentIncomeLocalDataSource>(),
-        _expenseLocal = Get.find<RentExpenseLocalDataSource>(),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
-        _tenantLocal = Get.find<RentTenantLocalDataSource>();
+      : _incomeLocal = Get.find<IncomeLocalDataSource>(),
+        _expenseLocal = Get.find<ExpenseLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
+        _tenantLocal = Get.find<TenantLocalDataSource>();
 
-  final RentIncomeLocalDataSource _incomeLocal;
-  final RentExpenseLocalDataSource _expenseLocal;
-  final RentPropertyLocalDataSource _propertyLocal;
-  final RentTenantLocalDataSource _tenantLocal;
+  final IncomeLocalDataSource _incomeLocal;
+  final ExpenseLocalDataSource _expenseLocal;
+  final PropertyLocalDataSource _propertyLocal;
+  final TenantLocalDataSource _tenantLocal;
 
   final loadingDash = true.obs;
   final granularity = FinancialChartGranularity.monthly.obs;
@@ -101,8 +101,8 @@ class RentFinancialComparisonController extends BaseController
   Future<void> loadDashboard({bool quiet = false}) async {
     if (!quiet) loadingDash.value = true;
     try {
-      final incomes = await _incomeLocal.getAllNewestFirst();
-      final expenses = await _expenseLocal.getAllNewestFirst();
+      final incomes = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
+      final expenses = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
       final properties = await _propertyLocal.getAllNewestFirst();
       final tenants = await _tenantLocal.getAllNewestFirst();
 
@@ -147,8 +147,8 @@ class RentFinancialComparisonController extends BaseController
 
   void _buildChartForGranularity(
     FinancialChartGranularity g,
-    List<RentIncomeRecord> incomes,
-    List<RentExpenseRecord> expenses,
+    List<IncomeRecord> incomes,
+    List<ExpenseRecord> expenses,
     DateTime now,
   ) {
     final labels = <String>[];
@@ -198,7 +198,7 @@ class RentFinancialComparisonController extends BaseController
     legendNet.value = ti - tc;
   }
 
-  double _sumIncome(List<RentIncomeRecord> rows, DateTime start, DateTime end) {
+  double _sumIncome(List<IncomeRecord> rows, DateTime start, DateTime end) {
     var s = 0.0;
     for (final r in rows) {
       final d = _parseDate(r.datePaidIso, r.createdAtMs);
@@ -207,7 +207,7 @@ class RentFinancialComparisonController extends BaseController
     return s;
   }
 
-  double _sumExpense(List<RentExpenseRecord> rows, DateTime start, DateTime end) {
+  double _sumExpense(List<ExpenseRecord> rows, DateTime start, DateTime end) {
     var s = 0.0;
     for (final r in rows) {
       final d = _parseDate(r.datePaidIso, r.createdAtMs);
@@ -217,9 +217,9 @@ class RentFinancialComparisonController extends BaseController
   }
 
   void _buildPerformers(
-    List<RentPropertyRecord> properties,
-    List<RentIncomeRecord> incomes,
-    List<RentExpenseRecord> expenses,
+    List<PropertyRecord> properties,
+    List<IncomeRecord> incomes,
+    List<ExpenseRecord> expenses,
     DateTime now,
   ) {
     if (properties.isEmpty) {
@@ -241,7 +241,7 @@ class RentFinancialComparisonController extends BaseController
     final rows = <({String name, double profit, double inc})>[];
     for (final p in properties) {
       final loc = p.propertyLocation.trim();
-      final suite = p.apartmentSuite.trim();
+      final suite = p.propertyName.trim();
       final title = suite.isNotEmpty ? '$loc · $suite' : (loc.isNotEmpty ? loc : 'Property');
       final key = loc.toLowerCase();
 
@@ -298,8 +298,8 @@ class RentFinancialComparisonController extends BaseController
   }
 
   void _buildTenantCards(
-    List<RentTenantRecord> tenants,
-    List<RentExpenseRecord> expenses,
+    List<TenantRecord> tenants,
+    List<ExpenseRecord> expenses,
   ) {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);

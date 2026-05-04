@@ -7,7 +7,9 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/base/base_controller.dart';
-import '../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/db/property_listing_units_sync.dart';
+import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/draft_listing_store.dart';
 import '../../../data/local/pending_listings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
@@ -21,7 +23,8 @@ import '../models/apartment_unit_draft.dart';
 class AddListingController extends BaseController {
   AddListingController()
       : _nominatim = Get.find<NominatimService>(),
-        _local = Get.find<RentPropertyLocalDataSource>(),
+        _local = Get.find<PropertyLocalDataSource>(),
+        _unitLocal = Get.find<PropertyUnitLocalDataSource>(),
         _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
@@ -31,7 +34,8 @@ class AddListingController extends BaseController {
         _draftStore = DraftListingStore();
 
   final NominatimService _nominatim;
-  final RentPropertyLocalDataSource _local;
+  final PropertyLocalDataSource _local;
+  final PropertyUnitLocalDataSource _unitLocal;
   final AppRepository _repository;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
@@ -64,7 +68,16 @@ class AddListingController extends BaseController {
 
   bool get fromFirstLogin => Get.arguments?['from_first_login'] == true;
 
-  bool get isApartmentProperty => propertyType.value == 'Apartment';
+  bool get isApartmentProperty {
+    final t = _effectivePropertyType.trim();
+    return t == 'Apartment';
+  }
+
+  /// Dropdown selection when set; otherwise legacy [propertyType] (kept in sync in [selectPropertyType]).
+  String get _effectivePropertyType =>
+      (selectedPropertyType.value?.trim().isNotEmpty == true
+          ? selectedPropertyType.value!.trim()
+          : propertyType.value.trim());
 
   bool get hideListingRentAmount => isApartmentProperty && apartmentUnits.isNotEmpty;
 
@@ -76,7 +89,16 @@ class AddListingController extends BaseController {
   final isEditing = false.obs;
   final awaitingEditLoad = false.obs;
 
-  RentPropertyRecord? _editingOriginal;
+  PropertyRecord? _editingOriginal;
+
+  /// When true, remote/API merge must not overwrite values taken from local [PropertyRecord].
+  bool _rentFreqLockedFromLocal = false;
+  bool _minDurLockedFromLocal = false;
+  bool _rentAmountLockedFromLocal = false;
+  bool _propertyTypeLockedFromLocal = false;
+  bool _unitsLockedFromLocal = false;
+
+  static const _rentFrequencyChoices = ['Per Day', 'Per Week', 'Per Month', 'Per Year'];
 
   final selectedPropertyType = Rx<String?>(null);
 
@@ -448,43 +470,77 @@ class AddListingController extends BaseController {
     showLoading();
     try {
       final original = _editingOriginal;
+      final unitsJson = _unitsJsonForSave();
       if (original != null) {
         final rentOut = hideListingRentAmount ? '' : rentAmountController.text.trim();
         await _local.update(
-          RentPropertyRecord(
+          PropertyRecord(
             id: original.id,
             propertyLocation: location,
-            apartmentSuite: propertyNameController.text.trim(),
-            propertyType: propertyType.value,
-            rentAmount: rentOut,
-            rentFrequency: rentFrequency.value,
-            minRentalDuration: minRentalDuration.value,
+            propertyName: propertyNameController.text.trim(),
+            propertyType: _effectivePropertyType,
             propertyRef: original.propertyRef,
+            tenants: original.tenants,
+            units: _listedUnitCount(),
             ownerUserId: original.ownerUserId,
             workspaceType: original.workspaceType,
             createdAtMs: original.createdAtMs,
-            unitsJson: _unitsJsonForSave(),
+            rentAmount: rentOut,
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            unitsJson: unitsJson,
           ),
+        );
+        await syncPropertyUnitsForListingSave(
+          unitLocal: _unitLocal,
+          propertyRef: original.propertyRef,
+          isApartment: isApartmentProperty,
+          apartmentUnitMaps: isApartmentProperty && apartmentUnits.isNotEmpty
+              ? apartmentUnits.map((u) => u.toJson()).toList()
+              : const [],
+          minRentalDuration: minRentalDuration.value,
+          listingRentFrequency: rentFrequency.value,
+          listingRentRaw: rentAmountController.text.trim(),
+          singleUnitName: propertyNameController.text.trim(),
+          rooms: int.tryParse(numberOfBedroomsController.text.trim()) ?? 0,
+          maxGuests: int.tryParse(maxGuestsController.text.trim()) ?? 0,
         );
         Get.back(result: true);
         Get.snackbar('Saved', 'Property updated on this device');
       } else {
         final workspaceType = await _workspaceContext.getWorkspaceType();
+        final propertyRef = 'local_${DateTime.now().millisecondsSinceEpoch}';
         await _local.insert(
-          RentPropertyRecord(
+          PropertyRecord(
             id: 0,
             propertyLocation: location,
-            apartmentSuite: propertyNameController.text.trim(),
-            propertyType: propertyType.value,
-            rentAmount: rentAmountController.text.trim(),
-            rentFrequency: rentFrequency.value,
-            minRentalDuration: minRentalDuration.value,
-            propertyRef: 'local_${DateTime.now().millisecondsSinceEpoch}',
+            propertyName: propertyNameController.text.trim(),
+            propertyType: _effectivePropertyType,
+            propertyRef: propertyRef,
+            tenants: 0,
+            units: _listedUnitCount(),
             ownerUserId: (await _preferenceManager.getUser()).id ?? '',
             workspaceType: workspaceType,
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
-            unitsJson: _unitsJsonForSave(),
+            rentAmount: rentAmountController.text.trim(),
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            unitsJson: unitsJson,
           ),
+        );
+        await syncPropertyUnitsForListingSave(
+          unitLocal: _unitLocal,
+          propertyRef: propertyRef,
+          isApartment: isApartmentProperty,
+          apartmentUnitMaps: isApartmentProperty && apartmentUnits.isNotEmpty
+              ? apartmentUnits.map((u) => u.toJson()).toList()
+              : const [],
+          minRentalDuration: minRentalDuration.value,
+          listingRentFrequency: rentFrequency.value,
+          listingRentRaw: rentAmountController.text.trim(),
+          singleUnitName: propertyNameController.text.trim(),
+          rooms: int.tryParse(numberOfBedroomsController.text.trim()) ?? 0,
+          maxGuests: int.tryParse(maxGuestsController.text.trim()) ?? 0,
         );
         Get.back(result: true);
         Get.snackbar('Saved', 'Property saved on this device');
@@ -560,6 +616,13 @@ class AddListingController extends BaseController {
     return jsonEncode(apartmentUnits.map((u) => u.toJson()).toList());
   }
 
+  int _listedUnitCount() {
+    if (isApartmentProperty && apartmentUnits.isNotEmpty) {
+      return apartmentUnits.length;
+    }
+    return 1;
+  }
+
   final publishing = false.obs;
   final syncing = false.obs;
 
@@ -572,13 +635,23 @@ class AddListingController extends BaseController {
       _listingId = id;
       isEditMode.value = true;
     }
+    if (args?['isEditMode'] == true) {
+      isEditMode.value = true;
+    }
+    if (isEditMode.value) {
+      isEditing.value = true;
+    }
   }
 
   @override
   void onReady() {
     super.onReady();
-    if (isEditMode.value && _listingId != null) {
-      _loadListingForEdit();
+    if (isEditMode.value) {
+      if (_listingId != null && _listingId!.isNotEmpty) {
+        _loadListingForEdit();
+      } else {
+        _loadEditFromArgumentsOnly();
+      }
     } else {
       _checkAndOfferResumeDraft();
     }
@@ -649,23 +722,293 @@ class AddListingController extends BaseController {
     }
   }
 
-  Future<void> _loadListingForEdit() async {
+  Future<void> _loadEditFromArgumentsOnly() async {
     loadingListing.value = true;
     try {
-      final res = await _repository.getListing(_listingId!);
-      if (res.responseCode == '0' && res.data != null) {
-        _prefillFromMap(res.data as Map<String, dynamic>);
+      final args = Get.arguments as Map<String, dynamic>?;
+      final listingData = args?['listing_data'] as Map<String, dynamic>?;
+      if (listingData != null) {
+        _prefillFromMap(listingData);
+        _mergeRentFieldsFromListingMap(listingData, respectLocalLocks: false);
+      }
+    } finally {
+      loadingListing.value = false;
+    }
+  }
+
+  Future<void> _loadListingForEdit() async {
+    loadingListing.value = true;
+    _rentFreqLockedFromLocal = false;
+    _minDurLockedFromLocal = false;
+    _rentAmountLockedFromLocal = false;
+    _propertyTypeLockedFromLocal = false;
+    _unitsLockedFromLocal = false;
+    try {
+      PropertyRecord? local;
+      try {
+        local = await _local.findByHubId(_listingId!);
+      } catch (_) {}
+
+      if (local != null) {
+        _prefillFromPropertyRecord(local);
+      }
+
+      Map<String, dynamic>? remoteMap;
+      try {
+        final res = await _repository.getListing(_listingId!);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (ok && res.data != null) {
+          remoteMap = _unwrapListingPayload(res.data);
+        }
+      } catch (_) {}
+
+      if (remoteMap != null) {
+        _prefillFromMap(remoteMap);
+        _mergeRentFieldsFromListingMap(
+          remoteMap,
+          respectLocalLocks: local != null,
+        );
       } else {
         final args = Get.arguments as Map<String, dynamic>?;
         final listingData = args?['listing_data'] as Map<String, dynamic>?;
-        if (listingData != null) _prefillFromMap(listingData);
+        if (listingData != null) {
+          _prefillFromMap(listingData);
+          _mergeRentFieldsFromListingMap(
+            listingData,
+            respectLocalLocks: local != null,
+          );
+        }
+      }
+
+      final args = Get.arguments as Map<String, dynamic>?;
+      final listingData = args?['listing_data'] as Map<String, dynamic>?;
+      if (listingData != null) {
+        _prefillFromMap(listingData);
+        _mergeRentFieldsFromListingMap(listingData, respectLocalLocks: false);
       }
     } catch (_) {
       final args = Get.arguments as Map<String, dynamic>?;
       final listingData = args?['listing_data'] as Map<String, dynamic>?;
-      if (listingData != null) _prefillFromMap(listingData);
+      if (listingData != null) {
+        _prefillFromMap(listingData);
+        _mergeRentFieldsFromListingMap(listingData, respectLocalLocks: false);
+      }
     } finally {
       loadingListing.value = false;
+    }
+  }
+
+  Map<String, dynamic>? _unwrapListingPayload(dynamic data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map && data['data'] is Map) {
+      return Map<String, dynamic>.from(data['data'] as Map);
+    }
+    if (data is Map && data['listing'] is Map) {
+      return Map<String, dynamic>.from(data['listing'] as Map);
+    }
+    return null;
+  }
+
+  void _prefillFromPropertyRecord(PropertyRecord r) {
+    _editingOriginal = r;
+    _rentFreqLockedFromLocal = r.rentFrequency.trim().isNotEmpty;
+    _minDurLockedFromLocal = r.minRentalDuration.trim().isNotEmpty;
+    _rentAmountLockedFromLocal = r.rentAmount.trim().isNotEmpty;
+    _propertyTypeLockedFromLocal = r.propertyType.trim().isNotEmpty;
+    _unitsLockedFromLocal = r.unitsJson.trim().isNotEmpty;
+
+    propertyLocationController.text = r.propertyLocation;
+    streetAddressController.text = r.propertyLocation;
+    propertyNameController.text = r.propertyName;
+    _applyPropertyTypeSelection(r.propertyType);
+    rentAmountController.text = r.rentAmount.trim();
+    if (_rentFreqLockedFromLocal) {
+      rentFrequency.value = _coerceRentFrequency(r.rentFrequency);
+    }
+    if (_minDurLockedFromLocal) {
+      minRentalDuration.value = _coerceMinRentalDuration(r.minRentalDuration);
+    }
+    _loadApartmentUnitsFromJson(r.unitsJson);
+    isEditing.value = true;
+  }
+
+  String _coerceRentFrequency(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) return rentFrequency.value;
+    for (final o in _rentFrequencyChoices) {
+      if (o.toLowerCase() == t.toLowerCase()) return o;
+    }
+    return t;
+  }
+
+  String _coerceMinRentalDuration(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) return minRentalDuration.value;
+    for (final o in minRentalDurationOptions) {
+      if (o.toLowerCase() == t.toLowerCase()) return o;
+    }
+    final lower = t.toLowerCase();
+    if (lower.contains('month')) return '1 Month';
+    if (lower.contains('week')) return '1 Week';
+    if (lower.contains('1') && lower.contains('day')) return '1 Day';
+    if (lower.contains('2') && lower.contains('day')) return '2 Days';
+    return minRentalDuration.value;
+  }
+
+  void _applyPropertyTypeSelection(String rawType) {
+    final t = rawType.trim();
+    if (t.isEmpty) return;
+    for (final o in propertyTypes) {
+      if (o.toLowerCase() == t.toLowerCase()) {
+        selectedPropertyType.value = o;
+        propertyType.value = o;
+        return;
+      }
+    }
+    for (final o in propertyTypeOptions) {
+      if (o.toLowerCase() == t.toLowerCase()) {
+        final mapped = _mapLegacyPropertyTypeToFormOption(o);
+        selectedPropertyType.value = mapped;
+        propertyType.value = mapped;
+        return;
+      }
+    }
+    selectedPropertyType.value = 'Other';
+    propertyType.value = 'Other';
+  }
+
+  String _mapLegacyPropertyTypeToFormOption(String legacy) {
+    switch (legacy) {
+      case 'Office space':
+      case 'Room':
+      case 'Storage':
+        return 'Other';
+      default:
+        return propertyTypes.contains(legacy) ? legacy : 'Other';
+    }
+  }
+
+  void _loadApartmentUnitsFromJson(String raw) {
+    apartmentUnits.clear();
+    final s = raw.trim();
+    if (s.isEmpty) return;
+    try {
+      final decoded = jsonDecode(s);
+      if (decoded is! List) return;
+      final list = <ApartmentUnitDraft>[];
+      for (final e in decoded) {
+        if (e is Map<String, dynamic>) {
+          list.add(ApartmentUnitDraft.fromJson(e));
+        } else if (e is Map) {
+          list.add(ApartmentUnitDraft.fromJson(Map<String, dynamic>.from(e)));
+        }
+      }
+      apartmentUnits.assignAll(list);
+    } catch (_) {}
+  }
+
+  void _loadApartmentUnitsFromList(List<dynamic> rows) {
+    final list = <ApartmentUnitDraft>[];
+    for (final e in rows) {
+      if (e is Map<String, dynamic>) {
+        list.add(ApartmentUnitDraft.fromJson(e));
+      } else if (e is Map) {
+        list.add(ApartmentUnitDraft.fromJson(Map<String, dynamic>.from(e)));
+      }
+    }
+    if (list.isEmpty) return;
+    apartmentUnits.assignAll(list);
+  }
+
+  String? _readStr(Map<String, dynamic> m, List<String> keys) {
+    for (final k in keys) {
+      final v = m[k];
+      if (v == null) continue;
+      final s = v.toString().trim();
+      if (s.isNotEmpty) return s;
+    }
+    return null;
+  }
+
+  String _formatRentFromDynamic(dynamic n) {
+    if (n is num) {
+      final d = n.toDouble();
+      if (d == d.roundToDouble()) return d.toInt().toString();
+      return d.toString();
+    }
+    return n.toString().trim();
+  }
+
+  /// Fills rent-first form fields from API/snake_case maps (and BnB-style keys where useful).
+  void _mergeRentFieldsFromListingMap(
+    Map<String, dynamic> m, {
+    required bool respectLocalLocks,
+  }) {
+    bool allowRentAmount() => !respectLocalLocks || !_rentAmountLockedFromLocal;
+    bool allowRentFreq() => !respectLocalLocks || !_rentFreqLockedFromLocal;
+    bool allowMinDur() => !respectLocalLocks || !_minDurLockedFromLocal;
+    bool allowType() => !respectLocalLocks || !_propertyTypeLockedFromLocal;
+    bool allowUnits() => !respectLocalLocks || !_unitsLockedFromLocal;
+
+    final loc = _readStr(m, [
+      'propertyLocation',
+      'streetAddress',
+      'location',
+      'propertyLocationText',
+    ]);
+    if (loc != null) {
+      if (!respectLocalLocks || propertyLocationController.text.trim().isEmpty) {
+        propertyLocationController.text = loc;
+      }
+      if (!respectLocalLocks || streetAddressController.text.trim().isEmpty) {
+        streetAddressController.text = loc;
+      }
+    }
+
+    final name = _readStr(m, ['propertyName', 'property_name', 'title', 'name']);
+    if (name != null && (!respectLocalLocks || propertyNameController.text.trim().isEmpty)) {
+      propertyNameController.text = name;
+    }
+
+    final type = _readStr(m, ['propertyType', 'property_type', 'type']);
+    if (type != null && allowType()) {
+      _applyPropertyTypeSelection(type);
+    }
+
+    if (allowRentAmount()) {
+      final rentStr = _readStr(m, ['rentAmount', 'monthlyRent', 'rent']);
+      if (rentStr != null) {
+        rentAmountController.text = rentStr;
+      } else {
+        final n = m['rentAmount'] ?? m['monthlyRent'] ?? m['baseNightlyRate'];
+        if (n != null && n.toString().trim().isNotEmpty) {
+          rentAmountController.text = _formatRentFromDynamic(n);
+        }
+      }
+    }
+
+    final freq = _readStr(m, ['rentFrequency', 'rent_frequency']);
+    if (freq != null && allowRentFreq()) {
+      rentFrequency.value = _coerceRentFrequency(freq);
+    }
+
+    final minD = _readStr(m, ['minRentalDuration', 'min_rental_duration', 'minimumStay']);
+    if (minD != null && allowMinDur()) {
+      minRentalDuration.value = _coerceMinRentalDuration(minD);
+    }
+
+    if (allowUnits()) {
+      final uj = _readStr(m, ['unitsJson', 'units_json']);
+      if (uj != null && uj.isNotEmpty) {
+        _loadApartmentUnitsFromJson(uj);
+      } else {
+        final units = m['units'] ?? m['apartmentUnits'];
+        if (units is List && units.isNotEmpty) {
+          _loadApartmentUnitsFromList(units);
+        }
+      }
     }
   }
 
@@ -864,6 +1207,9 @@ class AddListingController extends BaseController {
 
   void selectPropertyType(String? value) {
     selectedPropertyType.value = value;
+    if (value != null && value.trim().isNotEmpty) {
+      propertyType.value = value.trim();
+    }
   }
 
   String? validateRequired(String? value, [String fieldName = 'This field']) {

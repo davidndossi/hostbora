@@ -4,23 +4,23 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import '../../../core/base/base_controller.dart';
-import '../../../data/local/db/bnb_property_local_data_source.dart';
-import '../../../data/local/db/bnb_tenant_local_data_source.dart';
+import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
 
 class AddTenantFormController extends BaseController {
   AddTenantFormController()
-      : _tenantLocal = Get.find<BnBTenantLocalDataSource>(),
-        _propertyLocal = Get.find<BnBPropertyLocalDataSource>(),
+      : _tenantLocal = Get.find<TenantLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
         _workspaceContext = Get.find<WorkspaceContextService>();
 
-  final BnBTenantLocalDataSource _tenantLocal;
-  final BnBPropertyLocalDataSource _propertyLocal;
+  final TenantLocalDataSource _tenantLocal;
+  final PropertyLocalDataSource _propertyLocal;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
 
@@ -97,10 +97,12 @@ class AddTenantFormController extends BaseController {
       workspaceType: workspaceType,
     );
 
-    BnBPropertyRecord? selected;
+    PropertyRecord? selected;
     if (propertyRef.value.isNotEmpty) {
       for (final p in properties) {
-        if (p.listingId == propertyRef.value || 'legacy_${p.id}' == propertyRef.value) {
+        if (p.propertyRef == propertyRef.value ||
+            'legacy_${p.id}' == propertyRef.value ||
+            'local_${p.id}' == propertyRef.value) {
           selected = p;
           break;
         }
@@ -110,10 +112,10 @@ class AddTenantFormController extends BaseController {
       final wanted = propertyContextLabel.value.trim();
       for (final p in properties) {
         final composed = p.propertyName.trim().isNotEmpty
-            ? '${p.streetAddress.trim()} · ${p.propertyName.trim()}'
-            : p.streetAddress.trim();
+            ? '${p.propertyLocation.trim()} · ${p.propertyName.trim()}'
+            : p.propertyLocation.trim();
         final matches = composed == wanted ||
-            p.streetAddress.trim() == wanted ||
+            p.propertyLocation.trim() == wanted ||
             p.propertyName.trim() == wanted;
         if (matches) {
           selected = p;
@@ -128,15 +130,15 @@ class AddTenantFormController extends BaseController {
     }
 
     propertyRef.value =
-        selected.listingId.isNotEmpty ? selected.listingId : 'legacy_${selected.id}';
+        selected.propertyRef.isNotEmpty ? selected.propertyRef : 'legacy_${selected.id}';
     final composed = selected.propertyName.trim().isNotEmpty
-        ? '${selected.propertyName.trim()} · ${selected.streetAddress.trim()}'
-        : selected.streetAddress.trim();
+        ? '${selected.propertyName.trim()} · ${selected.propertyLocation.trim()}'
+        : selected.propertyLocation.trim();
     if (composed.isNotEmpty) {
       propertyContextLabel.value = composed;
     }
 
-    final drafts = _parseUnitDrafts(selected.roomsJson);
+    final drafts = _parseUnitDrafts(selected.unitsJson);
     availableUnitDrafts.assignAll(drafts);
 
     if (drafts.isEmpty) {
@@ -254,16 +256,18 @@ class AddTenantFormController extends BaseController {
 
     await _tenantLocal.insert(
       propertyLabel: propertyContextLabel.value.trim(),
-      listingId: propertyRef.value.trim(),
+      propertyRef: propertyRef.value.trim(),
       apartmentUnitId: apartmentUnitId,
       unitLabel: unitLabel,
-      guestName: tenantNameController.text.trim(),
+      tenantName: tenantNameController.text.trim(),
       gender: gender.value,
-      amountPaid: amount,
+      rentAmountValue: amount,
+      rentFrequency: rentFrequency.value,
       phoneNumber: phoneController.text.trim(),
       email: emailController.text.trim(),
-      checkInIso: DateFormat('yyyy-MM-dd').format(leaseStart.value!),
-      checkOutIso: DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
+      isWhatsapp: isWhatsapp.value,
+      leaseStartIso: DateFormat('yyyy-MM-dd').format(leaseStart.value!),
+      leaseEndIso: DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
     );
 
     showSuccessMessage('Tenant saved offline');

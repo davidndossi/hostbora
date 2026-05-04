@@ -5,26 +5,26 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_expense_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
 
 class RentAddNewExpenseController extends BaseController {
   RentAddNewExpenseController()
-      : _expenseLocal = Get.find<RentExpenseLocalDataSource>(),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
-        _tenantLocal = Get.find<RentTenantLocalDataSource>(),
+      : _expenseLocal = Get.find<ExpenseLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
+        _tenantLocal = Get.find<TenantLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
         _workspaceContext = Get.find<WorkspaceContextService>();
 
-  final RentExpenseLocalDataSource _expenseLocal;
-  final RentPropertyLocalDataSource _propertyLocal;
-  final RentTenantLocalDataSource _tenantLocal;
+  final ExpenseLocalDataSource _expenseLocal;
+  final PropertyLocalDataSource _propertyLocal;
+  final TenantLocalDataSource _tenantLocal;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
 
@@ -35,7 +35,7 @@ class RentAddNewExpenseController extends BaseController {
   final formKey = GlobalKey<FormState>();
 
   /// Expense category options (single selection).
-  final expenses = const ['Rent', 'Maintenance', 'Utilities', 'Salary', 'Other'];
+  final expenses = const ['Maintenance', 'Utilities', 'Salary', 'Other'];
 
   final selectedExpenseIndex = 0.obs;
   final propertyOptions = <String>[].obs;
@@ -43,17 +43,17 @@ class RentAddNewExpenseController extends BaseController {
   /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
   final selectedExpenseUnitKey = Rxn<String>();
 
-  List<RentPropertyRecord> _propertyRows = [];
+  List<PropertyRecord> _propertyRows = [];
 
   String get selectedExpense => expenses[selectedExpenseIndex.value];
   bool get hasProperties => propertyOptions.isNotEmpty;
 
-  RentPropertyRecord? get selectedPropertyRecord {
+  PropertyRecord? get selectedPropertyRecord {
     selectedProperty.value;
     final selected = selectedProperty.value.trim();
     if (selected.isEmpty) return null;
     for (final r in _propertyRows) {
-      final suite = r.apartmentSuite.trim();
+      final suite = r.propertyName.trim();
       final fallback = r.propertyLocation.trim();
       if (suite == selected || fallback == selected) return r;
     }
@@ -112,11 +112,11 @@ class RentAddNewExpenseController extends BaseController {
 
   /// Same rules as rent hub: match [RentTenantRecord] to property by ref or label.
   static bool _tenantMatchesProperty(
-    RentTenantRecord t,
-    RentPropertyRecord p,
+    TenantRecord t,
+    PropertyRecord p,
   ) {
     final loc = p.propertyLocation.trim();
-    final suite = p.apartmentSuite.trim();
+    final suite = p.propertyName.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : loc;
     final propertyRef = p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}';
     final r = t.propertyRef.trim();
@@ -131,9 +131,9 @@ class RentAddNewExpenseController extends BaseController {
   }
 
   static bool _tenantMatchesUnit(
-    RentTenantRecord t,
+    TenantRecord t,
     ApartmentUnitDraft u,
-    RentPropertyRecord p,
+    PropertyRecord p,
   ) {
     if (!_tenantMatchesProperty(t, p)) return false;
     final tid = t.apartmentUnitId.trim();
@@ -183,7 +183,7 @@ class RentAddNewExpenseController extends BaseController {
     _propertyRows = rows;
     final options = rows
         .map((e) {
-          final suite = e.apartmentSuite.trim();
+          final suite = e.propertyName.trim();
           return suite.isNotEmpty ? suite : e.propertyLocation.trim();
         })
         .where((e) => e.isNotEmpty)
@@ -245,17 +245,21 @@ class RentAddNewExpenseController extends BaseController {
     final unitLine = _optionalUnitNotesLine();
     final baseNotes = StringBuffer('Property: $property');
     if (unitLine.isNotEmpty) {
+      baseNotes.write(" ");
       baseNotes.writeln(unitLine);
     }
     final extra = notesController.text.trim();
     if (extra.isNotEmpty) {
+      baseNotes.write(" ");
       baseNotes.writeln(extra);
     }
+    final workspaceType = await _workspaceContext.getWorkspaceType();
     await _expenseLocal.insert(
       tenantName: tenantController.text.trim(),
       amountValue: amount,
       datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
       category: selectedExpense,
+      workspaceType: workspaceType,
       notes: baseNotes.toString().trim(),
       apartment: property,
       apartmentUnit: unitName,

@@ -2,9 +2,9 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_expense_local_data_source.dart';
-import '../../../../data/local/db/rent_income_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
+import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../routes/app_pages.dart';
@@ -31,14 +31,14 @@ class RentHubListingItem {
 
 class RentHubController extends BaseController {
   RentHubController({
-    RentIncomeLocalDataSource? incomeLocal,
-    RentExpenseLocalDataSource? expenseLocal,
-    RentPropertyLocalDataSource? propertyLocal,
+    IncomeLocalDataSource? incomeLocal,
+    ExpenseLocalDataSource? expenseLocal,
+    PropertyLocalDataSource? propertyLocal,
     PreferenceManager? preferenceManager,
     WorkspaceContextService? workspaceContext,
-  })  : _incomeLocal = incomeLocal ?? Get.find<RentIncomeLocalDataSource>(),
-        _expenseLocal = expenseLocal ?? Get.find<RentExpenseLocalDataSource>(),
-        _propertyLocal = propertyLocal ?? Get.find<RentPropertyLocalDataSource>(),
+  })  : _incomeLocal = incomeLocal ?? Get.find<IncomeLocalDataSource>(),
+        _expenseLocal = expenseLocal ?? Get.find<ExpenseLocalDataSource>(),
+        _propertyLocal = propertyLocal ?? Get.find<PropertyLocalDataSource>(),
         _preferenceManager = preferenceManager ??
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
         workspaceContext = workspaceContext ?? Get.find<WorkspaceContextService>();
@@ -46,9 +46,9 @@ class RentHubController extends BaseController {
   static const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   static final NumberFormat _money = NumberFormat('#,###', 'en_US');
 
-  final RentIncomeLocalDataSource _incomeLocal;
-  final RentExpenseLocalDataSource _expenseLocal;
-  final RentPropertyLocalDataSource _propertyLocal;
+  final IncomeLocalDataSource _incomeLocal;
+  final ExpenseLocalDataSource _expenseLocal;
+  final PropertyLocalDataSource _propertyLocal;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService workspaceContext;
 
@@ -85,8 +85,8 @@ class RentHubController extends BaseController {
     final today = DateTime(now.year, now.month, now.day);
     final weekStart = today.subtract(const Duration(days: 6));
 
-    final incomeRows = await _incomeLocal.getAllNewestFirst();
-    final expenseRows = await _expenseLocal.getAllNewestFirst();
+    final incomeRows = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
+    final expenseRows = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
 
     var incomeTotal = 0.0;
     var expenseTotal = 0.0;
@@ -149,8 +149,8 @@ class RentHubController extends BaseController {
           hubId: p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}',
           imageAsset: '',
           categoryLabel: p.propertyType.toUpperCase(),
-          title: p.apartmentSuite.trim().isNotEmpty
-              ? p.apartmentSuite
+          title: p.propertyName.trim().isNotEmpty
+              ? p.propertyName
               : p.propertyLocation,
           monthlyRentLabel: p.rentAmount.trim().isEmpty
               ? 'Tsh 0'

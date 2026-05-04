@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_expense_local_data_source.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
 class RentProfitExpenseLine {
@@ -10,7 +10,7 @@ class RentProfitExpenseLine {
     required this.estimated,
   });
 
-  final RentExpenseRecord record;
+  final ExpenseRecord record;
   final double estimated;
 
   double get variance => record.amountValue - estimated;
@@ -19,10 +19,10 @@ class RentProfitExpenseLine {
 class RentProfitAnalysisDashboardController extends BaseController
     with RentRealDataControllerMixin {
   RentProfitAnalysisDashboardController()
-      : _expenseLocal = Get.find<RentExpenseLocalDataSource>();
+      : _expenseLocal = Get.find<ExpenseLocalDataSource>();
 
-  final RentExpenseLocalDataSource _expenseLocal;
-  final expenses = <RentExpenseRecord>[].obs;
+  final ExpenseLocalDataSource _expenseLocal;
+  final expenses = <ExpenseRecord>[].obs;
 
   @override
   void onReady() {
@@ -38,7 +38,7 @@ class RentProfitAnalysisDashboardController extends BaseController
   }
 
   Future<void> _loadExpenses() async {
-    expenses.value = await _expenseLocal.getAllNewestFirst();
+    expenses.value = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
   }
 
   double get targetProfit {

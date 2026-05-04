@@ -1,30 +1,32 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_income_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../core/utils/thousand_separator.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/income_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
 
 class RentAddIncomeFormController extends BaseController {
   RentAddIncomeFormController()
-      : _incomeLocal = Get.find<RentIncomeLocalDataSource>(),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
-        _tenantLocal = Get.find<RentTenantLocalDataSource>(),
+      : _incomeLocal = Get.find<IncomeLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
+        _tenantLocal = Get.find<TenantLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
         _workspaceContext = Get.find<WorkspaceContextService>();
 
-  final RentIncomeLocalDataSource _incomeLocal;
-  final RentPropertyLocalDataSource _propertyLocal;
-  final RentTenantLocalDataSource _tenantLocal;
+  final IncomeLocalDataSource _incomeLocal;
+  final PropertyLocalDataSource _propertyLocal;
+  final TenantLocalDataSource _tenantLocal;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
 
@@ -33,6 +35,11 @@ class RentAddIncomeFormController extends BaseController {
   final datePaidController = TextEditingController();
   final notesController = TextEditingController();
   final formKey = GlobalKey<FormState>();
+
+  /// Reused across rebuilds so opening the keyboard does not allocate a new
+  /// [intl.NumberFormat] on every frame ([ThousandsSeparatorInputFormatter]).
+  final ThousandsSeparatorInputFormatter amountThousandsFormatter =
+      ThousandsSeparatorInputFormatter();
 
   /// Income category options (single selection).
   final categories = const ['Rent', 'Service Charge', 'Maintenance', 'Other'];
@@ -43,17 +50,28 @@ class RentAddIncomeFormController extends BaseController {
   /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
   final selectedIncomeUnitKey = Rxn<String>();
 
-  List<RentPropertyRecord> _propertyRows = [];
+  List<PropertyRecord> _propertyRows = [];
+
+  int? _cachedUnitsPropertyId;
+  String _cachedUnitsJsonSnapshot = '';
+  List<ApartmentUnitDraft> _cachedIncomeUnits = const [];
+
+  List<String> _propertyMenuSource = const [];
+  List<DropdownMenuItem<String>> _propertyMenuItems = const [];
+  Color? _propertyMenuFg;
+
+  Object? _unitMenuItemsCacheKey;
+  List<DropdownMenuItem<String?>> _cachedUnitMenuItems = const [];
 
   String get selectedCategory => categories[selectedCategoryIndex.value];
   bool get hasProperties => propertyOptions.isNotEmpty;
 
-  RentPropertyRecord? get selectedPropertyRecord {
+  PropertyRecord? get selectedPropertyRecord {
     selectedProperty.value;
     final selected = selectedProperty.value.trim();
     if (selected.isEmpty) return null;
     for (final r in _propertyRows) {
-      final suite = r.apartmentSuite.trim();
+      final suite = r.propertyName.trim();
       final fallback = r.propertyLocation.trim();
       if (suite == selected || fallback == selected) return r;
     }
@@ -64,7 +82,91 @@ class RentAddIncomeFormController extends BaseController {
     selectedProperty.value;
     final r = selectedPropertyRecord;
     if (r == null) return const [];
-    return _parseUnitsJson(r.unitsJson);
+    if (_cachedUnitsPropertyId != r.id ||
+        _cachedUnitsJsonSnapshot != r.unitsJson) {
+      _cachedUnitsPropertyId = r.id;
+      _cachedUnitsJsonSnapshot = r.unitsJson;
+      _cachedIncomeUnits = _parseUnitsJson(r.unitsJson);
+      _unitMenuItemsCacheKey = null;
+    }
+    return _cachedIncomeUnits;
+  }
+
+  /// Cached menu rows — avoids rebuilding every [DropdownMenuItem] on each
+  /// keyboard inset/layout pass (see [Obx] in the form view).
+  List<DropdownMenuItem<String>> propertyDropdownMenuItems(Color itemColor) {
+    final list = List<String>.from(propertyOptions);
+    if (_propertyMenuFg != itemColor ||
+        _propertyMenuSource.length != list.length ||
+        !listEquals(_propertyMenuSource, list)) {
+      _propertyMenuSource = list;
+      _propertyMenuFg = itemColor;
+      _propertyMenuItems = list
+          .map(
+            (p) => DropdownMenuItem<String>(
+              value: p,
+              child: Text(
+                p,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: itemColor,
+                ),
+              ),
+            ),
+          )
+          .toList();
+    }
+    return _propertyMenuItems;
+  }
+
+  List<DropdownMenuItem<String?>> unitIncomeDropdownMenuItems({
+    required Color itemColor,
+    required Color hintColor,
+    required String optionalWholePropertyLabel,
+  }) {
+    final r = selectedPropertyRecord;
+    final units = incomeUnitsForSelectedProperty;
+    final cacheKey = Object.hash(
+      r?.id ?? 0,
+      r?.unitsJson.hashCode ?? 0,
+      units.length,
+      units.map((u) => u.selectionKey).join(','),
+      optionalWholePropertyLabel,
+      itemColor,
+      hintColor,
+    );
+    if (_unitMenuItemsCacheKey == cacheKey) {
+      return _cachedUnitMenuItems;
+    }
+    _unitMenuItemsCacheKey = cacheKey;
+    _cachedUnitMenuItems = [
+      DropdownMenuItem<String?>(
+        value: null,
+        child: Text(
+          optionalWholePropertyLabel,
+          style: TextStyle(
+            fontSize: 15,
+            color: hintColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+      ...units.map(
+        (u) => DropdownMenuItem<String?>(
+          value: u.selectionKey,
+          child: Text(
+            u.unitName,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: itemColor,
+            ),
+          ),
+        ),
+      ),
+    ];
+    return _cachedUnitMenuItems;
   }
 
   bool get showIncomeUnitPicker {
@@ -111,11 +213,11 @@ class RentAddIncomeFormController extends BaseController {
   }
 
   static bool _tenantMatchesProperty(
-    RentTenantRecord t,
-    RentPropertyRecord p,
+    TenantRecord t,
+    PropertyRecord p,
   ) {
     final loc = p.propertyLocation.trim();
-    final suite = p.apartmentSuite.trim();
+    final suite = p.propertyName.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : loc;
     final propertyRef = p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}';
     final r = t.propertyRef.trim();
@@ -130,9 +232,9 @@ class RentAddIncomeFormController extends BaseController {
   }
 
   static bool _tenantMatchesUnit(
-    RentTenantRecord t,
+    TenantRecord t,
     ApartmentUnitDraft u,
-    RentPropertyRecord p,
+    PropertyRecord p,
   ) {
     if (!_tenantMatchesProperty(t, p)) return false;
     final tid = t.apartmentUnitId.trim();
@@ -179,10 +281,14 @@ class RentAddIncomeFormController extends BaseController {
       userId: userId,
       workspaceType: workspaceType,
     );
+    _cachedUnitsPropertyId = null;
+    _cachedUnitsJsonSnapshot = '';
+    _cachedIncomeUnits = const [];
+    _unitMenuItemsCacheKey = null;
     _propertyRows = rows;
     final options = rows
         .map((e) {
-          final suite = e.apartmentSuite.trim();
+          final suite = e.propertyName.trim();
           return suite.isNotEmpty ? suite : e.propertyLocation.trim();
         })
         .where((e) => e.isNotEmpty)
@@ -247,17 +353,21 @@ class RentAddIncomeFormController extends BaseController {
     final unitLine = _optionalUnitNotesLine();
     final baseNotes = StringBuffer('Property: $property');
     if (unitLine.isNotEmpty) {
+      baseNotes.write(" ");
       baseNotes.writeln(unitLine);
     }
     if (notes.isNotEmpty) {
+      baseNotes.write(" ");
       baseNotes.writeln(notes);
     }
 
+    final workspaceType = await _workspaceContext.getWorkspaceType();
     await _incomeLocal.insert(
       tenantName: tenant,
       amountValue: amount,
       datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
       category: selectedCategory,
+      workspaceType: workspaceType,
       notes: baseNotes.toString().trim(),
       apartment: property,
       apartmentUnit: unitName,

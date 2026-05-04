@@ -1,23 +1,22 @@
 import 'package:get/get.dart';
 import 'dart:convert';
 
+import '../data/local/db/property_local_data_source.dart';
+import '../data/local/db/property_unit_local_data_source.dart';
 import '/app/data/model/add_task_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/data/local/db/rent_payment_reminder_local_data_source.dart';
-import '/app/data/local/db/bnb_tenant_local_data_source.dart';
-import '/app/data/local/db/bnb_property_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
 import '/app/data/local/db/property_members_local_data_source.dart';
-import '/app/data/local/db/rent_expense_local_data_source.dart';
-import '/app/data/local/db/rent_income_local_data_source.dart';
+import '/app/data/local/db/expense_local_data_source.dart';
+import '/app/data/local/db/income_local_data_source.dart';
 import '/app/data/local/db/rent_loyalty_offer_local_data_source.dart';
 import '/app/data/local/db/rent_notification_log_local_data_source.dart';
-import '/app/data/local/db/rent_property_local_data_source.dart';
 import '/app/data/local/db/rent_property_estimate_local_data_source.dart';
 import '/app/data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '/app/data/local/db/rent_staff_local_data_source.dart';
 import '/app/data/local/db/rent_tenant_charge_local_data_source.dart';
-import '/app/data/local/db/rent_tenant_local_data_source.dart';
+import '/app/data/local/db/tenant_local_data_source.dart';
 import '/app/data/local/db/rent_utility_topup_local_data_source.dart';
 import '/app/data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '/app/data/local/service/local_notification_scheduler_service.dart';
@@ -45,12 +44,24 @@ class LocalSourceBindings implements Bindings {
       ),
       permanent: true,
     ).init();
-    Get.lazyPut<RentPropertyLocalDataSource>(
-      () => RentPropertyLocalDataSource(),
+    // Get.lazyPut<RentPropertyLocalDataSource>(
+    //   () => RentPropertyLocalDataSource(),
+    //   fenix: true,
+    // );
+    // Get.lazyPut<BnBPropertyLocalDataSource>(
+    //   () => BnBPropertyLocalDataSource(),
+    //   fenix: true,
+    // );
+    Get.lazyPut<TenantLocalDataSource>(
+      () => TenantLocalDataSource(),
       fenix: true,
     );
-    Get.lazyPut<BnBPropertyLocalDataSource>(
-      () => BnBPropertyLocalDataSource(),
+    Get.lazyPut<PropertyLocalDataSource>(
+      () => PropertyLocalDataSource(),
+      fenix: true,
+    );
+    Get.lazyPut<PropertyUnitLocalDataSource>(
+      () => PropertyUnitLocalDataSource(),
       fenix: true,
     );
     Get.lazyPut<PropertyMembersLocalDataSource>(
@@ -65,20 +76,12 @@ class LocalSourceBindings implements Bindings {
       () => RentStaffLocalDataSource(),
       fenix: true,
     );
-    Get.lazyPut<RentIncomeLocalDataSource>(
-      () => RentIncomeLocalDataSource(),
+    Get.lazyPut<IncomeLocalDataSource>(
+      () => IncomeLocalDataSource(),
       fenix: true,
     );
-    Get.lazyPut<RentExpenseLocalDataSource>(
-      () => RentExpenseLocalDataSource(),
-      fenix: true,
-    );
-    Get.lazyPut<RentTenantLocalDataSource>(
-      () => RentTenantLocalDataSource(),
-      fenix: true,
-    );
-    Get.lazyPut<BnBTenantLocalDataSource>(
-      () => BnBTenantLocalDataSource(),
+    Get.lazyPut<ExpenseLocalDataSource>(
+      () => ExpenseLocalDataSource(),
       fenix: true,
     );
     Get.lazyPut<RentLoyaltyOfferLocalDataSource>(
@@ -111,11 +114,11 @@ class LocalSourceBindings implements Bindings {
     );
     Get.lazyPut<RentRealDataSnapshotService>(
       () => RentRealDataSnapshotService(
-        propertyLocal: Get.find<RentPropertyLocalDataSource>(),
-        tenantLocal: Get.find<RentTenantLocalDataSource>(),
+        propertyLocal: Get.find<PropertyLocalDataSource>(),
+        tenantLocal: Get.find<TenantLocalDataSource>(),
         staffLocal: Get.find<RentStaffLocalDataSource>(),
-        incomeLocal: Get.find<RentIncomeLocalDataSource>(),
-        expenseLocal: Get.find<RentExpenseLocalDataSource>(),
+        incomeLocal: Get.find<IncomeLocalDataSource>(),
+        expenseLocal: Get.find<ExpenseLocalDataSource>(),
         loyaltyLocal: Get.find<RentLoyaltyOfferLocalDataSource>(),
         maintenanceLocal: Get.find<RentScheduledMaintenanceLocalDataSource>(),
       ),
@@ -127,7 +130,7 @@ class LocalSourceBindings implements Bindings {
     ).start();
     Get.put<TenantLeaseReminderService>(
       TenantLeaseReminderService(
-        tenantLocal: Get.find<RentTenantLocalDataSource>(),
+        tenantLocal: Get.find<TenantLocalDataSource>(),
         preferenceManager: Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
@@ -137,7 +140,7 @@ class LocalSourceBindings implements Bindings {
     ).start();
     Get.put<RentNotificationRulesService>(
       RentNotificationRulesService(
-        tenantLocal: Get.find<RentTenantLocalDataSource>(),
+        tenantLocal: Get.find<TenantLocalDataSource>(),
         staffLocal: Get.find<RentStaffLocalDataSource>(),
         maintenanceLocal: Get.find<RentScheduledMaintenanceLocalDataSource>(),
         notificationLogLocal: Get.find<RentNotificationLogLocalDataSource>(),

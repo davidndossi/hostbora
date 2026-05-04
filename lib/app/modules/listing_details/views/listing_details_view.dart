@@ -31,12 +31,20 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
-    appBarTitleText: controller.listingTitle.value.isEmpty
-      ? (_isSw ? 'Maelezo ya Mali' : 'Listing Details')
-      : controller.listingTitle.value,
-      isCentered: true,
+  PreferredSizeWidget? appBar(BuildContext context) {
+    const placeholder = CustomAppBar(appBarTitleText: '', isCentered: true);
+    return PreferredSize(
+      preferredSize: placeholder.preferredSize,
+      child: Obx(
+        () => CustomAppBar(
+          appBarTitleText: controller.listingTitle.value.isEmpty
+              ? (_isSw ? 'Maelezo ya Mali' : 'Listing Details')
+              : controller.listingTitle.value,
+          isCentered: true,
+        ),
+      ),
     );
+  }
 
   @override
   Widget body(BuildContext context) {
@@ -76,6 +84,8 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               prefix: 'TZS',
               progress: controller.monthlyRevenueProgress.value,
             ),
+            const SizedBox(height: 10),
+            _estimationCostsLink(u),
             const SizedBox(height: 14),
             _quickManagement(u),
             const SizedBox(height: 14),
@@ -172,6 +182,41 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     );
   }
 
+  Widget _estimationCostsLink(_ListingUi u) {
+    return Material(
+      color: u.card,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: controller.onAddPropertyEstimationCosts,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: u.line),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.calculate_outlined, color: AppColors.colorPrimary, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _isSw ? 'Ongeza makadirio ya gharama za mali' : 'Add Property Estimation Costs',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.colorPrimary,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: u.muted, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _kpiMinimal(
     _ListingUi u, {
     required String label,
@@ -214,7 +259,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                     fontSize: 34,
                     fontWeight: FontWeight.w700,
                     height: 1,
-                    color: u.text,
+                    color: u.dark ? const Color(0xFFF2F2F7) : AppColors.colorPrimary,
                   ),
                 ),
                 if (suffix.isNotEmpty)
@@ -383,6 +428,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
   Widget _unitCard(_ListingUi u, ListingUnitRowVm row) {
     final due = row.status == ListingUnitStatus.dueDate;
     final occupied = row.status == ListingUnitStatus.occupied;
+    final hasAttachedTenant = row.tenantName.trim().isNotEmpty;
 
     final badgeBg = due
         ? const Color(0xFFFEEAEA)
@@ -430,31 +476,58 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           const SizedBox(height: 3),
           Text(row.subtitle, style: TextStyle(fontSize: 14, color: u.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 8),
-          SizedBox(
-            height: 40,
-            width: double.infinity,
-            child: FilledButton.tonal(
-              onPressed: () => controller.onUnitPrimaryAction(row),
-              style: FilledButton.styleFrom(
-                backgroundColor: due
-                    ? const Color(0xFFFFF3F2)
-                    : occupied
-                        ? AppColors.colorPrimary
-                        : u.soft,
-                foregroundColor: due
-                    ? const Color(0xFFB42318)
-                    : occupied
-                        ? Colors.white
-                        : AppColors.colorPrimary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                padding: EdgeInsets.zero,
+          if (hasAttachedTenant)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF6EC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFB7E1C0)),
               ),
-              child: Text(
-                controller.primaryButtonLabel(row, _isSw),
-                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+              child: Row(
+                children: [
+                  const Icon(Icons.person_rounded, size: 16, color: Color(0xFF1B6B3A)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      row.tenantName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1B6B3A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(
+              height: 40,
+              width: double.infinity,
+              child: FilledButton.tonal(
+                onPressed: () => controller.onUnitPrimaryAction(row),
+                style: FilledButton.styleFrom(
+                  backgroundColor: due
+                      ? const Color(0xFFFFF3F2)
+                      : occupied
+                          ? AppColors.colorPrimary
+                          : u.soft,
+                  foregroundColor: due
+                      ? const Color(0xFFB42318)
+                      : occupied
+                          ? Colors.white
+                          : AppColors.colorPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: EdgeInsets.zero,
+                ),
+                child: Text(
+                  controller.primaryButtonLabel(row, _isSw),
+                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

@@ -68,7 +68,7 @@ class MainView extends BaseView<MainController> {
         shape: const CircleBorder(),
       ),
       children: [
-        FloatingActionButton.small(
+        FloatingActionButton.extended(
           heroTag: null,
           backgroundColor: isDark == true
               ? theme!.colorScheme.surfaceContainerHigh
@@ -80,9 +80,13 @@ class MainView extends BaseView<MainController> {
             _closeFabThen(() => homeController.addExpense());
           },
           tooltip: _t(en: 'Add expense', sw: 'Ongeza matumizi'),
-          child: const Icon(Icons.receipt_long_outlined),
+          label: Text(_t(en: 'Expense', sw: 'Matumizi'), style: TextStyle(fontSize: 12)),
+          icon: Icon(
+            Icons.receipt_long_outlined,
+            size: 18,
+          ),
         ),
-        FloatingActionButton.small(
+        FloatingActionButton.extended(
           heroTag: null,
           backgroundColor: isDark == true
               ? theme!.colorScheme.surfaceContainerHigh
@@ -94,7 +98,11 @@ class MainView extends BaseView<MainController> {
             _closeFabThen(() => homeController.addPayment());
           },
           tooltip: _t(en: 'Add payment', sw: 'Ongeza malipo'),
-          child: const Icon(Icons.payment_outlined),
+          label: Text(_t(en: 'Payment', sw: 'Malipo'), style: TextStyle(fontSize: 12)),
+          icon: Icon(
+            Icons.payment_outlined,
+            size: 18,
+          ),
         ),
       ],
     );

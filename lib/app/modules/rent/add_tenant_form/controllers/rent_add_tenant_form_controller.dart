@@ -4,23 +4,23 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
 
 class RentAddTenantFormController extends BaseController {
   RentAddTenantFormController()
-      : _tenantLocal = Get.find<RentTenantLocalDataSource>(),
-        _propertyLocal = Get.find<RentPropertyLocalDataSource>(),
+      : _tenantLocal = Get.find<TenantLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
         _workspaceContext = Get.find<WorkspaceContextService>();
 
-  final RentTenantLocalDataSource _tenantLocal;
-  final RentPropertyLocalDataSource _propertyLocal;
+  final TenantLocalDataSource _tenantLocal;
+  final PropertyLocalDataSource _propertyLocal;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService _workspaceContext;
 
@@ -98,10 +98,12 @@ class RentAddTenantFormController extends BaseController {
       workspaceType: workspaceType,
     );
 
-    RentPropertyRecord? selected;
+    PropertyRecord? selected;
     if (propertyRef.value.isNotEmpty) {
       for (final p in properties) {
-        if (p.propertyRef == propertyRef.value || 'legacy_${p.id}' == propertyRef.value) {
+        if (p.propertyRef == propertyRef.value ||
+            'legacy_${p.id}' == propertyRef.value ||
+            'local_${p.id}' == propertyRef.value) {
           selected = p;
           break;
         }
@@ -110,12 +112,12 @@ class RentAddTenantFormController extends BaseController {
     if (selected == null && propertyContextLabel.value.isNotEmpty) {
       final wanted = propertyContextLabel.value.trim();
       for (final p in properties) {
-        final composed = p.apartmentSuite.trim().isNotEmpty
-            ? '${p.propertyLocation.trim()} · ${p.apartmentSuite.trim()}'
+        final composed = p.propertyName.trim().isNotEmpty
+            ? '${p.propertyLocation.trim()} · ${p.propertyName.trim()}'
             : p.propertyLocation.trim();
         final matches = composed == wanted ||
             p.propertyLocation.trim() == wanted ||
-            p.apartmentSuite.trim() == wanted;
+            p.propertyName.trim() == wanted;
         if (matches) {
           selected = p;
           break;
@@ -130,8 +132,8 @@ class RentAddTenantFormController extends BaseController {
 
     propertyRef.value =
         selected.propertyRef.isNotEmpty ? selected.propertyRef : 'legacy_${selected.id}';
-    final composed = selected.apartmentSuite.trim().isNotEmpty
-        ? '${selected.propertyLocation.trim()} · ${selected.apartmentSuite.trim()}'
+    final composed = selected.propertyName.trim().isNotEmpty
+        ? '${selected.propertyLocation.trim()} · ${selected.propertyName.trim()}'
         : selected.propertyLocation.trim();
     if (composed.isNotEmpty) {
       propertyContextLabel.value = composed;
@@ -252,6 +254,11 @@ class RentAddTenantFormController extends BaseController {
     final draft = _draftForKey(selectedUnitKey.value);
     final unitLabel = draft?.unitName.trim() ?? '';
     final apartmentUnitId = draft?.unitId.trim() ?? '';
+    await _markUnitOccupied(
+      unitId: apartmentUnitId,
+      unitName: unitLabel,
+      tenantName: tenantNameController.text.trim(),
+    );
 
     await _tenantLocal.insert(
       propertyLabel: propertyContextLabel.value.trim(),
@@ -273,6 +280,63 @@ class RentAddTenantFormController extends BaseController {
 
     showSuccessMessage('Tenant saved offline');
     Get.back(result: true);
+  }
+
+  Future<void> _markUnitOccupied({
+    required String unitId,
+    required String unitName,
+    required String tenantName,
+  }) async {
+    final ref = propertyRef.value.trim();
+    if (ref.isEmpty) return;
+    final property =
+        await _propertyLocal.findByHubId(ref) ?? await _propertyLocal.getByPropertyRef(ref);
+    if (property == null) return;
+    if (property.unitsJson.trim().isEmpty) return;
+
+    try {
+      final decoded = jsonDecode(property.unitsJson);
+      if (decoded is! List) return;
+      var changed = false;
+      final updated = decoded.map((entry) {
+        if (entry is! Map) return entry;
+        final unit = Map<String, dynamic>.from(entry);
+        final existingId = (unit['unitId'] ?? unit['id'] ?? '').toString().trim();
+        final existingName = (unit['unitName'] ?? unit['name'] ?? '').toString().trim();
+        final idMatches =
+            unitId.isNotEmpty && existingId.isNotEmpty && existingId == unitId;
+        final nameMatches = unitName.isNotEmpty &&
+            existingName.isNotEmpty &&
+            existingName.toLowerCase() == unitName.toLowerCase();
+        if (!idMatches && !nameMatches) return unit;
+        changed = true;
+        unit['status'] = 'occupied';
+        unit['occupied'] = true;
+        if (tenantName.isNotEmpty) {
+          unit['tenantName'] = tenantName;
+        }
+        return unit;
+      }).toList();
+      if (!changed) return;
+      await _propertyLocal.update(
+        PropertyRecord(
+          id: property.id,
+          propertyLocation: property.propertyLocation,
+          propertyName: property.apartmentSuite,
+          propertyType: property.propertyType,
+          propertyRef: property.propertyRef,
+          tenants: property.tenants,
+          units: property.units,
+          ownerUserId: property.ownerUserId,
+          workspaceType: property.workspaceType,
+          createdAtMs: property.createdAtMs,
+          rentAmount: property.rentAmount,
+          rentFrequency: property.rentFrequency,
+          minRentalDuration: property.minRentalDuration,
+          unitsJson: jsonEncode(updated),
+        ),
+      );
+    } catch (_) {}
   }
 
   String? validateTenantName(String? value) {

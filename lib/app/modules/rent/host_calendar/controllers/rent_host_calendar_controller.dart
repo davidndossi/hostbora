@@ -2,10 +2,10 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/rent_payment_reminder_local_data_source.dart';
-import '../../../../data/local/db/rent_property_local_data_source.dart';
 import '../../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
-import '../../../../data/local/db/rent_tenant_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../data/repository/app_repository.dart';
@@ -19,15 +19,15 @@ class RentHostCalendarController extends BaseController {
 
   RentHostCalendarController({
     AppRepository? repository,
-    RentPropertyLocalDataSource? propertyLocal,
-    RentTenantLocalDataSource? tenantLocal,
+    PropertyLocalDataSource? propertyLocal,
+    TenantLocalDataSource? tenantLocal,
     RentScheduledMaintenanceLocalDataSource? maintenanceLocal,
     RentPaymentReminderLocalDataSource? paymentReminderLocal,
     PreferenceManager? preferenceManager,
     WorkspaceContextService? workspaceContext,
   })  : _repository = repository ?? Get.find<AppRepository>(tag: (AppRepository).toString()),
-        _propertyLocal = propertyLocal ?? Get.find<RentPropertyLocalDataSource>(),
-        _tenantLocal = tenantLocal ?? Get.find<RentTenantLocalDataSource>(),
+        _propertyLocal = propertyLocal ?? Get.find<PropertyLocalDataSource>(),
+        _tenantLocal = tenantLocal ?? Get.find<TenantLocalDataSource>(),
         _maintenanceLocal =
             maintenanceLocal ?? Get.find<RentScheduledMaintenanceLocalDataSource>(),
         _paymentReminderLocal =
@@ -40,8 +40,8 @@ class RentHostCalendarController extends BaseController {
   }
 
   final AppRepository _repository;
-  final RentPropertyLocalDataSource _propertyLocal;
-  final RentTenantLocalDataSource _tenantLocal;
+  final PropertyLocalDataSource _propertyLocal;
+  final TenantLocalDataSource _tenantLocal;
   final RentScheduledMaintenanceLocalDataSource _maintenanceLocal;
   final RentPaymentReminderLocalDataSource _paymentReminderLocal;
   final PreferenceManager _preferenceManager;
@@ -103,8 +103,8 @@ class RentHostCalendarController extends BaseController {
       workspaceType: workspace,
     );
     return rows
-        .map((p) => p.apartmentSuite.trim().isNotEmpty
-            ? p.apartmentSuite.trim()
+        .map((p) => p.propertyName.trim().isNotEmpty
+            ? p.propertyName.trim()
             : p.propertyLocation.trim())
         .where((e) => e.isNotEmpty)
         .toList();
@@ -126,14 +126,14 @@ class RentHostCalendarController extends BaseController {
   }
 
   /// Same label as [_loadLocalPropertyNames] / property filter so tenant events stay visible.
-  static String _hubPropertyName(RentPropertyRecord p) {
-    final suite = p.apartmentSuite.trim();
+  static String _hubPropertyName(PropertyRecord p) {
+    final suite = p.propertyName.trim();
     return suite.isNotEmpty ? suite : p.propertyLocation.trim();
   }
 
   static String _calendarPropertyNameForTenant(
-    RentTenantRecord t,
-    List<RentPropertyRecord> visibleProperties,
+    TenantRecord t,
+    List<PropertyRecord> visibleProperties,
   ) {
     final ref = t.propertyRef.trim();
     if (ref.isNotEmpty) {
