@@ -56,8 +56,7 @@ class SettingsView extends BaseView<SettingsController> {
 
   @override
   Widget body(BuildContext context) {
-    return Obx(() {
-      return SettingsList(
+    return SettingsList(
         applicationType: ApplicationType.both,
         platform: DevicePlatform.device,
         lightTheme: SettingsThemeData(
@@ -321,7 +320,6 @@ class SettingsView extends BaseView<SettingsController> {
           ),
         ],
       );
-    });
   }
 
   void showSignOutDialog(BuildContext context) {

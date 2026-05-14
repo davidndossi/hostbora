@@ -96,16 +96,6 @@ class SettingsController extends BaseController {
     _preferenceManager.setBool('dark_mode', darkMode.value);
   }
 
-  void toggleEnableNotifications() {
-    enableNotifications.value = !enableNotifications.value;
-    _preferenceManager.setBool('enable_notifications', enableNotifications.value);
-  }
-
-  void toggleEventReminders() {
-    eventReminders.value = !eventReminders.value;
-    _preferenceManager.setBool('event_reminders', eventReminders.value);
-  }
-
   void changePrivacySettings(String? value) {
     if (value != null) {
       privacy.value = value;
