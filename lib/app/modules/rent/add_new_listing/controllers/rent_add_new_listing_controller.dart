@@ -227,7 +227,18 @@ class RentAddNewListingController extends BaseController {
   @override
   void onReady() {
     super.onReady();
-    final hubId = Get.parameters['propertyRef']?.trim() ?? '';
+    var hubId = Get.parameters['propertyRef']?.trim() ?? '';
+    if (hubId.isEmpty) {
+      final args = Get.arguments;
+      if (args is Map) {
+        hubId = (args['listing_id'] ??
+                args['propertyRef'] ??
+                args['property_id'] ??
+                '')
+            .toString()
+            .trim();
+      }
+    }
     if (hubId.isEmpty) return;
     awaitingEditLoad.value = true;
     _loadPropertyForEdit(hubId).whenComplete(() {

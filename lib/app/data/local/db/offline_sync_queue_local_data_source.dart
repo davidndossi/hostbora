@@ -166,6 +166,44 @@ class OfflineSyncQueueLocalDataSource {
     return (rows.first['c'] as int?) ?? 0;
   }
 
+  Future<int> pendingCountByEntity({
+    required String entityType,
+    String? operation,
+  }) async {
+    final db = await database;
+    final entity = entityType.trim();
+    if (entity.isEmpty) return 0;
+    if (operation != null && operation.trim().isNotEmpty) {
+      final rows = await db.rawQuery(
+        '''
+        SELECT COUNT(*) AS c
+        FROM $_table
+        WHERE status IN (?, ?, ?)
+          AND entity_type = ?
+          AND operation = ?
+        ''',
+        ['pending', 'in_progress', 'failed', entity, operation.trim()],
+      );
+      final v = rows.first['c'];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return 0;
+    }
+    final rows = await db.rawQuery(
+      '''
+      SELECT COUNT(*) AS c
+      FROM $_table
+      WHERE status IN (?, ?, ?)
+        AND entity_type = ?
+      ''',
+      ['pending', 'in_progress', 'failed', entity],
+    );
+    final v = rows.first['c'];
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return 0;
+  }
+
   Future<void> deleteDone() async {
     final db = await database;
     await db.delete(_table, where: 'status = ?', whereArgs: ['done']);

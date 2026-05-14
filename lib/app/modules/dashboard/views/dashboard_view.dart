@@ -7,7 +7,6 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_decorations.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
-import '../../../routes/app_pages.dart';
 import '../controllers/dashboard_controller.dart';
 
 class DashboardView extends BaseView<DashboardController> {
@@ -26,17 +25,7 @@ class DashboardView extends BaseView<DashboardController> {
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
       appBarTitleText: appLocalization.dashboard,
-      isCentered: true,
-      actions: [
-        IconButton(
-          onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
-          icon: const Icon(Icons.notifications_none_outlined),
-        ),
-        IconButton(
-          onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined),
-        ),
-      ],
+      isCentered: true
     );
   }
 
@@ -45,7 +34,6 @@ class DashboardView extends BaseView<DashboardController> {
     return SafeArea(
       child: Column(
         children: [
-          _buildHeader(context),
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
@@ -73,36 +61,6 @@ class DashboardView extends BaseView<DashboardController> {
         ],
       ),
     );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Obx(() {
-      final isIncome = controller.isIncomeSelected.value;
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-        child: Row(
-          children: [
-            const Spacer(),
-            TextButton(
-              onPressed: isIncome
-                  ? controller.recordPayment
-                  : controller.addExpense,
-              child: Text(
-                isIncome
-                    ? _t(context, 'Record Payment', 'Rekodi Malipo')
-                    : _t(context, 'Add Expense', 'Ongeza Gharama'),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.colorPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
-      );
-    });
   }
 
   Widget _buildSegmentedToggle(BuildContext context) {
@@ -485,7 +443,10 @@ class DashboardView extends BaseView<DashboardController> {
         );
       });
       final maxVal = values.fold<double>(0, (m, v) => v > m ? v : m);
-      final maxY = (maxVal > 0 ? maxVal : 6.0).clamp(6.0, 10.0);
+      // Axis max must cover all bar heights; never cap below actual values (was clamping to 10).
+      final maxY = maxVal <= 0
+          ? 6.0
+          : (maxVal * 1.08).clamp(6.0, double.infinity);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

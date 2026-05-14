@@ -52,7 +52,8 @@ class TenantRecord {
       unitLabel: m['unit_label'] as String? ?? '',
       tenantName: m['tenant_name'] as String? ?? '',
       gender: m['gender'] as String? ?? '',
-      rentAmountValue: (m['rent_amount_value'] as num?)?.toDouble() ?? 0,
+      rentAmountValue:
+          (m['amount_paid'] as num?)?.toDouble() ?? (m['rent_amount_value'] as num?)?.toDouble() ?? 0,
       rentFrequency: m['rent_frequency'] as String? ?? '',
       phoneNumber: m['phone_number'] as String? ?? '',
       email: m['email'] as String? ?? '',
@@ -68,6 +69,9 @@ class TenantRecord {
 
 class TenantLocalDataSource {
   static const _table = AppLocalDatabase.tenantTable;
+
+  static String _normalizeWorkspace(String w) =>
+      w.trim().toLowerCase() == 'bnb' ? 'bnb' : 'rent';
 
   Database? _db;
 
@@ -102,7 +106,7 @@ class TenantLocalDataSource {
       'unit_label': unitLabel,
       'tenant_name': tenantName,
       'gender': gender,
-      'rent_amount_value': rentAmountValue,
+      'amount_paid': rentAmountValue,
       'rent_frequency': rentFrequency,
       'phone_number': phoneNumber,
       'email': email,
@@ -119,6 +123,28 @@ class TenantLocalDataSource {
     final db = await database;
     final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
     return maps.map(TenantRecord.fromMap).toList();
+  }
+
+  Future<List<TenantRecord>> getAllNewestFirstByWorkspace(String ws) async {
+    final db = await database;
+    final w = _normalizeWorkspace(ws);
+    final maps = await db.rawQuery(
+      '''
+      SELECT t.*
+      FROM ${AppLocalDatabase.tenantTable} t
+      INNER JOIN ${AppLocalDatabase.propertiesTable} p
+        ON p.property_ref = t.property_ref
+      WHERE lower(trim(coalesce(nullif(trim(p.workspace_type), ''), 'rent'))) = ?
+      ORDER BY t.created_at_ms DESC
+      ''',
+      [w],
+    );
+    return maps.map(TenantRecord.fromMap).toList();
+  }
+
+  /// Loads tenants whose property (joined by `property_ref`) is in BnB workspace.
+  Future<List<TenantRecord>> getAllForBnbWorkspaceByPropertyRefJoin() async {
+    return getAllNewestFirstByWorkspace('bnb');
   }
 
   Future<TenantRecord?> findByNameAndProperty({
@@ -179,7 +205,7 @@ class TenantLocalDataSource {
     await db.update(
       _table,
       {
-        'rent_amount_value': rentAmountValue,
+        'amount_paid': rentAmountValue,
         'lease_start_iso': leaseStartIso,
         'lease_end_iso': leaseEndIso,
       },
@@ -203,5 +229,30 @@ class TenantLocalDataSource {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  /// Returns the number of tenant rows with this [propertyRef] (trimmed),
+  /// matching [PropertyRecord.propertyRef] / `local_<id>` / `legacy_<id>`.
+  Future<int> countByPropertyRef(String propertyRef) async {
+    final r = propertyRef.trim();
+    if (r.isEmpty) return 0;
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT COUNT(*) AS c FROM $_table WHERE property_ref = ?',
+      [r],
+    );
+    if (rows.isEmpty) return 0;
+    final v = rows.first['c'];
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return 0;
+  }
+
+  /// Deletes tenant rows whose [property_ref] matches (same hub id as properties table).
+  Future<int> deleteByPropertyRef(String propertyRef) async {
+    final r = propertyRef.trim();
+    if (r.isEmpty) return 0;
+    final db = await database;
+    return db.delete(_table, where: 'property_ref = ?', whereArgs: [r]);
   }
 }

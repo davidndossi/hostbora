@@ -30,7 +30,7 @@ void leaseReminderCallbackDispatcher() {
 
     WidgetsFlutterBinding.ensureInitialized();
 
-    final appName = inputData?['appName'] as String? ?? 'Paa Yangu';
+    final appName = inputData?['appName'] as String? ?? 'Host Bora';
     final baseUrl = inputData?['baseUrl'] as String? ?? '';
     if (baseUrl.isEmpty) return false;
 

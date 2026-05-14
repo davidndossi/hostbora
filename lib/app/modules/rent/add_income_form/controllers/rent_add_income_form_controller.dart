@@ -9,9 +9,11 @@ import '../../../../core/base/base_controller.dart';
 import '../../../../core/utils/thousand_separator.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
+import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
-import '../../../../data/local/service/workspace_context_service.dart';
+import '../../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../../data/model/record_payment_request.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
 
 class RentAddIncomeFormController extends BaseController {
@@ -19,16 +21,18 @@ class RentAddIncomeFormController extends BaseController {
       : _incomeLocal = Get.find<IncomeLocalDataSource>(),
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _tenantLocal = Get.find<TenantLocalDataSource>(),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
-        ),
-        _workspaceContext = Get.find<WorkspaceContextService>();
+        );
 
   final IncomeLocalDataSource _incomeLocal;
   final PropertyLocalDataSource _propertyLocal;
   final TenantLocalDataSource _tenantLocal;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
   final PreferenceManager _preferenceManager;
-  final WorkspaceContextService _workspaceContext;
 
   final tenantController = TextEditingController();
   final amountController = TextEditingController();
@@ -276,10 +280,9 @@ class RentAddIncomeFormController extends BaseController {
 
   Future<void> _loadProperties() async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
-    final workspaceType = await _workspaceContext.getWorkspaceType();
     final rows = await _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
-      workspaceType: workspaceType,
+      workspaceType: 'rent',
     );
     _cachedUnitsPropertyId = null;
     _cachedUnitsJsonSnapshot = '';
@@ -296,7 +299,9 @@ class RentAddIncomeFormController extends BaseController {
         .toList();
     propertyOptions.assignAll(options);
 
-    final fromRoute = Get.parameters['property']?.trim() ?? '';
+    final fromArgs = _routePropertyLabel();
+    final fromRoute =
+        fromArgs.isNotEmpty ? fromArgs : (Get.parameters['property']?.trim() ?? '');
     if (fromRoute.isNotEmpty && options.contains(fromRoute)) {
       selectedProperty.value = fromRoute;
       return;
@@ -321,6 +326,35 @@ class RentAddIncomeFormController extends BaseController {
     _syncTenantFieldToSelectedUnit();
   }
 
+  String _routePropertyLabel() {
+    final args = Get.arguments;
+    if (args is Map) {
+      for (final key in ['property', 'property_name']) {
+        final v = (args[key] ?? '').toString().trim();
+        if (v.isNotEmpty) return v;
+      }
+    }
+    return '';
+  }
+
+  /// Persisted on each income row so listing details can sum revenue by property.
+  String _propertyRefForIncomeInsert() {
+    final args = Get.arguments;
+    if (args is Map) {
+      for (final key in ['propertyRef', 'property_ref', 'property_id']) {
+        final v = (args[key] ?? '').toString().trim();
+        if (v.isNotEmpty) return v;
+      }
+    }
+    final fromRoute = Get.parameters['propertyRef']?.trim() ?? '';
+    if (fromRoute.isNotEmpty) return fromRoute;
+    final r = selectedPropertyRecord;
+    if (r == null) return '';
+    final ref = r.propertyRef.trim();
+    if (ref.isNotEmpty) return ref;
+    return 'legacy_${r.id}';
+  }
+
   Future<void> saveIncomeOffline() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
     if (selectedProperty.value.trim().isEmpty) {
@@ -342,9 +376,9 @@ class RentAddIncomeFormController extends BaseController {
 
     DateTime paidDate;
     try {
-      paidDate = DateFormat('MM/dd/yyyy').parseStrict(dateRaw);
+      paidDate = DateFormat('dd/MM/yyyy').parseStrict(dateRaw);
     } catch (_) {
-      showErrorMessage('Use date format mm/dd/yyyy');
+      showErrorMessage('Use date format dd/MM/yyyy');
       return;
     }
 
@@ -353,7 +387,7 @@ class RentAddIncomeFormController extends BaseController {
     final unitLine = _optionalUnitNotesLine();
     final baseNotes = StringBuffer('Property: $property');
     if (unitLine.isNotEmpty) {
-      baseNotes.write(" ");
+      baseNotes.write(", ");
       baseNotes.writeln(unitLine);
     }
     if (notes.isNotEmpty) {
@@ -361,19 +395,39 @@ class RentAddIncomeFormController extends BaseController {
       baseNotes.writeln(notes);
     }
 
-    final workspaceType = await _workspaceContext.getWorkspaceType();
     await _incomeLocal.insert(
       tenantName: tenant,
       amountValue: amount,
       datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
       category: selectedCategory,
-      workspaceType: workspaceType,
+      workspaceType: 'rent',
       notes: baseNotes.toString().trim(),
       apartment: property,
       apartmentUnit: unitName,
+      propertyRef: _propertyRefForIncomeInsert(),
     );
 
-    showSuccessMessage('Income saved offline');
+    final request = RecordPaymentRequest(
+      amount: amount,
+      paymentMethod: 'Cash',
+      paymentDate: DateFormat('yyyy-MM-dd').format(paidDate),
+      status: 'PAID',
+    );
+    await _syncQueue.enqueue(
+      entityType: 'payment',
+      operation: 'create',
+      payloadJson: jsonEncode(request.toJson()),
+    );
+    await _syncWorker.runNow(maxItems: 20);
+    final pending = await _syncQueue.pendingCountByEntity(
+      entityType: 'payment',
+      operation: 'create',
+    );
+    if (pending > 0) {
+      showSuccessMessage('Income saved offline. Will sync when internet is available.');
+    } else {
+      showSuccessMessage('Income saved and synced.');
+    }
     Get.back(result: true);
   }
 
@@ -396,10 +450,10 @@ class RentAddIncomeFormController extends BaseController {
     final v = (value ?? '').trim();
     if (v.isEmpty) return 'Date paid is required';
     try {
-      DateFormat('MM/dd/yyyy').parseStrict(v);
+      DateFormat('dd/MM/yyyy').parseStrict(v);
       return null;
     } catch (_) {
-      return 'Use mm/dd/yyyy';
+      return 'Use dd/MM/yyyy';
     }
   }
 

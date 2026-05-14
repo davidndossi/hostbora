@@ -7,7 +7,6 @@ import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
-import '../../../../data/local/service/workspace_context_service.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
 
 class RentAddTenantFormController extends BaseController {
@@ -16,13 +15,11 @@ class RentAddTenantFormController extends BaseController {
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
-        ),
-        _workspaceContext = Get.find<WorkspaceContextService>();
+        );
 
   final TenantLocalDataSource _tenantLocal;
   final PropertyLocalDataSource _propertyLocal;
   final PreferenceManager _preferenceManager;
-  final WorkspaceContextService _workspaceContext;
 
   final propertyContextLabel = ''.obs;
   final propertyRef = ''.obs;
@@ -92,10 +89,9 @@ class RentAddTenantFormController extends BaseController {
     String preferredUnitName = '',
   }) async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
-    final workspaceType = await _workspaceContext.getWorkspaceType();
     final properties = await _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
-      workspaceType: workspaceType,
+      workspaceType: 'rent',
     );
 
     PropertyRecord? selected;

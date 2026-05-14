@@ -8,8 +8,9 @@ import 'package:intl/intl.dart';
 import '../../../../flavors/build_config.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
-import '../../../data/local/pending_bookings_store.dart';
+import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/model/create_booking_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/service/azampay_service.dart';
@@ -29,18 +30,22 @@ class BookingUnitItem {
 }
 
 class AddNewBookingController extends BaseController {
+  static const _chunkSize = 200;
+
   AddNewBookingController()
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _propertyUnitLocal = Get.find<PropertyUnitLocalDataSource>(),
         _azamPay = AzamPayService(),
-        _pendingStore = PendingBookingsStore();
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final AppRepository _repository;
   final PropertyLocalDataSource _propertyLocal;
   final PropertyUnitLocalDataSource _propertyUnitLocal;
   final AzamPayService _azamPay;
-  final PendingBookingsStore _pendingStore;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
 
   final formKey = GlobalKey<FormState>();
   final guestNameController = TextEditingController();
@@ -87,14 +92,21 @@ class AddNewBookingController extends BaseController {
     _updatePendingCount();
   }
 
-  void _updatePendingCount() {
-    pendingCount.value = _pendingStore.count;
+  Future<void> _updatePendingCount() async {
+    try {
+      pendingCount.value = await _syncQueue.pendingCountByEntity(
+        entityType: 'booking',
+        operation: 'create',
+      );
+    } catch (_) {}
   }
 
   Future<void> loadListings() async {
     listingsLoading.value = true;
     try {
-      final localRows = await _propertyLocal.getAllNewestFirst();
+      final localRows = await _propertyLocal.getAllNewestFirstChunked(
+        chunkSize: _chunkSize,
+      );
       final localItems = localRows
           .map(
             (r) => ListingItem(
@@ -134,7 +146,9 @@ class AddNewBookingController extends BaseController {
       await _loadUnitsForListing(selectedListingId.value);
     } catch (e) {
       try {
-        final localRows = await _propertyLocal.getAllNewestFirst();
+        final localRows = await _propertyLocal.getAllNewestFirstChunked(
+          chunkSize: _chunkSize,
+        );
         listings.assignAll(
           localRows
               .map(
@@ -175,9 +189,11 @@ class AddNewBookingController extends BaseController {
 
     final units = <BookingUnitItem>[];
     try {
-      final unitRows = await _propertyUnitLocal.getAllNewestFirst();
+      final unitRows = await _propertyUnitLocal.getAllByPropertyRefNewestFirstChunked(
+        propertyRef: id,
+        chunkSize: _chunkSize,
+      );
       for (final row in unitRows) {
-        if (row.propertyRef.trim() != id) continue;
         final unitName = row.unitName.trim();
         if (unitName.isEmpty) continue;
         units.add(
@@ -189,7 +205,9 @@ class AddNewBookingController extends BaseController {
       }
 
       if (units.isEmpty) {
-        final localRows = await _propertyLocal.getAllNewestFirst();
+        final localRows = await _propertyLocal.getAllNewestFirstChunked(
+          chunkSize: _chunkSize,
+        );
         final target = localRows.firstWhereOrNull(
           (r) => r.propertyRef.trim() == id || 'local_${r.id}' == id,
         );
@@ -310,7 +328,12 @@ class AddNewBookingController extends BaseController {
 
     saving.value = true;
     try {
-      await _pendingStore.add(request.toJson());
+      await _syncQueue.enqueue(
+        entityType: 'booking',
+        operation: 'create',
+        payloadJson: jsonEncode(request.toJson()),
+      );
+      await _syncWorker.runNow(maxItems: 20);
       _updatePendingCount();
       final bookingId = DateTime.now().millisecondsSinceEpoch.toString();
       if (sendPushToPay.value &&
@@ -324,7 +347,15 @@ class AddNewBookingController extends BaseController {
         );
       }
       Get.back();
-      Get.snackbar('Saved', 'Booking saved on this device');
+      final pending = pendingCount.value;
+      if (pending > 0) {
+        Get.snackbar(
+          'Saved offline',
+          'Booking saved on this device. Will sync when internet is available.',
+        );
+      } else {
+        Get.snackbar('Saved', 'Booking synced successfully.');
+      }
     } catch (e) {
       Get.snackbar('Error', 'Failed to save booking: $e');
     } finally {

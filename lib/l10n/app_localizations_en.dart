@@ -586,6 +586,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String get support => 'Support';
 
   @override
+  String get supportIntro =>
+      'Need help with listings, rent, tenants, or income? These answers cover the most common questions. For anything else, reach us by email.';
+
+  @override
+  String get supportTipsHeading => 'Quick tips';
+
+  @override
+  String get supportTipsBody =>
+      '• Pull down on a listing screen to refresh occupancy and monthly revenue after you add income or a tenant.\n• Income and expenses you save offline stay on this device until you clear data or sync when your product supports it.\n• Use Settings → Clear offline data only if you intend to remove local rent records from this phone.\n• If a number looks wrong, check that the income is dated in the current month and tied to the correct property.';
+
+  @override
+  String get supportFaqHeading => 'Common questions';
+
+  @override
+  String get supportFaq1Q => 'Why doesn’t my monthly revenue update?';
+
+  @override
+  String get supportFaq1A =>
+      'Listing details sum income for the current calendar month that matches the property. Add income with the correct property (and unit, if any), save, then return to the listing and pull to refresh.';
+
+  @override
+  String get supportFaq2Q =>
+      'I added a tenant but don’t see them on the listing.';
+
+  @override
+  String get supportFaq2A =>
+      'Open the listing again or pull to refresh. Tenants are stored locally first; make sure you picked the right property and unit when saving.';
+
+  @override
+  String get supportFaq3Q => 'What if the app shows a database error?';
+
+  @override
+  String get supportFaq3A =>
+      'Update to the latest version from the store. If it persists, use Settings → clear offline data only after you understand it removes local rent data, or contact support with your device model and app version.';
+
+  @override
+  String get supportFaq4Q => 'How do I change language or theme?';
+
+  @override
+  String get supportFaq4A =>
+      'Use the globe and sun/moon icons on most screens, or open Settings to adjust language and appearance.';
+
+  @override
+  String get supportContactHeading => 'Contact us';
+
+  @override
+  String get supportContactBody =>
+      'Email our support team. We aim to respond within one business day.';
+
+  @override
+  String get supportEmailButton => 'Email support';
+
+  @override
+  String get supportWhatsAppButton => 'Chat on WhatsApp';
+
+  @override
+  String get supportLegalHeading => 'Policies';
+
+  @override
+  String get supportLegalBody =>
+      'Your use of Paa Yangu is also governed by our Terms of Use and Privacy Policy.';
+
+  @override
+  String get supportOpenTerms => 'Terms of Use';
+
+  @override
+  String get supportOpenPrivacy => 'Privacy Policy';
+
+  @override
   String get nearby => 'Nearby';
 
   @override
@@ -1419,4 +1488,89 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addIncome => 'Add Income';
+
+  @override
+  String get managePaymentsFilters => 'Filters';
+
+  @override
+  String get managePayments => 'View payments';
+
+  @override
+  String get managePaymentsTitle => 'View payments';
+
+  @override
+  String get managePaymentsTotal => 'Total';
+
+  @override
+  String get managePaymentsMonth => 'Month';
+
+  @override
+  String get managePaymentsApartment => 'Apartment / unit';
+
+  @override
+  String get managePaymentsAllApartments => 'All apartments';
+
+  @override
+  String get managePaymentsStatus => 'Payment status';
+
+  @override
+  String get managePaymentsStatusAll => 'All';
+
+  @override
+  String get managePaymentsStatusFull => 'Full';
+
+  @override
+  String get managePaymentsStatusPartial => 'Partial';
+
+  @override
+  String get managePaymentsStartDate => 'Start date';
+
+  @override
+  String get managePaymentsEndDate => 'End date';
+
+  @override
+  String get managePaymentsClearDates => 'Clear dates';
+
+  @override
+  String get managePaymentsExpectedHint =>
+      'This month is in the future: amounts are expected rent from active leases (see in-app calculation comments).';
+
+  @override
+  String get managePaymentsNoRows => 'No payments to show.';
+
+  @override
+  String get managePaymentsCategory => 'Category';
+
+  @override
+  String get managePaymentsScheduled => 'Expected';
+
+  @override
+  String get managePaymentsUnknownStatus => '—';
+
+  @override
+  String get rentUtilityLukuUsageGraphLink => 'LUKU usage graph';
+
+  @override
+  String get rentUtilityWaterUsageGraphLink => 'Water usage graph';
+
+  @override
+  String get rentUtilityUsageGraphScreenTitleLuku => 'LUKU usage';
+
+  @override
+  String get rentUtilityUsageGraphScreenTitleWater => 'Water usage';
+
+  @override
+  String get rentUtilityUsageGraphChartCaption =>
+      'Top-ups per day (last 30 days)';
+
+  @override
+  String get rentUtilityUsageGraphEmpty => 'No top-ups in this period yet.';
+
+  @override
+  String get rentUtilityUsageGraphFootnoteLuku =>
+      'Values are kWh added per day from saved LUKU top-ups.';
+
+  @override
+  String get rentUtilityUsageGraphFootnoteWater =>
+      'Values are liters added per day from saved water recharges.';
 }

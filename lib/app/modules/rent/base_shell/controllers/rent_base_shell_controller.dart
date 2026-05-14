@@ -3,15 +3,18 @@ import 'package:get/get.dart';
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 
-/// Drives bottom navigation for the rent shell (Dashboard, Listings, Staff, Others).
+/// Drives bottom navigation for the rent shell (Dashboard, Listings, Tenants, More, Settings).
 class RentBaseShellController extends BaseController {
   final currentTab = 0.obs;
 
-  static const tabCount = 4;
+  static const tabCount = 5;
 
   /// Bottom bar order matches [RentBaseShellView] `IndexedStack` children.
   static const int tabDashboard = 0;
   static const int tabListings = 1;
+  static const int tabTenants = 2;
+  static const int tabMore = 3;
+  static const int tabSettings = 4;
 
   bool _pendingRedirectListingsIfHubEmpty = false;
 

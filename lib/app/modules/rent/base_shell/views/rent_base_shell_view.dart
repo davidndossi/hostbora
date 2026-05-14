@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/values/app_colors.dart';
 import '../../../../routes/app_pages.dart';
 import '../../hub/views/rent_hub_view.dart';
 import '../../my_properties_hub/views/rent_my_properties_hub_view.dart';
 import '../../tenant_residency_payment_tracker/views/rent_tenant_residency_payment_tracker_view.dart';
+import '../../../settings/views/settings_view.dart';
 import '../controllers/rent_base_shell_controller.dart';
 import 'rent_others_tab_view.dart';
-
-/// Rent area shell: shared bottom navigation; each tab hosts an existing rent screen.
-abstract class _ShellTheme {
-  static const Color teal = Color(0xFF005F5F);
-  static const Color muted = Color(0xFF6B7280);
-}
 
 class RentBaseShellView extends BaseView<RentBaseShellController> {
   RentBaseShellView({super.key});
@@ -32,6 +29,7 @@ class RentBaseShellView extends BaseView<RentBaseShellController> {
           RentMyPropertiesHubView(),
           RentTenantResidencyPaymentTrackerView(),
           RentOthersTabView(),
+          SettingsView(),
         ],
       ),
     );
@@ -41,60 +39,72 @@ class RentBaseShellView extends BaseView<RentBaseShellController> {
   Widget? bottomNavigationBar() {
     return Obx(() {
       final idx = controller.currentTab.value;
-      final isDark = Theme.of(Get.context!).brightness == Brightness.dark;
+      final theme = Theme.of(Get.context!);
+      final isDark = theme.brightness == Brightness.dark;
       final navBg = isDark ? const Color(0xFF2C2C2E) : Colors.white;
       final navBorder = isDark
           ? const Color(0xFF3A3A3C)
           : const Color(0xFFE8E6E1);
-      final selectedBg = isDark ? const Color(0xFF0A7A7A) : _ShellTheme.teal;
-      final selectedFg = Colors.white;
-      final unselectedFg = isDark ? const Color(0xFFB0B3BA) : _ShellTheme.muted;
+      Color selectedFg = isDark
+          ? theme.colorScheme.primary
+          : AppColors.colorPrimary;
+      Color unselectedFg = isDark
+          ? theme.colorScheme.onSurfaceVariant
+          : AppColors.slateBlueGrey;
       return Container(
         decoration: BoxDecoration(
           color: navBg,
           border: Border(top: BorderSide(color: navBorder)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _ShellTab(
                   label: 'Dashboard',
-                  icon: Icons.dashboard_rounded,
+                  icon: 'ic_dashboard.svg',
                   selected: idx == 0,
-                  selectedBg: selectedBg,
                   selectedFg: selectedFg,
                   unselectedFg: unselectedFg,
                   onTap: () => controller.setTab(0),
                 ),
                 _ShellTab(
                   label: 'Listings',
-                  icon: Icons.apartment_outlined,
+                  icon: 'ic_properties.svg',
                   selected: idx == 1,
-                  selectedBg: selectedBg,
                   selectedFg: selectedFg,
                   unselectedFg: unselectedFg,
                   onTap: () => controller.setTab(1),
                 ),
                 _ShellTab(
                   label: 'Tenants',
-                  icon: Icons.groups_outlined,
+                  icon: 'ic_group.svg',
+                  iconScale: 1.2,
                   selected: idx == 2,
-                  selectedBg: selectedBg,
                   selectedFg: selectedFg,
                   unselectedFg: unselectedFg,
                   onTap: () => controller.setTab(2),
                 ),
+                // _ShellTab(
+                //   label: 'More',
+                //   icon: 'ic_more.svg',
+                //   iconScale: 1.2,
+                //   selected: idx == 3,
+                //   selectedFg: selectedFg,
+                //   unselectedFg: unselectedFg,
+                //   onTap: () => controller.setTab(3),
+                // ),
                 _ShellTab(
-                  label: 'More',
-                  icon: Icons.list_outlined,
-                  selected: idx == 3,
-                  selectedBg: selectedBg,
+                  label: 'Settings',
+                  icon: 'ic_settings.svg',
+                  selected: idx == 4,
                   selectedFg: selectedFg,
                   unselectedFg: unselectedFg,
-                  onTap: () => controller.setTab(3),
+                  onTap: () => controller.setTab(4),
                 ),
               ],
             ),
@@ -125,17 +135,17 @@ class _ShellTab extends StatelessWidget {
   const _ShellTab({
     required this.label,
     required this.icon,
+    this.iconScale = 1.0,
     required this.selected,
-    required this.selectedBg,
     required this.selectedFg,
     required this.unselectedFg,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
+  final String icon;
+  final double iconScale;
   final bool selected;
-  final Color selectedBg;
   final Color selectedFg;
   final Color unselectedFg;
   final VoidCallback onTap;
@@ -149,25 +159,42 @@ class _ShellTab extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: selected ? selectedBg : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-            ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 22, color: fg),
-                const SizedBox(height: 2),
+                SvgPicture.asset(
+                  'images/$icon',
+                  height: 24 * iconScale,
+                  width: 24 * iconScale,
+                  colorFilter: ColorFilter.mode(fg, BlendMode.srcIn),
+                ),
+                const SizedBox(height: 4),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
+                    fontSize: 13,
                     color: fg,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(
+                  height: 7,
+                  child: selected
+                      ? Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    height: 3,
+                    width: 24,
+                    decoration: BoxDecoration(
+                      color: selectedFg,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  )
+                      : const SizedBox.shrink(),
                 ),
               ],
             ),

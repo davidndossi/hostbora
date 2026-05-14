@@ -12,6 +12,7 @@ class IncomeRecord {
     required this.notes,
     required this.apartment,
     required this.apartmentUnit,
+    this.propertyRef = '',
     required this.workspaceType,
     required this.createdAtMs,
   });
@@ -24,6 +25,8 @@ class IncomeRecord {
   final String notes;
   final String apartment;
   final String apartmentUnit;
+  /// Hub id / [PropertyRecord.propertyRef] / `local_<id>` for listing-scoped totals.
+  final String propertyRef;
   /// `rent` or `bnb` — matches [WorkspaceContextService] persistence.
   final String workspaceType;
   final int createdAtMs;
@@ -38,9 +41,35 @@ class IncomeRecord {
       notes: m['notes'] as String? ?? '',
       apartment: m['apartment'] as String? ?? '',
       apartmentUnit: m['apartment_unit'] as String? ?? '',
+      propertyRef: m['property_ref'] as String? ?? '',
       workspaceType: m['workspace_type'] as String? ?? 'rent',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
     );
+  }
+
+  /// Interprets [datePaidIso] as a local calendar day when it is `yyyy-MM-dd`,
+  /// so month rollups are not shifted by UTC parsing of date-only strings.
+  DateTime paidLocalCalendarOrCreated() {
+    final raw = datePaidIso.trim();
+    if (raw.length >= 10 && raw[4] == '-' && raw[7] == '-') {
+      final y = int.tryParse(raw.substring(0, 4));
+      final m = int.tryParse(raw.substring(5, 7));
+      final d = int.tryParse(raw.substring(8, 10));
+      if (y != null &&
+          m != null &&
+          d != null &&
+          m >= 1 &&
+          m <= 12 &&
+          d >= 1 &&
+          d <= 31) {
+        return DateTime(y, m, d);
+      }
+    }
+    try {
+      return DateTime.parse(raw);
+    } catch (_) {
+      return DateTime.fromMillisecondsSinceEpoch(createdAtMs);
+    }
   }
 }
 
@@ -68,6 +97,7 @@ class IncomeLocalDataSource {
     String notes = '',
     String apartment = '',
     String apartmentUnit = '',
+    String propertyRef = '',
   }) async {
     final db = await database;
     return db.insert(_table, {
@@ -78,6 +108,7 @@ class IncomeLocalDataSource {
       'notes': notes,
       'apartment': apartment,
       'apartment_unit': apartmentUnit,
+      'property_ref': propertyRef.trim(),
       'workspace_type': _normalizeWorkspace(workspaceType),
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });
@@ -98,6 +129,45 @@ class IncomeLocalDataSource {
       where:
           "lower(trim(coalesce(nullif(trim(workspace_type), ''), 'rent'))) = ?",
       whereArgs: [w],
+      orderBy: 'created_at_ms DESC',
+    );
+    return maps.map(IncomeRecord.fromMap).toList();
+  }
+
+  /// Loads income rows whose property (joined by `property_ref`) is in BnB workspace.
+  Future<List<IncomeRecord>> getAllForBnbWorkspaceByPropertyRefJoin() async {
+    final db = await database;
+    final maps = await db.rawQuery(
+      '''
+      SELECT i.*
+      FROM ${AppLocalDatabase.incomeTable} i
+      INNER JOIN ${AppLocalDatabase.propertiesTable} p
+        ON p.property_ref = i.property_ref
+      WHERE lower(trim(coalesce(nullif(trim(p.workspace_type), ''), 'rent'))) = ?
+      ORDER BY i.created_at_ms DESC
+      ''',
+      ['bnb'],
+    );
+    return maps.map(IncomeRecord.fromMap).toList();
+  }
+
+  /// Returns income rows for a specific [propertyRef] and [workspaceType].
+  ///
+  /// Workspace is normalized to `rent` / `bnb` and sorted newest first.
+  Future<List<IncomeRecord>> getAllByPropertyRefAndWorkspace({
+    required String propertyRef,
+    required String workspaceType,
+  }) async {
+    final db = await database;
+    final ref = propertyRef.trim();
+    if (ref.isEmpty) return const [];
+
+    final w = _normalizeWorkspace(workspaceType);
+    final maps = await db.query(
+      _table,
+      where:
+          "trim(property_ref) = ? AND lower(trim(coalesce(nullif(trim(workspace_type), ''), 'rent'))) = ?",
+      whereArgs: [ref, w],
       orderBy: 'created_at_ms DESC',
     );
     return maps.map(IncomeRecord.fromMap).toList();

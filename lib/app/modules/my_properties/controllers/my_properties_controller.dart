@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
@@ -12,10 +14,16 @@ class MyPropertiesController extends BaseController {
   MyPropertiesController()
       : _repository =
             Get.find<AppRepository>(tag: (AppRepository).toString()),
-        _local = Get.find<PropertyLocalDataSource>();
+        _local = Get.find<PropertyLocalDataSource>(),
+        _tenantLocal = Get.find<TenantLocalDataSource>(),
+        _preferenceManager = Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        );
 
   final AppRepository _repository;
   final PropertyLocalDataSource _local;
+  final TenantLocalDataSource _tenantLocal;
+  final PreferenceManager _preferenceManager;
 
   /// Status sent to API for filter: null = all, ACTIVE, DRAFT, ARCHIVED.
   static const List<String?> _filterStatuses = [null, 'ACTIVE', 'DRAFT', 'ARCHIVED'];
@@ -52,8 +60,11 @@ class MyPropertiesController extends BaseController {
           return s == status;
         }).toList();
       }
-      final remoteList =
-          maps.map(_listingFromMap).where((e) => e.id.isNotEmpty).toList();
+      final remoteList = (await Future.wait(
+              maps.map(_listingFromMap),
+            ))
+          .where((e) => e.id.isNotEmpty)
+          .toList();
       properties.assignAll(_mergeListings(localList, remoteList));
     } catch (e) {
       // Fall back to local rows so screen stays useful offline / API failure.
@@ -68,8 +79,12 @@ class MyPropertiesController extends BaseController {
   Future<List<PropertyListing>> _loadLocalListings({
     required String? status,
   }) async {
-    final rows = await _local.getAllNewestFirst();
-    final local = rows.map(_listingFromLocal).toList();
+    final userId = (await _preferenceManager.getUser()).id ?? '';
+    final rows = await _local.getAllVisibleNewestFirst(
+      userId: userId,
+      workspaceType: 'bnb',
+    );
+    final local = await Future.wait(rows.map(_listingFromLocal));
     if (status == null) return local;
     if (status == 'ACTIVE') {
       return local;
@@ -78,18 +93,17 @@ class MyPropertiesController extends BaseController {
     return const [];
   }
 
-  static PropertyListing _listingFromLocal(PropertyRecord r) {
+  Future<PropertyListing> _listingFromLocal(PropertyRecord r) async {
     final title = r.propertyName.trim().isNotEmpty
         ? r.propertyName.trim()
         : (r.propertyLocation.trim().isNotEmpty
             ? r.propertyLocation.trim()
             : 'Property');
-    // final price = int.tryParse(r.rentAmount.replaceAll(',', '').trim()) ?? 0;
     final id = r.propertyRef.trim().isNotEmpty
         ? r.propertyRef.trim()
         : 'local_${r.id}';
-    final tenants = (r.tenants as num?)?.toInt() ?? 0;
-    final units = (r.units as num?)?.toInt() ?? 0;
+    final tenants = await _tenantLocal.countByPropertyRef(id);
+    final units = r.units;
     return PropertyListing(
       id: id,
       title: title,
@@ -119,13 +133,12 @@ class MyPropertiesController extends BaseController {
     return byId.values.toList();
   }
 
-  static PropertyListing _listingFromMap(Map<String, dynamic> m) {
+  Future<PropertyListing> _listingFromMap(Map<String, dynamic> m) async {
     final id = m['id']?.toString() ?? m['listingId']?.toString() ?? '';
     final title = m['propertyName']?.toString() ?? m['title']?.toString() ?? 'Property';
     final rating = (m['rating'] as num?)?.toDouble() ?? 0.0;
     final location = m['propertyLocation']?.toString() ?? m['location']?.toString() ?? '';
-    // final price = (m['baseNightlyRate'] as num?)?.toInt() ?? 0;
-    final tenants = (m['tenants'] as num?)?.toInt() ?? 0;
+    final tenants = await _tenantLocal.countByPropertyRef(id);
     final units = (m['units'] as num?)?.toInt() ?? 0;
     final statusStr = (m['status'] as String?)?.toUpperCase() ?? 'ACTIVE';
     final status = statusStr == 'CLEANING' ? PropertyStatus.cleaning : PropertyStatus.ready;

@@ -26,7 +26,6 @@ class SettingsController extends BaseController {
   final username = ''.obs;
   final deviceId = ''.obs;
   final userId = ''.obs;
-  final isLeader = false.obs;
   final isAdmin = false.obs;
   final deviceName = ''.obs;
   final language = 'en'.obs;
@@ -70,7 +69,6 @@ class SettingsController extends BaseController {
     User user = await _preferenceManager.getUser();
     userId(user.id);
     isAdmin(user.isAdmin);
-    isLeader(user.isLeader);
     loadSettings();
   }
 
@@ -103,19 +101,9 @@ class SettingsController extends BaseController {
     _preferenceManager.setBool('enable_notifications', enableNotifications.value);
   }
 
-  void toggleDeathAnnouncements() {
-    deathAnnouncements.value = !deathAnnouncements.value;
-    _preferenceManager.setBool('death_announcements', deathAnnouncements.value);
-  }
-
   void toggleEventReminders() {
     eventReminders.value = !eventReminders.value;
     _preferenceManager.setBool('event_reminders', eventReminders.value);
-  }
-
-  void toggleReceiveCommunityUpdates() {
-    receiveCommunityUpdates.value = !receiveCommunityUpdates.value;
-    _preferenceManager.setBool('receive_community_updates', receiveCommunityUpdates.value);
   }
 
   void changePrivacySettings(String? value) {
@@ -151,10 +139,7 @@ class SettingsController extends BaseController {
       theme('dark');
       themeDesc('Dark Theme');
     }
-    enableNotifications.value = await _preferenceManager.getBool('enable_notifications');
-    deathAnnouncements.value = await _preferenceManager.getBool('death_announcements');
     eventReminders.value = await _preferenceManager.getBool('event_reminders');
-    receiveCommunityUpdates.value = await _preferenceManager.getBool('receive_community_updates');
     privacy.value = await _preferenceManager.getString('privacy');
     tenantReminderTemplate.value = await _preferenceManager.getString(
       tenantReminderTemplateKey,
@@ -202,11 +187,11 @@ class SettingsController extends BaseController {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: Text(cancelLabel),
+            child: Text(cancelLabel, style: TextStyle(fontSize: 16)),
           ),
           FilledButton(
             onPressed: () => Get.back(result: true),
-            child: Text(confirmLabel),
+            child: Text(confirmLabel, style: TextStyle(fontSize: 16)),
           ),
         ],
       ),
@@ -244,23 +229,6 @@ class SettingsController extends BaseController {
     } finally {
       runningLeaseReminderNow.value = false;
     }
-  }
-
-  void savePreference() {
-    Map<String, dynamic> map = {
-      'theme': darkMode.value ? 'dark' : 'light',
-      'enable_notifications': enableNotifications.value,
-      'death_announcements': deathAnnouncements.value,
-      'event_reminders': eventReminders.value,
-      'receive_community_updates': receiveCommunityUpdates.value,
-      'privacy': privacy.value,
-      'language': language.value
-    };
-    callDataServiceSilent(
-      _repository.saveUserPreference(userId.value, map),
-      onSuccess: (_) => {},
-      onError: (_) => {}
-    );
   }
 
   void logout() async {

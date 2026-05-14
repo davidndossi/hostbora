@@ -100,34 +100,34 @@ class SettingsView extends BaseView<SettingsController> {
                   ),
                 ),
               ),
-              SettingsTile(
-                onPressed: (context) => Get.toNamed(Routes.SEND_SMS),
-                leading: const Icon(Icons.sms_outlined),
-                title: _tileTitle(context, appLocalization.sendMessage),
-                value: _tileValue(context, appLocalization.sendSmsWhatsapp),
-              ),
-              SettingsTile.navigation(
-                onPressed: (context) =>
-                    _showTenantReminderTemplateDialog(context),
-                leading: const Icon(Icons.chat_outlined),
-                title: _tileTitle(
-                  context,
-                  appLocalization.tenantReminderTemplateTitle,
-                ),
-                description: _tileDescription(
-                  context,
-                  appLocalization.tenantReminderTemplateDescription,
-                ),
-                value: Obx(
-                  () => _tileValue(
-                    context,
-                    controller.tenantReminderTemplate.value.trim().isEmpty
-                        ? _t(context, 'Not set', 'Haijawekwa')
-                        : _t(context, 'Configured', 'Imewekwa'),
-                  ),
-                ),
-                trailing: const Icon(Icons.chevron_right_outlined),
-              ),
+              // SettingsTile(
+              //   onPressed: (context) => Get.toNamed(Routes.SEND_SMS),
+              //   leading: const Icon(Icons.sms_outlined),
+              //   title: _tileTitle(context, appLocalization.sendMessage),
+              //   value: _tileValue(context, appLocalization.sendSmsWhatsapp),
+              // ),
+              // SettingsTile.navigation(
+              //   onPressed: (context) =>
+              //       _showTenantReminderTemplateDialog(context),
+              //   leading: const Icon(Icons.chat_outlined),
+              //   title: _tileTitle(
+              //     context,
+              //     appLocalization.tenantReminderTemplateTitle,
+              //   ),
+              //   description: _tileDescription(
+              //     context,
+              //     appLocalization.tenantReminderTemplateDescription,
+              //   ),
+              //   value: Obx(
+              //     () => _tileValue(
+              //       context,
+              //       controller.tenantReminderTemplate.value.trim().isEmpty
+              //           ? _t(context, 'Not set', 'Haijawekwa')
+              //           : _t(context, 'Configured', 'Imewekwa'),
+              //     ),
+              //   ),
+              //   trailing: const Icon(Icons.chevron_right_outlined),
+              // ),
               SettingsTile(
                 onPressed: (context) => controller.runLeaseReminderNow(),
                 leading: const Icon(Icons.play_circle_outline),
@@ -158,25 +158,25 @@ class SettingsView extends BaseView<SettingsController> {
               ),
             ],
           ),
-          SettingsSection(
-            title: _tileTitle(context, appLocalization.updates),
-            tiles: [
-              SettingsTile.switchTile(
-                onToggle: (_) => controller.toggleEnableNotifications(),
-                initialValue: controller.enableNotifications.value,
-                leading: const Icon(Icons.notifications_active),
-                title: _tileTitle(context, appLocalization.enableNotifications),
-                activeSwitchColor: AppColors.colorPrimary,
-              ),
-              SettingsTile.switchTile(
-                onToggle: (_) => controller.toggleEventReminders(),
-                leading: const Icon(Icons.event_outlined),
-                initialValue: controller.eventReminders.value,
-                title: _tileTitle(context, appLocalization.eventReminders),
-                activeSwitchColor: AppColors.colorPrimary,
-              ),
-            ],
-          ),
+          // SettingsSection(
+          //   title: _tileTitle(context, appLocalization.updates),
+          //   tiles: [
+          //     SettingsTile.switchTile(
+          //       onToggle: (_) => controller.toggleEnableNotifications(),
+          //       initialValue: controller.enableNotifications.value,
+          //       leading: const Icon(Icons.notifications_active),
+          //       title: _tileTitle(context, appLocalization.enableNotifications),
+          //       activeSwitchColor: AppColors.colorPrimary,
+          //     ),
+          //     SettingsTile.switchTile(
+          //       onToggle: (_) => controller.toggleEventReminders(),
+          //       leading: const Icon(Icons.event_outlined),
+          //       initialValue: controller.eventReminders.value,
+          //       title: _tileTitle(context, appLocalization.eventReminders),
+          //       activeSwitchColor: AppColors.colorPrimary,
+          //     ),
+          //   ],
+          // ),
           SettingsSection(
             title: _tileTitle(context, appLocalization.security),
             tiles: <SettingsTile>[
@@ -203,42 +203,42 @@ class SettingsView extends BaseView<SettingsController> {
                 ),
                 trailing: const Icon(Icons.chevron_right_outlined),
               ),
-              SettingsTile.navigation(
-                onPressed: (context) => showToast(
-                  _t(
-                    context,
-                    'This feature is coming soon',
-                    'Huduma hii inakuja hivi karibuni',
-                  ),
-                ),
-                leading: const Icon(Icons.phonelink_lock),
-                title: _tileTitle(context, appLocalization.lockApp),
-                value: _tileValue(
-                  context,
-                  _t(context, 'Coming soon', 'Inakuja'),
-                ),
-                trailing: const Icon(Icons.chevron_right_outlined),
-              ),
-              SettingsTile.navigation(
-                onPressed: (context) => showToast(
-                  _t(
-                    context,
-                    'This feature is coming soon',
-                    'Huduma hii inakuja hivi karibuni',
-                  ),
-                ),
-                leading: const Icon(Icons.fingerprint),
-                title: _tileTitle(context, appLocalization.useFingerprint),
-                description: _tileDescription(
-                  context,
-                  appLocalization.useFingerprintDescription,
-                ),
-                value: _tileValue(
-                  context,
-                  _t(context, 'Coming soon', 'Inakuja'),
-                ),
-                trailing: const Icon(Icons.chevron_right_outlined),
-              ),
+              // SettingsTile.navigation(
+              //   onPressed: (context) => showToast(
+              //     _t(
+              //       context,
+              //       'This feature is coming soon',
+              //       'Huduma hii inakuja hivi karibuni',
+              //     ),
+              //   ),
+              //   leading: const Icon(Icons.phonelink_lock),
+              //   title: _tileTitle(context, appLocalization.lockApp),
+              //   value: _tileValue(
+              //     context,
+              //     _t(context, 'Coming soon', 'Inakuja'),
+              //   ),
+              //   trailing: const Icon(Icons.chevron_right_outlined),
+              // ),
+              // SettingsTile.navigation(
+              //   onPressed: (context) => showToast(
+              //     _t(
+              //       context,
+              //       'This feature is coming soon',
+              //       'Huduma hii inakuja hivi karibuni',
+              //     ),
+              //   ),
+              //   leading: const Icon(Icons.fingerprint),
+              //   title: _tileTitle(context, appLocalization.useFingerprint),
+              //   description: _tileDescription(
+              //     context,
+              //     appLocalization.useFingerprintDescription,
+              //   ),
+              //   value: _tileValue(
+              //     context,
+              //     _t(context, 'Coming soon', 'Inakuja'),
+              //   ),
+              //   trailing: const Icon(Icons.chevron_right_outlined),
+              // ),
               // SettingsTile.navigation(
               //   onPressed: (context) => Get.toNamed(Routes.CHANGE_PASSWORD),
               //   leading: const Icon(Icons.lock),
@@ -352,38 +352,82 @@ class SettingsView extends BaseView<SettingsController> {
   }
 
   void _showTenantReminderTemplateDialog(BuildContext context) {
+    const placeholders = <String>[
+      '{tenantName}',
+      '{property}',
+      '{rentAmount}',
+      '{rentFrequency}',
+      '{leaseEnd}',
+      '{remainingBalance}',
+    ];
     final textController = TextEditingController(
       text: controller.tenantReminderTemplate.value,
     );
     showDialog(
       context: context,
       builder: (context) {
+        final theme = Theme.of(context);
         return AlertDialog(
           title: Text(appLocalization.tenantReminderTemplateTitle),
-          content: TextField(
-            controller: textController,
-            minLines: 3,
-            maxLines: 6,
-            decoration: InputDecoration(
-              hintText: _t(
-                context,
-                'Example: Hello {tenantName}, your tenancy has ended. Please renew and pay your outstanding balance.',
-                'Mfano: Hujambo {tenantName}, muda wa upangaji umeisha. Tafadhali huisha mkataba na ulipie deni lililosalia.',
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _t(
+                      context,
+                      'You can use these placeholders in your message:',
+                      'Unaweza kutumia nafasi hizi katika ujumbe wako:',
+                    ),
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  ...placeholders.map(
+                    (p) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: SelectableText(
+                        p,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontFamily: 'monospace',
+                          fontSize: 14,
+                          color: theme.colorScheme.primary,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: textController,
+                    minLines: 3,
+                    maxLines: 6,
+                    decoration: InputDecoration(
+                      hintText: _t(
+                        context,
+                        'Example: Hello {tenantName}, your tenancy has ended. Please renew and pay your outstanding balance.',
+                        'Mfano: Hujambo {tenantName}, muda wa upangaji umeisha. Tafadhali huisha mkataba na ulipie deni lililosalia.',
+                      ),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
               ),
-              border: OutlineInputBorder(),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(appLocalization.cancel),
+              child: Text(appLocalization.cancel, style: TextStyle(fontSize: 16)),
             ),
             TextButton(
               onPressed: () async {
                 await controller.saveTenantReminderTemplate('');
                 if (context.mounted) Navigator.of(context).pop();
               },
-              child: Text(appLocalization.clear),
+              child: Text(appLocalization.clear, style: TextStyle(fontSize: 16)),
             ),
             TextButton(
               onPressed: () {
@@ -409,14 +453,14 @@ class SettingsView extends BaseView<SettingsController> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(ctx).pop(),
-                          child: Text(appLocalization.closeLabel),
+                          child: Text(appLocalization.closeLabel, style: TextStyle(fontSize: 16)),
                         ),
                       ],
                     );
                   },
                 );
               },
-              child: Text(appLocalization.previewLabel),
+              child: Text(appLocalization.previewLabel, style: TextStyle(fontSize: 16)),
             ),
             FilledButton(
               onPressed: () async {
@@ -425,7 +469,7 @@ class SettingsView extends BaseView<SettingsController> {
                 );
                 if (context.mounted) Navigator.of(context).pop();
               },
-              child: Text(appLocalization.save),
+              child: Text(appLocalization.save, style: TextStyle(fontSize: 16)),
             ),
           ],
         );

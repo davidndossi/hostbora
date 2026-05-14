@@ -82,10 +82,9 @@ class RentMyPropertiesHubController extends BaseController {
     try {
       loggedInUserId = ((await _preferenceManager.getUser()).id ?? '').trim();
       final currentUserId = loggedInUserId;
-      final workspaceType = await _workspaceContext.getWorkspaceType();
       final localRecords = await _localRent.getAllVisibleNewestFirst(
         userId: currentUserId,
-        workspaceType: workspaceType,
+        workspaceType: 'rent',
       );
       final tenantRecords = await _tenantLocal.getAllNewestFirst();
 

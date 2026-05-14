@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../controllers/rent_smart_utility_dashboard_controller.dart';
 
 class _UtilUi {
@@ -36,84 +37,40 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
   Color pageBackgroundColor(BuildContext context) => _UtilUi(context).bg;
 
   @override
-  Widget? bottomNavigationBar() => _bottomNav();
-
-  @override
   Widget body(BuildContext context) {
     final u = _UtilUi(context);
-    return Obx(() {
-      if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator(color: _UtilUi.forest));
-      }
-      return RefreshIndicator(
-        color: _UtilUi.forest,
-        onRefresh: controller.loadAll,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          children: [
-            _header(u),
-            const SizedBox(height: 20),
-            _globalStatusRow(u),
-            const SizedBox(height: 16),
-            _lukuCard(u),
-            const SizedBox(height: 12),
-            _waterCard(u),
-            const SizedBox(height: 20),
-            _weeklyUsageCard(u),
-            const SizedBox(height: 20),
-            _recentActivityHeader(u),
-            const SizedBox(height: 10),
-            ...controller.activities.map((a) => _activityTile(u, a)),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _header(_UtilUi u) {
-    return Row(
-      children: [
-        const CircleAvatar(
-          radius: 18,
-          backgroundColor: Color(0xFFEAE6DE),
-          child: Icon(Icons.person, size: 18, color: Color(0xFF6B4F3A)),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return SafeArea(
+      child: Obx(() {
+        if (controller.loading.value) {
+          return const Center(
+            child: CircularProgressIndicator(color: _UtilUi.forest),
+          );
+        }
+        return RefreshIndicator(
+          color: _UtilUi.forest,
+          onRefresh: controller.loadAll,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
-              Text(
-                controller.unitLabel.value,
-                style: TextStyle(
-                  fontSize: 10,
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w800,
-                  color: u.muted,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                controller.editorialName.value,
-                style: TextStyle(
-                  fontFamily: 'serif',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: u.onSurface,
-                ),
-              ),
+              const SizedBox(height: 20),
+              _globalStatusRow(u),
+              const SizedBox(height: 16),
+              _lukuCard(u),
+              const SizedBox(height: 12),
+              _waterCard(u),
+              const SizedBox(height: 20),
+              _weeklyUsageCard(u),
+              const SizedBox(height: 20),
+              _recentActivityHeader(u),
+              const SizedBox(height: 10),
+              if (controller.activities.isEmpty)
+                _emptyActivityTile(u)
+              else
+                ...controller.activities.map((a) => _activityTile(u, a)),
             ],
           ),
-        ),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: u.softSurface,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(Icons.apartment_rounded, size: 18, color: _UtilUi.forest),
-        ),
-      ],
+        );
+      }),
     );
   }
 
@@ -126,9 +83,10 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _isSw ? 'HALI KUU' : 'GLOBAL STATUS',
+                controller.unitLabel.value,
+                // _isSw ? 'HALI KUU' : 'GLOBAL STATUS',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 22,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.w800,
                   color: u.muted,
@@ -139,7 +97,7 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
                 controller.globalStatus.value,
                 style: TextStyle(
                   fontFamily: 'serif',
-                  fontSize: 32,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: u.onSurface,
                 ),
@@ -147,49 +105,49 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
             ],
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: u.card,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x12000000),
-                blurRadius: 10,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.shield_rounded, size: 18, color: _UtilUi.forest),
-              const SizedBox(width: 6),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _isSw ? 'NIDA IMANI' : 'NIDA TRUST',
-                    style: TextStyle(
-                      fontSize: 9,
-                      letterSpacing: 1.0,
-                      fontWeight: FontWeight.w800,
-                      color: u.muted,
-                    ),
-                  ),
-                  Text(
-                    '${controller.trustScore.value.toStringAsFixed(1)}/10',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: u.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        // Container(
+        //   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        //   decoration: BoxDecoration(
+        //     color: u.card,
+        //     borderRadius: BorderRadius.circular(14),
+        //     boxShadow: const [
+        //       BoxShadow(
+        //         color: Color(0x12000000),
+        //         blurRadius: 10,
+        //         offset: Offset(0, 3),
+        //       ),
+        //     ],
+        //   ),
+        //   child: Row(
+        //     mainAxisSize: MainAxisSize.min,
+        //     children: [
+        //       const Icon(Icons.shield_rounded, size: 18, color: _UtilUi.forest),
+        //       const SizedBox(width: 6),
+        //       Column(
+        //         crossAxisAlignment: CrossAxisAlignment.start,
+        //         children: [
+        //           Text(
+        //             _isSw ? 'NIDA IMANI' : 'NIDA TRUST',
+        //             style: TextStyle(
+        //               fontSize: 9,
+        //               letterSpacing: 1.0,
+        //               fontWeight: FontWeight.w800,
+        //               color: u.muted,
+        //             ),
+        //           ),
+        //           Text(
+        //             '${controller.trustScore.value.toStringAsFixed(1)}/10',
+        //             style: TextStyle(
+        //               fontSize: 12,
+        //               fontWeight: FontWeight.w800,
+        //               color: u.onSurface,
+        //             ),
+        //           ),
+        //         ],
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
   }
@@ -209,6 +167,10 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
         footer: _isSw
             ? 'Makadirio ya siku: ${controller.lukuCoverageDays.value}'
             : 'Estimated coverage: ${controller.lukuCoverageDays.value} days',
+        onUsageGraph: controller.openLukuUsageGraph,
+        usageGraphLabel: AppLocalizations.of(ctx)!.rentUtilityLukuUsageGraphLink,
+        watermarkIcon: Icons.bolt_rounded,
+        watermarkAngle: 0.14,
       ),
     );
   }
@@ -226,9 +188,12 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
               RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
               (m) => '${m[1]},',
             ),
-        unit: _isSw ? 'Lita' : 'Liters',
+        unit: _isSw ? 'Lita' : 'Litres',
         progress: controller.waterProgress,
         footer: controller.nextMeterReadingLabel.value,
+        onUsageGraph: controller.openWaterUsageGraph,
+        usageGraphLabel: AppLocalizations.of(ctx)!.rentUtilityWaterUsageGraphLink,
+        watermarkIcon: Icons.water_drop_rounded,
       ),
     );
   }
@@ -280,9 +245,128 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
     required String unit,
     required double progress,
     required String footer,
+    VoidCallback? onUsageGraph,
+    String? usageGraphLabel,
+    IconData? watermarkIcon,
+    double watermarkAngle = 0,
   }) {
+    final column = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: iconBg.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: iconBg, size: 20),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontFamily: 'serif',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: u.onSurface,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(
+                backgroundColor: _UtilUi.forest,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text(
+                actionLabel,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontSize: 38,
+                fontWeight: FontWeight.w700,
+                height: 1,
+                color: u.onSurface,
+              ),
+            ),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                unit,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: u.muted,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 7,
+            backgroundColor: u.softSurface,
+            color: _UtilUi.forest,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          footer,
+          style: TextStyle(fontSize: 11, color: u.muted),
+        ),
+        if (onUsageGraph != null && usageGraphLabel != null) ...[
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onUsageGraph,
+              icon: const Icon(Icons.show_chart_rounded, size: 18, color: _UtilUi.forest),
+              label: Text(
+                usageGraphLabel,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.45,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: _UtilUi.forest,
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: u.card,
         borderRadius: BorderRadius.circular(18),
@@ -294,96 +378,33 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: iconBg.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: iconBg, size: 20),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'serif',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: u.onSurface,
+      child: watermarkIcon != null
+          ? Stack(
+              children: [
+                Positioned(
+                  right: -6,
+                  bottom: 4,
+                  child: Transform.rotate(
+                    angle: watermarkAngle,
+                    child: Icon(
+                      watermarkIcon,
+                      size: 118,
+                      color: u.dark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : iconBg.withValues(alpha: 0.08),
+                    ),
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: onAction,
-                style: TextButton.styleFrom(
-                  backgroundColor: _UtilUi.forest,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: column,
                 ),
-                child: Text(
-                  actionLabel,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontFamily: 'serif',
-                  fontSize: 38,
-                  fontWeight: FontWeight.w700,
-                  height: 1,
-                  color: u.onSurface,
-                ),
-              ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  unit,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: u.muted,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 7,
-              backgroundColor: u.softSurface,
-              color: _UtilUi.forest,
+              ],
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: column,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            footer,
-            style: TextStyle(fontSize: 11, color: u.muted),
-          ),
-        ],
-      ),
     );
   }
 
@@ -392,6 +413,7 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
     final data = controller.weeklyUsage;
     final maxY = data.fold<double>(0, (a, b) => a > b ? a : b);
     final chartMax = maxY <= 0 ? 1.0 : maxY * 1.25;
+    final peakValue = maxY;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
@@ -464,7 +486,7 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
                 ),
                 barGroups: List.generate(days.length, (i) {
                   final v = i < data.length ? data[i] : 0.0;
-                  final isPeak = i == 5; // highlight SAT as in the mock
+                  final isPeak = peakValue > 0 && v == peakValue;
                   return BarChartGroupData(
                     x: i,
                     barRods: [
@@ -585,63 +607,18 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
     );
   }
 
-  Widget _bottomNav() {
+  Widget _emptyActivityTile(_UtilUi u) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE8E6E1))),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Row(
-            children: [
-              _navItem(Icons.grid_view_rounded, _isSw ? 'Dashibodi' : 'Dashboard', false, () {
-                Get.back();
-              }),
-              _navItem(Icons.bolt_rounded, _isSw ? 'Huduma' : 'Utilities', true, () {}),
-              _navItem(Icons.account_balance_wallet_rounded, _isSw ? 'Fedha' : 'Financials', false, () {
-                controller.showSuccessMessage('Financials tab');
-              }),
-              _navItem(Icons.settings_rounded, _isSw ? 'Mipangilio' : 'Settings', false, () {
-                controller.showSuccessMessage('Settings tab');
-              }),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem(IconData icon, String label, bool selected, VoidCallback onTap) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: u.card,
         borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-          decoration: BoxDecoration(
-            color: selected ? _UtilUi.forest : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 20, color: selected ? Colors.white : const Color(0xFF6B7280)),
-              const SizedBox(height: 2),
-              Text(
-                label.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.6,
-                  color: selected ? Colors.white : const Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
-        ),
+        border: Border.all(color: const Color(0xFFEAE6DE)),
+      ),
+      child: Text(
+        _isSw ? 'Bado hakuna shughuli za huduma.' : 'No utility activity recorded yet.',
+        style: TextStyle(fontSize: 13, color: u.muted, fontWeight: FontWeight.w600),
       ),
     );
   }

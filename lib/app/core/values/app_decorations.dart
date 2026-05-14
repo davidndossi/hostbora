@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_values.dart';
 
-/// Standard decorations aligned with Figma PAA YANGU design.
+/// Standard decorations aligned with Figma HOST BORA design.
 /// See docs/DESIGN_SYSTEM.md and Figma node 2001-1281.
 abstract class AppDecorations {
   /// Card style: white surface, 12px radius, subtle shadow (Figma spec).

@@ -25,7 +25,7 @@ class RentWhatsappTemplateBuilderView
       backgroundColor: RentTheme.conciergeTeal,
       foregroundColor: Colors.white,
       icon: const Icon(Icons.add_rounded),
-      label: Text(_isSw ? 'KIOLEZO KIPYA' : 'NEW TEMPLATE'),
+      label: Text(_isSw ? 'KIOLEZO KIPYA' : 'NEW TEMPLATE', style: TextStyle(fontSize: 16)),
       onPressed: () => _openEditor(),
     );
   }
@@ -107,7 +107,7 @@ class RentWhatsappTemplateBuilderView
                 Text(
                   _isSw
                       ? 'Andika, hakiki na tuma violezo vya huduma, matangazo au uthibitisho kwa WhatsApp.'
-                      : 'Author, preview and submit utility, marketing and authentication templates to Meta for approval.',
+                      : 'Author, preview and submit utility, marketing and authentication templates for WhatsApp.',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.9),

@@ -30,31 +30,59 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
     return CustomAppBar(
       appBarTitleText: appLocalization.expenseAnalysis,
       isCentered: true,
-      actions: [
-        IconButton(
-          onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined),
-        ),
-      ],
     );
   }
 
   @override
   Widget body(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildFilters(context),
-          const SizedBox(height: 24),
-          _buildDonutChart(context),
-          const SizedBox(height: 24),
-          _buildTopExpenses(context),
-          const SizedBox(height: 16),
-          _buildDownloadButton(context),
-          const SizedBox(height: 24),
-        ],
+    return Obx(() {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFilters(context),
+            const SizedBox(height: 24),
+            _buildDonutChart(context),
+            const SizedBox(height: 24),
+            _buildTopExpenses(context),
+            const SizedBox(height: 16),
+            _buildDownloadButton(context),
+            const SizedBox(height: 24),
+          ],
+        ),
+      );
+    });
+  }
+
+  List<Color> _chartColors(int count) {
+    final palette = <Color>[
+      _expenseChartCyan,
+      _expenseChartPurple,
+      _expenseChartGreen,
+      _expenseChartOrange,
+      Colors.indigo,
+      Colors.teal,
+    ];
+    if (count <= palette.length) return palette;
+    return List<Color>.generate(count, (i) => palette[i % palette.length]);
+  }
+
+  Widget _emptyStateCard(BuildContext context, {required String message}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _isDark(context) ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        borderRadius: BorderRadius.circular(AppValues.radius_12),
+      ),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 14,
+          color: _isDark(context) ? Colors.white70 : AppColors.textColorSecondary,
+        ),
       ),
     );
   }
@@ -95,22 +123,27 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
 
   Widget _buildDonutChart(BuildContext context) {
     final categories = controller.expenseCategories;
-    final colors = [
-      _expenseChartCyan,
-      _expenseChartPurple,
-      _expenseChartGreen,
-      _expenseChartOrange,
-    ];
+    final colors = _chartColors(categories.length);
+    final hasData = categories.isNotEmpty;
 
-    final sections = categories.asMap().entries.map((e) {
-      final c = e.value;
-      return PieChartSectionData(
-        value: c.value,
-        color: colors[c.colorIndex % colors.length],
-        radius: 48,
-        showTitle: false,
-      );
-    }).toList();
+    final sections = hasData
+        ? categories.asMap().entries.map((e) {
+            final c = e.value;
+            return PieChartSectionData(
+              value: c.value,
+              color: colors[c.colorIndex % colors.length],
+              radius: 48,
+              showTitle: false,
+            );
+          }).toList()
+        : [
+            PieChartSectionData(
+              value: 1,
+              color: Colors.grey.withValues(alpha: 0.3),
+              radius: 48,
+              showTitle: false,
+            ),
+          ];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -160,7 +193,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      ExpenseAnalysisController.totalAmount,
+                      controller.totalAmountLabel.value,
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -173,33 +206,42 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _LegendDot(
-                _expenseChartCyan,
-                _t(context, en: 'Maintenance', sw: 'Matengenezo'),
+          if (hasData)
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 14,
+              runSpacing: 8,
+              children: categories.map((c) {
+                return _LegendDot(colors[c.colorIndex % colors.length], c.name);
+              }).toList(),
+            )
+          else
+            Text(
+              _t(context, en: 'No expenses in selected period', sw: 'Hakuna matumizi kwa kipindi hiki'),
+              style: TextStyle(
+                fontSize: 13,
+                color: _isDark(context) ? Colors.white70 : AppColors.textColorSecondary,
               ),
-              _LegendDot(
-                _expenseChartPurple,
-                _t(context, en: 'Utilities', sw: 'Huduma'),
-              ),
-              _LegendDot(
-                _expenseChartGreen,
-                _t(context, en: 'Staffing', sw: 'Wafanyakazi'),
-              ),
-              _LegendDot(
-                _expenseChartOrange,
-                _t(context, en: 'Supplies', sw: 'Vifaa'),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildTopExpenses(BuildContext context) {
+    if (controller.loading.value) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (controller.topExpenses.isEmpty) {
+      return _emptyStateCard(
+        context,
+        message: _t(
+          context,
+          en: 'No expense records available yet.',
+          sw: 'Bado hakuna rekodi za matumizi.',
+        ),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -229,7 +271,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
         ),
         const SizedBox(height: 12),
         ...controller.topExpenses
-            .take(2)
+            .take(3)
             .map(
               (e) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),

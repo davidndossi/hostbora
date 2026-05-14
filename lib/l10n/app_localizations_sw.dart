@@ -585,6 +585,76 @@ class AppLocalizationsSw extends AppLocalizations {
   String get support => 'Msaada';
 
   @override
+  String get supportIntro =>
+      'Unahitaji msaada wa majengo, kodi, wapangaji, au mapato? Hapa kuna majibu ya maswali yanayoulizwa mara kwa mara. Kwa mengine, tuma barua pepe.';
+
+  @override
+  String get supportTipsHeading => 'Vidokezo muhimu';
+
+  @override
+  String get supportTipsBody =>
+      '• Buruta chini kwenye skrini ya mali ili kusasisha idadi baada ya kuongeza mapato au mpangaji.\n• Mapato na gharama unazohifadhi bila mtandao zinabaki kwenye simu hii hadi ufute data au kusawazisha pale bidhaa inapoungwa mtandaoni.\n• Tumia Mipangilio → Futa data ya nje ya mtandao tu ukiwa na nia ya kuondoa rekodi za kodi kwenye simu hii.\n• Nambari ikionekana si sahihi, hakikisha mapato yana tarehe ya mwezi huu na yameunganishwa na mali sahihi.';
+
+  @override
+  String get supportFaqHeading => 'Maswali ya kawaida';
+
+  @override
+  String get supportFaq1Q => 'Kwa nini mapato ya mwezi hayasasishwi?';
+
+  @override
+  String get supportFaq1A =>
+      'Maelezo ya mali hukusanya mapato ya mwezi wa kalenda unaofanana na mali hiyo. Ongeza mapato kwa mali sahihi (na chumba, kama kuna), hifadhi, kisha rudi kwenye mali na buruta kusasisha.';
+
+  @override
+  String get supportFaq2Q =>
+      'Nimeongeza mpangaji lakini haonekani kwenye mali.';
+
+  @override
+  String get supportFaq2A =>
+      'Fungua mali tena au buruta kusasisha. Wapangaji wanahifadhiwa kwenye simu kwanza; hakikisha ulichagua mali na chumba sahihi unapohifadhi.';
+
+  @override
+  String get supportFaq3Q =>
+      'Nifanyeje ikiwa aplikesheni inaonyesha hitilafu ya hifadhidata?';
+
+  @override
+  String get supportFaq3A =>
+      'Sasisha toleo jipya kutoka dukani. Ikiendelea, tumia Mipangilio → futa data ya nje ya mtandao tu baada ya kuelewa inaondoa data ya kodi ya ndani, au wasiliana na msaada ukitaja aina ya simu na toleo la aplikesheni.';
+
+  @override
+  String get supportFaq4Q => 'Ninabadilishaje lugha au mandhari?';
+
+  @override
+  String get supportFaq4A =>
+      'Tumia alama ya dunia na jua/mwezi kwenye skrini nyingi, au fungua Mipangilio kubadilisha lugha na muonekano.';
+
+  @override
+  String get supportContactHeading => 'Wasiliana nasi';
+
+  @override
+  String get supportContactBody =>
+      'Tuma barua pepe kwa timu ya msaada. Tunakusudia kujibu ndani ya siku moja ya kazi.';
+
+  @override
+  String get supportEmailButton => 'Tuma barua pepe kwa msaada';
+
+  @override
+  String get supportWhatsAppButton => 'Piga gumzo WhatsApp';
+
+  @override
+  String get supportLegalHeading => 'Sera';
+
+  @override
+  String get supportLegalBody =>
+      'Matumizi ya Paa Yangu pia yanategemea Masharti ya Matumizi na Sera ya Faragha.';
+
+  @override
+  String get supportOpenTerms => 'Masharti ya Matumizi';
+
+  @override
+  String get supportOpenPrivacy => 'Sera ya Faragha';
+
+  @override
   String get nearby => 'Karibu';
 
   @override
@@ -1417,5 +1487,91 @@ class AppLocalizationsSw extends AppLocalizations {
   String get performance => 'Performance';
 
   @override
-  String get addIncome => 'Add Income';
+  String get addIncome => 'Ongeza Mapato';
+
+  @override
+  String get managePaymentsFilters => 'Vichujio';
+
+  @override
+  String get managePayments => 'Angalia malipo';
+
+  @override
+  String get managePaymentsTitle => 'Angalia malipo';
+
+  @override
+  String get managePaymentsTotal => 'Jumla';
+
+  @override
+  String get managePaymentsMonth => 'Mwezi';
+
+  @override
+  String get managePaymentsApartment => 'Gorofa / kitengo';
+
+  @override
+  String get managePaymentsAllApartments => 'Gorofa zote';
+
+  @override
+  String get managePaymentsStatus => 'Hali ya malipo';
+
+  @override
+  String get managePaymentsStatusAll => 'Zote';
+
+  @override
+  String get managePaymentsStatusFull => 'Kamili';
+
+  @override
+  String get managePaymentsStatusPartial => 'Sehemu';
+
+  @override
+  String get managePaymentsStartDate => 'Tarehe ya kuanza';
+
+  @override
+  String get managePaymentsEndDate => 'Tarehe ya mwisho';
+
+  @override
+  String get managePaymentsClearDates => 'Futa tarehe';
+
+  @override
+  String get managePaymentsExpectedHint =>
+      'Mwezi huu uko mbele: kiasi ni kodi inayotarajiwa kutoka mikataba inayoendelea (angalia maelezo ya hesabu katika programu).';
+
+  @override
+  String get managePaymentsNoRows => 'Hakuna malipo ya kuonyesha.';
+
+  @override
+  String get managePaymentsCategory => 'Aina';
+
+  @override
+  String get managePaymentsScheduled => 'Inatarajiwa';
+
+  @override
+  String get managePaymentsUnknownStatus => '—';
+
+  @override
+  String get rentUtilityLukuUsageGraphLink => 'Grafu ya matumizi ya LUKU';
+
+  @override
+  String get rentUtilityWaterUsageGraphLink => 'Grafu ya matumizi ya maji';
+
+  @override
+  String get rentUtilityUsageGraphScreenTitleLuku => 'Matumizi ya LUKU';
+
+  @override
+  String get rentUtilityUsageGraphScreenTitleWater => 'Matumizi ya maji';
+
+  @override
+  String get rentUtilityUsageGraphChartCaption =>
+      'Ujazaji kwa siku (siku 30 zilizopita)';
+
+  @override
+  String get rentUtilityUsageGraphEmpty =>
+      'Bado hakuna ujazaji katika kipindi hiki.';
+
+  @override
+  String get rentUtilityUsageGraphFootnoteLuku =>
+      'Thamani ni kWh zilizoongezwa kwa siku kutoka malipo ya LUKU yaliyohifadhiwa.';
+
+  @override
+  String get rentUtilityUsageGraphFootnoteWater =>
+      'Thamani ni lita zilizoongezwa kwa siku kutoka ujazaji wa maji ulihifadhiwa.';
 }

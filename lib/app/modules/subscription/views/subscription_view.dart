@@ -7,7 +7,6 @@ import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../data/service/azampay_service.dart';
 import '../../../data/service/subscription_service.dart';
-import '../../../routes/app_pages.dart';
 import '../controllers/subscription_controller.dart';
 
 class SubscriptionView extends BaseView<SubscriptionController> {
@@ -328,7 +327,7 @@ class SubscriptionView extends BaseView<SubscriptionController> {
                 SizedBox(
                   height: AppValues.formButtonHeight,
                   child: ElevatedButton(
-                    onPressed: () => Get.offNamed(Routes.SEND_SMS),
+                    onPressed: controller.goToSendSms,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.colorPrimary,
                     ),

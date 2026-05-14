@@ -69,6 +69,7 @@ class PropertyUnitRecord {
 
 class PropertyUnitLocalDataSource {
   static const _table = AppLocalDatabase.propertyUnitsTable;
+  static const _defaultChunkSize = 200;
 
   Database? _db;
 
@@ -141,17 +142,103 @@ class PropertyUnitLocalDataSource {
   }
 
   Future<List<PropertyUnitRecord>> getAllNewestFirst() async {
+    return getAllNewestFirstChunked();
+  }
+
+  Future<List<PropertyUnitRecord>> getAllNewestFirstPage({
+    int limit = _defaultChunkSize,
+    int offset = 0,
+  }) async {
     final db = await database;
-    final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
+    final safeLimit = limit <= 0 ? _defaultChunkSize : limit;
+    final safeOffset = offset < 0 ? 0 : offset;
+    final maps = await db.query(
+      _table,
+      orderBy: 'created_at_ms DESC',
+      limit: safeLimit,
+      offset: safeOffset,
+    );
     return maps.map(PropertyUnitRecord.fromMap).toList();
+  }
+
+  Future<List<PropertyUnitRecord>> getAllNewestFirstChunked({
+    int chunkSize = _defaultChunkSize,
+  }) async {
+    final safeChunk = chunkSize <= 0 ? _defaultChunkSize : chunkSize;
+    final out = <PropertyUnitRecord>[];
+    var offset = 0;
+    while (true) {
+      final page = await getAllNewestFirstPage(limit: safeChunk, offset: offset);
+      if (page.isEmpty) break;
+      out.addAll(page);
+      if (page.length < safeChunk) break;
+      offset += page.length;
+    }
+    return out;
+  }
+
+  Future<List<PropertyUnitRecord>> getAllByPropertyRefNewestFirstPage({
+    required String propertyRef,
+    int limit = _defaultChunkSize,
+    int offset = 0,
+  }) async {
+    final ref = propertyRef.trim();
+    if (ref.isEmpty) return const [];
+    final db = await database;
+    final safeLimit = limit <= 0 ? _defaultChunkSize : limit;
+    final safeOffset = offset < 0 ? 0 : offset;
+    final maps = await db.query(
+      _table,
+      where: 'property_ref = ?',
+      whereArgs: [ref],
+      orderBy: 'created_at_ms DESC',
+      limit: safeLimit,
+      offset: safeOffset,
+    );
+    return maps.map(PropertyUnitRecord.fromMap).toList();
+  }
+
+  Future<List<PropertyUnitRecord>> getAllByPropertyRefNewestFirstChunked({
+    required String propertyRef,
+    int chunkSize = _defaultChunkSize,
+  }) async {
+    final safeChunk = chunkSize <= 0 ? _defaultChunkSize : chunkSize;
+    final out = <PropertyUnitRecord>[];
+    var offset = 0;
+    while (true) {
+      final page = await getAllByPropertyRefNewestFirstPage(
+        propertyRef: propertyRef,
+        limit: safeChunk,
+        offset: offset,
+      );
+      if (page.isEmpty) break;
+      out.addAll(page);
+      if (page.length < safeChunk) break;
+      offset += page.length;
+    }
+    return out;
   }
 
   Future<List<PropertyUnitRecord>> getAllVisibleNewestFirst({
     required String userId,
     String workspaceType = 'bnb',
   }) async {
+    return getAllVisibleNewestFirstChunked(
+      userId: userId,
+      workspaceType: workspaceType,
+    );
+  }
+
+  Future<List<PropertyUnitRecord>> getAllVisibleNewestFirstPage({
+    required String userId,
+    String workspaceType = 'bnb',
+    int limit = _defaultChunkSize,
+    int offset = 0,
+  }) async {
     final db = await database;
     final uid = userId.trim();
+    final safeLimit = limit <= 0 ? _defaultChunkSize : limit;
+    final safeOffset = offset < 0 ? 0 : offset;
     List<Map<String, Object?>> maps;
     if (uid.isEmpty) {
       maps = await db.rawQuery(
@@ -162,8 +249,9 @@ class PropertyUnitLocalDataSource {
           ON p.property_ref = u.property_ref
         WHERE (p.workspace_type = ? OR p.workspace_type = '')
         ORDER BY u.created_at_ms DESC
+        LIMIT ? OFFSET ?
         ''',
-        [workspaceType],
+        [workspaceType, safeLimit, safeOffset],
       );
     } else {
       maps = await db.rawQuery(
@@ -188,11 +276,35 @@ class PropertyUnitLocalDataSource {
             )
           )
         ORDER BY u.created_at_ms DESC
+        LIMIT ? OFFSET ?
         ''',
-        [workspaceType, uid, uid, workspaceType],
+        [workspaceType, uid, uid, workspaceType, safeLimit, safeOffset],
       );
     }
     return maps.map(PropertyUnitRecord.fromMap).toList();
+  }
+
+  Future<List<PropertyUnitRecord>> getAllVisibleNewestFirstChunked({
+    required String userId,
+    String workspaceType = 'bnb',
+    int chunkSize = _defaultChunkSize,
+  }) async {
+    final safeChunk = chunkSize <= 0 ? _defaultChunkSize : chunkSize;
+    final out = <PropertyUnitRecord>[];
+    var offset = 0;
+    while (true) {
+      final page = await getAllVisibleNewestFirstPage(
+        userId: userId,
+        workspaceType: workspaceType,
+        limit: safeChunk,
+        offset: offset,
+      );
+      if (page.isEmpty) break;
+      out.addAll(page);
+      if (page.length < safeChunk) break;
+      offset += page.length;
+    }
+    return out;
   }
 
   Future<void> deleteById(int id) async {

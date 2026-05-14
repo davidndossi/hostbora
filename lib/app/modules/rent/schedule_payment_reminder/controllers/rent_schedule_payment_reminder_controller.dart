@@ -60,7 +60,7 @@ class RentSchedulePaymentReminderController extends BaseController {
 
   static final NumberFormat _currency =
       NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0);
-  static final DateFormat _dateDisplay = DateFormat('MM/dd/yyyy');
+  static final DateFormat _dateDisplay = DateFormat('dd/MM/yyyy');
 
   @override
   void onInit() {
@@ -132,7 +132,7 @@ class RentSchedulePaymentReminderController extends BaseController {
 
   String get dateFieldLabel {
     final d = reminderDate.value;
-    return d == null ? 'mm/dd/yyyy' : _dateDisplay.format(d);
+    return d == null ? 'dd/MM/yyyy' : _dateDisplay.format(d);
   }
 
   String get timeFieldLabel {

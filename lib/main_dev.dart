@@ -188,9 +188,9 @@ void requestUserPermission() async {
 
 void main() async {
   EnvConfig devConfig = EnvConfig(
-    appName: 'Paa Yangu',
-    baseUrl: 'http://www.hostbora.co.tz:8082',
-    // baseUrl: 'http://172.20.10.3:8080',
+    appName: 'Host Bora',
+    baseUrl: 'http://167.86.89.92:8082',
+    // baseUrl: 'http://www.hostbora.co.tz:8082',
     shouldCollectCrashLog: true,
   );
 

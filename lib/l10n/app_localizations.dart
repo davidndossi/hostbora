@@ -1232,6 +1232,126 @@ abstract class AppLocalizations {
   /// **'Support'**
   String get support;
 
+  /// No description provided for @supportIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Need help with listings, rent, tenants, or income? These answers cover the most common questions. For anything else, reach us by email.'**
+  String get supportIntro;
+
+  /// No description provided for @supportTipsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick tips'**
+  String get supportTipsHeading;
+
+  /// No description provided for @supportTipsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'• Pull down on a listing screen to refresh occupancy and monthly revenue after you add income or a tenant.\n• Income and expenses you save offline stay on this device until you clear data or sync when your product supports it.\n• Use Settings → Clear offline data only if you intend to remove local rent records from this phone.\n• If a number looks wrong, check that the income is dated in the current month and tied to the correct property.'**
+  String get supportTipsBody;
+
+  /// No description provided for @supportFaqHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Common questions'**
+  String get supportFaqHeading;
+
+  /// No description provided for @supportFaq1Q.
+  ///
+  /// In en, this message translates to:
+  /// **'Why doesn’t my monthly revenue update?'**
+  String get supportFaq1Q;
+
+  /// No description provided for @supportFaq1A.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing details sum income for the current calendar month that matches the property. Add income with the correct property (and unit, if any), save, then return to the listing and pull to refresh.'**
+  String get supportFaq1A;
+
+  /// No description provided for @supportFaq2Q.
+  ///
+  /// In en, this message translates to:
+  /// **'I added a tenant but don’t see them on the listing.'**
+  String get supportFaq2Q;
+
+  /// No description provided for @supportFaq2A.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the listing again or pull to refresh. Tenants are stored locally first; make sure you picked the right property and unit when saving.'**
+  String get supportFaq2A;
+
+  /// No description provided for @supportFaq3Q.
+  ///
+  /// In en, this message translates to:
+  /// **'What if the app shows a database error?'**
+  String get supportFaq3Q;
+
+  /// No description provided for @supportFaq3A.
+  ///
+  /// In en, this message translates to:
+  /// **'Update to the latest version from the store. If it persists, use Settings → clear offline data only after you understand it removes local rent data, or contact support with your device model and app version.'**
+  String get supportFaq3A;
+
+  /// No description provided for @supportFaq4Q.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I change language or theme?'**
+  String get supportFaq4Q;
+
+  /// No description provided for @supportFaq4A.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the globe and sun/moon icons on most screens, or open Settings to adjust language and appearance.'**
+  String get supportFaq4A;
+
+  /// No description provided for @supportContactHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact us'**
+  String get supportContactHeading;
+
+  /// No description provided for @supportContactBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Email our support team. We aim to respond within one business day.'**
+  String get supportContactBody;
+
+  /// No description provided for @supportEmailButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Email support'**
+  String get supportEmailButton;
+
+  /// No description provided for @supportWhatsAppButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat on WhatsApp'**
+  String get supportWhatsAppButton;
+
+  /// No description provided for @supportLegalHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Policies'**
+  String get supportLegalHeading;
+
+  /// No description provided for @supportLegalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your use of Paa Yangu is also governed by our Terms of Use and Privacy Policy.'**
+  String get supportLegalBody;
+
+  /// No description provided for @supportOpenTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Use'**
+  String get supportOpenTerms;
+
+  /// No description provided for @supportOpenPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get supportOpenPrivacy;
+
   /// No description provided for @nearby.
   ///
   /// In en, this message translates to:
@@ -2851,6 +2971,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Income'**
   String get addIncome;
+
+  /// No description provided for @managePaymentsFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get managePaymentsFilters;
+
+  /// No description provided for @managePayments.
+  ///
+  /// In en, this message translates to:
+  /// **'View payments'**
+  String get managePayments;
+
+  /// No description provided for @managePaymentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View payments'**
+  String get managePaymentsTitle;
+
+  /// No description provided for @managePaymentsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get managePaymentsTotal;
+
+  /// No description provided for @managePaymentsMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get managePaymentsMonth;
+
+  /// No description provided for @managePaymentsApartment.
+  ///
+  /// In en, this message translates to:
+  /// **'Apartment / unit'**
+  String get managePaymentsApartment;
+
+  /// No description provided for @managePaymentsAllApartments.
+  ///
+  /// In en, this message translates to:
+  /// **'All apartments'**
+  String get managePaymentsAllApartments;
+
+  /// No description provided for @managePaymentsStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment status'**
+  String get managePaymentsStatus;
+
+  /// No description provided for @managePaymentsStatusAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get managePaymentsStatusAll;
+
+  /// No description provided for @managePaymentsStatusFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get managePaymentsStatusFull;
+
+  /// No description provided for @managePaymentsStatusPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial'**
+  String get managePaymentsStatusPartial;
+
+  /// No description provided for @managePaymentsStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get managePaymentsStartDate;
+
+  /// No description provided for @managePaymentsEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get managePaymentsEndDate;
+
+  /// No description provided for @managePaymentsClearDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear dates'**
+  String get managePaymentsClearDates;
+
+  /// No description provided for @managePaymentsExpectedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This month is in the future: amounts are expected rent from active leases (see in-app calculation comments).'**
+  String get managePaymentsExpectedHint;
+
+  /// No description provided for @managePaymentsNoRows.
+  ///
+  /// In en, this message translates to:
+  /// **'No payments to show.'**
+  String get managePaymentsNoRows;
+
+  /// No description provided for @managePaymentsCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get managePaymentsCategory;
+
+  /// No description provided for @managePaymentsScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected'**
+  String get managePaymentsScheduled;
+
+  /// No description provided for @managePaymentsUnknownStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get managePaymentsUnknownStatus;
+
+  /// No description provided for @rentUtilityLukuUsageGraphLink.
+  ///
+  /// In en, this message translates to:
+  /// **'LUKU usage graph'**
+  String get rentUtilityLukuUsageGraphLink;
+
+  /// No description provided for @rentUtilityWaterUsageGraphLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Water usage graph'**
+  String get rentUtilityWaterUsageGraphLink;
+
+  /// No description provided for @rentUtilityUsageGraphScreenTitleLuku.
+  ///
+  /// In en, this message translates to:
+  /// **'LUKU usage'**
+  String get rentUtilityUsageGraphScreenTitleLuku;
+
+  /// No description provided for @rentUtilityUsageGraphScreenTitleWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water usage'**
+  String get rentUtilityUsageGraphScreenTitleWater;
+
+  /// No description provided for @rentUtilityUsageGraphChartCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Top-ups per day (last 30 days)'**
+  String get rentUtilityUsageGraphChartCaption;
+
+  /// No description provided for @rentUtilityUsageGraphEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No top-ups in this period yet.'**
+  String get rentUtilityUsageGraphEmpty;
+
+  /// No description provided for @rentUtilityUsageGraphFootnoteLuku.
+  ///
+  /// In en, this message translates to:
+  /// **'Values are kWh added per day from saved LUKU top-ups.'**
+  String get rentUtilityUsageGraphFootnoteLuku;
+
+  /// No description provided for @rentUtilityUsageGraphFootnoteWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Values are liters added per day from saved water recharges.'**
+  String get rentUtilityUsageGraphFootnoteWater;
 }
 
 class _AppLocalizationsDelegate

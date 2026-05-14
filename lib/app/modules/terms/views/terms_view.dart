@@ -33,7 +33,7 @@ class TermsView extends BaseView<TermsController> {
           const SizedBox(height: AppValues.halfPadding),
           Text(
             'Last updated: 2025\n\n'
-            'By using Paa Yangu you agree to these terms. The app is provided for community engagement and communication. Use it responsibly and in line with your community guidelines.\n\n'
+            'By using Host Bora you agree to these terms. The app is provided for community engagement and communication. Use it responsibly and in line with your community guidelines.\n\n'
             'We may update these terms from time to time. Continued use of the app after changes means you accept the updated terms.',
             style: TextStyle(
               fontSize: 15,

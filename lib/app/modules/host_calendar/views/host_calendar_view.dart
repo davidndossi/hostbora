@@ -45,8 +45,8 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                 children: [
                   _buildHeader(context),
                   const SizedBox(height: 20),
-                  _buildDynamicPricingRow(context),
-                  const SizedBox(height: 20),
+                  // _buildDynamicPricingRow(context),
+                  // const SizedBox(height: 20),
                   _buildPropertySelector(context),
                   const SizedBox(height: 20),
                   _buildCalendarGrid(context),
@@ -294,6 +294,8 @@ class HostCalendarView extends BaseView<HostCalendarController> {
 
   Widget _buildCalendarGrid(BuildContext context) {
     return Obx(() {
+      controller.calendarRevision.value;
+      controller.properties.length;
       final focused = controller.currentMonth.value;
       final selected = controller.selectedDate.value;
       final firstDay = DateTime(focused.year - 2, 1);
@@ -493,7 +495,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
         ),
         const SizedBox(width: 6),
         Text(
-          appLocalization.aiOptimized,
+          appLocalization.today,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,
@@ -511,7 +513,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
         ),
         const SizedBox(width: 6),
         Text(
-          appLocalization.manualRate,
+          appLocalization.events,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,
@@ -524,6 +526,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
 
   Widget _buildEventsSection(BuildContext context) {
     return Obx(() {
+      controller.calendarRevision.value;
       final events = controller.eventsForSelectedDay;
       final selected = controller.selectedDate.value;
       final isBlocked = controller.isDateBlocked(selected);
@@ -620,6 +623,7 @@ class _EventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isMaintenance = event.type == CalendarEventType.maintenance;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -646,14 +650,18 @@ class _EventCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                event.type == CalendarEventType.checkOut
-                    ? t(context, en: 'CHECK-OUT', sw: 'KUONDOKA')
-                    : t(context, en: 'CHECK-IN', sw: 'KUINGIA'),
+                isMaintenance
+                    ? t(context, en: 'MAINTENANCE', sw: 'MATENGENEZO')
+                    : (event.type == CalendarEventType.checkOut
+                        ? t(context, en: 'CHECK-OUT', sw: 'KUONDOKA')
+                        : t(context, en: 'CHECK-IN', sw: 'KUINGIA')),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
-                  color: AppColors.colorPrimary,
+                  color: isMaintenance
+                      ? AppColors.colorOrange
+                      : AppColors.colorPrimary,
                 ),
               ),
               const Spacer(),
@@ -675,47 +683,96 @@ class _EventCard extends StatelessWidget {
               color: AppColors.textColorPrimary,
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(
-                Icons.people_outline,
-                size: 16,
-                color: AppColors.textColorSecondary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '${event.guests} ${t(context, en: 'Guests', sw: 'Wageni')}',
-                style: TextStyle(
-                  fontSize: 13,
+          if (isMaintenance) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.home_work_outlined,
+                  size: 16,
                   color: AppColors.textColorSecondary,
                 ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    event.propertyName.isEmpty ? '—' : event.propertyName,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textColorSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (event.subtitle.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.notes_outlined,
+                    size: 16,
+                    color: AppColors.textColorSecondary,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      event.subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textColorSecondary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              Icon(
-                event.subtitleHighlight
-                    ? Icons.cleaning_services
-                    : Icons.key_outlined,
-                size: 16,
-                color: event.subtitleHighlight
-                    ? AppColors.colorOrange
-                    : AppColors.textColorSecondary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                event.subtitle,
-                style: TextStyle(
-                  fontSize: 13,
+            ],
+          ] else ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.people_outline,
+                  size: 16,
+                  color: AppColors.textColorSecondary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${event.guests} ${t(context, en: 'Guests', sw: 'Wageni')}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textColorSecondary,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Icon(
+                  event.subtitleHighlight
+                      ? Icons.cleaning_services
+                      : Icons.key_outlined,
+                  size: 16,
                   color: event.subtitleHighlight
                       ? AppColors.colorOrange
                       : AppColors.textColorSecondary,
-                  fontWeight: event.subtitleHighlight
-                      ? FontWeight.w500
-                      : FontWeight.normal,
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    event.subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: event.subtitleHighlight
+                          ? AppColors.colorOrange
+                          : AppColors.textColorSecondary,
+                      fontWeight: event.subtitleHighlight
+                          ? FontWeight.w500
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

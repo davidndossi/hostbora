@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../values/app_colors.dart';
 import '/app/core/base/base_controller.dart';
 import '/app/core/model/page_state.dart';
 import '/app/core/widget/loading.dart';

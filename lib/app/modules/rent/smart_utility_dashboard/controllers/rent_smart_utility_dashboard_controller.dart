@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../routes/app_pages.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/rent_utility_topup_local_data_source.dart';
@@ -37,20 +38,20 @@ class RentSmartUtilityDashboardController extends BaseController {
   final RentUtilityTopUpLocalDataSource _topUpLocal;
 
   final loading = true.obs;
-  final unitLabel = 'UNIT 402'.obs;
-  final editorialName = 'The Concierge Editorial'.obs;
-  final trustScore = 9.8.obs;
-  final globalStatus = 'Active'.obs;
+  final unitLabel = ''.obs;
+  final trustScore = 0.0.obs;
+  final globalStatus = ''.obs;
   final propertyLabel = ''.obs;
+  final propertyRef = ''.obs;
 
   // LUKU electricity (kWh).
   final lukuUnits = 0.0.obs;
-  final lukuCapacity = 250.0.obs;
+  final lukuCapacity = 0.0.obs;
   final lukuCoverageDays = 0.obs;
 
   // Water (liters).
   final waterLiters = 0.0.obs;
-  final waterCapacity = 6000.0.obs;
+  final waterCapacity = 0.0.obs;
   final nextMeterReadingLabel = ''.obs;
 
   // 7 days usage (Mon..Sun) scaled for chart.
@@ -75,6 +76,9 @@ class RentSmartUtilityDashboardController extends BaseController {
       if (properties.isNotEmpty) {
         final p = properties.first;
         final loc = p.propertyLocation.trim();
+        final ref =
+            p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}';
+        propertyRef.value = ref;
         if (loc.isNotEmpty) {
           unitLabel.value = 'UNIT · ${loc.toUpperCase()}';
           propertyLabel.value = loc;
@@ -99,23 +103,20 @@ class RentSmartUtilityDashboardController extends BaseController {
         lukuCapacity.value = lukuTotal < 250 ? 250 : lukuTotal * 1.1;
         lukuCoverageDays.value = (lukuTotal / _avgDailyKwh).floor();
       } else {
-        lukuUnits.value = 142.5;
-        lukuCapacity.value = 250;
-        lukuCoverageDays.value = 12;
+        lukuUnits.value = 0.0;
+        lukuCapacity.value = 0;
+        lukuCoverageDays.value = 0;
       }
 
       if (waterTotal > 0) {
         waterLiters.value = waterTotal;
         waterCapacity.value = waterTotal < 6000 ? 6000 : waterTotal * 1.1;
       } else {
-        waterLiters.value = 4280;
-        waterCapacity.value = 6000;
+        waterLiters.value = 0;
+        waterCapacity.value = 0;
       }
 
-      final nextRead = DateTime.now().add(const Duration(days: 7));
-      nextMeterReadingLabel.value = _isSw
-          ? 'Soma ijayo la mita: ${DateFormat('d MMM').format(nextRead)}'
-          : 'Next meter reading: ${DateFormat('d MMM').format(nextRead)}';
+      _updateNextMeterReading(topUps);
 
       _buildActivityFeed(topUps);
       _updateWeeklyTrend(topUps);
@@ -130,9 +131,7 @@ class RentSmartUtilityDashboardController extends BaseController {
         }
       }
 
-      if (activities.isEmpty) {
-        _seedDefaultActivities();
-      }
+      _computeStatusAndTrust(topUps);
     } finally {
       loading.value = false;
     }
@@ -218,56 +217,73 @@ class RentSmartUtilityDashboardController extends BaseController {
     activities.assignAll(items);
   }
 
-  void _seedDefaultActivities() {
-    activities.assignAll(const [
-      UtilityActivityItem(
-        type: UtilityActivityType.lukuTopUp,
-        title: 'LUKU Top-up',
-        subtitle: 'Via M-Pesa · 14:20',
-        impactLabel: '+50.0 kWh',
-        amountLabel: 'TZS 35,000',
-        isPositive: true,
-      ),
-      UtilityActivityItem(
-        type: UtilityActivityType.waterBill,
-        title: 'Water Bill',
-        subtitle: 'Auto-Debit · Oct 12',
-        impactLabel: '1,200 L',
-        amountLabel: 'TZS 12,500',
-        isPositive: false,
-      ),
-      UtilityActivityItem(
-        type: UtilityActivityType.lukuTopUp,
-        title: 'LUKU Top-up',
-        subtitle: 'Via Airtel Money · Oct 05',
-        impactLabel: '+100.0 kWh',
-        amountLabel: 'TZS 70,000',
-        isPositive: true,
-      ),
-    ]);
-  }
-
   void _updateWeeklyTrend(List<RentUtilityTopUpRecord> topUps) {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day)
         .subtract(Duration(days: now.weekday - 1));
     final totals = List<double>.filled(7, 0);
-    bool any = false;
     for (final t in topUps) {
-      final d = DateTime.tryParse(t.dateIso);
-      if (d == null) continue;
+      final d = _parseDateOrCreated(t.dateIso, t.createdAtMs);
       final day = DateTime(d.year, d.month, d.day);
       final diff = day.difference(start).inDays;
       if (diff >= 0 && diff < 7) {
         totals[diff] += t.unitsAdded;
-        any = true;
       }
     }
-    if (any) {
-      weeklyUsage.assignAll(totals);
-    } else {
-      weeklyUsage.assignAll(const [14, 18, 16, 26, 30, 36, 10]);
+    weeklyUsage.assignAll(totals);
+  }
+
+  DateTime _parseDateOrCreated(String iso, int createdMs) {
+    final raw = iso.trim();
+    if (raw.length >= 10 && raw[4] == '-' && raw[7] == '-') {
+      final y = int.tryParse(raw.substring(0, 4));
+      final m = int.tryParse(raw.substring(5, 7));
+      final d = int.tryParse(raw.substring(8, 10));
+      if (y != null && m != null && d != null) {
+        return DateTime(y, m, d);
+      }
     }
+    return DateTime.fromMillisecondsSinceEpoch(createdMs);
+  }
+
+  void _updateNextMeterReading(List<RentUtilityTopUpRecord> topUps) {
+    DateTime base = DateTime.now();
+    if (topUps.isNotEmpty) {
+      final latest = topUps.first;
+      base = _parseDateOrCreated(latest.dateIso, latest.createdAtMs);
+    }
+    final nextRead = base.add(const Duration(days: 7));
+    nextMeterReadingLabel.value = _isSw
+        ? 'Soma ijayo ya mita: ${DateFormat('d MMM').format(nextRead)}'
+        : 'Next meter reading: ${DateFormat('d MMM').format(nextRead)}';
+  }
+
+  void _computeStatusAndTrust(List<RentUtilityTopUpRecord> topUps) {
+    final now = DateTime.now();
+    DateTime? latestDate;
+    if (topUps.isNotEmpty) {
+      latestDate = _parseDateOrCreated(topUps.first.dateIso, topUps.first.createdAtMs);
+    }
+    final recencyDays =
+        latestDate == null ? 999 : now.difference(latestDate).inDays;
+    final hasAnyBalance = lukuUnits.value > 0 || waterLiters.value > 0;
+    final isLow =
+        lukuCoverageDays.value <= 2 || (waterCapacity.value > 0 && waterProgress < 0.2);
+
+    if (!hasAnyBalance) {
+      globalStatus.value = _isSw ? 'Hakuna data' : 'No Data';
+    } else if (isLow || recencyDays > 14) {
+      globalStatus.value = _isSw ? 'Inahitaji kujazwa' : 'Needs Top-up';
+    } else {
+      globalStatus.value = _isSw ? 'Imara' : 'Healthy';
+    }
+
+    var score = 10.0;
+    if (!hasAnyBalance) score -= 4.5;
+    if (isLow) score -= 2.5;
+    if (recencyDays > 7) score -= 1.5;
+    if (recencyDays > 14) score -= 1.0;
+    trustScore.value = score.clamp(0.0, 10.0);
   }
 
   double get lukuProgress => lukuCapacity.value <= 0
@@ -294,6 +310,7 @@ class RentSmartUtilityDashboardController extends BaseController {
       provider: provider,
       notes: notes,
       propertyLabel: propertyLabel.value,
+      propertyRef: propertyRef.value,
       dateIso: when.toIso8601String(),
     );
     await loadAll();
@@ -320,6 +337,7 @@ class RentSmartUtilityDashboardController extends BaseController {
       provider: provider,
       notes: notes,
       propertyLabel: propertyLabel.value,
+      propertyRef: propertyRef.value,
       dateIso: when.toIso8601String(),
     );
     await loadAll();
@@ -333,6 +351,20 @@ class RentSmartUtilityDashboardController extends BaseController {
   void onViewAllActivity() {
     showSuccessMessage(
       _isSw ? 'Inapakia historia kamili' : 'Loading full utility history',
+    );
+  }
+
+  void openLukuUsageGraph() {
+    Get.toNamed(
+      Routes.RENT_UTILITY_USAGE_GRAPH,
+      parameters: {'kind': RentUtilityKind.luku},
+    );
+  }
+
+  void openWaterUsageGraph() {
+    Get.toNamed(
+      Routes.RENT_UTILITY_USAGE_GRAPH,
+      parameters: {'kind': RentUtilityKind.water},
     );
   }
 }

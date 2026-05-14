@@ -32,7 +32,7 @@ class SplashView extends BaseView<SplashController> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Paa Yangu',
+              'Host Bora',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,

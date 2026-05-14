@@ -77,7 +77,8 @@ class RentHubView extends BaseView<RentHubController> {
                   InkWell(
                     onTap: () async {
                       await controller.workspaceContext.switchWorkspace('bnb');
-                      Get.offNamed(Routes.HOME);
+                      // Return to BnB shell so bottom navigation is rebuilt.
+                      Get.offAllNamed(Routes.MAIN);
                     },
                     borderRadius: BorderRadius.circular(4),
                     child: Padding(
@@ -122,6 +123,8 @@ class RentHubView extends BaseView<RentHubController> {
               _netProfitCard(),
               const SizedBox(height: 12),
               _incomeExpenseRow(context),
+              const SizedBox(height: 12),
+              _managePaymentsShortcut(context),
               const SizedBox(height: 20),
               _revenueChartCard(context),
               const SizedBox(height: 16),
@@ -289,6 +292,40 @@ class RentHubView extends BaseView<RentHubController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _managePaymentsShortcut(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: isDark ? const Color(0xFF2C2C2E) : _HubTheme.cardCream,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () => Get.toNamed(Routes.RENT_MANAGE_PAYMENTS),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Icon(Icons.receipt_long_outlined,
+                  color: isDark ? const Color(0xFF4DB6AC) : _HubTheme.teal, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  appLocalization.managePayments,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: isDark ? const Color(0xFF4DB6AC) : _HubTheme.teal,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  color: isDark ? const Color(0xFF4DB6AC) : _HubTheme.teal),
+            ],
+          ),
+        ),
       ),
     );
   }

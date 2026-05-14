@@ -30,6 +30,7 @@ abstract class Routes {
   static const PASSWORD_UPDATED = _Paths.PASSWORD_UPDATED;
   static const ADD_LISTING = _Paths.ADD_LISTING;
   static const EDIT_LISTING = _Paths.EDIT_LISTING;
+  static const EDIT_UNIT = _Paths.EDIT_UNIT;
   static const TEAM_AND_STAFF = _Paths.TEAM_AND_STAFF;
   static const BOOKING_DETAILS = _Paths.BOOKING_DETAILS;
   static const FINANCIAL_OVERVIEW = _Paths.FINANCIAL_OVERVIEW;
@@ -74,6 +75,7 @@ abstract class Routes {
   static const RENT_LISTING_ANALYTICS_DASHBOARD = _Paths.RENT_LISTING_ANALYTICS_DASHBOARD;
   static const RENT_ADD_TENANT_FORM = _Paths.RENT_ADD_TENANT_FORM;
   static const RENT_ADD_INCOME_FORM = _Paths.RENT_ADD_INCOME_FORM;
+  static const RENT_MANAGE_PAYMENTS = _Paths.RENT_MANAGE_PAYMENTS;
   static const RENT_ADD_NEW_EXPENSE = _Paths.RENT_ADD_NEW_EXPENSE;
   static const RENT_MONTHLY_PL_SUMMARY = _Paths.RENT_MONTHLY_PL_SUMMARY;
   static const RENT_STAFF_PAYROLL_DETAILS = _Paths.RENT_STAFF_PAYROLL_DETAILS;
@@ -95,6 +97,7 @@ abstract class Routes {
   static const RENT_DEFINE_ACTIVE_LOYALTY = _Paths.RENT_DEFINE_ACTIVE_LOYALTY;
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = _Paths.RENT_ACTIVE_LOYALTY_PROGRAMS;
   static const RENT_SMART_UTILITY_DASHBOARD = _Paths.RENT_SMART_UTILITY_DASHBOARD;
+  static const RENT_UTILITY_USAGE_GRAPH = _Paths.RENT_UTILITY_USAGE_GRAPH;
   static const RENT_NOTIFICATION_CENTER_MARK_ALL = _Paths.RENT_NOTIFICATION_CENTER_MARK_ALL;
   static const RENT_NO_NOTIFICATIONS_EMPTY = _Paths.RENT_NO_NOTIFICATIONS_EMPTY;
   static const RENT_CONCIERGE_INBOX = _Paths.RENT_CONCIERGE_INBOX;
@@ -133,6 +136,7 @@ abstract class _Paths {
   static const PASSWORD_UPDATED = '/password-updated';
   static const ADD_LISTING = '/add-listing';
   static const EDIT_LISTING = '/edit-listing';
+  static const EDIT_UNIT = '/edit-unit';
   static const TEAM_AND_STAFF = '/team-and-staff';
   static const BOOKING_DETAILS = '/booking-details';
   static const FINANCIAL_OVERVIEW = '/financial-overview';
@@ -177,6 +181,7 @@ abstract class _Paths {
   static const RENT_LISTING_ANALYTICS_DASHBOARD = '/rent/listing-analytics-dashboard';
   static const RENT_ADD_TENANT_FORM = '/rent/add-tenant-form';
   static const RENT_ADD_INCOME_FORM = '/rent/add-income-form';
+  static const RENT_MANAGE_PAYMENTS = '/rent/manage-payments';
   static const RENT_ADD_NEW_EXPENSE = '/rent/add-new-expense';
   static const RENT_MONTHLY_PL_SUMMARY = '/rent/monthly-pl-summary';
   static const RENT_STAFF_PAYROLL_DETAILS = '/rent/staff-payroll-details';
@@ -196,6 +201,7 @@ abstract class _Paths {
   static const RENT_DEFINE_ACTIVE_LOYALTY = '/rent/define-active-loyalty';
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = '/rent/active-loyalty-programs';
   static const RENT_SMART_UTILITY_DASHBOARD = '/rent/smart-utility-dashboard';
+  static const RENT_UTILITY_USAGE_GRAPH = '/rent/utility-usage-graph';
   static const RENT_NOTIFICATION_CENTER_MARK_ALL = '/rent/notification-center-mark-all';
   static const RENT_NO_NOTIFICATIONS_EMPTY = '/rent/no-notifications-empty';
   static const RENT_CONCIERGE_INBOX = '/rent/concierge-inbox';

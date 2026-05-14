@@ -285,6 +285,21 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
             ),
           ),
           const SizedBox(height: 12),
+          Text(
+            _isSw ? 'Maelezo' : 'Description',
+            style: sectionTitleStyle,
+          ),
+          const SizedBox(height: 7),
+          _field(
+            isDark,
+            controller.notesController,
+            hint: _isSw
+                ? 'Andika maelezo ya gharama (si lazima)'
+                : 'Add expense description (optional)',
+            isMultiline: true,
+            minHeight: 92,
+          ),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(

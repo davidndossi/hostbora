@@ -109,6 +109,11 @@ class RentOthersTabView extends BaseView<RentOthersTabController> {
   @override
   Widget body(BuildContext context) {
     final items = <_OthersLink>[
+      _OthersLink(
+        appLocalization.managePayments,
+        Icons.receipt_long_outlined,
+        Routes.RENT_MANAGE_PAYMENTS,
+      ),
       _OthersLink(_isSw ? 'Kikasha' : 'Inbox', Icons.inbox_outlined, Routes.RENT_CONCIERGE_INBOX),
       _OthersLink(_isSw ? 'Panga Matengenezo' : 'Schedule Maintenance', Icons.engineering_outlined, Routes.RENT_SCHEDULE_MAINTENANCE_FORM),
       _OthersLink(_isSw ? 'Bainisha Tozo za Mpangaji' : 'Define Tenant Charges', Icons.payments_outlined, Routes.RENT_DEFINE_TENANT_CHARGES),

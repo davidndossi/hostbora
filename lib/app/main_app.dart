@@ -32,7 +32,7 @@ class _MainAppState extends State<MainApp> {
   bool _loading = true;
 
   /// BnB shell vs Rent shell when session is restored (matches [PreferenceManager.keyWorkspaceType]).
-  String _sessionHomeRoute = Routes.RENT_HUB;
+  String _sessionHomeRoute = Routes.MAIN;
 
   final PreferenceManager _preferenceManager = Get.put<PreferenceManager>(
     PreferenceManagerImpl(),
@@ -86,7 +86,7 @@ class _MainAppState extends State<MainApp> {
             .getString(PreferenceManager.keyPinCode, defaultValue: '')
             .timeout(_bootstrapTimeout),
         _preferenceManager
-            .getString(PreferenceManager.keyWorkspaceType, defaultValue: 'rent')
+            .getString(PreferenceManager.keyWorkspaceType, defaultValue: 'bnb')
             .timeout(_bootstrapTimeout),
       ]);
       final loggedIn = results[0] as bool;
@@ -123,7 +123,7 @@ class _MainAppState extends State<MainApp> {
         _isLoggedIn = false;
         _hasSeenOnboarding = true; // on error, skip onboarding to avoid loop
         _hasValidPin = false;
-        _sessionHomeRoute = Routes.RENT_HUB;
+        _sessionHomeRoute = Routes.MAIN;
         _loading = false;
       });
     }

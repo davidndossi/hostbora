@@ -164,8 +164,8 @@ void requestUserPermission() async {
 
 void main() async {
   EnvConfig prodConfig = EnvConfig(
-    appName: 'Paa Yangu',
-    baseUrl: 'http://167.86.89.92:8081/paa_yangu-v1',
+    appName: 'Host Bora',
+    baseUrl: 'https://hostbora.co.tz:8444',
     shouldCollectCrashLog: true,
   );
 

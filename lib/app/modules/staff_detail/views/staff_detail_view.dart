@@ -24,12 +24,6 @@ class StaffDetailView extends BaseView<StaffDetailController> {
     return CustomAppBar(
       appBarTitleText: appLocalization.staffDetail,
       isCentered: true,
-      actions: [
-        IconButton(
-          onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined),
-        ),
-      ],
     );
   }
 

@@ -43,7 +43,7 @@ class AboutView extends BaseView<AboutController> {
           ),
           const SizedBox(height: AppValues.halfPadding),
           Text(
-            'Connect with your community. Paa Yangu helps you stay in touch with local groups, get updates, and participate in community life.',
+            'Connect with your community. Host Bora helps you stay in touch with local groups, get updates, and participate in community life.',
             style: TextStyle(
               fontSize: 16,
               height: 1.5,

@@ -33,7 +33,7 @@ class PrivacyView extends BaseView<PrivacyController> {
           const SizedBox(height: AppValues.halfPadding),
           Text(
             'Last updated: 2025\n\n'
-            'Paa Yangu respects your privacy. We collect only what is needed to provide the service: account information, community membership, and usage necessary for features like notifications.\n\n'
+            'Host Bora respects your privacy. We collect only what is needed to provide the service: account information, community membership, and usage necessary for features like notifications.\n\n'
             'Your data is used to run the app and improve your experience. We do not sell your personal information. You can manage notification and privacy choices in Settings.',
             style: TextStyle(
               fontSize: 15,

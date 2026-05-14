@@ -7,9 +7,11 @@ import 'package:intl/intl.dart';
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
+import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
-import '../../../../data/local/service/workspace_context_service.dart';
+import '../../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../../data/model/add_expense_request.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
 
 class RentAddNewExpenseController extends BaseController {
@@ -17,16 +19,18 @@ class RentAddNewExpenseController extends BaseController {
       : _expenseLocal = Get.find<ExpenseLocalDataSource>(),
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _tenantLocal = Get.find<TenantLocalDataSource>(),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
-        ),
-        _workspaceContext = Get.find<WorkspaceContextService>();
+        );
 
   final ExpenseLocalDataSource _expenseLocal;
   final PropertyLocalDataSource _propertyLocal;
   final TenantLocalDataSource _tenantLocal;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
   final PreferenceManager _preferenceManager;
-  final WorkspaceContextService _workspaceContext;
 
   final tenantController = TextEditingController();
   final amountController = TextEditingController();
@@ -175,10 +179,9 @@ class RentAddNewExpenseController extends BaseController {
 
   Future<void> _loadProperties() async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
-    final workspaceType = await _workspaceContext.getWorkspaceType();
     final rows = await _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
-      workspaceType: workspaceType,
+      workspaceType: 'rent',
     );
     _propertyRows = rows;
     final options = rows
@@ -245,7 +248,7 @@ class RentAddNewExpenseController extends BaseController {
     final unitLine = _optionalUnitNotesLine();
     final baseNotes = StringBuffer('Property: $property');
     if (unitLine.isNotEmpty) {
-      baseNotes.write(" ");
+      baseNotes.write(", ");
       baseNotes.writeln(unitLine);
     }
     final extra = notesController.text.trim();
@@ -253,19 +256,42 @@ class RentAddNewExpenseController extends BaseController {
       baseNotes.write(" ");
       baseNotes.writeln(extra);
     }
-    final workspaceType = await _workspaceContext.getWorkspaceType();
     await _expenseLocal.insert(
       tenantName: tenantController.text.trim(),
       amountValue: amount,
       datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
       category: selectedExpense,
-      workspaceType: workspaceType,
+      workspaceType: 'rent',
       notes: baseNotes.toString().trim(),
       apartment: property,
       apartmentUnit: unitName,
     );
 
-    showSuccessMessage('Expense saved offline');
+    final request = AddExpenseRequest(
+      amount: amount,
+      category: selectedExpense,
+      expenseDate: DateFormat('yyyy-MM-dd').format(paidDate),
+      vendor: tenantController.text.trim().isNotEmpty
+          ? tenantController.text.trim()
+          : property,
+      taxDeductible: true,
+      description: baseNotes.toString().trim(),
+    );
+    await _syncQueue.enqueue(
+      entityType: 'expense',
+      operation: 'create',
+      payloadJson: jsonEncode(request.toJson()),
+    );
+    await _syncWorker.runNow(maxItems: 20);
+    final pending = await _syncQueue.pendingCountByEntity(
+      entityType: 'expense',
+      operation: 'create',
+    );
+    if (pending > 0) {
+      showSuccessMessage('Expense saved offline. Will sync when internet is available.');
+    } else {
+      showSuccessMessage('Expense saved and synced.');
+    }
     Get.back(result: true);
   }
 

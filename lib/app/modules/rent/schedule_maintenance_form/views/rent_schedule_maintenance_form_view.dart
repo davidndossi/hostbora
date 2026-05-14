@@ -148,7 +148,7 @@ class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFo
               decoration: InputDecoration(
                 filled: true,
                 fillColor: fill,
-                hintText: _isSw ? 'dd/mm/yyyy' : 'mm/dd/yyyy',
+                hintText: _isSw ? 'dd/MM/yyyy' : 'dd/MM/yyyy',
                 hintStyle: TextStyle(color: hintColor),
                 suffixIcon: Icon(Icons.calendar_today_outlined, color: _teal.withValues(alpha: 0.85), size: 20),
                 border: OutlineInputBorder(

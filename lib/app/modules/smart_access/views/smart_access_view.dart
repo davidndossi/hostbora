@@ -34,12 +34,6 @@ class SmartAccessView extends BaseView<SmartAccessController> {
     return CustomAppBar(
       appBarTitleText: appLocalization.smartAccess,
       isCentered: true,
-      actions: [
-        IconButton(
-          onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined),
-        ),
-      ],
     );
   }
 

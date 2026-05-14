@@ -197,6 +197,24 @@ class RentTenantLedgerOccupancyController extends BaseController {
     );
   }
 
+  void openSendSmsShortcut() {
+    final rec = tenantRecord.value;
+    final phone = rec?.phoneNumber.trim() ?? '';
+    if (phone.isEmpty) {
+      showErrorMessage('Tenant phone number not available');
+      return;
+    }
+    Get.toNamed(
+      Routes.SEND_SMS,
+      arguments: {
+        'phones': [phone],
+        'tenantIds': [rec?.id ?? tenantId.value],
+        'propertyRef': rec?.propertyRef ?? '',
+        'contextLabel': 'Message ${displayTenantName.trim()}',
+      },
+    );
+  }
+
   Future<void> _loadTenantAndCheckPeriod() async {
     final byId = tenantId.value > 0 ? await _tenantLocal.findById(tenantId.value) : null;
     final byRoute = await _tenantLocal.findByNameAndProperty(

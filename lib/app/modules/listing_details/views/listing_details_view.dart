@@ -31,20 +31,12 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) {
-    const placeholder = CustomAppBar(appBarTitleText: '', isCentered: true);
-    return PreferredSize(
-      preferredSize: placeholder.preferredSize,
-      child: Obx(
-        () => CustomAppBar(
-          appBarTitleText: controller.listingTitle.value.isEmpty
-              ? (_isSw ? 'Maelezo ya Mali' : 'Listing Details')
-              : controller.listingTitle.value,
-          isCentered: true,
-        ),
-      ),
-    );
-  }
+  PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
+    appBarTitleText: controller.listingTitle.value.isEmpty
+        ? (_isSw ? 'Maelezo ya Mali' : 'Listing Details')
+        : controller.listingTitle.value,
+    isCentered: true,
+  );
 
   @override
   Widget body(BuildContext context) {
@@ -96,6 +88,8 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             _staff(u),
             const SizedBox(height: 12),
             _warning(u),
+            const SizedBox(height: 14),
+            _removeButton()
           ],
         ),
       );
@@ -182,34 +176,117 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     );
   }
 
+  // Widget _estimationCostsLink(_ListingUi u) {
+  //   return Material(
+  //     color: u.card,
+  //     borderRadius: BorderRadius.circular(14),
+  //     child: InkWell(
+  //       onTap: controller.onAddPropertyEstimationCosts,
+  //       borderRadius: BorderRadius.circular(14),
+  //       child: Container(
+  //         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+  //         decoration: BoxDecoration(
+  //           borderRadius: BorderRadius.circular(14),
+  //           border: Border.all(color: u.line),
+  //         ),
+  //         child: Row(
+  //           children: [
+  //             Icon(Icons.calculate_outlined, color: AppColors.colorPrimary, size: 22),
+  //             const SizedBox(width: 10),
+  //             Expanded(
+  //               child: Text(
+  //                 _isSw ? 'Ongeza makadirio ya gharama za mali' : 'Add Property Estimation Costs',
+  //                 style: TextStyle(
+  //                   fontSize: 14,
+  //                   fontWeight: FontWeight.w700,
+  //                   color: AppColors.colorPrimary,
+  //                 ),
+  //               ),
+  //             ),
+  //             Icon(Icons.chevron_right_rounded, color: u.muted, size: 22),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
   Widget _estimationCostsLink(_ListingUi u) {
     return Material(
       color: u.card,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: controller.onAddPropertyEstimationCosts,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: u.line),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.colorPrimary.withOpacity(0.18),
+            ),
           ),
           child: Row(
             children: [
-              Icon(Icons.calculate_outlined, color: AppColors.colorPrimary, size: 22),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  _isSw ? 'Ongeza makadirio ya gharama za mali' : 'Add Property Estimation Costs',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.colorPrimary,
-                  ),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.colorPrimary.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.calculate_outlined,
+                  color: AppColors.colorPrimary,
+                  size: 22,
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: u.muted, size: 22),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isSw
+                          ? 'Makadirio ya gharama'
+                          : 'Property Estimation Costs',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: u.text,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _isSw
+                          ? 'Ongeza gharama za ujenzi, matengenezo au huduma'
+                          : 'Add construction, maintenance or service costs',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: u.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: u.line.withOpacity(0.45),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.colorPrimary,
+                  size: 22,
+                ),
+              ),
             ],
           ),
         ),
@@ -442,16 +519,21 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             : const Color(0xFF6B7280);
     final badgeText = due ? 'DUE DATE' : occupied ? 'OCCUPIED' : 'SHORT';
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
-      decoration: BoxDecoration(
-        color: u.card,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: u.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        onTap: () => controller.onEditUnitDetails(row),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+          decoration: BoxDecoration(
+            color: u.card,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: u.line),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           Row(
             children: [
               Expanded(
@@ -528,7 +610,9 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 ),
               ),
             ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -685,6 +769,30 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _removeButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: controller.onDeleteProperty,
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFFB91C1C),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          padding: EdgeInsets.all(AppValues.padding),
+        ),
+        icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+        label: Text(
+          _isSw ? 'FUTA MJENGO' : 'REMOVE PROPERTY',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

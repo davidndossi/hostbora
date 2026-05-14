@@ -88,5 +88,13 @@ class PropertyMembersLocalDataSource {
     );
     return maps.map(PropertyMemberRecord.fromMap).toList();
   }
+
+  /// Removes all membership rows for [propertyRef] (any workspace).
+  Future<int> deleteAllForPropertyRef(String propertyRef) async {
+    final r = propertyRef.trim();
+    if (r.isEmpty) return 0;
+    final db = await database;
+    return db.delete(_table, where: 'property_ref = ?', whereArgs: [r]);
+  }
 }
 

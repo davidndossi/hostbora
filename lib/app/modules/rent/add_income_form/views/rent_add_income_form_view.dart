@@ -37,7 +37,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
     final month = picked.month.toString().padLeft(2, '0');
     final day = picked.day.toString().padLeft(2, '0');
     final year = picked.year.toString();
-    controller.datePaidController.text = '$month/$day/$year';
+    controller.datePaidController.text = '$day/$month/$year';
   }
 
   @override
@@ -181,7 +181,7 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
           _field(
             isDark,
             controller.datePaidController,
-            hint: _isSw ? 'dd/mm/yyyy' : 'mm/dd/yyyy',
+            hint: _isSw ? 'dd/MM/yyyy' : 'dd/MM/yyyy',
             suffix: Icons.calendar_today_outlined,
             readOnly: true,
             onTap: () => _pickDatePaid(context),

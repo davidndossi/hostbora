@@ -59,6 +59,14 @@ class RentTenantResidencyPaymentTrackerView
     );
   }
 
+  @override
+  Widget? floatingActionButton() {
+    return FloatingActionButton(
+      onPressed: () => controller.openSendSmsForFilteredTenants,
+      child: const Icon(Icons.chat_bubble_outline),
+    );
+  }
+
   Widget _overviewMetricsCard(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? const Color(0xFF2C2C2E) : Colors.white;
@@ -396,12 +404,11 @@ class RentTenantResidencyPaymentTrackerView
               const SizedBox(height: 14),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: t.onSchedule
-                        ? _onScheduleBadge(isDark: isDark)
-                        : _statusLegend(isDark: isDark),
-                  ),
+                  t.onSchedule
+                      ? _onScheduleBadge(isDark: isDark)
+                      : _statusLegend(isDark: isDark),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [

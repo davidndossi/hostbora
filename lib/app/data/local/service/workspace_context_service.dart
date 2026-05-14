@@ -14,12 +14,12 @@ class WorkspaceContextService extends GetxService {
 
   final PreferenceManager _preferenceManager;
 
-  final currentWorkspace = 'rent'.obs;
+  final currentWorkspace = 'bnb'.obs;
 
   Future<WorkspaceContextService> init() async {
     final saved = await _preferenceManager.getString(
       PreferenceManager.keyWorkspaceType,
-      defaultValue: 'rent',
+      defaultValue: 'bnb',
     );
     currentWorkspace.value = _normalize(saved);
     return this;
@@ -30,7 +30,7 @@ class WorkspaceContextService extends GetxService {
     if (value.isEmpty) {
       final saved = await _preferenceManager.getString(
         PreferenceManager.keyWorkspaceType,
-        defaultValue: 'rent',
+        defaultValue: 'bnb',
       );
       currentWorkspace.value = _normalize(saved);
     }
@@ -47,7 +47,7 @@ class WorkspaceContextService extends GetxService {
   Future<void> offAllToPreferredWorkspace({Map<String, dynamic>? arguments}) async {
     final saved = await _preferenceManager.getString(
       PreferenceManager.keyWorkspaceType,
-      defaultValue: 'rent',
+      defaultValue: 'bnb',
     );
     await switchWorkspace(_normalize(saved));
     if (currentWorkspace.value == 'bnb') {

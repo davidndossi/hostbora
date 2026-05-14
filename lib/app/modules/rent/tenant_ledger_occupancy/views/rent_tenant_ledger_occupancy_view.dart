@@ -131,12 +131,12 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
     final tenancyMonth = (controller.currentStayMonths + 1).clamp(1, 999);
     final tail = _isSw
         ? '. Kwa sasa anaingia mwezi wa $tenancyMonth wa upangaji.'
-        : '. Currently entering the ${_englishOrdinalMonth(tenancyMonth)} month of professional tenancy.';
+        : '. Currently entering the ${_englishOrdinalMonth(tenancyMonth)} month of tenancy.';
     return RichText(
       text: TextSpan(
         style: TextStyle(fontSize: 14, height: 1.45, color: u.onSurfaceSecondary),
         children: [
-          TextSpan(text: _isSw ? 'Makazi ya hadhi katika ' : 'Executive residency at '),
+          TextSpan(text: _isSw ? 'Mpangaji ' : 'Tenant at '),
           TextSpan(
             text: bold,
             style: TextStyle(fontWeight: FontWeight.w800, color: u.onSurface),
@@ -509,6 +509,24 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
           ),
         ),
         const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: controller.openSendSmsShortcut,
+            icon: const Icon(Icons.sms_outlined, size: 20),
+            label: Text(
+              _isSw ? 'TUMA SMS / WHATSAPP' : 'SEND SMS / WHATSAPP',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: u.dark ? const Color(0xFF80CBC4) : _LedgerUi.teal,
+              side: BorderSide(color: u.border),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
         Obx(
           () => Container(
             width: double.infinity,
@@ -538,7 +556,10 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                     OutlinedButton.icon(
                       onPressed: controller.pickAndUploadSignedContract,
                       icon: const Icon(Icons.upload_file, size: 18),
-                      label: Text(_isSw ? 'Pakia PDF/Word' : 'Upload PDF/Word'),
+                      label: Text(
+                        _isSw ? 'Pakia PDF/Word' : 'Upload PDF/Word',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5)
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: u.dark ? const Color(0xFF80CBC4) : _LedgerUi.teal,
                         side: BorderSide(color: u.border),
@@ -547,7 +568,10 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                     OutlinedButton.icon(
                       onPressed: controller.openSignedContract,
                       icon: const Icon(Icons.open_in_new, size: 18),
-                      label: Text(_isSw ? 'Fungua' : 'Open'),
+                      label: Text(
+                        _isSw ? 'Fungua' : 'Open',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5)
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: u.dark ? const Color(0xFF80CBC4) : _LedgerUi.teal,
                         side: BorderSide(color: u.border),
@@ -556,7 +580,10 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                     OutlinedButton.icon(
                       onPressed: controller.openEditLeaseTermsDialog,
                       icon: const Icon(Icons.edit_calendar_outlined, size: 18),
-                      label: Text(_isSw ? 'Hariri masharti ya mkataba' : 'Edit lease terms'),
+                      label: Text(
+                        _isSw ? 'Hariri masharti ya mkataba' : 'Edit lease terms',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5)
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: u.dark ? const Color(0xFF80CBC4) : _LedgerUi.teal,
                         side: BorderSide(color: u.border),

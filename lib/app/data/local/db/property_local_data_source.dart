@@ -78,6 +78,7 @@ class PropertyRecord {
 
 class PropertyLocalDataSource {
   static const _table = AppLocalDatabase.propertiesTable;
+  static const _defaultChunkSize = 200;
 
   Database? _db;
 
@@ -146,9 +147,39 @@ class PropertyLocalDataSource {
   }
 
   Future<List<PropertyRecord>> getAllNewestFirst() async {
+    return getAllNewestFirstChunked();
+  }
+
+  Future<List<PropertyRecord>> getAllNewestFirstPage({
+    int limit = _defaultChunkSize,
+    int offset = 0,
+  }) async {
     final db = await database;
-    final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
+    final safeLimit = limit <= 0 ? _defaultChunkSize : limit;
+    final safeOffset = offset < 0 ? 0 : offset;
+    final maps = await db.query(
+      _table,
+      orderBy: 'created_at_ms DESC',
+      limit: safeLimit,
+      offset: safeOffset,
+    );
     return maps.map(PropertyRecord.fromMap).toList();
+  }
+
+  Future<List<PropertyRecord>> getAllNewestFirstChunked({
+    int chunkSize = _defaultChunkSize,
+  }) async {
+    final safeChunk = chunkSize <= 0 ? _defaultChunkSize : chunkSize;
+    final out = <PropertyRecord>[];
+    var offset = 0;
+    while (true) {
+      final page = await getAllNewestFirstPage(limit: safeChunk, offset: offset);
+      if (page.isEmpty) break;
+      out.addAll(page);
+      if (page.length < safeChunk) break;
+      offset += page.length;
+    }
+    return out;
   }
 
   // Future<List<PropertyRecord>> getAllVisibleNewestFirst({
@@ -179,13 +210,29 @@ class PropertyLocalDataSource {
     required String userId,
     String workspaceType = 'rent',
   }) async {
+    return getAllVisibleNewestFirstChunked(
+      userId: userId,
+      workspaceType: workspaceType,
+    );
+  }
+
+  Future<List<PropertyRecord>> getAllVisibleNewestFirstPage({
+    required String userId,
+    String workspaceType = 'rent',
+    int limit = _defaultChunkSize,
+    int offset = 0,
+  }) async {
     final db = await database;
+    final safeLimit = limit <= 0 ? _defaultChunkSize : limit;
+    final safeOffset = offset < 0 ? 0 : offset;
     if (userId.trim().isEmpty) {
       final maps = await db.query(
         _table,
         where: 'workspace_type = ? OR workspace_type = ""',
         whereArgs: [workspaceType],
         orderBy: 'created_at_ms DESC',
+        limit: safeLimit,
+        offset: safeOffset,
       );
       return maps.map(PropertyRecord.fromMap).toList();
     }
@@ -209,10 +256,34 @@ class PropertyLocalDataSource {
           )
         )
       ORDER BY p.created_at_ms DESC
+      LIMIT ? OFFSET ?
       ''',
-      [workspaceType, userId, userId, workspaceType],
+      [workspaceType, userId, userId, workspaceType, safeLimit, safeOffset],
     );
     return maps.map(PropertyRecord.fromMap).toList();
+  }
+
+  Future<List<PropertyRecord>> getAllVisibleNewestFirstChunked({
+    required String userId,
+    String workspaceType = 'rent',
+    int chunkSize = _defaultChunkSize,
+  }) async {
+    final safeChunk = chunkSize <= 0 ? _defaultChunkSize : chunkSize;
+    final out = <PropertyRecord>[];
+    var offset = 0;
+    while (true) {
+      final page = await getAllVisibleNewestFirstPage(
+        userId: userId,
+        workspaceType: workspaceType,
+        limit: safeChunk,
+        offset: offset,
+      );
+      if (page.isEmpty) break;
+      out.addAll(page);
+      if (page.length < safeChunk) break;
+      offset += page.length;
+    }
+    return out;
   }
 
   Future<void> deleteById(int id) async {

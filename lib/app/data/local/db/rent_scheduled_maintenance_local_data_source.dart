@@ -13,6 +13,8 @@ class RentScheduledMaintenanceRecord {
     required this.notificationId,
     required this.syncStatus,
     required this.createdAtMs,
+    this.propertyRef = '',
+    this.apartmentUnitId = '',
   });
 
   final int id;
@@ -24,6 +26,10 @@ class RentScheduledMaintenanceRecord {
   final int notificationId;
   final String syncStatus;
   final int createdAtMs;
+  /// Hub id / `local_<id>` — matches [PropertyRecord.propertyRef].
+  final String propertyRef;
+  /// Matches [ApartmentUnitDraft.unitId] when scoped to a unit.
+  final String apartmentUnitId;
 
   factory RentScheduledMaintenanceRecord.fromMap(Map<String, Object?> m) {
     return RentScheduledMaintenanceRecord(
@@ -36,12 +42,14 @@ class RentScheduledMaintenanceRecord {
       notificationId: m['notification_id'] as int? ?? 0,
       syncStatus: m['sync_status'] as String? ?? 'pending',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
+      propertyRef: m['property_ref'] as String? ?? '',
+      apartmentUnitId: m['apartment_unit_id'] as String? ?? '',
     );
   }
 }
 
 class RentScheduledMaintenanceLocalDataSource {
-  static const _table = AppLocalDatabase.rentScheduledMaintenanceTable;
+  static const _table = AppLocalDatabase.scheduledMaintenanceTable;
 
   Database? _db;
 
@@ -59,6 +67,8 @@ class RentScheduledMaintenanceLocalDataSource {
     required String priority,
     required int notificationId,
     required String syncStatus,
+    String propertyRef = '',
+    String apartmentUnitId = '',
   }) async {
     final db = await database;
     return db.insert(_table, {
@@ -69,6 +79,8 @@ class RentScheduledMaintenanceLocalDataSource {
       'priority': priority,
       'notification_id': notificationId,
       'sync_status': syncStatus,
+      'property_ref': propertyRef.trim(),
+      'apartment_unit_id': apartmentUnitId.trim(),
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });
   }

@@ -17,6 +17,7 @@ class RentUtilityTopUpRecord {
     required this.provider,
     required this.notes,
     required this.propertyLabel,
+    required this.propertyRef,
     required this.dateIso,
     required this.createdAtMs,
   });
@@ -32,6 +33,7 @@ class RentUtilityTopUpRecord {
   final String provider;
   final String notes;
   final String propertyLabel;
+  final String propertyRef;
   final String dateIso;
   final int createdAtMs;
 
@@ -44,6 +46,7 @@ class RentUtilityTopUpRecord {
       provider: m['provider'] as String? ?? '',
       notes: m['notes'] as String? ?? '',
       propertyLabel: m['property_label'] as String? ?? '',
+      propertyRef: m['property_ref'] as String? ?? '',
       dateIso: m['date_iso'] as String? ?? '',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
     );
@@ -68,6 +71,7 @@ class RentUtilityTopUpLocalDataSource {
     String provider = '',
     String notes = '',
     String propertyLabel = '',
+    String propertyRef = '',
     required String dateIso,
   }) async {
     final db = await database;
@@ -78,6 +82,7 @@ class RentUtilityTopUpLocalDataSource {
       'provider': provider,
       'notes': notes,
       'property_label': propertyLabel,
+      'property_ref': propertyRef.trim(),
       'date_iso': dateIso,
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });

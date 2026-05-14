@@ -8,12 +8,12 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_listing_units_sync.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/draft_listing_store.dart';
-import '../../../data/local/pending_listings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
-import '../../../data/local/service/workspace_context_service.dart';
+import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/model/add_listing_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/service/nominatim_service.dart';
@@ -29,8 +29,8 @@ class AddListingController extends BaseController {
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
-        _workspaceContext = Get.find<WorkspaceContextService>(),
-        _pendingStore = PendingListingsStore(),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>(),
         _draftStore = DraftListingStore();
 
   final NominatimService _nominatim;
@@ -38,11 +38,9 @@ class AddListingController extends BaseController {
   final PropertyUnitLocalDataSource _unitLocal;
   final AppRepository _repository;
   final PreferenceManager _preferenceManager;
-  final WorkspaceContextService _workspaceContext;
-  final PendingListingsStore _pendingStore;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
   final DraftListingStore _draftStore;
-
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   final formKey = GlobalKey<FormState>();
   final propertyNameController = TextEditingController();
@@ -508,7 +506,6 @@ class AddListingController extends BaseController {
         Get.back(result: true);
         Get.snackbar('Saved', 'Property updated on this device');
       } else {
-        final workspaceType = await _workspaceContext.getWorkspaceType();
         final propertyRef = 'local_${DateTime.now().millisecondsSinceEpoch}';
         await _local.insert(
           PropertyRecord(
@@ -520,7 +517,7 @@ class AddListingController extends BaseController {
             tenants: 0,
             units: _listedUnitCount(),
             ownerUserId: (await _preferenceManager.getUser()).id ?? '',
-            workspaceType: workspaceType,
+            workspaceType: 'bnb',
             createdAtMs: DateTime.now().millisecondsSinceEpoch,
             rentAmount: rentAmountController.text.trim(),
             rentFrequency: rentFrequency.value,
@@ -624,14 +621,13 @@ class AddListingController extends BaseController {
   }
 
   final publishing = false.obs;
-  final syncing = false.obs;
-
   @override
   void onInit() {
     super.onInit();
     final args = Get.arguments as Map<String, dynamic>?;
-    final id = args?['listing_id'] as String?;
-    if (id != null && id.isNotEmpty) {
+    final rawListingId = args?['listing_id'];
+    final id = rawListingId == null ? '' : rawListingId.toString().trim();
+    if (id.isNotEmpty) {
       _listingId = id;
       isEditMode.value = true;
     }
@@ -655,12 +651,6 @@ class AddListingController extends BaseController {
     } else {
       _checkAndOfferResumeDraft();
     }
-    _syncPendingWhenOnline();
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
-      if (results.any((r) => r == ConnectivityResult.wifi || r == ConnectivityResult.mobile)) {
-        _syncPendingWhenOnline();
-      }
-    });
   }
 
   /// When not in edit mode, if a draft exists show a dialog to resume or start fresh.
@@ -720,6 +710,17 @@ class AddListingController extends BaseController {
     if (step != null && step >= 1 && step <= totalSteps) {
       currentStep.value = step;
     }
+  }
+
+  Map<String, List<String>> _parseRoomPhotoPaths(dynamic raw) {
+    final map = <String, List<String>>{};
+    if (raw is! Map) return map;
+    for (final e in raw.entries) {
+      if (e.value is List) {
+        map[e.key.toString()] = (e.value as List).map((x) => x.toString()).toList();
+      }
+    }
+    return map;
   }
 
   Future<void> _loadEditFromArgumentsOnly() async {
@@ -1044,57 +1045,6 @@ class AddListingController extends BaseController {
     return results.any((r) => r == ConnectivityResult.wifi || r == ConnectivityResult.mobile);
   }
 
-  Map<String, List<String>> _parseRoomPhotoPaths(dynamic raw) {
-    final map = <String, List<String>>{};
-    if (raw is! Map) return map;
-    for (final e in raw.entries) {
-      if (e.value is List) {
-        map[e.key.toString()] = (e.value as List).map((x) => x.toString()).toList();
-      }
-    }
-    return map;
-  }
-
-  Future<void> _syncPendingWhenOnline() async {
-    if (syncing.value) return;
-    if (!await _isOnline()) return;
-    final list = _pendingStore.load();
-    if (list.isEmpty) return;
-    syncing.value = true;
-    try {
-      final toKeep = <Map<String, dynamic>>[];
-      var synced = 0;
-      for (final item in list) {
-        try {
-          final listingMap = item['listing'] as Map<String, dynamic>?;
-          if (listingMap == null) continue;
-          final request = AddListingRequest.fromJson(listingMap);
-          final paths = _parseRoomPhotoPaths(item['roomPhotoPaths']);
-          final coverPath = item['coverPhotoPath'] as String?;
-          final res = await _repository.publishListing(
-            request,
-            paths,
-            coverPhotoPath: coverPath,
-          );
-          if (res.responseCode == '200' || res.responseCode == '201') {
-            synced++;
-          } else {
-            toKeep.add(item);
-          }
-        } catch (_) {
-          toKeep.add(item);
-        }
-      }
-      await _pendingStore.save(toKeep);
-      if (synced > 0) {
-        if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
-        Get.snackbar('Synced', synced == 1 ? 'Offline listing synced.' : '$synced offline listings synced.');
-      }
-    } finally {
-      syncing.value = false;
-    }
-  }
-
   Future<void> publishListing() async {
     if (publishing.value) return;
 
@@ -1150,36 +1100,54 @@ class AddListingController extends BaseController {
       }
       final online = await _isOnline();
       if (!online) {
-        await _pendingStore.add(
-          request.toJson(),
-          roomPhotoPaths,
-          coverPhotoPath: coverPath,
+        await _syncQueue.enqueue(
+          entityType: 'listing',
+          operation: 'create',
+          payloadJson: jsonEncode({
+            'listing': request.toJson(),
+            'roomPhotoPaths': roomPhotoPaths,
+            if (coverPath != null && coverPath.isNotEmpty) 'coverPhotoPath': coverPath,
+          }),
+        );
+        await _syncWorker.runNow(maxItems: 20);
+        final pending = await _syncQueue.pendingCountByEntity(
+          entityType: 'listing',
+          operation: 'create',
         );
         await _draftStore.clear();
         Get.offNamed(Routes.LISTING_PUBLISHED);
-        Get.snackbar(
-          'Saved offline',
-          'Listing will sync when you\'re back online.',
-          duration: const Duration(seconds: 4),
-        );
+        if (pending > 0) {
+          Get.snackbar(
+            'Saved offline',
+            'Listing will sync when you\'re back online.',
+            duration: const Duration(seconds: 4),
+          );
+        } else {
+          Get.snackbar('Published', 'Listing synced successfully.');
+        }
         publishing.value = false;
         return;
       }
-      await _syncPendingWhenOnline();
-      final response = await _repository.publishListing(
-        request,
-        roomPhotoPaths,
-        coverPhotoPath: coverPath,
+      await _syncQueue.enqueue(
+        entityType: 'listing',
+        operation: 'create',
+        payloadJson: jsonEncode({
+          'listing': request.toJson(),
+          'roomPhotoPaths': roomPhotoPaths,
+          if (coverPath != null && coverPath.isNotEmpty) 'coverPhotoPath': coverPath,
+        }),
       );
-      if (response.responseCode == '200' || response.responseCode == '201') {
-        await _draftStore.clear();
-        Get.offNamed(Routes.LISTING_PUBLISHED);
-      } else {
-        Get.snackbar(
-          'Publish failed',
-          response.message ?? 'Could not publish listing.',
-        );
+      await _syncWorker.runNow(maxItems: 20);
+      final pending = await _syncQueue.pendingCountByEntity(
+        entityType: 'listing',
+        operation: 'create',
+      );
+      if (pending > 0) {
+        Get.snackbar('Saved offline', 'Listing queued. Will sync when internet is available.');
+        return;
       }
+      await _draftStore.clear();
+      Get.offNamed(Routes.LISTING_PUBLISHED);
     } catch (e) {
       Get.snackbar('Error', isEditMode.value ? 'Failed to update listing: $e' : 'Failed to publish listing: $e');
     } finally {
@@ -1221,7 +1189,6 @@ class AddListingController extends BaseController {
 
   @override
   void onClose() {
-    _connectivitySubscription?.cancel();
     _searchDebounce?.cancel();
     propertyNameController.dispose();
     streetAddressController.dispose();

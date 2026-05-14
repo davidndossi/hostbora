@@ -25,6 +25,7 @@ class TenantInsight {
     required this.onSchedule,
     required this.paidAmount,
     required this.totalAmount,
+    required this.phoneNumber,
   });
 
   final String id;
@@ -38,6 +39,7 @@ class TenantInsight {
   final bool onSchedule;
   final double paidAmount;
   final double totalAmount;
+  final String phoneNumber;
 }
 
 class RentTenantResidencyPaymentTrackerController extends BaseController {
@@ -129,8 +131,32 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     );
   }
 
+  void openSendSmsForFilteredTenants() {
+    final scoped = filteredTenants;
+    final phones = scoped
+        .map((e) => e.phoneNumber.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet()
+        .toList();
+    if (phones.isEmpty) {
+      showErrorMessage('No tenant phone numbers available');
+      return;
+    }
+    final contextTitle = Get.parameters['propertyTitle']?.trim() ?? '';
+    Get.toNamed(
+      Routes.SEND_SMS,
+      arguments: {
+        'phones': phones,
+        'propertyRef': Get.parameters['propertyRef'] ?? '',
+        'contextLabel': contextTitle.isEmpty
+            ? 'Tenancy insights recipients'
+            : 'Tenants in $contextTitle',
+      },
+    );
+  }
+
   Future<void> loadTenants() async {
-    final rows = await _tenantLocal.getAllNewestFirst();
+    final rows = await _tenantLocal.getAllNewestFirstByWorkspace('rent');
     final scoped = rows.where(_recordMatchesListingFilter).toList();
     final fmt = DateFormat('MMM yyyy');
     tenants.assignAll(scoped.map((r) {
@@ -159,6 +185,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
         onSchedule: now.isBefore(end),
         paidAmount: paidAmount.toDouble(),
         totalAmount: totalAmount.toDouble(),
+        phoneNumber: r.phoneNumber,
       );
     }));
   }

@@ -4,9 +4,9 @@ import 'package:sqflite/sqflite.dart';
 
 /// Central SQLite database for offline storage.
 ///
-/// [dbVersion] is **3**: [onUpgrade] and [onOpen] run [_ensureWorkspaceTypeColumns]
-/// so `workspace_type` is added to legacy files even if user_version was already
-/// bumped (e.g. v2 on disk without a complete migration).
+/// [dbVersion] is **1** for fresh local test cycles.
+/// Full schema (including `workspace_type` and `income.property_ref`) is
+/// created in [_createSchema], while [onOpen] keeps legacy repair guards.
 ///
 /// The DB file was renamed to [dbName] so installs that still had the old
 /// `paa_yangu_local.db` (user_version 24) do not hit a downgrade error; that
@@ -20,7 +20,7 @@ class AppLocalDatabase {
   AppLocalDatabase._();
 
   static const dbName = 'paa_yangu_local_v1.db';
-  static const dbVersion = 3;
+  static const dbVersion = 1;
 
   static const propertiesTable = 'properties';
   static const propertyUnitsTable = 'property_units';
@@ -32,7 +32,6 @@ class AppLocalDatabase {
   static const rentStaffTable = 'rent_staff';
   static const rentLoyaltyOfferTable = 'rent_loyalty_offer';
   static const rentTenantChargeTable = 'rent_tenant_charge';
-  static const rentScheduledMaintenanceTable = 'rent_scheduled_maintenance';
   static const rentPaymentReminderTable = 'rent_payment_reminder';
   static const rentNotificationLogTable = 'rent_notification_log';
   static const rentPropertyEstimateTable = 'rent_property_estimate';
@@ -60,6 +59,8 @@ class AppLocalDatabase {
         // Repairs schemas where user_version advanced but ALTER steps did not
         // all run (e.g. income/expense missing workspace_type while properties had it).
         await _ensureWorkspaceTypeColumns(db);
+        await _ensureIncomePropertyRefColumn(db);
+        await _ensureUtilityTopupPropertyRefColumn(db);
       },
     );
     return _db!;
@@ -130,6 +131,7 @@ class AppLocalDatabase {
         notes TEXT NOT NULL DEFAULT '',
         apartment TEXT NOT NULL DEFAULT '',
         apartment_unit TEXT NOT NULL DEFAULT '',
+        property_ref TEXT NOT NULL DEFAULT '',
         workspace_type TEXT NOT NULL DEFAULT 'rent',
         created_at_ms INTEGER NOT NULL
       )
@@ -226,20 +228,6 @@ class AppLocalDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE $rentScheduledMaintenanceTable (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        property_label TEXT NOT NULL,
-        category TEXT NOT NULL,
-        description TEXT NOT NULL,
-        scheduled_date_iso TEXT NOT NULL,
-        priority TEXT NOT NULL,
-        notification_id INTEGER NOT NULL,
-        sync_status TEXT NOT NULL DEFAULT 'pending',
-        created_at_ms INTEGER NOT NULL
-      )
-    ''');
-
-    await db.execute('''
       CREATE TABLE $rentPaymentReminderTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tenant_name TEXT NOT NULL,
@@ -292,6 +280,7 @@ class AppLocalDatabase {
         provider TEXT NOT NULL DEFAULT '',
         notes TEXT NOT NULL DEFAULT '',
         property_label TEXT NOT NULL DEFAULT '',
+        property_ref TEXT NOT NULL DEFAULT '',
         date_iso TEXT NOT NULL,
         created_at_ms INTEGER NOT NULL
       )
@@ -367,6 +356,27 @@ class AppLocalDatabase {
     if (oldVersion < 3) {
       await _ensureWorkspaceTypeColumns(db);
     }
+    if (oldVersion < 4) {
+      await _ensureIncomePropertyRefColumn(db);
+    }
+  }
+
+  static Future<void> _ensureIncomePropertyRefColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      incomeTable,
+      'property_ref',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
+  static Future<void> _ensureUtilityTopupPropertyRefColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      rentUtilityTopupTable,
+      'property_ref',
+      "TEXT NOT NULL DEFAULT ''",
+    );
   }
 
   /// Idempotent: adds [workspace_type] on legacy tables and fixes indexes.
@@ -442,7 +452,6 @@ class AppLocalDatabase {
     rentPropertyEstimateTable,
     rentNotificationLogTable,
     rentPaymentReminderTable,
-    rentScheduledMaintenanceTable,
     rentTenantChargeTable,
     rentLoyaltyOfferTable,
     rentStaffTable,
@@ -486,7 +495,7 @@ class AppLocalDatabase {
       await txn.delete(tenantTable);
       await txn.delete(rentLoyaltyOfferTable);
       await txn.delete(rentTenantChargeTable);
-      await txn.delete(rentScheduledMaintenanceTable);
+      await txn.delete(scheduledMaintenanceTable);
       await txn.delete(rentPaymentReminderTable);
       await txn.delete(rentNotificationLogTable);
       await txn.delete(rentPropertyEstimateTable);

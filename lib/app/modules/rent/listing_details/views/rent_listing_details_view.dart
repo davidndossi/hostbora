@@ -86,6 +86,8 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
             _staff(u),
             const SizedBox(height: 12),
             _warning(u),
+            const SizedBox(height: 14),
+            _removeButton()
           ],
         ),
       );
@@ -612,6 +614,30 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _removeButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: controller.onDeleteProperty,
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFFB91C1C),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          padding: EdgeInsets.all(AppValues.padding),
+        ),
+        icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+        label: Text(
+          _isSw ? 'FUTA MJENGO' : 'REMOVE PROPERTY',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

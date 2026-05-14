@@ -364,7 +364,7 @@ void _showMultiUnitPropertySheet(
                                   },
                                 );
                               },
-                              child: Text(isSw ? 'Maelezo' : 'View details'),
+                              child: Text(isSw ? 'Maelezo' : 'View details', style: TextStyle(fontSize: 16)),
                             ),
                             if (onTenantForUnit != null)
                               IconButton(

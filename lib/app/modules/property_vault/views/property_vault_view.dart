@@ -28,12 +28,6 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
     return CustomAppBar(
       appBarTitleText: appLocalization.propertyVault,
       isBackButtonEnabled: false,
-      actions: [
-        IconButton(
-          onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined),
-        ),
-      ],
     );
   }
 

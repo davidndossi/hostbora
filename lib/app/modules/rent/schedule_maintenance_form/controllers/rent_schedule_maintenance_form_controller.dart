@@ -12,6 +12,7 @@ import '../../../../data/local/service/local_notification_scheduler_service.dart
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../data/model/add_task_request.dart';
 import '../../../../data/repository/app_repository.dart';
+import '../../../host_calendar/controllers/host_calendar_controller.dart';
 import '../../host_calendar/controllers/rent_host_calendar_controller.dart';
 
 class RentScheduleMaintenanceFormController extends BaseController {
@@ -74,20 +75,59 @@ class RentScheduleMaintenanceFormController extends BaseController {
     }.toList();
     merged.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     propertyOptions.assignAll(merged);
-    if (propertyOptions.isNotEmpty) {
-      final requested = Get.parameters['property']?.trim() ?? '';
-      if (requested.isNotEmpty) {
-        final match = propertyOptions.firstWhereOrNull(
-          (p) => p.toLowerCase() == requested.toLowerCase(),
-        );
-        if (match != null) {
-          selectedProperty.value = match;
-          return;
-        }
+    _applyNavigationContext();
+  }
+
+  /// Reads [Get.arguments] (when a [Map]) and [Get.parameters] for route-driven defaults.
+  void _applyNavigationContext() {
+    final args = Get.arguments;
+
+    String? pickString(String key) {
+      if (args is Map && args[key] != null) {
+        final v = args[key].toString().trim();
+        if (v.isNotEmpty) return v;
       }
-      selectedProperty.value = propertyOptions.first;
+      final p = Get.parameters[key];
+      if (p != null && p.trim().isNotEmpty) return p.trim();
+      return null;
+    }
+
+    _resolvedPropertyRef =
+        pickString('propertyRef') ?? pickString('property_id') ?? '';
+    _resolvedApartmentUnitId = pickString('apartmentUnitId') ??
+        pickString('unitId') ??
+        pickString('apartment_unit_id') ??
+        '';
+
+    final requestedName =
+        pickString('property') ?? pickString('property_name');
+    if (propertyOptions.isNotEmpty) {
+      if (requestedName != null && requestedName.isNotEmpty) {
+        final match = propertyOptions.firstWhereOrNull(
+          (p) => p.toLowerCase() == requestedName.toLowerCase(),
+        );
+        selectedProperty.value = match ?? propertyOptions.first;
+      } else {
+        selectedProperty.value = propertyOptions.first;
+      }
+    }
+
+    final cat = pickString('category');
+    if (cat != null &&
+        cat.isNotEmpty &&
+        categoryOptions.contains(cat)) {
+      selectedCategory.value = cat;
+    }
+
+    final desc = pickString('description');
+    if (desc != null && desc.isNotEmpty) {
+      descriptionController.text = desc;
     }
   }
+
+  /// From navigation ([Get.arguments] / [Get.parameters]); may be empty.
+  String _resolvedPropertyRef = '';
+  String _resolvedApartmentUnitId = '';
 
   Future<List<String>> _loadRemotePropertyNames() async {
     try {
@@ -145,7 +185,7 @@ class RentScheduleMaintenanceFormController extends BaseController {
     );
     if (picked != null) {
       scheduleDate.value = picked;
-      scheduleDateFieldController.text = DateFormat('MM/dd/yyyy').format(picked);
+      scheduleDateFieldController.text = DateFormat('dd/MM/yyyy').format(picked);
     }
   }
 
@@ -167,6 +207,8 @@ class RentScheduleMaintenanceFormController extends BaseController {
       priority: priority.value,
       notificationId: notificationId,
       syncStatus: 'pending',
+      propertyRef: _resolvedPropertyRef,
+      apartmentUnitId: _resolvedApartmentUnitId,
     );
 
     final reminderAt = scheduledAt.subtract(const Duration(days: 1));
@@ -184,10 +226,11 @@ class RentScheduleMaintenanceFormController extends BaseController {
       dueDate: DateFormat('yyyy-MM-dd').format(scheduledAt),
     );
 
+    late final String successMsg;
     try {
       await _repository.addTask(taskRequest);
       await _maintenanceLocal.updateSyncStatus(localId, 'synced');
-      showSuccessMessage('Saved offline and online. Reminder scheduled.');
+      successMsg = 'Saved offline and online. Reminder scheduled.';
     } catch (_) {
       await _syncQueue.enqueue(
         entityType: 'rent_scheduled_maintenance',
@@ -199,12 +242,19 @@ class RentScheduleMaintenanceFormController extends BaseController {
           'dueDate': taskRequest.dueDate,
         }),
       );
-      showSuccessMessage('Saved offline. Will sync when internet is available.');
+      successMsg = 'Saved offline. Will sync when internet is available.';
     }
 
     if (Get.isRegistered<RentHostCalendarController>()) {
       await Get.find<RentHostCalendarController>().loadCalendarData();
     }
+    if (Get.isRegistered<HostCalendarController>()) {
+      await Get.find<HostCalendarController>().loadCalendarData();
+    }
+
+    showSuccessMessage(successMsg);
+    await Future.delayed(const Duration(milliseconds: 500));
+    Get.back(result: true);
   }
 
   @override

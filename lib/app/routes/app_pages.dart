@@ -24,6 +24,8 @@ import '../modules/registration/bindings/registration_binding.dart';
 import '../modules/registration/views/registration_view.dart';
 import '../modules/rent/smart_utility_dashboard/bindings/rent_smart_utility_dashboard_binding.dart';
 import '../modules/rent/smart_utility_dashboard/views/rent_smart_utility_dashboard_view.dart';
+import '../modules/rent/utility_usage_graph/bindings/rent_utility_usage_graph_binding.dart';
+import '../modules/rent/utility_usage_graph/views/rent_utility_usage_graph_view.dart';
 import '../modules/send_sms/bindings/send_sms_binding.dart';
 import '../modules/send_sms/views/send_sms_view.dart';
 import '../modules/subscription/bindings/subscription_binding.dart';
@@ -58,6 +60,8 @@ import '../modules/add_listing/bindings/add_listing_binding.dart';
 import '../modules/add_listing/views/add_listing_view.dart';
 import '../modules/edit_listing/bindings/edit_listing_binding.dart';
 import '../modules/edit_listing/views/edit_listing_view.dart';
+import '../modules/edit_unit/bindings/edit_unit_binding.dart';
+import '../modules/edit_unit/views/edit_unit_view.dart';
 import '../modules/team_and_staff/bindings/team_and_staff_binding.dart';
 import '../modules/team_and_staff/views/team_and_staff_view.dart';
 import '../modules/booking_details/bindings/booking_details_binding.dart';
@@ -230,6 +234,8 @@ import '../modules/rent/active_loyalty_programs/views/rent_active_loyalty_progra
     as split_active_loyalty_view;
 import '../modules/rent/whatsapp_template_builder/bindings/rent_whatsapp_template_builder_binding.dart';
 import '../modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart';
+import '../modules/rent/manage_payments/bindings/manage_payments_binding.dart';
+import '../modules/rent/manage_payments/views/manage_payments_view.dart';
 
 part 'app_routes.dart';
 
@@ -369,6 +375,11 @@ class AppPages {
       name: _Paths.EDIT_LISTING,
       page: () => EditListingView(),
       binding: EditListingBinding(),
+    ),
+    GetPage(
+      name: _Paths.EDIT_UNIT,
+      page: () => EditUnitView(),
+      binding: EditUnitBinding(),
     ),
     GetPage(
       name: _Paths.TEAM_AND_STAFF,
@@ -576,6 +587,11 @@ class AppPages {
       binding: split_add_income_binding.RentAddIncomeFormBinding(),
     ),
     GetPage(
+      name: _Paths.RENT_MANAGE_PAYMENTS,
+      page: () => ManagePaymentsView(),
+      binding: ManagePaymentsBinding(),
+    ),
+    GetPage(
       name: _Paths.RENT_ADD_NEW_EXPENSE,
       page: () => split_add_expense_view.RentAddNewExpenseView(),
       binding: split_add_expense_binding.RentAddNewExpenseBinding(),
@@ -694,6 +710,11 @@ class AppPages {
       name: _Paths.RENT_SMART_UTILITY_DASHBOARD,
       page: () => RentSmartUtilityDashboardView(),
       binding: RentSmartUtilityDashboardBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_UTILITY_USAGE_GRAPH,
+      page: () => RentUtilityUsageGraphView(),
+      binding: RentUtilityUsageGraphBinding(),
     ),
     GetPage(
       name: _Paths.RENT_WHATSAPP_TEMPLATE_BUILDER,

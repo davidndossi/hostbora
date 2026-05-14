@@ -23,12 +23,6 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
     return CustomAppBar(
       appBarTitleText: appLocalization.teamAndStaff,
       isCentered: true,
-      actions: [
-        IconButton(
-          onPressed: () => Get.toNamed(Routes.SETTINGS),
-          icon: const Icon(Icons.more_vert_outlined),
-        ),
-      ],
     );
   }
 
@@ -40,7 +34,33 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
           _buildSearchBar(context),
           Expanded(
             child: Obx(() {
+              if (controller.loadingStaff.value &&
+                  controller.staffList.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
               final list = controller.filteredStaff;
+              if (list.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      _t(
+                        context,
+                        en: 'No staff yet. Add people from Rent → Staff management.',
+                        sw:
+                            'Hakuna wafanyakazi bado. Ongeza kutoka Kodi → Usimamizi wa wafanyakazi.',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: _isDark(context)
+                            ? Colors.white70
+                            : AppColors.textColorSecondary,
+                      ),
+                    ),
+                  ),
+                );
+              }
               return ListView.separated(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
                 itemCount: list.length,

@@ -8,7 +8,6 @@ import '../../../../core/widget/custom_app_bar.dart';
 import '../../rent_theme.dart';
 import '../controllers/rent_add_tenant_form_controller.dart';
 
-/// Concierge “Add New Tenant” — beige canvas, dark teal accents, serif headlines.
 class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
   RentAddTenantFormView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';

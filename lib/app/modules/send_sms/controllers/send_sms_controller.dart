@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/model/send_sms_request.dart';
@@ -17,6 +19,7 @@ import '../models/saved_whatsapp_group.dart';
 class SendSmsController extends BaseController
     with GetTickerProviderStateMixin {
   static const String _keySavedWhatsAppGroups = 'saved_whatsapp_groups';
+  static const String _smsTemplatesKey = 'rent_sms_payment_reminder_templates';
   String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
 
   final isFirstView = true.obs;
@@ -25,6 +28,7 @@ class SendSmsController extends BaseController
   final messageController = TextEditingController();
   final groupLinkController = TextEditingController();
   final promptController = TextEditingController();
+  final templateNameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   /// Saved WhatsApp group links for quick access.
@@ -35,6 +39,11 @@ class SendSmsController extends BaseController
   final includeAudio = false.obs;
   final includeFile = false.obs;
   final isGenerating = false.obs;
+  final saveAsTemplateEnabled = false.obs;
+  final recipientContextLabel = ''.obs;
+  final prefilledTenantIds = <int>{}.obs;
+  final pickerSelectedTenantIds = <int>{}.obs;
+  final availableTenants = <TenantRecord>[].obs;
 
   static final _phonePattern = RegExp(r'^0[678]\d{8}$');
 
@@ -42,6 +51,13 @@ class SendSmsController extends BaseController
     tag: (PreferenceManager).toString(),
   );
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
+  final TenantLocalDataSource _tenantLocal = Get.find<TenantLocalDataSource>();
+  final RentWhatsappTemplateLocalDataSource _whatsappTemplateLocal =
+      Get.find<RentWhatsappTemplateLocalDataSource>();
+
+  /// Saved WhatsApp Business-style templates (body uses `{{1}}`, `{{2}}`, …).
+  final savedMessageTemplates = <RentWhatsappTemplateRecord>[].obs;
+  final selectedTemplateId = Rxn<int>();
 
   /// True after access check; false if user is not admin/leader.
   final isAccessAllowed = false.obs;
@@ -53,8 +69,133 @@ class SendSmsController extends BaseController
   void onInit() {
     tabController = TabController(length: 2, vsync: this);
     super.onInit();
+    _prefillFromRouteArgs();
     _checkAccess();
+    _loadTenantsForPicker();
     loadSavedGroups();
+    loadSavedMessageTemplates();
+  }
+
+  void _prefillFromRouteArgs() {
+    final args = Get.arguments;
+    if (args is! Map) return;
+    final map = Map<String, dynamic>.from(args);
+    final phones = _extractPhones(map['phones']);
+    if (phones.isNotEmpty) {
+      appendPhoneNumbers(phones);
+    }
+    recipientContextLabel.value = (map['contextLabel'] ?? '').toString().trim();
+    prefilledTenantIds.assignAll(_extractTenantIds(map['tenantIds']));
+    pickerSelectedTenantIds.assignAll(prefilledTenantIds);
+  }
+
+  List<int> _extractTenantIds(dynamic raw) {
+    if (raw is List) {
+      return raw
+          .map((e) => int.tryParse(e.toString()) ?? -1)
+          .where((e) => e > 0)
+          .toSet()
+          .toList();
+    }
+    if (raw is String) {
+      return raw
+          .split(RegExp(r'[\n,;]+'))
+          .map((e) => int.tryParse(e.trim()) ?? -1)
+          .where((e) => e > 0)
+          .toSet()
+          .toList();
+    }
+    return const [];
+  }
+
+  List<String> _extractPhones(dynamic raw) {
+    if (raw is List) {
+      return raw
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    if (raw is String) {
+      return parsePhoneNumbers(raw);
+    }
+    return const [];
+  }
+
+  Future<void> _loadTenantsForPicker() async {
+    try {
+      final rows = await _tenantLocal.getAllNewestFirstByWorkspace('rent');
+      final propertyRefFilter = _routeArgString('propertyRef');
+      final scoped = propertyRefFilter.isEmpty
+          ? rows
+          : rows.where((e) => e.propertyRef.trim() == propertyRefFilter).toList();
+      availableTenants.assignAll(scoped);
+    } catch (_) {
+      availableTenants.clear();
+    }
+  }
+
+  String _routeArgString(String key) {
+    final args = Get.arguments;
+    if (args is! Map) return '';
+    final map = Map<String, dynamic>.from(args);
+    return (map[key] ?? '').toString().trim();
+  }
+
+  Future<void> loadSavedMessageTemplates() async {
+    try {
+      final list = await _whatsappTemplateLocal.getAllNewestFirst();
+      savedMessageTemplates.assignAll(list);
+      final sel = selectedTemplateId.value;
+      if (sel != null &&
+          !savedMessageTemplates.any((t) => t.id == sel)) {
+        selectedTemplateId.value = null;
+      }
+    } catch (_) {
+      savedMessageTemplates.clear();
+    }
+  }
+
+  /// Fills [messageController] with header/body/footer and replaces `{{n}}`
+  /// using each template's saved sample values.
+  void onMessageTemplateSelected(int? id) {
+    selectedTemplateId.value = id;
+    if (id == null) return;
+    RentWhatsappTemplateRecord? found;
+    for (final t in savedMessageTemplates) {
+      if (t.id == id) {
+        found = t;
+        break;
+      }
+    }
+    if (found != null) {
+      messageController.text = _renderTemplateWithSamples(found);
+      messageController.selection = TextSelection.collapsed(
+        offset: messageController.text.length,
+      );
+    }
+  }
+
+  String _renderTemplateWithSamples(RentWhatsappTemplateRecord t) {
+    String replaceVars(String raw) {
+      var out = raw;
+      for (var i = 0; i < t.sampleVariables.length; i++) {
+        out = out.replaceAll('{{${i + 1}}}', t.sampleVariables[i]);
+      }
+      return out;
+    }
+
+    final parts = <String>[];
+    if (t.headerType == WaTemplateHeaderType.text &&
+        t.headerText.trim().isNotEmpty) {
+      parts.add(replaceVars(t.headerText));
+    }
+    if (t.bodyText.trim().isNotEmpty) {
+      parts.add(replaceVars(t.bodyText));
+    }
+    if (t.footerText.trim().isNotEmpty) {
+      parts.add(replaceVars(t.footerText));
+    }
+    return parts.where((s) => s.trim().isNotEmpty).join('\n\n');
   }
 
   /// Load saved WhatsApp groups from preferences.
@@ -156,14 +297,6 @@ class SendSmsController extends BaseController
   /// Allow access for admins, leaders, or users with an active SMS subscription.
   /// If not allowed, redirect to subscription page (15,000 TZS/month).
   Future<void> _checkAccess() async {
-    final isAdmin = await _preferenceManager.getBool(
-      'isAdmin',
-      defaultValue: false,
-    );
-    final isLeader = await _preferenceManager.getBool(
-      'isLeader',
-      defaultValue: false,
-    );
     final expiryMs = await _preferenceManager.getInt(
       keySmsSubscriptionExpiry,
       defaultValue: 0,
@@ -176,7 +309,7 @@ class SendSmsController extends BaseController
     print('Has active subscription $hasActiveSubscription');
 
     isCheckingAccess(false);
-    if ((isAdmin || isLeader) && hasActiveSubscription) {
+    if (hasActiveSubscription) {
       isAccessAllowed(true);
     } else {
       isAccessAllowed(false);
@@ -190,7 +323,84 @@ class SendSmsController extends BaseController
     messageController.dispose();
     groupLinkController.dispose();
     promptController.dispose();
+    templateNameController.dispose();
     super.onClose();
+  }
+
+  void toggleTenantForPicker(int tenantId, bool selected) {
+    final current = Set<int>.from(pickerSelectedTenantIds);
+    if (selected) {
+      current.add(tenantId);
+    } else {
+      current.remove(tenantId);
+    }
+    pickerSelectedTenantIds.assignAll(current);
+  }
+
+  void appendSelectedTenantsToRecipients() {
+    final selected = availableTenants
+        .where((t) => pickerSelectedTenantIds.contains(t.id))
+        .map((t) => t.phoneNumber.trim())
+        .where((n) => n.isNotEmpty)
+        .toList();
+    appendPhoneNumbers(selected);
+  }
+
+  void appendPhoneNumbers(List<String> phones) {
+    if (phones.isEmpty) return;
+    final existing = parsePhoneNumbers(phoneNumbersController.text);
+    final merged = <String>{...existing, ...phones.map((e) => e.trim())}
+      ..removeWhere((e) => e.isEmpty);
+    phoneNumbersController.text = merged.join('\n');
+    phoneNumbersController.selection = TextSelection.collapsed(
+      offset: phoneNumbersController.text.length,
+    );
+  }
+
+  Future<void> saveCurrentMessageAsTemplate({required bool isWhatsApp}) async {
+    final body = messageController.text.trim();
+    if (body.isEmpty) {
+      showErrorMessage(_t('Write a message first.', 'Andika ujumbe kwanza.'));
+      return;
+    }
+    final rawName = templateNameController.text.trim();
+    final name = rawName.isEmpty
+        ? _t('quick_template', 'kiolezo_haraka')
+        : rawName;
+    if (isWhatsApp) {
+      try {
+        await _whatsappTemplateLocal.insert(
+          name: name,
+          category: WaTemplateCategory.utility,
+          language: Get.locale?.languageCode == 'sw' ? 'sw' : 'en_US',
+          headerType: WaTemplateHeaderType.none,
+          headerText: '',
+          bodyText: body,
+          footerText: '',
+          buttons: const [],
+          sampleVariables: const [],
+          status: WaTemplateStatus.draft,
+        );
+        await loadSavedMessageTemplates();
+        showSuccessMessage(
+          _t('WhatsApp template saved.', 'Kiolezo cha WhatsApp kimehifadhiwa.'),
+        );
+      } catch (_) {
+        showErrorMessage(
+          _t(
+            'Failed to save WhatsApp template.',
+            'Imeshindikana kuhifadhi kiolezo cha WhatsApp.',
+          ),
+        );
+      }
+      return;
+    }
+
+    final existing = await _preferenceManager.getStringList(_smsTemplatesKey);
+    final entry = '$name|||$body';
+    final updated = [...existing.where((e) => !e.startsWith('$name|||')), entry];
+    await _preferenceManager.setStringList(_smsTemplatesKey, updated);
+    showSuccessMessage(_t('SMS template saved.', 'Kiolezo cha SMS kimehifadhiwa.'));
   }
 
   void _handleLoadAIDataSuccess(GeneralResponse res) async {
@@ -492,8 +702,7 @@ class SendSmsController extends BaseController
                       }
                     },
                   ),
-                )
-                .toList(),
+                ),
           ],
         ),
         contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),

@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
-import '../../../data/service/azampay_service.dart';
 import '../../../data/service/subscription_service.dart';
 import '../../../routes/app_pages.dart';
 
@@ -94,6 +93,14 @@ class SubscriptionController extends BaseController {
     }
   }
 
+  /// Navigates to Send SMS after this frame so [Obx] on the subscription screen
+  /// can finish unsubscribing before the route (and controller) are disposed.
+  void goToSendSms() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.offNamed(Routes.SEND_SMS);
+    });
+  }
+
   /// Activates subscription (30 days). Call after user has completed AzamPay payment.
   Future<void> activateAfterPayment() async {
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -101,7 +108,7 @@ class SubscriptionController extends BaseController {
     await _preferenceManager.setInt(keySmsSubscriptionExpiry, newExpiry);
     subscriptionExpiryMs(newExpiry);
     showSuccessMessage('Subscription active. You can now use Send SMS/WhatsApp.');
-    Get.offNamed(Routes.SEND_SMS);
+    goToSendSms();
   }
 
   void setProvider(String? value) {

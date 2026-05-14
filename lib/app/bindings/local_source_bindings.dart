@@ -4,6 +4,10 @@ import 'dart:convert';
 import '../data/local/db/property_local_data_source.dart';
 import '../data/local/db/property_unit_local_data_source.dart';
 import '/app/data/model/add_task_request.dart';
+import '/app/data/model/add_expense_request.dart';
+import '/app/data/model/add_listing_request.dart';
+import '/app/data/model/create_booking_request.dart';
+import '/app/data/model/record_payment_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/data/local/db/rent_payment_reminder_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
@@ -199,6 +203,84 @@ class LocalSourceBindings implements Bindings {
         if (localId != null) {
           await Get.find<RentPaymentReminderLocalDataSource>()
               .updateSyncStatus(localId, 'synced');
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'booking',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final res = await repository.createBooking(CreateBookingRequest.fromJson(map));
+        final ok = res.responseCode == null ||
+            res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) {
+          throw Exception(res.message ?? 'Booking sync failed');
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'payment',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final res = await repository.recordPayment(RecordPaymentRequest.fromJson(map));
+        final ok = res.responseCode == null ||
+            res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) {
+          throw Exception(res.message ?? 'Payment sync failed');
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'expense',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final res = await repository.addExpense(AddExpenseRequest.fromJson(map));
+        final ok = res.responseCode == null ||
+            res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) {
+          throw Exception(res.message ?? 'Expense sync failed');
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'listing',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final listingMap = (map['listing'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+        final roomPhotoPathsRaw =
+            (map['roomPhotoPaths'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+        final roomPhotoPaths = <String, List<String>>{};
+        for (final e in roomPhotoPathsRaw.entries) {
+          if (e.value is List) {
+            roomPhotoPaths[e.key] = (e.value as List).map((v) => v.toString()).toList();
+          }
+        }
+        final coverPath = (map['coverPhotoPath'] ?? '').toString().trim();
+        final res = await repository.publishListing(
+          AddListingRequest.fromJson(listingMap),
+          roomPhotoPaths,
+          coverPhotoPath: coverPath.isEmpty ? null : coverPath,
+        );
+        final ok = res.responseCode == null ||
+            res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) {
+          throw Exception(res.message ?? 'Listing sync failed');
         }
       },
     );

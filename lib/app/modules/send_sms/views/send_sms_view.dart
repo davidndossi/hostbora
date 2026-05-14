@@ -16,6 +16,262 @@ class SendSmsView extends BaseView<SendSmsController> {
     return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
   }
 
+  Widget _buildSavedTemplatesPicker(BuildContext context) {
+    final theme = Theme.of(context);
+    return Obx(() {
+      if (controller.savedMessageTemplates.isEmpty) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppValues.spacing_20),
+          child: Text(
+            _t(
+              context,
+              'No saved templates yet. Create templates under Rent hub → WhatsApp templates.',
+              'Bado hakuna miolezo. Tengeneza chini ya Rent → Miolezo ya WhatsApp.',
+            ),
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        );
+      }
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppValues.spacing_20),
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: _t(
+              context,
+              'Saved template',
+              'Kiolezo kilichohifadhiwa',
+            ),
+            helperText: _t(
+              context,
+              'Replaces {{1}}, {{2}}, … with values saved for each template.',
+              'Hubadilisha {{1}}, {{2}}, … kwa maadili yaliyohifadhiwa kwa kila kiolezo.',
+            ),
+            border: const OutlineInputBorder(),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int?>(
+              value: controller.selectedTemplateId.value,
+              isExpanded: true,
+              isDense: true,
+              hint: Text(
+                _t(context, 'Choose a template', 'Chagua kiolezo'),
+              ),
+              items: [
+                DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text(
+                    _t(context, 'Custom message only', 'Ujumbe wa kawaida tu'),
+                  ),
+                ),
+                ...controller.savedMessageTemplates.map(
+                  (t) => DropdownMenuItem<int?>(
+                    value: t.id,
+                    child: Text(
+                      t.name.trim().isEmpty ? 'Template #${t.id}' : t.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+              onChanged: controller.onMessageTemplateSelected,
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Future<void> _showTenantPicker(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: SizedBox(
+              height: 460,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _t(ctx, 'Select tenant recipients', 'Chagua wapokeaji wapangaji'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  Obx(
+                    () => Text(
+                      controller.recipientContextLabel.value.isEmpty
+                          ? _t(
+                              ctx,
+                              'Pick one or more tenants to append their numbers.',
+                              'Chagua mpangaji mmoja au zaidi kuongeza namba zao.',
+                            )
+                          : controller.recipientContextLabel.value,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Obx(() {
+                      if (controller.availableTenants.isEmpty) {
+                        return Center(
+                          child: Text(
+                            _t(
+                              ctx,
+                              'No tenants available in this context.',
+                              'Hakuna wapangaji kwenye muktadha huu.',
+                            ),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        itemCount: controller.availableTenants.length,
+                        itemBuilder: (_, index) {
+                          final t = controller.availableTenants[index];
+                          final selected = controller.pickerSelectedTenantIds
+                              .contains(t.id);
+                          return CheckboxListTile(
+                            value: selected,
+                            onChanged: (v) => controller.toggleTenantForPicker(
+                              t.id,
+                              v ?? false,
+                            ),
+                            title: Text(
+                              t.tenantName.trim().isEmpty
+                                  ? t.phoneNumber
+                                  : t.tenantName,
+                            ),
+                            subtitle: Text(
+                              '${t.propertyLabel}\n${t.phoneNumber}',
+                              maxLines: 2,
+                            ),
+                            isThreeLine: true,
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        controller.appendSelectedTenantsToRecipients();
+                        Get.back();
+                      },
+                      icon: const Icon(Icons.add_ic_call_outlined),
+                      label: Text(
+                        _t(
+                          ctx,
+                          'Add selected phone numbers',
+                          'Ongeza namba zilizochaguliwa',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRecipientAssistActions(BuildContext context) {
+    return Obx(
+      () => Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => _showTenantPicker(context),
+              icon: const Icon(Icons.people_alt_outlined, size: 18),
+              label: Text(
+                _t(
+                  context,
+                  'Pick tenant(s)',
+                  'Chagua mpangaji',
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          if (controller.pickerSelectedTenantIds.isNotEmpty)
+            Text(
+              _t(
+                context,
+                '${controller.pickerSelectedTenantIds.length} selected',
+                '${controller.pickerSelectedTenantIds.length} wamechaguliwa',
+              ),
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveTemplateControls(BuildContext context, {required bool isWhatsApp}) {
+    return Obx(
+      () => Column(
+        children: [
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            value: controller.saveAsTemplateEnabled.value,
+            title: Text(
+              _t(
+                context,
+                'Save current message as template',
+                'Hifadhi ujumbe huu kama kiolezo',
+              ),
+            ),
+            onChanged: (value) {
+              controller.saveAsTemplateEnabled.value = value;
+            },
+          ),
+          if (controller.saveAsTemplateEnabled.value)
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: controller.templateNameController,
+                    decoration: InputDecoration(
+                      labelText: _t(context, 'Template name', 'Jina la kiolezo'),
+                      hintText: _t(
+                        context,
+                        isWhatsApp ? 'e.g. rent_followup' : 'e.g. payment reminder',
+                        isWhatsApp ? 'mf. ufuatiliaji_kodi' : 'mf. ukumbusho wa malipo',
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () => controller.saveCurrentMessageAsTemplate(
+                    isWhatsApp: isWhatsApp,
+                  ),
+                  child: Text(_t(context, 'Save', 'Hifadhi')),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -103,7 +359,10 @@ class SendSmsView extends BaseView<SendSmsController> {
                                 ),
                                 validator: controller.phoneNumbersValidator,
                               ),
+                              const SizedBox(height: AppValues.spacing_10),
+                              _buildRecipientAssistActions(context),
                               const SizedBox(height: AppValues.spacing_20),
+                              _buildSavedTemplatesPicker(context),
                               TextFormField(
                                 controller: controller.messageController,
                                 keyboardType: TextInputType.multiline,
@@ -119,6 +378,11 @@ class SendSmsView extends BaseView<SendSmsController> {
                                   alignLabelWithHint: true,
                                 ),
                                 validator: controller.messageValidator,
+                              ),
+                              const SizedBox(height: AppValues.spacing_10),
+                              _buildSaveTemplateControls(
+                                context,
+                                isWhatsApp: false,
                               ),
                               const SizedBox(height: AppValues.spacing_20),
                               Obx(
@@ -198,8 +462,13 @@ class SendSmsView extends BaseView<SendSmsController> {
                                               controller.phoneNumbersValidator,
                                         ),
                                         const SizedBox(
+                                          height: AppValues.spacing_10,
+                                        ),
+                                        _buildRecipientAssistActions(context),
+                                        const SizedBox(
                                           height: AppValues.spacing_20,
                                         ),
+                                        _buildSavedTemplatesPicker(context),
                                         Text(
                                           _t(
                                             context,
@@ -365,6 +634,13 @@ class SendSmsView extends BaseView<SendSmsController> {
                                             ),
                                           ),
                                         ),
+                                        const SizedBox(
+                                          height: AppValues.spacing_10,
+                                        ),
+                                        _buildSaveTemplateControls(
+                                          context,
+                                          isWhatsApp: true,
+                                        ),
                                       ],
                                     ),
                                     Column(
@@ -511,6 +787,7 @@ class SendSmsView extends BaseView<SendSmsController> {
                                         const SizedBox(
                                           height: AppValues.spacing_10,
                                         ),
+                                        _buildSavedTemplatesPicker(context),
                                         Text(
                                           _t(
                                             context,

@@ -91,7 +91,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     final pendingLocalBookings = _pendingBookingsStore.count;
     final localActive = pendingLocalBookings;
 
-    final tenantRows = await _bnbTenantLocal.getAllNewestFirst();
+    final tenantRows = await _bnbTenantLocal.getAllForBnbWorkspaceByPropertyRefJoin();
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
     final nextMonthStart = DateTime(now.year, now.month + 1, 1);
@@ -101,16 +101,35 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     var localCurrentBookings = 0;
     var localPreviousBookings = 0;
     for (final t in tenantRows) {
-      DateTime d;
+      DateTime leaseStart;
       try {
-        d = DateTime.parse(t.leaseStartIso);
+        leaseStart = DateTime.parse(t.leaseStartIso.trim());
       } catch (_) {
-        d = DateTime.fromMillisecondsSinceEpoch(t.createdAtMs);
+        leaseStart = DateTime.fromMillisecondsSinceEpoch(t.createdAtMs);
       }
-      if (!d.isBefore(monthStart) && d.isBefore(nextMonthStart)) {
+      DateTime leaseEnd;
+      try {
+        leaseEnd = DateTime.parse(t.leaseEndIso.trim());
+      } catch (_) {
+        // Open-ended / bad end date: treat as ongoing far into the future.
+        leaseEnd = DateTime(now.year + 50, 12, 31);
+      }
+
+      if (_leaseOverlapsCalendarMonth(
+            leaseStart: leaseStart,
+            leaseEnd: leaseEnd,
+            monthStart: monthStart,
+            nextMonthStart: nextMonthStart,
+          )) {
         localMonthlyRevenue += t.rentAmountValue;
         localCurrentBookings++;
-      } else if (!d.isBefore(prevMonthStart) && d.isBefore(monthStart)) {
+      }
+      if (_leaseOverlapsCalendarMonth(
+            leaseStart: leaseStart,
+            leaseEnd: leaseEnd,
+            monthStart: prevMonthStart,
+            nextMonthStart: monthStart,
+          )) {
         prevMonthlyRevenue += t.rentAmountValue;
         localPreviousBookings++;
       }
@@ -119,7 +138,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     double bnbLocalIncomeThisMonth = 0;
     double bnbLocalIncomePrevMonth = 0;
     try {
-      final incomeRows = await _rentIncomeLocal.getAllNewestFirst();
+      final incomeRows = await _rentIncomeLocal.getAllForBnbWorkspaceByPropertyRefJoin();
       for (final r in incomeRows) {
         if (r.workspaceType.trim().toLowerCase() != 'bnb') continue;
         final parsed = DateTime.tryParse(r.datePaidIso.trim());
@@ -148,6 +167,21 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
             ? remoteBookingsChange
             : _formatMoMPercent(localCurrentBookings.toDouble(), localPreviousBookings.toDouble());
     revenueChange.value = _formatMoMPercent(combinedMonthly, combinedPrev);
+  }
+
+  /// True when [leaseStart]–[leaseEnd] overlaps half-open calendar month
+  /// [monthStart, nextMonthStart) using date-only boundaries (avoids UTC drift).
+  static bool _leaseOverlapsCalendarMonth({
+    required DateTime leaseStart,
+    required DateTime leaseEnd,
+    required DateTime monthStart,
+    required DateTime nextMonthStart,
+  }) {
+    final ls = DateTime(leaseStart.year, leaseStart.month, leaseStart.day);
+    final le = DateTime(leaseEnd.year, leaseEnd.month, leaseEnd.day);
+    final ws = DateTime(monthStart.year, monthStart.month, monthStart.day);
+    final we = DateTime(nextMonthStart.year, nextMonthStart.month, nextMonthStart.day);
+    return ls.isBefore(we) && le.isAfter(ws);
   }
 
   String _formatMoMPercent(double current, double previous) {
@@ -191,7 +225,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     } catch (_) {}
 
     try {
-      final properties = await _propertyLocal.getAllNewestFirst();
+      final properties = await _propertyLocal.getAllVisibleNewestFirst(
+          userId: '', workspaceType: 'bnb');
       final pending = _pendingBookingsStore.load();
       for (final m in pending) {
         final listingId = (m['listingId'] ?? '').toString().trim();
@@ -277,7 +312,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   Future<void> addExpense() async {
     await _guardPropertyBeforeAction(
       onProceed: () async {
-        await Get.toNamed(Routes.RENT_ADD_NEW_EXPENSE);
+        await Get.toNamed(Routes.ADD_EXPENSE);
       },
     );
   }
@@ -285,7 +320,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   Future<void> addPayment() async {
     await _guardPropertyBeforeAction(
       onProceed: () async {
-        final saved = await Get.toNamed(Routes.RENT_ADD_INCOME_FORM);
+        final saved = await Get.toNamed(Routes.RECORD_PAYMENT);
         if (saved == true) {
           await _loadOverview();
         }
@@ -325,10 +360,12 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
           if ((data['listings'] as List).isNotEmpty) return true;
         }
       }
-      final localRows = await _propertyLocal.getAllNewestFirst();
+      final localRows = await _propertyLocal.getAllVisibleNewestFirst(
+          userId: '', workspaceType: 'bnb');
       return localRows.isNotEmpty;
     } catch (_) {
-      final localRows = await _propertyLocal.getAllNewestFirst();
+      final localRows = await _propertyLocal.getAllVisibleNewestFirst(
+          userId: '', workspaceType: 'bnb');
       return localRows.isNotEmpty;
     }
   }
