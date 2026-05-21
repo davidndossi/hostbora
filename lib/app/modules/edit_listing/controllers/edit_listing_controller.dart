@@ -7,6 +7,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/property_listing_units_sync.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
+import '../../../core/values/property_unit_floor.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
 
 class EditListingController extends BaseController {
@@ -33,6 +34,7 @@ class EditListingController extends BaseController {
   final draftUnitNameController = TextEditingController();
   final draftUnitRentController = TextEditingController();
   final draftUnitDescriptionController = TextEditingController();
+  final draftUnitFloor = PropertyUnitFloor.defaultIndex.obs;
 
   bool get showUnitsEditor => isApartmentProperty;
 
@@ -122,6 +124,7 @@ class EditListingController extends BaseController {
             unitName: u.unitName.trim(),
             unitRent: u.unitRent.trim(),
             unitRentFrequency: u.unitRentFrequency.trim(),
+            unitFloor: u.unitFloor,
             unitDescription: u.unitDescription.trim(),
           ),
         )
@@ -149,6 +152,7 @@ class EditListingController extends BaseController {
             unitName: u.unitName,
             unitRent: u.unitRent,
             unitRentFrequency: u.unitRentFrequency,
+            unitFloor: u.unitFloor,
             unitDescription: u.unitDescription,
           ),
         );
@@ -158,6 +162,12 @@ class EditListingController extends BaseController {
       }
     }
     if (changed) apartmentUnits.assignAll(next);
+  }
+
+  void updateDraftUnitFloor(int? value) {
+    if (value != null && PropertyUnitFloor.indices.contains(value)) {
+      draftUnitFloor.value = value;
+    }
   }
 
   String? validateDraftUnitRent(String? value) {
@@ -184,12 +194,14 @@ class EditListingController extends BaseController {
         unitRentFrequency: _original?.rentFrequency.trim().isNotEmpty == true
             ? _original!.rentFrequency
             : 'Per Month',
+        unitFloor: draftUnitFloor.value,
         unitDescription: draftUnitDescriptionController.text.trim(),
       ),
     );
     draftUnitNameController.clear();
     draftUnitRentController.clear();
     draftUnitDescriptionController.clear();
+    draftUnitFloor.value = PropertyUnitFloor.defaultIndex;
   }
 
   void removeApartmentUnit(int index) {
@@ -260,6 +272,7 @@ class EditListingController extends BaseController {
         rentFrequency: orig.rentFrequency,
         minRentalDuration: orig.minRentalDuration,
         unitsJson: unitsChanged ? unitsJsonOut : orig.unitsJson,
+        floorCount: orig.floorCount,
       );
 
       await _local.update(merged);

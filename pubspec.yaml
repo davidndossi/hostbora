@@ -49,6 +49,7 @@ dependencies:
   url_launcher: ^6.3.0
   share_plus: ^10.1.4
   permission_handler: ^12.0.0+1
+  flutter_contacts: ^1.1.9+2
   toggle_switch: ^2.3.0
   flutter_signature_pad: ^3.0.1
   connectivity_plus: ^7.0.0
@@ -65,10 +66,12 @@ dependencies:
   image_picker: ^1.1.2
   camera: ^0.11.0
   path_provider: ^2.1.5
-  image: ^4.8.0
+  # Constrained for `excel` (needs archive ^3.x). Newer `image` requires archive ^4.
+  image: '>=4.1.7 <4.5.0'
   open_file: ^3.5.10
-  pointycastle: ^4.0.0
-  basic_utils: ^5.7.0
+  # Pinned for compatibility with `excel` (archive ^3.x). basic_utils 5.8+ pulls archive ^4.
+  pointycastle: ^3.9.1
+  basic_utils: '>=5.7.0 <5.8.0'
   fl_chart: ^0.69.0
   table_calendar: ^3.2.0
   tuya_home_sdk_flutter: ^0.2.3
@@ -80,6 +83,10 @@ dependencies:
   timezone: ^0.10.1
   flutter_timezone: ^5.0.2
   workmanager: ^0.9.0+3
+  excel: ^4.0.6
+  pdf: ^3.11.1
+  printing: ^5.13.4
+  package_info_plus: ^8.3.0
 
 dev_dependencies:
   flutter_test:

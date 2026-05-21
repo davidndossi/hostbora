@@ -3,7 +3,10 @@ import 'package:get/get.dart';
 import '../model/add_listing_request.dart';
 import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
+import '../model/cancel_booking_request.dart';
+import '../model/checkout_booking_request.dart';
 import '../model/create_booking_request.dart';
+import '../model/update_booking_request.dart';
 import '../model/add_expense_request.dart';
 import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
@@ -17,6 +20,9 @@ import '../model/update_preference_request.dart';
 import '../model/user_profile_request.dart';
 import '../model/send_sms_request.dart';
 import '../model/update_request.dart';
+import '../model/create_calendar_subscription_request.dart';
+import '../model/update_calendar_subscription_request.dart';
+import '../model/calendar_sync_request.dart';
 import '../remote/remote_data_source.dart';
 import 'app_repository.dart';
 
@@ -172,6 +178,21 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> checkoutBooking(CheckoutBookingRequest request) {
+    return _remoteSource.checkoutBooking(request);
+  }
+
+  @override
+  Future<GeneralResponse> cancelBooking(CancelBookingRequest request) {
+    return _remoteSource.cancelBooking(request);
+  }
+
+  @override
+  Future<GeneralResponse> updateBooking(UpdateBookingRequest request) {
+    return _remoteSource.updateBooking(request);
+  }
+
+  @override
   Future<GeneralResponse> recordPayment(RecordPaymentRequest request) {
     return _remoteSource.recordPayment(request);
   }
@@ -214,5 +235,35 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> getVaultDocuments(String directoryId) {
     return _remoteSource.getVaultDocuments(directoryId);
+  }
+
+  @override
+  Future<GeneralResponse> createCalendarSubscription(
+    CreateCalendarSubscriptionRequest request,
+  ) {
+    return _remoteSource.createCalendarSubscription(request);
+  }
+
+  @override
+  Future<GeneralResponse> getCalendarSubscriptions(String listingId) {
+    return _remoteSource.getCalendarSubscriptions(listingId);
+  }
+
+  @override
+  Future<GeneralResponse> updateCalendarSubscription(
+    String subscriptionId,
+    UpdateCalendarSubscriptionRequest request,
+  ) {
+    return _remoteSource.updateCalendarSubscription(subscriptionId, request);
+  }
+
+  @override
+  Future<GeneralResponse> deleteCalendarSubscription(String subscriptionId) {
+    return _remoteSource.deleteCalendarSubscription(subscriptionId);
+  }
+
+  @override
+  Future<GeneralResponse> syncCalendarImport(CalendarSyncRequest request) {
+    return _remoteSource.syncCalendarImport(request);
   }
 }

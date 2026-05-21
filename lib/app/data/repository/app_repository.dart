@@ -1,7 +1,10 @@
 import '../model/add_listing_request.dart';
 import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
+import '../model/cancel_booking_request.dart';
+import '../model/checkout_booking_request.dart';
 import '../model/create_booking_request.dart';
+import '../model/update_booking_request.dart';
 import '../model/add_expense_request.dart';
 import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
@@ -15,6 +18,9 @@ import '../model/update_preference_request.dart';
 import '../model/user_profile_request.dart';
 import '../model/send_sms_request.dart';
 import '../model/update_request.dart';
+import '../model/create_calendar_subscription_request.dart';
+import '../model/update_calendar_subscription_request.dart';
+import '../model/calendar_sync_request.dart';
 
 abstract class AppRepository {
 
@@ -79,6 +85,12 @@ abstract class AppRepository {
 
   Future<GeneralResponse> createBooking(CreateBookingRequest request);
 
+  Future<GeneralResponse> checkoutBooking(CheckoutBookingRequest request);
+
+  Future<GeneralResponse> cancelBooking(CancelBookingRequest request);
+
+  Future<GeneralResponse> updateBooking(UpdateBookingRequest request);
+
   Future<GeneralResponse> recordPayment(RecordPaymentRequest request);
 
   Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]);
@@ -96,4 +108,19 @@ abstract class AppRepository {
   Future<GeneralResponse> addTask(AddTaskRequest request);
 
   Future<GeneralResponse> getVaultDocuments(String directoryId);
+
+  Future<GeneralResponse> createCalendarSubscription(
+    CreateCalendarSubscriptionRequest request,
+  );
+
+  Future<GeneralResponse> getCalendarSubscriptions(String listingId);
+
+  Future<GeneralResponse> updateCalendarSubscription(
+    String subscriptionId,
+    UpdateCalendarSubscriptionRequest request,
+  );
+
+  Future<GeneralResponse> deleteCalendarSubscription(String subscriptionId);
+
+  Future<GeneralResponse> syncCalendarImport(CalendarSyncRequest request);
 }

@@ -1,3 +1,4 @@
+import '../../../core/values/property_unit_floor.dart';
 import 'property_unit_local_data_source.dart';
 
 /// Replaces `property_units` rows for [propertyRef] after saving the parent property.
@@ -36,6 +37,7 @@ Future<void> syncPropertyUnitsForListingSave({
       final freq = freqRaw.isNotEmpty ? freqRaw : listingRentFrequency;
 
       final notes = (m['unitDescription'] ?? '').toString();
+      final floor = PropertyUnitFloor.parse(m['unitFloor']);
 
       await unitLocal.insert(
         PropertyUnitRecord(
@@ -49,7 +51,7 @@ Future<void> syncPropertyUnitsForListingSave({
           minRentDuration: minRentalDuration,
           maxGuests: maxGuests,
           rooms: rooms,
-          floor: 0,
+          floor: floor,
           notes: notes,
           createdAtMs: now,
         ),

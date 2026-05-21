@@ -190,10 +190,7 @@ class SettingsView extends BaseView<SettingsController> {
                 trailing: const Icon(Icons.chevron_right_outlined),
               ),
               SettingsTile.navigation(
-                onPressed: (context) => Get.toNamed(
-                  Routes.CHANGE_PIN,
-                  arguments: {'setup_pin': true, 'change_pin': true},
-                ),
+                onPressed: (context) => controller.openPinSettings(),
                 leading: const Icon(Icons.pin_outlined),
                 title: _tileTitle(context, appLocalization.changePinTitle),
                 description: _tileDescription(
@@ -293,8 +290,35 @@ class SettingsView extends BaseView<SettingsController> {
               ),
               SettingsTile.navigation(
                 onPressed: (context) => Get.toNamed(Routes.SUPPORT),
+                leading: const Icon(Icons.contact_mail_outlined),
+                title: _tileTitle(
+                  context,
+                  appLocalization.supportContactHeading,
+                ),
+                description: _tileDescription(
+                  context,
+                  appLocalization.settingsContactUsDescription,
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.FEEDBACK),
+                leading: const Icon(Icons.feedback_outlined),
+                title: _tileTitle(context, appLocalization.sendFeedback),
+                description: _tileDescription(
+                  context,
+                  appLocalization.settingsSendFeedbackDescription,
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.SUPPORT),
                 leading: const Icon(Icons.help_outline),
                 title: _tileTitle(context, appLocalization.support),
+                description: _tileDescription(
+                  context,
+                  appLocalization.settingsSupportDescription,
+                ),
                 trailing: const Icon(Icons.chevron_right_outlined),
               ),
               SettingsTile.navigation(

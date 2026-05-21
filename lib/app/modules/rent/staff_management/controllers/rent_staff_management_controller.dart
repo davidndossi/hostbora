@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/rent_staff_local_data_source.dart';
+import '../../../../routes/app_pages.dart';
 import '../utils/rent_staff_pay_format.dart';
 
 /// One row in the rent staff list.
@@ -41,14 +42,15 @@ class RentStaffManagementController extends BaseController {
 
   final paymentType = RentStaffPayFormat.monthly.obs;
   final selectedPrimaryRole = ''.obs;
+  final editingStaffId = Rxn<int>();
 
   static const primaryRoleOptions = [
     'Estate Manager',
-    'Housekeeper',
+    'Housekeeping',
     'Security',
     'Gardener',
     'Chef',
-    'Concierge',
+    'Receptionist',
     'Maintenance',
     'Other',
   ];
@@ -85,10 +87,22 @@ class RentStaffManagementController extends BaseController {
   int get monthlyContractCount =>
       staff.where((s) => s.paymentType == RentStaffPayFormat.monthly).length;
 
+  bool get isEditMode => editingStaffId.value != null;
+
+  @override
+  void onInit() {
+    super.onInit();
+    final args = Get.arguments;
+    if (args is Map && args['staffId'] != null) {
+      final id = int.tryParse('${args['staffId']}');
+      if (id != null) editingStaffId.value = id;
+    }
+  }
+
   @override
   void onReady() {
     super.onReady();
-    loadStaff();
+    loadStaff().then((_) => _prefillIfEditing());
   }
 
   Future<void> loadStaff() async {
@@ -158,6 +172,24 @@ class RentStaffManagementController extends BaseController {
     }
   }
 
+  Future<void> _prefillIfEditing() async {
+    final id = editingStaffId.value;
+    if (id == null) return;
+    final record = await _local.getById(id);
+    if (record == null) return;
+    fullNameController.text = record.name;
+    selectedPrimaryRole.value = record.jobTitle;
+    payDateController.text = record.payDayLabel;
+    paymentType.value = record.paymentType;
+    if (record.amountValue > 0) {
+      amountController.text = record.amountValue.toStringAsFixed(
+        record.amountValue.truncateToDouble() == record.amountValue ? 0 : 2,
+      );
+    } else if (record.payAmountLabel.isNotEmpty) {
+      amountController.text = record.payAmountLabel;
+    }
+  }
+
   Future<void> registerStaff() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
     final name = fullNameController.text.trim();
@@ -173,6 +205,22 @@ class RentStaffManagementController extends BaseController {
 
     showLoading();
     try {
+      final editId = editingStaffId.value;
+      if (editId != null) {
+        await _local.updateById(
+          id: editId,
+          name: name,
+          jobTitle: role,
+          payDayLabel: payDay,
+          paymentType: paymentType.value,
+          amountValue: amount,
+        );
+        hideLoading();
+        showSuccessMessage('Staff updated');
+        Get.back(result: true);
+        return;
+      }
+
       await _local.insert(
         name: name,
         jobTitle: role,
@@ -196,7 +244,10 @@ class RentStaffManagementController extends BaseController {
   }
 
   void editStaff(RentStaffListItem member) {
-    Get.snackbar('Edit', member.name);
+    Get.toNamed(
+      Routes.RENT_STAFF_MANAGEMENT,
+      arguments: {'staffId': member.id},
+    )?.then((_) => loadStaff());
   }
 
   Future<void> removeStaff(String id) async {

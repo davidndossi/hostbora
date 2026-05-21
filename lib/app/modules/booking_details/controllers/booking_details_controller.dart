@@ -1,40 +1,79 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/bnb_booking_actions.dart';
+import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../data/model/check_in_item.dart';
 import '../../../routes/app_pages.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class BookingDetailsController extends BaseController {
+  BookingDetailsController()
+      : _actions = BnbBookingActions(
+          syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
+          syncWorker: Get.find<OfflineSyncWorkerService>(),
+        ),
+        _incomeLocal = Get.find<IncomeLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
+        _preferenceManager = Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        );
+
+  final BnbBookingActions _actions;
+  final IncomeLocalDataSource _incomeLocal;
+  final PropertyLocalDataSource _propertyLocal;
+  final PreferenceManager _preferenceManager;
+
+  static final _money = NumberFormat('#,###', 'en_US');
+
   /// True when opened from My Properties (select listing) to check availability.
   late final bool isListingMode;
 
-  // Property/listing - from args in listing mode or defaults
+  late CheckInItem _item;
+
   final propertyTitle = ''.obs;
   final propertyLocation = ''.obs;
   final propertyImageUrl = ''.obs;
 
-  // Booking data - used when not in listing mode (from Get.arguments or API)
-  final guestName = 'Alex Johnson';
-  final guestAvatarUrl = 'https://placehold.co/56x56';
-  final guestRating = 4.9;
-  final guestReviewCount = 12;
+  final guestName = ''.obs;
+  final guestAvatarUrl = ''.obs;
+  final guestRating = 0.0;
+  final guestReviewCount = 0;
 
-  final checkInDate = 'Oct 12, 2023';
+  final checkInDate = ''.obs;
   final checkInTime = 'After 3:00 PM';
-  final checkOutDate = 'Oct 15, 2023';
+  final checkOutDate = ''.obs;
   final checkOutTime = 'By 11:00 AM';
 
-  final isPaid = true;
-  final totalPayout = '\$1,240.00';
+  final isPaid = false.obs;
+  final totalPayout = '—'.obs;
+  final paymentSummaryLoading = false.obs;
 
-  /// Availability: 'today' (default), 'month', 'month_date'
-  final availabilityMode = 'today'.obs;
-  final selectedMonth = Rxn<DateTime>();
-  final selectedDate = Rxn<DateTime>();
+  String _propertyRef = '';
+  String _propertyLabel = '';
 
-  BookingDetailsController() {
+  final isCheckedOut = false.obs;
+  final isCancelled = false.obs;
+  final processing = false.obs;
+
+  DateTime? _checkOutDateTime;
+
+  static const _displayDateFormat = 'MMM d, yyyy';
+
+  AppLocalizations get _l10n => appLocalization;
+
+  @override
+  void onInit() {
+    super.onInit();
     final args = Get.arguments;
     if (args is Map<String, dynamic>) {
       final id = args['listingId'];
@@ -47,11 +86,48 @@ class BookingDetailsController extends BaseController {
       }
     }
     isListingMode = false;
-    propertyTitle.value = 'Modern Lakeside Villa';
-    propertyLocation.value = 'Lake Tahoe, California';
-    propertyImageUrl.value =
-        'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800';
+    if (args is CheckInItem) {
+      _bindBooking(args);
+      unawaited(_resolvePropertyContext());
+      unawaited(_loadPaymentSummary());
+    } else {
+      _bindBooking(
+        const CheckInItem(
+          imageUrl: '',
+          guestName: 'Guest',
+          guestAvatarUrl: '',
+          propertyType: 'Property',
+          dates: '',
+          isConfirmed: false,
+        ),
+      );
+    }
   }
+
+  void _bindBooking(CheckInItem item) {
+    _item = item;
+    _propertyLabel = item.propertyType.trim();
+    guestName.value = item.guestName;
+    guestAvatarUrl.value = item.guestAvatarUrl;
+    propertyTitle.value = item.propertyType;
+    propertyLocation.value = '';
+    propertyImageUrl.value = item.imageUrl;
+    isCheckedOut.value = item.isCheckedOut;
+    isCancelled.value = item.isCancelled;
+
+    final ci = DateTime.tryParse(item.checkInIso);
+    final co = DateTime.tryParse(item.checkOutIso);
+    _checkOutDateTime = co;
+    checkInDate.value =
+        ci != null ? DateFormat(_displayDateFormat).format(ci) : item.checkInIso;
+    checkOutDate.value =
+        co != null ? DateFormat(_displayDateFormat).format(co) : item.checkOutIso;
+  }
+
+  /// Availability: 'today' (default), 'month', 'month_date'
+  final availabilityMode = 'today'.obs;
+  final selectedMonth = Rxn<DateTime>();
+  final selectedDate = Rxn<DateTime>();
 
   void setAvailabilityMode(String mode) {
     availabilityMode.value = mode;
@@ -108,7 +184,6 @@ class BookingDetailsController extends BaseController {
     }
   }
 
-  /// Date we're showing availability for: today (default), or selected month/date.
   String get availabilitySummary {
     if (availabilityMode.value == 'today') {
       final t = DateTime.now();
@@ -124,7 +199,6 @@ class BookingDetailsController extends BaseController {
     return DateFormat('EEEE, MMM d').format(d);
   }
 
-  /// Placeholder availability status (replace with API later).
   String get availabilityStatus {
     if (availabilityMode.value == 'today') {
       return 'Available';
@@ -135,29 +209,280 @@ class BookingDetailsController extends BaseController {
     return 'Available';
   }
 
-  void goBack() => Get.back();
+  void goBack() => Get.back(result: true);
+
+  Future<void> _resolvePropertyContext() async {
+    final listingId = (_item.listingId ?? '').trim();
+    if (listingId.isNotEmpty) {
+      _propertyRef = listingId;
+    }
+    try {
+      final userId = (await _preferenceManager.getUser()).id ?? '';
+      final rows = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: userId,
+        workspaceType: 'bnb',
+      );
+      for (final p in rows) {
+        final ref = p.propertyRef.trim();
+        final legacy = 'legacy_${p.id}';
+        final local = 'local_${p.id}';
+        if (listingId.isNotEmpty &&
+            (listingId == ref || listingId == legacy || listingId == local)) {
+          _propertyRef = ref.isNotEmpty ? ref : legacy;
+          final label = p.propertyName.trim().isNotEmpty
+              ? p.propertyName.trim()
+              : p.propertyLocation.trim();
+          if (label.isNotEmpty) _propertyLabel = label;
+          return;
+        }
+        final label = p.propertyName.trim().isNotEmpty
+            ? p.propertyName.trim()
+            : p.propertyLocation.trim();
+        if (label.isNotEmpty && label == _propertyLabel) {
+          _propertyRef = ref.isNotEmpty ? ref : legacy;
+          return;
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadPaymentSummary() async {
+    if (isListingMode) return;
+    paymentSummaryLoading.value = true;
+    try {
+      final rows = await _incomeLocal.getAllByBookingId(
+        _item.bookingKey,
+        workspaceType: 'bnb',
+      );
+      final total = rows.fold<double>(0, (sum, r) => sum + r.amountValue);
+      isPaid.value = total > 0;
+      totalPayout.value =
+          total > 0 ? 'TZS ${_money.format(total.round())}' : '—';
+    } finally {
+      paymentSummaryLoading.value = false;
+    }
+  }
+
+  Future<void> recordPayment() async {
+    if (isListingMode) return;
+    final property = _propertyLabel.isNotEmpty
+        ? _propertyLabel
+        : propertyTitle.value.trim();
+    final saved = await Get.toNamed(
+      Routes.RECORD_PAYMENT,
+      parameters: {
+        'bookingId': _item.bookingKey,
+        if (_propertyRef.isNotEmpty) 'propertyRef': _propertyRef,
+        if (property.isNotEmpty) 'property': property,
+      },
+      arguments: {
+        'bookingId': _item.bookingKey,
+        if (_propertyRef.isNotEmpty) 'propertyRef': _propertyRef,
+        if (property.isNotEmpty) 'property': property,
+      },
+    );
+    if (saved == true) {
+      await _loadPaymentSummary();
+    }
+  }
 
   void share() {
     final text = [
-      'Booking – ${propertyTitle.value}',
+      '${_l10n.bookingDetails} – ${propertyTitle.value}',
       if (propertyLocation.value.isNotEmpty) propertyLocation.value,
-      'Check-in: $checkInDate $checkInTime',
-      'Check-out: $checkOutDate $checkOutTime',
-      'Guest: $guestName',
-      if (totalPayout.isNotEmpty) 'Total: $totalPayout',
+      'Check-in: ${checkInDate.value} $checkInTime',
+      'Check-out: ${checkOutDate.value} $checkOutTime',
+      '${_l10n.guestName}: ${guestName.value}',
+      if (totalPayout.value.isNotEmpty && totalPayout.value != '—')
+        '${_l10n.totalPayout}: ${totalPayout.value}',
     ].join('\n');
-    Share.share(text, subject: 'Booking – ${propertyTitle.value}');
+    Share.share(text, subject: '${_l10n.bookingDetails} – ${propertyTitle.value}');
   }
 
-  void moreOptions() {
-    // TODO: show bottom sheet / menu
+  void moreOptions() {}
+
+  void messageGuest() {}
+
+  bool get _isInactive =>
+      isCheckedOut.value || isCancelled.value;
+
+  Future<void> confirmCancelBooking() async {
+    if (_isInactive || processing.value) return;
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(_l10n.cancelBookingTitle),
+        content: Text(_l10n.cancelBookingMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(_l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(Get.context!).colorScheme.error,
+            ),
+            child: Text(_l10n.cancelBooking),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await cancelBooking();
   }
 
-  void messageGuest() {
-    // TODO: open chat with guest
+  Future<void> cancelBooking() async {
+    if (_isInactive || processing.value) return;
+    processing.value = true;
+    try {
+      await _actions.cancelBooking(
+        bookingKey: _item.bookingKey,
+        isLocalPending: _item.isLocalPending,
+      );
+      isCancelled.value = true;
+      Get.snackbar(_l10n.cancelBooking, _l10n.bookingCancelledSuccess);
+      Get.back(result: true);
+    } catch (e) {
+      Get.snackbar(_l10n.error, e.toString());
+    } finally {
+      processing.value = false;
+    }
   }
 
-  void modifyBooking() {
-    // TODO: navigate to modify booking
+  Future<void> confirmCheckOut() async {
+    if (_isInactive || processing.value) return;
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(_l10n.checkOutGuestTitle),
+        content: Text(_l10n.checkOutGuestMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(_l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(_l10n.checkOutGuest),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await checkOutGuest();
   }
+
+  Future<void> checkOutGuest() async {
+    if (_isInactive || processing.value) return;
+    processing.value = true;
+    try {
+      await _actions.checkOut(
+        bookingKey: _item.bookingKey,
+        isLocalPending: _item.isLocalPending,
+      );
+      isCheckedOut.value = true;
+      Get.snackbar(_l10n.checkOutGuest, _l10n.guestCheckedOut);
+      Get.back(result: true);
+    } catch (e) {
+      Get.snackbar(_l10n.error, e.toString());
+    } finally {
+      processing.value = false;
+    }
+  }
+
+  Future<void> showExtendStayDialog() async {
+    if (_isInactive || processing.value) return;
+    final currentOut = _checkOutDateTime ??
+        DateTime.tryParse(_item.checkOutIso) ??
+        DateTime.now().add(const Duration(days: 1));
+    var extraNights = 1;
+
+    final result = await Get.dialog<int>(
+      AlertDialog(
+        title: Text(_l10n.extendStayTitle),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            final newOut = currentOut.add(Duration(days: extraNights));
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_l10n.extendStayDays),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: extraNights > 1
+                          ? () => setState(() => extraNights--)
+                          : null,
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                    Text(
+                      '$extraNights',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: extraNights < 90
+                          ? () => setState(() => extraNights++)
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${_l10n.newCheckOutDate}: ${DateFormat(_displayDateFormat).format(newOut)}',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(_l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: extraNights),
+            child: Text(_l10n.extendStayConfirm),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result < 1) return;
+    await extendStay(extraNights: result);
+  }
+
+  Future<void> extendStay({required int extraNights}) async {
+    if (_isInactive || processing.value) return;
+    final currentOut = _checkOutDateTime ??
+        DateTime.tryParse(_item.checkOutIso) ??
+        DateTime.now();
+    final newOut = DateTime(currentOut.year, currentOut.month, currentOut.day)
+        .add(Duration(days: extraNights));
+
+    processing.value = true;
+    try {
+      await _actions.extendStay(
+        bookingKey: _item.bookingKey,
+        isLocalPending: _item.isLocalPending,
+        newCheckOut: newOut,
+      );
+      _checkOutDateTime = newOut;
+      checkOutDate.value = DateFormat(_displayDateFormat).format(newOut);
+      Get.snackbar(_l10n.extendStayTitle, _l10n.stayExtended);
+      Get.back(result: true);
+    } catch (e) {
+      Get.snackbar(_l10n.error, e.toString());
+    } finally {
+      processing.value = false;
+    }
+  }
+
+  void modifyBooking() => showExtendStayDialog();
 }

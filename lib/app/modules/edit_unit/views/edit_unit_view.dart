@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
+import '../../../core/values/property_unit_floor.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
@@ -39,6 +41,7 @@ class EditUnitView extends BaseView<EditUnitController> {
         );
       }
 
+      final l10n = AppLocalizations.of(context)!;
       return Form(
         key: controller.formKey,
         child: ListView(
@@ -55,6 +58,29 @@ class EditUnitView extends BaseView<EditUnitController> {
                   return _isSw ? 'Jina la uniti linahitajika' : 'Unit name is required';
                 }
                 return null;
+              },
+            ),
+            const SizedBox(height: 14),
+            _label(dark, l10n.unitFloorLabel.toUpperCase()),
+            const SizedBox(height: 8),
+            Obx(
+              () {
+                final floor = PropertyUnitFloor.indices.contains(controller.unitFloor.value)
+                    ? controller.unitFloor.value
+                    : PropertyUnitFloor.defaultIndex;
+                return DropdownButtonFormField<int>(
+                  initialValue: floor,
+                  decoration: _input(dark, ''),
+                  items: PropertyUnitFloor.indices
+                      .map(
+                        (f) => DropdownMenuItem(
+                          value: f,
+                          child: Text(PropertyUnitFloor.label(l10n, f)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: controller.updateUnitFloor,
+                );
               },
             ),
             const SizedBox(height: 14),

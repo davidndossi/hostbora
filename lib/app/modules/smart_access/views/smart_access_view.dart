@@ -5,7 +5,6 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
-import '../../../routes/app_pages.dart';
 import '../controllers/smart_access_controller.dart';
 
 const _accessTeal = Color(0xFF0A6A69);
@@ -289,7 +288,25 @@ class SmartAccessView extends BaseView<SmartAccessController> {
               ),
             ],
           ),
-          ...controller.recentActivity.map(
+          Obx(() {
+            if (controller.recentActivity.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  _t(
+                    context,
+                    en: 'No recent activity',
+                    sw: 'Hakuna shughuli za hivi karibuni',
+                  ),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textColorSecondary,
+                  ),
+                ),
+              );
+            }
+            return Column(
+              children: controller.recentActivity.map(
             (e) => Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Row(
@@ -331,7 +348,9 @@ class SmartAccessView extends BaseView<SmartAccessController> {
                 ],
               ),
             ),
-          ),
+          ).toList(),
+            );
+          }),
         ],
       ),
     );

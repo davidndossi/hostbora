@@ -16,6 +16,7 @@ abstract class Routes {
   static const SUCCESS = _Paths.SUCCESS;
   static const FAILED = _Paths.FAILED;
   static const SUPPORT = _Paths.SUPPORT;
+  static const FEEDBACK = _Paths.FEEDBACK;
   static const SEND_SMS = _Paths.SEND_SMS;
   static const SUBSCRIPTION = _Paths.SUBSCRIPTION;
   static const SPLASH = _Paths.SPLASH;
@@ -34,10 +35,13 @@ abstract class Routes {
   static const TEAM_AND_STAFF = _Paths.TEAM_AND_STAFF;
   static const BOOKING_DETAILS = _Paths.BOOKING_DETAILS;
   static const FINANCIAL_OVERVIEW = _Paths.FINANCIAL_OVERVIEW;
+  static const REPORTS_HUB = _Paths.REPORTS_HUB;
   static const VERIFY_IDENTITY = _Paths.VERIFY_IDENTITY;
   static const HOST_CALENDAR = _Paths.HOST_CALENDAR;
   static const MY_PROPERTIES = _Paths.MY_PROPERTIES;
   static const LISTING_DETAILS = _Paths.LISTING_DETAILS;
+  static const LISTING_UNIT_OCCUPANCY = _Paths.LISTING_UNIT_OCCUPANCY;
+  static const CALENDAR_SYNC = _Paths.CALENDAR_SYNC;
   static const SECURITY = _Paths.SECURITY;
   static const NEW_PASSWORD = _Paths.NEW_PASSWORD;
   static const EXPENSE_ANALYSIS = _Paths.EXPENSE_ANALYSIS;
@@ -122,6 +126,7 @@ abstract class _Paths {
   static const FAILED = '/failed';
   static const CHANGE_PASSWORD = '/change-password';
   static const SUPPORT = '/support';
+  static const FEEDBACK = '/feedback';
   static const SEND_SMS = '/send-sms';
   static const SUBSCRIPTION = '/subscription';
   static const SPLASH = '/splash';
@@ -140,10 +145,13 @@ abstract class _Paths {
   static const TEAM_AND_STAFF = '/team-and-staff';
   static const BOOKING_DETAILS = '/booking-details';
   static const FINANCIAL_OVERVIEW = '/financial-overview';
+  static const REPORTS_HUB = '/reports-hub';
   static const VERIFY_IDENTITY = '/verify-identity';
   static const HOST_CALENDAR = '/host-calendar';
   static const MY_PROPERTIES = '/my-properties';
   static const LISTING_DETAILS = '/listing-details';
+  static const LISTING_UNIT_OCCUPANCY = '/listing-unit-occupancy';
+  static const CALENDAR_SYNC = '/calendar-sync';
   static const SECURITY = '/security';
   static const NEW_PASSWORD = '/new-password';
   static const EXPENSE_ANALYSIS = '/expense-analysis';

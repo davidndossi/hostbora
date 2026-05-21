@@ -1,11 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:local_auth/local_auth.dart';
-import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:pin_code_fields/pin_code_fields.dart';
 
 import '../../../core/base/base_controller.dart';
@@ -154,67 +151,6 @@ class AuthController extends BaseController {
     }
   }
 
-  void useBiometrics() async {
-    var phone = await _preferenceManager.getString(PreferenceManager.keyUsername);
-    var a = await _preferenceManager.getString('userApp');
-    if (a == '') {
-      showErrorMessage(_t('Login using phone/password first', 'Ingia kutumia namba ya simu/nywila kwanza'));
-      return;
-    }
-    final LocalAuthentication auth = LocalAuthentication();
-    // final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
-    // final bool canAuthenticate =
-    //     canAuthenticateWithBiometrics || await auth.isDeviceSupported();
-    final List<BiometricType> availableBiometrics = await auth.getAvailableBiometrics();
-    if (availableBiometrics.isNotEmpty) {
-      // Some biometrics are enrolled.
-      if (availableBiometrics.contains(BiometricType.strong) ||
-          availableBiometrics.contains(BiometricType.weak) ||
-          availableBiometrics.contains(BiometricType.fingerprint) ||
-          availableBiometrics.contains(BiometricType.face)) {
-        // Specific types of biometrics are available.
-        // Use checks like this with caution!
-        try {
-          final bool didAuthenticate = await auth.authenticate(
-              localizedReason: _t(
-                'Scan your fingerprint (or face) to login',
-                'Weka alama ya kidole (au uso) ili kuingia',
-              ),
-              options: const AuthenticationOptions(
-                biometricOnly: true,
-                stickyAuth: true,
-              )
-          );
-          if (didAuthenticate) {
-            msisdn(phone);
-            password(a.toString());
-          } else {
-            Get.back();
-          }
-        } on PlatformException catch (e) {
-          if (e.code == auth_error.notAvailable) {
-            // Add handling of no hardware here.
-          } else if (e.code == auth_error.notEnrolled) {
-            // ...
-          } else {
-            // ...
-          }
-        }
-      } else {
-        showErrorMessage(_t(
-          'Your phone does not support biometrics... enter your password',
-          'Simu yako haitumii biometria... weka nenosiri lako',
-        ));
-      }
-    } else {
-      showErrorMessage(_t(
-        'Cannot access biometrics... enter your password',
-        'Hatuwezi kufikia biometria... weka nenosiri lako',
-      ));
-    }
-    // return canAuthenticate;
-  }
-
   Future<void> showOtpDialog() async {
     otpController.clear();
     errorController?.close();
@@ -317,6 +253,7 @@ class AuthController extends BaseController {
       await _preferenceManager.setBool('isAdmin', loginResponse.user?.isAdmin ?? false);
 
       await _preferenceManager.setUser('user', loginResponse.user);
+      // TODO(security): replace plaintext userApp storage with a secure token/credential API.
       await _preferenceManager.setString('userApp', password.value);
       if (res.token != null) {
         final hasPinEnabled = await _preferenceManager.getBool(

@@ -20,6 +20,7 @@ class PropertyRecord {
     this.rentFrequency = '',
     this.minRentalDuration = '',
     this.unitsJson = '',
+    this.floorCount = 1,
   });
 
   final int id;
@@ -36,6 +37,7 @@ class PropertyRecord {
   final String rentFrequency;
   final String minRentalDuration;
   final String unitsJson;
+  final int floorCount;
 
   /// Rent “apartment suite” field — same as [propertyName] in local schema.
   String get apartmentSuite => propertyName;
@@ -56,6 +58,7 @@ class PropertyRecord {
       rentFrequency: m['rent_frequency'] as String? ?? '',
       minRentalDuration: m['min_rental_duration'] as String? ?? '',
       unitsJson: m['units_json'] as String? ?? '',
+      floorCount: (m['floor_count'] as num?)?.toInt() ?? 1,
     );
   }
 
@@ -73,6 +76,7 @@ class PropertyRecord {
         'rent_frequency': rentFrequency,
         'min_rental_duration': minRentalDuration,
         'units_json': unitsJson,
+        'floor_count': floorCount,
       };
 }
 

@@ -6,7 +6,6 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
-import '../../../routes/app_pages.dart';
 import '../controllers/expense_analysis_controller.dart';
 
 const _expenseChartCyan = Color(0xFF00BCD4);

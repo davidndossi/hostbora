@@ -13,6 +13,7 @@ class IncomeRecord {
     required this.apartment,
     required this.apartmentUnit,
     this.propertyRef = '',
+    this.bookingId = '',
     required this.workspaceType,
     required this.createdAtMs,
   });
@@ -27,6 +28,8 @@ class IncomeRecord {
   final String apartmentUnit;
   /// Hub id / [PropertyRecord.propertyRef] / `local_<id>` for listing-scoped totals.
   final String propertyRef;
+  /// BnB booking key ([CheckInItem.bookingKey]) when payment is linked to a stay.
+  final String bookingId;
   /// `rent` or `bnb` — matches [WorkspaceContextService] persistence.
   final String workspaceType;
   final int createdAtMs;
@@ -42,6 +45,7 @@ class IncomeRecord {
       apartment: m['apartment'] as String? ?? '',
       apartmentUnit: m['apartment_unit'] as String? ?? '',
       propertyRef: m['property_ref'] as String? ?? '',
+      bookingId: m['booking_id'] as String? ?? '',
       workspaceType: m['workspace_type'] as String? ?? 'rent',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
     );
@@ -98,6 +102,7 @@ class IncomeLocalDataSource {
     String apartment = '',
     String apartmentUnit = '',
     String propertyRef = '',
+    String bookingId = '',
   }) async {
     final db = await database;
     return db.insert(_table, {
@@ -109,9 +114,36 @@ class IncomeLocalDataSource {
       'apartment': apartment,
       'apartment_unit': apartmentUnit,
       'property_ref': propertyRef.trim(),
+      'booking_id': bookingId.trim(),
       'workspace_type': _normalizeWorkspace(workspaceType),
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });
+  }
+
+  /// Income rows linked to a BnB booking ([CheckInItem.bookingKey]).
+  Future<List<IncomeRecord>> getAllByBookingId(
+    String bookingId, {
+    String? workspaceType,
+  }) async {
+    final key = bookingId.trim();
+    if (key.isEmpty) return const [];
+
+    final db = await database;
+    final where = StringBuffer('trim(booking_id) = ?');
+    final args = <Object>[key];
+    if (workspaceType != null) {
+      where.write(
+        " AND lower(trim(coalesce(nullif(trim(workspace_type), ''), 'rent'))) = ?",
+      );
+      args.add(_normalizeWorkspace(workspaceType));
+    }
+    final maps = await db.query(
+      _table,
+      where: where.toString(),
+      whereArgs: args,
+      orderBy: 'created_at_ms DESC',
+    );
+    return maps.map(IncomeRecord.fromMap).toList();
   }
 
   /// When [workspaceType] is null, returns rows for all workspaces (e.g. home

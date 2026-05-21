@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/base/base_controller.dart';
@@ -14,6 +16,7 @@ import '../../../data/model/send_sms_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../subscription/controllers/subscription_controller.dart';
+import '../models/device_contact_entry.dart';
 import '../models/saved_whatsapp_group.dart';
 
 class SendSmsController extends BaseController
@@ -44,6 +47,10 @@ class SendSmsController extends BaseController
   final prefilledTenantIds = <int>{}.obs;
   final pickerSelectedTenantIds = <int>{}.obs;
   final availableTenants = <TenantRecord>[].obs;
+  final deviceContactEntries = <DeviceContactEntry>[].obs;
+  final contactPickerSearchQuery = ''.obs;
+  final pickerSelectedContactKeys = <String>{}.obs;
+  final isLoadingContacts = false.obs;
 
   static final _phonePattern = RegExp(r'^0[678]\d{8}$');
 
@@ -355,6 +362,113 @@ class SendSmsController extends BaseController
     phoneNumbersController.selection = TextSelection.collapsed(
       offset: phoneNumbersController.text.length,
     );
+  }
+
+  /// Converts contact/raw input to local SMS format (e.g. 0612345678).
+  String? normalizeToLocalSmsFormat(String raw) {
+    var digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('255') && digits.length >= 12) {
+      digits = '0${digits.substring(digits.length - 9)}';
+    } else if (digits.length == 9 && RegExp(r'^[678]').hasMatch(digits)) {
+      digits = '0$digits';
+    }
+    return _phonePattern.hasMatch(digits) ? digits : null;
+  }
+
+  Future<bool> ensureContactsPermission() async {
+    var status = await Permission.contacts.status;
+    if (!status.isGranted) {
+      status = await Permission.contacts.request();
+    }
+    return status.isGranted;
+  }
+
+  List<DeviceContactEntry> get filteredDeviceContactEntries {
+    final q = contactPickerSearchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return deviceContactEntries;
+    return deviceContactEntries
+        .where(
+          (e) =>
+              e.displayName.toLowerCase().contains(q) ||
+              e.phone.contains(q),
+        )
+        .toList();
+  }
+
+  /// Loads device contacts for the picker. Returns false if permission denied.
+  Future<bool> prepareContactPicker() async {
+    isLoadingContacts(true);
+    contactPickerSearchQuery.value = '';
+    pickerSelectedContactKeys.clear();
+    deviceContactEntries.clear();
+    try {
+      if (!await ensureContactsPermission()) {
+        showErrorMessage(
+          _t(
+            'Contacts permission is required to pick phone numbers.',
+            'Ruhusa ya mawasiliano inahitajika kuchagua namba za simu.',
+          ),
+        );
+        return false;
+      }
+      final contacts = await FlutterContacts.getContacts(
+        withProperties: true,
+        withPhoto: false,
+      );
+      final seenPhones = <String>{};
+      final entries = <DeviceContactEntry>[];
+      for (final contact in contacts) {
+        final name = contact.displayName.trim().isEmpty
+            ? _t('Unknown', 'Haijulikani')
+            : contact.displayName.trim();
+        for (final phone in contact.phones) {
+          final normalized = normalizeToLocalSmsFormat(phone.number);
+          if (normalized == null || !seenPhones.add(normalized)) continue;
+          entries.add(
+            DeviceContactEntry(
+              contactId: contact.id,
+              displayName: name,
+              phone: normalized,
+            ),
+          );
+        }
+      }
+      entries.sort(
+        (a, b) => a.displayName.toLowerCase().compareTo(
+          b.displayName.toLowerCase(),
+        ),
+      );
+      deviceContactEntries.assignAll(entries);
+      return true;
+    } catch (_) {
+      showErrorMessage(
+        _t(
+          'Could not load contacts. Please try again.',
+          'Imeshindikana kupakia mawasiliano. Jaribu tena.',
+        ),
+      );
+      return false;
+    } finally {
+      isLoadingContacts(false);
+    }
+  }
+
+  void toggleContactForPicker(String selectionKey, bool selected) {
+    final current = Set<String>.from(pickerSelectedContactKeys);
+    if (selected) {
+      current.add(selectionKey);
+    } else {
+      current.remove(selectionKey);
+    }
+    pickerSelectedContactKeys.assignAll(current);
+  }
+
+  void appendSelectedContactsToRecipients() {
+    final selectedPhones = deviceContactEntries
+        .where((e) => pickerSelectedContactKeys.contains(e.selectionKey))
+        .map((e) => e.phone)
+        .toList();
+    appendPhoneNumbers(selectedPhones);
   }
 
   Future<void> saveCurrentMessageAsTemplate({required bool isWhatsApp}) async {

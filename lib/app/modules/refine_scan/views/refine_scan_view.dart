@@ -145,6 +145,7 @@ class RefineScanView extends BaseView<RefineScanController> {
       return Container(
         width: maxWidth,
         height: maxHeight,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: _isDark(context)
               ? Theme.of(context).colorScheme.surfaceContainerHighest
@@ -155,21 +156,22 @@ class RefineScanView extends BaseView<RefineScanController> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                _t(context, en: 'CONTRACT', sw: 'MKATABA'),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: _isDark(context)
-                      ? Theme.of(context).colorScheme.onSurface
-                      : AppColors.textColorPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
               Icon(
-                Icons.description_outlined,
+                Icons.document_scanner_outlined,
                 size: 48,
                 color: AppColors.textColorSecondary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                appLocalization.refineScanNoImage,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: _isDark(context)
+                      ? Theme.of(context).colorScheme.onSurfaceVariant
+                      : AppColors.textColorSecondary,
+                ),
               ),
             ],
           ),
@@ -275,56 +277,30 @@ class RefineScanView extends BaseView<RefineScanController> {
           ),
         ),
         const SizedBox(height: 8),
-        Material(
-          color: isDark
-              ? theme.colorScheme.surfaceContainerHigh
-              : AppColors.colorWhite,
-          borderRadius: BorderRadius.circular(AppValues.radius_6),
-          child: InkWell(
-            onTap: controller.selectDestinationFolder,
-            borderRadius: BorderRadius.circular(AppValues.radius_6),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppValues.radius_6),
-                border: Border.all(
-                  color: isDark
-                      ? theme.colorScheme.outlineVariant
-                      : AppColors.designInputBorder,
-                ),
+        Obx(
+          () => Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? theme.colorScheme.surfaceContainerHigh
+                  : AppColors.colorWhite,
+              borderRadius: BorderRadius.circular(AppValues.radius_6),
+              border: Border.all(
+                color: isDark
+                    ? theme.colorScheme.outlineVariant
+                    : AppColors.designInputBorder,
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Obx(
-                      () => Text(
-                        controller.destinationFolder.value == 'Select folder'
-                            ? _t(
-                                context,
-                                en: 'Select folder',
-                                sw: 'Chagua kabrasha',
-                              )
-                            : controller.destinationFolder.value,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color:
-                              controller.destinationFolder.value ==
-                                  'Select folder'
-                              ? (isDark
-                                    ? theme.colorScheme.onSurfaceVariant
-                                    : AppColors.designPlaceholder)
-                              : (isDark
-                                    ? theme.colorScheme.onSurface
-                                    : AppColors.textColorPrimary),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppColors.designPlaceholder,
-                  ),
-                ],
+            ),
+            child: Text(
+              controller.destinationFolder.value.isEmpty
+                  ? _t(context, en: 'Select folder', sw: 'Chagua kabrasha')
+                  : controller.destinationFolder.value,
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark
+                    ? theme.colorScheme.onSurface
+                    : AppColors.textColorPrimary,
               ),
             ),
           ),
@@ -363,21 +339,41 @@ class RefineScanView extends BaseView<RefineScanController> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: ElevatedButton(
-            onPressed: controller.saveToVault,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.designAccent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppValues.radius_6),
-              ),
-              elevation: 0,
-            ),
-            child: Text(
-              _t(context, en: 'Save to Vault', sw: 'Hifadhi Kwenye Vault'),
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+          child: Obx(
+            () {
+              final enabled = controller.canSave;
+              return ElevatedButton(
+                onPressed: enabled ? controller.saveToVault : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.designAccent,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppColors.designAccent.withValues(
+                    alpha: 0.4,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppValues.radius_6),
+                  ),
+                  elevation: 0,
+                ),
+                child: controller.isSaving.value
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        _t(context, en: 'Save to Vault', sw: 'Hifadhi Kwenye Vault'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              );
+            },
           ),
         ),
       ],

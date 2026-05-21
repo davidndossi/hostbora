@@ -7,6 +7,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/property_listing_units_sync.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
+import '../../../core/values/property_unit_floor.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
 
 class EditUnitController extends BaseController {
@@ -22,6 +23,7 @@ class EditUnitController extends BaseController {
   final unitRentController = TextEditingController();
   final unitDescriptionController = TextEditingController();
   final unitRentFrequency = 'Per Month'.obs;
+  final unitFloor = PropertyUnitFloor.defaultIndex.obs;
 
   static const rentFrequencyOptions = [
     'Per Day',
@@ -106,6 +108,7 @@ class EditUnitController extends BaseController {
       unitRentController.text = unit.unitRent;
       unitDescriptionController.text = unit.unitDescription;
       unitRentFrequency.value = _coerceFrequency(unit.unitRentFrequency, row.rentFrequency);
+      unitFloor.value = unit.unitFloor;
     } catch (e, st) {
       logger.e('EditUnit load $e $st');
       loadError.value = _isSw ? 'Imeshindwa kupakia unit.' : 'Could not load unit details.';
@@ -128,6 +131,12 @@ class EditUnitController extends BaseController {
     }
   }
 
+  void updateUnitFloor(int? value) {
+    if (value != null && PropertyUnitFloor.indices.contains(value)) {
+      unitFloor.value = value;
+    }
+  }
+
   Future<void> save() async {
     if (saving.value) return;
     final property = _property;
@@ -144,6 +153,7 @@ class EditUnitController extends BaseController {
       unitName: updatedName,
       unitRent: updatedRent,
       unitRentFrequency: unitRentFrequency.value,
+      unitFloor: unitFloor.value,
       unitDescription: updatedDesc,
     );
 
@@ -169,6 +179,7 @@ class EditUnitController extends BaseController {
           rentFrequency: property.rentFrequency,
           minRentalDuration: property.minRentalDuration,
           unitsJson: unitsJson,
+          floorCount: property.floorCount,
         ),
       );
 

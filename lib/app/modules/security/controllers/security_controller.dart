@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:local_auth/local_auth.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
@@ -10,36 +11,25 @@ class SecurityController extends BaseController {
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
 
   final PreferenceManager _preferenceManager;
-  final faceIdEnabled = true.obs;
+  final faceIdEnabled = false.obs;
   final pinEnabled = false.obs;
+
   @override
   void onInit() {
     super.onInit();
-    _loadPinStatus();
+    _loadSecurityPrefs();
   }
 
-  Future<void> _loadPinStatus() async {
+  Future<void> _loadSecurityPrefs() async {
     pinEnabled.value = await _preferenceManager.getBool(
       PreferenceManager.keyPinEnabled,
       defaultValue: false,
     );
+    faceIdEnabled.value = await _preferenceManager.getBool(
+      PreferenceManager.keyFaceIdEnabled,
+      defaultValue: false,
+    );
   }
-
-
-  final devices = <DeviceSession>[
-    DeviceSession(
-      name: 'iPhone 14 Pro',
-      location: 'London, UK',
-      lastActive: 'Active Now',
-      isCurrent: true,
-    ),
-    DeviceSession(
-      name: 'MacBook Pro 16"',
-      location: 'Manchester, UK',
-      lastActive: '2 hours ago',
-      isCurrent: false,
-    ),
-  ];
 
   void goBack() => Get.back();
 
@@ -48,54 +38,60 @@ class SecurityController extends BaseController {
   void openPinCode() {
     Get.toNamed(
       Routes.CHANGE_PIN,
-      arguments: {'setup_pin': true, 'change_pin': true},
+      arguments: {
+        'setup_pin': true,
+        'change_pin': pinEnabled.value,
+      },
+    )?.then((_) => _loadSecurityPrefs());
+  }
+
+  Future<void> toggleFaceId(bool enabled) async {
+    if (enabled) {
+      final pinCode = await _preferenceManager.getString(
+        PreferenceManager.keyPinCode,
+        defaultValue: '',
+      );
+      final pinOn = await _preferenceManager.getBool(
+        PreferenceManager.keyPinEnabled,
+        defaultValue: false,
+      );
+      if (!pinOn || pinCode.length != 4) {
+        faceIdEnabled.value = false;
+        showErrorMessage(appLocalization.faceIdRequiresPinMessage);
+        return;
+      }
+
+      try {
+        final auth = LocalAuthentication();
+        final supported = await auth.isDeviceSupported();
+        final available = await auth.getAvailableBiometrics();
+        final canUse = supported &&
+            (available.contains(BiometricType.strong) ||
+                available.contains(BiometricType.weak) ||
+                available.contains(BiometricType.fingerprint) ||
+                available.contains(BiometricType.face));
+        if (!canUse) {
+          faceIdEnabled.value = false;
+          showErrorMessage(appLocalization.faceIdNotAvailableMessage);
+          return;
+        }
+      } catch (_) {
+        faceIdEnabled.value = false;
+        showErrorMessage(appLocalization.faceIdNotAvailableMessage);
+        return;
+      }
+    }
+
+    faceIdEnabled.value = enabled;
+    await _preferenceManager.setBool(
+      PreferenceManager.keyFaceIdEnabled,
+      enabled,
     );
   }
 
   void openTwoFactor() {
-    // TODO: navigate to 2FA settings
-  }
-
-  void logoutAllDevices() {
-    // TODO: confirm and call API to log out all sessions
-    Get.back();
-  }
-
-  void logoutDevice(DeviceSession device) {
-    // TODO: remove session
+    showErrorMessage(appLocalization.twoFactorNotConfiguredMessage);
   }
 
   void openPrivacyPolicy() => Get.toNamed(Routes.PRIVACY);
-
-  void onNavTap(int index) {
-    switch (index) {
-      case 0:
-        break; // TODO: Inbox
-      case 1:
-        Get.offAllNamed(Routes.HOST_CALENDAR);
-        break;
-      case 2:
-        Get.offAllNamed(Routes.MY_PROPERTIES);
-        break;
-      case 3:
-        Get.back();
-        break; // Settings - current
-      case 4:
-        break; // TODO: Menu
-    }
-  }
-}
-
-class DeviceSession {
-  final String name;
-  final String location;
-  final String lastActive;
-  final bool isCurrent;
-
-  DeviceSession({
-    required this.name,
-    required this.location,
-    required this.lastActive,
-    required this.isCurrent,
-  });
 }

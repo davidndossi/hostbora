@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
@@ -8,6 +9,8 @@ import '../controllers/support_controller.dart';
 
 class SupportView extends BaseView<SupportController> {
   SupportView({super.key});
+
+  static const int faqCount = 11;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -58,41 +61,52 @@ class SupportView extends BaseView<SupportController> {
           const SizedBox(height: AppValues.largePadding),
           _sectionTitle(l10n.supportFaqHeading, headingColor),
           const SizedBox(height: 8),
-          _faqTile(
-            context: context,
-            title: l10n.supportFaq1Q,
-            body: l10n.supportFaq1A,
-            cardColor: cardColor,
+          ...List.generate(faqCount, (i) {
+            final index = i + 1;
+            return _faqTile(
+              context: context,
+              title: _faqQuestion(l10n, index),
+              body: _faqAnswer(l10n, index),
+              cardColor: cardColor,
+              borderColor: borderColor,
+              bodyColor: bodyColor,
+              headingColor: headingColor,
+            );
+          }),
+          const SizedBox(height: AppValues.largePadding),
+          _sectionTitle(l10n.sendFeedback, headingColor),
+          const SizedBox(height: 10),
+          _card(
+            color: cardColor,
             borderColor: borderColor,
-            bodyColor: bodyColor,
-            headingColor: headingColor,
-          ),
-          _faqTile(
-            context: context,
-            title: l10n.supportFaq2Q,
-            body: l10n.supportFaq2A,
-            cardColor: cardColor,
-            borderColor: borderColor,
-            bodyColor: bodyColor,
-            headingColor: headingColor,
-          ),
-          _faqTile(
-            context: context,
-            title: l10n.supportFaq3Q,
-            body: l10n.supportFaq3A,
-            cardColor: cardColor,
-            borderColor: borderColor,
-            bodyColor: bodyColor,
-            headingColor: headingColor,
-          ),
-          _faqTile(
-            context: context,
-            title: l10n.supportFaq4Q,
-            body: l10n.supportFaq4A,
-            cardColor: cardColor,
-            borderColor: borderColor,
-            bodyColor: bodyColor,
-            headingColor: headingColor,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.supportFeedbackBody,
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.5,
+                    color: bodyColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: controller.openFeedback,
+                  icon: const Icon(Icons.feedback_outlined, size: 20),
+                  label: Text(
+                    l10n.sendFeedback,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppValues.largePadding),
           _sectionTitle(l10n.supportContactHeading, headingColor),
@@ -109,6 +123,15 @@ class SupportView extends BaseView<SupportController> {
                     fontSize: 15,
                     height: 1.5,
                     color: bodyColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  SupportController.supportEmailAddress,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: headingColor,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -207,6 +230,64 @@ class SupportView extends BaseView<SupportController> {
       ),
       child: child,
     );
+  }
+
+  String _faqQuestion(AppLocalizations l10n, int index) {
+    switch (index) {
+      case 1:
+        return l10n.supportFaq1Q;
+      case 2:
+        return l10n.supportFaq2Q;
+      case 3:
+        return l10n.supportFaq3Q;
+      case 4:
+        return l10n.supportFaq4Q;
+      case 5:
+        return l10n.supportFaq5Q;
+      case 6:
+        return l10n.supportFaq6Q;
+      case 7:
+        return l10n.supportFaq7Q;
+      case 8:
+        return l10n.supportFaq8Q;
+      case 9:
+        return l10n.supportFaq9Q;
+      case 10:
+        return l10n.supportFaq10Q;
+      case 11:
+        return l10n.supportFaq11Q;
+      default:
+        return '';
+    }
+  }
+
+  String _faqAnswer(AppLocalizations l10n, int index) {
+    switch (index) {
+      case 1:
+        return l10n.supportFaq1A;
+      case 2:
+        return l10n.supportFaq2A;
+      case 3:
+        return l10n.supportFaq3A;
+      case 4:
+        return l10n.supportFaq4A;
+      case 5:
+        return l10n.supportFaq5A;
+      case 6:
+        return l10n.supportFaq6A;
+      case 7:
+        return l10n.supportFaq7A;
+      case 8:
+        return l10n.supportFaq8A;
+      case 9:
+        return l10n.supportFaq9A;
+      case 10:
+        return l10n.supportFaq10A;
+      case 11:
+        return l10n.supportFaq11A;
+      default:
+        return '';
+    }
   }
 
   Widget _faqTile({

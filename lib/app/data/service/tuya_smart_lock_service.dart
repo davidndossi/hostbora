@@ -57,7 +57,12 @@ class TuyaSmartLockService extends GetxService {
 
   /// Subscribe to lock state updates (e.g. to refresh UI when lock is used locally).
   Stream<Map<String, dynamic>> onLockStateUpdated(String deviceId) {
-    return tuyaService.onDeviceDpsUpdated(deviceId: deviceId).cast<Map<String, dynamic>>();
+    return tuyaService.onDeviceEvents(deviceId: deviceId).map((event) {
+      if (event is DpsUpdateEvent) {
+        return Map<String, dynamic>.from(event.dps);
+      }
+      return <String, dynamic>{};
+    }).where((dps) => dps.isNotEmpty);
   }
 
   /// Returns whether the last known state (from dps map) is locked.

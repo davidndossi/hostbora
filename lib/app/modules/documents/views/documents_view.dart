@@ -65,7 +65,7 @@ class DocumentsView extends BaseView<DocumentsController> {
             if (controller.documents.isEmpty) {
               return Center(
                 child: Text(
-                  _t(context, en: 'No documents', sw: 'Hakuna nyaraka'),
+                  appLocalization.noDocuments,
                   style: TextStyle(
                     fontSize: 16,
                     color: isDark
@@ -164,7 +164,7 @@ class DocumentsView extends BaseView<DocumentsController> {
         onPressed: controller.uploadDocument,
         icon: const Icon(Icons.upload_outlined, size: 22, color: Colors.white),
         label: Text(
-          _t(context, en: 'Upload Document', sw: 'Pakia Nyaraka'),
+          appLocalization.uploadDocument,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,

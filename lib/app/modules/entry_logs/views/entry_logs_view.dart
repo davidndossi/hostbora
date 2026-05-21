@@ -43,12 +43,20 @@ class EntryLogsView extends BaseView<EntryLogsController> {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            '${controller.deviceName} • ${controller.locationName}',
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
-            ),
+          Obx(
+            () {
+              final loc = controller.locationName.value.trim();
+              final subtitle = loc.isEmpty
+                  ? controller.deviceName.value
+                  : '${controller.deviceName.value} • $loc';
+              return Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -86,6 +94,48 @@ class EntryLogsView extends BaseView<EntryLogsController> {
           _buildFilterTabs(context),
           Expanded(
             child: Obx(() {
+              if (controller.isLoading.value && controller.allItems.isEmpty) {
+                return const Center(child: CircularProgressIndicator(color: _teal));
+              }
+              if (controller.loadError.value.isNotEmpty &&
+                  controller.allItems.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 40,
+                          color: isDark
+                              ? Colors.white54
+                              : AppColors.textColorSecondary,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          controller.loadError.value,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isDark
+                                ? Colors.white70
+                                : AppColors.textColorSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: controller.loadLogs,
+                          child: Text(
+                            _t(context, en: 'Retry', sw: 'Jaribu tena'),
+                            style: const TextStyle(color: _teal),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
               final byDay = controller.itemsByDay;
               if (byDay.isEmpty) {
                 return Center(
@@ -136,7 +186,8 @@ class EntryLogsView extends BaseView<EntryLogsController> {
   }
 
   Widget _buildFilterTabs(BuildContext context) {
-    return Padding(
+    return Obx(
+      () => Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: Row(
         children: [
@@ -161,6 +212,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
           ),
         ],
       ),
+    ),
     );
   }
 }

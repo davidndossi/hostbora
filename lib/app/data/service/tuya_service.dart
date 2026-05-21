@@ -96,10 +96,14 @@ class TuyaService extends GetxService {
   }
 
   /// Subscribe to real-time device status updates (e.g. lock state, camera motion).
-  Stream<Object> onDeviceDpsUpdated({required String deviceId}) {
+  Stream<TuyaDeviceEvent> onDeviceEvents({required String deviceId}) {
     if (!_initialized) return const Stream.empty();
     return TuyaHomeSdkFlutter.instance.onDeviceEvents(deviceId: deviceId);
   }
+
+  @Deprecated('Use onDeviceEvents')
+  Stream<TuyaDeviceEvent> onDeviceDpsUpdated({required String deviceId}) =>
+      onDeviceEvents(deviceId: deviceId);
 
   /// Login with Tuya (required before getHomeList / getHomeDevices).
   /// Use after your app user is authenticated; link your user to Tuya via email/phone or OAuth.

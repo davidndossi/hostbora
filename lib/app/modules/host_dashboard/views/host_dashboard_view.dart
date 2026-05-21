@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../data/model/check_in_item.dart';
 import '../controllers/host_dashboard_controller.dart';
 
 class HostDashboardView extends BaseView<HostDashboardController> {

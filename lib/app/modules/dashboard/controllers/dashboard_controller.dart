@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -6,11 +7,17 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/workspace_context_service.dart';
+import '../../../data/model/check_in_item.dart';
 import '../../../data/model/community.dart';
 import '../../../data/model/user_community.dart';
+import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
 class DashboardController extends BaseController {
@@ -27,8 +34,38 @@ class DashboardController extends BaseController {
   final IncomeLocalDataSource _incomeLocal = Get.find<IncomeLocalDataSource>();
   final ExpenseLocalDataSource _expenseLocal =
       Get.find<ExpenseLocalDataSource>();
+  final PropertyLocalDataSource _propertyLocal =
+      Get.find<PropertyLocalDataSource>();
+  final WorkspaceContextService _workspaceContext =
+      Get.find<WorkspaceContextService>();
+  final AppRepository _repository =
+      Get.find<AppRepository>(tag: (AppRepository).toString());
+  final PendingBookingsStore _pendingBookingsStore = PendingBookingsStore();
 
   static final _money = NumberFormat('#,###', 'en_US');
+
+  final isBnbWorkspace = true.obs;
+  final bnbBookingsCount = 0.obs;
+  final bnbGuestsCount = 0.obs;
+  final bnbTodayRevenue = 'TZS 0'.obs;
+  final bnbUnitsCount = 0.obs;
+
+  /// Mon–Sun of the current calendar week (same as [RentSmartUtilityDashboardController]).
+  static const weeklyDayLabels = [
+    'MON',
+    'TUE',
+    'WED',
+    'THU',
+    'FRI',
+    'SAT',
+    'SUN',
+  ];
+
+  /// BnB income per day (TZS), indexed 0 = Monday … 6 = Sunday.
+  final weeklyRevenue = <double>[0, 0, 0, 0, 0, 0, 0].obs;
+
+  /// Daily occupancy % (0–100): occupied unit-nights ÷ available unit-nights.
+  final weeklyOccupancyPercent = <double>[0, 0, 0, 0, 0, 0, 0].obs;
 
   late String firebaseToken;
   Timer? _debounce;
@@ -111,7 +148,14 @@ class DashboardController extends BaseController {
   Future<void> loadDashboard() async {
     isLoading.value = true;
     try {
-      const ws = 'bnb';
+      final ws = await _workspaceContext.getWorkspaceType();
+      isBnbWorkspace.value = ws == 'bnb';
+      if (isBnbWorkspace.value) {
+        await _loadBnbOverviewStats();
+      } else {
+        weeklyRevenue.assignAll(List<double>.filled(7, 0));
+        weeklyOccupancyPercent.assignAll(List<double>.filled(7, 0));
+      }
       final incomes =
           await _incomeLocal.getAllNewestFirst(workspaceType: ws);
       final expenses =
@@ -355,11 +399,216 @@ class DashboardController extends BaseController {
 
   void goBack() => Get.back();
 
-  void recordPayment() => Get.toNamed(Routes.RECORD_PAYMENT);
+  Future<void> recordPayment() async {
+    final saved = await Get.toNamed(Routes.RECORD_PAYMENT);
+    if (saved == true) {
+      await loadDashboard();
+    }
+  }
 
-  void addExpense() => Get.toNamed(Routes.ADD_EXPENSE);
+  Future<void> addExpense() async {
+    final saved = await Get.toNamed(Routes.ADD_EXPENSE);
+    if (saved == true) {
+      await loadDashboard();
+    }
+  }
 
   void selectIncome() => isIncomeSelected.value = true;
   void selectExpenses() => isIncomeSelected.value = false;
+
+  void openBookings() => Get.toNamed(Routes.ALL_BOOKINGS);
+
+  void openProperties() => Get.toNamed(Routes.MY_PROPERTIES);
+
+  void openTodayRevenue() =>
+      Get.toNamed(Routes.RENT_MANAGE_PAYMENTS, arguments: {'ws': 'bnb'});
+
+  Future<void> _loadBnbOverviewStats() async {
+    final weekStart = _currentWeekMondayStart();
+    final merge = BnbBookingMerge(pending: _pendingBookingsStore);
+    final merged = <String, CheckInItem>{};
+    var unitsTotal = 0;
+
+    try {
+      final res = await _repository.getAllBookings();
+      final data = res.data;
+      List<dynamic> rows = const [];
+      if (res.responseCode == '0' && data is Map && data['bookings'] is List) {
+        rows = data['bookings'] as List;
+      } else if (res.responseCode == '0' && data is List) {
+        rows = data;
+      }
+      for (final e in rows.whereType<Map>()) {
+        final item = merge.fromApiMap(Map<String, dynamic>.from(e));
+        merged[item.bookingKey] = item;
+      }
+    } catch (_) {}
+
+    try {
+      final properties = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: '',
+        workspaceType: 'bnb',
+      );
+      for (final m in _pendingBookingsStore.load()) {
+        final listingId = (m['listingId'] ?? '').toString().trim();
+        final checkIn = (m['checkIn'] ?? '').toString();
+        final checkOut = (m['checkOut'] ?? '').toString();
+        if (listingId.isEmpty || checkIn.isEmpty || checkOut.isEmpty) {
+          continue;
+        }
+        final property = properties.firstWhereOrNull(
+          (p) =>
+              p.propertyRef.trim() == listingId ||
+              'local_${p.id}' == listingId,
+        );
+        final propertyLabel = property?.propertyName.trim().isNotEmpty == true
+            ? property!.propertyName.trim()
+            : (property?.propertyLocation ?? 'Property');
+        final localId = 'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
+        merged[localId] = merge.fromPendingMap(
+          m,
+          propertyLabel: propertyLabel,
+          localId: localId,
+        );
+      }
+
+      for (final p in properties) {
+        unitsTotal += _bnbUnitCountForProperty(p);
+      }
+      bnbUnitsCount.value = unitsTotal;
+    } catch (_) {
+      bnbUnitsCount.value = 0;
+      unitsTotal = 0;
+    }
+
+    final active = merged.values.where(_isActiveBnbBooking).toList();
+    bnbBookingsCount.value = active.length;
+
+    final guestKeys = <String>{};
+    for (final item in active) {
+      final name = item.guestName.trim().toLowerCase();
+      if (name.isNotEmpty) guestKeys.add(name);
+    }
+    bnbGuestsCount.value = guestKeys.length;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    var todaySum = 0.0;
+    var incomes = <IncomeRecord>[];
+    try {
+      incomes = await _incomeLocal.getAllNewestFirst(workspaceType: 'bnb');
+      for (final r in incomes) {
+        final d = r.paidLocalCalendarOrCreated();
+        if (!d.isBefore(today) && d.isBefore(tomorrow)) {
+          todaySum += r.amountValue;
+        }
+      }
+    } catch (_) {}
+    bnbTodayRevenue.value = 'TZS ${_money.format(todaySum.round())}';
+
+    _assignWeeklyRevenue(incomes, weekStart);
+    _assignWeeklyOccupancy(merged.values, unitsTotal, weekStart);
+  }
+
+  /// Monday 00:00 of the current calendar week (local).
+  static DateTime _currentWeekMondayStart() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+  }
+
+  void _assignWeeklyRevenue(List<IncomeRecord> incomes, DateTime weekStart) {
+    final totals = List<double>.filled(7, 0);
+    for (final r in incomes) {
+      final d = r.paidLocalCalendarOrCreated();
+      final day = DateTime(d.year, d.month, d.day);
+      final diff = day.difference(weekStart).inDays;
+      if (diff >= 0 && diff < 7) totals[diff] += r.amountValue;
+    }
+    weeklyRevenue.assignAll(totals);
+  }
+
+  /// Occupancy per calendar day: for each Mon–Sun day,
+  /// `occupied / totalUnits * 100`, capped at 100.
+  ///
+  /// - **Available** unit-nights for a day = [totalUnits] (all BnB units).
+  /// - **Occupied** unit-nights = count of non-checked-out bookings whose stay
+  ///   overlaps that day on half-open `[checkIn, checkOut)` (checkout day excluded).
+  /// - Each booking counts as one unit (no per-booking unit count in [CheckInItem]).
+  void _assignWeeklyOccupancy(
+    Iterable<CheckInItem> bookings,
+    int totalUnits,
+    DateTime weekStart,
+  ) {
+    final pct = List<double>.filled(7, 0);
+    if (totalUnits <= 0) {
+      weeklyOccupancyPercent.assignAll(pct);
+      return;
+    }
+    for (var i = 0; i < 7; i++) {
+      final day = weekStart.add(Duration(days: i));
+      var occupied = 0;
+      for (final item in bookings) {
+        if (_bookingOccupiesCalendarDay(item, day)) occupied++;
+      }
+      pct[i] = ((occupied / totalUnits) * 100).clamp(0.0, 100.0);
+    }
+    weeklyOccupancyPercent.assignAll(pct);
+  }
+
+  static bool _bookingOccupiesCalendarDay(CheckInItem item, DateTime day) {
+    if (item.isInactive) return false;
+    final ci = _parseCalendarDay(item.checkInIso);
+    final co = _parseCalendarDay(item.checkOutIso);
+    if (ci == null || co == null) return false;
+    return !day.isBefore(ci) && day.isBefore(co);
+  }
+
+  static DateTime? _parseCalendarDay(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) return null;
+    if (t.length >= 10 && t[4] == '-' && t[7] == '-') {
+      final y = int.tryParse(t.substring(0, 4));
+      final m = int.tryParse(t.substring(5, 7));
+      final d = int.tryParse(t.substring(8, 10));
+      if (y != null &&
+          m != null &&
+          d != null &&
+          m >= 1 &&
+          m <= 12 &&
+          d >= 1 &&
+          d <= 31) {
+        return DateTime(y, m, d);
+      }
+    }
+    final p = DateTime.tryParse(t);
+    if (p == null) return null;
+    return DateTime(p.year, p.month, p.day);
+  }
+
+  static bool _isActiveBnbBooking(CheckInItem item) {
+    if (item.isInactive) return false;
+    final co = DateTime.tryParse(item.checkOutIso.trim());
+    if (co != null) {
+      final now = DateTime.now();
+      final end = DateTime(co.year, co.month, co.day);
+      final today = DateTime(now.year, now.month, now.day);
+      if (end.isBefore(today)) return false;
+    }
+    return true;
+  }
+
+  static int _bnbUnitCountForProperty(PropertyRecord p) {
+    final raw = p.unitsJson.trim();
+    if (raw.isNotEmpty && raw != '[]') {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List && decoded.isNotEmpty) return decoded.length;
+      } catch (_) {}
+    }
+    if (p.units > 0) return p.units;
+    return 1;
+  }
 
 }

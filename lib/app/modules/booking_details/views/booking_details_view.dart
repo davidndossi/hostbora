@@ -47,6 +47,8 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                     _buildCheckInOutRow(context),
                     const SizedBox(height: 20),
                     _buildPaymentRow(context),
+                    const SizedBox(height: 12),
+                    _buildRecordPaymentButton(context),
                     const SizedBox(height: 24),
                     _buildSectionLabel(
                       context,
@@ -57,9 +59,25 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    Obx(() {
+                      if (controller.isCancelled.value) {
+                        return _buildCancelledBanner(context);
+                      }
+                      if (controller.isCheckedOut.value) {
+                        return _buildCheckedOutBanner(context);
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                    const SizedBox(height: 12),
                     _buildMessageGuestButton(context),
                     const SizedBox(height: 12),
-                    _buildModifyBookingLink(context),
+                    Obx(() {
+                      if (controller.isCheckedOut.value ||
+                          controller.isCancelled.value) {
+                        return const SizedBox.shrink();
+                      }
+                      return _buildStayActions(context);
+                    }),
                   ],
                 ],
               ),
@@ -524,13 +542,13 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
           CircleAvatar(
             radius: 28,
             backgroundColor: AppColors.colorPrimaryLight,
-            backgroundImage: controller.guestAvatarUrl.isNotEmpty
-                ? NetworkImage(controller.guestAvatarUrl)
+            backgroundImage: controller.guestAvatarUrl.value.isNotEmpty
+                ? NetworkImage(controller.guestAvatarUrl.value)
                 : null,
-            child: controller.guestAvatarUrl.isEmpty
+            child: controller.guestAvatarUrl.value.isEmpty
                 ? Text(
-                    controller.guestName.isNotEmpty
-                        ? controller.guestName[0].toUpperCase()
+                    controller.guestName.value.isNotEmpty
+                        ? controller.guestName.value[0].toUpperCase()
                         : '?',
                     style: TextStyle(
                       fontSize: 20,
@@ -545,14 +563,16 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  controller.guestName,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: _isDark(context)
-                        ? Colors.white
-                        : AppColors.textColorPrimary,
+                Obx(
+                  () => Text(
+                    controller.guestName.value,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: _isDark(context)
+                          ? Colors.white
+                          : AppColors.textColorPrimary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -601,26 +621,28 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
   }
 
   Widget _buildCheckInOutRow(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildDateCard(
-            context: context,
-            label: 'CHECK-IN',
-            date: controller.checkInDate,
-            time: controller.checkInTime,
+    return Obx(
+      () => Row(
+        children: [
+          Expanded(
+            child: _buildDateCard(
+              context: context,
+              label: 'CHECK-IN',
+              date: controller.checkInDate.value,
+              time: controller.checkInTime,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildDateCard(
-            context: context,
-            label: 'CHECK-OUT',
-            date: controller.checkOutDate,
-            time: controller.checkOutTime,
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildDateCard(
+              context: context,
+              label: 'CHECK-OUT',
+              date: controller.checkOutDate.value,
+              time: controller.checkOutTime,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -689,77 +711,111 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
   }
 
   Widget _buildPaymentRow(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _t(context, en: 'Payment Status', sw: 'Hali ya Malipo'),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: _isDark(context)
-                      ? Colors.white70
-                      : AppColors.textColorSecondary,
+    return Obx(() {
+      final paid = controller.isPaid.value;
+      final payout = controller.totalPayout.value;
+      final loading = controller.paymentSummaryLoading.value;
+      final statusColor = paid ? AppColors.colorPrimary : const Color(0xFFE67E22);
+      final statusIcon = paid ? Icons.check : Icons.schedule;
+
+      return Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appLocalization.paymentStatus,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _isDark(context)
+                        ? Colors.white70
+                        : AppColors.textColorSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.colorPrimary,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.check, size: 18, color: Colors.white),
-                    const SizedBox(width: 6),
-                    Text(
-                      _t(context, en: 'PAID', sw: 'IMELIPWA'),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                        color: Colors.white,
-                      ),
+                const SizedBox(height: 8),
+                if (loading)
+                  const SizedBox(
+                    height: 28,
+                    width: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                  ],
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(statusIcon, size: 18, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          paid ? appLocalization.paid : appLocalization.pending,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appLocalization.totalPayout,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _isDark(context)
+                        ? Colors.white70
+                        : AppColors.textColorSecondary,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  loading ? '…' : payout,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.colorPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildRecordPaymentButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: controller.recordPayment,
+        icon: const Icon(Icons.payments_outlined, size: 20),
+        label: Text(appLocalization.recordPayment),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          side: const BorderSide(color: AppColors.colorPrimary),
+          foregroundColor: AppColors.colorPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppValues.radius_6),
           ),
         ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _t(context, en: 'Total Payout', sw: 'Jumla ya Malipo'),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: _isDark(context)
-                      ? Colors.white70
-                      : AppColors.textColorSecondary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                controller.totalPayout,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.colorPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -797,19 +853,119 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
     );
   }
 
-  Widget _buildModifyBookingLink(BuildContext context) {
-    return Center(
-      child: TextButton(
-        onPressed: controller.modifyBooking,
-        child: Text(
-          _t(context, en: 'Modify Booking', sw: 'Hariri Uhifadhi'),
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.colorPrimary,
-            decoration: TextDecoration.underline,
-          ),
+  Widget _buildCancelledBanner(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppValues.radius_6),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.35),
         ),
       ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.cancel_outlined,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            appLocalization.bookingCancelledLabel,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildCheckedOutBanner(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.textColorSecondary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppValues.radius_6),
+        border: Border.all(color: AppColors.designInputBorder),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.logout_rounded,
+            color: _isDark(context) ? Colors.white70 : AppColors.textColorSecondary,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            appLocalization.bookingCheckedOut,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStayActions(BuildContext context) {
+    return Obx(() {
+      final busy = controller.processing.value;
+      return Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: busy ? null : controller.showExtendStayDialog,
+              icon: const Icon(Icons.calendar_today_outlined, size: 20),
+              label: Text(appLocalization.extendStayTitle),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: const BorderSide(color: AppColors.colorPrimary),
+                foregroundColor: AppColors.colorPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppValues.radius_6),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: busy ? null : controller.confirmCheckOut,
+              icon: const Icon(Icons.logout_rounded, size: 20),
+              label: Text(appLocalization.checkOutGuest),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.colorPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppValues.radius_6),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: busy ? null : controller.confirmCancelBooking,
+              icon: Icon(
+                Icons.cancel_outlined,
+                size: 20,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              label: Text(
+                appLocalization.cancelBooking,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
   }
 }

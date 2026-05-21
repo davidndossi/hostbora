@@ -16,6 +16,7 @@ abstract class PreferenceManager {
   static const keyPinEnabled = 'pin_enabled';
   static const keyPinFailedAttempts = 'pin_failed_attempts';
   static const keyPinLockedUntilMs = 'pin_locked_until_ms';
+  static const keyFaceIdEnabled = 'face_id_enabled';
 
   Future<String> getString(String key, {String defaultValue = ''});
 

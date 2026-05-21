@@ -5,7 +5,10 @@ import 'package:dio/dio.dart';
 import '../model/add_listing_request.dart';
 import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
+import '../model/cancel_booking_request.dart';
+import '../model/checkout_booking_request.dart';
 import '../model/create_booking_request.dart';
+import '../model/update_booking_request.dart';
 import '../model/add_expense_request.dart';
 import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
@@ -18,6 +21,9 @@ import '../model/send_sms_request.dart';
 import '../model/update_preference_request.dart';
 import '../model/update_request.dart';
 import '../model/user_profile_request.dart';
+import '../model/create_calendar_subscription_request.dart';
+import '../model/update_calendar_subscription_request.dart';
+import '../model/calendar_sync_request.dart';
 import '/app/core/base/base_remote_source.dart';
 import '../../network/dio_provider.dart';
 import '../model/login_response.dart';
@@ -440,6 +446,48 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
+  Future<GeneralResponse> checkoutBooking(CheckoutBookingRequest request) {
+    final id = Uri.encodeComponent(request.bookingId.trim());
+    final endpoint = '${DioProvider.baseUrl}/api/bookings/$id/checkout';
+    final dioCall = dioClient.post(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> cancelBooking(CancelBookingRequest request) {
+    final id = Uri.encodeComponent(request.bookingId.trim());
+    final endpoint = '${DioProvider.baseUrl}/api/bookings/$id/cancel';
+    final dioCall = dioClient.post(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateBooking(UpdateBookingRequest request) {
+    final id = Uri.encodeComponent(request.bookingId.trim());
+    final endpoint = '${DioProvider.baseUrl}/api/bookings/$id';
+    final dioCall = dioClient.patch(
+      endpoint,
+      data: <String, dynamic>{'checkOut': request.checkOut},
+    );
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<GeneralResponse> recordPayment(RecordPaymentRequest request) {
     final endpoint = '${DioProvider.baseUrl}/api/payments';
     final dioCall = dioClient.post(endpoint, data: request.toJson());
@@ -568,6 +616,76 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   Future<GeneralResponse> getVaultDocuments(String directoryId) {
     final endpoint = '${DioProvider.baseUrl}/api/vault/documents';
     final dioCall = dioClient.get(endpoint, queryParameters: {'directoryId': directoryId});
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> createCalendarSubscription(
+    CreateCalendarSubscriptionRequest request,
+  ) {
+    final endpoint = '${DioProvider.baseUrl}/api/calendar/subscriptions';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getCalendarSubscriptions(String listingId) {
+    final endpoint = '${DioProvider.baseUrl}/api/calendar/subscriptions';
+    final dioCall = dioClient.get(
+      endpoint,
+      queryParameters: {'listingId': listingId},
+    );
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateCalendarSubscription(
+    String subscriptionId,
+    UpdateCalendarSubscriptionRequest request,
+  ) {
+    final endpoint =
+        '${DioProvider.baseUrl}/api/calendar/subscriptions/$subscriptionId';
+    final dioCall = dioClient.put(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> deleteCalendarSubscription(String subscriptionId) {
+    final endpoint =
+        '${DioProvider.baseUrl}/api/calendar/subscriptions/$subscriptionId';
+    final dioCall = dioClient.delete(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> syncCalendarImport(CalendarSyncRequest request) {
+    final endpoint = '${DioProvider.baseUrl}/api/calendar/import/sync';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));

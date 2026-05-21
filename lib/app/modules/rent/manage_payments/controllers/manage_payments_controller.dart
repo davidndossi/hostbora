@@ -155,9 +155,13 @@ class ManagePaymentsController extends BaseController {
 
   Future<void> refreshRows() async {
     loading.value = true;
+    String ws = 'rent';
+    if (Get.arguments != null && Get.arguments['ws'] != null) {
+      ws = Get.arguments['ws'];
+    }
     try {
-      final income = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
-      final tenants = await _tenantLocal.getAllNewestFirstByWorkspace('rent');
+      final income = await _incomeLocal.getAllNewestFirst(workspaceType: ws);
+      final tenants = await _tenantLocal.getAllNewestFirstByWorkspace(ws);
 
       final y = selectedMonth.year;
       final m = selectedMonth.month;

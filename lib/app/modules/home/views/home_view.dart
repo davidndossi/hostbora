@@ -11,6 +11,7 @@ import '../../../core/widget/custom_app_bar.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_view.dart';
+import '../../../data/model/check_in_item.dart';
 import '../controllers/home_controller.dart';
 
 // ignore: must_be_immutable
@@ -141,6 +142,20 @@ class HomeView extends BaseView<HomeController> {
             children: [
               _buildPropertyOverview(context),
               const SizedBox(height: 24),
+              _buildHorizontalGuestSection(
+                context,
+                title: appLocalization.homeCheckInGuestsToday,
+                list: controller.checkInsToday,
+                emptyMessage: appLocalization.homeNoCheckInsToday,
+              ),
+              const SizedBox(height: 24),
+              _buildHorizontalGuestSection(
+                context,
+                title: appLocalization.homeCheckOutGuestsToday,
+                list: controller.checkOutsToday,
+                emptyMessage: appLocalization.homeNoCheckOutsToday,
+              ),
+              const SizedBox(height: 24),
               _buildUpcomingCheckIns(context),
               const SizedBox(height: 24),
               _buildQuickActions(context),
@@ -208,49 +223,55 @@ class HomeView extends BaseView<HomeController> {
     );
   }
 
-  Widget _buildUpcomingCheckIns(BuildContext context) {
+  Widget _buildHorizontalGuestSection(
+    BuildContext context, {
+    required String title,
+    required RxList<CheckInItem> list,
+    required String emptyMessage,
+    VoidCallback? onSeeAll,
+    String? seeAllLabel,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              _t(context, 'Upcoming Check-ins', 'Wanaoingia Hivi Karibuni'),
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: _isDark(context)
-                    ? Colors.white
-                    : AppColors.textColorPrimary,
-              ),
-            ),
-            TextButton(
-              onPressed: controller.seeAllCheckIns,
+            Expanded(
               child: Text(
-                _t(context, 'See All', 'Ona Yote'),
+                title,
                 style: TextStyle(
-                  color: AppColors.colorPrimary,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  color: _isDark(context)
+                      ? Colors.white
+                      : AppColors.textColorPrimary,
                 ),
               ),
             ),
+            if (onSeeAll != null && seeAllLabel != null)
+              TextButton(
+                onPressed: onSeeAll,
+                child: Text(
+                  seeAllLabel,
+                  style: TextStyle(
+                    color: AppColors.colorPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 12),
         Obx(() {
-          final list = controller.checkIns;
           if (list.isEmpty) {
             return SizedBox(
               height: 120,
               child: Center(
                 child: Text(
-                  _t(
-                    context,
-                    'No upcoming check-ins',
-                    'Hakuna wanaoingia hivi karibuni',
-                  ),
+                  emptyMessage,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
                     color: Theme.of(context).brightness == Brightness.dark
@@ -281,6 +302,21 @@ class HomeView extends BaseView<HomeController> {
     );
   }
 
+  Widget _buildUpcomingCheckIns(BuildContext context) {
+    return _buildHorizontalGuestSection(
+      context,
+      title: _t(context, 'Upcoming Check-ins', 'Wanaoingia Hivi Karibuni'),
+      list: controller.checkIns,
+      emptyMessage: _t(
+        context,
+        'No upcoming check-ins',
+        'Hakuna wanaoingia hivi karibuni',
+      ),
+      onSeeAll: controller.seeAllCheckIns,
+      seeAllLabel: _t(context, 'See All', 'Ona Yote'),
+    );
+  }
+
   Widget _buildQuickActions(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,9 +344,9 @@ class HomeView extends BaseView<HomeController> {
               onTap: controller.properties,
             ),
             _QuickActionTile(
-              icon: 'ic_add_property.svg',
-              label: _t(context, 'Add Listing', 'Ongeza Tangazo'),
-              onTap: controller.addListing,
+              icon: 'ic_group.svg',
+              label: _t(context, 'Tenants', 'Wapangaji'),
+              onTap: controller.tenants,
             ),
             _QuickActionTile(
               icon: 'ic_calendar.svg',
@@ -323,8 +359,16 @@ class HomeView extends BaseView<HomeController> {
               label: _t(context, 'Maintenance & Tasks', 'Matengenezo na Kazi'),
               onTap: controller.tasks,
             ),
-            // _QuickActionTile(icon: 'ic_design_studio.svg', label: 'Design Studio', onTap: controller.designStudio),
-            // _QuickActionTile(icon: 'ic_pinterest.svg', label: 'Moodboards', onTap: controller.designMoodboards),
+            _QuickActionTile(
+              icon: 'ic_design_studio.svg',
+              label: _t(context, 'Design studio', 'Studio ya ubunifu'),
+              onTap: controller.designStudio,
+            ),
+            _QuickActionTile(
+              icon: 'ic_pinterest.svg',
+              label: _t(context, 'Moodboards', 'Moodboard'),
+              onTap: controller.designMoodboards,
+            ),
             // _QuickActionTile(icon: 'ic_ai_manager.svg', label: 'AI Manager', onTap: controller.aiManager),
             // _QuickActionTile(icon: 'ic_ai_insights.svg', label: 'AI Insights', onTap: controller.aiInsights),
             // _QuickActionTile(icon: 'ic_robot.svg', label: 'AI Automations', onTap: controller.aiAutomations),

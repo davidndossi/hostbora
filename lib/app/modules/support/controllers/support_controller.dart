@@ -5,8 +5,10 @@ import '../../../core/base/base_controller.dart';
 import '../../../routes/app_pages.dart';
 
 class SupportController extends BaseController {
+  static const String supportEmailAddress = 'support@paayangu.com';
+
   static final Uri _supportEmail = Uri.parse(
-    'mailto:support@paayangu.com?subject=${Uri.encodeComponent('Host Bora support')}',
+    'mailto:$supportEmailAddress?subject=${Uri.encodeComponent('Host Bora support')}',
   );
 
   /// WhatsApp number in international format **without** + or spaces (e.g. `255712345678`).
@@ -40,4 +42,6 @@ class SupportController extends BaseController {
   void openTerms() => Get.toNamed(Routes.TERMS);
 
   void openPrivacy() => Get.toNamed(Routes.PRIVACY);
+
+  void openFeedback() => Get.toNamed(Routes.FEEDBACK);
 }

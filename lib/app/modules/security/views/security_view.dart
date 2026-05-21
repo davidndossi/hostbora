@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
@@ -74,8 +73,7 @@ class SecurityView extends BaseView<SecurityController> {
                 subtitle: appLocalization.fastLoginVerification,
                 trailing: Switch(
                   value: controller.faceIdEnabled.value,
-                  onChanged: (_) => controller.faceIdEnabled.value =
-                      !controller.faceIdEnabled.value,
+                  onChanged: controller.toggleFaceId,
                   activeThumbColor: Colors.white,
                   activeTrackColor: AppColors.colorPrimary,
                 ),
@@ -93,11 +91,11 @@ class SecurityView extends BaseView<SecurityController> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    appLocalization.enabled,
+                    appLocalization.notConfigured,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.colorPrimary,
+                      color: _isDark(context) ? Colors.white70 : _secondaryText,
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -153,55 +151,30 @@ class SecurityView extends BaseView<SecurityController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              appLocalization.deviceManagement,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-                color: _isDark(context) ? Colors.white70 : _sectionTitle,
-              ),
-            ),
-            GestureDetector(
-              onTap: controller.logoutAllDevices,
-              child: Text(
-                appLocalization.logOutAll,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.paaYanguAlert,
-                ),
-              ),
-            ),
-          ],
+        Text(
+          appLocalization.deviceManagement,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+            color: _isDark(context) ? Colors.white70 : _sectionTitle,
+          ),
         ),
         const SizedBox(height: 8),
         Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           decoration: BoxDecoration(
             color: _isDark(context) ? const Color(0xFF1F1F1F) : _cardBg,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
           ),
-          child: Column(
-            children: [
-              ...controller.devices.asMap().entries.map((entry) {
-                final i = entry.key;
-                final d = entry.value;
-                final isLast = i == controller.devices.length - 1;
-                return Column(
-                  children: [
-                    _DeviceRow(
-                      device: d,
-                      isDark: _isDark(context),
-                      onLogout: () => controller.logoutDevice(d),
-                    ),
-                    if (!isLast) const Divider(height: 1),
-                  ],
-                );
-              }),
-            ],
+          child: Text(
+            appLocalization.noRemoteDeviceApi,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              color: _isDark(context) ? Colors.white70 : _secondaryText,
+            ),
           ),
         ),
       ],
@@ -314,91 +287,3 @@ class _SettingsRow extends StatelessWidget {
 
 const _bodyText = Color(0xFF333333);
 const _secondaryText = Color(0xFFA0A0A0);
-
-class _DeviceRow extends StatelessWidget {
-  final DeviceSession device;
-  final bool isDark;
-  final VoidCallback onLogout;
-
-  const _DeviceRow({
-    required this.device,
-    required this.isDark,
-    required this.onLogout,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Icon(
-            device.name.contains('Mac') ? Icons.laptop_mac : Icons.phone_iphone,
-            size: 22,
-            color: isDark ? Colors.white : _bodyText,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      device.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white : const Color(0xFF333333),
-                      ),
-                    ),
-                    if (device.isCurrent) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.colorPrimary,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context)!.current,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${device.location} • ${device.lastActive}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white70 : _secondaryText,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (!device.isCurrent)
-            IconButton(
-              onPressed: onLogout,
-              icon: Icon(
-                Icons.logout,
-                size: 20,
-                color: isDark ? Colors.white : _bodyText,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-            ),
-        ],
-      ),
-    );
-  }
-}

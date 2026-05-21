@@ -3,23 +3,28 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_decorations.dart';
+import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/design_moodboards_controller.dart';
+import '../widgets/moodboard_image.dart';
 
 class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
   DesignMoodboardsView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
-
-  String _t(BuildContext context, {required String en, required String sw}) {
-    final code =
-        Get.locale?.languageCode ??
-        Localizations.localeOf(context).languageCode;
-    return code == 'sw' ? sw : en;
-  }
-
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => null;
+  PreferredSizeWidget? appBar(BuildContext context) {
+    return CustomAppBar(
+      appBarTitleText: appLocalization.designMoodboardsTitle,
+      isCentered: true,
+      actions: [
+        IconButton(
+          tooltip: appLocalization.designMoodboardOpenHomeDesigns,
+          onPressed: controller.openHomeDesignsWeb,
+          icon: const Icon(Icons.open_in_new_rounded),
+        ),
+      ],
+    );
+  }
 
   @override
   FloatingActionButtonLocation floatingActionButtonLocation() =>
@@ -29,11 +34,12 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
   Widget? floatingActionButton() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: FloatingActionButton(
+      child: FloatingActionButton.extended(
         onPressed: controller.createNewMoodboard,
+        backgroundColor: AppColors.colorPrimary,
         foregroundColor: Colors.white,
-        elevation: 4,
-        child: const Icon(Icons.add, size: 28),
+        icon: const Icon(Icons.add),
+        label: Text(appLocalization.designMoodboardsCreateBoard),
       ),
     );
   }
@@ -41,70 +47,90 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
   @override
   Widget body(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
-    return SafeArea(
-      bottom: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-            child: Row(
-              children: [
-                _circleIcon(
-                  context,
-                  Icons.arrow_back_ios_new_rounded,
-                  onTap: Get.back,
-                ),
-                const Spacer(),
-                _circleIcon(context, Icons.search_rounded, onTap: () {}),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
-            child: Text(
-              _t(
-                context,
-                en: 'My Design Moodboards',
-                sw: 'Moodboard Zangu za Ubunifu',
-              ),
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: isDark
-                    ? theme.colorScheme.onSurface
-                    : const Color(0xFF1A1A1A),
-                height: 1.15,
-              ),
-            ),
-          ),
-          _filterChips(context),
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark ? theme.colorScheme.surface : AppColors.pageBackground;
 
+    return ColoredBox(
+      color: bg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!controller.isHomeDesignsConfigured)
+            _apiBanner(context),
+          _filterChips(context),
           Expanded(
             child: Obx(() {
+              if (controller.loadFailed.value) {
+                return _errorState(context);
+              }
               final list = controller.filteredItems;
-              return GridView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 0.8,
+              if (list.isEmpty) {
+                return _emptyState(context);
+              }
+              return RefreshIndicator(
+                onRefresh: controller.reloadBoards,
+                child: GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 14,
+                    childAspectRatio: 0.82,
+                  ),
+                  itemCount: list.length,
+                  itemBuilder: (context, index) {
+                    final item = list[index];
+                    return _MoodboardCard(
+                      item: item,
+                      onTap: () => controller.openMoodboardDetail(item),
+                      savedLabel: appLocalization.designMoodboardsSavedItems(
+                        item.savedCount,
+                      ),
+                    );
+                  },
                 ),
-                itemCount: list.length,
-                itemBuilder: (context, index) {
-                  final item = list[index];
-                  return _MoodboardCard(
-                    item: item,
-                    onTap: () => controller.openMoodboardDetail(item),
-                    t: _t,
-                  );
-                },
               );
             }),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _apiBanner(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Material(
+        color: AppColors.colorPrimary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: controller.openHomeDesignsWeb,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(Icons.auto_awesome, color: AppColors.colorPrimary, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    appLocalization.designMoodboardApiNotConfigured,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -114,23 +140,23 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
       final f = controller.filter.value;
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
         child: Row(
           children: [
             _FilterChip(
-              label: _t(context, en: 'All Boards', sw: 'Bodi Zote'),
+              label: appLocalization.designMoodboardsFilterAll,
               selected: f == MoodboardFilter.all,
               onTap: () => controller.setFilter(MoodboardFilter.all),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             _FilterChip(
-              label: _t(context, en: 'AI Concepts', sw: 'Dhana za AI'),
+              label: appLocalization.designMoodboardsFilterAi,
               selected: f == MoodboardFilter.aiConcepts,
               onTap: () => controller.setFilter(MoodboardFilter.aiConcepts),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             _FilterChip(
-              label: _t(context, en: 'Materials', sw: 'Vifaa'),
+              label: appLocalization.designMoodboardsFilterMaterials,
               selected: f == MoodboardFilter.materials,
               onTap: () => controller.setFilter(MoodboardFilter.materials),
             ),
@@ -140,31 +166,71 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
     });
   }
 
-  Widget _circleIcon(
-    BuildContext context,
-    IconData icon, {
-    required VoidCallback onTap,
-  }) {
+  Widget _emptyState(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
-    return Material(
-      color: isDark
-          ? theme.colorScheme.surfaceContainerHigh
-          : AppColors.colorWhite,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: Icon(
-            icon,
-            size: 20,
-            color: isDark
-                ? theme.colorScheme.onSurface
-                : AppColors.textColorPrimary,
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(32),
+      children: [
+        const SizedBox(height: 48),
+        Icon(
+          Icons.dashboard_customize_outlined,
+          size: 64,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          appLocalization.designMoodboardsEmptyTitle,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
           ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          appLocalization.designMoodboardsEmptyBody,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Center(
+          child: FilledButton.icon(
+            onPressed: controller.createNewMoodboard,
+            icon: const Icon(Icons.add),
+            label: Text(appLocalization.designMoodboardsCreateBoard),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _errorState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.cloud_off_outlined,
+              size: 48,
+              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.8),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              appLocalization.designMoodboardsLoadError,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: controller.reloadBoards,
+              icon: const Icon(Icons.refresh),
+              label: Text(appLocalization.designMoodboardRetry),
+            ),
+          ],
         ),
       ),
     );
@@ -184,20 +250,26 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? AppColors.colorPrimary : Colors.white,
+            color: selected
+                ? AppColors.colorPrimary
+                : (isDark
+                    ? Theme.of(context).colorScheme.surfaceContainerHigh
+                    : AppColors.colorWhite),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: selected
                   ? AppColors.colorPrimary
-                  : const Color(0xFFE8E4DC),
+                  : AppColors.designInputBorder,
             ),
           ),
           child: Text(
@@ -205,7 +277,9 @@ class _FilterChip extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : const Color(0xFF8A8680),
+              color: selected
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -218,105 +292,107 @@ class _MoodboardCard extends StatelessWidget {
   const _MoodboardCard({
     required this.item,
     required this.onTap,
-    required this.t,
+    required this.savedLabel,
   });
 
   final MoodboardListItem item;
   final VoidCallback onTap;
-  final String Function(
-    BuildContext context, {
-    required String en,
-    required String sw,
-  })
-  t;
+  final String savedLabel;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Image.asset(
-                      item.assetPath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: isDark
-                            ? theme.colorScheme.surfaceContainerHighest
-                            : const Color(0xFFE8E4DC),
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.image_not_supported_outlined),
+    final cardDeco = isDark
+        ? BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          )
+        : AppDecorations.cardWithRadius(16);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: DecoratedBox(
+          decoration: cardDeco,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                      child: MoodboardImage(
+                        ref: item.imageRef,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  ),
+                    if (item.showAiBadge)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: _AiBadge(),
+                      ),
+                  ],
                 ),
-                if (item.showAiBadge)
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.45),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.auto_awesome,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'AI',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ),
-              ],
-            ),
+                    const SizedBox(height: 2),
+                    Text(
+                      savedLabel,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
+        ),
+      ),
+    );
+  }
+}
+
+class _AiBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.auto_awesome, size: 12, color: Colors.white),
+          SizedBox(width: 4),
           Text(
-            item.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            'AI',
             style: TextStyle(
-              fontSize: 15,
+              color: Colors.white,
+              fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: isDark
-                  ? theme.colorScheme.onSurface
-                  : const Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            '${item.savedCount} ${t(context, en: 'Saved Items', sw: 'Vipengee Vilivyohifadhiwa')}',
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark
-                  ? theme.colorScheme.onSurfaceVariant
-                  : const Color(0xFF8A8680),
             ),
           ),
         ],

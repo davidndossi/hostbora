@@ -18,6 +18,7 @@ import '../../../data/model/add_listing_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/service/nominatim_service.dart';
 import '../../../routes/app_pages.dart';
+import '../../../core/values/property_unit_floor.dart';
 import '../models/apartment_unit_draft.dart';
 
 class AddListingController extends BaseController {
@@ -55,11 +56,16 @@ class AddListingController extends BaseController {
   final propertyTypeOptions = const ['Apartment', 'House', 'Office space', 'Room', 'Storage', 'Other'];
   final minRentalDurationOptions = const ['1 Day', '2 Days', '1 Week', '1 Month'];
 
+  static const int minFloorCount = 1;
+  static const int maxFloorCount = 200;
+  final floorCount = 1.obs;
+
   final apartmentUnits = <ApartmentUnitDraft>[].obs;
   final draftUnitNameController = TextEditingController();
   final draftUnitRentController = TextEditingController();
   final draftUnitDescriptionController = TextEditingController();
   final draftUnitRentFrequency = 'Per Day'.obs;
+  final draftUnitFloor = PropertyUnitFloor.defaultIndex.obs;
 
   static const int totalSteps = 7;
   final currentStep = 1.obs;
@@ -122,6 +128,14 @@ class AddListingController extends BaseController {
     if (value != null && value.isNotEmpty) {
       minRentalDuration.value = value;
     }
+  }
+
+  void incrementFloorCount() {
+    if (floorCount.value < maxFloorCount) floorCount.value++;
+  }
+
+  void decrementFloorCount() {
+    if (floorCount.value > minFloorCount) floorCount.value--;
   }
 
   void onAddressQueryChanged(String query) {
@@ -487,6 +501,7 @@ class AddListingController extends BaseController {
             rentFrequency: rentFrequency.value,
             minRentalDuration: minRentalDuration.value,
             unitsJson: unitsJson,
+            floorCount: floorCount.value,
           ),
         );
         await syncPropertyUnitsForListingSave(
@@ -523,6 +538,7 @@ class AddListingController extends BaseController {
             rentFrequency: rentFrequency.value,
             minRentalDuration: minRentalDuration.value,
             unitsJson: unitsJson,
+            floorCount: floorCount.value,
           ),
         );
         await syncPropertyUnitsForListingSave(
@@ -566,6 +582,7 @@ class AddListingController extends BaseController {
             unitName: u.unitName,
             unitRent: u.unitRent,
             unitRentFrequency: rentFrequency.value,
+            unitFloor: u.unitFloor,
             unitDescription: u.unitDescription,
           ),
         );
@@ -590,6 +607,7 @@ class AddListingController extends BaseController {
         unitName: name,
         unitRent: rent,
         unitRentFrequency: rentFrequency.value,
+        unitFloor: draftUnitFloor.value,
         unitDescription: draftUnitDescriptionController.text.trim(),
       ),
     );
@@ -597,6 +615,13 @@ class AddListingController extends BaseController {
     draftUnitRentController.clear();
     draftUnitDescriptionController.clear();
     draftUnitRentFrequency.value = rentFrequency.value;
+    draftUnitFloor.value = PropertyUnitFloor.defaultIndex;
+  }
+
+  void updateDraftUnitFloor(int? value) {
+    if (value != null && PropertyUnitFloor.indices.contains(value)) {
+      draftUnitFloor.value = value;
+    }
   }
 
   void removeApartmentUnit(int index) {
@@ -831,6 +856,7 @@ class AddListingController extends BaseController {
     if (_minDurLockedFromLocal) {
       minRentalDuration.value = _coerceMinRentalDuration(r.minRentalDuration);
     }
+    floorCount.value = r.floorCount.clamp(minFloorCount, maxFloorCount);
     _loadApartmentUnitsFromJson(r.unitsJson);
     isEditing.value = true;
   }

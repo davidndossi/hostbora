@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/vault_documents_store.dart';
+import '../../../data/local/vault_recent_access_store.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../vault_route_args.dart';
 
 enum DocumentFilter { all, urgent, verified, more }
 
@@ -23,11 +28,19 @@ class DocumentItem {
 }
 
 class DocumentsController extends BaseController {
-  DocumentsController() : _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+  DocumentsController({
+    AppRepository? repository,
+    VaultDocumentsStore? vaultStore,
+    VaultRecentAccessStore? recentStore,
+  })  : _repository = repository ??
+            Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _vaultStore = vaultStore ?? VaultDocumentsStore(),
+        _recentStore = recentStore ?? VaultRecentAccessStore();
 
   final AppRepository _repository;
+  final VaultDocumentsStore _vaultStore;
+  final VaultRecentAccessStore _recentStore;
 
-  /// Directory when opened from property vault; null when opened from settings (show all or default).
   String? directoryId;
   String? directoryName;
 
@@ -38,18 +51,46 @@ class DocumentsController extends BaseController {
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
-    if (args is Map<String, dynamic>) {
-      directoryId = args['directoryId']?.toString();
-      directoryName = args['directoryName']?.toString();
-    }
+    final args = VaultRouteArgs.fromGetArguments();
+    directoryId = args.directoryId;
+    directoryName = args.directoryName;
+    _recordDirectoryAccess();
     loadDocuments();
   }
 
-  /// Fetches documents from service for the current directory (no static list).
+  Future<void> _recordDirectoryAccess() async {
+    final dirId = directoryId;
+    if (dirId == null || dirId.isEmpty) return;
+    final name = directoryName?.trim();
+    if (name == null || name.isEmpty) return;
+    await _recentStore.recordDirectory(
+      directoryId: dirId,
+      displayName: name,
+    );
+  }
+
+  /// Fetches remote documents and merges locally saved vault scans.
   Future<void> loadDocuments() async {
     final dirId = directoryId ?? 'all';
     loading.value = true;
+    try {
+      final remote = await _fetchRemoteDocuments(dirId);
+      final local = _localDocumentsFor(dirId);
+      final seen = <String>{};
+      final merged = <DocumentItem>[];
+      for (final item in [...local, ...remote]) {
+        final key = item.name.toLowerCase();
+        if (seen.add(key)) merged.add(item);
+      }
+      documents.assignAll(merged);
+    } catch (_) {
+      documents.assignAll(_localDocumentsFor(dirId));
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  Future<List<DocumentItem>> _fetchRemoteDocuments(String dirId) async {
     try {
       final res = await _repository.getVaultDocuments(dirId);
       final data = res.data;
@@ -57,21 +98,47 @@ class DocumentsController extends BaseController {
       if (data is List) {
         rawList = data;
       } else if (data is Map<String, dynamic>) {
-        if (data['documents'] is List) rawList = data['documents'] as List;
-        else if (data['files'] is List) rawList = data['files'] as List;
-        else if (data['content'] is List) rawList = data['content'] as List;
+        if (data['documents'] is List) {
+          rawList = data['documents'] as List;
+        } else if (data['files'] is List) {
+          rawList = data['files'] as List;
+        } else if (data['content'] is List) {
+          rawList = data['content'] as List;
+        }
       }
-      final list = rawList
+      return rawList
           .whereType<Map<String, dynamic>>()
           .map(_itemFromMap)
           .where((e) => e.name.isNotEmpty)
           .toList();
-      documents.assignAll(list);
     } catch (_) {
-      documents.clear();
-    } finally {
-      loading.value = false;
+      return [];
     }
+  }
+
+  List<DocumentItem> _localDocumentsFor(String dirId) {
+    return _vaultStore
+        .loadForDirectory(dirId)
+        .where((d) => d.localPath.isNotEmpty && File(d.localPath).existsSync())
+        .map(_itemFromStored)
+        .toList();
+  }
+
+  static DocumentItem _itemFromStored(StoredVaultDocument d) {
+    final file = File(d.localPath);
+    final bytes = file.existsSync() ? file.lengthSync() : 0;
+    return DocumentItem(
+      name: d.fileName,
+      size: _formatBytes(bytes),
+      synced: d.synced,
+      fileType: DocumentFileType.image,
+    );
+  }
+
+  static String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   static DocumentItem _itemFromMap(Map<String, dynamic> m) {
@@ -84,8 +151,11 @@ class DocumentsController extends BaseController {
       if (i >= 0 && i < name.length - 1) ext = name.substring(i + 1).toLowerCase();
     }
     DocumentFileType fileType = DocumentFileType.pdf;
-    if (ext.contains('xls') || ext == 'xlsx') fileType = DocumentFileType.xlsx;
-    else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(ext)) fileType = DocumentFileType.image;
+    if (ext.contains('xls') || ext == 'xlsx') {
+      fileType = DocumentFileType.xlsx;
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(ext)) {
+      fileType = DocumentFileType.image;
+    }
     return DocumentItem(name: name, size: size, synced: synced, fileType: fileType);
   }
 
@@ -104,6 +174,12 @@ class DocumentsController extends BaseController {
   }
 
   void uploadDocument() {
-    Get.toNamed(Routes.DOCUMENT_SCANNER);
+    Get.toNamed(
+      Routes.DOCUMENT_SCANNER,
+      arguments: VaultRouteArgs(
+        directoryId: directoryId,
+        directoryName: directoryName,
+      ).toMap(),
+    );
   }
 }

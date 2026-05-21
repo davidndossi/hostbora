@@ -2,7 +2,8 @@ import 'package:get/get.dart';
 
 import '../../data/local/preference/preference_manager.dart';
 
-const String _keyDarkTheme = 'is_dark_theme';
+/// Preference key used by [ThemeController] and Settings (legacy `dark_mode` migrated on load).
+const String kPrefDarkTheme = 'is_dark_theme';
 
 class ThemeController extends GetxController {
   ThemeController(this._preferenceManager);
@@ -18,12 +19,12 @@ class ThemeController extends GetxController {
   }
 
   Future<void> _loadTheme() async {
-    final dark = await _preferenceManager.getBool(_keyDarkTheme, defaultValue: false);
+    final dark = await _preferenceManager.getBool(kPrefDarkTheme, defaultValue: false);
     isDarkMode.value = dark;
   }
 
   void toggleTheme() {
     isDarkMode.value = !isDarkMode.value;
-    _preferenceManager.setBool(_keyDarkTheme, isDarkMode.value);
+    _preferenceManager.setBool(kPrefDarkTheme, isDarkMode.value);
   }
 }

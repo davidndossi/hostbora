@@ -12,6 +12,10 @@ import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/listing_details/bindings/listing_details_binding.dart';
 import '../modules/listing_details/views/listing_details_view.dart';
+import '../modules/unit_occupancy/bindings/unit_occupancy_binding.dart';
+import '../modules/unit_occupancy/views/unit_occupancy_view.dart';
+import '../modules/calendar_sync/bindings/calendar_sync_binding.dart';
+import '../modules/calendar_sync/views/calendar_sync_view.dart';
 import '../modules/main/bindings/main_binding.dart';
 import '../modules/main/views/main_view.dart';
 import '../modules/notifications/bindings/notifications_binding.dart';
@@ -40,6 +44,8 @@ import '../modules/success/bindings/success_binding.dart';
 import '../modules/success/views/success_view.dart';
 import '../modules/support/bindings/support_binding.dart';
 import '../modules/support/views/support_view.dart';
+import '../modules/feedback/bindings/feedback_binding.dart';
+import '../modules/feedback/views/feedback_view.dart';
 import '../modules/about/bindings/about_binding.dart';
 import '../modules/about/views/about_view.dart';
 import '../modules/terms/bindings/terms_binding.dart';
@@ -68,6 +74,8 @@ import '../modules/booking_details/bindings/booking_details_binding.dart';
 import '../modules/booking_details/views/booking_details_view.dart';
 import '../modules/financial_overview/bindings/financial_overview_binding.dart';
 import '../modules/financial_overview/views/financial_overview_view.dart';
+import '../modules/reports/bindings/reports_binding.dart';
+import '../modules/reports/views/reports_view.dart';
 import '../modules/verify_identity/bindings/verify_identity_binding.dart';
 import '../modules/verify_identity/views/verify_identity_view.dart';
 import '../modules/host_calendar/bindings/host_calendar_binding.dart';
@@ -292,6 +300,11 @@ class AppPages {
       binding: SupportBinding(),
     ),
     GetPage(
+      name: _Paths.FEEDBACK,
+      page: () => FeedbackView(),
+      binding: FeedbackBinding(),
+    ),
+    GetPage(
       name: _Paths.OTP,
       page: () => OtpView(),
       binding: OtpBinding(),
@@ -397,6 +410,11 @@ class AppPages {
       binding: FinancialOverviewBinding(),
     ),
     GetPage(
+      name: _Paths.REPORTS_HUB,
+      page: () => ReportsView(),
+      binding: ReportsBinding(),
+    ),
+    GetPage(
       name: _Paths.VERIFY_IDENTITY,
       page: () => VerifyIdentityView(),
       binding: VerifyIdentityBinding(),
@@ -415,6 +433,16 @@ class AppPages {
       name: _Paths.LISTING_DETAILS,
       page: () => ListingDetailsView(),
       binding: ListingDetailsBinding(),
+    ),
+    GetPage(
+      name: _Paths.LISTING_UNIT_OCCUPANCY,
+      page: () => UnitOccupancyView(),
+      binding: UnitOccupancyBinding(),
+    ),
+    GetPage(
+      name: _Paths.CALENDAR_SYNC,
+      page: () => CalendarSyncView(),
+      binding: CalendarSyncBinding(),
     ),
     GetPage(
       name: _Paths.SECURITY,

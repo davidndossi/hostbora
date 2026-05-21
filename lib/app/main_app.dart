@@ -31,9 +31,6 @@ class _MainAppState extends State<MainApp> {
   bool _hasSeenOnboarding = true; // default true so we don't block on first run
   bool _loading = true;
 
-  /// BnB shell vs Rent shell when session is restored (matches [PreferenceManager.keyWorkspaceType]).
-  String _sessionHomeRoute = Routes.MAIN;
-
   final PreferenceManager _preferenceManager = Get.put<PreferenceManager>(
     PreferenceManagerImpl(),
     tag: (PreferenceManager).toString(),
@@ -85,19 +82,12 @@ class _MainAppState extends State<MainApp> {
         _preferenceManager
             .getString(PreferenceManager.keyPinCode, defaultValue: '')
             .timeout(_bootstrapTimeout),
-        _preferenceManager
-            .getString(PreferenceManager.keyWorkspaceType, defaultValue: 'bnb')
-            .timeout(_bootstrapTimeout),
       ]);
       final loggedIn = results[0] as bool;
       final hasSeenOnboarding = results[1] as bool;
       final pinEnabled = results[2];
       final pinCode = results[3] as String;
-      final workspacePref = (results[4] as String).trim().toLowerCase();
       final hasValidPin = (pinEnabled as bool) && pinCode.length == 4;
-      final sessionHome = workspacePref == 'bnb'
-          ? Routes.MAIN
-          : Routes.RENT_HUB;
 
       if (!mounted) return;
 
@@ -105,7 +95,6 @@ class _MainAppState extends State<MainApp> {
         _isLoggedIn = loggedIn;
         _hasSeenOnboarding = hasSeenOnboarding;
         _hasValidPin = hasValidPin;
-        _sessionHomeRoute = sessionHome;
         _loading = false;
       });
     } catch (e, stack) {
@@ -123,7 +112,6 @@ class _MainAppState extends State<MainApp> {
         _isLoggedIn = false;
         _hasSeenOnboarding = true; // on error, skip onboarding to avoid loop
         _hasValidPin = false;
-        _sessionHomeRoute = Routes.MAIN;
         _loading = false;
       });
     }
@@ -195,7 +183,7 @@ class _MainAppState extends State<MainApp> {
         title: _envConfig.appName,
         initialRoute: _hasSeenOnboarding
             ? (_isLoggedIn
-                  ? (_hasValidPin ? _sessionHomeRoute : Routes.CHANGE_PIN)
+                  ? (_hasValidPin ? Routes.WELCOME_BACK : Routes.CHANGE_PIN)
                   : (_hasValidPin ? Routes.WELCOME_BACK : AppPages.auth))
             : Routes.ONBOARDING,
         initialBinding: InitialBinding(),
@@ -213,6 +201,8 @@ class _MainAppState extends State<MainApp> {
     );
   }
 
+  static const TextStyle _buttonTextStyle = TextStyle(fontSize: 16);
+
   static ThemeData _lightTheme() {
     return ThemeData(
       primarySwatch: AppColors.colorPrimarySwatch,
@@ -227,10 +217,20 @@ class _MainAppState extends State<MainApp> {
           backgroundColor: AppColors.colorPrimary,
           foregroundColor: AppColors.textColorWhite,
           minimumSize: const Size.fromHeight(AppValues.formButtonHeight),
+          textStyle: _buttonTextStyle,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
           ),
         ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(textStyle: _buttonTextStyle),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(textStyle: _buttonTextStyle),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(textStyle: _buttonTextStyle),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -299,10 +299,20 @@ class _MainAppState extends State<MainApp> {
           backgroundColor: AppColors.colorPrimary,
           foregroundColor: AppColors.textColorWhite,
           minimumSize: const Size.fromHeight(AppValues.formButtonHeight),
+          textStyle: _buttonTextStyle,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
           ),
         ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(textStyle: _buttonTextStyle),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(textStyle: _buttonTextStyle),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(textStyle: _buttonTextStyle),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

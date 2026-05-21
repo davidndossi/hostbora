@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 enum EntryLogStatus { success, completed, manual, alert }
 
 enum EntryLogIconType { phone, lock, key, keypad, warning }

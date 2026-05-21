@@ -1,7 +1,10 @@
 import '../model/add_listing_request.dart';
 import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
+import '../model/cancel_booking_request.dart';
+import '../model/checkout_booking_request.dart';
 import '../model/create_booking_request.dart';
+import '../model/update_booking_request.dart';
 import '../model/add_expense_request.dart';
 import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
@@ -15,6 +18,9 @@ import '../model/send_sms_request.dart';
 import '../model/update_preference_request.dart';
 import '../model/user_profile_request.dart';
 import '../model/update_request.dart';
+import '../model/create_calendar_subscription_request.dart';
+import '../model/update_calendar_subscription_request.dart';
+import '../model/calendar_sync_request.dart';
 
 abstract class RemoteDataSource {
 
@@ -84,6 +90,15 @@ abstract class RemoteDataSource {
   /// Creates a booking for a listing.
   Future<GeneralResponse> createBooking(CreateBookingRequest request);
 
+  /// Marks a booking as checked out / completed.
+  Future<GeneralResponse> checkoutBooking(CheckoutBookingRequest request);
+
+  /// Cancels a booking.
+  Future<GeneralResponse> cancelBooking(CancelBookingRequest request);
+
+  /// Updates booking check-out date (extend stay).
+  Future<GeneralResponse> updateBooking(UpdateBookingRequest request);
+
   /// Records a payment (amount, method, optional booking, date, status).
   Future<GeneralResponse> recordPayment(RecordPaymentRequest request);
 
@@ -111,4 +126,24 @@ abstract class RemoteDataSource {
 
   /// List documents in a vault directory (e.g. legal, tax, manuals).
   Future<GeneralResponse> getVaultDocuments(String directoryId);
+
+  /// iCal: create IMPORT (sourceUrl) or EXPORT subscription.
+  Future<GeneralResponse> createCalendarSubscription(
+    CreateCalendarSubscriptionRequest request,
+  );
+
+  /// iCal: list subscriptions for a listing.
+  Future<GeneralResponse> getCalendarSubscriptions(String listingId);
+
+  /// iCal: update import URL / label / enabled.
+  Future<GeneralResponse> updateCalendarSubscription(
+    String subscriptionId,
+    UpdateCalendarSubscriptionRequest request,
+  );
+
+  /// iCal: delete subscription and imported blocks.
+  Future<GeneralResponse> deleteCalendarSubscription(String subscriptionId);
+
+  /// iCal: pull external calendars into server blocks.
+  Future<GeneralResponse> syncCalendarImport(CalendarSyncRequest request);
 }

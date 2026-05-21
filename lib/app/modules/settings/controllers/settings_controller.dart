@@ -11,6 +11,7 @@ import '../../../data/local/service/tenant_lease_reminder_service.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
 
@@ -85,15 +86,44 @@ class SettingsController extends BaseController {
   }
 
   void toggleTheme() {
+    if (Get.isRegistered<ThemeController>()) {
+      Get.find<ThemeController>().toggleTheme();
+      _syncThemeLabels(Get.find<ThemeController>().isDarkMode.value);
+      return;
+    }
     darkMode.value = !darkMode.value;
-    if (darkMode.value) {
-      theme('light');
-      themeDesc('Light Theme');
-    } else {
+    _preferenceManager.setBool(kPrefDarkTheme, darkMode.value);
+    _syncThemeLabels(darkMode.value);
+  }
+
+  void _syncThemeLabels(bool isDark) {
+    darkMode.value = isDark;
+    if (isDark) {
       theme('dark');
       themeDesc('Dark Theme');
+    } else {
+      theme('light');
+      themeDesc('Light Theme');
     }
-    _preferenceManager.setBool('dark_mode', darkMode.value);
+  }
+
+  Future<void> openPinSettings() async {
+    final pinOn = await _preferenceManager.getBool(
+      PreferenceManager.keyPinEnabled,
+      defaultValue: false,
+    );
+    final pinCode = await _preferenceManager.getString(
+      PreferenceManager.keyPinCode,
+      defaultValue: '',
+    );
+    final hasPin = pinOn && pinCode.length == 4;
+    Get.toNamed(
+      Routes.CHANGE_PIN,
+      arguments: {
+        'setup_pin': !hasPin,
+        'change_pin': hasPin,
+      },
+    );
   }
 
   void changePrivacySettings(String? value) {
@@ -121,14 +151,16 @@ class SettingsController extends BaseController {
   }
 
   Future<void> loadSettings() async {
-    darkMode.value = await _preferenceManager.getBool('dark_mode');
-    if (darkMode.value) {
-      theme('light');
-      themeDesc('Light Theme');
-    } else {
-      theme('dark');
-      themeDesc('Dark Theme');
+    var isDark = await _preferenceManager.getBool(kPrefDarkTheme);
+    final legacyDark = await _preferenceManager.getBool('dark_mode');
+    if (legacyDark && !isDark) {
+      isDark = true;
+      await _preferenceManager.setBool(kPrefDarkTheme, true);
     }
+    if (Get.isRegistered<ThemeController>()) {
+      Get.find<ThemeController>().isDarkMode.value = isDark;
+    }
+    _syncThemeLabels(isDark);
     eventReminders.value = await _preferenceManager.getBool('event_reminders');
     privacy.value = await _preferenceManager.getString('privacy');
     tenantReminderTemplate.value = await _preferenceManager.getString(

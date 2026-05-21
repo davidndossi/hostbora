@@ -156,7 +156,11 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   }
 
   Future<void> loadTenants() async {
-    final rows = await _tenantLocal.getAllNewestFirstByWorkspace('rent');
+    String ws = 'rent';
+    if (Get.arguments != null && Get.arguments['ws'] != null) {
+      ws = Get.arguments['ws'];
+    }
+    final rows = await _tenantLocal.getAllNewestFirstByWorkspace(ws);
     final scoped = rows.where(_recordMatchesListingFilter).toList();
     final fmt = DateFormat('MMM yyyy');
     tenants.assignAll(scoped.map((r) {

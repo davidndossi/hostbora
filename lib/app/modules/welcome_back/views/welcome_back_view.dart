@@ -55,19 +55,32 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                   ),
                   const SizedBox(height: 32),
                   Obx(
-                    () => controller.setupPinMode.value
+                    () => controller.setupPinMode.value ||
+                            !controller.biometricsOffered
                         ? const SizedBox.shrink()
                         : _buildBiometricCircle(context),
                   ),
-                  const SizedBox(height: 28),
-                  Text(
-                    appLocalization.orEnterSecurePin,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _isDark(context) ? Colors.white70 : AppColors.designPlaceholder,
-                      letterSpacing: 0.5,
-                    ),
+                  Obx(
+                    () => controller.setupPinMode.value ||
+                            !controller.biometricsOffered
+                        ? const SizedBox(height: 32)
+                        : const SizedBox(height: 28),
+                  ),
+                  Obx(
+                    () => controller.setupPinMode.value ||
+                            !controller.biometricsOffered
+                        ? const SizedBox.shrink()
+                        : Text(
+                            appLocalization.orEnterSecurePin,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _isDark(context)
+                                  ? Colors.white70
+                                  : AppColors.designPlaceholder,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                   ),
                   const SizedBox(height: 16),
                   _buildPinDots(),

@@ -171,7 +171,7 @@ class RentHubView extends BaseView<RentHubController> {
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(
-          onPressed: () => Get.toNamed(Routes.RENT_ADD_NEW_EXPENSE),
+          onPressed: controller.openAddExpense,
           icon: const Icon(Icons.payment, size: 16),
           label: Text(
             appLocalization.addExpense.replaceFirst(' ', '\n'),
@@ -194,7 +194,7 @@ class RentHubView extends BaseView<RentHubController> {
         ),
         const SizedBox(width: 6),
         ElevatedButton.icon(
-          onPressed: () => Get.toNamed(Routes.RENT_ADD_INCOME_FORM),
+          onPressed: controller.openAddIncome,
           icon: const Icon(Icons.payments, size: 16),
           label: Text(
             appLocalization.addIncome.replaceFirst(' ', '\n'),

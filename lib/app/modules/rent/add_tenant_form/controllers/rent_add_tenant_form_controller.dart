@@ -330,6 +330,7 @@ class RentAddTenantFormController extends BaseController {
           rentFrequency: property.rentFrequency,
           minRentalDuration: property.minRentalDuration,
           unitsJson: jsonEncode(updated),
+          floorCount: property.floorCount,
         ),
       );
     } catch (_) {}

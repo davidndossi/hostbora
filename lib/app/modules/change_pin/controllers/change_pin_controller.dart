@@ -8,53 +8,125 @@ import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/general_response.dart';
 import '/app/core/base/base_controller.dart';
 
-enum PINStatus { enterFirst, enterSecond, equals , unequals}
+enum PINStatus { verifyCurrent, enterFirst, enterSecond, equals, unequals }
 
 class ChangePinController extends BaseController {
   final pinStatus = PINStatus.enterFirst.obs;
   final firstPIN = ''.obs;
   final secondPIN = ''.obs;
+  final changePinMode = false.obs;
 
-  final PreferenceManager _preferenceManager = Get.find(tag: (PreferenceManager).toString());
+  final PreferenceManager _preferenceManager =
+      Get.find(tag: (PreferenceManager).toString());
+
+  String _storedPin = '';
+
+  @override
+  void onInit() {
+    super.onInit();
+    final args = Get.arguments;
+    if (args is Map && args['change_pin'] == true) {
+      changePinMode.value = true;
+      pinStatus(PINStatus.verifyCurrent);
+      _loadStoredPin();
+    }
+  }
+
+  Future<void> _loadStoredPin() async {
+    _storedPin = await _preferenceManager.getString(
+      PreferenceManager.keyPinCode,
+      defaultValue: '',
+    );
+    if (_storedPin.isEmpty) {
+      showErrorMessage(
+        _t('PIN is not set yet.', 'PIN bado haijawekwa.'),
+      );
+      Get.back();
+    }
+  }
+
+  String _t(String en, String sw) =>
+      Get.locale?.languageCode == 'sw' ? sw : en;
 
   int getCountsOfPIN() {
-    return firstPIN.value.length < 4 ? firstPIN.value.length : secondPIN.value.length;
+    if (pinStatus.value == PINStatus.verifyCurrent) {
+      return firstPIN.value.length;
+    }
+    return firstPIN.value.length < 4
+        ? firstPIN.value.length
+        : secondPIN.value.length;
   }
 
   void setPIN(int pinNum) {
+    if (pinStatus.value == PINStatus.verifyCurrent) {
+      if (firstPIN.value.length < 4) {
+        firstPIN('${firstPIN.value}$pinNum');
+        if (firstPIN.value.length == 4) {
+          _verifyCurrentPin();
+        }
+      }
+      update();
+      return;
+    }
+
     if (firstPIN.value.length < 4) {
-      String currentPIN = "${firstPIN.value}$pinNum";
+      final currentPIN = '${firstPIN.value}$pinNum';
       firstPIN(currentPIN);
       if (currentPIN.length < 4) {
         pinStatus(PINStatus.enterFirst);
       } else {
         pinStatus(PINStatus.enterSecond);
       }
+    } else {
+      final currentPIN = '${secondPIN.value}$pinNum';
+      secondPIN(currentPIN);
+      if (currentPIN.length < 4) {
+        pinStatus(PINStatus.enterSecond);
+      } else if (secondPIN.value == firstPIN.value) {
+        pinStatus(PINStatus.equals);
       } else {
-        String currentPIN = "${secondPIN.value}$pinNum";
-        secondPIN(currentPIN);
-        if (currentPIN.length < 4) {
-          pinStatus(PINStatus.enterSecond);
-        } else if (secondPIN.value == firstPIN.value) {
-          pinStatus(PINStatus.equals);
-        } else {
-          pinStatus(PINStatus.unequals);
-        }
+        pinStatus(PINStatus.unequals);
       }
+    }
+    update();
+  }
+
+  void _verifyCurrentPin() {
+    if (firstPIN.value != _storedPin) {
+      showErrorMessage(
+        _t('Current PIN is incorrect', 'PIN ya sasa si sahihi'),
+      );
+      firstPIN('');
+      pinStatus(PINStatus.verifyCurrent);
+      update();
+      return;
+    }
+    firstPIN('');
+    secondPIN('');
+    pinStatus(PINStatus.enterFirst);
     update();
   }
 
   void erase() {
+    if (pinStatus.value == PINStatus.verifyCurrent) {
+      if (firstPIN.value.isNotEmpty) {
+        firstPIN(firstPIN.value.substring(0, firstPIN.value.length - 1));
+      }
+      update();
+      return;
+    }
+
     if (firstPIN.isEmpty) {
       pinStatus(PINStatus.enterFirst);
     } else if (firstPIN.value.length < 4) {
-      String currentPIN = firstPIN.substring(0, firstPIN.value.length - 1);
+      final currentPIN = firstPIN.value.substring(0, firstPIN.value.length - 1);
       firstPIN(currentPIN);
       pinStatus(PINStatus.enterFirst);
     } else if (secondPIN.isEmpty) {
       pinStatus(PINStatus.enterSecond);
     } else {
-      String currentPIN = secondPIN.substring(0, secondPIN.value.length - 1);
+      final currentPIN =
+          secondPIN.value.substring(0, secondPIN.value.length - 1);
       secondPIN(currentPIN);
       pinStatus(PINStatus.enterSecond);
     }
@@ -62,7 +134,7 @@ class ChangePinController extends BaseController {
   }
 
   void reset() {
-    pinStatus(PINStatus.enterFirst);
+    pinStatus(changePinMode.value ? PINStatus.verifyCurrent : PINStatus.enterFirst);
     firstPIN('');
     secondPIN('');
     Get.back(closeOverlays: true);
@@ -151,5 +223,4 @@ class ChangePinController extends BaseController {
         canAuthenticateWithBiometrics || await auth.isDeviceSupported();
     return canAuthenticate;
   }
-
 }

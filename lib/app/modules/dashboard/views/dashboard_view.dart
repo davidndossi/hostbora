@@ -44,6 +44,8 @@ class DashboardView extends BaseView<DashboardController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildBnbOverviewSection(context),
+                    _buildBnbWeeklyReportsSection(context),
                     _buildSegmentedToggle(context),
                     const SizedBox(height: 20),
                     _buildPerformanceTrendsCard(context),
@@ -57,6 +59,262 @@ class DashboardView extends BaseView<DashboardController> {
                 ),
               );
             }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBnbOverviewSection(BuildContext context) {
+    return Obx(() {
+      if (!controller.isBnbWorkspace.value) return const SizedBox.shrink();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _t(context, 'Overview', 'Muhtasari'),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _BnbOverviewCard(
+                  title: appLocalization.bookings,
+                  value: '${controller.bnbBookingsCount.value}',
+                  onTap: controller.openBookings,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _BnbOverviewCard(
+                  title: appLocalization.dashboardGuests,
+                  value: '${controller.bnbGuestsCount.value}',
+                  onTap: controller.openBookings,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _BnbOverviewCard(
+                  title: appLocalization.dashboardTodayRevenue,
+                  value: controller.bnbTodayRevenue.value,
+                  onTap: controller.openTodayRevenue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _BnbOverviewCard(
+                  title: appLocalization.dashboardUnits,
+                  value: '${controller.bnbUnitsCount.value}',
+                  onTap: controller.openProperties,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+        ],
+      );
+    });
+  }
+
+  Widget _buildBnbWeeklyReportsSection(BuildContext context) {
+    return Obx(() {
+      if (!controller.isBnbWorkspace.value) return const SizedBox.shrink();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildWeeklyBarChartCard(
+            context,
+            title: appLocalization.dashboardWeeklyRevenue,
+            subtitle: appLocalization.dashboardWeekTrend,
+            values: controller.weeklyRevenue,
+            maxYCap: null,
+            formatTooltip: (v) => 'TZS ${v.round()}',
+          ),
+          const SizedBox(height: 16),
+          _buildWeeklyBarChartCard(
+            context,
+            title: appLocalization.dashboardWeeklyOccupancy,
+            subtitle: appLocalization.dashboardWeekTrend,
+            values: controller.weeklyOccupancyPercent,
+            maxYCap: 100,
+            formatTooltip: (v) => '${v.round()}%',
+          ),
+          const SizedBox(height: 20),
+        ],
+      );
+    });
+  }
+
+  Widget _buildWeeklyBarChartCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required RxList<double> values,
+    required double? maxYCap,
+    required String Function(double) formatTooltip,
+  }) {
+    final data = values;
+    final maxVal = data.fold<double>(0, (a, b) => a > b ? a : b);
+    final chartMax = maxYCap ?? (maxVal <= 0 ? 1.0 : maxVal * 1.12);
+    final peakValue = maxVal;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: AppDecorations.card.copyWith(
+        color: _isDark(context)
+            ? const Color(0xFF1F1F1F)
+            : AppColors.colorWhite,
+        border: Border.all(
+          color: _isDark(context)
+              ? Colors.white.withValues(alpha: 0.18)
+              : Colors.transparent,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: _isDark(context) ? 0.28 : 0.06,
+            ),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                  color: _isDark(context)
+                      ? Colors.white70
+                      : AppColors.textColorSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 180,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: chartMax,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        formatTooltip(rod.toY),
+                        TextStyle(
+                          color: _isDark(context)
+                              ? Colors.white
+                              : AppColors.textColorPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      getTitlesWidget: (value, meta) {
+                        final i = value.toInt();
+                        if (i < 0 ||
+                            i >= DashboardController.weeklyDayLabels.length) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            DashboardController.weeklyDayLabels[i],
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: _isDark(context)
+                                  ? Colors.white70
+                                  : AppColors.textColorSecondary,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: (_isDark(context)
+                            ? Colors.white
+                            : AppColors.designInputBorder)
+                        .withValues(alpha: 0.5),
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: List.generate(
+                  DashboardController.weeklyDayLabels.length,
+                  (i) {
+                    final v = i < data.length ? data[i] : 0.0;
+                    final isPeak = peakValue > 0 && v == peakValue;
+                    return BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          fromY: 0,
+                          toY: v,
+                          width: 18,
+                          color: isPeak
+                              ? AppColors.designAccent
+                              : AppColors.designAccent.withValues(alpha: 0.55),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              duration: const Duration(milliseconds: 150),
+            ),
           ),
         ],
       ),
@@ -604,6 +862,77 @@ class _SegmentButton extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BnbOverviewCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final VoidCallback? onTap;
+
+  const _BnbOverviewCard({
+    required this.title,
+    required this.value,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+      borderRadius: BorderRadius.circular(AppValues.radius_12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppValues.radius_12),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppValues.radius_12),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : Colors.transparent,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark
+                        ? Colors.white70
+                        : AppColors.textColorSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),

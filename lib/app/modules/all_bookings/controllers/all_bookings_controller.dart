@@ -1,13 +1,17 @@
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/bnb_booking_merge.dart';
+import '../../../data/local/pending_bookings_store.dart';
+import '../../../data/model/check_in_item.dart';
 import '../../../data/repository/app_repository.dart';
-import '../../../modules/home/controllers/home_controller.dart';
+import '../../../data/local/db/property_local_data_source.dart';
 import '../../../routes/app_pages.dart';
 
 class AllBookingsController extends BaseController {
   final AppRepository _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+  final PropertyLocalDataSource _propertyLocal = Get.find<PropertyLocalDataSource>();
+  final PendingBookingsStore _pendingBookingsStore = PendingBookingsStore();
 
   final bookings = <CheckInItem>[].obs;
   final loading = true.obs;
@@ -20,50 +24,52 @@ class AllBookingsController extends BaseController {
 
   Future<void> loadAllBookings() async {
     loading.value = true;
+    final merge = BnbBookingMerge(pending: _pendingBookingsStore);
+    final merged = <String, CheckInItem>{};
     try {
       final res = await _repository.getAllBookings();
-      if (res.responseCode != '0' || res.data == null) {
-        bookings.clear();
-        return;
+      final data = res.data;
+      List<dynamic> rows = const [];
+      if (res.responseCode == '0' && data is Map && data['bookings'] is List) {
+        rows = data['bookings'] as List;
+      } else if (res.responseCode == '0' && data is List) {
+        rows = data;
       }
-      final list = res.data!['bookings'] as List<dynamic>? ?? [];
-      final items = list.map((e) {
-        final m = e as Map<String, dynamic>;
-        final checkIn = m['checkIn'] as String? ?? '';
-        final checkOut = m['checkOut'] as String? ?? '';
-        final nights = (m['numberOfNights'] as num?)?.toInt() ?? 0;
-        final dates = _formatDates(checkIn, checkOut, nights);
-        return CheckInItem(
-          bookingId: m['bookingId'] as String?,
-          imageUrl: m['imageUrl'] as String? ?? '',
-          guestName: m['guestName'] as String? ?? '',
-          guestAvatarUrl: m['guestAvatarUrl'] as String? ?? '',
-          propertyType: m['propertyType'] as String? ?? m['propertyName'] as String? ?? '',
-          dates: dates,
-          isConfirmed: m['isConfirmed'] as bool? ?? false,
-        );
-      }).toList();
-      bookings.assignAll(items);
-    } catch (_) {
-      bookings.clear();
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  String _formatDates(String checkIn, String checkOut, int nights) {
-    try {
-      final ci = DateTime.tryParse(checkIn);
-      final co = DateTime.tryParse(checkOut);
-      if (ci != null && co != null) {
-        final fmt = DateFormat('MMM d');
-        final n = nights > 0 ? nights : co.difference(ci).inDays;
-        return '${fmt.format(ci)} - ${fmt.format(co)} • $n Night${n == 1 ? '' : 's'}';
+      for (final e in rows.whereType<Map>()) {
+        final item = merge.fromApiMap(Map<String, dynamic>.from(e));
+        merged[item.bookingKey] = item;
       }
     } catch (_) {}
-    return '$checkIn - $checkOut';
+
+    try {
+      final properties = await _propertyLocal.getAllVisibleNewestFirst(
+          userId: '', workspaceType: 'bnb');
+      for (final m in _pendingBookingsStore.load()) {
+        final listingId = (m['listingId'] ?? '').toString().trim();
+        final checkIn = (m['checkIn'] ?? '').toString();
+        final checkOut = (m['checkOut'] ?? '').toString();
+        if (listingId.isEmpty || checkIn.isEmpty || checkOut.isEmpty) continue;
+        final property = properties.firstWhereOrNull(
+          (p) => p.propertyRef.trim() == listingId || 'local_${p.id}' == listingId,
+        );
+        final propertyLabel = property?.propertyName.trim().isNotEmpty == true
+            ? property!.propertyName.trim()
+            : (property?.propertyLocation ?? 'Property');
+        final localId = 'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
+        merged[localId] = merge.fromPendingMap(
+          m,
+          propertyLabel: propertyLabel,
+          localId: localId,
+        );
+      }
+    } catch (_) {}
+
+    bookings.assignAll(merged.values.toList());
+    loading.value = false;
   }
 
   void openBookingDetails(CheckInItem item) =>
-      Get.toNamed(Routes.BOOKING_DETAILS, arguments: item);
+      Get.toNamed(Routes.BOOKING_DETAILS, arguments: item)?.then((_) {
+        loadAllBookings();
+      });
 }

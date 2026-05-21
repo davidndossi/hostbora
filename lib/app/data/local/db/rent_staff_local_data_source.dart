@@ -86,6 +86,41 @@ class RentStaffLocalDataSource {
     return maps.map(RentStaffRecord.fromMap).toList();
   }
 
+  Future<RentStaffRecord?> getById(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return RentStaffRecord.fromMap(maps.first);
+  }
+
+  Future<void> updateById({
+    required int id,
+    required String name,
+    required String jobTitle,
+    required String payDayLabel,
+    required String paymentType,
+    required double amountValue,
+  }) async {
+    final db = await database;
+    await db.update(
+      _table,
+      {
+        'name': name,
+        'job_title': jobTitle,
+        'pay_day_label': payDayLabel,
+        'payment_type': paymentType,
+        'amount_value': amountValue,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<void> deleteById(int id) async {
     final db = await database;
     await db.delete(_table, where: 'id = ?', whereArgs: [id]);

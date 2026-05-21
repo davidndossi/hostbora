@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 
 import '../../../data/local/preference/preference_manager.dart';
 import '/app/core/base/base_controller.dart';
+import '/app/modules/dashboard/controllers/dashboard_controller.dart';
+import '/app/modules/home/controllers/home_controller.dart';
 import '/app/modules/main/controllers/bottom_nav_controller.dart';
 import '/app/modules/main/model/menu_code.dart';
 
@@ -37,6 +39,21 @@ class MainController extends BaseController {
 
   Future<void> onMenuSelected(MenuCode menuCode) async {
     _selectedMenuCodeController(menuCode);
+    switch (menuCode) {
+      case MenuCode.HOME:
+        if (Get.isRegistered<HomeController>()) {
+          await Get.find<HomeController>().loadHomeData();
+        }
+        break;
+      case MenuCode.DASHBOARD:
+        if (Get.isRegistered<DashboardController>()) {
+          await Get.find<DashboardController>().loadDashboard();
+        }
+        break;
+      case MenuCode.CALENDAR:
+      case MenuCode.SETTINGS:
+        break;
+    }
   }
 
   void setDefaultLocale(final bool isUpdate) {

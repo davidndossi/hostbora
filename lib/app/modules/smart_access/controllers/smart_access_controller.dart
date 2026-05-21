@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/service/entry_logs_service.dart';
 import '../../../data/service/tuya_smart_lock_service.dart';
 import '../../../routes/app_pages.dart';
 
@@ -21,19 +22,13 @@ class ActivityEntry {
 class SmartAccessController extends BaseController {
   final isLocked = true.obs;
   final lastUpdated = '2 MINS AGO'.obs;
-  final propertyLabel = 'WESTSIDE PENTHOUSE • UNIT 402';
+  final propertyLabel = 'Smart Lock'.obs;
 
   /// When Tuya Smart Lock is integrated, this is the device ID used for remote lock/unlock.
   String? _selectedLockDeviceId;
   StreamSubscription? _lockStateSubscription;
 
-  final recentActivity = <ActivityEntry>[
-    const ActivityEntry(
-      guestName: 'Sarah Jenkins',
-      detail: 'Unlocked via keypad',
-      time: '1:42 PM',
-    ),
-  ];
+  final recentActivity = <ActivityEntry>[].obs;
 
   @override
   void onInit() {
@@ -53,12 +48,29 @@ class SmartAccessController extends BaseController {
     final lockService = Get.find<TuyaSmartLockService>();
     final locks = await lockService.getLockDevices();
     if (locks.isEmpty) return;
-    _selectedLockDeviceId = locks.first.devId;
+    final device = locks.first;
+    _selectedLockDeviceId = device.devId;
+    propertyLabel.value = device.name;
+    _loadRecentActivity();
     _lockStateSubscription = lockService
         .onLockStateUpdated(_selectedLockDeviceId!)
         .listen((dps) {
       isLocked.value = TuyaSmartLockService.isLockedFromDps(dps);
     });
+  }
+
+  void _loadRecentActivity() {
+    final service = EntryLogsService();
+    final items = service.loadLocalItems();
+    recentActivity.assignAll(
+      items.take(3).map(
+        (e) => ActivityEntry(
+          guestName: e.title,
+          detail: e.detail,
+          time: e.time,
+        ),
+      ),
+    );
   }
 
   void goBack() => Get.back();
@@ -71,7 +83,14 @@ class SmartAccessController extends BaseController {
     if (Get.isRegistered<TuyaSmartLockService>() && _selectedLockDeviceId != null) {
       final lockService = Get.find<TuyaSmartLockService>();
       final ok = await lockService.unlock(_selectedLockDeviceId!);
-      if (ok) isLocked.value = false;
+      if (ok) {
+        isLocked.value = false;
+        await EntryLogsService().recordAppUnlock(
+          deviceId: _selectedLockDeviceId,
+          deviceName: propertyLabel.value.split('•').first.trim(),
+        );
+        _loadRecentActivity();
+      }
       return;
     }
     isLocked.value = false;
@@ -82,7 +101,14 @@ class SmartAccessController extends BaseController {
     if (Get.isRegistered<TuyaSmartLockService>() && _selectedLockDeviceId != null) {
       final lockService = Get.find<TuyaSmartLockService>();
       final ok = await lockService.lock(_selectedLockDeviceId!);
-      if (ok) isLocked.value = true;
+      if (ok) {
+        isLocked.value = true;
+        await EntryLogsService().recordAppLock(
+          deviceId: _selectedLockDeviceId,
+          deviceName: propertyLabel.value.split('•').first.trim(),
+        );
+        _loadRecentActivity();
+      }
       return;
     }
     isLocked.value = true;

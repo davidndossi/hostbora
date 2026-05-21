@@ -61,6 +61,8 @@ class AppLocalDatabase {
         await _ensureWorkspaceTypeColumns(db);
         await _ensureIncomePropertyRefColumn(db);
         await _ensureUtilityTopupPropertyRefColumn(db);
+        await _ensurePropertiesFloorCountColumn(db);
+        await _ensureIncomeBookingIdColumn(db);
       },
     );
     return _db!;
@@ -82,7 +84,8 @@ class AppLocalDatabase {
         rent_amount TEXT NOT NULL DEFAULT '',
         rent_frequency TEXT NOT NULL DEFAULT '',
         min_rental_duration TEXT NOT NULL DEFAULT '',
-        units_json TEXT NOT NULL DEFAULT ''
+        units_json TEXT NOT NULL DEFAULT '',
+        floor_count INTEGER NOT NULL DEFAULT 1
       )
     ''');
     await db.execute(
@@ -132,10 +135,14 @@ class AppLocalDatabase {
         apartment TEXT NOT NULL DEFAULT '',
         apartment_unit TEXT NOT NULL DEFAULT '',
         property_ref TEXT NOT NULL DEFAULT '',
+        booking_id TEXT NOT NULL DEFAULT '',
         workspace_type TEXT NOT NULL DEFAULT 'rent',
         created_at_ms INTEGER NOT NULL
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_${incomeTable}_booking_id ON $incomeTable(booking_id) WHERE booking_id != ""',
+    );
     await db.execute('''
       CREATE TABLE $expenseTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -359,6 +366,21 @@ class AppLocalDatabase {
     if (oldVersion < 4) {
       await _ensureIncomePropertyRefColumn(db);
     }
+    if (oldVersion < 5) {
+      await _ensureIncomeBookingIdColumn(db);
+    }
+  }
+
+  static Future<void> _ensureIncomeBookingIdColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      incomeTable,
+      'booking_id',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_${incomeTable}_booking_id ON $incomeTable(booking_id) WHERE booking_id != ""',
+    );
   }
 
   static Future<void> _ensureIncomePropertyRefColumn(Database db) async {
@@ -376,6 +398,15 @@ class AppLocalDatabase {
       rentUtilityTopupTable,
       'property_ref',
       "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
+  static Future<void> _ensurePropertiesFloorCountColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      propertiesTable,
+      'floor_count',
+      'INTEGER NOT NULL DEFAULT 1',
     );
   }
 

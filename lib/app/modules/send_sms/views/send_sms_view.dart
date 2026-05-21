@@ -3,6 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
@@ -82,6 +83,105 @@ class SendSmsView extends BaseView<SendSmsController> {
         ),
       );
     });
+  }
+
+  Future<void> _showContactPicker(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ready = await controller.prepareContactPicker();
+    if (!ready || !context.mounted) return;
+    final searchController = TextEditingController();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: SizedBox(
+              height: 500,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.sendSmsSelectContactRecipients,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.sendSmsPickContactsHint,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      labelText: l10n.sendSmsSearchContacts,
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (v) => controller.contactPickerSearchQuery.value = v,
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Obx(() {
+                      if (controller.isLoadingContacts.value) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final entries = controller.filteredDeviceContactEntries;
+                      if (entries.isEmpty) {
+                        return Center(
+                          child: Text(l10n.sendSmsNoContactsWithPhones),
+                        );
+                      }
+                      return ListView.builder(
+                        itemCount: entries.length,
+                        itemBuilder: (_, index) {
+                          final entry = entries[index];
+                          final selected = controller.pickerSelectedContactKeys
+                              .contains(entry.selectionKey);
+                          return CheckboxListTile(
+                            value: selected,
+                            onChanged: (v) => controller.toggleContactForPicker(
+                              entry.selectionKey,
+                              v ?? false,
+                            ),
+                            title: Text(entry.displayName),
+                            subtitle: Text(entry.phone),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        controller.appendSelectedContactsToRecipients();
+                        Get.back();
+                      },
+                      icon: const Icon(Icons.contact_phone_outlined),
+                      label: Text(l10n.sendSmsAddSelectedContactNumbers),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    searchController.dispose();
   }
 
   Future<void> _showTenantPicker(BuildContext context) async {
@@ -189,33 +289,57 @@ class SendSmsView extends BaseView<SendSmsController> {
   }
 
   Widget _buildRecipientAssistActions(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Obx(
-      () => Row(
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _showTenantPicker(context),
-              icon: const Icon(Icons.people_alt_outlined, size: 18),
-              label: Text(
-                _t(
-                  context,
-                  'Pick tenant(s)',
-                  'Chagua mpangaji',
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showTenantPicker(context),
+                  icon: const Icon(Icons.people_alt_outlined, size: 18),
+                  label: Text(
+                    _t(
+                      context,
+                      'Pick tenant(s)',
+                      'Chagua mpangaji',
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          if (controller.pickerSelectedTenantIds.isNotEmpty)
-            Text(
-              _t(
-                context,
-                '${controller.pickerSelectedTenantIds.length} selected',
-                '${controller.pickerSelectedTenantIds.length} wamechaguliwa',
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showContactPicker(context),
+                  icon: const Icon(Icons.contacts_outlined, size: 18),
+                  label: Text(l10n.sendSmsPickFromContacts),
+                ),
               ),
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ],
+          ),
+          if (controller.pickerSelectedTenantIds.isNotEmpty ||
+              controller.pickerSelectedContactKeys.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                [
+                  if (controller.pickerSelectedTenantIds.isNotEmpty)
+                    _t(
+                      context,
+                      '${controller.pickerSelectedTenantIds.length} tenant(s)',
+                      'wapangaji ${controller.pickerSelectedTenantIds.length}',
+                    ),
+                  if (controller.pickerSelectedContactKeys.isNotEmpty)
+                    l10n.sendSmsContactsSelectedCount(
+                      controller.pickerSelectedContactKeys.length,
+                    ),
+                ].join(' · '),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
         ],

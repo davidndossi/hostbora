@@ -1,8 +1,8 @@
-## Paa Yangu website
+## HostBora marketing website
 
-This is a static marketing website for the Paa Yangu app.
+Static single-page site for **HostBora** — property management for landlords, property managers, and hosts in Tanzania and East Africa (BnB + long-term rent).
 
-### Run locally
+### Preview locally
 
 From the repo root:
 
@@ -11,18 +11,36 @@ cd website
 python3 -m http.server 5173
 ```
 
-Then open `http://localhost:5173`.
+Then open [http://localhost:5173](http://localhost:5173).
+
+You can also open `index.html` directly in a browser; use a local server if you need correct paths for assets or future routing.
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `index.html` | Landing page (hero, features, workspaces, audience, trust, contact) |
+| `styles.css` | Responsive layout and brand styles |
+| `app.js` | Mobile nav + contact form mailto |
+| `privacy-policy.html` | Privacy policy |
+| `assets/logo.svg` | Logo / favicon |
+| `.nojekyll` | GitHub Pages (skip Jekyll) |
 
 ### Deploy
 
-- **Any static host**: upload the contents of `website/`.
-- **GitHub Pages**: set Pages to deploy from `website/` (or `/docs` if you prefer), and keep `.nojekyll`.
+Upload the `website/` folder to any static host (Netlify, Vercel, S3, nginx, etc.).
 
-### Update content
+For **GitHub Pages**, set the source to the `website/` directory and keep `.nojekyll` at the root of that folder.
 
-Edit:
-- `website/index.html`
-- `website/styles.css`
-- `website/app.js`
+### Brand colors
 
-Assets live in `website/assets/`, including **`logo.svg`** (header, footer, favicon, hero eyebrow). Replace `logo.svg` if you add an official brand pack.
+Aligned with the Flutter app (`lib/app/core/values/app_colors.dart`):
+
+- Primary: `#1C6E64`
+- Primary dark: `#145C54`
+- Surface: `#F6F8F8`
+- Accent green: `#2ECC71`
+
+### Edit content
+
+Update copy in `index.html`. Styles live in `styles.css`. Replace `assets/logo.svg` when you have final brand assets.

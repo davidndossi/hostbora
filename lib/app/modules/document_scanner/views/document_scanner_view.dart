@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../controllers/document_scanner_controller.dart';
 
 const _scannerBg = Color(0xFF1E2E3A);
@@ -59,58 +60,7 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
               ),
             ),
           ),
-          Obx(
-            () => Padding(
-              padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-              child: GestureDetector(
-                onTap: controller.toggleAutoCapture,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scannerPillBg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: controller.autoCaptureOn.value
-                              ? AppColors.paaYanguSuccess
-                              : _scannerSecondary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        controller.autoCaptureOn.value
-                            ? _t(
-                                context,
-                                en: 'AUTO-CAPTURE ON',
-                                sw: 'KUNASA KIOTOMATIKI ON',
-                              )
-                            : _t(
-                                context,
-                                en: 'AUTO-CAPTURE OFF',
-                                sw: 'KUNASA KIOTOMATIKI OFF',
-                              ),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: instructionTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -136,6 +86,7 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
   Widget _buildCameraPreview(BuildContext context, Color scannerBg) {
     return Obx(() {
       if (controller.cameraError.value.isNotEmpty) {
+        final l10n = AppLocalizations.of(context)!;
         return Container(
           color: scannerBg,
           child: Center(
@@ -154,6 +105,23 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
                       fontSize: 15,
                     ),
                   ),
+                  if (controller.showPermissionActions.value) ...[
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        OutlinedButton(
+                          onPressed: controller.retryPermission,
+                          child: Text(l10n.designMoodboardRetry),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: controller.openAppSettingsForCamera,
+                          child: Text(l10n.openSettings),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -279,23 +247,18 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _BottomAction(
-                icon: Icons.photo_library_outlined,
-                label: _t(context, en: 'IMPORT', sw: 'INGIZA'),
-                scannerPillBg: scannerPillBg,
-                scannerSecondary: scannerSecondary,
-                onTap: controller.importFromGallery,
+              Expanded(
+                child: _BottomAction(
+                  icon: Icons.photo_library_outlined,
+                  label: _t(context, en: 'IMPORT', sw: 'INGIZA'),
+                  scannerPillBg: scannerPillBg,
+                  scannerSecondary: scannerSecondary,
+                  onTap: controller.importFromGallery,
+                ),
               ),
               _buildCaptureButton(context),
-              _BottomAction(
-                icon: Icons.layers_outlined,
-                label: _t(context, en: 'BATCH MODE', sw: 'HALI YA WINGI'),
-                scannerPillBg: scannerPillBg,
-                scannerSecondary: scannerSecondary,
-                onTap: controller.batchMode,
-              ),
+              const Expanded(child: SizedBox()),
             ],
           ),
         ),

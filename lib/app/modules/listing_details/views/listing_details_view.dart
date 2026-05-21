@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:paa_yangu/app/core/values/app_values.dart';
 import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../controllers/listing_details_controller.dart';
@@ -67,6 +68,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               value: '${controller.occupancyPercent.value.clamp(0, 100)}',
               suffix: '%',
               progress: controller.occupancyPercent.value.clamp(0, 100) / 100,
+              onTap: controller.onOpenUnitOccupancy,
             ),
             const SizedBox(height: 10),
             _kpiMinimal(
@@ -80,6 +82,8 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             _estimationCostsLink(u),
             const SizedBox(height: 14),
             _quickManagement(u),
+            const SizedBox(height: 10),
+            _calendarSyncEntry(context, u),
             const SizedBox(height: 14),
             _units(u),
             const SizedBox(height: 12),
@@ -301,8 +305,9 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     String prefix = '',
     String suffix = '',
     double? progress,
+    VoidCallback? onTap,
   }) {
-    return Container(
+    final inner = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: u.card,
@@ -367,6 +372,57 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         ],
       ),
     );
+    if (onTap == null) return inner;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: inner,
+      ),
+    );
+  }
+
+  Widget _calendarSyncEntry(BuildContext context, _ListingUi u) {
+    final l10n = AppLocalizations.of(context)!;
+    return Material(
+      color: u.card,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: controller.onOpenCalendarSync,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              const Icon(Icons.sync, color: AppColors.colorPrimary, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.calendarSyncOpenFromListing,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: u.text,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.calendarSyncOpenFromListingHint,
+                      style: TextStyle(fontSize: 12, color: u.muted),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: u.muted),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _quickManagement(_ListingUi u) {
@@ -385,7 +441,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           children: [
             Expanded(
               child: Text(
-                _isSw ? 'Quick Management' : 'Quick Management',
+                _isSw ? 'Usimamizi wa Haraka' : 'Quick Management',
                 style: TextStyle(
                   fontFamily: 'serif',
                   fontSize: 22,
@@ -395,7 +451,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               ),
             ),
             Text(
-              _isSw ? '6 ACTIVE\nMODULES' : '6 ACTIVE\nMODULES',
+              _isSw ? 'MODULI 6\nHAI' : '6 ACTIVE\nMODULES',
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: 12,
@@ -462,7 +518,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           children: [
             Expanded(
               child: Text(
-                _isSw ? 'Property Units' : 'Property Units',
+                _isSw ? 'Uniti za Mjengo' : 'Property Units',
                 style: TextStyle(
                   fontFamily: 'serif',
                   fontSize: 22,
@@ -474,7 +530,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             TextButton(
               onPressed: controller.onAddNewUnit,
               child: Text(
-                _isSw ? 'ADD NEW UNIT' : 'ADD NEW UNIT',
+                _isSw ? 'ONGEZA UNIT MPYA' : 'ADD NEW UNIT',
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ),
@@ -625,7 +681,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           children: [
             Expanded(
               child: Text(
-                _isSw ? 'Recent Activity' : 'Recent Activity',
+                _isSw ? 'Shughuli za Karibuni' : 'Recent Activity',
                 style: TextStyle(fontFamily: 'serif', fontSize: 22, fontWeight: FontWeight.w700, color: u.text),
               ),
             ),
@@ -690,7 +746,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           children: [
             Expanded(
               child: Text(
-                _isSw ? 'Staff Assigned' : 'Staff Assigned',
+                _isSw ? 'Wafanyakazi Waliopangiwa' : 'Staff Assigned',
                 style: TextStyle(fontFamily: 'serif', fontSize: 22, fontWeight: FontWeight.w700, color: u.text),
               ),
             ),

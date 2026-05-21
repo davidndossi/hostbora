@@ -77,6 +77,24 @@ class MainView extends BaseView<MainController> {
               ? theme!.colorScheme.primary
               : AppColors.colorPrimary,
           onPressed: () {
+            _closeFabThen(() => homeController.addListing());
+          },
+          tooltip: _t(en: 'Add Listing', sw: 'Ongeza Mjengo'),
+          label: Text(_t(en: 'Property', sw: 'Mjengo'), style: TextStyle(fontSize: 12)),
+          icon: Icon(
+            Icons.house_outlined,
+            size: 18,
+          ),
+        ),
+        FloatingActionButton.extended(
+          heroTag: null,
+          backgroundColor: isDark == true
+              ? theme!.colorScheme.surfaceContainerHigh
+              : AppColors.colorWhite,
+          foregroundColor: isDark == true
+              ? theme!.colorScheme.primary
+              : AppColors.colorPrimary,
+          onPressed: () {
             _closeFabThen(() => homeController.addExpense());
           },
           tooltip: _t(en: 'Add expense', sw: 'Ongeza matumizi'),

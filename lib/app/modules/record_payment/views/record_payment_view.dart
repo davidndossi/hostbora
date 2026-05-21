@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/widget/custom_app_bar.dart';
-import '../../../routes/app_pages.dart';
 import '../controllers/record_payment_controller.dart';
 
 class RecordPaymentView extends BaseView<RecordPaymentController> {
@@ -129,6 +128,61 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                     ),
                     onChanged: controller.updateSelectedIncomeUnit,
                   ),
+                ],
+              );
+            }),
+            Obx(() {
+              if (!controller.hasProperties) return const SizedBox.shrink();
+              final options = controller.bookingOptions;
+              final sel = controller.selectedBookingKey.value;
+              final valid = sel != null && options.any((o) => o.bookingKey == sel);
+              final value = valid ? sel : null;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  _label(appLocalization.linkedBookingOptional, isDark: isDark),
+                  if (controller.loadingBookings.value)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: LinearProgressIndicator(
+                        minHeight: 2,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    )
+                  else if (options.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 2),
+                      child: Text(
+                        appLocalization.noActiveBookingsForProperty,
+                        style: TextStyle(fontSize: 12, color: hintMuted),
+                      ),
+                    )
+                  else
+                    DropdownButtonFormField<String?>(
+                      initialValue: value,
+                      isExpanded: true,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: dropdownText,
+                      ),
+                      dropdownColor:
+                          isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                      icon: Icon(Icons.expand_more_rounded, color: chevronColor),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: appLocalization.chooseBooking,
+                        hintStyle: TextStyle(color: hintMuted, fontSize: 15),
+                      ),
+                      items: controller.bookingDropdownMenuItems(
+                        itemColor: dropdownText,
+                        hintColor: hintMuted,
+                        optionalNoBookingLabel: appLocalization.optionalNoBooking,
+                      ),
+                      onChanged: controller.updateSelectedBooking,
+                    ),
                 ],
               );
             }),

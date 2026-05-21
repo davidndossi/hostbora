@@ -6,7 +6,8 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/all_bookings_controller.dart';
-import '../../../modules/home/controllers/home_controller.dart';
+import '../../../data/model/check_in_item.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class AllBookingsView extends BaseView<AllBookingsController> {
   AllBookingsView({super.key});
@@ -159,7 +160,50 @@ class _BookingCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (item.isConfirmed)
+                        if (item.isCancelled)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .error
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              AppLocalizations.of(context)!.bookingCancelledLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        if (item.isCancelled) const SizedBox(width: 4),
+                        if (item.isCheckedOut)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.textColorSecondary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              AppLocalizations.of(context)!.bookingCheckedOut,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: subTextColor,
+                              ),
+                            ),
+                          ),
+                        if (item.isCheckedOut) const SizedBox(width: 4),
+                        if (item.isConfirmed && !item.isInactive)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,

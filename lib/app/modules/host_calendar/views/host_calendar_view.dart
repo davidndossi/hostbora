@@ -10,6 +10,10 @@ import '../controllers/host_calendar_controller.dart';
 import '../enum/day_type.dart';
 
 const _hostCalendarManualRateBg = Color(0xFFE07A5F);
+/// Booked but no linked BnB income / payment flag.
+const _hostCalendarBookedBg = Color(0xFFE67E22);
+/// Stay with recorded payment (income linked to booking or API paid status).
+const _hostCalendarPaidBg = Color(0xFF1C6E64);
 
 class HostCalendarView extends BaseView<HostCalendarController> {
   HostCalendarView({super.key});
@@ -48,6 +52,26 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                   // _buildDynamicPricingRow(context),
                   // const SizedBox(height: 20),
                   _buildPropertySelector(context),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: controller.onOpenCalendarSync,
+                      icon: const Icon(Icons.sync, size: 18),
+                      label: Text(appLocalization.calendarSyncOpenFromListing),
+                    ),
+                  ),
+                  Obx(() {
+                    if (!controller.showUnitSelector) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        _buildUnitSelector(context),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 20),
                   _buildCalendarGrid(context),
                   const SizedBox(height: 12),
@@ -192,7 +216,6 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   }
 
   Widget _buildPropertySelector(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -206,87 +229,110 @@ class HostCalendarView extends BaseView<HostCalendarController> {
           ),
         ),
         const SizedBox(height: 8),
-        Obx(
-          () => Material(
-            color: _isDark(context)
-                ? theme.colorScheme.surfaceContainerHigh
-                : AppColors.colorWhite,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: () => _showPropertySheet(context),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _isDark(context)
-                        ? theme.colorScheme.outlineVariant
-                        : AppColors.designInputBorder,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.home_rounded,
-                      size: 24,
-                      color: AppColors.colorPrimary,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
+        Obx(() => _calendarDropdown<int>(
+              context: context,
+              value: controller.selectedPropertyLocalId.value,
+              hint: _t(context, en: 'Select property', sw: 'Chagua mali'),
+              items: controller.bnbProperties
+                  .map(
+                    (p) => DropdownMenuItem<int>(
+                      value: p.localId,
                       child: Text(
-                        controller.selectedPropertyName.value,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textColorPrimary,
-                        ),
+                        p.displayName,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Icon(
-                      Icons.keyboard_arrow_down,
-                      color: AppColors.textColorSecondary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+                  )
+                  .toList(),
+              onChanged: controller.bnbProperties.isEmpty
+                  ? null
+                  : (id) {
+                      if (id != null) controller.selectProperty(id);
+                    },
+            )),
       ],
     );
   }
 
-  void _showPropertySheet(BuildContext context) {
+  Widget _buildUnitSelector(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          appLocalization.calendarActiveUnit,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+            color: AppColors.textColorSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Obx(() => _calendarDropdown<String>(
+              context: context,
+              value: controller.selectedUnitKey.value.isEmpty
+                  ? null
+                  : controller.selectedUnitKey.value,
+              hint: _t(context, en: 'Select unit', sw: 'Chagua chumba'),
+              items: controller.apartmentUnits
+                  .map(
+                    (u) => DropdownMenuItem<String>(
+                      value: u.key,
+                      child: Text(
+                        u.label,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: controller.apartmentUnits.isEmpty
+                  ? null
+                  : (key) {
+                      if (key != null) controller.selectUnit(key);
+                    },
+            )),
+      ],
+    );
+  }
+
+  Widget _calendarDropdown<T>({
+    required BuildContext context,
+    required T? value,
+    required String hint,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?>? onChanged,
+  }) {
     final theme = Theme.of(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: _isDark(context)
+    return Material(
+      color: _isDark(context)
           ? theme.colorScheme.surfaceContainerHigh
           : AppColors.colorWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: controller.properties
-              .map(
-                (p) => ListTile(
-                  title: Text(
-                    p,
-                    style: TextStyle(color: AppColors.textColorPrimary),
-                  ),
-                  onTap: () {
-                    controller.selectProperty(p);
-                    Navigator.pop(ctx);
-                  },
-                ),
-              )
-              .toList(),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _isDark(context)
+                ? theme.colorScheme.outlineVariant
+                : AppColors.designInputBorder,
+          ),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<T>(
+            isExpanded: true,
+            value: value,
+            hint: Text(
+              hint,
+              style: TextStyle(color: AppColors.textColorSecondary),
+            ),
+            icon: Icon(
+              Icons.keyboard_arrow_down,
+              color: AppColors.textColorSecondary,
+            ),
+            items: items,
+            onChanged: onChanged,
+          ),
         ),
       ),
     );
@@ -295,7 +341,8 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   Widget _buildCalendarGrid(BuildContext context) {
     return Obx(() {
       controller.calendarRevision.value;
-      controller.properties.length;
+      controller.bnbProperties.length;
+      controller.selectedUnitKey.value;
       final focused = controller.currentMonth.value;
       final selected = controller.selectedDate.value;
       final firstDay = DateTime(focused.year - 2, 1);
@@ -372,6 +419,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                 day.month == selected.month &&
                 day.day == selected.day,
             dayType: controller.typeForDay(day),
+            bookingStatus: controller.bookingStatusForDay(day),
             isBlocked: controller.isDateBlocked(day),
             isDisabled: !controller.isDayEnabled(day),
           ),
@@ -397,6 +445,8 @@ class HostCalendarView extends BaseView<HostCalendarController> {
     String? price,
     bool isSelected = false,
     DayType dayType = DayType.standard,
+    HostCalendarDayBookingStatus bookingStatus =
+        HostCalendarDayBookingStatus.none,
     bool isBlocked = false,
     bool isDisabled = false,
   }) {
@@ -407,6 +457,10 @@ class HostCalendarView extends BaseView<HostCalendarController> {
         bg = _isDark(context)
             ? theme.colorScheme.surfaceContainerHighest
             : Colors.grey.shade300;
+      } else if (bookingStatus == HostCalendarDayBookingStatus.bookedPaid) {
+        bg = _hostCalendarPaidBg.withValues(alpha: 0.35);
+      } else if (bookingStatus == HostCalendarDayBookingStatus.bookedUnpaid) {
+        bg = _hostCalendarBookedBg.withValues(alpha: 0.45);
       } else if (dayType == DayType.aiOptimized) {
         bg = AppColors.colorPrimaryLight.withValues(alpha: 0.6);
       } else if (dayType == DayType.manualRate) {
@@ -483,37 +537,39 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   }
 
   Widget _buildLegend(BuildContext context) {
+    return Wrap(
+      spacing: 16,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _legendDot(
+          color: _hostCalendarBookedBg,
+          label: appLocalization.calendarBooked,
+        ),
+        _legendDot(
+          color: _hostCalendarPaidBg,
+          label: appLocalization.calendarPaidStay,
+        ),
+        _legendDot(
+          color: AppColors.colorPrimary,
+          label: appLocalization.today,
+        ),
+      ],
+    );
+  }
+
+  Widget _legendDot({required Color color, required String label}) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: AppColors.colorPrimary,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
         Text(
-          appLocalization.today,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textColorSecondary,
-          ),
-        ),
-        const SizedBox(width: 20),
-        Container(
-          width: 8,
-          height: 8,
-          decoration: const BoxDecoration(
-            color: _hostCalendarManualRateBg,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          appLocalization.events,
+          label,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,

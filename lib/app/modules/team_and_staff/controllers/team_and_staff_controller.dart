@@ -164,30 +164,16 @@ class TeamAndStaffController extends BaseController {
   }
 
   void editStaff(StaffMember member) {
-    final f = Get.toNamed(Routes.RENT_STAFF_MANAGEMENT);
+    final f = Get.toNamed(
+      Routes.RENT_STAFF_MANAGEMENT,
+      arguments: {'staffId': member.id},
+    );
     if (f != null) f.then((_) => loadStaff());
   }
 
   void openStaffDetail(StaffMember member) {
     final f = Get.toNamed(Routes.STAFF_DETAIL, arguments: member);
     if (f != null) f.then((_) => loadStaff());
-  }
-
-  void onNavTap(int index) {
-    switch (index) {
-      case 0:
-        Get.toNamed(Routes.ADD_LISTING);
-        break;
-      case 1:
-        // TODO: Bookings
-        break;
-      case 2:
-        // TEAM - current screen
-        break;
-      case 3:
-        // TODO: Profile
-        break;
-    }
   }
 
   @override

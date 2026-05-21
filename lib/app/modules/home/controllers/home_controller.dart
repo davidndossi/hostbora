@@ -8,10 +8,13 @@ import 'package:paa_yangu/app/core/values/text_styles.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/pending_bookings_store.dart';
+import '../../../data/model/check_in_item.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
 import '/app/core/base/base_controller.dart';
 
 class HomeController extends BaseController with GetTickerProviderStateMixin {
@@ -49,6 +52,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final revenueChange = '+0% from last month'.obs;
 
   final checkIns = <CheckInItem>[].obs;
+  final checkInsToday = <CheckInItem>[].obs;
+  final checkOutsToday = <CheckInItem>[].obs;
   final homeLoading = false.obs;
 
   @override
@@ -63,7 +68,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     try {
       await Future.wait([
         _loadOverview(),
-        _loadUpcomingCheckIns(),
+        _loadBookingLists(),
       ]);
     } catch (e) {
       if (e is Exception) {
@@ -194,7 +199,67 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     return '$sign${pct.toStringAsFixed(0)}% from last month';
   }
 
-  Future<void> _loadUpcomingCheckIns() async {
+  /// Merges API upcoming bookings + local pending (BnB), then derives today /
+  /// upcoming lists using local calendar date parts (same day geometry as
+  /// occupancy: checkout day is a departure day, not a stay night).
+  Future<void> _loadBookingLists() async {
+    final all = await loadMergedActiveBnbBookings();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final inToday = <CheckInItem>[];
+    final outToday = <CheckInItem>[];
+    final upcoming = <CheckInItem>[];
+
+    for (final item in all) {
+      if (item.isInactive) continue;
+      final ci = _parseCalendarDay(item.checkInIso);
+      final co = _parseCalendarDay(item.checkOutIso);
+      if (ci != null && _dateOnly(ci) == today) {
+        inToday.add(item);
+      }
+      if (co != null && _dateOnly(co) == today) {
+        outToday.add(item);
+      }
+      if (ci != null && !ci.isBefore(today)) {
+        upcoming.add(item);
+      }
+    }
+
+    int sortByCheckIn(CheckInItem a, CheckInItem b) {
+      final da = _parseCalendarDay(a.checkInIso);
+      final db = _parseCalendarDay(b.checkInIso);
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      final c = da.compareTo(db);
+      if (c != 0) return c;
+      return a.guestName.compareTo(b.guestName);
+    }
+
+    int sortByCheckOut(CheckInItem a, CheckInItem b) {
+      final da = _parseCalendarDay(a.checkOutIso);
+      final db = _parseCalendarDay(b.checkOutIso);
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      final c = da.compareTo(db);
+      if (c != 0) return c;
+      return a.guestName.compareTo(b.guestName);
+    }
+
+    inToday.sort(sortByCheckIn);
+    outToday.sort(sortByCheckOut);
+    upcoming.sort(sortByCheckIn);
+
+    checkInsToday.assignAll(inToday);
+    checkOutsToday.assignAll(outToday);
+    checkIns.assignAll(upcoming);
+  }
+
+  /// Shared merge path for home lists (API + pending). Excludes inactive rows.
+  Future<List<CheckInItem>> loadMergedActiveBnbBookings() async {
+    final merge = BnbBookingMerge(pending: _pendingBookingsStore);
     final merged = <String, CheckInItem>{};
 
     try {
@@ -207,28 +272,16 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         rows = data;
       }
       for (final e in rows.whereType<Map>()) {
-        final m = Map<String, dynamic>.from(e);
-        final checkIn = (m['checkIn'] ?? '').toString();
-        final checkOut = (m['checkOut'] ?? '').toString();
-        final nights = (m['numberOfNights'] as num?)?.toInt() ?? 0;
-        final id = (m['bookingId'] ?? '${m['guestName']}_$checkIn').toString();
-        merged[id] = CheckInItem(
-          bookingId: m['bookingId'] as String?,
-          imageUrl: (m['imageUrl'] ?? '').toString(),
-          guestName: (m['guestName'] ?? '').toString(),
-          guestAvatarUrl: (m['guestAvatarUrl'] ?? '').toString(),
-          propertyType: (m['propertyType'] ?? m['propertyName'] ?? '').toString(),
-          dates: _formatDates(checkIn, checkOut, nights),
-          isConfirmed: (m['isConfirmed'] as bool?) ?? false,
-        );
+        final item = merge.fromApiMap(Map<String, dynamic>.from(e));
+        if (item.isInactive) continue;
+        merged[item.bookingKey] = item;
       }
     } catch (_) {}
 
     try {
       final properties = await _propertyLocal.getAllVisibleNewestFirst(
           userId: '', workspaceType: 'bnb');
-      final pending = _pendingBookingsStore.load();
-      for (final m in pending) {
+      for (final m in _pendingBookingsStore.load()) {
         final listingId = (m['listingId'] ?? '').toString().trim();
         final checkIn = (m['checkIn'] ?? '').toString();
         final checkOut = (m['checkOut'] ?? '').toString();
@@ -240,32 +293,42 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
             ? property!.propertyName.trim()
             : (property?.propertyLocation ?? 'Property');
         final localId = 'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
-        merged[localId] = CheckInItem(
-          bookingId: localId,
-          imageUrl: '',
-          guestName: (m['guestName'] ?? '').toString(),
-          guestAvatarUrl: '',
-          propertyType: propertyLabel,
-          dates: _formatDates(checkIn, checkOut, 0),
-          isConfirmed: true,
+        final item = merge.fromPendingMap(
+          m,
+          propertyLabel: propertyLabel,
+          localId: localId,
         );
+        if (item.isInactive) continue;
+        merged[localId] = item;
       }
     } catch (_) {}
 
-    checkIns.assignAll(merged.values.toList());
+    return merged.values.toList();
   }
 
-  String _formatDates(String checkIn, String checkOut, int nights) {
-    try {
-      final ci = DateTime.tryParse(checkIn);
-      final co = DateTime.tryParse(checkOut);
-      if (ci != null && co != null) {
-        final fmt = DateFormat('MMM d');
-        final n = nights > 0 ? nights : co.difference(ci).inDays;
-        return '${fmt.format(ci)} - ${fmt.format(co)} • $n Night${n == 1 ? '' : 's'}';
+  static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  /// Same date-only parsing as host dashboard / reports occupancy geometry.
+  static DateTime? _parseCalendarDay(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) return null;
+    if (t.length >= 10 && t[4] == '-' && t[7] == '-') {
+      final y = int.tryParse(t.substring(0, 4));
+      final m = int.tryParse(t.substring(5, 7));
+      final d = int.tryParse(t.substring(8, 10));
+      if (y != null &&
+          m != null &&
+          d != null &&
+          m >= 1 &&
+          m <= 12 &&
+          d >= 1 &&
+          d <= 31) {
+        return DateTime(y, m, d);
       }
-    } catch (_) {}
-    return '$checkIn - $checkOut';
+    }
+    final p = DateTime.tryParse(t);
+    if (p == null) return null;
+    return DateTime(p.year, p.month, p.day);
   }
 
   void viewTrends() {
@@ -278,11 +341,14 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void properties() => Get.toNamed(Routes.MY_PROPERTIES);
 
+  void tenants() => Get.toNamed(
+      Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER, arguments: {'ws': 'bnb'});
+
   Future<void> addNewBooking() async {
     await _guardPropertyBeforeAction(
       onProceed: () async {
         await Get.toNamed(Routes.ADD_NEW_BOOKING);
-        await _loadUpcomingCheckIns();
+        await _loadBookingLists();
       },
     );
   }
@@ -293,7 +359,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void assignTasks() => Get.toNamed(Routes.TEAM_AND_STAFF);
 
-  void reports() => Get.toNamed(Routes.EXPENSE_ANALYSIS);
+  Future<void> reports() async {
+    await Get.toNamed(Routes.REPORTS_HUB);
+  }
 
   void designStudio() => Get.toNamed(Routes.INTERIOR_DESIGN_STUDIO);
 
@@ -312,7 +380,10 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   Future<void> addExpense() async {
     await _guardPropertyBeforeAction(
       onProceed: () async {
-        await Get.toNamed(Routes.ADD_EXPENSE);
+        final saved = await Get.toNamed(Routes.ADD_EXPENSE);
+        if (saved == true) {
+          await _refreshBnbFinancialSurfaces();
+        }
       },
     );
   }
@@ -322,16 +393,29 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       onProceed: () async {
         final saved = await Get.toNamed(Routes.RECORD_PAYMENT);
         if (saved == true) {
-          await _loadOverview();
+          await _refreshBnbFinancialSurfaces();
         }
       },
     );
   }
 
+  /// Reloads home metrics and the main-shell dashboard after local income/expense writes.
+  Future<void> _refreshBnbFinancialSurfaces() async {
+    await _loadOverview();
+    if (Get.isRegistered<DashboardController>()) {
+      await Get.find<DashboardController>().loadDashboard();
+    }
+  }
+
   void openNotifications() => Get.toNamed(Routes.NOTIFICATIONS);
 
-  void openBookingDetails(CheckInItem item) =>
-      Get.toNamed(Routes.BOOKING_DETAILS, arguments: item);
+  void openBookingDetails(CheckInItem item) {
+    Get.toNamed(Routes.BOOKING_DETAILS, arguments: item)?.then((refreshed) {
+      if (refreshed == true) {
+        _loadBookingLists();
+      }
+    });
+  }
 
   Future<void> _guardPropertyBeforeAction({
     required FutureOr<void> Function() onProceed,
@@ -400,24 +484,4 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       ),
     );
   }
-}
-
-class CheckInItem {
-  final String? bookingId;
-  final String imageUrl;
-  final String guestName;
-  final String guestAvatarUrl;
-  final String propertyType;
-  final String dates;
-  final bool isConfirmed;
-
-  CheckInItem({
-    this.bookingId,
-    required this.imageUrl,
-    required this.guestName,
-    required this.guestAvatarUrl,
-    required this.propertyType,
-    required this.dates,
-    required this.isConfirmed,
-  });
 }

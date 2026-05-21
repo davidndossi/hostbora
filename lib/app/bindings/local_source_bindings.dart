@@ -6,7 +6,10 @@ import '../data/local/db/property_unit_local_data_source.dart';
 import '/app/data/model/add_task_request.dart';
 import '/app/data/model/add_expense_request.dart';
 import '/app/data/model/add_listing_request.dart';
+import '/app/data/model/cancel_booking_request.dart';
+import '/app/data/model/checkout_booking_request.dart';
 import '/app/data/model/create_booking_request.dart';
+import '/app/data/model/update_booking_request.dart';
 import '/app/data/model/record_payment_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/data/local/db/rent_payment_reminder_local_data_source.dart';
@@ -219,6 +222,58 @@ class LocalSourceBindings implements Bindings {
             res.responseCode == '201';
         if (!ok) {
           throw Exception(res.message ?? 'Booking sync failed');
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'booking',
+      operation: 'checkout',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final res = await repository.checkoutBooking(
+          CheckoutBookingRequest.fromJson(map),
+        );
+        final ok = res.responseCode == null ||
+            res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) {
+          throw Exception(res.message ?? 'Booking checkout sync failed');
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'booking',
+      operation: 'cancel',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final res = await repository.cancelBooking(
+          CancelBookingRequest.fromJson(map),
+        );
+        final ok = res.responseCode == null ||
+            res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) {
+          throw Exception(res.message ?? 'Booking cancel sync failed');
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'booking',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final res = await repository.updateBooking(UpdateBookingRequest.fromJson(map));
+        final ok = res.responseCode == null ||
+            res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) {
+          throw Exception(res.message ?? 'Booking update sync failed');
         }
       },
     );

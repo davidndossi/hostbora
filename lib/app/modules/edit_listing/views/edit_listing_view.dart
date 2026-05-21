@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/property_unit_floor.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/edit_listing_controller.dart';
@@ -157,6 +159,7 @@ class EditListingView extends BaseView<EditListingController> {
   Widget _buildUnitsSection(BuildContext context, {required bool isDark}) {
     final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
     final labelColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280);
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -210,6 +213,26 @@ class EditListingView extends BaseView<EditListingController> {
                 isDark: isDark,
                 fieldController: controller.draftUnitNameController,
                 hint: _t(context, en: 'e.g. 4B or Unit 1', sw: 'mf. 4B au Unit 1'),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l10n.unitFloorLabel.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w700,
+                  color: labelColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Obx(
+                () => _unitFloorDropdown(
+                  context: context,
+                  isDark: isDark,
+                  l10n: l10n,
+                  value: controller.draftUnitFloor.value,
+                  onChanged: controller.updateDraftUnitFloor,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
@@ -312,8 +335,51 @@ class EditListingView extends BaseView<EditListingController> {
     );
   }
 
+  Widget _unitFloorDropdown({
+    required BuildContext context,
+    required bool isDark,
+    required AppLocalizations l10n,
+    required int value,
+    required ValueChanged<int?> onChanged,
+  }) {
+    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
+    final textColor = isDark ? Colors.white : const Color(0xFF2E2E2E);
+    final floor = PropertyUnitFloor.indices.contains(value)
+        ? value
+        : PropertyUnitFloor.defaultIndex;
+    return DropdownButtonFormField<int>(
+      initialValue: floor,
+      isExpanded: true,
+      icon: Icon(
+        Icons.expand_more,
+        color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D),
+      ),
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: fill,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      dropdownColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+      items: PropertyUnitFloor.indices
+          .map(
+            (f) => DropdownMenuItem<int>(
+              value: f,
+              child: Text(PropertyUnitFloor.label(l10n, f)),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+
   Widget _addedUnitTile(BuildContext context, int index, {required bool isDark}) {
     final u = controller.apartmentUnits[index];
+    final l10n = AppLocalizations.of(context)!;
     final tileBg = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF8F8F8);
     final borderColor = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFEDEDED);
     return Container(
@@ -340,7 +406,7 @@ class EditListingView extends BaseView<EditListingController> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Tshs ${u.unitRent} · ${u.unitRentFrequency}',
+                  '${PropertyUnitFloor.label(l10n, u.unitFloor)} · Tshs ${u.unitRent} · ${u.unitRentFrequency}',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

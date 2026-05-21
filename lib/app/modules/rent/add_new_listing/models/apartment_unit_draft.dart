@@ -1,3 +1,5 @@
+import '../../../../core/values/property_unit_floor.dart';
+
 /// One apartment unit row added from the “Add Unit” flow.
 /// [unitId] is stable in [units_json] so tenants can link via [RentTenantRecord.apartmentUnitId].
 class ApartmentUnitDraft {
@@ -5,7 +7,8 @@ class ApartmentUnitDraft {
     this.unitId = '',
     required this.unitName,
     required this.unitRent,
-    this.unitRentFrequency = 'Per Month',
+    this.unitRentFrequency = 'Per Day',
+    this.unitFloor = PropertyUnitFloor.defaultIndex,
     required this.unitDescription,
   });
 
@@ -13,8 +16,10 @@ class ApartmentUnitDraft {
   final String unitId;
   final String unitName;
   final String unitRent;
-  /// Same labels as listing [rentFrequency] (e.g. Per Month).
+  /// Same labels as listing [rentFrequency] (e.g. Per Day).
   final String unitRentFrequency;
+  /// [PropertyUnitFloor] index (0 = ground).
+  final int unitFloor;
   /// Optional; may be empty.
   final String unitDescription;
 
@@ -27,6 +32,7 @@ class ApartmentUnitDraft {
         'unitName': unitName,
         'unitRent': unitRent,
         'unitRentFrequency': unitRentFrequency,
+        'unitFloor': unitFloor,
         'unitDescription': unitDescription,
       };
 
@@ -38,7 +44,8 @@ class ApartmentUnitDraft {
       unitId: m['unitId']?.toString() ?? '',
       unitName: m['unitName']?.toString() ?? '',
       unitRent: m['unitRent']?.toString() ?? '',
-      unitRentFrequency: freq.isNotEmpty ? freq : 'Per Month',
+      unitRentFrequency: freq.isNotEmpty ? freq : 'Per Day',
+      unitFloor: PropertyUnitFloor.parse(m['unitFloor']),
       unitDescription: m['unitDescription']?.toString() ?? '',
     );
   }

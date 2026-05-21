@@ -1235,7 +1235,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportIntro.
   ///
   /// In en, this message translates to:
-  /// **'Need help with listings, rent, tenants, or income? These answers cover the most common questions. For anything else, reach us by email.'**
+  /// **'Answers about Host Bora (Paa Yangu)—BnB and Rent workspaces, bookings, payments, calendar sync, security, and more. For anything not covered here, contact us below.'**
   String get supportIntro;
 
   /// No description provided for @supportTipsHeading.
@@ -1247,7 +1247,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportTipsBody.
   ///
   /// In en, this message translates to:
-  /// **'• Pull down on a listing screen to refresh occupancy and monthly revenue after you add income or a tenant.\n• Income and expenses you save offline stay on this device until you clear data or sync when your product supports it.\n• Use Settings → Clear offline data only if you intend to remove local rent records from this phone.\n• If a number looks wrong, check that the income is dated in the current month and tied to the correct property.'**
+  /// **'• Switch BnB and Rent from the home screen; pull down on listings to refresh occupancy and revenue.\n• Record payments against the correct property and unit; check dates fall in the current month for dashboards.\n• Link external calendars per listing to reduce double bookings.\n• Use Settings → Clear offline data only if you intend to remove local rent records from this phone.'**
   String get supportTipsBody;
 
   /// No description provided for @supportFaqHeading.
@@ -1259,50 +1259,134 @@ abstract class AppLocalizations {
   /// No description provided for @supportFaq1Q.
   ///
   /// In en, this message translates to:
-  /// **'Why doesn’t my monthly revenue update?'**
+  /// **'What is the difference between BnB and Rent workspaces?'**
   String get supportFaq1Q;
 
   /// No description provided for @supportFaq1A.
   ///
   /// In en, this message translates to:
-  /// **'Listing details sum income for the current calendar month that matches the property. Add income with the correct property (and unit, if any), save, then return to the listing and pull to refresh.'**
+  /// **'Host Bora has two workspaces. BnB is for short-stay: listings, bookings, host calendar, calendar sync, and guest payments. Rent is for long-term: tenants, leases, rent payments, reminders, staff, and smart utilities. Switch from the home screen any time—properties, expenses, and Property Vault are shared.'**
   String get supportFaq1A;
 
   /// No description provided for @supportFaq2Q.
   ///
   /// In en, this message translates to:
-  /// **'I added a tenant but don’t see them on the listing.'**
+  /// **'How do I record guest or tenant payments?'**
   String get supportFaq2Q;
 
   /// No description provided for @supportFaq2A.
   ///
   /// In en, this message translates to:
-  /// **'Open the listing again or pull to refresh. Tenants are stored locally first; make sure you picked the right property and unit when saving.'**
+  /// **'In BnB, open a booking or use Record payment from the host hub. In Rent, use Manage payments on a tenant or listing. Enter amount, date, and method; payments attach to the property (and unit). Pull to refresh on a listing if monthly totals look stale.'**
   String get supportFaq2A;
 
   /// No description provided for @supportFaq3Q.
   ///
   /// In en, this message translates to:
-  /// **'What if the app shows a database error?'**
+  /// **'How do I manage BnB bookings?'**
   String get supportFaq3Q;
 
   /// No description provided for @supportFaq3A.
   ///
   /// In en, this message translates to:
-  /// **'Update to the latest version from the store. If it persists, use Settings → clear offline data only after you understand it removes local rent data, or contact support with your device model and app version.'**
+  /// **'Use Host calendar and All bookings for upcoming stays. Open a booking for guest details, check-in and check-out, status updates, and checkout. Today’s check-ins appear on the BnB dashboard. Changes sync when you are online.'**
   String get supportFaq3A;
 
   /// No description provided for @supportFaq4Q.
   ///
   /// In en, this message translates to:
-  /// **'How do I change language or theme?'**
+  /// **'How does calendar sync work?'**
   String get supportFaq4Q;
 
   /// No description provided for @supportFaq4A.
   ///
   /// In en, this message translates to:
-  /// **'Use the globe and sun/moon icons on most screens, or open Settings to adjust language and appearance.'**
+  /// **'From a listing, open Calendar sync. Paste your Airbnb (or other) .ics import URL to pull external bookings. Create an export link and add it in Airbnb to block dates Host Bora already has booked. Linked calendars appear under subscriptions for that listing.'**
   String get supportFaq4A;
+
+  /// No description provided for @supportFaq5Q.
+  ///
+  /// In en, this message translates to:
+  /// **'How do PIN, Face ID, and security work?'**
+  String get supportFaq5Q;
+
+  /// No description provided for @supportFaq5A.
+  ///
+  /// In en, this message translates to:
+  /// **'After your first sign-in you can set a 4-digit PIN under Security. Use PIN for faster return visits; enable Face ID or Touch ID only after PIN is set. Change PIN anytime from Settings. Smart access and entry logs require a connected compatible lock (e.g. Tuya).'**
+  String get supportFaq5A;
+
+  /// No description provided for @supportFaq6Q.
+  ///
+  /// In en, this message translates to:
+  /// **'Can I use Host Bora offline?'**
+  String get supportFaq6Q;
+
+  /// No description provided for @supportFaq6A.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes. Properties, rent records, bookings you have opened, vault documents, and income or expenses you save stay on your device and sync when you reconnect. Avoid Settings → Clear offline data unless you intend to remove local rent data from this phone.'**
+  String get supportFaq6A;
+
+  /// No description provided for @supportFaq7Q.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I send SMS or WhatsApp messages?'**
+  String get supportFaq7Q;
+
+  /// No description provided for @supportFaq7A.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Send SMS from the menu, enter numbers or pick from contacts, then compose your message. An active SMS/WhatsApp subscription may be required for some messaging features—open Subscription in settings to check status and renew.'**
+  String get supportFaq7A;
+
+  /// No description provided for @supportFaq8Q.
+  ///
+  /// In en, this message translates to:
+  /// **'What is Property Vault?'**
+  String get supportFaq8Q;
+
+  /// No description provided for @supportFaq8A.
+  ///
+  /// In en, this message translates to:
+  /// **'Property Vault stores scans and documents per property—leases, IDs, receipts, and folders you create. Scan from Document scanner or upload files, then organise in vault directories. Recent access is listed for quick return. Documents stay on your device and sync when online.'**
+  String get supportFaq8A;
+
+  /// No description provided for @supportFaq9Q.
+  ///
+  /// In en, this message translates to:
+  /// **'How do rent and lease reminders work?'**
+  String get supportFaq9Q;
+
+  /// No description provided for @supportFaq9A.
+  ///
+  /// In en, this message translates to:
+  /// **'In Rent workspace, set a tenant reminder template in Settings for automatic WhatsApp notices when a lease is ending. Use Run lease reminder now to trigger a one-month check manually. Save each tenant’s phone number on their profile so reminders can be delivered.'**
+  String get supportFaq9A;
+
+  /// No description provided for @supportFaq10Q.
+  ///
+  /// In en, this message translates to:
+  /// **'What is the SMS/WhatsApp subscription?'**
+  String get supportFaq10Q;
+
+  /// No description provided for @supportFaq10A.
+  ///
+  /// In en, this message translates to:
+  /// **'The subscription unlocks SMS and WhatsApp messaging features for 30 days. Pay via the in-app mobile-money prompt. After payment, status updates automatically. Renew before expiry; messaging may be limited when inactive.'**
+  String get supportFaq10A;
+
+  /// No description provided for @supportFaq11Q.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I contact support?'**
+  String get supportFaq11Q;
+
+  /// No description provided for @supportFaq11A.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Email support or Chat on WhatsApp on this screen. Include your device model, app version, and what you were doing when the issue happened. For privacy requests email privacy@hostbora.co.tz. We aim to reply within one business day.'**
+  String get supportFaq11A;
 
   /// No description provided for @supportContactHeading.
   ///
@@ -1337,7 +1421,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportLegalBody.
   ///
   /// In en, this message translates to:
-  /// **'Your use of Paa Yangu is also governed by our Terms of Use and Privacy Policy.'**
+  /// **'Your use of Host Bora is also governed by our Terms of Use and Privacy Policy.'**
   String get supportLegalBody;
 
   /// No description provided for @supportOpenTerms.
@@ -1351,6 +1435,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Privacy Policy'**
   String get supportOpenPrivacy;
+
+  /// No description provided for @supportFeedbackBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what works well or what we should improve. Your message opens in your email app with details we need to help.'**
+  String get supportFeedbackBody;
+
+  /// No description provided for @sendFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get sendFeedback;
+
+  /// No description provided for @sendFeedbackIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Share ideas, report a problem, or suggest an improvement. We read every message.'**
+  String get sendFeedbackIntro;
+
+  /// No description provided for @feedbackCategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get feedbackCategoryLabel;
+
+  /// No description provided for @feedbackCategoryOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get feedbackCategoryOptional;
+
+  /// No description provided for @feedbackCategoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a category'**
+  String get feedbackCategoryHint;
+
+  /// No description provided for @feedbackCategoryNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Not specified'**
+  String get feedbackCategoryNone;
+
+  /// No description provided for @feedbackCategoryGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get feedbackCategoryGeneral;
+
+  /// No description provided for @feedbackCategoryBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug or issue'**
+  String get feedbackCategoryBug;
+
+  /// No description provided for @feedbackCategoryFeature.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature idea'**
+  String get feedbackCategoryFeature;
+
+  /// No description provided for @feedbackCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get feedbackCategoryOther;
+
+  /// No description provided for @feedbackMessageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your message'**
+  String get feedbackMessageLabel;
+
+  /// No description provided for @feedbackMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your feedback in a few sentences…'**
+  String get feedbackMessageHint;
+
+  /// No description provided for @feedbackMessageRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your feedback.'**
+  String get feedbackMessageRequired;
+
+  /// No description provided for @feedbackEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email'**
+  String get feedbackEmailLabel;
+
+  /// No description provided for @feedbackEmailOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional — so we can reply if needed'**
+  String get feedbackEmailOptional;
+
+  /// No description provided for @feedbackEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'you@example.com'**
+  String get feedbackEmailHint;
+
+  /// No description provided for @feedbackInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get feedbackInvalidEmail;
+
+  /// No description provided for @feedbackSubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get feedbackSubmitButton;
+
+  /// No description provided for @feedbackThankYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you! Your feedback was sent or saved for our team.'**
+  String get feedbackThankYou;
+
+  /// No description provided for @feedbackSubmitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send feedback. Please try again.'**
+  String get feedbackSubmitFailed;
+
+  /// No description provided for @settingsContactUsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or chat with our support team.'**
+  String get settingsContactUsDescription;
+
+  /// No description provided for @settingsSendFeedbackDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Share ideas or report a problem.'**
+  String get settingsSendFeedbackDescription;
+
+  /// No description provided for @settingsSupportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tips, FAQs, contact us, and feedback.'**
+  String get settingsSupportDescription;
 
   /// No description provided for @nearby.
   ///
@@ -1694,6 +1922,54 @@ abstract class AppLocalizations {
   /// **'Send SMS or whatsapp'**
   String get sendSmsWhatsapp;
 
+  /// No description provided for @sendSmsPickFromContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick from contacts'**
+  String get sendSmsPickFromContacts;
+
+  /// No description provided for @sendSmsSelectContactRecipients.
+  ///
+  /// In en, this message translates to:
+  /// **'Select contact recipients'**
+  String get sendSmsSelectContactRecipients;
+
+  /// No description provided for @sendSmsPickContactsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one or more contacts to append their phone numbers.'**
+  String get sendSmsPickContactsHint;
+
+  /// No description provided for @sendSmsSearchContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search contacts'**
+  String get sendSmsSearchContacts;
+
+  /// No description provided for @sendSmsNoContactsWithPhones.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts with valid phone numbers found.'**
+  String get sendSmsNoContactsWithPhones;
+
+  /// No description provided for @sendSmsAddSelectedContactNumbers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add selected phone numbers'**
+  String get sendSmsAddSelectedContactNumbers;
+
+  /// No description provided for @sendSmsContactsPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts permission is required to pick phone numbers.'**
+  String get sendSmsContactsPermissionDenied;
+
+  /// No description provided for @sendSmsContactsSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String sendSmsContactsSelectedCount(int count);
+
   /// No description provided for @updates.
   ///
   /// In en, this message translates to:
@@ -1795,6 +2071,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ACTIVE PROPERTY'**
   String get activeProperty;
+
+  /// No description provided for @calendarActiveUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIVE UNIT'**
+  String get calendarActiveUnit;
+
+  /// No description provided for @calendarBooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Booked'**
+  String get calendarBooked;
+
+  /// No description provided for @calendarPaidStay.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get calendarPaidStay;
 
   /// No description provided for @aiOptimized.
   ///
@@ -1988,6 +2282,66 @@ abstract class AppLocalizations {
   /// **'Vault Synced'**
   String get vaultSynced;
 
+  /// No description provided for @vaultSyncedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'All documents are encrypted and secured.'**
+  String get vaultSyncedDescription;
+
+  /// No description provided for @searchVaultDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Search vault documents...'**
+  String get searchVaultDocuments;
+
+  /// No description provided for @noRecentDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'No recently accessed documents'**
+  String get noRecentDocuments;
+
+  /// No description provided for @noVaultDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'No directories match your search'**
+  String get noVaultDirectories;
+
+  /// No description provided for @vaultLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load vault. Check your connection and try again.'**
+  String get vaultLoadError;
+
+  /// No description provided for @noDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents'**
+  String get noDocuments;
+
+  /// No description provided for @vaultNoItems.
+  ///
+  /// In en, this message translates to:
+  /// **'No items'**
+  String get vaultNoItems;
+
+  /// No description provided for @vaultOneItem.
+  ///
+  /// In en, this message translates to:
+  /// **'1 item'**
+  String get vaultOneItem;
+
+  /// No description provided for @vaultItemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String vaultItemsCount(Object count);
+
+  /// No description provided for @vaultModified.
+  ///
+  /// In en, this message translates to:
+  /// **'Modified'**
+  String get vaultModified;
+
   /// No description provided for @taxRecords.
   ///
   /// In en, this message translates to:
@@ -2096,6 +2450,42 @@ abstract class AppLocalizations {
   /// **'Enabled'**
   String get enabled;
 
+  /// No description provided for @notConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured'**
+  String get notConfigured;
+
+  /// No description provided for @twoFactorNotConfiguredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-factor authentication is not set up yet.'**
+  String get twoFactorNotConfiguredMessage;
+
+  /// No description provided for @noRemoteDeviceApi.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote device management is not available yet. You can sign out on this device from Settings.'**
+  String get noRemoteDeviceApi;
+
+  /// No description provided for @signOutThisDeviceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out on this device'**
+  String get signOutThisDeviceTitle;
+
+  /// No description provided for @signOutThisDeviceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote sign-out for other devices is not available yet. You can sign out on this device, which clears your session on this phone.'**
+  String get signOutThisDeviceMessage;
+
+  /// No description provided for @enterCurrentPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter current PIN'**
+  String get enterCurrentPin;
+
   /// No description provided for @deviceManagement.
   ///
   /// In en, this message translates to:
@@ -2167,6 +2557,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refine Scan'**
   String get refineScan;
+
+  /// No description provided for @refineScanNoImage.
+  ///
+  /// In en, this message translates to:
+  /// **'No scan loaded. Capture or import an image to continue.'**
+  String get refineScanNoImage;
+
+  /// No description provided for @vaultDocumentSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Document saved to vault'**
+  String get vaultDocumentSaved;
 
   /// No description provided for @contract.
   ///
@@ -2336,6 +2738,96 @@ abstract class AppLocalizations {
   /// **'Modify Booking'**
   String get modifyBooking;
 
+  /// No description provided for @checkOutGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Check out guest'**
+  String get checkOutGuest;
+
+  /// No description provided for @checkOutGuestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check out guest?'**
+  String get checkOutGuestTitle;
+
+  /// No description provided for @checkOutGuestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark this booking as completed. The guest will be checked out.'**
+  String get checkOutGuestMessage;
+
+  /// No description provided for @guestCheckedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest checked out successfully.'**
+  String get guestCheckedOut;
+
+  /// No description provided for @extendStayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend stay'**
+  String get extendStayTitle;
+
+  /// No description provided for @extendStayDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional nights'**
+  String get extendStayDays;
+
+  /// No description provided for @extendStayConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Update check-out'**
+  String get extendStayConfirm;
+
+  /// No description provided for @stayExtended.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay extended. Check-out date updated.'**
+  String get stayExtended;
+
+  /// No description provided for @newCheckOutDate.
+  ///
+  /// In en, this message translates to:
+  /// **'New check-out'**
+  String get newCheckOutDate;
+
+  /// No description provided for @bookingCheckedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked out'**
+  String get bookingCheckedOut;
+
+  /// No description provided for @cancelBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel booking'**
+  String get cancelBooking;
+
+  /// No description provided for @cancelBookingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel booking?'**
+  String get cancelBookingTitle;
+
+  /// No description provided for @cancelBookingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This reservation will be cancelled. The guest will no longer be expected.'**
+  String get cancelBookingMessage;
+
+  /// No description provided for @bookingCancelledSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking cancelled.'**
+  String get bookingCancelledSuccess;
+
+  /// No description provided for @bookingCancelledLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get bookingCancelledLabel;
+
   /// No description provided for @transaction.
   ///
   /// In en, this message translates to:
@@ -2365,6 +2857,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Linked Booking'**
   String get linkedBooking;
+
+  /// No description provided for @linkedBookingOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'BOOKING (OPTIONAL)'**
+  String get linkedBookingOptional;
+
+  /// No description provided for @chooseBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose booking'**
+  String get chooseBooking;
+
+  /// No description provided for @optionalNoBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional — no booking'**
+  String get optionalNoBooking;
+
+  /// No description provided for @noActiveBookingsForProperty.
+  ///
+  /// In en, this message translates to:
+  /// **'No active bookings for this property'**
+  String get noActiveBookingsForProperty;
 
   /// No description provided for @paymentDate.
   ///
@@ -2663,7 +3179,7 @@ abstract class AppLocalizations {
   /// No description provided for @paaYangu.
   ///
   /// In en, this message translates to:
-  /// **'Paa Yangu'**
+  /// **'Host Bora'**
   String get paaYangu;
 
   /// No description provided for @version.
@@ -2671,6 +3187,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version'**
   String get version;
+
+  /// No description provided for @aboutIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'HostBora helps hosts and landlords run short-stay stays and long-term rentals from one app. Switch between the BnB and Rent workspaces any time.'**
+  String get aboutIntro;
+
+  /// No description provided for @aboutBnbFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'BnB workspace: manage listings and units, track bookings and today\'s check-ins, use your host calendar, sync external calendars, record guest payments, and view reports.'**
+  String get aboutBnbFeatures;
+
+  /// No description provided for @aboutRentFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Rent workspace: track tenants and leases, manage rent payments and reminders, monitor expenses and monthly performance, handle staff, and review smart utility usage where set up.'**
+  String get aboutRentFeatures;
+
+  /// No description provided for @aboutSharedFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Across both workspaces: add properties and expenses, message guests or tenants, keep documents in your property vault, and continue with secure on-device data when you are offline.'**
+  String get aboutSharedFeatures;
 
   /// No description provided for @tryAgain.
   ///
@@ -3133,6 +3673,1086 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Values are liters added per day from saved water recharges.'**
   String get rentUtilityUsageGraphFootnoteWater;
+
+  /// No description provided for @unitFloorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor'**
+  String get unitFloorLabel;
+
+  /// No description provided for @unitFloorGround.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground Floor'**
+  String get unitFloorGround;
+
+  /// No description provided for @unitFloorFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'First Floor'**
+  String get unitFloorFirst;
+
+  /// No description provided for @unitFloorSecond.
+  ///
+  /// In en, this message translates to:
+  /// **'Second Floor'**
+  String get unitFloorSecond;
+
+  /// No description provided for @unitFloorThird.
+  ///
+  /// In en, this message translates to:
+  /// **'Third Floor'**
+  String get unitFloorThird;
+
+  /// No description provided for @unitOccupancyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Units occupancy'**
+  String get unitOccupancyTitle;
+
+  /// No description provided for @unitOccupancyLegendAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get unitOccupancyLegendAvailable;
+
+  /// No description provided for @unitOccupancyLegendOccupied.
+  ///
+  /// In en, this message translates to:
+  /// **'Occupied'**
+  String get unitOccupancyLegendOccupied;
+
+  /// No description provided for @unitOccupancyLegendReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Reserved'**
+  String get unitOccupancyLegendReserved;
+
+  /// No description provided for @unitOccupancyLegendMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance'**
+  String get unitOccupancyLegendMaintenance;
+
+  /// No description provided for @unitOccupancyLegendCleaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleaning'**
+  String get unitOccupancyLegendCleaning;
+
+  /// No description provided for @unitOccupancyRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get unitOccupancyRefresh;
+
+  /// No description provided for @unitOccupancyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No units found for this listing.'**
+  String get unitOccupancyEmpty;
+
+  /// No description provided for @unitOccupancyFloorLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{floorTitle} (Floor {floorNumber})'**
+  String unitOccupancyFloorLine(String floorTitle, int floorNumber);
+
+  /// No description provided for @propertyFloorCount.
+  ///
+  /// In en, this message translates to:
+  /// **'NUMBER OF FLOORS'**
+  String get propertyFloorCount;
+
+  /// No description provided for @propertyFloorCountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How many floors does this building have?'**
+  String get propertyFloorCountHint;
+
+  /// No description provided for @dashboardGuests.
+  ///
+  /// In en, this message translates to:
+  /// **'Guests'**
+  String get dashboardGuests;
+
+  /// No description provided for @dashboardTodayRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Revenue'**
+  String get dashboardTodayRevenue;
+
+  /// No description provided for @dashboardUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get dashboardUnits;
+
+  /// No description provided for @dashboardWeeklyRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Revenue'**
+  String get dashboardWeeklyRevenue;
+
+  /// No description provided for @dashboardWeeklyOccupancy.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Occupancy'**
+  String get dashboardWeeklyOccupancy;
+
+  /// No description provided for @dashboardWeekTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'MON–SUN'**
+  String get dashboardWeekTrend;
+
+  /// No description provided for @reportsHubTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get reportsHubTitle;
+
+  /// No description provided for @reportsTabOccupancy.
+  ///
+  /// In en, this message translates to:
+  /// **'Occupancy'**
+  String get reportsTabOccupancy;
+
+  /// No description provided for @reportsTabFinancial.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial'**
+  String get reportsTabFinancial;
+
+  /// No description provided for @reportsTabExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses'**
+  String get reportsTabExpenses;
+
+  /// No description provided for @reportsPeriodWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get reportsPeriodWeekly;
+
+  /// No description provided for @reportsPeriodMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get reportsPeriodMonthly;
+
+  /// No description provided for @reportsPeriodYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get reportsPeriodYearly;
+
+  /// No description provided for @reportsPeriodCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get reportsPeriodCustom;
+
+  /// No description provided for @reportsPickStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get reportsPickStartDate;
+
+  /// No description provided for @reportsPickEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get reportsPickEndDate;
+
+  /// No description provided for @reportsPropertyFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Property'**
+  String get reportsPropertyFilter;
+
+  /// No description provided for @reportsPropertyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All properties'**
+  String get reportsPropertyAll;
+
+  /// No description provided for @reportsOccupancyChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Occupancy (%)'**
+  String get reportsOccupancyChartTitle;
+
+  /// No description provided for @reportsOccupancyFormulaNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Each bucket uses stay overlap on [check-in, check-out) vs total BnB units (same geometry as the host dashboard).'**
+  String get reportsOccupancyFormulaNote;
+
+  /// No description provided for @reportsRevenueSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get reportsRevenueSeries;
+
+  /// No description provided for @reportsExpenseSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses'**
+  String get reportsExpenseSeries;
+
+  /// No description provided for @reportsNetSeries.
+  ///
+  /// In en, this message translates to:
+  /// **'Net'**
+  String get reportsNetSeries;
+
+  /// No description provided for @reportsRevenueOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Net shown when BnB expense rows exist in this period.'**
+  String get reportsRevenueOnlyHint;
+
+  /// No description provided for @reportsExpenseCategoryChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses by category'**
+  String get reportsExpenseCategoryChart;
+
+  /// No description provided for @reportsExportPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF'**
+  String get reportsExportPdf;
+
+  /// No description provided for @reportsExportCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV'**
+  String get reportsExportCsv;
+
+  /// No description provided for @reportsExportExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Excel'**
+  String get reportsExportExcel;
+
+  /// No description provided for @reportsInvalidDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date must be on or before end date.'**
+  String get reportsInvalidDateRange;
+
+  /// No description provided for @reportsExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Export ready to share'**
+  String get reportsExportDone;
+
+  /// No description provided for @reportsNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data for this period.'**
+  String get reportsNoData;
+
+  /// No description provided for @homeCheckInGuestsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in guests'**
+  String get homeCheckInGuestsToday;
+
+  /// No description provided for @homeCheckOutGuestsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-out guests'**
+  String get homeCheckOutGuestsToday;
+
+  /// No description provided for @homeNoCheckInsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No check-ins scheduled for today.'**
+  String get homeNoCheckInsToday;
+
+  /// No description provided for @homeNoCheckOutsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No departures scheduled for today.'**
+  String get homeNoCheckOutsToday;
+
+  /// No description provided for @calendarSyncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar sync'**
+  String get calendarSyncTitle;
+
+  /// No description provided for @calendarSyncTitleForListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar sync · {listingName}'**
+  String calendarSyncTitleForListing(String listingName);
+
+  /// No description provided for @calendarSyncMissingListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Open this screen from a listing to manage calendar sync.'**
+  String get calendarSyncMissingListing;
+
+  /// No description provided for @calendarSyncIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Airbnb (or other) calendars to avoid double bookings. Import external bookings; export HostBora blocked dates.'**
+  String get calendarSyncIntro;
+
+  /// No description provided for @calendarSyncImportSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from Airbnb'**
+  String get calendarSyncImportSection;
+
+  /// No description provided for @calendarSyncImportUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar URL'**
+  String get calendarSyncImportUrlLabel;
+
+  /// No description provided for @calendarSyncImportUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the .ics URL from Airbnb calendar settings'**
+  String get calendarSyncImportUrlHint;
+
+  /// No description provided for @calendarSyncImportLabelOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Label (optional)'**
+  String get calendarSyncImportLabelOptional;
+
+  /// No description provided for @calendarSyncSaveImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Save import link'**
+  String get calendarSyncSaveImport;
+
+  /// No description provided for @calendarSyncExportSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Export to Airbnb'**
+  String get calendarSyncExportSection;
+
+  /// No description provided for @calendarSyncExportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an export link and paste it into Airbnb as an imported calendar.'**
+  String get calendarSyncExportHint;
+
+  /// No description provided for @calendarSyncCreateExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Create export link'**
+  String get calendarSyncCreateExport;
+
+  /// No description provided for @calendarSyncSubscriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked calendars'**
+  String get calendarSyncSubscriptions;
+
+  /// No description provided for @calendarSyncSyncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get calendarSyncSyncNow;
+
+  /// No description provided for @calendarSyncSyncFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get calendarSyncSyncFeed;
+
+  /// No description provided for @calendarSyncBlocksNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported blocks are stored on the server. The host calendar grid still shows your bookings until a blocks API is available.'**
+  String get calendarSyncBlocksNote;
+
+  /// No description provided for @calendarSyncNoSubscriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'No calendar links yet.'**
+  String get calendarSyncNoSubscriptions;
+
+  /// No description provided for @calendarSyncDirectionImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get calendarSyncDirectionImport;
+
+  /// No description provided for @calendarSyncDirectionExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get calendarSyncDirectionExport;
+
+  /// No description provided for @calendarSyncDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get calendarSyncDisabled;
+
+  /// No description provided for @calendarSyncCopyUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy URL'**
+  String get calendarSyncCopyUrl;
+
+  /// No description provided for @calendarSyncLastSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync'**
+  String get calendarSyncLastSync;
+
+  /// No description provided for @calendarSyncRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get calendarSyncRemove;
+
+  /// No description provided for @calendarSyncOpenFromListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar sync'**
+  String get calendarSyncOpenFromListing;
+
+  /// No description provided for @calendarSyncOpenFromListingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Airbnb · iCal import & export'**
+  String get calendarSyncOpenFromListingHint;
+
+  /// No description provided for @designMoodboardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Design moodboards'**
+  String get designMoodboardsTitle;
+
+  /// No description provided for @designMoodboardsFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All boards'**
+  String get designMoodboardsFilterAll;
+
+  /// No description provided for @designMoodboardsFilterAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI concepts'**
+  String get designMoodboardsFilterAi;
+
+  /// No description provided for @designMoodboardsFilterMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials'**
+  String get designMoodboardsFilterMaterials;
+
+  /// No description provided for @designMoodboardsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No moodboards yet'**
+  String get designMoodboardsEmptyTitle;
+
+  /// No description provided for @designMoodboardsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a board to collect AI concepts and material inspiration for your properties.'**
+  String get designMoodboardsEmptyBody;
+
+  /// No description provided for @designMoodboardsCreateBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'New board'**
+  String get designMoodboardsCreateBoard;
+
+  /// No description provided for @designMoodboardsSavedItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 saved item} other{{count} saved items}}'**
+  String designMoodboardsSavedItems(int count);
+
+  /// No description provided for @designMoodboardsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load moodboards.'**
+  String get designMoodboardsLoadError;
+
+  /// No description provided for @designMoodboardRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get designMoodboardRetry;
+
+  /// No description provided for @designMoodboardOpenHomeDesigns.
+  ///
+  /// In en, this message translates to:
+  /// **'Open HomeDesigns.ai'**
+  String get designMoodboardOpenHomeDesigns;
+
+  /// No description provided for @designMoodboardApiNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a HomeDesigns API token to generate designs in-app, or open homedesigns.ai in your browser.'**
+  String get designMoodboardApiNotConfigured;
+
+  /// No description provided for @designMoodboardApiGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'API guide'**
+  String get designMoodboardApiGuide;
+
+  /// No description provided for @designMoodboardCreateDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New moodboard'**
+  String get designMoodboardCreateDialogTitle;
+
+  /// No description provided for @designMoodboardCreateDialogHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Board name'**
+  String get designMoodboardCreateDialogHint;
+
+  /// No description provided for @designMoodboardDesignConcepts.
+  ///
+  /// In en, this message translates to:
+  /// **'Design concepts'**
+  String get designMoodboardDesignConcepts;
+
+  /// No description provided for @designMoodboardColorPalette.
+  ///
+  /// In en, this message translates to:
+  /// **'Color palette'**
+  String get designMoodboardColorPalette;
+
+  /// No description provided for @designMoodboardFurnitureTextures.
+  ///
+  /// In en, this message translates to:
+  /// **'Furniture & textures'**
+  String get designMoodboardFurnitureTextures;
+
+  /// No description provided for @designMoodboardGenerateMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate more like this'**
+  String get designMoodboardGenerateMore;
+
+  /// No description provided for @designMoodboardAddPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get designMoodboardAddPhoto;
+
+  /// No description provided for @designMoodboardPoweredBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by HomeDesigns.ai'**
+  String get designMoodboardPoweredBy;
+
+  /// No description provided for @designMoodboardRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename moodboard'**
+  String get designMoodboardRename;
+
+  /// No description provided for @designMoodboardDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete moodboard'**
+  String get designMoodboardDelete;
+
+  /// No description provided for @designMoodboardDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this moodboard and all saved items?'**
+  String get designMoodboardDeleteConfirm;
+
+  /// No description provided for @designMoodboardNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Moodboard not found.'**
+  String get designMoodboardNotFound;
+
+  /// No description provided for @designMoodboardCreatedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Created today'**
+  String get designMoodboardCreatedToday;
+
+  /// No description provided for @designMoodboardCreatedDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {days} days ago'**
+  String designMoodboardCreatedDaysAgo(int days);
+
+  /// No description provided for @designMoodboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{itemCount, plural, =0{No items} =1{1 item} other{{itemCount} items}} · {createdAgo}'**
+  String designMoodboardSubtitle(int itemCount, String createdAgo);
+
+  /// No description provided for @designMoodboardNewConceptName.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded photo'**
+  String get designMoodboardNewConceptName;
+
+  /// No description provided for @designMoodboardAiConceptName.
+  ///
+  /// In en, this message translates to:
+  /// **'AI concept {index}'**
+  String designMoodboardAiConceptName(int index);
+
+  /// No description provided for @designMoodboardNoOutputs.
+  ///
+  /// In en, this message translates to:
+  /// **'No images returned from HomeDesigns.'**
+  String get designMoodboardNoOutputs;
+
+  /// No description provided for @designMoodboardGeneratedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {count, plural, =1{1 concept} other{{count} concepts}} to your board'**
+  String designMoodboardGeneratedCount(int count);
+
+  /// No description provided for @designMoodboardGenerateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Generation failed. Check your API token and try again.'**
+  String get designMoodboardGenerateFailed;
+
+  /// No description provided for @designMoodboardNeedSourcePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a local photo first so AI can redesign it.'**
+  String get designMoodboardNeedSourcePhoto;
+
+  /// No description provided for @designMoodboardOpenHomeDesignsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened HomeDesigns.ai — sign in to use full tools.'**
+  String get designMoodboardOpenHomeDesignsHint;
+
+  /// No description provided for @designMoodboardCannotOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open link.'**
+  String get designMoodboardCannotOpenLink;
+
+  /// No description provided for @homeQuickActionMoodboards.
+  ///
+  /// In en, this message translates to:
+  /// **'Moodboards'**
+  String get homeQuickActionMoodboards;
+
+  /// No description provided for @homeQuickActionDesignStudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Design studio'**
+  String get homeQuickActionDesignStudio;
+
+  /// No description provided for @privacyLastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated: May 21, 2026'**
+  String get privacyLastUpdated;
+
+  /// No description provided for @privacyIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'This Privacy Policy explains how Host Bora (“we”, “us”) collects, uses, stores, and shares information when you use our mobile app and related services (the “Services”). By using the Services, you acknowledge this policy. If you do not agree, please do not use the Services.'**
+  String get privacyIntro;
+
+  /// No description provided for @privacySwHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Note: This policy explains how Host Bora handles your information. For questions, contact us using the emails below.'**
+  String get privacySwHint;
+
+  /// No description provided for @privacySectionWhoWeAreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who we are'**
+  String get privacySectionWhoWeAreTitle;
+
+  /// No description provided for @privacySectionWhoWeAreBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Host Bora is a property-management app for short-term rental and hospitality hosts. We are the data controller for personal information processed through the Services unless we tell you otherwise for a specific feature.\n\nOur Services are designed for hosts in Tanzania and similar markets. Where local law applies, we aim to process information lawfully, fairly, and transparently.'**
+  String get privacySectionWhoWeAreBody;
+
+  /// No description provided for @privacySectionCollectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What we collect'**
+  String get privacySectionCollectTitle;
+
+  /// No description provided for @privacySectionCollectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Depending on how you use Host Bora, we may collect:\n\n• Account and profile: name, email, phone, authentication data, language and notification settings.\n• Property and listings: addresses, unit details, photos, pricing, amenities, and notes.\n• Bookings and guests: reservation dates, guest or tenant names and contacts, check-in/out, status, and notes.\n• Payments and finances: amounts, dates, methods, income and expense records (we do not store full card numbers).\n• Documents and vault: scans, uploads, metadata, and labels you assign.\n• Calendar sync: subscription URLs, sync settings, and imported booking data.\n• Smart access: device IDs, lock status, entry logs, and credentials when you connect compatible locks (e.g. Tuya).\n• Camera and media: images for listings, scanning, or moodboards when you use those features.\n• Usage and technical data: app version, device type, OS, approximate location, IP, diagnostics, and crash reports.\n• Communications: support messages and feedback.\n\nYou are responsible for having a lawful basis to enter guest, tenant, staff, or third-party data into Host Bora.'**
+  String get privacySectionCollectBody;
+
+  /// No description provided for @privacySectionUseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How we use your information'**
+  String get privacySectionUseTitle;
+
+  /// No description provided for @privacySectionUseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We use information to provide and secure the Services, manage properties, bookings, payments, tasks, and documents, sync calendars and integrations you connect, operate smart-access features you enable, send service notifications per your settings, respond to support, prevent fraud and abuse, improve reliability with aggregated or de-identified analytics, and comply with law.\n\nWe do not sell your personal information.'**
+  String get privacySectionUseBody;
+
+  /// No description provided for @privacySectionLegalBasisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal basis and consent'**
+  String get privacySectionLegalBasisTitle;
+
+  /// No description provided for @privacySectionLegalBasisBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Where required by law, we rely on:\n\n• Contract: processing needed to provide the Services you sign up for.\n• Legitimate interests: operating, securing, and improving Host Bora without overriding your rights.\n• Consent: optional marketing, device permissions, or third-party integrations—you may withdraw consent in device or in-app settings where available.\n• Legal obligation: when we must retain or disclose information to comply with law or valid authority requests.\n\nThis policy is practical guidance for hosts; it is not legal advice.'**
+  String get privacySectionLegalBasisBody;
+
+  /// No description provided for @privacySectionSharingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How we share information'**
+  String get privacySectionSharingTitle;
+
+  /// No description provided for @privacySectionSharingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We share information only as needed:\n\n• Service providers: hosting, cloud storage, authentication, analytics, crash reporting, push notifications, mapping, and payment processors under contractual safeguards.\n• Integrations you choose: OTAs, calendar providers, smart-lock platforms, or design tools—only what is necessary, governed by their policies.\n• People you authorise: staff, co-hosts, or collaborators you grant access to.\n• Legal and safety: when required by law or to protect rights and security.\n• Business transfers: merger, acquisition, or asset sale, subject to confidentiality.\n\nWe do not share listing photos, documents, or guest lists with advertisers for their independent marketing.'**
+  String get privacySectionSharingBody;
+
+  /// No description provided for @privacySectionStorageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage and security'**
+  String get privacySectionStorageTitle;
+
+  /// No description provided for @privacySectionStorageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Host Bora supports offline use. The app may store data locally on your device (cached properties, bookings, documents) and sync to our servers when online so data is available across devices.\n\nWe use administrative, technical, and organisational measures including encryption in transit where supported and access controls. No method is completely secure—protect your device and account credentials.'**
+  String get privacySectionStorageBody;
+
+  /// No description provided for @privacySectionRetentionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How long we keep information'**
+  String get privacySectionRetentionTitle;
+
+  /// No description provided for @privacySectionRetentionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We retain personal information while your account is active or as needed to provide the Services, resolve disputes, enforce agreements, and meet legal requirements. You may delete certain content where the app offers deletion. After account closure or a deletion request, we delete or anonymise data within a reasonable period, except limited legal, security, or backup copies.'**
+  String get privacySectionRetentionBody;
+
+  /// No description provided for @privacySectionRightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rights and choices'**
+  String get privacySectionRightsTitle;
+
+  /// No description provided for @privacySectionRightsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject to applicable law, you may have the right to access, correct, delete, object to, or restrict processing, withdraw consent, or complain to a data-protection authority.\n\nUpdate many details in app settings, manage permissions in your phone settings (some features may not work without them), or uninstall the app. To exercise rights, contact us below—we may verify your identity first.'**
+  String get privacySectionRightsBody;
+
+  /// No description provided for @privacySectionChildrenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Children'**
+  String get privacySectionChildrenTitle;
+
+  /// No description provided for @privacySectionChildrenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Host Bora is for hosts and business users, not children under 18. We do not knowingly collect children\'s personal information. If you believe a child has provided us data, contact us and we will take appropriate steps to delete it.'**
+  String get privacySectionChildrenBody;
+
+  /// No description provided for @privacySectionChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes to this policy'**
+  String get privacySectionChangesTitle;
+
+  /// No description provided for @privacySectionChangesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We may update this Privacy Policy from time to time and will update the “Last updated” date. Material changes may be communicated in the app or by email where appropriate. Continued use after changes take effect means you accept the updated policy.'**
+  String get privacySectionChangesBody;
+
+  /// No description provided for @privacySectionContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact us'**
+  String get privacySectionContactTitle;
+
+  /// No description provided for @privacySectionContactBody.
+  ///
+  /// In en, this message translates to:
+  /// **'For privacy questions, access or deletion requests, or concerns about this policy:\n\nPrivacy: privacy@hostbora.co.tz\nSupport: support@hostbora.co.tz'**
+  String get privacySectionContactBody;
+
+  /// No description provided for @termsLastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated: May 21, 2026'**
+  String get termsLastUpdated;
+
+  /// No description provided for @termsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'These Terms of Service (“Terms”) govern your access to and use of the Host Bora mobile application and related services (the “Services”) operated by Host Bora (“we”, “us”, or “our”). By creating an account or using the Services, you agree to these Terms. If you do not agree, do not use the Services.'**
+  String get termsIntro;
+
+  /// No description provided for @termsSwHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Note: These Terms explain your rights and responsibilities when using Host Bora. For questions, contact us using the emails below.'**
+  String get termsSwHint;
+
+  /// No description provided for @termsSectionAcceptanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Acceptance of terms'**
+  String get termsSectionAcceptanceTitle;
+
+  /// No description provided for @termsSectionAcceptanceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You must be at least 18 years old and able to enter a binding contract to use Host Bora. If you use the Services on behalf of a business, you represent that you have authority to bind that business to these Terms.\n\nYour continued use of the Services after we post or communicate changes constitutes acceptance of the updated Terms, to the extent permitted by law.'**
+  String get termsSectionAcceptanceBody;
+
+  /// No description provided for @termsSectionServiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Description of the service'**
+  String get termsSectionServiceTitle;
+
+  /// No description provided for @termsSectionServiceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Host Bora is a property-management platform for short-term rental, hospitality, and residential hosts. The Services may include tools to manage listings and units, bookings and guests, payments and expenses, documents and vault storage, calendar sync, staff access, smart locks and entry logs, design moodboards, reports, and related features we offer from time to time.\n\nWe may add, change, or discontinue features. Some features depend on third-party services, devices, or networks you connect; we do not guarantee uninterrupted availability.'**
+  String get termsSectionServiceBody;
+
+  /// No description provided for @termsSectionAccountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts and security'**
+  String get termsSectionAccountsTitle;
+
+  /// No description provided for @termsSectionAccountsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You are responsible for accurate registration information and for keeping your login credentials, PIN, and biometric settings secure. Notify us promptly if you suspect unauthorised access.\n\nYou may not share accounts in a way that violates these Terms. You are responsible for activity under your account, including actions by staff or collaborators you authorise. We may suspend or terminate accounts that violate these Terms or pose a security risk.'**
+  String get termsSectionAccountsBody;
+
+  /// No description provided for @termsSectionAcceptableUseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Acceptable use'**
+  String get termsSectionAcceptableUseTitle;
+
+  /// No description provided for @termsSectionAcceptableUseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You agree to use Host Bora lawfully and only for legitimate property-management purposes. You must not:\n\n• Upload false, misleading, or infringing content.\n• Harass, threaten, or discriminate against others.\n• Attempt to breach security, scrape data without permission, or interfere with the Services.\n• Use the Services for illegal rentals, fraud, money laundering, or activities that violate guest, tenant, or employment laws.\n• Enter personal data about guests, tenants, or staff without a lawful basis and appropriate notices.\n\nYou remain solely responsible for compliance with local laws, tax obligations, licensing, and community or platform rules for your properties.'**
+  String get termsSectionAcceptableUseBody;
+
+  /// No description provided for @termsSectionPaymentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments and subscriptions'**
+  String get termsSectionPaymentsTitle;
+
+  /// No description provided for @termsSectionPaymentsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Certain features may require a paid subscription or fees disclosed in the app or on our website. Prices, billing cycles, and included features may change with notice where required.\n\nPayments processed through app stores or payment providers are subject to their terms and refund policies. Financial records you enter in Host Bora are for your operational use; we do not provide tax, accounting, or legal advice. You are responsible for accuracy of amounts you record and for any charges from third parties (e.g. OTAs, banks, lock providers).'**
+  String get termsSectionPaymentsBody;
+
+  /// No description provided for @termsSectionDataPrivacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data and privacy'**
+  String get termsSectionDataPrivacyTitle;
+
+  /// No description provided for @termsSectionDataPrivacyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Our collection and use of personal information is described in our Privacy Policy, which is incorporated into these Terms by reference. By using the Services, you also confirm that you have appropriate rights and notices to process guest, tenant, staff, and other third-party data you enter into Host Bora.\n\nYou can review the Privacy Policy in the app settings or contact privacy@hostbora.co.tz for privacy-related requests.'**
+  String get termsSectionDataPrivacyBody;
+
+  /// No description provided for @termsSectionDisclaimersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disclaimers'**
+  String get termsSectionDisclaimersTitle;
+
+  /// No description provided for @termsSectionDisclaimersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The Services are provided on an “as is” and “as available” basis. To the fullest extent permitted by law, we disclaim warranties of merchantability, fitness for a particular purpose, non-infringement, and uninterrupted or error-free operation.\n\nHost Bora is a tool to help you manage properties; we do not guarantee booking levels, revenue, guest behaviour, device compatibility of smart locks, or accuracy of calendar sync or third-party integrations. You use integrations and smart-access features at your own risk and should maintain backup access methods.'**
+  String get termsSectionDisclaimersBody;
+
+  /// No description provided for @termsSectionLiabilityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limitation of liability'**
+  String get termsSectionLiabilityTitle;
+
+  /// No description provided for @termsSectionLiabilityBody.
+  ///
+  /// In en, this message translates to:
+  /// **'To the maximum extent permitted by applicable law, Host Bora and its affiliates, officers, employees, and suppliers will not be liable for any indirect, incidental, special, consequential, or punitive damages, or for loss of profits, data, goodwill, or property damage, arising from your use of the Services.\n\nOur total liability for any claim relating to the Services is limited to the greater of (a) amounts you paid us for the Services in the twelve months before the claim, or (b) USD 100 (or equivalent in Tanzanian shillings), except where law does not allow such limitation. Nothing in these Terms limits liability for death or personal injury caused by negligence, fraud, or other liability that cannot be excluded by law.'**
+  String get termsSectionLiabilityBody;
+
+  /// No description provided for @termsSectionGoverningLawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Governing law and disputes'**
+  String get termsSectionGoverningLawTitle;
+
+  /// No description provided for @termsSectionGoverningLawBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These Terms are governed by the laws of the United Republic of Tanzania, without regard to conflict-of-law rules, except where mandatory consumer or data-protection rules in your country require otherwise.\n\nWe encourage you to contact support@hostbora.co.tz first to resolve concerns. Any dispute that cannot be resolved informally may be submitted to the competent courts in Tanzania, unless applicable law gives you the right to bring proceedings in your home jurisdiction.\n\nThese Terms are general information for hosts; they are not legal advice. Consider local counsel for tax, tenancy, hospitality, or data-protection obligations.'**
+  String get termsSectionGoverningLawBody;
+
+  /// No description provided for @termsSectionChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes to these terms'**
+  String get termsSectionChangesTitle;
+
+  /// No description provided for @termsSectionChangesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We may update these Terms from time to time and will update the “Last updated” date. Material changes may be communicated in the app, by email, or on our website where appropriate. If you do not agree to updated Terms, you must stop using the Services and may close your account.'**
+  String get termsSectionChangesBody;
+
+  /// No description provided for @termsSectionContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact us'**
+  String get termsSectionContactTitle;
+
+  /// No description provided for @termsSectionContactBody.
+  ///
+  /// In en, this message translates to:
+  /// **'For questions about these Terms or the Services:\n\nSupport: support@hostbora.co.tz\nPrivacy: privacy@hostbora.co.tz'**
+  String get termsSectionContactBody;
+
+  /// No description provided for @faceIdRequiresPinMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a 4-digit PIN before enabling Face ID or Touch ID.'**
+  String get faceIdRequiresPinMessage;
+
+  /// No description provided for @faceIdNotAvailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometrics are not available on this device.'**
+  String get faceIdNotAvailableMessage;
+
+  /// No description provided for @staffDetailPayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay'**
+  String get staffDetailPayLabel;
+
+  /// No description provided for @staffDetailNoTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks assigned to this team member yet.'**
+  String get staffDetailNoTasks;
+
+  /// No description provided for @staffDetailNoProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'No properties linked yet. Assign staff from a listing detail screen.'**
+  String get staffDetailNoProperties;
+
+  /// No description provided for @staffDetailAssignFromListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign properties from a listing detail screen.'**
+  String get staffDetailAssignFromListing;
+
+  /// No description provided for @staffDetailConfirmRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from team?'**
+  String get staffDetailConfirmRemoveTitle;
+
+  /// No description provided for @staffDetailConfirmRemoveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from your team? This cannot be undone.'**
+  String staffDetailConfirmRemoveBody(String name);
+
+  /// No description provided for @staffDetailRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get staffDetailRemoveConfirm;
+
+  /// No description provided for @staffDetailRemovedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Team member removed.'**
+  String get staffDetailRemovedSuccess;
+
+  /// No description provided for @staffDetailCannotRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not remove this team member.'**
+  String get staffDetailCannotRemove;
+
+  /// No description provided for @staffDetailCannotOpenEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open email app.'**
+  String get staffDetailCannotOpenEmail;
+
+  /// No description provided for @staffDetailCannotOpenPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open phone app.'**
+  String get staffDetailCannotOpenPhone;
+
+  /// No description provided for @staffDetailTaskCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get staffDetailTaskCompleted;
+
+  /// No description provided for @staffDetailTaskDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due'**
+  String get staffDetailTaskDue;
+
+  /// No description provided for @staffDetailTaskPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get staffDetailTaskPending;
 }
 
 class _AppLocalizationsDelegate

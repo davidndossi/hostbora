@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -7,8 +5,6 @@ import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/utils/thousand_separator.dart';
-import '../../../core/values/app_colors.dart';
-import '../../../core/values/app_values.dart';
 import '../controllers/add_expense_controller.dart';
 
 class AddExpenseView extends BaseView<AddExpenseController> {

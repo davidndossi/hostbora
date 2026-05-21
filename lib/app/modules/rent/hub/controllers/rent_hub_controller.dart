@@ -173,6 +173,20 @@ class RentHubController extends BaseController {
 
   void onConciergeSupportTap() {}
 
+  Future<void> openAddExpense() async {
+    final saved = await Get.toNamed(Routes.RENT_ADD_NEW_EXPENSE);
+    if (saved == true) {
+      await refreshDashboard();
+    }
+  }
+
+  Future<void> openAddIncome() async {
+    final saved = await Get.toNamed(Routes.RENT_ADD_INCOME_FORM);
+    if (saved == true) {
+      await refreshDashboard();
+    }
+  }
+
   Future<void> openHostDashboard() async {
     final hostName = (await _preferenceManager.getString(
       PreferenceManager.keyFullName,

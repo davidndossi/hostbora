@@ -1,19 +1,24 @@
 import 'package:camera/camera.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../routes/app_pages.dart';
+import '../../documents/vault_route_args.dart';
 
 class DocumentScannerController extends BaseController {
+  DocumentScannerController({ImagePicker? imagePicker})
+      : _imagePicker = imagePicker ?? ImagePicker();
+
+  final ImagePicker _imagePicker;
   final flashOn = false.obs;
-  final autoCaptureOn = true.obs;
 
   final isCameraReady = false.obs;
   final cameraError = ''.obs;
-  /// True when permission was denied so the UI can show "Open Settings" / retry.
   final showPermissionActions = false.obs;
+
+  late final VaultRouteArgs _vaultArgs;
 
   List<CameraDescription> _cameras = [];
   CameraController? _cameraController;
@@ -23,6 +28,7 @@ class DocumentScannerController extends BaseController {
   @override
   void onInit() {
     super.onInit();
+    _vaultArgs = VaultRouteArgs.fromGetArguments();
     _initCamera();
   }
 
@@ -46,7 +52,6 @@ class DocumentScannerController extends BaseController {
             ? 'Camera access was denied. Please enable it in Settings to scan documents.'
             : 'Camera permission is needed to scan documents.';
         showPermissionActions.value = true;
-        _showCameraPermissionDialog();
         return;
       }
 
@@ -84,7 +89,9 @@ class DocumentScannerController extends BaseController {
   void close() => Get.back();
 
   Future<void> toggleFlash() async {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return;
+    }
     try {
       final next = !flashOn.value;
       await _cameraController!.setFlashMode(next ? FlashMode.torch : FlashMode.off);
@@ -92,66 +99,61 @@ class DocumentScannerController extends BaseController {
     } catch (_) {}
   }
 
-  void toggleAutoCapture() {
-    autoCaptureOn.value = !autoCaptureOn.value;
-  }
+  Future<void> importFromGallery() async {
+    try {
+      var status = await Permission.photos.status;
+      if (status.isDenied) {
+        status = await Permission.photos.request();
+      }
+      if (!status.isGranted && !status.isLimited) {
+        showErrorMessage('Photo library access is needed to import images.');
+        return;
+      }
 
-  void importFromGallery() async {
-    Get.toNamed(Routes.REFINE_SCAN);
+      final picked = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 92,
+      );
+      final path = picked?.path;
+      if (path == null || path.isEmpty) return;
+
+      await _disposeCamera();
+      Get.toNamed(
+        Routes.REFINE_SCAN,
+        arguments: _vaultArgs.copyWith(imagePath: path).toMap(includeImagePath: true),
+      );
+    } catch (e) {
+      showErrorMessage('Could not import image');
+    }
   }
 
   Future<void> capture() async {
     if (_cameraController == null ||
         !_cameraController!.value.isInitialized ||
-        _cameraController!.value.isTakingPicture) return;
+        _cameraController!.value.isTakingPicture) {
+      return;
+    }
     try {
       final file = await _cameraController!.takePicture();
       final path = file.path;
       if (path.isNotEmpty) {
-        Get.toNamed(Routes.REFINE_SCAN, arguments: {'imagePath': path});
+        await _disposeCamera();
+        Get.toNamed(
+          Routes.REFINE_SCAN,
+          arguments: _vaultArgs.copyWith(imagePath: path).toMap(includeImagePath: true),
+        );
       }
     } catch (e) {
       showErrorMessage('Capture failed');
     }
   }
 
-  void batchMode() {
-    autoCaptureOn.value = false;
-  }
-
-  /// Retry after user may have granted permission in settings.
   Future<void> retryPermission() async {
-    _initCamera();
+    await _disposeCamera();
+    await _initCamera();
   }
 
-  /// Open app settings so the user can enable camera permission.
   Future<void> openAppSettingsForCamera() async {
     await openAppSettings();
-  }
-
-  void _showCameraPermissionDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Camera access required'),
-        content: const Text(
-          'To scan documents we need access to your camera. '
-          'Please open Settings and allow camera permission for this app.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Not now'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              openAppSettingsForCamera();
-            },
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
-      barrierDismissible: false,
-    );
   }
 }

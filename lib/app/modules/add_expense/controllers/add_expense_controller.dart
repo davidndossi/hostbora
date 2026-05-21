@@ -40,7 +40,7 @@ class AddExpenseController extends BaseController {
   final formKey = GlobalKey<FormState>();
 
   /// Expense category options (single selection).
-  final expenses = const ['Maintenance', 'Utilities', 'Salary', 'Other'];
+  final expenses = const ['Maintenance', 'Utilities', 'Salary', 'Yearly tax', 'Other'];
 
   final selectedExpenseIndex = 0.obs;
   final propertyOptions = <String>[].obs;

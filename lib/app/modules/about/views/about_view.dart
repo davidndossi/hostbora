@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
@@ -12,6 +13,19 @@ class AboutView extends BaseView<AboutController> {
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(appBarTitleText: appLocalization.about, isCentered: true);
+  }
+
+  TextStyle get _bodyStyle => TextStyle(
+        fontSize: 16,
+        height: 1.5,
+        color: AppColors.textColorSecondary,
+      );
+
+  Widget _descriptionParagraph(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppValues.padding),
+      child: Text(text, style: _bodyStyle),
+    );
   }
 
   @override
@@ -41,16 +55,12 @@ class AboutView extends BaseView<AboutController> {
               ),
             ),
           ),
-          const SizedBox(height: AppValues.halfPadding),
-          Text(
-            'Connect with your community. Host Bora helps you stay in touch with local groups, get updates, and participate in community life.',
-            style: TextStyle(
-              fontSize: 16,
-              height: 1.5,
-              color: AppColors.textColorSecondary,
-            ),
-          ),
           const SizedBox(height: AppValues.largePadding),
+          _descriptionParagraph(appLocalization.aboutIntro),
+          _descriptionParagraph(appLocalization.aboutBnbFeatures),
+          _descriptionParagraph(appLocalization.aboutRentFeatures),
+          _descriptionParagraph(appLocalization.aboutSharedFeatures),
+          const SizedBox(height: AppValues.halfPadding),
           Text(
             appLocalization.version,
             style: TextStyle(
@@ -60,11 +70,15 @@ class AboutView extends BaseView<AboutController> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            '1.0.0',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textColorSecondary,
+          Obx(
+            () => Text(
+              controller.versionLoading.value
+                  ? '…'
+                  : controller.versionText.value,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textColorSecondary,
+              ),
             ),
           ),
         ],

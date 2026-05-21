@@ -1,5 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/config/homedesigns_config.dart';
+import '../../../data/local/design_moodboards_store.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
 
@@ -9,7 +13,7 @@ class MoodboardListItem {
   MoodboardListItem({
     required this.id,
     required this.title,
-    required this.assetPath,
+    required this.imageRef,
     required this.savedCount,
     required this.showAiBadge,
     required this.aiConcept,
@@ -18,7 +22,7 @@ class MoodboardListItem {
 
   final String id;
   final String title;
-  final String assetPath;
+  final String? imageRef;
   final int savedCount;
   final bool showAiBadge;
   final bool aiConcept;
@@ -34,80 +38,127 @@ class MoodboardListItem {
         return materials;
     }
   }
+
+  static MoodboardListItem fromStored(StoredMoodboard b) {
+    return MoodboardListItem(
+      id: b.id,
+      title: b.title,
+      imageRef: b.displayCover,
+      savedCount: b.savedCount,
+      showAiBadge: b.showAiBadge,
+      aiConcept: b.aiConcept,
+      materials: b.materials,
+    );
+  }
 }
 
+/// Lists moodboards from [DesignMoodboardsStore] and links to HomeDesigns.ai when configured.
+///
+/// API key setup (do not commit secrets):
+/// ```bash
+/// flutter run --dart-define=HOMEDESIGNS_ACCESS_TOKEN=your_token
+/// ```
+/// Token: https://homedesigns.ai/api-guide
 class DesignMoodboardsController extends BaseController {
-  final filter = MoodboardFilter.all.obs;
+  DesignMoodboardsController({
+    DesignMoodboardsStore? store,
+    HomeDesignsConfig? homeDesignsConfig,
+  })  : _store = store ?? DesignMoodboardsStore(),
+        _homeDesignsConfig = homeDesignsConfig ?? HomeDesignsConfig.fromEnvironment();
 
-  final items = <MoodboardListItem>[
-    MoodboardListItem(
-      id: '1',
-      title: 'Mediterranean Vibes',
-      assetPath: 'images/mediterranean_vibes.jpg',
-      savedCount: 12,
-      showAiBadge: true,
-      aiConcept: true,
-      materials: false,
-    ),
-    MoodboardListItem(
-      id: '2',
-      title: 'Victorian Suite',
-      assetPath: 'images/victorian_suite.jpg',
-      savedCount: 12,
-      showAiBadge: false,
-      aiConcept: false,
-      materials: true,
-    ),
-    MoodboardListItem(
-      id: '3',
-      title: 'Modern Minimalist',
-      assetPath: 'images/modern_minimalist.jpg',
-      savedCount: 8,
-      showAiBadge: true,
-      aiConcept: true,
-      materials: false,
-    ),
-    MoodboardListItem(
-      id: '4',
-      title: 'Scandinavian Cozy',
-      assetPath: 'images/scandinavian_cozy.jpg',
-      savedCount: 15,
-      showAiBadge: false,
-      aiConcept: false,
-      materials: true,
-    ),
-    MoodboardListItem(
-      id: '5',
-      title: 'Industrial Loft',
-      assetPath: 'images/industrial_loft.jpg',
-      savedCount: 9,
-      showAiBadge: false,
-      aiConcept: false,
-      materials: true,
-    ),
-    MoodboardListItem(
-      id: '6',
-      title: 'Bohemian Desert',
-      assetPath: 'images/bohemian_desert.jpg',
-      savedCount: 11,
-      showAiBadge: true,
-      aiConcept: true,
-      materials: false,
-    ),
-  ];
+  final DesignMoodboardsStore _store;
+  final HomeDesignsConfig _homeDesignsConfig;
+
+  final filter = MoodboardFilter.all.obs;
+  final boards = <MoodboardListItem>[].obs;
+  final loadFailed = false.obs;
+
+  bool get isHomeDesignsConfigured => _homeDesignsConfig.isConfigured;
 
   List<MoodboardListItem> get filteredItems {
     final f = filter.value;
-    return items.where((e) => e.matches(f)).toList();
+    return boards.where((e) => e.matches(f)).toList();
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    reloadBoards();
+  }
+
+  Future<void> reloadBoards() async {
+    loadFailed.value = false;
+    showLoading();
+    try {
+      await _store.seedDefaultsIfEmpty();
+      final stored = _store.loadBoards();
+      boards.assignAll(
+        stored.map(MoodboardListItem.fromStored).toList()
+          ..sort((a, b) => b.savedCount.compareTo(a.savedCount)),
+      );
+    } catch (e, st) {
+      logger.e('Failed to load moodboards', error: e, stackTrace: st);
+      loadFailed.value = true;
+      showErrorMessage(appLocalization.designMoodboardsLoadError);
+    } finally {
+      hideLoading();
+    }
   }
 
   void setFilter(MoodboardFilter f) => filter.value = f;
 
   void openMoodboardDetail(MoodboardListItem item) {
-    Get.toNamed(Routes.DESIGN_MOODBOARD, arguments: item.title);
+    Get.toNamed(Routes.DESIGN_MOODBOARD, arguments: item.id);
   }
 
-  void createNewMoodboard() {
-    Get.toNamed(Routes.INTERIOR_DESIGN_STUDIO);
+  Future<void> createNewMoodboard() async {
+    final title = await _promptForBoardTitle();
+    if (title == null || title.trim().isEmpty) return;
+    final board = StoredMoodboard(
+      id: 'board-${DateTime.now().millisecondsSinceEpoch}',
+      title: title.trim(),
+      aiConcept: true,
+      showAiBadge: true,
+      createdAt: DateTime.now(),
+    );
+    await _store.upsertBoard(board);
+    await reloadBoards();
+    openMoodboardDetail(MoodboardListItem.fromStored(board));
+  }
+
+  Future<void> openHomeDesignsWeb() async {
+    final uri = Uri.parse(HomeDesignsConfig.webAppUrl);
+    if (!await canLaunchUrl(uri)) {
+      showErrorMessage(appLocalization.designMoodboardCannotOpenLink);
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<String?> _promptForBoardTitle() async {
+    final controller = TextEditingController();
+    return Get.dialog<String>(
+      AlertDialog(
+        title: Text(appLocalization.designMoodboardCreateDialogTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: appLocalization.designMoodboardCreateDialogHint,
+          ),
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: Get.back,
+            child: Text(appLocalization.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: controller.text),
+            child: Text(appLocalization.submit),
+          ),
+        ],
+      ),
+    );
   }
 }

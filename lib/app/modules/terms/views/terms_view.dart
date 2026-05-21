@@ -14,33 +14,63 @@ class TermsView extends BaseView<TermsController> {
     return CustomAppBar(appBarTitleText: appLocalization.termsOfService, isCentered: true);
   }
 
+  TextStyle get _headingStyle => TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textColorPrimary,
+      );
+
+  TextStyle get _bodyStyle => TextStyle(
+        fontSize: 15,
+        height: 1.6,
+        color: AppColors.textColorSecondary,
+      );
+
+  TextStyle get _metaStyle => TextStyle(
+        fontSize: 14,
+        color: AppColors.textColorSecondary,
+      );
+
+  Widget _section(String title, String body) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppValues.padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: _headingStyle),
+          const SizedBox(height: AppValues.halfPadding),
+          Text(body, style: _bodyStyle),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget body(BuildContext context) {
+    final l10n = appLocalization;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppValues.padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(l10n.termsLastUpdated, style: _metaStyle),
+          const SizedBox(height: AppValues.padding),
+          Text(l10n.termsIntro, style: _bodyStyle),
           const SizedBox(height: AppValues.halfPadding),
-          Text(
-            appLocalization.termsOfService,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textColorPrimary,
-            ),
-          ),
+          Text(l10n.termsSwHint, style: _metaStyle),
+          const SizedBox(height: AppValues.padding),
+          _section(l10n.termsSectionAcceptanceTitle, l10n.termsSectionAcceptanceBody),
+          _section(l10n.termsSectionServiceTitle, l10n.termsSectionServiceBody),
+          _section(l10n.termsSectionAccountsTitle, l10n.termsSectionAccountsBody),
+          _section(l10n.termsSectionAcceptableUseTitle, l10n.termsSectionAcceptableUseBody),
+          _section(l10n.termsSectionPaymentsTitle, l10n.termsSectionPaymentsBody),
+          _section(l10n.termsSectionDataPrivacyTitle, l10n.termsSectionDataPrivacyBody),
+          _section(l10n.termsSectionDisclaimersTitle, l10n.termsSectionDisclaimersBody),
+          _section(l10n.termsSectionLiabilityTitle, l10n.termsSectionLiabilityBody),
+          _section(l10n.termsSectionGoverningLawTitle, l10n.termsSectionGoverningLawBody),
+          _section(l10n.termsSectionChangesTitle, l10n.termsSectionChangesBody),
+          _section(l10n.termsSectionContactTitle, l10n.termsSectionContactBody),
           const SizedBox(height: AppValues.halfPadding),
-          Text(
-            'Last updated: 2025\n\n'
-            'By using Host Bora you agree to these terms. The app is provided for community engagement and communication. Use it responsibly and in line with your community guidelines.\n\n'
-            'We may update these terms from time to time. Continued use of the app after changes means you accept the updated terms.',
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.6,
-              color: AppColors.textColorSecondary,
-            ),
-          ),
         ],
       ),
     );

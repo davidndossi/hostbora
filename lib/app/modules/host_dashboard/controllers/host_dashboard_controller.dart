@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/model/check_in_item.dart';
 import '../../../routes/app_pages.dart';
 
 class HostDashboardController extends BaseController {
@@ -9,8 +10,11 @@ class HostDashboardController extends BaseController {
   final bookingsChange = '+15% from last month';
   final revenueChange = '+8.2% from last month';
 
+  /// Placeholder rows for the legacy host dashboard layout (real data lives on Home).
   final checkIns = [
     CheckInItem(
+      checkInIso: '2026-10-12',
+      checkOutIso: '2026-10-15',
       imageUrl: 'https://placehold.co/280x160/f0f0f0/999?text=Downtown+Loft',
       guestName: 'Sarah M.',
       guestAvatarUrl: 'https://placehold.co/48x48',
@@ -19,6 +23,8 @@ class HostDashboardController extends BaseController {
       isConfirmed: true,
     ),
     CheckInItem(
+      checkInIso: '2026-10-14',
+      checkOutIso: '2026-10-18',
       imageUrl: 'https://placehold.co/280x160/e3f2f1/999?text=Seaside',
       guestName: 'James',
       guestAvatarUrl: 'https://placehold.co/48x48',
@@ -32,9 +38,7 @@ class HostDashboardController extends BaseController {
     // TODO: navigate to trends screen
   }
 
-  void seeAllCheckIns() {
-    // TODO: navigate to check-ins list
-  }
+  void seeAllCheckIns() => Get.toNamed(Routes.ALL_BOOKINGS);
 
   void addListing() => Get.toNamed(Routes.ADD_LISTING);
 
@@ -46,28 +50,10 @@ class HostDashboardController extends BaseController {
 
   void assignTasks() => Get.toNamed(Routes.TEAM_AND_STAFF);
 
-  void reports() => Get.toNamed(Routes.FINANCIAL_OVERVIEW);
+  void reports() => Get.toNamed(Routes.REPORTS_HUB);
 
   void openNotifications() => Get.toNamed(Routes.NOTIFICATIONS);
 
   void openBookingDetails(CheckInItem item) =>
       Get.toNamed(Routes.BOOKING_DETAILS, arguments: item);
-}
-
-class CheckInItem {
-  final String imageUrl;
-  final String guestName;
-  final String guestAvatarUrl;
-  final String propertyType;
-  final String dates;
-  final bool isConfirmed;
-
-  CheckInItem({
-    required this.imageUrl,
-    required this.guestName,
-    required this.guestAvatarUrl,
-    required this.propertyType,
-    required this.dates,
-    required this.isConfirmed,
-  });
 }

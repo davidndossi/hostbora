@@ -34,8 +34,8 @@ class WelcomeBackController extends BaseController {
   final lockoutMessage = ''.obs;
   final msisdn = ''.obs;
   final password = ''.obs;
-  String _firstPin = '';
   String _storedPin = '';
+  final faceIdEnabledPref = false.obs;
 
   late String firebaseToken;
 
@@ -62,10 +62,21 @@ class WelcomeBackController extends BaseController {
       setupPinMode.value = true;
       setupPrompt.value = _t('Enter current PIN', 'Weka PIN ya sasa');
     }
+    _loadFaceIdPref();
     _checkBiometricsAvailable();
     _loadPin();
     _refreshLockState();
   }
+
+  Future<void> _loadFaceIdPref() async {
+    faceIdEnabledPref.value = await _preferenceManager.getBool(
+      PreferenceManager.keyFaceIdEnabled,
+      defaultValue: false,
+    );
+  }
+
+  bool get biometricsOffered =>
+      canUseBiometrics.value && faceIdEnabledPref.value;
 
   Future<void> _loadPin() async {
     _storedPin = await _preferenceManager.getString(
@@ -167,6 +178,7 @@ class WelcomeBackController extends BaseController {
 
   void loadCredentials() async {
     var phone = await _preferenceManager.getString(PreferenceManager.keyUsername);
+    // TODO(security): replace plaintext userApp storage with a secure token/credential API.
     var a = await _preferenceManager.getString('userApp');
     msisdn(phone);
     password(a.toString());
@@ -313,7 +325,6 @@ class WelcomeBackController extends BaseController {
 
   void forgotPin() {
     if (setupPinMode.value) {
-      _firstPin = '';
       enteredPin.value = '';
       setupStep.value = 1;
       setupPrompt.value = changePinMode.value
@@ -329,6 +340,13 @@ class WelcomeBackController extends BaseController {
   }
 
   Future<void> authenticateWithBiometrics() async {
+    if (!biometricsOffered) {
+      showErrorMessage(_t(
+        'Biometric sign-in is disabled in Security settings.',
+        'Kuingia kwa biometria kumezimwa katika mipangilio ya Usalama.',
+      ));
+      return;
+    }
     if (!canUseBiometrics.value) {
       showErrorMessage(_t('Biometrics not available. Use PIN to sign in.', 'Biometria haipatikani. Tumia PIN kuingia.'));
       return;

@@ -9,6 +9,7 @@ import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
+import '../../../../core/values/property_unit_floor.dart';
 import '../models/apartment_unit_draft.dart';
 
 class RentAddNewListingController extends BaseController {
@@ -31,6 +32,10 @@ class RentAddNewListingController extends BaseController {
   final rentFrequencyOptions = const ['Per Day', 'Per Week', 'Per Month', 'Per Year'];
   final minRentalDurationOptions = const ['1 Month', '3 Months', '6 Months', '12 Months'];
 
+  static const int minFloorCount = 1;
+  static const int maxFloorCount = 200;
+  final floorCount = 1.obs;
+
   final propertyLocationController = TextEditingController();
   final apartmentSuiteController = TextEditingController();
   final rentAmountController = TextEditingController();
@@ -41,6 +46,7 @@ class RentAddNewListingController extends BaseController {
   final draftUnitRentController = TextEditingController();
   final draftUnitDescriptionController = TextEditingController();
   final draftUnitRentFrequency = 'Per Month'.obs;
+  final draftUnitFloor = PropertyUnitFloor.defaultIndex.obs;
 
   /// True after a local property is loaded for editing (route param `propertyRef`).
   final isEditing = false.obs;
@@ -64,6 +70,7 @@ class RentAddNewListingController extends BaseController {
         draftUnitDescriptionController.clear();
         draftUnitRentFrequency.value =
             _coerceOption(rentFrequency.value, rentFrequencyOptions);
+        draftUnitFloor.value = PropertyUnitFloor.defaultIndex;
       }
     }
   }
@@ -85,6 +92,7 @@ class RentAddNewListingController extends BaseController {
             unitRent: u.unitRent,
             unitRentFrequency:
                 _coerceOption(u.unitRentFrequency, rentFrequencyOptions),
+            unitFloor: u.unitFloor,
             unitDescription: u.unitDescription,
           ),
         );
@@ -110,6 +118,7 @@ class RentAddNewListingController extends BaseController {
         unitRent: rent,
         unitRentFrequency:
             _coerceOption(draftUnitRentFrequency.value, rentFrequencyOptions),
+        unitFloor: draftUnitFloor.value,
         unitDescription: draftUnitDescriptionController.text.trim(),
       ),
     );
@@ -118,6 +127,13 @@ class RentAddNewListingController extends BaseController {
     draftUnitDescriptionController.clear();
     draftUnitRentFrequency.value =
         _coerceOption(rentFrequency.value, rentFrequencyOptions);
+    draftUnitFloor.value = PropertyUnitFloor.defaultIndex;
+  }
+
+  void updateDraftUnitFloor(int? value) {
+    if (value != null && PropertyUnitFloor.indices.contains(value)) {
+      draftUnitFloor.value = value;
+    }
   }
 
   void removeApartmentUnit(int index) {
@@ -159,6 +175,14 @@ class RentAddNewListingController extends BaseController {
     }
   }
 
+  void incrementFloorCount() {
+    if (floorCount.value < maxFloorCount) floorCount.value++;
+  }
+
+  void decrementFloorCount() {
+    if (floorCount.value > minFloorCount) floorCount.value--;
+  }
+
   String _coerceOption(String raw, List<String> options) {
     final v = raw.trim();
     if (options.contains(v)) return v;
@@ -186,6 +210,7 @@ class RentAddNewListingController extends BaseController {
       rentFrequency.value = _coerceOption(row.rentFrequency, rentFrequencyOptions);
       minRentalDuration.value = _coerceOption(row.minRentalDuration, minRentalDurationOptions);
       rentAmountController.text = row.rentAmount;
+      floorCount.value = row.floorCount.clamp(minFloorCount, maxFloorCount);
       draftUnitRentFrequency.value =
           _coerceOption(rentFrequency.value, rentFrequencyOptions);
       apartmentUnits.clear();
@@ -207,6 +232,7 @@ class RentAddNewListingController extends BaseController {
                       draft.unitRentFrequency,
                       rentFrequencyOptions,
                     ),
+                    unitFloor: draft.unitFloor,
                     unitDescription: draft.unitDescription,
                   ),
                 );
@@ -288,6 +314,7 @@ class RentAddNewListingController extends BaseController {
             rentFrequency: rentFrequency.value,
             minRentalDuration: minRentalDuration.value,
             unitsJson: unitsJson,
+            floorCount: floorCount.value,
           ),
         );
         await syncPropertyUnitsForListingSave(
@@ -325,6 +352,7 @@ class RentAddNewListingController extends BaseController {
             rentFrequency: rentFrequency.value,
             minRentalDuration: minRentalDuration.value,
             unitsJson: unitsJson,
+            floorCount: floorCount.value,
           ),
         );
         await syncPropertyUnitsForListingSave(

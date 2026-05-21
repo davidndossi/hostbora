@@ -158,7 +158,7 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
         u: u,
         iconBg: _UtilUi.forest,
         icon: Icons.bolt_rounded,
-        title: _isSw ? 'Vitengo vya LUKU' : 'LUKU Units',
+        title: 'LUKU Units',
         actionLabel: _isSw ? 'JAZA' : 'TOP UP',
         onAction: () => _openTopUpSheet(ctx, isLuku: true),
         value: controller.lukuUnits.value.toStringAsFixed(1),

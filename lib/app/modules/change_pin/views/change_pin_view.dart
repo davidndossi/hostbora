@@ -80,13 +80,15 @@ class ChangePinView extends BaseView<ChangePinController> {
           padding: const EdgeInsets.symmetric(horizontal: 35.0, vertical: 15.0),
           child: Obx(
             () => Text(
-              controller.pinStatus.value == PINStatus.enterFirst
-                  ? _t(context, en: 'Create PIN', sw: 'Tengeneza PIN')
-                  : _t(
-                      context,
-                      en: 'Re-enter your PIN',
-                      sw: 'Weka PIN yako tena',
-                    ),
+              controller.pinStatus.value == PINStatus.verifyCurrent
+                  ? appLocalization.enterCurrentPin
+                  : controller.pinStatus.value == PINStatus.enterFirst
+                      ? _t(context, en: 'Create PIN', sw: 'Tengeneza PIN')
+                      : _t(
+                          context,
+                          en: 'Re-enter your PIN',
+                          sw: 'Weka PIN yako tena',
+                        ),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w400,

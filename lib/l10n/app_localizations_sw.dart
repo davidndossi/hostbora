@@ -586,47 +586,94 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportIntro =>
-      'Unahitaji msaada wa majengo, kodi, wapangaji, au mapato? Hapa kuna majibu ya maswali yanayoulizwa mara kwa mara. Kwa mengine, tuma barua pepe.';
+      'Majibu kuhusu Host Bora (Paa Yangu)—BnB na Rent, uhifadhi, malipo, usawazishaji wa kalenda, usalama na zaidi. Kwa mengine, wasiliana nasi hapa chini.';
 
   @override
   String get supportTipsHeading => 'Vidokezo muhimu';
 
   @override
   String get supportTipsBody =>
-      '• Buruta chini kwenye skrini ya mali ili kusasisha idadi baada ya kuongeza mapato au mpangaji.\n• Mapato na gharama unazohifadhi bila mtandao zinabaki kwenye simu hii hadi ufute data au kusawazisha pale bidhaa inapoungwa mtandaoni.\n• Tumia Mipangilio → Futa data ya nje ya mtandao tu ukiwa na nia ya kuondoa rekodi za kodi kwenye simu hii.\n• Nambari ikionekana si sahihi, hakikisha mapato yana tarehe ya mwezi huu na yameunganishwa na mali sahihi.';
+      '• Badilisha BnB na Rent kutoka skrini ya nyumbani; buruta chini kwenye mali kusasisha idadi na mapato.\n• Rekodi malipo kwa mali na chumba sahihi; hakikisha tarehe ziko katika mwezi huu kwa dashibodi.\n• Unganisha kalenda za nje kwa kila mali kupunguza uhifadhi mara mbili.\n• Tumia Mipangilio → Futa data ya nje ya mtandao tu ukiwa na nia ya kuondoa rekodi za kodi kwenye simu hii.';
 
   @override
   String get supportFaqHeading => 'Maswali ya kawaida';
 
   @override
-  String get supportFaq1Q => 'Kwa nini mapato ya mwezi hayasasishwi?';
+  String get supportFaq1Q => 'Tofauti kati ya BnB na Rent ni ipi?';
 
   @override
   String get supportFaq1A =>
-      'Maelezo ya mali hukusanya mapato ya mwezi wa kalenda unaofanana na mali hiyo. Ongeza mapato kwa mali sahihi (na chumba, kama kuna), hifadhi, kisha rudi kwenye mali na buruta kusasisha.';
+      'Host Bora ina nafasi mbili za kazi. BnB ni kwa makao mafupi: orodha, uhifadhi, kalenda ya mwenyeji, usawazishaji wa kalenda, na malipo ya wageni. Rent ni kwa muda mrefu: wapangaji, mikataba, malipo ya kodi, vikumbusho, wafanyakazi, na matumizi mahiri. Badilisha kutoka skrini ya nyumbani—mali, gharama, na Property Vault vinashirikiwa.';
 
   @override
-  String get supportFaq2Q =>
-      'Nimeongeza mpangaji lakini haonekani kwenye mali.';
+  String get supportFaq2Q => 'Ninawezaje kurekodi malipo ya mgeni au mpangaji?';
 
   @override
   String get supportFaq2A =>
-      'Fungua mali tena au buruta kusasisha. Wapangaji wanahifadhiwa kwenye simu kwanza; hakikisha ulichagua mali na chumba sahihi unapohifadhi.';
+      'Katika BnB, fungua uhifadhi au tumia Rekodi malipo kutoka kitovu cha mwenyeji. Katika Rent, tumia Simamia malipo kwa mpangaji au mali. Weka kiasi, tarehe, na njia; malipo huunganishwa na mali (na chumba). Buruta kusasisha kwenye mali ikiwa jumla ya mwezi haionekani sahihi.';
 
   @override
-  String get supportFaq3Q =>
-      'Nifanyeje ikiwa aplikesheni inaonyesha hitilafu ya hifadhidata?';
+  String get supportFaq3Q => 'Ninawezaje kusimamia uhifadhi wa BnB?';
 
   @override
   String get supportFaq3A =>
-      'Sasisha toleo jipya kutoka dukani. Ikiendelea, tumia Mipangilio → futa data ya nje ya mtandao tu baada ya kuelewa inaondoa data ya kodi ya ndani, au wasiliana na msaada ukitaja aina ya simu na toleo la aplikesheni.';
+      'Tumia Kalenda ya mwenyeji na Uhifadhi wote kwa makao yanayokuja. Fungua uhifadhi kwa maelezo ya mgeni, kuingia na kutoka, kusasisha hali, na checkout. Wageni wa leo wanaonekana kwenye dashibodi ya BnB. Mabadiliko husawazishwa ukiwa mtandaoni.';
 
   @override
-  String get supportFaq4Q => 'Ninabadilishaje lugha au mandhari?';
+  String get supportFaq4Q => 'Usawazishaji wa kalenda unafanyaje kazi?';
 
   @override
   String get supportFaq4A =>
-      'Tumia alama ya dunia na jua/mwezi kwenye skrini nyingi, au fungua Mipangilio kubadilisha lugha na muonekano.';
+      'Kutoka kwenye mali, fungua Usawazishaji wa kalenda. Bandika URL ya .ics kutoka Airbnb (au nyingine) kuvuta uhifadhi wa nje. Unda kiungo cha kuhamisha na kiongeze Airbnb kuzuia tarehe Host Bora tayari imehifadhi. Kalenda zilizounganishwa zinaonekana chini ya usajili wa mali hiyo.';
+
+  @override
+  String get supportFaq5Q => 'PIN, Face ID, na usalama vinafanyaje kazi?';
+
+  @override
+  String get supportFaq5A =>
+      'Baada ya kuingia mara ya kwanza unaweza kuweka PIN ya tarakimu 4 chini ya Usalama. Tumia PIN kuingia haraka; wezesha Face ID au Touch ID baada ya PIN. Badilisha PIN wakati wowote kutoka Mipangilio. Ufikiaji mahiri na kumbukumbu za kuingia zinahitaji kufuli inayooana (mf. Tuya).';
+
+  @override
+  String get supportFaq6Q => 'Naweza kutumia Host Bora bila mtandao?';
+
+  @override
+  String get supportFaq6A =>
+      'Ndiyo. Mali, rekodi za kodi, uhifadhi uliofungua, hati za vault, na mapato au gharama unazohifadhi zinabaki kwenye simu na husawazishwa unaporudi mtandaoni. Epuka Mipangilio → Futa data ya nje ya mtandao isipokuwa una nia ya kuondoa rekodi za kodi za ndani.';
+
+  @override
+  String get supportFaq7Q => 'Ninawezaje kutuma SMS au WhatsApp?';
+
+  @override
+  String get supportFaq7A =>
+      'Fungua Tuma SMS kutoka menyu, weka nambari au chagua kutoka anwani, kisha andika ujumbe. Usajili wa SMS/WhatsApp unaweza kuhitajika kwa baadhi ya huduma—fungua Usajili katika mipangilio kuangalia hali na kufanya upya.';
+
+  @override
+  String get supportFaq8Q => 'Property Vault ni nini?';
+
+  @override
+  String get supportFaq8A =>
+      'Property Vault huhifadhi skani na hati kwa kila mali—mikataba, vitambulisho, risiti, na folda unazounda. Skani kutoka Kichanganuzi cha hati au pakia faili, kisha panga katika folda za vault. Zilizofunguliwa hivi karibuni zinaorodheshwa kwa ufikiaji wa haraka. Hati zinabaki kwenye simu na kusawazishwa mtandaoni.';
+
+  @override
+  String get supportFaq9Q => 'Vikumbusho vya kodi na mkataba vinafanyaje kazi?';
+
+  @override
+  String get supportFaq9A =>
+      'Katika Rent, weka kiolezo cha kikumbusho cha mpangaji katika Mipangilio kwa arifa za WhatsApp moja kwa moja mkataba unapoisha. Tumia Endesha kikumbusho cha mkataba sasa kwa ukaguzi wa mwezi mmoja kwa mkono. Hifadhi nambari ya simu ya mpangaji kwenye wasifu wake.';
+
+  @override
+  String get supportFaq10Q => 'Usajili wa SMS/WhatsApp ni nini?';
+
+  @override
+  String get supportFaq10A =>
+      'Usajili unafungua huduma za SMS na WhatsApp kwa siku 30. Lipa kupitia kidokezo cha pesa za simu ndani ya aplikesheni. Baada ya malipo, hali husasishwa kiotomatiki. Fanya upya kabla ya kuisha; ujumbe unaweza kupunguzwa usajili ukiisha.';
+
+  @override
+  String get supportFaq11Q => 'Ninawezaje kuwasiliana na msaada?';
+
+  @override
+  String get supportFaq11A =>
+      'Tumia Tuma barua pepe kwa msaada au Piga gumzo WhatsApp kwenye skrini hii. Jumuisha aina ya simu, toleo la aplikesheni, na ulichokuwa ukifanya. Kwa faragha tuma barua pepe privacy@hostbora.co.tz. Tunakusudia kujibu ndani ya siku moja ya kazi.';
 
   @override
   String get supportContactHeading => 'Wasiliana nasi';
@@ -646,13 +693,92 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportLegalBody =>
-      'Matumizi ya Paa Yangu pia yanategemea Masharti ya Matumizi na Sera ya Faragha.';
+      'Matumizi ya Host Bora pia yanategemea Masharti ya Matumizi na Sera ya Faragha.';
 
   @override
   String get supportOpenTerms => 'Masharti ya Matumizi';
 
   @override
   String get supportOpenPrivacy => 'Sera ya Faragha';
+
+  @override
+  String get supportFeedbackBody =>
+      'Tuambie kinachofanya kazi vizuri au tunachopaswa kuboresha. Ujumbe wako unafungua katika programu ya barua pepe pamoja na maelezo tunayohitaji.';
+
+  @override
+  String get sendFeedback => 'Tuma maoni';
+
+  @override
+  String get sendFeedbackIntro =>
+      'Shiriki mawazo, ripoti tatizo, au pendekeza uboreshaji. Tunasoma kila ujumbe.';
+
+  @override
+  String get feedbackCategoryLabel => 'Aina';
+
+  @override
+  String get feedbackCategoryOptional => 'Si lazima';
+
+  @override
+  String get feedbackCategoryHint => 'Chagua aina';
+
+  @override
+  String get feedbackCategoryNone => 'Haijabainishwa';
+
+  @override
+  String get feedbackCategoryGeneral => 'Jumla';
+
+  @override
+  String get feedbackCategoryBug => 'Hitilafu au tatizo';
+
+  @override
+  String get feedbackCategoryFeature => 'Wazo la kipengele';
+
+  @override
+  String get feedbackCategoryOther => 'Nyingine';
+
+  @override
+  String get feedbackMessageLabel => 'Ujumbe wako';
+
+  @override
+  String get feedbackMessageHint => 'Eleza maoni yako kwa sentensi chache…';
+
+  @override
+  String get feedbackMessageRequired => 'Tafadhali andika maoni yako.';
+
+  @override
+  String get feedbackEmailLabel => 'Barua pepe yako';
+
+  @override
+  String get feedbackEmailOptional =>
+      'Si lazima — ili tuweze kujibu ikihitajika';
+
+  @override
+  String get feedbackEmailHint => 'wewe@mfano.com';
+
+  @override
+  String get feedbackInvalidEmail => 'Weka anwani halali ya barua pepe.';
+
+  @override
+  String get feedbackSubmitButton => 'Tuma maoni';
+
+  @override
+  String get feedbackThankYou =>
+      'Asante! Maoni yako yametumwa au yamehifadhiwa kwa timu yetu.';
+
+  @override
+  String get feedbackSubmitFailed => 'Imeshindikana kutuma maoni. Jaribu tena.';
+
+  @override
+  String get settingsContactUsDescription =>
+      'Tuma barua pepe au piga gumzo na timu ya msaada.';
+
+  @override
+  String get settingsSendFeedbackDescription =>
+      'Shiriki mawazo au ripoti tatizo.';
+
+  @override
+  String get settingsSupportDescription =>
+      'Vidokezo, maswali, wasiliana nasi, na maoni.';
 
   @override
   String get nearby => 'Karibu';
@@ -842,6 +968,36 @@ class AppLocalizationsSw extends AppLocalizations {
   String get sendSmsWhatsapp => 'Tuma SMS au whatsapp';
 
   @override
+  String get sendSmsPickFromContacts => 'Chagua kutoka kwa simu';
+
+  @override
+  String get sendSmsSelectContactRecipients =>
+      'Chagua wapokeaji kutoka kwa simu';
+
+  @override
+  String get sendSmsPickContactsHint =>
+      'Chagua mwasiliani mmoja au zaidi kuongeza namba zao.';
+
+  @override
+  String get sendSmsSearchContacts => 'Tafuta mawasiliano';
+
+  @override
+  String get sendSmsNoContactsWithPhones =>
+      'Hakuna mawasiliano yenye namba sahihi za simu.';
+
+  @override
+  String get sendSmsAddSelectedContactNumbers => 'Ongeza namba zilizochaguliwa';
+
+  @override
+  String get sendSmsContactsPermissionDenied =>
+      'Ruhusa ya mawasiliano inahitajika kuchagua namba za simu.';
+
+  @override
+  String sendSmsContactsSelectedCount(int count) {
+    return '$count wamechaguliwa';
+  }
+
+  @override
   String get updates => 'Sasisho';
 
   @override
@@ -892,6 +1048,15 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get activeProperty => 'MALI HAI';
+
+  @override
+  String get calendarActiveUnit => 'CHUMBA HAI';
+
+  @override
+  String get calendarBooked => 'Imekodishwa';
+
+  @override
+  String get calendarPaidStay => 'Imelipwa';
 
   @override
   String get aiOptimized => 'ILIYOBORESHWA KWA AKILI BANDIA';
@@ -991,6 +1156,39 @@ class AppLocalizationsSw extends AppLocalizations {
   String get vaultSynced => 'Hifadhi Imesawazishwa';
 
   @override
+  String get vaultSyncedDescription => 'Nyaraka zote zimesimbwa na zinalindwa.';
+
+  @override
+  String get searchVaultDocuments => 'Tafuta nyaraka za vault...';
+
+  @override
+  String get noRecentDocuments => 'Hakuna nyaraka ulizofungua hivi karibuni';
+
+  @override
+  String get noVaultDirectories => 'Hakuna saraka zinazolingana na utafutaji';
+
+  @override
+  String get vaultLoadError =>
+      'Imeshindwa kupakia vault. Angalia muunganisho na ujaribu tena.';
+
+  @override
+  String get noDocuments => 'Hakuna nyaraka';
+
+  @override
+  String get vaultNoItems => 'Hakuna vitu';
+
+  @override
+  String get vaultOneItem => 'kipengele 1';
+
+  @override
+  String vaultItemsCount(Object count) {
+    return 'vitu $count';
+  }
+
+  @override
+  String get vaultModified => 'Imebadilishwa';
+
+  @override
   String get taxRecords => 'Kumbukumbu za Kodi';
 
   @override
@@ -1045,6 +1243,27 @@ class AppLocalizationsSw extends AppLocalizations {
   String get enabled => 'Imewezeshwa';
 
   @override
+  String get notConfigured => 'Haijasanidiwa';
+
+  @override
+  String get twoFactorNotConfiguredMessage =>
+      'Uthibitishaji wa mambo mawili bado haujasanidiwa.';
+
+  @override
+  String get noRemoteDeviceApi =>
+      'Usimamizi wa vifaa kwa mbali haupatikani bado. Unaweza kutoka kwenye kifaa hiki kutoka Mipangilio.';
+
+  @override
+  String get signOutThisDeviceTitle => 'Toka kwenye kifaa hiki';
+
+  @override
+  String get signOutThisDeviceMessage =>
+      'Kutoka kwa vifaa vingine kwa mbali bado haupatikani. Unaweza kutoka kwenye kifaa hiki, jambo litakaloondoa kipindi chako kwenye simu hii.';
+
+  @override
+  String get enterCurrentPin => 'Weka PIN ya sasa';
+
+  @override
   String get deviceManagement => 'USIMAMIZI WA VIFAA';
 
   @override
@@ -1079,6 +1298,13 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get refineScan => 'Boresha Scan';
+
+  @override
+  String get refineScanNoImage =>
+      'Hakuna picha iliyopakiwa. Piga picha au ingiza ili kuendelea.';
+
+  @override
+  String get vaultDocumentSaved => 'Hati imehifadhiwa kwenye vault';
 
   @override
   String get contract => 'MAKUBALIANO';
@@ -1165,6 +1391,54 @@ class AppLocalizationsSw extends AppLocalizations {
   String get modifyBooking => 'Badilisha Kuweka Nafasi';
 
   @override
+  String get checkOutGuest => 'Mtoe mgeni';
+
+  @override
+  String get checkOutGuestTitle => 'Mtoe mgeni?';
+
+  @override
+  String get checkOutGuestMessage =>
+      'Weka uhifadhi huu kuwa umekamilika. Mgeni atatolewa.';
+
+  @override
+  String get guestCheckedOut => 'Mgeni ametolewa kwa mafanikio.';
+
+  @override
+  String get extendStayTitle => 'Ongeza siku za kukaa';
+
+  @override
+  String get extendStayDays => 'Usiku wa ziada';
+
+  @override
+  String get extendStayConfirm => 'Sasisha tarehe ya kuondoka';
+
+  @override
+  String get stayExtended =>
+      'Kukaa kumeongezwa. Tarehe ya kuondoka imesasishwa.';
+
+  @override
+  String get newCheckOutDate => 'Tarehe mpya ya kuondoka';
+
+  @override
+  String get bookingCheckedOut => 'Ametolewa';
+
+  @override
+  String get cancelBooking => 'Ghairi uhifadhi';
+
+  @override
+  String get cancelBookingTitle => 'Ghairi uhifadhi?';
+
+  @override
+  String get cancelBookingMessage =>
+      'Uhifadhi huu utaghairiwa. Mgeni hataarajiwa tena.';
+
+  @override
+  String get bookingCancelledSuccess => 'Uhifadhi umeghairiwa.';
+
+  @override
+  String get bookingCancelledLabel => 'Imeghairiwa';
+
+  @override
   String get transaction => 'SHUGHULI';
 
   @override
@@ -1178,6 +1452,19 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get linkedBooking => 'Kuweka Nafasi Kuhusiana';
+
+  @override
+  String get linkedBookingOptional => 'UHIFADHI (HIARI)';
+
+  @override
+  String get chooseBooking => 'Chagua uhifadhi';
+
+  @override
+  String get optionalNoBooking => 'Hiari — hakuna uhifadhi';
+
+  @override
+  String get noActiveBookingsForProperty =>
+      'Hakuna uhifadhi unaotumika kwa mjengo huu';
 
   @override
   String get paymentDate => 'Tarehe ya Malipo';
@@ -1327,10 +1614,26 @@ class AppLocalizationsSw extends AppLocalizations {
   String get help => 'MSAADA';
 
   @override
-  String get paaYangu => 'Paa Yangu';
+  String get paaYangu => 'Host Bora';
 
   @override
   String get version => 'Toleo';
+
+  @override
+  String get aboutIntro =>
+      'HostBora inawasaidia wenye nyumba na wamiliki wa mali kuendesha makazi ya muda mfupi na kodi za muda mrefu katika programu moja. Badilisha kati ya sehemu za BnB na Rent wakati wowote.';
+
+  @override
+  String get aboutBnbFeatures =>
+      'Sehemu ya BnB: simamia orodha na vyumba, fuatilia uhifadhi na wageni wanaochelewa leo, tumia kalenda ya mwenyeji, landanisha kalenda za nje, rekodi malipo ya wageni, na angalia ripoti.';
+
+  @override
+  String get aboutRentFeatures =>
+      'Sehemu ya Rent: fuatilia wapangaji na mikataba, simamia malipo ya kodi na vikumbusho, fuatilia gharama na utendaji wa kila mwezi, simamia wafanyakazi, na angalia matumizi ya huduma mahiri pale yalipowekwa.';
+
+  @override
+  String get aboutSharedFeatures =>
+      'Katika sehemu zote mbili: ongeza mali na gharama, tuma ujumbe kwa wageni au wapangaji, hifadhi nyaraka katika hifadhi ya mali, na endelea kwa data salama kwenye simu hata bila mtandao.';
 
   @override
   String get tryAgain => 'Jaribu Tena';
@@ -1574,4 +1877,629 @@ class AppLocalizationsSw extends AppLocalizations {
   @override
   String get rentUtilityUsageGraphFootnoteWater =>
       'Thamani ni lita zilizoongezwa kwa siku kutoka ujazaji wa maji ulihifadhiwa.';
+
+  @override
+  String get unitFloorLabel => 'Ghorofa';
+
+  @override
+  String get unitFloorGround => 'Ghorofa ya Chini';
+
+  @override
+  String get unitFloorFirst => 'Ghorofa ya Kwanza';
+
+  @override
+  String get unitFloorSecond => 'Ghorofa ya Pili';
+
+  @override
+  String get unitFloorThird => 'Ghorofa ya Tatu';
+
+  @override
+  String get unitOccupancyTitle => 'Mapangilio ya vyumba';
+
+  @override
+  String get unitOccupancyLegendAvailable => 'Inapatikana';
+
+  @override
+  String get unitOccupancyLegendOccupied => 'Imechukuliwa';
+
+  @override
+  String get unitOccupancyLegendReserved => 'Imehifadhiwa';
+
+  @override
+  String get unitOccupancyLegendMaintenance => 'Matengenezo';
+
+  @override
+  String get unitOccupancyLegendCleaning => 'Usafi';
+
+  @override
+  String get unitOccupancyRefresh => 'Onyesha upya';
+
+  @override
+  String get unitOccupancyEmpty =>
+      'Hakuna vyumba vilivyopatikana kwa listing hii.';
+
+  @override
+  String unitOccupancyFloorLine(String floorTitle, int floorNumber) {
+    return '$floorTitle (Ghorofa $floorNumber)';
+  }
+
+  @override
+  String get propertyFloorCount => 'IDADI YA GHOROFA';
+
+  @override
+  String get propertyFloorCountHint => 'Jengo lina ghorofa ngapi?';
+
+  @override
+  String get dashboardGuests => 'Wageni';
+
+  @override
+  String get dashboardTodayRevenue => 'Mapato ya Leo';
+
+  @override
+  String get dashboardUnits => 'Vyumba';
+
+  @override
+  String get dashboardWeeklyRevenue => 'Mapato ya Wiki';
+
+  @override
+  String get dashboardWeeklyOccupancy => 'Ukodishaji wa Wiki';
+
+  @override
+  String get dashboardWeekTrend => 'JUM–JUMAPILI';
+
+  @override
+  String get reportsHubTitle => 'Ripoti';
+
+  @override
+  String get reportsTabOccupancy => 'Ukodishaji';
+
+  @override
+  String get reportsTabFinancial => 'Fedha';
+
+  @override
+  String get reportsTabExpenses => 'Gharama';
+
+  @override
+  String get reportsPeriodWeekly => 'Kila wiki';
+
+  @override
+  String get reportsPeriodMonthly => 'Kila mwezi';
+
+  @override
+  String get reportsPeriodYearly => 'Kila mwaka';
+
+  @override
+  String get reportsPeriodCustom => 'Maalum';
+
+  @override
+  String get reportsPickStartDate => 'Tarehe ya kuanza';
+
+  @override
+  String get reportsPickEndDate => 'Tarehe ya mwisho';
+
+  @override
+  String get reportsPropertyFilter => 'Mali';
+
+  @override
+  String get reportsPropertyAll => 'Mali zote';
+
+  @override
+  String get reportsOccupancyChartTitle => 'Ukodishaji (%)';
+
+  @override
+  String get reportsOccupancyFormulaNote =>
+      'Kila kipande: kukwama kwa [check-in, check-out) dhidi ya jumla ya vitengo vya BnB (sawa na dashibodi ya mwenyeji).';
+
+  @override
+  String get reportsRevenueSeries => 'Mapato';
+
+  @override
+  String get reportsExpenseSeries => 'Gharama';
+
+  @override
+  String get reportsNetSeries => 'Halisi';
+
+  @override
+  String get reportsRevenueOnlyHint =>
+      'Halisi inaonyeshwa ikiwa kuna gharama za BnB za kipindi hiki.';
+
+  @override
+  String get reportsExpenseCategoryChart => 'Gharama kwa aina';
+
+  @override
+  String get reportsExportPdf => 'PDF';
+
+  @override
+  String get reportsExportCsv => 'CSV';
+
+  @override
+  String get reportsExportExcel => 'Excel';
+
+  @override
+  String get reportsInvalidDateRange =>
+      'Tarehe ya kuanza lazima iwe kabla au sawa na tarehe ya mwisho.';
+
+  @override
+  String get reportsExportDone => 'Hamisho liko tayari kushiriki';
+
+  @override
+  String get reportsNoData => 'Hakuna data ya kipindi hiki.';
+
+  @override
+  String get homeCheckInGuestsToday => 'Wageni wa kuingia leo';
+
+  @override
+  String get homeCheckOutGuestsToday => 'Wageni wa kutoka leo';
+
+  @override
+  String get homeNoCheckInsToday => 'Hakuna wageni wanaokusudiwa kuingia leo.';
+
+  @override
+  String get homeNoCheckOutsToday => 'Hakuna wageni wanaokusudiwa kutoka leo.';
+
+  @override
+  String get calendarSyncTitle => 'Usawazishaji wa kalenda';
+
+  @override
+  String calendarSyncTitleForListing(String listingName) {
+    return 'Usawazishaji · $listingName';
+  }
+
+  @override
+  String get calendarSyncMissingListing =>
+      'Fungua ukurasa huu kutoka kwenye orodha ya mali ili kusimamia kalenda.';
+
+  @override
+  String get calendarSyncIntro =>
+      'Unganisha kalenda za Airbnb (au nyingine) kuepuka uhifadhi mara mbili. Leta uhifadhi wa nje; toa tarehe zilizozuiwa za HostBora.';
+
+  @override
+  String get calendarSyncImportSection => 'Leta kutoka Airbnb';
+
+  @override
+  String get calendarSyncImportUrlLabel => 'URL ya kalenda';
+
+  @override
+  String get calendarSyncImportUrlHint =>
+      'Bandika URL ya .ics kutoka mipangilio ya kalenda ya Airbnb';
+
+  @override
+  String get calendarSyncImportLabelOptional => 'Lebo (hiari)';
+
+  @override
+  String get calendarSyncSaveImport => 'Hifadhi kiungo cha kuleta';
+
+  @override
+  String get calendarSyncExportSection => 'Toa kwenda Airbnb';
+
+  @override
+  String get calendarSyncExportHint =>
+      'Unda kiungo cha kutoa na ukibandike Airbnb kama kalenda iliyoletwa.';
+
+  @override
+  String get calendarSyncCreateExport => 'Unda kiungo cha kutoa';
+
+  @override
+  String get calendarSyncSubscriptions => 'Kalenda zilizounganishwa';
+
+  @override
+  String get calendarSyncSyncNow => 'Sawazisha sasa';
+
+  @override
+  String get calendarSyncSyncFeed => 'Sawazisha';
+
+  @override
+  String get calendarSyncBlocksNote =>
+      'Vizuizi vilivyoleta vimehifadhiwa kwenye seva. Gridi ya kalenda ya mwenyeji bado inaonyesha uhifadhi wako hadi API ya vizuizi ipatikane.';
+
+  @override
+  String get calendarSyncNoSubscriptions => 'Hakuna viungo vya kalenda bado.';
+
+  @override
+  String get calendarSyncDirectionImport => 'Leta';
+
+  @override
+  String get calendarSyncDirectionExport => 'Toa';
+
+  @override
+  String get calendarSyncDisabled => 'Imezimwa';
+
+  @override
+  String get calendarSyncCopyUrl => 'Nakili URL';
+
+  @override
+  String get calendarSyncLastSync => 'Usawazishaji wa mwisho';
+
+  @override
+  String get calendarSyncRemove => 'Ondoa';
+
+  @override
+  String get calendarSyncOpenFromListing => 'Usawazishaji wa kalenda';
+
+  @override
+  String get calendarSyncOpenFromListingHint => 'Airbnb · kuleta na kutoa iCal';
+
+  @override
+  String get designMoodboardsTitle => 'Moodboard za ubunifu';
+
+  @override
+  String get designMoodboardsFilterAll => 'Bodi zote';
+
+  @override
+  String get designMoodboardsFilterAi => 'Dhana za AI';
+
+  @override
+  String get designMoodboardsFilterMaterials => 'Vifaa';
+
+  @override
+  String get designMoodboardsEmptyTitle => 'Hakuna moodboard bado';
+
+  @override
+  String get designMoodboardsEmptyBody =>
+      'Unda bodi kukusanya dhana za AI na vyanzo vya vifaa kwa mali zako.';
+
+  @override
+  String get designMoodboardsCreateBoard => 'Bodi mpya';
+
+  @override
+  String designMoodboardsSavedItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'vipengee $count vilivyohifadhiwa',
+      one: 'kipengee 1 kilichohifadhiwa',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get designMoodboardsLoadError => 'Imeshindwa kupakia moodboard.';
+
+  @override
+  String get designMoodboardRetry => 'Jaribu tena';
+
+  @override
+  String get designMoodboardOpenHomeDesigns => 'Fungua HomeDesigns.ai';
+
+  @override
+  String get designMoodboardApiNotConfigured =>
+      'Ongeza tokeni ya API ya HomeDesigns ili kutengeneza ndani ya programu, au fungua homedesigns.ai kwenye kivinjari.';
+
+  @override
+  String get designMoodboardApiGuide => 'Mwongozo wa API';
+
+  @override
+  String get designMoodboardCreateDialogTitle => 'Moodboard mpya';
+
+  @override
+  String get designMoodboardCreateDialogHint => 'Jina la bodi';
+
+  @override
+  String get designMoodboardDesignConcepts => 'Dhana za ubunifu';
+
+  @override
+  String get designMoodboardColorPalette => 'Paleti ya rangi';
+
+  @override
+  String get designMoodboardFurnitureTextures => 'Samani na michoro';
+
+  @override
+  String get designMoodboardGenerateMore => 'Tengeneza zaidi kama hizi';
+
+  @override
+  String get designMoodboardAddPhoto => 'Ongeza picha';
+
+  @override
+  String get designMoodboardPoweredBy => 'Inaendeshwa na HomeDesigns.ai';
+
+  @override
+  String get designMoodboardRename => 'Badili jina la moodboard';
+
+  @override
+  String get designMoodboardDelete => 'Futa moodboard';
+
+  @override
+  String get designMoodboardDeleteConfirm =>
+      'Futa moodboard hii na vipengee vyote vilivyohifadhiwa?';
+
+  @override
+  String get designMoodboardNotFound => 'Moodboard haikupatikana.';
+
+  @override
+  String get designMoodboardCreatedToday => 'Imeundwa leo';
+
+  @override
+  String designMoodboardCreatedDaysAgo(int days) {
+    return 'Imeundwa siku $days zilizopita';
+  }
+
+  @override
+  String designMoodboardSubtitle(int itemCount, String createdAgo) {
+    String _temp0 = intl.Intl.pluralLogic(
+      itemCount,
+      locale: localeName,
+      other: 'vipengee $itemCount',
+      one: 'kipengee 1',
+      zero: 'Hakuna vipengee',
+    );
+    return '$_temp0 · $createdAgo';
+  }
+
+  @override
+  String get designMoodboardNewConceptName => 'Picha iliyopakiwa';
+
+  @override
+  String designMoodboardAiConceptName(int index) {
+    return 'Dhana ya AI $index';
+  }
+
+  @override
+  String get designMoodboardNoOutputs =>
+      'Hakuna picha zilizorejeshwa kutoka HomeDesigns.';
+
+  @override
+  String designMoodboardGeneratedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'dhana $count',
+      one: 'dhana 1',
+    );
+    return 'Imeongeza $_temp0 kwenye bodi yako';
+  }
+
+  @override
+  String get designMoodboardGenerateFailed =>
+      'Utengenezaji umeshindwa. Angalia tokeni yako ya API ujaribu tena.';
+
+  @override
+  String get designMoodboardNeedSourcePhoto =>
+      'Ongeza picha ya ndani kwanza ili AI ibadilishe.';
+
+  @override
+  String get designMoodboardOpenHomeDesignsHint =>
+      'HomeDesigns.ai imefunguliwa — ingia ili kutumia zana kamili.';
+
+  @override
+  String get designMoodboardCannotOpenLink => 'Imeshindwa kufungua kiungo.';
+
+  @override
+  String get homeQuickActionMoodboards => 'Moodboard';
+
+  @override
+  String get homeQuickActionDesignStudio => 'Studio ya ubunifu';
+
+  @override
+  String get privacyLastUpdated => 'Imesasishwa mwisho: 21 Mei 2026';
+
+  @override
+  String get privacyIntro =>
+      'Sera hii ya Faragha inaeleza jinsi Host Bora (“sisi”) inavyokusanya, kutumia, kuhifadhi, na kushiriki taarifa unapotumia programu yetu ya simu na huduma zinazohusiana (“Huduma”). Kwa kutumia Huduma, unakubali sera hii. Usipokubali, tafadhali usitumie Huduma.';
+
+  @override
+  String get privacySwHint =>
+      'Kidokezo: Sera hii inaeleza jinsi Host Bora inavyoshughulikia taarifa zako. Kwa maswali, wasiliana nasi kwa barua pepe hapa chini.';
+
+  @override
+  String get privacySectionWhoWeAreTitle => 'Sisi ni nani';
+
+  @override
+  String get privacySectionWhoWeAreBody =>
+      'Host Bora ni programu ya usimamizi wa mali kwa wenyeji wa makazi ya muda mfupi na ukarimu. Sisi ndio mdhibiti wa data kwa taarifa binafsi zinazochakatwa kupitia Huduma, isipokuwa tukuambie vinginevyo kwa kipengele fulani.\n\nHuduma zetu zimeundwa kwa wenyeji nchini Tanzania na masoko yanayofanana. Pale sheria ya ndani inapotumika, tunalenga kuchakata taarifa kwa uwazi, haki, na kisheria.';
+
+  @override
+  String get privacySectionCollectTitle => 'Tunachokusanya';
+
+  @override
+  String get privacySectionCollectBody =>
+      'Kulingana na jinsi unavyotumia Host Bora, tunaweza kukusanya:\n\n• Akaunti na wasifu: jina, barua pepe, simu, data ya uthibitishaji, lugha na mipangilio ya arifa.\n• Mali na orodha: anwani, maelezo ya vyumba, picha, bei, vifaa, na maelezo.\n• Uhifadhi na wageni: tarehe, majina na mawasiliano, kuingia/kutoka, hali, na maelezo.\n• Malipo na fedha: kiasi, tarehe, njia, mapato na gharama (hatuhifadhi nambari kamili za kadi).\n• Nyaraka na hifadhi: skani, upakiaji, metadata, na lebo unazoweka.\n• Usawazishaji wa kalenda: URL, mipangilio, na data ya uhifadhi iliyoletwa.\n• Ufikiaji mahiri: vitambulisho vya vifaa, hali ya kufuli, kumbukumbu za kuingia, na vitambulisho unapounganisha kufuli (mf. Tuya).\n• Kamera na media: picha kwa orodha, skani, au moodboard unapotumia vipengele hivyo.\n• Matumizi na kiufundi: toleo la programu, aina ya kifaa, OS, eneo la takriban, IP, uchunguzi, na ripoti za hitilafu.\n• Mawasiliano: ujumbe wa msaada na maoni.\n\nUnawajibika kuwa na msingi wa kisheria wa kuingiza data ya wageni, wapangaji, wafanyakazi, au wahusika wengine.';
+
+  @override
+  String get privacySectionUseTitle => 'Jinsi tunavyotumia taarifa zako';
+
+  @override
+  String get privacySectionUseBody =>
+      'Tunatumia taarifa kutoa na kulinda Huduma, kusimamia mali, uhifadhi, malipo, kazi, na nyaraka, kusawazisha kalenda na miunganisho unayochagua, kuendesha vipengele vya ufikiaji mahiri unavyowasha, kutuma arifa za huduma kulingana na mipangilio yako, kujibu msaada, kuzuia ulaghai, kuboresha uaminifu kwa takwimu zilizojumlishwa au zisizotambulika, na kutii sheria.\n\nHatuuzi taarifa zako binafsi.';
+
+  @override
+  String get privacySectionLegalBasisTitle => 'Msingi wa kisheria na idhini';
+
+  @override
+  String get privacySectionLegalBasisBody =>
+      'Pale sheria inapohitaji, tunategemea:\n\n• Mkataba: uchakataji unaohitajika kutoa Huduma unazojisajili.\n• Maslahi halali: kuendesha, kulinda, na kuboresha Host Bora bila kupindua haki zako.\n• Idhini: uuzaji wa hiari, ruhusa za kifaa, au miunganisho ya wahusika wengine—unaweza kuondoa idhini katika mipangilio ya kifaa au programu.\n• Wajibu wa kisheria: pale tunapaswa kuhifadhi au kufichua taarifa kwa sheria au mamlaka halali.\n\nSera hii ni mwongozo wa vitendo kwa wenyeji; si ushauri wa kisheria.';
+
+  @override
+  String get privacySectionSharingTitle => 'Jinsi tunavyoshiriki taarifa';
+
+  @override
+  String get privacySectionSharingBody =>
+      'Tunashiriki taarifa tu inapohitajika:\n\n• Watoa huduma: hosting, hifadhi ya wingu, uthibitishaji, uchambuzi, ripoti za hitilafu, arifa, ramani, na malipo chini ya ulinzi wa kimkataba.\n• Miunganisho unayochagua: OTAs, watoa kalenda, kufuli mahiri, au zana za ubunifu—tu kinachohitajika, chini ya sera zao.\n• Watu unayoidhinisha: wafanyakazi, wenyeji washirika, au washirika unaowapa ufikiaji.\n• Sheria na usalama: inapohitajika kwa sheria au kulinda haki na usalama.\n• Uhamisho wa biashara: muungano, ununuzi, au uuzaji wa mali, chini ya usiri.\n\nHatushiriki picha za orodha, nyaraka, au orodha za wageni na watangazaji kwa uuzaji wao huru.';
+
+  @override
+  String get privacySectionStorageTitle => 'Uhifadhi na usalama';
+
+  @override
+  String get privacySectionStorageBody =>
+      'Host Bora inaendana na matumizi bila mtandao. Programu inaweza kuhifadhi data ndani ya kifaa chako (mali, uhifadhi, nyaraka zilizohifadhiwa) na kusawazisha kwenye seva zetu ukiwa mtandaoni ili data ipatikane kwenye vifaa vyote.\n\nTunatumia hatua za kiutawala, kiufundi, na shirika ikiwa ni pamoja na usimbaji wakati wa usafirishaji na udhibiti wa ufikiaji. Hakuna njia iliyo salama kabisa—linda kifaa chako na vitambulisho vya akaunti.';
+
+  @override
+  String get privacySectionRetentionTitle => 'Muda wa kuhifadhi taarifa';
+
+  @override
+  String get privacySectionRetentionBody =>
+      'Tunahifadhi taarifa binafsi wakati akaunti yako inatumika au inapohitajika kutoa Huduma, kutatua migogoro, kutekeleza makubaliano, na kutii sheria. Unaweza kufuta maudhui fulani pale programu inapotoa uwezo huo. Baada ya kufunga akaunti au ombi la kufuta, tunafuta au kutambulisha data ndani ya muda unaofaa, isipokuwa nakala za kisheria, usalama, au chelezo kwa muda mfupi.';
+
+  @override
+  String get privacySectionRightsTitle => 'Haki zako na chaguo';
+
+  @override
+  String get privacySectionRightsBody =>
+      'Kulingana na sheria, unaweza kuwa na haki ya kufikia, kusahihisha, kufuta, kupinga, au kuzuia uchakataji, kuondoa idhini, au kulalamikia mamlaka ya ulinzi wa data.\n\nSasisha maelezo mengi katika mipangilio ya programu, simamia ruhusa katika simu yako (baadhi ya vipengele vinaweza kutofanya kazi bila zao), au ondoa programu. Kutumia haki zako, wasiliana nasi hapa chini—tunaweza kuthibitisha utambulisho wako kwanza.';
+
+  @override
+  String get privacySectionChildrenTitle => 'Watoto';
+
+  @override
+  String get privacySectionChildrenBody =>
+      'Host Bora ni kwa wenyeji na watumiaji wa biashara, si watoto chini ya miaka 18. Hatukusanyi kwa makusudi taarifa za watoto. Ukiamini mtoto ametupa taarifa, wasiliana nasi na tutachukua hatua za kufuta.';
+
+  @override
+  String get privacySectionChangesTitle => 'Mabadiliko ya sera hii';
+
+  @override
+  String get privacySectionChangesBody =>
+      'Tunaweza kusasisha Sera hii ya Faragha na tutasasisha tarehe ya “Imesasishwa mwisho”. Mabadiliko makubwa yanaweza kutangazwa katika programu au kwa barua pepe inapofaa. Kuendelea kutumia baada ya mabadiliko kunamaanisha unakubali sera iliyosasishwa.';
+
+  @override
+  String get privacySectionContactTitle => 'Wasiliana nasi';
+
+  @override
+  String get privacySectionContactBody =>
+      'Kwa maswali ya faragha, ombi la kufikia au kufuta data, au wasiwasi kuhusu sera hii:\n\nFaragha: privacy@hostbora.co.tz\nMsaada: support@hostbora.co.tz';
+
+  @override
+  String get termsLastUpdated => 'Imesasishwa mwisho: 21 Mei 2026';
+
+  @override
+  String get termsIntro =>
+      'Masharti haya ya Huduma (“Masharti”) yanadhibiti ufikiaji na matumizi yako ya programu ya simu ya Host Bora na huduma zinazohusiana (“Huduma”) zinazoendeshwa na Host Bora (“sisi”). Kwa kuunda akaunti au kutumia Huduma, unakubali Masharti haya. Usipokubali, usitumie Huduma.';
+
+  @override
+  String get termsSwHint =>
+      'Kidokezo: Masharti haya yanaeleza haki na wajibu wako unapotumia Host Bora. Kwa maswali, wasiliana nasi kwa barua pepe hapa chini.';
+
+  @override
+  String get termsSectionAcceptanceTitle => 'Kukubali masharti';
+
+  @override
+  String get termsSectionAcceptanceBody =>
+      'Lazima uwe na angalau miaka 18 na uweze kuingia mkataba unaofungwa kutumia Host Bora. Ukitutumia kwa niaba ya biashara, unathibitisha una mamlaka ya kufunga biashara hiyo kwa Masharti haya.\n\nKuendelea kutumia Huduma baada ya mabadiliko kunamaanisha unakubali Masharti yaliyosasishwa, kwa kiwango kinachoruhusiwa na sheria.';
+
+  @override
+  String get termsSectionServiceTitle => 'Maelezo ya huduma';
+
+  @override
+  String get termsSectionServiceBody =>
+      'Host Bora ni jukwaa la usimamizi wa mali kwa wenyeji wa makazi ya muda mfupi, ukarimu, na makazi ya kawaida. Huduma zinaweza kujumuisha zana za kusimamia orodha na vyumba, uhifadhi na wageni, malipo na gharama, nyaraka na hifadhi, usawazishaji wa kalenda, ufikiaji wa wafanyakazi, kufuli mahiri na kumbukumbu za kuingia, moodboard za ubunifu, ripoti, na vipengele vingine tunavyotoa.\n\nTunaweza kuongeza, kubadilisha, au kuondoa vipengele. Baadhi vinategemea huduma, vifaa, au mitandao ya wahusika wengine; hatuhakikishi upatikanaji wa kudumu.';
+
+  @override
+  String get termsSectionAccountsTitle => 'Akaunti na usalama';
+
+  @override
+  String get termsSectionAccountsBody =>
+      'Unawajibika kwa taarifa sahihi za usajili na kulinda vitambulisho vya kuingia, PIN, na mipangilio ya biometriki. Tuarifu haraka ukishuku ufikiaji usioruhusiwa.\n\nUsishiriki akaunti kwa njia inayokiuka Masharti haya. Unawajibika kwa shughuli chini ya akaunti yako, ikiwa ni pamoja na wafanyakazi au washirika unaowaidhinisha. Tunaweza kusimamisha au kufunga akaunti zinazokiuka Masharti au kuwa hatari kwa usalama.';
+
+  @override
+  String get termsSectionAcceptableUseTitle => 'Matumizi yanayokubalika';
+
+  @override
+  String get termsSectionAcceptableUseBody =>
+      'Unakubali kutumia Host Bora kwa kisheria na kwa madhumuni halali ya usimamizi wa mali pekee. Usiruhusu:\n\n• Kupakia maudhui ya uongo, ya kupotosha, au yanayokiuka haki.\n• Kuudhi, kutishia, au kubagua wengine.\n• Kujaribu kuvunja usalama, kuchukua data bila ruhusa, au kuingilia Huduma.\n• Kutumia Huduma kwa upangishaji haramu, ulaghai, utapeli wa fedha, au shughuli zinazokiuka sheria za wageni, wapangaji, au ajira.\n• Kuweka data binafsi ya wageni, wapangaji, au wafanyakazi bila msingi wa kisheria na taarifa zinazofaa.\n\nUnabaki kuwajibika pekee kwa kutii sheria za ndani, kodi, leseni, na sheria za jumuiya au majukwaa kwa mali zako.';
+
+  @override
+  String get termsSectionPaymentsTitle => 'Malipo na usajili';
+
+  @override
+  String get termsSectionPaymentsBody =>
+      'Vipengele fulani vinaweza kuhitaji usajili wa kulipwa au ada zinazoonyeshwa katika programu au kwenye tovuti yetu. Bei, mzunguko wa malipo, na vipengele vinavyojumuishwa vinaweza kubadilika kwa taarifa inapohitajika.\n\nMalipo yanayochakatwa kupitia maduka ya programu au watoa malipo yanategemea masharti na sera za kurejeshea fedha zao. Rekodi za fedha unazoweka katika Host Bora ni kwa matumizi yako ya uendeshaji; hatutoi ushauri wa kodi, uhasibu, au kisheria. Unawajibika kwa usahihi wa kiasi unachorekodi na malipo kutoka kwa wahusika wengine (mf. OTAs, benki, watoa kufuli).';
+
+  @override
+  String get termsSectionDataPrivacyTitle => 'Data na faragha';
+
+  @override
+  String get termsSectionDataPrivacyBody =>
+      'Ukusanyaji na matumizi yetu ya taarifa binafsi yanaelezwa katika Sera yetu ya Faragha, ambayo imejumuishwa katika Masharti haya kwa marejeo. Kwa kutumia Huduma, unathibitisha pia una haki na taarifa zinazofaa kuchakata data ya wageni, wapangaji, wafanyakazi, na wahusika wengine unaoweka katika Host Bora.\n\nUnaweza kusoma Sera ya Faragha katika mipangilio ya programu au kuwasiliana privacy@hostbora.co.tz kwa maombi yanayohusiana na faragha.';
+
+  @override
+  String get termsSectionDisclaimersTitle => 'Kanusho';
+
+  @override
+  String get termsSectionDisclaimersBody =>
+      'Huduma zinatolewa “kama zilivyo” na “zinavyopatikana”. Kwa kiwango kinachoruhusiwa na sheria, tunakanusha dhamana za uuzaji, kufaa kwa madhumuni fulani, kutokiuka, na uendeshaji usio na hitilafu au usio katizwa.\n\nHost Bora ni zana ya kukusaidia kusimamia mali; hatuhakikishi viwango vya uhifadhi, mapato, tabia ya wageni, utangamano wa vifaa vya kufuli mahiri, au usahihi wa usawazishaji wa kalenda au miunganisho ya wahusika wengine. Unatumia miunganisho na vipengele vya ufikiaji mahiri kwa hatari yako mwenyewe na unapaswa kuwa na njia za dharura za kufungua.';
+
+  @override
+  String get termsSectionLiabilityTitle => 'Ukomo wa uwajibikaji';
+
+  @override
+  String get termsSectionLiabilityBody =>
+      'Kwa kiwango kinachoruhusiwa na sheria, Host Bora na washirika, maafisa, wafanyakazi, na watoa huduma wetu hawatawajibika kwa uharibifu wa moja kwa moja, wa bahati mbaya, maalum, wa matokeo, au wa adhabu, au kwa kupoteza faida, data, sifa, au uharibifu wa mali, kutokana na matumizi yako ya Huduma.\n\nUwajibikaji wetu wa jumla kwa dai lolote kuhusu Huduma umepunguzwa kwa kiasi kikubwa zaidi cha (a) kiasi ulicholipa kwa Huduma katika miezi kumi na miwili kabla ya dai, au (b) USD 100 (au sawa kwa shilingi za Tanzania), isipokuwa sheria hairuhusu ukomo huo. Hakuna katika Masharti haya kinachopunguza uwajibikaji kwa kifo au jeraha la mwili kutokana na uzembe, ulaghai, au uwajibikaji mwingine usioweza kuondolewa kwa sheria.';
+
+  @override
+  String get termsSectionGoverningLawTitle => 'Sheria inayotumika na migogoro';
+
+  @override
+  String get termsSectionGoverningLawBody =>
+      'Masharti haya yanatawaliwa na sheria za Jamhuri ya Muungano wa Tanzania, bila kuzingatia migogoro ya sheria, isipokuwa sheria ya lazima ya mlaji au ulinzi wa data katika nchi yako inahitaji vinginevyo.\n\nTunakuhimiza kuwasiliana support@hostbora.co.tz kwanza kutatua wasiwasi. Migogoro isiyotatuliwa kwa amani inaweza kuwasilishwa mahakamani zenye mamlaka nchini Tanzania, isipokuwa sheria inakupa haki ya kuleta kesi katika nchi yako.\n\nMasharti haya ni taarifa ya jumla kwa wenyeji; si ushauri wa kisheria. Fikiria mshauri wa ndani kwa kodi, upangaji, ukarimu, au wajibu wa ulinzi wa data.';
+
+  @override
+  String get termsSectionChangesTitle => 'Mabadiliko ya masharti haya';
+
+  @override
+  String get termsSectionChangesBody =>
+      'Tunaweza kusasisha Masharti haya na tutasasisha tarehe ya “Imesasishwa mwisho”. Mabadiliko makubwa yanaweza kutangazwa katika programu, kwa barua pepe, au kwenye tovuti yetu. Usipokubali Masharti yaliyosasishwa, lazima uache kutumia Huduma na unaweza kufunga akaunti yako.';
+
+  @override
+  String get termsSectionContactTitle => 'Wasiliana nasi';
+
+  @override
+  String get termsSectionContactBody =>
+      'Kwa maswali kuhusu Masharti haya au Huduma:\n\nMsaada: support@hostbora.co.tz\nFaragha: privacy@hostbora.co.tz';
+
+  @override
+  String get faceIdRequiresPinMessage =>
+      'Weka PIN ya tarakimu 4 kabla ya kuwasha Face ID au Touch ID.';
+
+  @override
+  String get faceIdNotAvailableMessage =>
+      'Biometria haipatikani kwenye kifaa hiki.';
+
+  @override
+  String get staffDetailPayLabel => 'Malipo';
+
+  @override
+  String get staffDetailNoTasks =>
+      'Hakuna kazi zilizopangiwa kwa mwanachama huyu bado.';
+
+  @override
+  String get staffDetailNoProperties =>
+      'Hakuna mali zilizounganishwa bado. Pangia wafanyakazi kutoka ukurasa wa maelezo ya orodha.';
+
+  @override
+  String get staffDetailAssignFromListing =>
+      'Pangia mali kutoka ukurasa wa maelezo ya orodha.';
+
+  @override
+  String get staffDetailConfirmRemoveTitle => 'Ondoa kwenye timu?';
+
+  @override
+  String staffDetailConfirmRemoveBody(String name) {
+    return 'Ondoa $name kwenye timu yako? Huwezi kurudisha.';
+  }
+
+  @override
+  String get staffDetailRemoveConfirm => 'Ondoa';
+
+  @override
+  String get staffDetailRemovedSuccess => 'Mwanachama wa timu ameondolewa.';
+
+  @override
+  String get staffDetailCannotRemove =>
+      'Imeshindwa kuondoa mwanachama wa timu.';
+
+  @override
+  String get staffDetailCannotOpenEmail =>
+      'Imeshindwa kufungua programu ya barua pepe.';
+
+  @override
+  String get staffDetailCannotOpenPhone =>
+      'Imeshindwa kufungua programu ya simu.';
+
+  @override
+  String get staffDetailTaskCompleted => 'Imekamilika';
+
+  @override
+  String get staffDetailTaskDue => 'Inastahili';
+
+  @override
+  String get staffDetailTaskPending => 'Inasubiri';
 }

@@ -1,75 +1,34 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/service/entry_logs_service.dart';
 import '../model/entry_log_item.dart';
 
 enum EntryLogFilter { all, appUnlocks, pinCodes }
 
 class EntryLogsController extends BaseController {
-  final selectedFilter = EntryLogFilter.all.obs;
-  final lastSynced = '2m ago'.obs;
-  final deviceName = 'Tuya Smart Lock';
-  final locationName = 'Front Door';
+  EntryLogsController({EntryLogsService? entryLogsService})
+      : _service = entryLogsService ?? EntryLogsService();
 
-  final _allItems = <EntryLogItem>[
-    EntryLogItem(
-      id: '1',
-      iconType: EntryLogIconType.phone,
-      title: 'Unlocked by John Smith',
-      detail: 'Mobile App • Host Access',
-      time: '10:30 AM',
-      status: EntryLogStatus.success,
-      date: DateTime.now(),
-      isAppUnlock: true,
-    ),
-    EntryLogItem(
-      id: '2',
-      iconType: EntryLogIconType.lock,
-      title: 'Auto-locked',
-      detail: 'System • Secure Mode',
-      time: '09:15 AM',
-      status: EntryLogStatus.completed,
-      date: DateTime.now(),
-    ),
-    EntryLogItem(
-      id: '3',
-      iconType: EntryLogIconType.key,
-      title: 'Manual Lock',
-      detail: 'Physical Key • Interior Thumbturn',
-      time: '08:45 AM',
-      status: EntryLogStatus.manual,
-      date: DateTime.now(),
-    ),
-    EntryLogItem(
-      id: '4',
-      iconType: EntryLogIconType.keypad,
-      title: 'Unlocked by Guest: Sarah W.',
-      detail: 'PIN Code • Checkout Access',
-      time: '11:02 AM',
-      status: EntryLogStatus.success,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      isPinCode: true,
-    ),
-    EntryLogItem(
-      id: '5',
-      iconType: EntryLogIconType.warning,
-      title: 'Failed Unlock Attempt',
-      detail: 'Wrong PIN • 3rd Attempt',
-      time: '10:58 AM',
-      status: EntryLogStatus.alert,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      isPinCode: true,
-    ),
-  ];
+  final EntryLogsService _service;
+
+  final selectedFilter = EntryLogFilter.all.obs;
+  final lastSynced = '—'.obs;
+  final deviceName = 'Smart Lock'.obs;
+  final locationName = ''.obs;
+  final allItems = <EntryLogItem>[].obs;
+  final isLoading = false.obs;
+  final loadError = ''.obs;
+  final fromCacheOnly = true.obs;
 
   List<EntryLogItem> get filteredItems {
     switch (selectedFilter.value) {
       case EntryLogFilter.all:
-        return _allItems;
+        return allItems.toList();
       case EntryLogFilter.appUnlocks:
-        return _allItems.where((e) => e.isAppUnlock).toList();
+        return allItems.where((e) => e.isAppUnlock).toList();
       case EntryLogFilter.pinCodes:
-        return _allItems.where((e) => e.isPinCode).toList();
+        return allItems.where((e) => e.isPinCode).toList();
     }
   }
 
@@ -90,7 +49,7 @@ class EntryLogsController extends BaseController {
     }
 
     for (final list in map.values) {
-      list.sort((a, b) => b.time.compareTo(a.time));
+      list.sort((a, b) => b.date.compareTo(a.date));
     }
 
     const order = ['TODAY', 'YESTERDAY'];
@@ -105,16 +64,52 @@ class EntryLogsController extends BaseController {
   }
 
   String _formatSectionDate(DateTime d) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadLogs();
+  }
+
+  Future<void> loadLogs({bool refresh = false}) async {
+    isLoading.value = true;
+    loadError.value = '';
+    try {
+      final result = await _service.load(refresh: refresh);
+      allItems.assignAll(result.items);
+      if (result.deviceName != null && result.deviceName!.isNotEmpty) {
+        deviceName.value = result.deviceName!;
+      }
+      locationName.value = result.locationName ?? '';
+      lastSynced.value = result.lastSyncedLabel ?? '—';
+      fromCacheOnly.value = result.fromCacheOnly;
+      if (result.errorMessage != null &&
+          result.errorMessage!.isNotEmpty &&
+          result.items.isEmpty) {
+        loadError.value = result.errorMessage!;
+      }
+    } catch (e) {
+      allItems.assignAll(_service.loadLocalItems());
+      loadError.value = '$e';
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void setFilter(EntryLogFilter filter) {
     selectedFilter.value = filter;
   }
 
-  void refresh() {
-    lastSynced.value = 'Just now';
-    Get.snackbar('Synced', 'Entry logs refreshed.');
+  Future<void> refresh() async {
+    await loadLogs(refresh: true);
+    if (loadError.value.isEmpty) {
+      Get.snackbar('Synced', 'Entry logs refreshed.');
+    }
   }
 }

@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/values/text_styles.dart';
+import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/change_password_request.dart';
+import '../../../network/exceptions/api_exception.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/model/otp_request.dart';
 import '../../../data/repository/app_repository.dart';
@@ -12,6 +14,8 @@ import '../../../routes/app_pages.dart';
 
 class ChangePasswordController extends BaseController {
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
+  final PreferenceManager _preferenceManager =
+      Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
 
   final TextEditingController currentPasswordController = TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
@@ -25,6 +29,7 @@ class ChangePasswordController extends BaseController {
   @override
   void onInit() {
     super.onInit();
+    _loadUsernameFromPrefs();
     if (Get.arguments != null) {
       if (Get.arguments['msisdn'] != null) {
         String msisdn = Get.arguments['msisdn'];
@@ -34,7 +39,17 @@ class ChangePasswordController extends BaseController {
         });
       }
     }
+  }
 
+  Future<void> _loadUsernameFromPrefs() async {
+    if (msisdn.value.isNotEmpty) return;
+    final saved = await _preferenceManager.getString(
+      PreferenceManager.keyUsername,
+      defaultValue: '',
+    );
+    if (saved.isNotEmpty) {
+      msisdn(saved);
+    }
   }
 
   @override
@@ -68,7 +83,15 @@ class ChangePasswordController extends BaseController {
     return null;
   }
 
-  void _handleQueryResponseError(Exception e) {}
+  void _handleQueryResponseError(Exception e) {
+    if (e is ApiException && e.message.isNotEmpty) {
+      showErrorMessage(e.message);
+      return;
+    }
+    showErrorMessage(
+      e.toString().replaceFirst('Exception: ', ''),
+    );
+  }
 
   void _handleChangePasswordResponseSuccess(GeneralResponse res) {
     if (res.responseCode == '0') {

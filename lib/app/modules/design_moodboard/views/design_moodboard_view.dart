@@ -3,164 +3,145 @@ import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_decorations.dart';
+import '../../../core/widget/custom_app_bar.dart';
+import '../../design_moodboards/widgets/moodboard_image.dart';
 import '../controllers/design_moodboard_controller.dart';
-
-/// Moodboard detail — cream background & spec teal accent (#0D6D6D).
-const Color _kTealAccent = Color(0xFF0D6D6D);
-const Color _kTitleNavy = Color(0xFF1B2838);
 
 class DesignMoodboardView extends BaseView<DesignMoodboardController> {
   DesignMoodboardView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
-
-  String _t(BuildContext context, {required String en, required String sw}) {
-    final code =
-        Get.locale?.languageCode ??
-        Localizations.localeOf(context).languageCode;
-    return code == 'sw' ? sw : en;
-  }
-
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => null;
+  PreferredSizeWidget? appBar(BuildContext context) {
+    return CustomAppBar(
+      appBarTitleText: controller.moodboardTitle.isNotEmpty
+          ? controller.moodboardTitle
+          : appLocalization.designMoodboardsTitle,
+      isCentered: false,
+    );
+  }
 
   @override
   Widget body(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
-    return Column(
-      children: [
-        Expanded(
-          child: SafeArea(
-            bottom: false,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _topBar(context),
-                  const SizedBox(height: 16),
-                  Text(
-                    controller.moodboardTitle,
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? theme.colorScheme.onSurface : _kTitleNavy,
-                      height: 1.1,
-                    ),
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark ? theme.colorScheme.surface : AppColors.pageBackground;
+
+    return ColoredBox(
+      color: bg,
+      child: Obx(() {
+        if (controller.loadFailed.value) {
+          return _errorBody(context);
+        }
+        if (controller.board.value == null) {
+          return _errorBody(context);
+        }
+        return Column(
+          children: [
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: controller.reloadBoard,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!controller.isHomeDesignsConfigured)
+                        _apiHint(context),
+                      Text(
+                        controller.subtitleLine,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _sectionTitle(
+                        context,
+                        appLocalization.designMoodboardDesignConcepts,
+                      ),
+                      const SizedBox(height: 12),
+                      _conceptsGrid(context),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: controller.addPhotoFromGallery,
+                        icon: const Icon(Icons.add_photo_alternate_outlined),
+                        label: Text(appLocalization.designMoodboardAddPhoto),
+                      ),
+                      const SizedBox(height: 20),
+                      _sectionTitle(
+                        context,
+                        appLocalization.designMoodboardColorPalette,
+                      ),
+                      const SizedBox(height: 12),
+                      _paletteCard(context),
+                      if (controller.textures.isNotEmpty) ...[
+                        const SizedBox(height: 24),
+                        _sectionTitle(
+                          context,
+                          appLocalization.designMoodboardFurnitureTextures,
+                        ),
+                        const SizedBox(height: 12),
+                        _texturesRow(context),
+                      ],
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    controller.subtitleLine,
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.3,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  _sectionTitle(
-                    context,
-                    _t(context, en: 'DESIGN CONCEPTS', sw: 'DHANA ZA UBUNIFU'),
-                  ),
-                  const SizedBox(height: 14),
-                  _conceptsGrid(),
-                  const SizedBox(height: 28),
-                  _sectionTitle(
-                    context,
-                    _t(context, en: 'COLOR PALETTE', sw: 'PALETI YA RANGI'),
-                  ),
-                  const SizedBox(height: 14),
-                  _paletteCard(context),
-                  const SizedBox(height: 28),
-                  _sectionTitle(
-                    context,
-                    _t(
-                      context,
-                      en: 'FURNITURE & TEXTURES',
-                      sw: 'SAMANI NA MICHORO',
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _texturesRow(),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
+            _bottomBar(context),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _apiHint(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: AppColors.colorPrimary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        child: ListTile(
+          dense: true,
+          leading: Icon(Icons.info_outline, color: AppColors.colorPrimary),
+          title: Text(
+            appLocalization.designMoodboardApiNotConfigured,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          trailing: TextButton(
+            onPressed: controller.openApiGuide,
+            child: Text(appLocalization.designMoodboardApiGuide),
           ),
         ),
-        _bottomCta(context),
-      ],
-    );
-  }
-
-  Widget _topBar(BuildContext context) {
-    return Row(
-      children: [
-        _roundIcon(context, Icons.arrow_back_ios_new_rounded, onTap: Get.back),
-        const Spacer(),
-        _roundIcon(
-          context,
-          Icons.share_outlined,
-          onTap: () async {
-            await Share.share(
-              '${controller.moodboardTitle} — ${controller.subtitleLine}',
-              subject: controller.moodboardTitle,
-            );
-          },
-        ),
-        const SizedBox(width: 10),
-        _roundIcon(
-          context,
-          Icons.more_vert,
-          onTap: () => _showMoreMenu(context),
-        ),
-      ],
-    );
-  }
-
-  void _showMoreMenu(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = _isDark(context);
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: isDark
-          ? theme.colorScheme.surfaceContainerHigh
-          : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (ctx) => SafeArea(
+    );
+  }
+
+  Widget _errorBody(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: Icon(
-                Icons.edit_outlined,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              title: Text(
-                _t(
-                  context,
-                  en: 'Rename moodboard',
-                  sw: 'Badili jina la moodboard',
-                ),
-                style: TextStyle(color: theme.colorScheme.onSurface),
-              ),
-              onTap: () => Navigator.pop(ctx),
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
             ),
-            ListTile(
-              leading: Icon(
-                Icons.delete_outline,
-                color: theme.colorScheme.error,
-              ),
-              title: Text(
-                _t(context, en: 'Delete', sw: 'Futa'),
-                style: TextStyle(color: theme.colorScheme.onSurface),
-              ),
-              onTap: () => Navigator.pop(ctx),
+            const SizedBox(height: 12),
+            Text(
+              appLocalization.designMoodboardsLoadError,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: controller.reloadBoard,
+              icon: const Icon(Icons.refresh),
+              label: Text(appLocalization.designMoodboardRetry),
             ),
           ],
         ),
@@ -168,163 +149,110 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
     );
   }
 
-  Widget _roundIcon(
-    BuildContext context,
-    IconData icon, {
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    final isDark = _isDark(context);
-    return Material(
-      color: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
-      elevation: 0,
-      shadowColor: Colors.transparent,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(
-            icon,
-            size: 20,
-            color: isDark ? theme.colorScheme.onSurface : _kTitleNavy,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _sectionTitle(BuildContext context, String text) {
-    final theme = Theme.of(context);
     return Text(
       text,
       style: TextStyle(
-        color: _isDark(context) ? theme.colorScheme.primary : _kTealAccent,
+        color: AppColors.colorPrimary,
         fontSize: 12,
-        letterSpacing: 1.6,
+        letterSpacing: 1.4,
         fontWeight: FontWeight.w700,
       ),
     );
   }
 
-  Widget _conceptsGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: controller.concepts.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.92,
-      ),
-      itemBuilder: (context, index) {
-        final item = controller.concepts[index];
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.asset(
-                item.image,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Theme.of(context).colorScheme.surfaceContainerHighest
-                      : const Color(0xFFE8E6E1),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.image_not_supported_outlined,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-              ),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.55),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              if (item.editable)
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Material(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    shape: const CircleBorder(),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {},
-                      customBorder: const CircleBorder(),
-                      child: const SizedBox(
-                        width: 36,
-                        height: 36,
-                        child: Icon(
-                          Icons.edit_outlined,
-                          size: 18,
-                          color: _kTitleNavy,
-                        ),
+  Widget _conceptsGrid(BuildContext context) {
+    return Obx(() {
+      final items = controller.concepts;
+      if (items.isEmpty) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: AppDecorations.card,
+          child: Text(
+            appLocalization.designMoodboardsEmptyBody,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        );
+      }
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: items.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.92,
+        ),
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                MoodboardImage(ref: item.image, fit: BoxFit.cover),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.55),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 12,
-                child: Text(
-                  item.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    height: 1.2,
-                    shadows: [Shadow(color: Colors.black45, blurRadius: 8)],
+                if (item.fromAi)
+                  const Positioned(
+                    top: 8,
+                    right: 8,
+                    child: _AiChip(),
+                  ),
+                Positioned(
+                  left: 10,
+                  right: 10,
+                  bottom: 10,
+                  child: Text(
+                    item.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+              ],
+            ),
+          );
+        },
+      );
+    });
   }
 
   Widget _paletteCard(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 18),
-      decoration: BoxDecoration(
-        color: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(
-          color: isDark
-              ? theme.colorScheme.outlineVariant
-              : const Color(0xFFE8E6E1),
-        ),
-      ),
-      child: Obx(() {
-        final selected = controller.selectedPaletteIndex.value;
-        return Row(
+    final isDark = theme.brightness == Brightness.dark;
+    return Obx(() {
+      final selected = controller.selectedPaletteIndex.value;
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        decoration: isDark
+            ? BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+              )
+            : AppDecorations.cardWithRadius(16),
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: List.generate(controller.palette.length, (i) {
             final sw = controller.palette[i];
@@ -334,139 +262,182 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
               child: InkWell(
                 onTap: () => controller.selectPalette(i),
                 borderRadius: BorderRadius.circular(24),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: fill,
-                          border: Border.all(
-                            color: isSel
-                                ? _kTealAccent
-                                : const Color(0xFFE0DDD8),
-                            width: isSel ? 3 : 1,
-                          ),
-                          boxShadow: isSel
-                              ? [
-                                  BoxShadow(
-                                    color: _kTealAccent.withValues(alpha: 0.35),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        sw.hex,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: fill,
+                        border: Border.all(
                           color: isSel
-                              ? (isDark
-                                    ? theme.colorScheme.primary
-                                    : _kTealAccent)
-                              : theme.colorScheme.onSurfaceVariant,
+                              ? AppColors.colorPrimary
+                              : AppColors.designInputBorder,
+                          width: isSel ? 3 : 1,
                         ),
                       ),
-                      if (sw.label != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          sw.label!,
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      sw.hex,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: isSel ? FontWeight.w800 : FontWeight.w500,
+                        color: isSel
+                            ? AppColors.colorPrimary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
           }),
-        );
-      }),
-    );
+        ),
+      );
+    });
   }
 
-  Widget _texturesRow() {
-    return SizedBox(
-      height: 176,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: controller.textures.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
-        itemBuilder: (context, index) => ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: SizedBox(
-            width: 140,
-            height: 140,
-            child: Image.asset(
-              controller.textures[index],
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Theme.of(context).colorScheme.surfaceContainerHighest
-                    : const Color(0xFFE8E6E1),
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  color: Colors.grey.shade500,
-                ),
+  Widget _texturesRow(BuildContext context) {
+    return Obx(() {
+      return SizedBox(
+        height: 140,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: controller.textures.length,
+          separatorBuilder: (context, index) => const SizedBox(width: 12),
+          itemBuilder: (context, index) => ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: 120,
+              child: MoodboardImage(
+                ref: controller.textures[index],
+                fit: BoxFit.cover,
               ),
             ),
           ),
+        ),
+      );
+    });
+  }
+
+  Widget _bottomBar(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Obx(() {
+              if (!controller.generating.value) return const SizedBox.shrink();
+              return const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: LinearProgressIndicator(),
+              );
+            }),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    await Share.share(
+                      '${controller.moodboardTitle} — ${controller.subtitleLine}',
+                      subject: controller.moodboardTitle,
+                    );
+                  },
+                  icon: const Icon(Icons.share_outlined),
+                ),
+                IconButton(
+                  onPressed: () => _showMoreMenu(context),
+                  icon: const Icon(Icons.more_vert),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Obx(
+                    () => FilledButton.icon(
+                      onPressed: controller.generating.value
+                          ? null
+                          : controller.generateMoreLikeThis,
+                      icon: controller.generating.value
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.auto_awesome, size: 20),
+                      label: Text(
+                        controller.isHomeDesignsConfigured
+                            ? appLocalization.designMoodboardGenerateMore
+                            : appLocalization.designMoodboardOpenHomeDesigns,
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.colorPrimary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              appLocalization.designMoodboardPoweredBy,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _bottomCta(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: controller.generateMoreLikeThis,
-            icon: const Icon(Icons.auto_awesome, size: 20, color: Colors.white),
-            label: Text(
-              _t(
-                context,
-                en: 'Generate More Like This',
-                sw: 'Tengeneza Mengine Yanayofanana',
-              ),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
-              ),
+  void _showMoreMenu(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: Text(appLocalization.designMoodboardRename),
+              onTap: () {
+                Navigator.pop(ctx);
+                controller.renameMoodboard();
+              },
             ),
-            style: FilledButton.styleFrom(
-              backgroundColor: _kTealAccent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-              ),
-              elevation: 2,
-              shadowColor: _kTealAccent.withValues(alpha: 0.4),
+            ListTile(
+              leading: const Icon(Icons.open_in_new),
+              title: Text(appLocalization.designMoodboardOpenHomeDesigns),
+              onTap: () {
+                Navigator.pop(ctx);
+                controller.openHomeDesignsWeb();
+              },
             ),
-          ),
+            ListTile(
+              leading: Icon(
+                Icons.delete_outline,
+                color: Theme.of(ctx).colorScheme.error,
+              ),
+              title: Text(appLocalization.designMoodboardDelete),
+              onTap: () {
+                Navigator.pop(ctx);
+                controller.deleteMoodboard();
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -475,5 +446,28 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
   Color _fromHex(String hex) {
     final value = hex.replaceAll('#', '');
     return Color(int.parse('FF$value', radix: 16));
+  }
+}
+
+class _AiChip extends StatelessWidget {
+  const _AiChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.colorPrimary.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text(
+        'AI',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }

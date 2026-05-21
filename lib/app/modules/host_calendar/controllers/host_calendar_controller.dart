@@ -1,12 +1,79 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/bnb_booking_merge.dart';
+import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
+import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
-import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../routes/app_pages.dart';
+import '../../add_listing/models/apartment_unit_draft.dart';
 import '../enum/day_type.dart';
+
+/// Calendar occupancy for one booking stay.
+class _BookingSpan {
+  const _BookingSpan({
+    required this.bookingKey,
+    required this.listingId,
+    required this.unitId,
+    required this.checkIn,
+    required this.checkOut,
+    required this.isCancelled,
+    required this.propertyLabel,
+  });
+
+  final String bookingKey;
+  final String listingId;
+  final String unitId;
+  final DateTime checkIn;
+  final DateTime? checkOut;
+  final bool isCancelled;
+  final String propertyLabel;
+}
+
+class HostCalendarPropertyOption {
+  const HostCalendarPropertyOption(this.record);
+
+  final PropertyRecord record;
+
+  int get localId => record.id;
+
+  String get hubRef {
+    final ref = record.propertyRef.trim();
+    return ref.isNotEmpty ? ref : 'legacy_${record.id}';
+  }
+
+  String get displayName {
+    final name = record.propertyName.trim();
+    if (name.isNotEmpty) return name;
+    return record.propertyLocation.trim();
+  }
+
+  bool get isApartment =>
+      record.propertyType.trim().toLowerCase() == 'apartment';
+
+  bool matchesListingId(String listingId) {
+    final id = listingId.trim();
+    if (id.isEmpty) return false;
+    return id == hubRef ||
+        id == 'local_${record.id}' ||
+        id == 'legacy_${record.id}';
+  }
+}
+
+class HostCalendarUnitOption {
+  const HostCalendarUnitOption({required this.key, required this.label});
+
+  final String key;
+  final String label;
+}
+
+enum HostCalendarDayBookingStatus { none, bookedUnpaid, bookedPaid }
 
 class HostCalendarController extends BaseController {
   static DateTime get _today {
@@ -17,36 +84,44 @@ class HostCalendarController extends BaseController {
   HostCalendarController()
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
+        _unitLocal = Get.find<PropertyUnitLocalDataSource>(),
+        _incomeLocal = Get.find<IncomeLocalDataSource>(),
         _preferenceManager =
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
-        _workspaceContext = Get.find<WorkspaceContextService>(),
-        _maintenanceLocal = Get.find<RentScheduledMaintenanceLocalDataSource>() {
+        _maintenanceLocal = Get.find<RentScheduledMaintenanceLocalDataSource>(),
+        _pendingBookingsStore = PendingBookingsStore() {
     selectedDate.value = _today;
     currentMonth.value = DateTime(_today.year, _today.month);
   }
 
   final AppRepository _repository;
   final PropertyLocalDataSource _propertyLocal;
+  final PropertyUnitLocalDataSource _unitLocal;
+  final IncomeLocalDataSource _incomeLocal;
   final PreferenceManager _preferenceManager;
-  final WorkspaceContextService _workspaceContext;
   final RentScheduledMaintenanceLocalDataSource _maintenanceLocal;
+  final PendingBookingsStore _pendingBookingsStore;
 
   final selectedDate = Rx<DateTime>(DateTime.now());
   final currentMonth = Rx<DateTime>(DateTime.now());
   final dynamicPricingOn = true.obs;
-  final selectedPropertyName = ''.obs;
 
-  /// Listing display names from local properties + remote listings (BnB workspace).
-  final properties = <String>[].obs;
+  final bnbProperties = <HostCalendarPropertyOption>[].obs;
+  final selectedPropertyLocalId = Rxn<int>();
+  final apartmentUnits = <HostCalendarUnitOption>[].obs;
+  final selectedUnitKey = ''.obs;
+
   final loading = false.obs;
-
-  /// Bumped after events are indexed so [Obx] widgets rebuild.
   final calendarRevision = 0.obs;
 
   final _eventsByDate = <String, List<CalendarEvent>>{}.obs;
-
-  /// Blocked dates (not available for booking), stored as 'yyyy-MM-dd'.
   final blockedDates = <String>[].obs;
+
+  final _bookedUnpaidDayKeys = <String>{}.obs;
+  final _bookedPaidDayKeys = <String>{}.obs;
+  final _paidBookingKeys = <String>{};
+
+  List<_BookingSpan> _bookingSpans = const [];
 
   @override
   void onReady() {
@@ -54,105 +129,351 @@ class HostCalendarController extends BaseController {
     loadCalendarData();
   }
 
-  /// Loads property names and indexes bookings plus scheduled maintenance by date.
+  HostCalendarPropertyOption? get selectedProperty {
+    final id = selectedPropertyLocalId.value;
+    if (id == null) return null;
+    for (final p in bnbProperties) {
+      if (p.localId == id) return p;
+    }
+    return null;
+  }
+
+  String get selectedPropertyName => selectedProperty?.displayName ?? '';
+
+  bool get showUnitSelector =>
+      selectedProperty?.isApartment == true && apartmentUnits.isNotEmpty;
+
   Future<void> loadCalendarData() async {
     loading.value = true;
     try {
-      final localNames = await _loadLocalPropertyNames();
-      final remoteNames = await _loadRemotePropertyNames();
-      final merged = <String>{
-        ...localNames.where((e) => e.isNotEmpty),
-        ...remoteNames.where((e) => e.isNotEmpty),
-      }.toList();
-      merged.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-      properties.assignAll(merged);
-      if (selectedPropertyName.value.isEmpty && properties.isNotEmpty) {
-        selectedPropertyName.value = properties.first;
-      }
-
-      final bookingEvents = await _loadRemoteBookingEvents();
+      await _loadBnbProperties();
+      await _loadBookingsAndIncome();
       final maintenanceEvents = await _loadLocalMaintenanceEvents();
+      final bookingEvents = _bookingSpansToCalendarEvents();
       _indexEvents([...bookingEvents, ...maintenanceEvents]);
+      _rebuildDayMarkers();
     } finally {
       loading.value = false;
       calendarRevision.value++;
     }
   }
 
-  Future<List<String>> _loadLocalPropertyNames() async {
+  Future<void> _loadBnbProperties() async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
-    final workspace = await _workspaceContext.getWorkspaceType();
     final rows = await _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
-      workspaceType: workspace,
+      workspaceType: 'bnb',
     );
-    return rows
-        .map((p) => p.propertyName.trim().isNotEmpty
-            ? p.propertyName.trim()
-            : p.propertyLocation.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-  }
+    final options = rows.map(HostCalendarPropertyOption.new).toList();
+    options.sort(
+      (a, b) => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+    );
+    bnbProperties.assignAll(options);
 
-  Future<List<String>> _loadRemotePropertyNames() async {
-    try {
-      final res = await _repository.getMyListings(status: null);
-      if (res.responseCode != '0' || res.data == null) return const [];
-      final list = _extractListFromResponse(res.data);
-      return list
-          .map((m) =>
-              (m['propertyName'] ?? m['title'] ?? m['name'])?.toString().trim() ?? '')
-          .where((e) => e.isNotEmpty)
-          .toList();
-    } catch (_) {
-      return const [];
+    if (bnbProperties.isEmpty) {
+      selectedPropertyLocalId.value = null;
+      apartmentUnits.clear();
+      selectedUnitKey.value = '';
+      return;
+    }
+
+    final current = selectedPropertyLocalId.value;
+    if (current == null ||
+        !bnbProperties.any((p) => p.localId == current)) {
+      await selectProperty(bnbProperties.first.localId);
+    } else {
+      await _loadUnitsForSelectedProperty();
     }
   }
 
-  Future<List<CalendarEvent>> _loadRemoteBookingEvents() async {
-    try {
-      final res = await _repository.getUpcomingBookings();
-      if (res.responseCode != '0' || res.data == null) return const [];
-      final raw = res.data!['bookings'];
-      if (raw is! List) return const [];
-      final out = <CalendarEvent>[];
-      for (final item in raw.whereType<Map<String, dynamic>>()) {
-        final guestName = (item['guestName'] ?? '').toString().trim();
-        final propertyName = (item['propertyType'] ?? item['propertyName'] ?? '')
-            .toString()
-            .trim();
-        final guests = (item['numberOfGuests'] as num?)?.toInt() ?? 1;
-        final checkIn = _tryDate((item['checkIn'] ?? '').toString());
-        final checkOut = _tryDate((item['checkOut'] ?? '').toString());
-        if (checkIn != null) {
-          out.add(CalendarEvent(
-            type: CalendarEventType.checkIn,
-            guestName: guestName.isEmpty ? 'Guest' : guestName,
-            time: '03:00 PM',
-            guests: guests,
-            subtitle: 'Digital key enabled',
-            subtitleHighlight: false,
-            propertyName: propertyName,
-            eventDate: checkIn,
-          ));
+  Future<void> selectProperty(int localId) async {
+    selectedPropertyLocalId.value = localId;
+    await _loadUnitsForSelectedProperty();
+    _rebuildDayMarkers();
+    calendarRevision.value++;
+  }
+
+  Future<void> _loadUnitsForSelectedProperty() async {
+    final prop = selectedProperty;
+    apartmentUnits.clear();
+    selectedUnitKey.value = '';
+    if (prop == null || !prop.isApartment) return;
+
+    final seen = <String>{};
+    final opts = <HostCalendarUnitOption>[];
+
+    void addUnit(String key, String label) {
+      final k = key.trim();
+      final name = label.trim();
+      if (k.isEmpty || name.isEmpty || seen.contains(k)) return;
+      seen.add(k);
+      opts.add(HostCalendarUnitOption(key: k, label: name));
+    }
+
+    final raw = prop.record.unitsJson.trim();
+    if (raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          for (final e in decoded) {
+            if (e is Map) {
+              final draft = ApartmentUnitDraft.fromJson(
+                Map<String, dynamic>.from(e),
+              );
+              addUnit(draft.selectionKey, draft.unitName);
+            }
+          }
         }
-        if (checkOut != null) {
-          out.add(CalendarEvent(
-            type: CalendarEventType.checkOut,
-            guestName: guestName.isEmpty ? 'Guest' : guestName,
-            time: '11:00 AM',
-            guests: guests,
-            subtitle: 'Check-out',
-            subtitleHighlight: false,
-            propertyName: propertyName,
-            eventDate: checkOut,
-          ));
+      } catch (_) {}
+    }
+
+    if (opts.isEmpty) {
+      try {
+        final rows = await _unitLocal.getAllByPropertyRefNewestFirstChunked(
+          propertyRef: prop.hubRef,
+        );
+        for (final u in rows) {
+          addUnit(u.propertyUnitRef, u.unitName);
+        }
+      } catch (_) {}
+    }
+
+    opts.sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+    apartmentUnits.assignAll(opts);
+    if (opts.isNotEmpty) {
+      final prev = selectedUnitKey.value;
+      if (prev.isNotEmpty && opts.any((u) => u.key == prev)) {
+        selectedUnitKey.value = prev;
+      } else {
+        selectedUnitKey.value = opts.first.key;
+      }
+    }
+  }
+
+  void selectUnit(String key) {
+    selectedUnitKey.value = key;
+    _rebuildDayMarkers();
+    calendarRevision.value++;
+  }
+
+  Future<void> _loadBookingsAndIncome() async {
+    final merge = BnbBookingMerge(pending: _pendingBookingsStore);
+    final mergedMaps = <String, Map<String, dynamic>>{};
+    final paidKeys = <String>{};
+
+    try {
+      final incomeRows = await _incomeLocal.getAllNewestFirst(workspaceType: 'bnb');
+      for (final row in incomeRows) {
+        final key = row.bookingId.trim();
+        if (key.isNotEmpty && row.amountValue > 0) {
+          paidKeys.add(key);
         }
       }
-      return out;
-    } catch (_) {
-      return const [];
+    } catch (_) {}
+
+    try {
+      final res = await _repository.getAllBookings();
+      final data = res.data;
+      List<dynamic> rows = const [];
+      if (res.responseCode == '0' && data is Map && data['bookings'] is List) {
+        rows = data['bookings'] as List;
+      } else if (res.responseCode == '0' && data is List) {
+        rows = data;
+      }
+      for (final e in rows.whereType<Map>()) {
+        final m = Map<String, dynamic>.from(e);
+        final item = merge.fromApiMap(m);
+        if (item.isCancelled) continue;
+        mergedMaps[item.bookingKey] = m;
+        if (_isApiPaid(m)) paidKeys.add(item.bookingKey);
+      }
+    } catch (_) {}
+
+    try {
+      final properties = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: '',
+        workspaceType: 'bnb',
+      );
+      for (final m in _pendingBookingsStore.load()) {
+        final listingId = (m['listingId'] ?? '').toString().trim();
+        final checkIn = (m['checkIn'] ?? '').toString();
+        final checkOut = (m['checkOut'] ?? '').toString();
+        if (listingId.isEmpty || checkIn.isEmpty || checkOut.isEmpty) continue;
+        final property = properties.firstWhereOrNull(
+          (p) =>
+              p.propertyRef.trim() == listingId ||
+              'local_${p.id}' == listingId,
+        );
+        final propertyLabel = property?.propertyName.trim().isNotEmpty == true
+            ? property!.propertyName.trim()
+            : (property?.propertyLocation ?? 'Property');
+        final localId =
+            'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
+        mergedMaps[localId] = {
+          ...m,
+          'bookingId': localId,
+          'propertyType': propertyLabel,
+        };
+      }
+    } catch (_) {}
+
+    _paidBookingKeys
+      ..clear()
+      ..addAll(paidKeys);
+
+    final spans = <_BookingSpan>[];
+    for (final entry in mergedMaps.entries) {
+      final m = entry.value;
+      final item = merge.fromApiMap(m);
+      if (item.isCancelled) continue;
+      final ci = _tryDate(item.checkInIso);
+      if (ci == null) continue;
+      final co = _tryDate(item.checkOutIso);
+      spans.add(
+        _BookingSpan(
+          bookingKey: item.bookingKey,
+          listingId: (item.listingId ?? '').trim(),
+          unitId: (m['unitId'] ?? m['unit_id'] ?? '').toString().trim(),
+          checkIn: ci,
+          checkOut: co,
+          isCancelled: item.isCancelled,
+          propertyLabel: item.propertyType.trim(),
+        ),
+      );
     }
+    _bookingSpans = spans;
+  }
+
+  static bool _isApiPaid(Map<String, dynamic> m) {
+    final status = (m['paymentStatus'] ?? m['payment_status'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    if (status == 'paid' || status == 'settled' || status == 'complete') {
+      return true;
+    }
+    final paid = m['isPaid'] ?? m['paid'];
+    if (paid is bool && paid) return true;
+    return false;
+  }
+
+  void _rebuildDayMarkers() {
+    final unpaid = <String>{};
+    final paid = <String>{};
+    final prop = selectedProperty;
+    if (prop == null) {
+      _bookedUnpaidDayKeys
+        ..clear()
+        ..refresh();
+      _bookedPaidDayKeys
+        ..clear()
+        ..refresh();
+      return;
+    }
+
+    final unitKey = selectedUnitKey.value.trim();
+
+    for (final span in _bookingSpans) {
+      if (span.isCancelled) continue;
+      if (!_matchesProperty(span, prop)) continue;
+      if (prop.isApartment && apartmentUnits.isNotEmpty) {
+        if (unitKey.isEmpty || !_matchesUnit(span, unitKey)) continue;
+      }
+
+      final isPaid = _paidBookingKeys.contains(span.bookingKey);
+      var day = span.checkIn;
+      final end = span.checkOut ?? span.checkIn.add(const Duration(days: 1));
+      while (day.isBefore(end)) {
+        final key = _dateKey(day);
+        if (isPaid) {
+          paid.add(key);
+        } else {
+          unpaid.add(key);
+        }
+        day = day.add(const Duration(days: 1));
+      }
+    }
+
+    for (final k in paid) {
+      unpaid.remove(k);
+    }
+
+    _bookedUnpaidDayKeys
+      ..clear()
+      ..addAll(unpaid);
+    _bookedUnpaidDayKeys.refresh();
+    _bookedPaidDayKeys
+      ..clear()
+      ..addAll(paid);
+    _bookedPaidDayKeys.refresh();
+  }
+
+  static bool _matchesProperty(_BookingSpan span, HostCalendarPropertyOption prop) {
+    if (prop.matchesListingId(span.listingId)) return true;
+    final label = span.propertyLabel.trim();
+    if (label.isNotEmpty && label == prop.displayName) return true;
+    return false;
+  }
+
+  static bool _matchesUnit(_BookingSpan span, String unitKey) {
+    final uid = span.unitId.trim();
+    if (uid.isEmpty) return true;
+    return uid == unitKey;
+  }
+
+  HostCalendarDayBookingStatus bookingStatusForDay(DateTime day) {
+    final key = _dateKey(DateTime(day.year, day.month, day.day));
+    if (_bookedPaidDayKeys.contains(key)) {
+      return HostCalendarDayBookingStatus.bookedPaid;
+    }
+    if (_bookedUnpaidDayKeys.contains(key)) {
+      return HostCalendarDayBookingStatus.bookedUnpaid;
+    }
+    return HostCalendarDayBookingStatus.none;
+  }
+
+  List<CalendarEvent> _bookingSpansToCalendarEvents() {
+    final prop = selectedProperty;
+    if (prop == null) return const [];
+    final unitKey = selectedUnitKey.value.trim();
+    final out = <CalendarEvent>[];
+    for (final span in _bookingSpans) {
+      if (span.isCancelled) continue;
+      if (!_matchesProperty(span, prop)) continue;
+      if (prop.isApartment && apartmentUnits.isNotEmpty) {
+        if (unitKey.isEmpty || !_matchesUnit(span, unitKey)) continue;
+      }
+      out.add(
+        CalendarEvent(
+          type: CalendarEventType.checkIn,
+          guestName: 'Booking',
+          time: '03:00 PM',
+          guests: 1,
+          subtitle: _paidBookingKeys.contains(span.bookingKey)
+              ? 'Paid stay'
+              : 'Booked',
+          subtitleHighlight: !_paidBookingKeys.contains(span.bookingKey),
+          propertyName: prop.displayName,
+          eventDate: span.checkIn,
+        ),
+      );
+      final co = span.checkOut;
+      if (co != null) {
+        out.add(
+          CalendarEvent(
+            type: CalendarEventType.checkOut,
+            guestName: 'Booking',
+            time: '11:00 AM',
+            guests: 1,
+            subtitle: 'Check-out',
+            subtitleHighlight: false,
+            propertyName: prop.displayName,
+            eventDate: co,
+          ),
+        );
+      }
+    }
+    return out;
   }
 
   Future<List<CalendarEvent>> _loadLocalMaintenanceEvents() async {
@@ -196,17 +517,6 @@ class HostCalendarController extends BaseController {
     }
   }
 
-  List<Map<String, dynamic>> _extractListFromResponse(dynamic data) {
-    if (data is List) return data.whereType<Map<String, dynamic>>().toList();
-    if (data is Map && data['content'] is List) {
-      return (data['content'] as List).whereType<Map<String, dynamic>>().toList();
-    }
-    if (data is Map && data['listings'] is List) {
-      return (data['listings'] as List).whereType<Map<String, dynamic>>().toList();
-    }
-    return const [];
-  }
-
   static String _dateKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -225,13 +535,11 @@ class HostCalendarController extends BaseController {
     blockedDates.refresh();
   }
 
-  /// True if [day] is today or in the future (date only).
   bool isDayEnabled(DateTime day) {
     final d = DateTime(day.year, day.month, day.day);
     return !d.isBefore(_today);
   }
 
-  /// No fabricated nightly rates — cells show day number only unless you add pricing later.
   String? priceForDay(DateTime day) => null;
 
   int eventsCountForDay(DateTime day) {
@@ -240,6 +548,9 @@ class HostCalendarController extends BaseController {
   }
 
   DayType typeForDay(DateTime day) {
+    if (bookingStatusForDay(day) != HostCalendarDayBookingStatus.none) {
+      return DayType.standard;
+    }
     if (day.month != currentMonth.value.month) return DayType.standard;
     final count = eventsCountForDay(day);
     if (count >= 2 && dynamicPricingOn.value) return DayType.aiOptimized;
@@ -259,29 +570,67 @@ class HostCalendarController extends BaseController {
 
   void toggleDynamicPricing() => dynamicPricingOn.value = !dynamicPricingOn.value;
 
-  void selectProperty(String name) => selectedPropertyName.value = name;
-
-  /// Events for the selected day (bookings + maintenance), filtered by property when possible.
   List<CalendarEvent> get eventsForSelectedDay {
     final key = _dateKey(selectedDate.value);
     final items = _eventsByDate[key] ?? const <CalendarEvent>[];
-    final selected = selectedPropertyName.value.trim();
-    if (selected.isEmpty) return items;
-    final filtered = items
-        .where((e) =>
-            e.propertyName.trim().isEmpty ||
-            e.propertyName.trim() == selected)
+    final prop = selectedProperty;
+    if (prop == null) return items;
+    return items
+        .where(
+          (e) =>
+              e.propertyName.trim().isEmpty ||
+              e.propertyName.trim() == prop.displayName,
+        )
         .toList();
-    if (filtered.isNotEmpty) return filtered;
-    return items;
   }
 
   String get selectedDayHeader {
     final d = selectedDate.value;
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
     final name = days[d.weekday - 1];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '$name, ${months[d.month - 1]} ${d.day}';
+  }
+
+  void onOpenCalendarSync() {
+    final prop = selectedProperty;
+    if (prop == null) {
+      showErrorMessage('Select a property first');
+      return;
+    }
+    final listingId = prop.hubRef.trim();
+    if (listingId.isEmpty) {
+      showErrorMessage('This property has no listing id for calendar sync');
+      return;
+    }
+    Get.toNamed(
+      Routes.CALENDAR_SYNC,
+      arguments: {
+        'listing_id': listingId,
+        'listing_name': prop.displayName,
+      },
+    );
   }
 }
 
@@ -294,7 +643,6 @@ class CalendarEvent {
   final int guests;
   final String subtitle;
   final bool subtitleHighlight;
-  /// Listing/property label from the booking payload (filter key).
   final String propertyName;
   final DateTime eventDate;
 

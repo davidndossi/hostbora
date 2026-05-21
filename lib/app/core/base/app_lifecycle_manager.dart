@@ -10,12 +10,23 @@ class AppLifecycleManager with WidgetsBindingObserver {
   final BuildContext context;
   Timer? _timer;
   Timer? _expiryCheckTimer;
+  bool _lockShownThisResume = false;
 
   AppLifecycleManager(this.context);
+
+  static const _lockSkipRoutes = <String>{
+    Routes.WELCOME_BACK,
+    Routes.AUTH,
+    Routes.CHANGE_PIN,
+    Routes.ONBOARDING,
+    Routes.OTP,
+    Routes.REGISTRATION,
+  };
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
+      _lockShownThisResume = false;
       _startTimer();
       _expiryCheckTimer?.cancel();
       _expiryCheckTimer = null;
@@ -23,6 +34,7 @@ class AppLifecycleManager with WidgetsBindingObserver {
       _cancelTimer();
       _checkTokenAndLogoutIfExpired();
       _startExpiryCheckTimer();
+      _maybeShowAppLock();
     }
   }
 
@@ -50,6 +62,42 @@ class AppLifecycleManager with WidgetsBindingObserver {
     } catch (_) {}
   }
 
+  Future<bool> _hasValidSession(PreferenceManager pref) async {
+    final token = await pref.getString(PreferenceManager.keyToken, defaultValue: '');
+    final expiryTime = await pref.getString(PreferenceManager.keyExpiryTime, defaultValue: '');
+    if (token.isEmpty || expiryTime.isEmpty) return false;
+    final expiryMs = DateTime.tryParse(expiryTime)?.millisecondsSinceEpoch;
+    if (expiryMs == null) return false;
+    return DateTime.now().millisecondsSinceEpoch <= expiryMs;
+  }
+
+  Future<void> _maybeShowAppLock() async {
+    if (_lockShownThisResume) return;
+
+    try {
+      final pref = Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
+      if (!await _hasValidSession(pref)) return;
+
+      final pinEnabled = await pref.getBool(
+        PreferenceManager.keyPinEnabled,
+        defaultValue: false,
+      );
+      final pinCode = await pref.getString(
+        PreferenceManager.keyPinCode,
+        defaultValue: '',
+      );
+      if (!pinEnabled || pinCode.length != 4) return;
+
+      final route = Get.currentRoute;
+      if (_lockSkipRoutes.contains(route)) return;
+
+      _lockShownThisResume = true;
+      if (Get.isRegistered<GetMaterialController>()) {
+        await Get.toNamed(Routes.WELCOME_BACK);
+      }
+    } catch (_) {}
+  }
+
   void startObserving() {
     WidgetsBinding.instance.addObserver(this);
     _checkTokenAndLogoutIfExpired();
@@ -65,7 +113,6 @@ class AppLifecycleManager with WidgetsBindingObserver {
   void _startTimer() {
     _timer = Timer(const Duration(seconds: 15), () {
       debugPrint('App has been in the background for 15 seconds.');
-      // When the app comes to the foreground, navigate to the home page
       if (Get.currentRoute == '/receipt') {
         Get.until((route) => route.isFirst);
       }

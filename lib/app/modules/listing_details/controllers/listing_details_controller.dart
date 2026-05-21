@@ -866,6 +866,30 @@ class ListingDetailsController extends BaseController {
     // Kept for refresh compatibility with the view.
   }
 
+  void onOpenUnitOccupancy() {
+    Get.toNamed(
+      Routes.LISTING_UNIT_OCCUPANCY,
+      arguments: {
+        'property_id': _propertyId,
+        'property_name': _propertyName,
+        'property_location': _propertyLocation,
+      },
+    );
+  }
+
+  void onOpenCalendarSync() {
+    if (_propertyId.isEmpty) return;
+    Get.toNamed(
+      Routes.CALENDAR_SYNC,
+      arguments: {
+        'listing_id': _propertyId,
+        'listing_name': listingTitle.value.isNotEmpty
+            ? listingTitle.value
+            : _propertyName,
+      },
+    );
+  }
+
   Future<PropertyRecord?> _findLocalPropertyRowForListing() async {
     try {
       final rows = await _propertyLocal.getAllNewestFirst();

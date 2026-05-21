@@ -14,33 +14,63 @@ class PrivacyView extends BaseView<PrivacyController> {
     return CustomAppBar(appBarTitleText: appLocalization.privacyPolicy, isCentered: true);
   }
 
+  TextStyle get _headingStyle => TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textColorPrimary,
+      );
+
+  TextStyle get _bodyStyle => TextStyle(
+        fontSize: 15,
+        height: 1.6,
+        color: AppColors.textColorSecondary,
+      );
+
+  TextStyle get _metaStyle => TextStyle(
+        fontSize: 14,
+        color: AppColors.textColorSecondary,
+      );
+
+  Widget _section(String title, String body) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppValues.padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: _headingStyle),
+          const SizedBox(height: AppValues.halfPadding),
+          Text(body, style: _bodyStyle),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget body(BuildContext context) {
+    final l10n = appLocalization;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppValues.padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(l10n.privacyLastUpdated, style: _metaStyle),
+          const SizedBox(height: AppValues.padding),
+          Text(l10n.privacyIntro, style: _bodyStyle),
           const SizedBox(height: AppValues.halfPadding),
-          Text(
-            appLocalization.privacyPolicy,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textColorPrimary,
-            ),
-          ),
+          Text(l10n.privacySwHint, style: _metaStyle),
+          const SizedBox(height: AppValues.padding),
+          _section(l10n.privacySectionWhoWeAreTitle, l10n.privacySectionWhoWeAreBody),
+          _section(l10n.privacySectionCollectTitle, l10n.privacySectionCollectBody),
+          _section(l10n.privacySectionUseTitle, l10n.privacySectionUseBody),
+          _section(l10n.privacySectionLegalBasisTitle, l10n.privacySectionLegalBasisBody),
+          _section(l10n.privacySectionSharingTitle, l10n.privacySectionSharingBody),
+          _section(l10n.privacySectionStorageTitle, l10n.privacySectionStorageBody),
+          _section(l10n.privacySectionRetentionTitle, l10n.privacySectionRetentionBody),
+          _section(l10n.privacySectionRightsTitle, l10n.privacySectionRightsBody),
+          _section(l10n.privacySectionChildrenTitle, l10n.privacySectionChildrenBody),
+          _section(l10n.privacySectionChangesTitle, l10n.privacySectionChangesBody),
+          _section(l10n.privacySectionContactTitle, l10n.privacySectionContactBody),
           const SizedBox(height: AppValues.halfPadding),
-          Text(
-            'Last updated: 2025\n\n'
-            'Host Bora respects your privacy. We collect only what is needed to provide the service: account information, community membership, and usage necessary for features like notifications.\n\n'
-            'Your data is used to run the app and improve your experience. We do not sell your personal information. You can manage notification and privacy choices in Settings.',
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.6,
-              color: AppColors.textColorSecondary,
-            ),
-          ),
         ],
       ),
     );
