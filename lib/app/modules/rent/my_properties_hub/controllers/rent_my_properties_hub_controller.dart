@@ -271,8 +271,8 @@ class RentMyPropertiesHubController extends BaseController {
 
   Future<void> editProperty(String propertyHubId) async {
     final value = await Get.toNamed(
-      Routes.RENT_ADD_NEW_LISTING,
-      parameters: {'propertyRef': propertyHubId},
+      Routes.EDIT_LISTING,
+      parameters: {'property_ref': propertyHubId},
     );
     if (value == true) {
       showSuccessMessage('Listing updated');

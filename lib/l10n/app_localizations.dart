@@ -2408,6 +2408,54 @@ abstract class AppLocalizations {
   /// **'Recent Activity'**
   String get recentActivity;
 
+  /// No description provided for @rentListingActivityLogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity log'**
+  String get rentListingActivityLogTitle;
+
+  /// No description provided for @rentListingActivityLogEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity for this property yet.'**
+  String get rentListingActivityLogEmpty;
+
+  /// No description provided for @rentListingExpectedMonthlyIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected monthly income'**
+  String get rentListingExpectedMonthlyIncome;
+
+  /// No description provided for @rentListingMonthlyIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly income'**
+  String get rentListingMonthlyIncome;
+
+  /// No description provided for @rentAddTenantIncomePromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenant saved'**
+  String get rentAddTenantIncomePromptTitle;
+
+  /// No description provided for @rentAddTenantIncomePromptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Record the first rent payment now? We will pre-fill the income form from this tenant.'**
+  String get rentAddTenantIncomePromptBody;
+
+  /// No description provided for @rentAddTenantIncomePromptAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add income'**
+  String get rentAddTenantIncomePromptAdd;
+
+  /// No description provided for @rentAddTenantIncomePromptLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get rentAddTenantIncomePromptLater;
+
   /// No description provided for @loginSecurity.
   ///
   /// In en, this message translates to:
@@ -3625,6 +3673,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'—'**
   String get managePaymentsUnknownStatus;
+
+  /// No description provided for @manageExpensesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View expenses'**
+  String get manageExpensesTitle;
+
+  /// No description provided for @manageExpensesNoRows.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses to show.'**
+  String get manageExpensesNoRows;
+
+  /// No description provided for @manageExpensesCategoryFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get manageExpensesCategoryFilter;
+
+  /// No description provided for @manageExpensesAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get manageExpensesAllCategories;
 
   /// No description provided for @rentUtilityLukuUsageGraphLink.
   ///

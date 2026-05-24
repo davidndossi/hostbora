@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_decorations.dart';
 import '../../../core/values/app_values.dart';
@@ -39,23 +40,27 @@ class DashboardView extends BaseView<DashboardController> {
               if (controller.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
-              return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildBnbOverviewSection(context),
-                    _buildBnbWeeklyReportsSection(context),
-                    _buildSegmentedToggle(context),
-                    const SizedBox(height: 20),
-                    _buildPerformanceTrendsCard(context),
-                    const SizedBox(height: 16),
-                    _buildTotalRevenueCard(context),
-                    const SizedBox(height: 12),
-                    _buildMetricRow(context),
-                    const SizedBox(height: 20),
-                    _buildMonthlyGrowthSection(context),
-                  ],
+              return RefreshIndicator(
+                onRefresh: controller.loadDashboard,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildBnbOverviewSection(context),
+                      _buildBnbWeeklyReportsSection(context),
+                      _buildSegmentedToggle(context),
+                      const SizedBox(height: 20),
+                      _buildPerformanceTrendsCard(context),
+                      const SizedBox(height: 16),
+                      _buildTotalRevenueCard(context),
+                      const SizedBox(height: 12),
+                      _buildMetricRow(context),
+                      const SizedBox(height: 20),
+                      _buildMonthlyGrowthSection(context),
+                    ],
+                  ),
                 ),
               );
             }),
@@ -128,6 +133,9 @@ class DashboardView extends BaseView<DashboardController> {
   Widget _buildBnbWeeklyReportsSection(BuildContext context) {
     return Obx(() {
       if (!controller.isBnbWorkspace.value) return const SizedBox.shrink();
+      // Observe list contents so charts update after quiet reloads.
+      final revenue = List<double>.from(controller.weeklyRevenue);
+      final occupancy = List<double>.from(controller.weeklyOccupancyPercent);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -135,16 +143,17 @@ class DashboardView extends BaseView<DashboardController> {
             context,
             title: appLocalization.dashboardWeeklyRevenue,
             subtitle: appLocalization.dashboardWeekTrend,
-            values: controller.weeklyRevenue,
+            values: revenue,
             maxYCap: null,
-            formatTooltip: (v) => 'TZS ${v.round()}',
+            formatTooltip: (v) =>
+                Get.find<CurrencyService>().formatBase(v.round()),
           ),
           const SizedBox(height: 16),
           _buildWeeklyBarChartCard(
             context,
             title: appLocalization.dashboardWeeklyOccupancy,
             subtitle: appLocalization.dashboardWeekTrend,
-            values: controller.weeklyOccupancyPercent,
+            values: occupancy,
             maxYCap: 100,
             formatTooltip: (v) => '${v.round()}%',
           ),
@@ -158,7 +167,7 @@ class DashboardView extends BaseView<DashboardController> {
     BuildContext context, {
     required String title,
     required String subtitle,
-    required RxList<double> values,
+    required List<double> values,
     required double? maxYCap,
     required String Function(double) formatTooltip,
   }) {

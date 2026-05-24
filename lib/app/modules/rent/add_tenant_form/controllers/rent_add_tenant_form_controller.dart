@@ -7,7 +7,10 @@ import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
+import '../../../../routes/app_pages.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
+import '../../listing_details/controllers/rent_listing_details_controller.dart';
+import '../../tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 class RentAddTenantFormController extends BaseController {
   RentAddTenantFormController()
@@ -40,8 +43,10 @@ class RentAddTenantFormController extends BaseController {
   final leaseStart = Rx<DateTime?>(null);
   final leaseEnd = Rx<DateTime?>(null);
 
+  PropertyRecord? _linkedProperty;
+
   static const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
-  static const rentFrequencyOptions = ['Per Day', 'Per Week', 'Per Month', 'Per Year'];
+  static const rentFrequencyOptions = ['Per Week', 'Per Month', 'Per Year'];
 
   List<String> get unitSelectionKeys =>
       availableUnitDrafts.map((u) => u.selectionKey).toList();
@@ -121,11 +126,13 @@ class RentAddTenantFormController extends BaseController {
       }
     }
     if (selected == null) {
+      _linkedProperty = null;
       availableUnitDrafts.clear();
       selectedUnitKey.value = null;
       return;
     }
 
+    _linkedProperty = selected;
     propertyRef.value =
         selected.propertyRef.isNotEmpty ? selected.propertyRef : 'legacy_${selected.id}';
     final composed = selected.propertyName.trim().isNotEmpty
@@ -274,8 +281,66 @@ class RentAddTenantFormController extends BaseController {
       contractFileName: '',
     );
 
+    await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+    await RentListingDetailsController.refreshIfRegistered();
+
     showSuccessMessage('Tenant saved offline');
+
+    final addIncome = await _promptAddIncomeAfterTenant();
+    if (addIncome == true) {
+      final nav = _incomeNavigationArgs();
+      Get.back(result: true);
+      await Get.toNamed(
+        Routes.RENT_ADD_INCOME_FORM,
+        parameters: {
+          if (nav['property'] != null) 'property': nav['property'] as String,
+          if (nav['propertyRef'] != null) 'propertyRef': nav['propertyRef'] as String,
+        },
+        arguments: nav,
+      );
+      return;
+    }
+
     Get.back(result: true);
+  }
+
+  Future<bool?> _promptAddIncomeAfterTenant() {
+    return Get.dialog<bool>(
+      AlertDialog(
+        title: Text(appLocalization.rentAddTenantIncomePromptTitle),
+        content: Text(appLocalization.rentAddTenantIncomePromptBody),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(appLocalization.rentAddTenantIncomePromptLater),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(appLocalization.rentAddTenantIncomePromptAdd),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  Map<String, dynamic> _incomeNavigationArgs() {
+    final p = _linkedProperty;
+    final propertyOption = p == null
+        ? propertyContextLabel.value.trim()
+        : (p.propertyName.trim().isNotEmpty
+            ? p.propertyName.trim()
+            : p.propertyLocation.trim());
+    return {
+      'property': propertyOption,
+      'propertyRef': propertyRef.value.trim(),
+      'prefillIncome': {
+        'tenantName': tenantNameController.text.trim(),
+        'amount': rentAmountController.text.trim().replaceAll(',', ''),
+        'unitSelectionKey': selectedUnitKey.value,
+        'categoryIndex': 0,
+      },
+    };
   }
 
   Future<void> _markUnitOccupied({

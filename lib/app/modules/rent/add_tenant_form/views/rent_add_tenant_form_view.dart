@@ -303,7 +303,7 @@ class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
   }
 
   Widget _leaseDateRangeField(BuildContext context, bool isDark) {
-    final dateFmt = DateFormat.yMMMd();
+    final dateFmt = DateFormat('dd/MM/yyyy');
     final fieldBg = isDark ? const Color(0xFF3A3A3C) : Colors.white;
     final chevronColor = isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D);
 

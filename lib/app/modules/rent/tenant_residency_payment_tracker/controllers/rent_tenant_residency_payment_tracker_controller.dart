@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 
@@ -44,9 +45,11 @@ class TenantInsight {
 
 class RentTenantResidencyPaymentTrackerController extends BaseController {
   RentTenantResidencyPaymentTrackerController()
-      : _tenantLocal = Get.find<TenantLocalDataSource>();
+      : _tenantLocal = Get.find<TenantLocalDataSource>(),
+        _incomeLocal = Get.find<IncomeLocalDataSource>();
 
   final TenantLocalDataSource _tenantLocal;
+  final IncomeLocalDataSource _incomeLocal;
   final searchController = TextEditingController();
   final searchQuery = ''.obs;
   final tenants = <TenantInsight>[].obs;
@@ -155,13 +158,22 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     );
   }
 
+  /// Reload tenant cards when income or tenant data changes elsewhere.
+  static Future<void> refreshIfRegistered() async {
+    if (Get.isRegistered<RentTenantResidencyPaymentTrackerController>()) {
+      await Get.find<RentTenantResidencyPaymentTrackerController>().loadTenants();
+    }
+  }
+
   Future<void> loadTenants() async {
-    String ws = 'rent';
-    if (Get.arguments != null && Get.arguments['ws'] != null) {
-      ws = Get.arguments['ws'];
+    var ws = 'rent';
+    final args = Get.arguments;
+    if (args is Map && args['ws'] != null) {
+      ws = args['ws'].toString();
     }
     final rows = await _tenantLocal.getAllNewestFirstByWorkspace(ws);
     final scoped = rows.where(_recordMatchesListingFilter).toList();
+    final incomeRows = await _incomeLocal.getAllNewestFirst(workspaceType: ws);
     final fmt = DateFormat('MMM yyyy');
     tenants.assignAll(scoped.map((r) {
       final start = _parseDate(r.leaseStartIso) ?? DateTime.now();
@@ -171,7 +183,16 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
       final spentMonths = _monthsBetween(start, now).clamp(0, totalMonths);
       final progress = (spentMonths / totalMonths).clamp(0.0, 1.0);
       final totalAmount = r.rentAmountValue * totalMonths;
-      final paidAmount = (r.rentAmountValue * spentMonths).clamp(0, totalAmount);
+      final paidFromIncome = _sumIncomeForTenant(r, incomeRows);
+      final paidAmount =
+          paidFromIncome.clamp(0, totalAmount).toDouble();
+      final expectedToDate =
+          (r.rentAmountValue * spentMonths).clamp(0, totalAmount);
+      final rentPerMonth =
+          totalMonths > 0 ? totalAmount / totalMonths : r.rentAmountValue;
+      final paidMonthSlots = rentPerMonth > 0
+          ? (paidFromIncome / rentPerMonth).floor().clamp(0, 6)
+          : 0;
       return TenantInsight(
         id: '${r.id}',
         name: r.tenantName,
@@ -182,16 +203,53 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
         monthStatuses: List<ResidencyMonthStatus>.generate(
           6,
           (i) {
-            if (i < spentMonths.clamp(0, 6)) return ResidencyMonthStatus.paid;
+            if (i < paidMonthSlots) return ResidencyMonthStatus.paid;
+            if (i < spentMonths.clamp(0, 6)) {
+              return ResidencyMonthStatus.partial;
+            }
             return ResidencyMonthStatus.upcoming;
           },
         ),
-        onSchedule: now.isBefore(end),
-        paidAmount: paidAmount.toDouble(),
-        totalAmount: totalAmount.toDouble(),
+        onSchedule: paidAmount + 0.01 >= expectedToDate || now.isAfter(end),
+        paidAmount: paidAmount,
+        totalAmount: totalAmount,
         phoneNumber: r.phoneNumber,
       );
     }));
+  }
+
+  static double _sumIncomeForTenant(
+    TenantRecord tenant,
+    List<IncomeRecord> incomeRows,
+  ) {
+    var sum = 0.0;
+    for (final row in incomeRows) {
+      if (_incomeRowMatchesTenant(row, tenant)) {
+        sum += row.amountValue;
+      }
+    }
+    return sum;
+  }
+
+  static bool _incomeRowMatchesTenant(IncomeRecord income, TenantRecord tenant) {
+    if (income.tenantName.trim().toLowerCase() !=
+        tenant.tenantName.trim().toLowerCase()) {
+      return false;
+    }
+    final tenantRef = tenant.propertyRef.trim();
+    final incomeRef = income.propertyRef.trim();
+    if (tenantRef.isNotEmpty &&
+        incomeRef.isNotEmpty &&
+        tenantRef != incomeRef) {
+      return false;
+    }
+    final pl = tenant.propertyLabel.trim().toLowerCase();
+    if (pl.isEmpty) return true;
+    final ap = income.apartment.trim().toLowerCase();
+    final unit = income.apartmentUnit.trim().toLowerCase();
+    final notes = income.notes.trim().toLowerCase();
+    final blob = '$ap $unit $notes'.trim();
+    return blob.contains(pl) || pl.contains(ap) || ap == pl;
   }
 
   DateTime? _parseDate(String v) {

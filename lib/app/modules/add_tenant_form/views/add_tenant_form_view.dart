@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/utils/tenant_rent_billing.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/add_tenant_form_controller.dart';
@@ -11,6 +12,34 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
   AddTenantFormView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
+
+  String _rentRateLabel(String frequency) {
+    final f = frequency.trim().toLowerCase();
+    if (_isSw) {
+      switch (f) {
+        case 'per day':
+          return 'KODI (KWA SIKU)';
+        case 'per week':
+          return 'KODI (KWA WIKI)';
+        case 'per year':
+          return 'KODI (KWA MWAKA)';
+        case 'per month':
+        default:
+          return 'KODI (KWA MWEZI)';
+      }
+    }
+    switch (f) {
+      case 'per day':
+        return 'RENT RATE (PER DAY)';
+      case 'per week':
+        return 'RENT RATE (PER WEEK)';
+      case 'per year':
+        return 'RENT RATE (PER YEAR)';
+      case 'per month':
+      default:
+        return 'RENT RATE (PER MONTH)';
+    }
+  }
 
   TextStyle _labelStyle(bool isDark) => TextStyle(
         fontSize: 10,
@@ -111,7 +140,12 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
           _sectionCard(
             isDark: isDark,
             children: [
-              Text('RENT AMOUNT', style: _labelStyle(isDark)),
+              Obx(
+                () => Text(
+                  _rentRateLabel(controller.rentFrequency.value),
+                  style: _labelStyle(isDark),
+                ),
+              ),
               const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,6 +157,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       textInputAction: TextInputAction.next,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
+                      onChanged: controller.onRentAmountChanged,
                       validator: controller.validateRentAmount,
                       style: TextStyle(
                         fontSize: 15,
@@ -156,12 +191,54 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 3,
+                    child: Obx(
+                      () => _whiteDropdown<String>(
+                        isDark: isDark,
+                        value: controller.rentFrequency.value,
+                        options: AddTenantFormController.rentFrequencyOptions,
+                        onChanged: controller.setRentFrequency,
+                        compact: true,
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
               Text('LEASE PERIOD', style: _labelStyle(isDark)),
               const SizedBox(height: 8),
               _leaseDateRangeField(context, isDark),
+              Obx(() {
+                final total = controller.stayTotalPreview.value;
+                final units = controller.stayBillingUnits.value;
+                if (total <= 0 || units <= 0) return const SizedBox.shrink();
+                final freq = controller.rentFrequency.value;
+                final isPerDay = freq.trim().toLowerCase() == 'per day';
+                final unitLabel = isPerDay
+                    ? (units == 1
+                        ? (_isSw ? 'usiku' : 'night')
+                        : (_isSw ? 'usiku' : 'nights'))
+                    : () {
+                        final period =
+                            TenantRentBilling.periodLabel(freq, sw: _isSw);
+                        return units == 1 ? period : '${period}s';
+                      }();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    _isSw
+                        ? 'Jumla ya kukaa ($units $unitLabel): TZS ${NumberFormat('#,###').format(total.round())}'
+                        : 'Total for stay ($units $unitLabel): TZS ${NumberFormat('#,###').format(total.round())}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF4B5563),
+                    ),
+                  ),
+                );
+              }),
             ],
           ),
           const SizedBox(height: 14),

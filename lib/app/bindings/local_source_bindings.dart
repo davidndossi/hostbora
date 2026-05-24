@@ -16,7 +16,9 @@ import '/app/data/local/db/rent_payment_reminder_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
 import '/app/data/local/db/property_members_local_data_source.dart';
 import '/app/data/local/db/expense_local_data_source.dart';
+import '/app/data/local/db/exchange_rate_local_data_source.dart';
 import '/app/data/local/db/income_local_data_source.dart';
+import '/app/data/local/service/currency_service.dart';
 import '/app/data/local/db/rent_loyalty_offer_local_data_source.dart';
 import '/app/data/local/db/rent_notification_log_local_data_source.dart';
 import '/app/data/local/db/rent_property_estimate_local_data_source.dart';
@@ -51,6 +53,14 @@ class LocalSourceBindings implements Bindings {
       ),
       permanent: true,
     ).init();
+    Get.lazyPut<ExchangeRateLocalDataSource>(
+      () => ExchangeRateLocalDataSource(),
+      fenix: true,
+    );
+    Get.putAsync<CurrencyService>(
+      () => CurrencyService().init(),
+      permanent: true,
+    );
     // Get.lazyPut<RentPropertyLocalDataSource>(
     //   () => RentPropertyLocalDataSource(),
     //   fenix: true,

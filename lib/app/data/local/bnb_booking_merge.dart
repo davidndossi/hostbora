@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../../core/utils/bnb_stay_billing.dart';
 import '../model/check_in_item.dart';
 import 'bnb_booking_overrides_store.dart';
 import 'pending_bookings_store.dart';
@@ -81,7 +82,8 @@ class BnbBookingMerge {
       final co = DateTime.tryParse(checkOut);
       if (ci != null && co != null) {
         final fmt = DateFormat('MMM d');
-        final n = nights > 0 ? nights : co.difference(ci).inDays;
+        final calculated = BnbStayBilling.nightsBetween(ci, co);
+        final n = calculated > 0 ? calculated : (nights > 0 ? nights : 0);
         return '${fmt.format(ci)} - ${fmt.format(co)} • $n Night${n == 1 ? '' : 's'}';
       }
     } catch (_) {}

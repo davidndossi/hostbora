@@ -21,6 +21,7 @@ import '../model/update_request.dart';
 import '../model/create_calendar_subscription_request.dart';
 import '../model/update_calendar_subscription_request.dart';
 import '../model/calendar_sync_request.dart';
+import '../model/fx_response.dart';
 
 abstract class RemoteDataSource {
 
@@ -146,4 +147,6 @@ abstract class RemoteDataSource {
 
   /// iCal: pull external calendars into server blocks.
   Future<GeneralResponse> syncCalendarImport(CalendarSyncRequest request);
+
+  Future<FxResponse> getExchangeRates();
 }

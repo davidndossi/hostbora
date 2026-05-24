@@ -102,7 +102,7 @@ class AddListingController extends BaseController {
   bool _propertyTypeLockedFromLocal = false;
   bool _unitsLockedFromLocal = false;
 
-  static const _rentFrequencyChoices = ['Per Day', 'Per Week', 'Per Month', 'Per Year'];
+  static const _rentFrequencyChoices = ['Per Day'];
 
   final selectedPropertyType = Rx<String?>(null);
 

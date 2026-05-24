@@ -14,6 +14,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/model/check_in_item.dart';
@@ -679,7 +680,8 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
     return f.path;
   }
 
-  String formatTzs(double v) => 'TZS ${_money.format(v.round())}';
+  String formatTzs(double v) =>
+      Get.find<CurrencyService>().formatBase(v.round());
 
   double netAt(int i) => revenuePerBucket[i] - expensePerBucket[i];
 

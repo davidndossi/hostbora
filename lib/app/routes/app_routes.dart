@@ -80,6 +80,7 @@ abstract class Routes {
   static const RENT_ADD_TENANT_FORM = _Paths.RENT_ADD_TENANT_FORM;
   static const RENT_ADD_INCOME_FORM = _Paths.RENT_ADD_INCOME_FORM;
   static const RENT_MANAGE_PAYMENTS = _Paths.RENT_MANAGE_PAYMENTS;
+  static const RENT_MANAGE_EXPENSES = _Paths.RENT_MANAGE_EXPENSES;
   static const RENT_ADD_NEW_EXPENSE = _Paths.RENT_ADD_NEW_EXPENSE;
   static const RENT_MONTHLY_PL_SUMMARY = _Paths.RENT_MONTHLY_PL_SUMMARY;
   static const RENT_STAFF_PAYROLL_DETAILS = _Paths.RENT_STAFF_PAYROLL_DETAILS;
@@ -109,6 +110,7 @@ abstract class Routes {
   static const RENT_ESTATE_MANAGER_DASHBOARD = _Paths.RENT_ESTATE_MANAGER_DASHBOARD;
   static const RENT_ADD_NEW_LISTING = _Paths.RENT_ADD_NEW_LISTING;
   static const RENT_LISTING_DETAILS = _Paths.RENT_LISTING_DETAILS;
+  static const RENT_LISTING_ACTIVITY_LOG = _Paths.RENT_LISTING_ACTIVITY_LOG;
   static const RENT_PROPERTY_ROI_ESTIMATE_FORM = _Paths.RENT_PROPERTY_ROI_ESTIMATE_FORM;
   static const RENT_WHATSAPP_TEMPLATE_BUILDER = _Paths.RENT_WHATSAPP_TEMPLATE_BUILDER;
 }
@@ -190,6 +192,7 @@ abstract class _Paths {
   static const RENT_ADD_TENANT_FORM = '/rent/add-tenant-form';
   static const RENT_ADD_INCOME_FORM = '/rent/add-income-form';
   static const RENT_MANAGE_PAYMENTS = '/rent/manage-payments';
+  static const RENT_MANAGE_EXPENSES = '/rent/manage-expenses';
   static const RENT_ADD_NEW_EXPENSE = '/rent/add-new-expense';
   static const RENT_MONTHLY_PL_SUMMARY = '/rent/monthly-pl-summary';
   static const RENT_STAFF_PAYROLL_DETAILS = '/rent/staff-payroll-details';
@@ -217,6 +220,7 @@ abstract class _Paths {
   static const RENT_ESTATE_MANAGER_DASHBOARD = '/rent/estate-manager-dashboard';
   static const RENT_ADD_NEW_LISTING = '/rent/add-new-listing';
   static const RENT_LISTING_DETAILS = '/rent/listing-details';
+  static const RENT_LISTING_ACTIVITY_LOG = '/rent/listing-activity-log';
   static const RENT_PROPERTY_ROI_ESTIMATE_FORM = '/rent/property-roi-estimate-form';
   static const RENT_WHATSAPP_TEMPLATE_BUILDER = '/rent/whatsapp-template-builder';
 }

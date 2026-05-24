@@ -29,7 +29,7 @@ class RentAddNewListingController extends BaseController {
   final rentFrequency = 'Per Month'.obs;
   final minRentalDuration = '6 Months'.obs;
   final propertyTypeOptions = const ['Apartment', 'House', 'Office space', 'Room', 'Storage', 'Other'];
-  final rentFrequencyOptions = const ['Per Day', 'Per Week', 'Per Month', 'Per Year'];
+  final rentFrequencyOptions = const ['Per Week', 'Per Month', 'Per Year'];
   final minRentalDurationOptions = const ['1 Month', '3 Months', '6 Months', '12 Months'];
 
   static const int minFloorCount = 1;

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:local_auth/local_auth.dart';
@@ -48,8 +49,14 @@ class WelcomeBackController extends BaseController {
   /// True when device has biometrics available (fingerprint or face).
   final canUseBiometrics = false.obs;
 
+  /// Prefer face icon when Face ID is the enrolled method.
+  final prefersFaceBiometric = false.obs;
+
   /// True while fingerprint/face auth is in progress.
   final isBiometricAuthInProgress = false.obs;
+
+  IconData get biometricIcon =>
+      prefersFaceBiometric.value ? Icons.face_rounded : Icons.fingerprint_rounded;
 
   @override
   void onInit() {
@@ -94,13 +101,16 @@ class WelcomeBackController extends BaseController {
       final auth = LocalAuthentication();
       final available = await auth.getAvailableBiometrics();
       final supported = await auth.isDeviceSupported();
-      canUseBiometrics.value = supported &&
-          (available.contains(BiometricType.strong) ||
-              available.contains(BiometricType.weak) ||
-              available.contains(BiometricType.fingerprint) ||
-              available.contains(BiometricType.face));
+      final hasBiometric = available.contains(BiometricType.strong) ||
+          available.contains(BiometricType.weak) ||
+          available.contains(BiometricType.fingerprint) ||
+          available.contains(BiometricType.face);
+      canUseBiometrics.value = supported && hasBiometric;
+      prefersFaceBiometric.value = available.contains(BiometricType.face) &&
+          !available.contains(BiometricType.fingerprint);
     } catch (_) {
       canUseBiometrics.value = false;
+      prefersFaceBiometric.value = false;
     }
   }
 
@@ -340,13 +350,6 @@ class WelcomeBackController extends BaseController {
   }
 
   Future<void> authenticateWithBiometrics() async {
-    if (!biometricsOffered) {
-      showErrorMessage(_t(
-        'Biometric sign-in is disabled in Security settings.',
-        'Kuingia kwa biometria kumezimwa katika mipangilio ya Usalama.',
-      ));
-      return;
-    }
     if (!canUseBiometrics.value) {
       showErrorMessage(_t('Biometrics not available. Use PIN to sign in.', 'Biometria haipatikani. Tumia PIN kuingia.'));
       return;
@@ -365,6 +368,10 @@ class WelcomeBackController extends BaseController {
         ),
       );
       if (didAuthenticate) {
+        if (!faceIdEnabledPref.value) {
+          faceIdEnabledPref.value = true;
+          await _preferenceManager.setBool(PreferenceManager.keyFaceIdEnabled, true);
+        }
         loadCredentials();
       }
     } on PlatformException catch (e) {

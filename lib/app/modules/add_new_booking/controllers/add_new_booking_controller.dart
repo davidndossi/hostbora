@@ -15,6 +15,8 @@ import '../../../data/model/create_booking_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/service/azampay_service.dart';
 import '../../../routes/app_pages.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../host_calendar/controllers/host_calendar_controller.dart';
 
 /// Lightweight listing for property dropdown (from GET /api/listings).
 class ListingItem {
@@ -346,7 +348,9 @@ class AddNewBookingController extends BaseController {
           externalId: bookingId,
         );
       }
-      Get.back();
+      await HostCalendarController.refreshIfRegistered();
+      await DashboardController.refreshIfRegistered();
+      Get.back(result: true);
       final pending = pendingCount.value;
       if (pending > 0) {
         Get.snackbar(

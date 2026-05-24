@@ -26,7 +26,7 @@ class FeedbackController extends BaseController {
     _preferenceManager,
   );
 
-  static const String supportEmail = 'support@paayangu.com';
+  static const String supportEmail = 'support@hostbora.co.tz';
 
   @override
   void onInit() {

@@ -23,6 +23,7 @@ import '../model/update_request.dart';
 import '../model/create_calendar_subscription_request.dart';
 import '../model/update_calendar_subscription_request.dart';
 import '../model/calendar_sync_request.dart';
+import '../model/fx_response.dart';
 import '../remote/remote_data_source.dart';
 import 'app_repository.dart';
 
@@ -265,5 +266,10 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> syncCalendarImport(CalendarSyncRequest request) {
     return _remoteSource.syncCalendarImport(request);
+  }
+
+  @override
+  Future<FxResponse> getExchangeRates() {
+    return _remoteSource.getExchangeRates();
   }
 }

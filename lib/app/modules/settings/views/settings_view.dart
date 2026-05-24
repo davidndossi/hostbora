@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:settings_ui/settings_ui.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_view.dart';
 import '/app/core/widget/custom_app_bar.dart';
@@ -86,6 +87,28 @@ class SettingsView extends BaseView<SettingsController> {
           SettingsSection(
             title: _tileTitle(context, appLocalization.common),
             tiles: [
+              SettingsTile(
+                onPressed: (context) => controller.showBaseCurrencyPicker(context),
+                leading: const Icon(Icons.payments_outlined),
+                title: _tileTitle(
+                  context,
+                  _t(context, 'Base currency', 'Sarafu ya msingi'),
+                ),
+                value: Obx(
+                  () => _tileValue(
+                    context,
+                    Get.find<CurrencyService>().baseCurrency.value,
+                  ),
+                ),
+              ),
+              SettingsTile(
+                onPressed: (context) => controller.refreshExchangeRates(),
+                leading: const Icon(Icons.currency_exchange),
+                title: _tileTitle(
+                  context,
+                  _t(context, 'Refresh exchange rates', 'Sasisha viwango vya ubadilishaji'),
+                ),
+              ),
               SettingsTile(
                 onPressed: (context) => controller.setDefaultLocale(),
                 leading: const Icon(Icons.language),

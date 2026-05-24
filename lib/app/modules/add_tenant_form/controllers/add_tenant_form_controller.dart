@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/bnb_stay_billing.dart';
+import '../../../core/utils/tenant_rent_billing.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
@@ -40,7 +42,17 @@ class AddTenantFormController extends BaseController {
   final leaseStart = Rx<DateTime?>(null);
   final leaseEnd = Rx<DateTime?>(null);
 
+  /// Rate per [rentFrequency] period (from unit or manual entry).
+  final ratePerPeriod = 0.0.obs;
+  /// Billing units for current lease (e.g. days when Per Day).
+  final stayBillingUnits = 0.obs;
+  /// rate × units when lease dates are set.
+  final stayTotalPreview = 0.0.obs;
+
   static const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
+  static const rentFrequencyOptions = [
+    'Per Day'
+  ];
 
   List<String> get unitSelectionKeys =>
       availableUnitDrafts.map((u) => u.selectionKey).toList();
@@ -167,12 +179,62 @@ class AddTenantFormController extends BaseController {
   }
 
   void _prefillRentFromUnit(ApartmentUnitDraft u) {
+    final freq = u.unitRentFrequency.trim();
+    if (freq.isNotEmpty) {
+      rentFrequency.value = freq;
+    }
     final raw = u.unitRent.trim().replaceAll(',', '');
-    if (raw.isEmpty) return;
+    if (raw.isEmpty) {
+      _applyRatePerPeriod(0);
+      return;
+    }
     final n = double.tryParse(raw);
     if (n != null && n > 0) {
-      rentAmountController.text = raw;
+      _applyRatePerPeriod(n);
     }
+  }
+
+  void _applyRatePerPeriod(double rate) {
+    ratePerPeriod.value = rate;
+    if (rate > 0) {
+      final formatted = rate == rate.roundToDouble()
+          ? rate.round().toString()
+          : rate.toStringAsFixed(2);
+      rentAmountController.text = formatted;
+    } else {
+      rentAmountController.clear();
+    }
+    _refreshStayTotalPreview();
+  }
+
+  void _refreshStayTotalPreview() {
+    final start = leaseStart.value;
+    final end = leaseEnd.value;
+    final rate = ratePerPeriod.value;
+    if (start == null || end == null || rate <= 0) {
+      stayBillingUnits.value = 0;
+      stayTotalPreview.value = 0;
+      return;
+    }
+    final units = BnbStayBilling.billingUnitsBetween(
+      start,
+      end,
+      rentFrequency.value,
+    );
+    stayBillingUnits.value = units;
+    stayTotalPreview.value = BnbStayBilling.totalForStay(
+      ratePerPeriod: rate,
+      frequency: rentFrequency.value,
+      checkIn: start,
+      checkOut: end,
+    );
+  }
+
+  void onRentAmountChanged(String value) {
+    final raw = value.trim().replaceAll(',', '');
+    final n = double.tryParse(raw);
+    ratePerPeriod.value = n != null && n > 0 ? n : 0;
+    _refreshStayTotalPreview();
   }
 
   List<ApartmentUnitDraft> _parseUnitDrafts(String unitsJson) {
@@ -211,6 +273,7 @@ class AddTenantFormController extends BaseController {
   void setRentFrequency(String? value) {
     if (value != null && value.isNotEmpty) {
       rentFrequency.value = value;
+      _refreshStayTotalPreview();
     }
   }
 
@@ -221,8 +284,15 @@ class AddTenantFormController extends BaseController {
   }
 
   void setLeaseDateRange(DateTimeRange range) {
-    leaseStart.value = DateTime(range.start.year, range.start.month, range.start.day);
-    leaseEnd.value = DateTime(range.end.year, range.end.month, range.end.day);
+    final start = DateTime(range.start.year, range.start.month, range.start.day);
+    final end = DateTime(range.end.year, range.end.month, range.end.day);
+    if (!BnbStayBilling.isValidStayRange(start, end)) {
+      showErrorMessage('Check-out must be after check-in (at least one night)');
+      return;
+    }
+    leaseStart.value = start;
+    leaseEnd.value = end;
+    _refreshStayTotalPreview();
   }
 
   Future<void> saveTenant() async {
@@ -240,9 +310,26 @@ class AddTenantFormController extends BaseController {
     }
 
     final amountRaw = rentAmountController.text.trim().replaceAll(',', '');
-    final amount = double.tryParse(amountRaw);
-    if (amount == null || amount <= 0) {
+    final rate = double.tryParse(amountRaw);
+    if (rate == null || rate <= 0) {
       showErrorMessage('Enter a valid rent amount');
+      return;
+    }
+
+    final start = leaseStart.value!;
+    final end = leaseEnd.value!;
+    if (!BnbStayBilling.isValidStayRange(start, end)) {
+      showErrorMessage('Check-out must be after check-in (at least one night)');
+      return;
+    }
+    final stayTotal = BnbStayBilling.totalForStay(
+      ratePerPeriod: rate,
+      frequency: rentFrequency.value,
+      checkIn: start,
+      checkOut: end,
+    );
+    if (stayTotal <= 0) {
+      showErrorMessage('Could not calculate rent for this stay');
       return;
     }
 
@@ -257,8 +344,8 @@ class AddTenantFormController extends BaseController {
       unitLabel: unitLabel,
       tenantName: tenantNameController.text.trim(),
       gender: gender.value,
-      rentAmountValue: amount,
-      rentFrequency: rentFrequency.value,
+      rentAmountValue: stayTotal,
+      rentFrequency: 'Per Stay',
       phoneNumber: phoneController.text.trim(),
       email: emailController.text.trim(),
       isWhatsapp: isWhatsapp.value,
@@ -266,7 +353,16 @@ class AddTenantFormController extends BaseController {
       leaseEndIso: DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
     );
 
-    showSuccessMessage('Tenant saved offline');
+    final units = stayBillingUnits.value;
+    if (stayTotal > 0 && units > 0) {
+      final period = TenantRentBilling.periodLabel(rentFrequency.value);
+      showSuccessMessage(
+        'Tenant saved. Total for stay ($units $period${units == 1 ? '' : 's'}): '
+        'TZS ${NumberFormat('#,###').format(stayTotal.round())}',
+      );
+    } else {
+      showSuccessMessage('Tenant saved offline');
+    }
     Get.back(result: true);
   }
 

@@ -5,7 +5,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../routes/app_pages.dart';
 
 class SupportController extends BaseController {
-  static const String supportEmailAddress = 'support@paayangu.com';
+  static const String supportEmailAddress = 'support@hostbora.co.tz';
 
   static final Uri _supportEmail = Uri.parse(
     'mailto:$supportEmailAddress?subject=${Uri.encodeComponent('Host Bora support')}',

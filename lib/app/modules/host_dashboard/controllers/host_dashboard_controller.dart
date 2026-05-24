@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../routes/app_pages.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../host_calendar/controllers/host_calendar_controller.dart';
 
 class HostDashboardController extends BaseController {
   final activeBookings = 12;
@@ -42,7 +44,14 @@ class HostDashboardController extends BaseController {
 
   void addListing() => Get.toNamed(Routes.ADD_LISTING);
 
-  void addNewBooking() => Get.toNamed(Routes.ADD_NEW_BOOKING);
+  void addNewBooking() {
+    Get.toNamed(Routes.ADD_NEW_BOOKING)?.then((saved) async {
+      if (saved == true) {
+        await HostCalendarController.refreshIfRegistered();
+        await DashboardController.refreshIfRegistered();
+      }
+    });
+  }
 
   void smartAccess() => Get.toNamed(Routes.SMART_ACCESS);
 

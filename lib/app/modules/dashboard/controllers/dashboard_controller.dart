@@ -7,12 +7,16 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/booking_api_response.dart';
 import '../../../data/local/bnb_booking_merge.dart';
+import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/model/community.dart';
@@ -41,6 +45,10 @@ class DashboardController extends BaseController {
   final AppRepository _repository =
       Get.find<AppRepository>(tag: (AppRepository).toString());
   final PendingBookingsStore _pendingBookingsStore = PendingBookingsStore();
+  late final BnbBookingPendingLoader _pendingBookingLoader =
+      BnbBookingPendingLoader(
+    syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
+  );
 
   static final _money = NumberFormat('#,###', 'en_US');
 
@@ -145,8 +153,15 @@ class DashboardController extends BaseController {
     firebaseToken = await _preferenceManager.getString(PreferenceManager.keyFirebaseToken);
   }
 
-  Future<void> loadDashboard() async {
-    isLoading.value = true;
+  /// Reload metrics when bookings or income change elsewhere.
+  static Future<void> refreshIfRegistered({bool quiet = true}) async {
+    if (Get.isRegistered<DashboardController>()) {
+      await Get.find<DashboardController>().loadDashboard(quiet: quiet);
+    }
+  }
+
+  Future<void> loadDashboard({bool quiet = false}) async {
+    if (!quiet) isLoading.value = true;
     try {
       final ws = await _workspaceContext.getWorkspaceType();
       isBnbWorkspace.value = ws == 'bnb';
@@ -219,7 +234,7 @@ class DashboardController extends BaseController {
       final expThis = sumExpenseBetween(thisMonthStart, nextMonthStart);
       final expLast = sumExpenseBetween(lastMonthStart, thisMonthStart);
 
-      totalRevenue.value = 'TZS ${_money.format(revThis.round())}';
+      totalRevenue.value = Get.find<CurrencyService>().formatBase(revThis.round());
       totalRevenueChange.value = _pctChange(revThis, revLast);
       totalRevenueUp.value = revThis >= revLast;
 
@@ -227,17 +242,17 @@ class DashboardController extends BaseController {
           daysThisMonth > 0 ? revThis / daysThisMonth : 0.0;
       final avgDailyLast =
           daysLastMonth > 0 ? revLast / daysLastMonth : 0.0;
-      avgDailyRate.value = 'TZS ${_money.format(avgDailyThis.round())}';
+      avgDailyRate.value = Get.find<CurrencyService>().formatBase(avgDailyThis.round());
       avgDailyRateChange.value = _pctChange(avgDailyThis, avgDailyLast);
       avgDailyRateUp.value = avgDailyThis >= avgDailyLast;
 
       final profitThis = revThis - expThis;
       final profitLast = revLast - expLast;
-      netProfit.value = 'TZS ${_money.format(profitThis.round())}';
+      netProfit.value = Get.find<CurrencyService>().formatBase(profitThis.round());
       netProfitChange.value = _pctChange(profitThis, profitLast);
       netProfitUp.value = profitThis >= profitLast;
 
-      totalExpenses.value = 'TZS ${_money.format(expThis.round())}';
+      totalExpenses.value = Get.find<CurrencyService>().formatBase(expThis.round());
       totalExpensesChange.value = _pctChange(expThis, expLast);
       totalExpensesUp.value = expThis >= expLast;
 
@@ -245,7 +260,8 @@ class DashboardController extends BaseController {
           daysThisMonth > 0 ? expThis / daysThisMonth : 0.0;
       final avgExpDailyLast =
           daysLastMonth > 0 ? expLast / daysLastMonth : 0.0;
-      avgDailyExpense.value = 'TZS ${_money.format(avgExpDailyThis.round())}';
+      avgDailyExpense.value =
+          Get.find<CurrencyService>().formatBase(avgExpDailyThis.round());
       avgDailyExpenseChange.value =
           _pctChange(avgExpDailyThis, avgExpDailyLast);
       avgDailyExpenseUp.value = avgExpDailyThis >= avgExpDailyLast;
@@ -304,7 +320,7 @@ class DashboardController extends BaseController {
     } catch (_) {
       // keep default/placeholder values
     } finally {
-      isLoading.value = false;
+      if (!quiet) isLoading.value = false;
     }
   }
 
@@ -431,16 +447,12 @@ class DashboardController extends BaseController {
 
     try {
       final res = await _repository.getAllBookings();
-      final data = res.data;
-      List<dynamic> rows = const [];
-      if (res.responseCode == '0' && data is Map && data['bookings'] is List) {
-        rows = data['bookings'] as List;
-      } else if (res.responseCode == '0' && data is List) {
-        rows = data;
-      }
-      for (final e in rows.whereType<Map>()) {
-        final item = merge.fromApiMap(Map<String, dynamic>.from(e));
-        merged[item.bookingKey] = item;
+      if (BookingApiResponse.isSuccess(res.responseCode)) {
+        for (final m in BookingApiResponse.parseBookingsList(res.data)) {
+          final item = merge.fromApiMap(m);
+          if (item.isCancelled) continue;
+          merged[item.bookingKey] = item;
+        }
       }
     } catch (_) {}
 
@@ -449,28 +461,12 @@ class DashboardController extends BaseController {
         userId: '',
         workspaceType: 'bnb',
       );
-      for (final m in _pendingBookingsStore.load()) {
-        final listingId = (m['listingId'] ?? '').toString().trim();
-        final checkIn = (m['checkIn'] ?? '').toString();
-        final checkOut = (m['checkOut'] ?? '').toString();
-        if (listingId.isEmpty || checkIn.isEmpty || checkOut.isEmpty) {
-          continue;
-        }
-        final property = properties.firstWhereOrNull(
-          (p) =>
-              p.propertyRef.trim() == listingId ||
-              'local_${p.id}' == listingId,
-        );
-        final propertyLabel = property?.propertyName.trim().isNotEmpty == true
-            ? property!.propertyName.trim()
-            : (property?.propertyLocation ?? 'Property');
-        final localId = 'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
-        merged[localId] = merge.fromPendingMap(
-          m,
-          propertyLabel: propertyLabel,
-          localId: localId,
-        );
-      }
+      await mergePendingBnbBookings(
+        merge: merge,
+        merged: merged,
+        properties: properties,
+        loader: _pendingBookingLoader,
+      );
 
       for (final p in properties) {
         unitsTotal += _bnbUnitCountForProperty(p);
@@ -505,7 +501,8 @@ class DashboardController extends BaseController {
         }
       }
     } catch (_) {}
-    bnbTodayRevenue.value = 'TZS ${_money.format(todaySum.round())}';
+    bnbTodayRevenue.value =
+        Get.find<CurrencyService>().formatBase(todaySum.round());
 
     _assignWeeklyRevenue(incomes, weekStart);
     _assignWeeklyOccupancy(merged.values, unitsTotal, weekStart);

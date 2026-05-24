@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/widget/custom_app_bar.dart';
 import '../../../../../l10n/app_localizations.dart';
 import '../controllers/rent_smart_utility_dashboard_controller.dart';
 
@@ -31,7 +32,13 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => null;
+  PreferredSizeWidget? appBar(BuildContext context) {
+    return CustomAppBar(
+      appBarTitleText: _isSw ? 'Umeme na Maji' : 'Utilities',
+      showLanguageToggle: false,
+      showThemeToggle: false,
+    );
+  }
 
   @override
   Color pageBackgroundColor(BuildContext context) => _UtilUi(context).bg;
@@ -52,7 +59,6 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
-              const SizedBox(height: 20),
               _globalStatusRow(u),
               const SizedBox(height: 16),
               _lukuCard(u),
@@ -86,7 +92,7 @@ class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardCo
                 controller.unitLabel.value,
                 // _isSw ? 'HALI KUU' : 'GLOBAL STATUS',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 18,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.w800,
                   color: u.muted,

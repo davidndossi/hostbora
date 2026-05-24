@@ -1224,6 +1224,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recentActivity => 'Recent Activity';
 
   @override
+  String get rentListingActivityLogTitle => 'Activity log';
+
+  @override
+  String get rentListingActivityLogEmpty =>
+      'No activity for this property yet.';
+
+  @override
+  String get rentListingExpectedMonthlyIncome => 'Expected monthly income';
+
+  @override
+  String get rentListingMonthlyIncome => 'Monthly income';
+
+  @override
+  String get rentAddTenantIncomePromptTitle => 'Tenant saved';
+
+  @override
+  String get rentAddTenantIncomePromptBody =>
+      'Record the first rent payment now? We will pre-fill the income form from this tenant.';
+
+  @override
+  String get rentAddTenantIncomePromptAdd => 'Add income';
+
+  @override
+  String get rentAddTenantIncomePromptLater => 'Not now';
+
+  @override
   String get loginSecurity => 'LOGIN SECURITY';
 
   @override
@@ -1851,6 +1877,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get managePaymentsUnknownStatus => '—';
+
+  @override
+  String get manageExpensesTitle => 'View expenses';
+
+  @override
+  String get manageExpensesNoRows => 'No expenses to show.';
+
+  @override
+  String get manageExpensesCategoryFilter => 'Category';
+
+  @override
+  String get manageExpensesAllCategories => 'All categories';
 
   @override
   String get rentUtilityLukuUsageGraphLink => 'LUKU usage graph';

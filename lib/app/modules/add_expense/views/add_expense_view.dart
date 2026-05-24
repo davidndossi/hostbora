@@ -5,6 +5,7 @@ import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/utils/thousand_separator.dart';
+import '../../../core/widget/currency_dropdown_field.dart';
 import '../controllers/add_expense_controller.dart';
 
 class AddExpenseView extends BaseView<AddExpenseController> {
@@ -264,18 +265,33 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                 children: [
                   const SizedBox(height: 12),
                   Text(
-                    _isSw ? 'Kiasi (Tsh)' : 'Amount (Tsh)',
+                    _isSw ? 'Kiasi' : 'Amount',
                     style: sectionTitleStyle,
                   ),
                   const SizedBox(height: 7),
-                  _field(
-                    isDark,
-                    controller.amountController,
-                    hint: 'Tsh 0.00',
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    validator: controller.validateAmount,
-                    inputFormatters: [
-                      ThousandsSeparatorInputFormatter(),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _field(
+                          isDark,
+                          controller.amountController,
+                          hint: '0.00',
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          validator: controller.validateAmount,
+                          inputFormatters: [
+                            ThousandsSeparatorInputFormatter(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: CurrencyDropdownField(
+                          selectedCurrency: controller.selectedCurrency,
+                          label: _isSw ? 'Sarafu' : 'Currency',
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),

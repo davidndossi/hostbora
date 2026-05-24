@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/widget/currency_dropdown_field.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_add_income_form_controller.dart';
 
@@ -168,13 +169,28 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
           // ),
           // const SizedBox(height: 16),
           _label(_isSw ? 'KIASI KILICHOLIPWA' : 'AMOUNT PAID', isDark: isDark),
-          _field(
-            isDark,
-            controller.amountController,
-            hint: 'TZS 0.00',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            validator: controller.validateAmount,
-            inputFormatters: [controller.amountThousandsFormatter],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: _field(
+                  isDark,
+                  controller.amountController,
+                  hint: '0.00',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: controller.validateAmount,
+                  inputFormatters: [controller.amountThousandsFormatter],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: CurrencyDropdownField(
+                  selectedCurrency: controller.selectedCurrency,
+                  label: _isSw ? 'SARAFU' : 'CURRENCY',
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           _label(_isSw ? 'TAREHE YA MALIPO' : 'DATE PAID', isDark: isDark),
@@ -261,22 +277,40 @@ class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
             ),
           ),
           const SizedBox(height: 30),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: controller.saveIncomeOffline,
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11)),
+          Obx(() {
+            final isSaving = controller.saving.value;
+            final onPrimary = Theme.of(context).colorScheme.onPrimary;
+            return SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: isSaving ? null : controller.saveIncomeOffline,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11)),
+                ),
+                icon: isSaving
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: onPrimary,
+                        ),
+                      )
+                    : const Icon(Icons.check, size: 20),
+                label: Text(
+                  isSaving
+                      ? (_isSw ? 'Inahifadhi...' : 'Saving...')
+                      : (_isSw ? 'Hifadhi Mapato' : 'Save Income'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 16),
+                ),
               ),
-              icon: const Icon(Icons.check, size: 20),
-              label: Text(_isSw ? 'Hifadhi Mapato' : 'Save Income',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-            ),
-          ),
+            );
+          }),
           const SizedBox(height: 18),
           Align(
             alignment: Alignment.center,

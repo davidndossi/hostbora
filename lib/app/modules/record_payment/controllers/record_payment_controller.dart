@@ -7,7 +7,9 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/money_input_helper.dart';
 import '../../../core/utils/thousand_separator.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -20,6 +22,7 @@ import '../../../data/model/check_in_item.dart';
 import '../../../data/model/record_payment_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
+import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 enum PaymentStatus { paid, pending }
 
@@ -77,6 +80,7 @@ class RecordPaymentController extends BaseController {
   final selectedProperty = ''.obs;
   /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
   final selectedIncomeUnitKey = Rxn<String>();
+  final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
   /// Optional BnB booking ([CheckInItem.bookingKey]); null = not linked.
   final selectedBookingKey = Rxn<String>();
   final bookingOptions = <BookingPickerOption>[].obs;
@@ -378,6 +382,7 @@ class RecordPaymentController extends BaseController {
   }
 
   Future<void> _initForm() async {
+    selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
     final presetBooking = _routeBookingId();
     if (presetBooking.isNotEmpty) {
       selectedBookingKey.value = presetBooking;
@@ -621,6 +626,7 @@ class RecordPaymentController extends BaseController {
   }
 
   Future<void> saveIncomeOffline() async {
+    if (saving.value) return;
     if (!(formKey.currentState?.validate() ?? false)) return;
     if (selectedProperty.value.trim().isEmpty) {
       showErrorMessage('Please select a property');
@@ -633,8 +639,11 @@ class RecordPaymentController extends BaseController {
     final notes = notesController.text.trim();
     final property = selectedProperty.value.trim();
 
-    final amount = double.tryParse(amountRaw);
-    if (amount == null || amount <= 0) {
+    final parsed = MoneyInputHelper.forSave(
+      amountRaw: amountRaw,
+      selectedCurrency: selectedCurrency.value,
+    );
+    if (parsed.inputAmount <= 0) {
       showErrorMessage('Enter a valid amount greater than 0');
       return;
     }
@@ -662,42 +671,53 @@ class RecordPaymentController extends BaseController {
 
     final bookingId = _selectedBookingIdForSave() ?? '';
 
-    await _incomeLocal.insert(
-      tenantName: tenant,
-      amountValue: amount,
-      datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
-      category: selectedCategory,
-      workspaceType: 'bnb',
-      notes: baseNotes.toString().trim(),
-      apartment: property,
-      apartmentUnit: unitName,
-      propertyRef: _propertyRefForIncomeInsert(),
-      bookingId: bookingId,
-    );
+    saving.value = true;
+    try {
+      await _incomeLocal.insert(
+        tenantName: tenant,
+        amountValue: parsed.baseAmount,
+        datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
+        category: selectedCategory,
+        workspaceType: 'bnb',
+        notes: baseNotes.toString().trim(),
+        apartment: property,
+        apartmentUnit: unitName,
+        propertyRef: _propertyRefForIncomeInsert(),
+        bookingId: bookingId,
+        currencyCode: parsed.currency,
+        inputAmountValue: parsed.inputAmount,
+      );
 
-    final request = RecordPaymentRequest(
-      amount: amount,
-      paymentMethod: selectedPaymentMethod.value,
-      bookingId: bookingId.isEmpty ? null : bookingId,
-      paymentDate: DateFormat(_isoDateFormat).format(paidDate),
-      status: status.value == PaymentStatus.paid ? 'PAID' : 'PENDING',
-    );
-    await _syncQueue.enqueue(
-      entityType: 'payment',
-      operation: 'create',
-      payloadJson: jsonEncode(request.toJson()),
-    );
-    await _syncWorker.runNow(maxItems: 20);
-    final pending = await _syncQueue.pendingCountByEntity(
-      entityType: 'payment',
-      operation: 'create',
-    );
-    if (pending > 0) {
-      showSuccessMessage('Income saved offline. Will sync when internet is available.');
-    } else {
-      showSuccessMessage('Income saved and synced.');
+      final request = RecordPaymentRequest(
+        amount: parsed.baseAmount,
+        paymentMethod: selectedPaymentMethod.value,
+        bookingId: bookingId.isEmpty ? null : bookingId,
+        paymentDate: DateFormat(_isoDateFormat).format(paidDate),
+        status: status.value == PaymentStatus.paid ? 'PAID' : 'PENDING',
+      );
+      await _syncQueue.enqueue(
+        entityType: 'payment',
+        operation: 'create',
+        payloadJson: jsonEncode(request.toJson()),
+      );
+      await _syncWorker.runNow(maxItems: 20);
+      final pending = await _syncQueue.pendingCountByEntity(
+        entityType: 'payment',
+        operation: 'create',
+      );
+      if (pending > 0) {
+        showSuccessMessage(
+            'Income saved offline. Will sync when internet is available.');
+      } else {
+        showSuccessMessage('Income saved and synced.');
+      }
+      await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+      Get.back(result: true);
+    } catch (e) {
+      showErrorMessage('Failed to save income: $e');
+    } finally {
+      saving.value = false;
     }
-    Get.back(result: true);
   }
 
   String? validateTenant(String? value) {

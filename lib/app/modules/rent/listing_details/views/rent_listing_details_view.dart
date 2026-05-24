@@ -71,10 +71,19 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
             const SizedBox(height: 10),
             _kpiMinimal(
               u,
-              label: _isSw ? 'MAPATO YA MWEZI' : 'MONTHLY REVENUE',
-              value: controller.monthlyRevenueLabel.value,
-              prefix: 'TZS',
-              progress: controller.monthlyRevenueProgress.value,
+              label: appLocalization.rentListingExpectedMonthlyIncome.toUpperCase(),
+              value: controller.expectedMonthlyIncomeLabel.value,
+            ),
+            const SizedBox(height: 10),
+            Obx(
+              () => _kpiMinimal(
+                u,
+                label: appLocalization.rentListingMonthlyIncome.toUpperCase(),
+                value: controller.monthlyIncomeLabel.value,
+                progress: controller.hasRecordedMonthlyIncome.value
+                    ? controller.monthlyRevenueProgress.value
+                    : null,
+              ),
             ),
             const SizedBox(height: 14),
             _quickManagement(u),
@@ -470,15 +479,15 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
           children: [
             Expanded(
               child: Text(
-                _isSw ? 'Recent Activity' : 'Recent Activity',
+                appLocalization.recentActivity,
                 style: TextStyle(fontFamily: 'serif', fontSize: 22, fontWeight: FontWeight.w700, color: u.text),
               ),
             ),
             TextButton(
               onPressed: controller.onViewAllLog,
-              child: const Text(
-                'VIEW ALL LOG',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              child: Text(
+                appLocalization.viewAll.toUpperCase(),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ),
           ],
@@ -486,7 +495,10 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
         Obx(() {
           final rows = controller.recentActivity;
           if (rows.isEmpty) {
-            return Text('No recent activity', style: TextStyle(fontSize: 14, color: u.muted));
+            return Text(
+              appLocalization.rentListingActivityLogEmpty,
+              style: TextStyle(fontSize: 14, color: u.muted),
+            );
           }
           return Column(
             children: rows

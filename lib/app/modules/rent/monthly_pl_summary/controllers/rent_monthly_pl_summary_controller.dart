@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
 class PlExpenseLineVm {
@@ -286,7 +287,8 @@ class RentMonthlyPlSummaryController extends BaseController
     }
   }
 
-  String formatTsh(double v) => 'Tsh ${_money.format(v.round())}';
+  String formatTsh(double v) =>
+      Get.find<CurrencyService>().formatBase(v.round());
 
   String monthTitle({required bool isSw}) {
     try {

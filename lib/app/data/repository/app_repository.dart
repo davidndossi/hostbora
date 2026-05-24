@@ -21,6 +21,7 @@ import '../model/update_request.dart';
 import '../model/create_calendar_subscription_request.dart';
 import '../model/update_calendar_subscription_request.dart';
 import '../model/calendar_sync_request.dart';
+import '../model/fx_response.dart';
 
 abstract class AppRepository {
 
@@ -123,4 +124,7 @@ abstract class AppRepository {
   Future<GeneralResponse> deleteCalendarSubscription(String subscriptionId);
 
   Future<GeneralResponse> syncCalendarImport(CalendarSyncRequest request);
+
+  /// POST /api/exchange/rates — FX list (currency, buying, selling).
+  Future<FxResponse> getExchangeRates();
 }

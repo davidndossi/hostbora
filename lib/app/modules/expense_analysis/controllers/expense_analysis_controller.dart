@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../routes/app_pages.dart';
 
 class ExpenseAnalysisController extends BaseController {
@@ -68,7 +69,8 @@ class ExpenseAnalysisController extends BaseController {
       }).toList();
 
       final total = inRange.fold<double>(0, (sum, e) => sum + e.amountValue);
-      totalAmountLabel.value = 'Tshs. ${_money.format(total.round())}';
+      totalAmountLabel.value =
+          Get.find<CurrencyService>().formatBase(total.round());
 
       final byCategory = <String, double>{};
       for (final row in inRange) {
@@ -123,7 +125,7 @@ class ExpenseAnalysisController extends BaseController {
           return TopExpenseItem(
             category: entry.key,
             subtitle: _subtitleForCategory(entry.key),
-            amount: 'Tshs. ${_money.format(entry.value.round())}',
+            amount: Get.find<CurrencyService>().formatBase(entry.value.round()),
             changePercent: '${pct.toStringAsFixed(1)}%',
             changeUp: delta >= 0,
             thisMonthRatio: (current / maxMonthTotal).clamp(0.0, 1.0),

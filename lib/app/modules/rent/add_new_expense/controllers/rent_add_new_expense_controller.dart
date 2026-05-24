@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/money_input_helper.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -13,6 +15,7 @@ import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../../data/model/add_expense_request.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
+import '../../listing_details/controllers/rent_listing_details_controller.dart';
 
 class RentAddNewExpenseController extends BaseController {
   RentAddNewExpenseController()
@@ -46,6 +49,7 @@ class RentAddNewExpenseController extends BaseController {
   final selectedProperty = ''.obs;
   /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
   final selectedExpenseUnitKey = Rxn<String>();
+  final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
 
   List<PropertyRecord> _propertyRows = [];
 
@@ -168,6 +172,7 @@ class RentAddNewExpenseController extends BaseController {
   @override
   void onInit() {
     super.onInit();
+    selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
     _loadProperties();
   }
 
@@ -194,7 +199,9 @@ class RentAddNewExpenseController extends BaseController {
         .toList();
     propertyOptions.assignAll(options);
 
-    final fromRoute = Get.parameters['property']?.trim() ?? '';
+    final fromArgs = _routePropertyLabel();
+    final fromRoute =
+        fromArgs.isNotEmpty ? fromArgs : (Get.parameters['property']?.trim() ?? '');
     if (fromRoute.isNotEmpty && options.contains(fromRoute)) {
       selectedProperty.value = fromRoute;
       return;
@@ -202,6 +209,17 @@ class RentAddNewExpenseController extends BaseController {
     if (options.length == 1) {
       selectedProperty.value = options.first;
     }
+  }
+
+  String _routePropertyLabel() {
+    final args = Get.arguments;
+    if (args is Map) {
+      for (final key in ['property', 'property_name']) {
+        final v = (args[key] ?? '').toString().trim();
+        if (v.isNotEmpty) return v;
+      }
+    }
+    return '';
   }
 
   void updateSelectedProperty(String? value) {
@@ -226,9 +244,11 @@ class RentAddNewExpenseController extends BaseController {
       return;
     }
 
-    final amountRaw = amountController.text.trim().replaceAll(',', '');
-    final amount = double.tryParse(amountRaw);
-    if (amount == null || amount <= 0) {
+    final parsed = MoneyInputHelper.forSave(
+      amountRaw: amountController.text.trim(),
+      selectedCurrency: selectedCurrency.value,
+    );
+    if (parsed.inputAmount <= 0) {
       showErrorMessage('Enter a valid amount greater than 0');
       return;
     }
@@ -258,17 +278,19 @@ class RentAddNewExpenseController extends BaseController {
     }
     await _expenseLocal.insert(
       tenantName: tenantController.text.trim(),
-      amountValue: amount,
+      amountValue: parsed.baseAmount,
       datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
       category: selectedExpense,
       workspaceType: 'rent',
       notes: baseNotes.toString().trim(),
       apartment: property,
       apartmentUnit: unitName,
+      currencyCode: parsed.currency,
+      inputAmountValue: parsed.inputAmount,
     );
 
     final request = AddExpenseRequest(
-      amount: amount,
+      amount: parsed.baseAmount,
       category: selectedExpense,
       expenseDate: DateFormat('yyyy-MM-dd').format(paidDate),
       vendor: tenantController.text.trim().isNotEmpty
@@ -292,6 +314,7 @@ class RentAddNewExpenseController extends BaseController {
     } else {
       showSuccessMessage('Expense saved and synced.');
     }
+    await RentListingDetailsController.refreshIfRegistered();
     Get.back(result: true);
   }
 

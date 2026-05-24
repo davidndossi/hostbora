@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/money_input_helper.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
@@ -47,6 +49,7 @@ class AddExpenseController extends BaseController {
   final selectedProperty = ''.obs;
   /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
   final selectedExpenseUnitKey = Rxn<String>();
+  final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
 
   List<PropertyRecord> _propertyRows = [];
 
@@ -166,6 +169,7 @@ class AddExpenseController extends BaseController {
   @override
   void onInit() {
     super.onInit();
+    selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
     _loadProperties();
   }
 
@@ -224,9 +228,11 @@ class AddExpenseController extends BaseController {
       return;
     }
 
-    final amountRaw = amountController.text.trim().replaceAll(',', '');
-    final amount = double.tryParse(amountRaw);
-    if (amount == null || amount <= 0) {
+    final parsed = MoneyInputHelper.forSave(
+      amountRaw: amountController.text.trim(),
+      selectedCurrency: selectedCurrency.value,
+    );
+    if (parsed.inputAmount <= 0) {
       showErrorMessage('Enter a valid amount greater than 0');
       return;
     }
@@ -256,17 +262,19 @@ class AddExpenseController extends BaseController {
     }
     await _expenseLocal.insert(
       tenantName: tenantController.text.trim(),
-      amountValue: amount,
+      amountValue: parsed.baseAmount,
       datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
       category: selectedExpense,
       workspaceType: 'bnb',
       notes: baseNotes.toString().trim(),
       apartment: property,
       apartmentUnit: unitName,
+      currencyCode: parsed.currency,
+      inputAmountValue: parsed.inputAmount,
     );
 
     final request = AddExpenseRequest(
-      amount: amount,
+      amount: parsed.baseAmount,
       category: selectedExpense,
       expenseDate: DateFormat('yyyy-MM-dd').format(paidDate),
       vendor: tenantController.text.trim().isNotEmpty

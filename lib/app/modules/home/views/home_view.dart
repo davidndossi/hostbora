@@ -345,7 +345,7 @@ class HomeView extends BaseView<HomeController> {
             ),
             _QuickActionTile(
               icon: 'ic_group.svg',
-              label: _t(context, 'Tenants', 'Wapangaji'),
+              label: _t(context, 'Guests', 'Wageni'),
               onTap: controller.tenants,
             ),
             _QuickActionTile(

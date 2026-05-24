@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -86,84 +88,131 @@ class InteriorDesignStudioView
   Widget _buildUploadCard(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = _isDark(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
-      decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surfaceContainerHigh
-            : AppColors.pageBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
+    return Obx(() {
+      final photoPath = controller.selectedRoomPhotoPath.value;
+      final hasPhoto =
+          photoPath != null && photoPath.isNotEmpty && File(photoPath).existsSync();
+      final picking = controller.pickingPhoto.value;
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+        decoration: BoxDecoration(
           color: isDark
-              ? theme.colorScheme.outlineVariant
-              : AppColors.designInputBorder,
+              ? theme.colorScheme.surfaceContainerHigh
+              : AppColors.pageBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? theme.colorScheme.outlineVariant
+                : AppColors.designInputBorder,
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: AppColors.colorPrimary,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(Icons.photo_camera_outlined, color: Colors.white),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            _t(
-              context,
-              en: 'Upload a photo of your room',
-              sw: 'Pakia picha ya chumba chako',
-            ),
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: isDark
-                  ? theme.colorScheme.onSurface
-                  : AppColors.textColorPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _t(
-              context,
-              en: 'For best results, ensure the room is well-lit',
-              sw: 'Kwa matokeo bora, hakikisha chumba kina mwanga wa kutosha',
-            ),
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark
-                  ? theme.colorScheme.onSurfaceVariant
-                  : AppColors.textColorSecondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: controller.uploadPhoto,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.colorPrimary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
+        child: Column(
+          children: [
+            if (hasPhoto) ...[
+              ClipRRect(
                 borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  File(photoPath),
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-              minimumSize: const Size(140, 48),
-            ),
-            child: Text(
-              _t(context, en: 'Select Photo', sw: 'Chagua Picha'),
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.35,
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: picking ? null : controller.clearRoomPhoto,
+                  child: Text(
+                    _t(context, en: 'Remove', sw: 'Ondoa'),
+                    style: const TextStyle(color: AppColors.colorPrimary),
+                  ),
+                ),
+              ),
+            ] else ...[
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: AppColors.colorPrimary,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.photo_camera_outlined, color: Colors.white),
+              ),
+              const SizedBox(height: 10),
+            ],
+            Text(
+              hasPhoto
+                  ? _t(
+                      context,
+                      en: 'Room photo ready',
+                      sw: 'Picha ya chumba iko tayari',
+                    )
+                  : _t(
+                      context,
+                      en: 'Upload a photo of your room',
+                      sw: 'Pakia picha ya chumba chako',
+                    ),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? theme.colorScheme.onSurface
+                    : AppColors.textColorPrimary,
               ),
             ),
-          ),
-        ],
-      ),
-    );
+            const SizedBox(height: 4),
+            Text(
+              _t(
+                context,
+                en: 'For best results, ensure the room is well-lit',
+                sw: 'Kwa matokeo bora, hakikisha chumba kina mwanga wa kutosha',
+              ),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.textColorSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: picking ? null : controller.uploadPhoto,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.colorPrimary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                minimumSize: const Size(140, 48),
+              ),
+              child: picking
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      hasPhoto
+                          ? _t(context, en: 'Change Photo', sw: 'Badili Picha')
+                          : _t(context, en: 'Select Photo', sw: 'Chagua Picha'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.35,
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildStyleHeader(BuildContext context) {
@@ -307,38 +356,34 @@ class InteriorDesignStudioView
   }
 
   Widget _buildResultList() {
-    final isDark = _isDark(Get.context!);
-    final theme = Theme.of(Get.context!);
-    return Column(
-      children: controller.results
-          .map(
-            (item) => Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? theme.colorScheme.surfaceContainerHigh
-                    : AppColors.colorWhite,
-                borderRadius: BorderRadius.circular(AppValues.radius_12),
-                border: Border.all(
+    return Obx(() {
+      final isDark = _isDark(Get.context!);
+      final theme = Theme.of(Get.context!);
+      return Column(
+        children: controller.results
+            .map(
+              (item) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
                   color: isDark
-                      ? theme.colorScheme.outlineVariant
-                      : AppColors.designInputBorder,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppValues.radius_12),
-                    ),
-                    child: Image.asset(
-                      item.imagePath,
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+                      ? theme.colorScheme.surfaceContainerHigh
+                      : AppColors.colorWhite,
+                  borderRadius: BorderRadius.circular(AppValues.radius_12),
+                  border: Border.all(
+                    color: isDark
+                        ? theme.colorScheme.outlineVariant
+                        : AppColors.designInputBorder,
                   ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppValues.radius_12),
+                      ),
+                      child: _resultImage(item.imagePath, height: 150),
+                    ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
                     child: Row(
@@ -457,6 +502,52 @@ class InteriorDesignStudioView
             ),
           )
           .toList(),
+      );
+    });
+  }
+
+  Widget _resultImage(String path, {required double height}) {
+    if (path.startsWith('http')) {
+      return Image.network(
+        path,
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _resultImagePlaceholder(height),
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return SizedBox(
+            height: height,
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        },
+      );
+    }
+    if (path.startsWith('/')) {
+      return Image.file(
+        File(path),
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _resultImagePlaceholder(height),
+      );
+    }
+    return Image.asset(
+      path,
+      height: height,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _resultImagePlaceholder(height),
+    );
+  }
+
+  Widget _resultImagePlaceholder(double height) {
+    return Container(
+      height: height,
+      width: double.infinity,
+      color: AppColors.pageBackground,
+      alignment: Alignment.center,
+      child: const Icon(Icons.image_not_supported_outlined),
     );
   }
 }

@@ -39,6 +39,7 @@ class AppLocalDatabase {
   static const rentWhatsappTemplateTable = 'rent_whatsapp_template';
   static const propertyMembersTable = 'property_members';
   static const offlineSyncQueueTable = 'offline_sync_queue';
+  static const exchangeRatesTable = 'exchange_rates';
 
   static Database? _db;
 
@@ -63,6 +64,8 @@ class AppLocalDatabase {
         await _ensureUtilityTopupPropertyRefColumn(db);
         await _ensurePropertiesFloorCountColumn(db);
         await _ensureIncomeBookingIdColumn(db);
+        await _ensureCurrencyColumns(db);
+        await _ensureExchangeRatesTable(db);
       },
     );
     return _db!;
@@ -137,6 +140,8 @@ class AppLocalDatabase {
         property_ref TEXT NOT NULL DEFAULT '',
         booking_id TEXT NOT NULL DEFAULT '',
         workspace_type TEXT NOT NULL DEFAULT 'rent',
+        currency_code TEXT NOT NULL DEFAULT 'TZS',
+        input_amount_value REAL NOT NULL DEFAULT 0,
         created_at_ms INTEGER NOT NULL
       )
     ''');
@@ -154,7 +159,17 @@ class AppLocalDatabase {
         apartment TEXT NOT NULL DEFAULT '',
         apartment_unit TEXT NOT NULL DEFAULT '',
         workspace_type TEXT NOT NULL DEFAULT 'rent',
+        currency_code TEXT NOT NULL DEFAULT 'TZS',
+        input_amount_value REAL NOT NULL DEFAULT 0,
         created_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE $exchangeRatesTable (
+        currency TEXT PRIMARY KEY,
+        buying REAL NOT NULL,
+        selling REAL NOT NULL,
+        updated_at_ms INTEGER NOT NULL
       )
     ''');
     await db.execute('''
@@ -369,6 +384,44 @@ class AppLocalDatabase {
     if (oldVersion < 5) {
       await _ensureIncomeBookingIdColumn(db);
     }
+  }
+
+  static Future<void> _ensureCurrencyColumns(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      incomeTable,
+      'currency_code',
+      "TEXT NOT NULL DEFAULT 'TZS'",
+    );
+    await _addColumnIfMissing(
+      db,
+      incomeTable,
+      'input_amount_value',
+      'REAL NOT NULL DEFAULT 0',
+    );
+    await _addColumnIfMissing(
+      db,
+      expenseTable,
+      'currency_code',
+      "TEXT NOT NULL DEFAULT 'TZS'",
+    );
+    await _addColumnIfMissing(
+      db,
+      expenseTable,
+      'input_amount_value',
+      'REAL NOT NULL DEFAULT 0',
+    );
+  }
+
+  static Future<void> _ensureExchangeRatesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $exchangeRatesTable (
+        currency TEXT PRIMARY KEY,
+        buying REAL NOT NULL,
+        selling REAL NOT NULL,
+        updated_at_ms INTEGER NOT NULL
+      )
+    ''');
   }
 
   static Future<void> _ensureIncomeBookingIdColumn(Database db) async {

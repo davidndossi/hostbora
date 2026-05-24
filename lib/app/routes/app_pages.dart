@@ -142,6 +142,8 @@ import '../modules/rent/estate_manager_dashboard/bindings/rent_estate_manager_da
 import '../modules/rent/estate_manager_dashboard/views/rent_estate_manager_dashboard_view.dart';
 import '../modules/rent/base_shell/bindings/rent_base_shell_binding.dart';
 import '../modules/rent/base_shell/views/rent_base_shell_view.dart';
+import '../modules/rent/listing_activity_log/bindings/rent_listing_activity_log_binding.dart';
+import '../modules/rent/listing_activity_log/views/rent_listing_activity_log_view.dart';
 import '../modules/rent/listing_details/bindings/rent_listing_details_binding.dart';
 import '../modules/rent/listing_details/views/rent_listing_details_view.dart';
 import '../modules/rent/add_new_listing/bindings/rent_add_new_listing_binding.dart';
@@ -242,6 +244,8 @@ import '../modules/rent/active_loyalty_programs/views/rent_active_loyalty_progra
     as split_active_loyalty_view;
 import '../modules/rent/whatsapp_template_builder/bindings/rent_whatsapp_template_builder_binding.dart';
 import '../modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart';
+import '../modules/rent/manage_expenses/bindings/manage_expenses_binding.dart';
+import '../modules/rent/manage_expenses/views/manage_expenses_view.dart';
 import '../modules/rent/manage_payments/bindings/manage_payments_binding.dart';
 import '../modules/rent/manage_payments/views/manage_payments_view.dart';
 
@@ -620,6 +624,11 @@ class AppPages {
       binding: ManagePaymentsBinding(),
     ),
     GetPage(
+      name: _Paths.RENT_MANAGE_EXPENSES,
+      page: () => ManageExpensesView(),
+      binding: ManageExpensesBinding(),
+    ),
+    GetPage(
       name: _Paths.RENT_ADD_NEW_EXPENSE,
       page: () => split_add_expense_view.RentAddNewExpenseView(),
       binding: split_add_expense_binding.RentAddNewExpenseBinding(),
@@ -728,6 +737,11 @@ class AppPages {
       name: _Paths.RENT_LISTING_DETAILS,
       page: () => RentListingDetailsView(),
       binding: RentListingDetailsBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_LISTING_ACTIVITY_LOG,
+      page: () => RentListingActivityLogView(),
+      binding: RentListingActivityLogBinding(),
     ),
     GetPage(
       name: _Paths.RENT_PROPERTY_ROI_ESTIMATE_FORM,

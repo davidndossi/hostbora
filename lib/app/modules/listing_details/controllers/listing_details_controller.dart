@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/tenant_rent_billing.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
@@ -13,6 +14,7 @@ import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
@@ -228,7 +230,7 @@ class ListingDetailsController extends BaseController {
       paymentTotal += row.amountValue;
     }
 
-    var spanningLeaseRent = 0.0;
+    var tenantMonthRevenue = 0.0;
     try {
       if (_propertyId.isNotEmpty ||
           _propertyName.isNotEmpty ||
@@ -236,22 +238,19 @@ class ListingDetailsController extends BaseController {
         final tenants = await _tenantLocal.getAllNewestFirst();
         for (final t in tenants) {
           if (!_tenantMatchesListingForMonthlyRevenue(t, scopeRefs)) continue;
-          final ls = _parseTenantLeaseStartDate(t);
-          final le = _parseTenantLeaseEndDate(t);
-          if (ls == null || le == null) continue;
-          if (_leaseBeganBeforeMonthAndEndsAfterFirstDayOfNextMonth(
-                leaseStart: ls,
-                leaseEnd: le,
-                monthStart: start,
-                nextMonthStart: end,
-              )) {
-            spanningLeaseRent += t.rentAmountValue;
-          }
+          tenantMonthRevenue += TenantRentBilling.revenueInCalendarMonth(
+            rentAmountValue: t.rentAmountValue,
+            rentFrequency: t.rentFrequency,
+            leaseStartIso: t.leaseStartIso,
+            leaseEndIso: t.leaseEndIso,
+            monthStart: start,
+            nextMonthStart: end,
+          );
         }
       }
     } catch (_) {}
 
-    final localTotal = paymentTotal + spanningLeaseRent;
+    final localTotal = paymentTotal + tenantMonthRevenue;
 
     // Local rows (including newly saved income) are authoritative; use API
     // only when there is no matching local income for this month.
@@ -267,44 +266,6 @@ class ListingDetailsController extends BaseController {
     final expected = expectedLocal > 0 ? expectedLocal : expectedRemote;
     monthlyRevenueProgress.value =
         expected <= 0 ? 0 : (displayTotal / expected).clamp(0, 1).toDouble();
-  }
-
-  /// Lease began strictly before [monthStart] and ends strictly after the first
-  /// calendar day of the following month ([nextMonthStart]).
-  static bool _leaseBeganBeforeMonthAndEndsAfterFirstDayOfNextMonth({
-    required DateTime leaseStart,
-    required DateTime leaseEnd,
-    required DateTime monthStart,
-    required DateTime nextMonthStart,
-  }) {
-    final ls = DateTime(leaseStart.year, leaseStart.month, leaseStart.day);
-    final le = DateTime(leaseEnd.year, leaseEnd.month, leaseEnd.day);
-    final ms = DateTime(monthStart.year, monthStart.month, monthStart.day);
-    final nms =
-        DateTime(nextMonthStart.year, nextMonthStart.month, nextMonthStart.day);
-    return ls.isBefore(ms) && le.isAfter(nms);
-  }
-
-  DateTime? _parseTenantLeaseStartDate(TenantRecord t) {
-    final raw = t.leaseStartIso.trim();
-    try {
-      if (raw.isEmpty) {
-        return DateTime.fromMillisecondsSinceEpoch(t.createdAtMs);
-      }
-      return DateTime.parse(raw);
-    } catch (_) {
-      return DateTime.fromMillisecondsSinceEpoch(t.createdAtMs);
-    }
-  }
-
-  DateTime? _parseTenantLeaseEndDate(TenantRecord t) {
-    final raw = t.leaseEndIso.trim();
-    if (raw.isEmpty) return null;
-    try {
-      return DateTime.parse(raw);
-    } catch (_) {
-      return null;
-    }
   }
 
   bool _tenantMatchesListingForMonthlyRevenue(
@@ -597,7 +558,7 @@ class ListingDetailsController extends BaseController {
         vm: ListingActivityVm(
           title: _isSw ? 'Malipo yamepokelewa' : 'Payment received',
           subtitle: i.notes.isEmpty ? i.category : i.notes,
-          trailing: '+ TZS ${_money.format(i.amountValue.round())}',
+          trailing: '+ ${Get.find<CurrencyService>().formatBase(i.amountValue.round())}',
           timeLabel: _relativeDate(i.datePaidIso, i.createdAtMs),
           accentColor: const Color(0xFF0EA5A4),
         ),
@@ -610,7 +571,7 @@ class ListingDetailsController extends BaseController {
         vm: ListingActivityVm(
           title: _isSw ? 'Gharama imerekodiwa' : 'Expense logged',
           subtitle: e.notes.isEmpty ? e.category : e.notes,
-          trailing: 'TZS ${_money.format(e.amountValue.round())}',
+          trailing: Get.find<CurrencyService>().formatBase(e.amountValue.round()),
           timeLabel: _relativeDate(e.datePaidIso, e.createdAtMs),
           accentColor: const Color(0xFFF59E0B),
         ),

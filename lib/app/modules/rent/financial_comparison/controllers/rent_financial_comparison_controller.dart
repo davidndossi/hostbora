@@ -6,6 +6,7 @@ import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../routes/app_pages.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
@@ -341,12 +342,17 @@ class RentFinancialComparisonController extends BaseController
     tenantProfits.assignAll(vms);
   }
 
-  String formatTshFull(double v) => 'Tsh ${_money.format(v.round())}';
+  String formatTshFull(double v) =>
+      Get.find<CurrencyService>().formatBase(v.round());
 
   String formatTshShort(double v) {
-    if (v >= 1e6) return 'Tsh ${(v / 1e6).toStringAsFixed(1)}M';
-    if (v >= 1e3) return 'Tsh ${(v / 1e3).round()}k';
-    return 'Tsh ${_money.format(v.round())}';
+    final fx = Get.find<CurrencyService>();
+    final sample = fx.formatBase(1);
+    final prefix = sample.replaceAll(RegExp(r'[\d,\.]'), '').trim();
+    final p = prefix.isEmpty ? '${fx.baseCurrency.value} ' : '$prefix ';
+    if (v >= 1e6) return '$p${(v / 1e6).toStringAsFixed(1)}M';
+    if (v >= 1e3) return '$p${(v / 1e3).round()}k';
+    return fx.formatBase(v.round());
   }
 
   String formatMargin(double v) => '${v.toStringAsFixed(1)}%';

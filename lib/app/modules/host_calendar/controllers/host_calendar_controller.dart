@@ -3,8 +3,11 @@ import 'dart:convert';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/booking_api_response.dart';
 import '../../../data/local/bnb_booking_merge.dart';
+import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
@@ -89,7 +92,10 @@ class HostCalendarController extends BaseController {
         _preferenceManager =
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
         _maintenanceLocal = Get.find<RentScheduledMaintenanceLocalDataSource>(),
-        _pendingBookingsStore = PendingBookingsStore() {
+        _pendingBookingsStore = PendingBookingsStore(),
+        _pendingBookingLoader = BnbBookingPendingLoader(
+          syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
+        ) {
     selectedDate.value = _today;
     currentMonth.value = DateTime(_today.year, _today.month);
   }
@@ -101,6 +107,7 @@ class HostCalendarController extends BaseController {
   final PreferenceManager _preferenceManager;
   final RentScheduledMaintenanceLocalDataSource _maintenanceLocal;
   final PendingBookingsStore _pendingBookingsStore;
+  final BnbBookingPendingLoader _pendingBookingLoader;
 
   final selectedDate = Rx<DateTime>(DateTime.now());
   final currentMonth = Rx<DateTime>(DateTime.now());
@@ -271,48 +278,58 @@ class HostCalendarController extends BaseController {
       }
     } catch (_) {}
 
+    List<PropertyRecord> properties = const [];
+    try {
+      properties = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: '',
+        workspaceType: 'bnb',
+      );
+    } catch (_) {}
+
     try {
       final res = await _repository.getAllBookings();
-      final data = res.data;
-      List<dynamic> rows = const [];
-      if (res.responseCode == '0' && data is Map && data['bookings'] is List) {
-        rows = data['bookings'] as List;
-      } else if (res.responseCode == '0' && data is List) {
-        rows = data;
-      }
-      for (final e in rows.whereType<Map>()) {
-        final m = Map<String, dynamic>.from(e);
-        final item = merge.fromApiMap(m);
-        if (item.isCancelled) continue;
-        mergedMaps[item.bookingKey] = m;
-        if (_isApiPaid(m)) paidKeys.add(item.bookingKey);
+      if (BookingApiResponse.isSuccess(res.responseCode)) {
+        for (final m in BookingApiResponse.parseBookingsList(res.data)) {
+          final normalized = Map<String, dynamic>.from(m);
+          final listingId =
+              (normalized['listingId'] ?? normalized['propertyId'] ?? '')
+                  .toString()
+                  .trim();
+          final property = _findPropertyForListing(listingId, properties);
+          if (property != null) {
+            normalized['listingId'] = _hubRefForProperty(property);
+          }
+          final item = merge.fromApiMap(normalized);
+          if (item.isCancelled) continue;
+          mergedMaps[item.bookingKey] = normalized;
+          if (_isApiPaid(normalized)) paidKeys.add(item.bookingKey);
+        }
       }
     } catch (_) {}
 
     try {
-      final properties = await _propertyLocal.getAllVisibleNewestFirst(
-        userId: '',
-        workspaceType: 'bnb',
-      );
-      for (final m in _pendingBookingsStore.load()) {
-        final listingId = (m['listingId'] ?? '').toString().trim();
+      for (final m in await _pendingBookingLoader.loadAll()) {
+        final rawListingId = (m['listingId'] ?? '').toString().trim();
         final checkIn = (m['checkIn'] ?? '').toString();
         final checkOut = (m['checkOut'] ?? '').toString();
-        if (listingId.isEmpty || checkIn.isEmpty || checkOut.isEmpty) continue;
-        final property = properties.firstWhereOrNull(
-          (p) =>
-              p.propertyRef.trim() == listingId ||
-              'local_${p.id}' == listingId,
-        );
+        if (rawListingId.isEmpty || checkIn.isEmpty || checkOut.isEmpty) {
+          continue;
+        }
+        final property = _findPropertyForListing(rawListingId, properties);
+        final hubListingId = property != null
+            ? _hubRefForProperty(property)
+            : rawListingId;
         final propertyLabel = property?.propertyName.trim().isNotEmpty == true
             ? property!.propertyName.trim()
             : (property?.propertyLocation ?? 'Property');
         final localId =
-            'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
+            'local_${m['createdAt'] ?? '${rawListingId}_$checkIn'}';
         mergedMaps[localId] = {
           ...m,
+          'listingId': hubListingId,
           'bookingId': localId,
           'propertyType': propertyLabel,
+          if (m['unitId'] != null) 'unitId': m['unitId'],
         };
       }
     } catch (_) {}
@@ -408,11 +425,38 @@ class HostCalendarController extends BaseController {
     _bookedPaidDayKeys.refresh();
   }
 
+  static String _hubRefForProperty(PropertyRecord record) {
+    final ref = record.propertyRef.trim();
+    return ref.isNotEmpty ? ref : 'legacy_${record.id}';
+  }
+
+  static PropertyRecord? _findPropertyForListing(
+    String listingId,
+    List<PropertyRecord> properties,
+  ) {
+    final id = listingId.trim();
+    if (id.isEmpty) return null;
+    for (final p in properties) {
+      if (p.propertyRef.trim() == id) return p;
+      if ('local_${p.id}' == id || 'legacy_${p.id}' == id) return p;
+    }
+    return null;
+  }
+
   static bool _matchesProperty(_BookingSpan span, HostCalendarPropertyOption prop) {
     if (prop.matchesListingId(span.listingId)) return true;
     final label = span.propertyLabel.trim();
     if (label.isNotEmpty && label == prop.displayName) return true;
+    final loc = prop.record.propertyLocation.trim();
+    if (label.isNotEmpty && loc.isNotEmpty && label == loc) return true;
     return false;
+  }
+
+  /// Reload calendar after a booking is created or updated elsewhere.
+  static Future<void> refreshIfRegistered() async {
+    if (Get.isRegistered<HostCalendarController>()) {
+      await Get.find<HostCalendarController>().loadCalendarData();
+    }
   }
 
   static bool _matchesUnit(_BookingSpan span, String unitKey) {

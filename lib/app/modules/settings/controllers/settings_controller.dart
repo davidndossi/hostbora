@@ -10,7 +10,9 @@ import '../../../data/local/pending_payments_store.dart';
 import '../../../data/local/service/tenant_lease_reminder_service.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../core/widget/base_currency_picker.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
@@ -150,6 +152,35 @@ class SettingsController extends BaseController {
     ));
   }
 
+  Future<void> refreshExchangeRates() async {
+    final ok = await Get.find<CurrencyService>().refreshRatesFromRemote();
+    showSuccessMessage(
+      ok ? 'Exchange rates updated' : 'Could not refresh exchange rates',
+    );
+  }
+
+  void showBaseCurrencyPicker(BuildContext context) {
+    final isSw = Get.locale?.languageCode == 'sw';
+    Get.dialog(
+      AlertDialog(
+        title: Text(isSw ? 'Sarafu ya msingi' : 'Base currency'),
+        content: SingleChildScrollView(
+          child: BaseCurrencyPicker(
+            title: isSw
+                ? 'Ripoti na chati zitaonyesha kiasi katika sarafu hii'
+                : 'Reports and charts will use this currency',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(isSw ? 'Funga' : 'Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> loadSettings() async {
     var isDark = await _preferenceManager.getBool(kPrefDarkTheme);
     final legacyDark = await _preferenceManager.getBool('dark_mode');
@@ -167,6 +198,9 @@ class SettingsController extends BaseController {
       tenantReminderTemplateKey,
       defaultValue: '',
     );
+    if (Get.isRegistered<CurrencyService>()) {
+      await Get.find<CurrencyService>().refreshRatesFromRemote();
+    }
   }
 
   Future<void> saveTenantReminderTemplate(String value) async {

@@ -166,6 +166,18 @@ class OfflineSyncQueueLocalDataSource {
     return (rows.first['c'] as int?) ?? 0;
   }
 
+  /// Pending / in-progress / failed `booking:create` rows (not yet removed after sync).
+  Future<List<OfflineSyncQueueItem>> listUnsyncedBookingCreates() async {
+    final db = await database;
+    final rows = await db.query(
+      _table,
+      where: 'status IN (?, ?, ?) AND entity_type = ? AND operation = ?',
+      whereArgs: ['pending', 'in_progress', 'failed', 'booking', 'create'],
+      orderBy: 'created_at_ms ASC',
+    );
+    return rows.map(OfflineSyncQueueItem.fromMap).toList();
+  }
+
   Future<int> pendingCountByEntity({
     required String entityType,
     String? operation,

@@ -6,8 +6,10 @@ import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../routes/app_pages.dart';
+import '../../tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 /// Portfolio listing row for the hub carousel.
 /// Kept for backward compatibility in the view; populated from real data only.
@@ -63,9 +65,12 @@ class RentHubController extends BaseController {
   List<double> get chartIncome => _chartIncome;
   List<double> get chartExpense => _chartExpense;
 
-  String get netProfitLabel => 'Tsh ${_money.format((_incomeTotal.value - _expenseTotal.value).round())}';
-  String get totalIncomeLabel => 'Tsh ${_money.format(_incomeTotal.value.round())}';
-  String get expensesLabel => 'Tsh ${_money.format(_expenseTotal.value.round())}';
+  CurrencyService get _currency => Get.find<CurrencyService>();
+
+  String get netProfitLabel =>
+      _currency.formatBase((_incomeTotal.value - _expenseTotal.value).round());
+  String get totalIncomeLabel => _currency.formatBase(_incomeTotal.value.round());
+  String get expensesLabel => _currency.formatBase(_expenseTotal.value.round());
   String get profitTrendLabel {
     final p = _profitTrendPercent.value;
     final sign = p > 0 ? '+' : '';
@@ -184,6 +189,7 @@ class RentHubController extends BaseController {
     final saved = await Get.toNamed(Routes.RENT_ADD_INCOME_FORM);
     if (saved == true) {
       await refreshDashboard();
+      await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
     }
   }
 

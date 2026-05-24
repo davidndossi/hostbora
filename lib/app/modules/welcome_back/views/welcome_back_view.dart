@@ -44,31 +44,34 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                     () => Text(
                       controller.setupPinMode.value
                           ? controller.setupPrompt.value
-                          : appLocalization.welcomeAuthenticatingBiometrics,
+                          : controller.canUseBiometrics.value
+                              ? appLocalization.enterPasswordContinue
+                              : appLocalization.welcomeAuthenticatingBiometrics,
                       style: TextStyle(
                         fontSize: 15,
                         color: _isDark(context)
                             ? Colors.white70
                             : AppColors.designPlaceholder,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                   const SizedBox(height: 32),
                   Obx(
                     () => controller.setupPinMode.value ||
-                            !controller.biometricsOffered
+                            !controller.canUseBiometrics.value
                         ? const SizedBox.shrink()
                         : _buildBiometricCircle(context),
                   ),
                   Obx(
                     () => controller.setupPinMode.value ||
-                            !controller.biometricsOffered
+                            !controller.canUseBiometrics.value
                         ? const SizedBox(height: 32)
                         : const SizedBox(height: 28),
                   ),
                   Obx(
                     () => controller.setupPinMode.value ||
-                            !controller.biometricsOffered
+                            !controller.canUseBiometrics.value
                         ? const SizedBox.shrink()
                         : Text(
                             appLocalization.orEnterSecurePin,
@@ -232,37 +235,41 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
 
   Widget _buildBiometricCircle(BuildContext context) {
     return Obx(() {
-      final available = controller.canUseBiometrics.value;
       final inProgress = controller.isBiometricAuthInProgress.value;
+      final icon = controller.biometricIcon;
       return GestureDetector(
-        onTap: available && !inProgress ? controller.authenticateWithBiometrics : null,
-        child: Opacity(
-          opacity: available ? 1 : 0.5,
-          child: Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.designAccent,
-                width: 2,
-              ),
-              color: _isDark(context) ? const Color(0xFF1F1F1F) : Colors.white,
+        onTap: inProgress ? null : controller.authenticateWithBiometrics,
+        child: Container(
+          width: 140,
+          height: 140,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.designAccent,
+              width: 2,
             ),
-            child: inProgress
-                ? const Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(
-                      color: AppColors.designAccent,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Icon(
-                    Icons.fingerprint_rounded,
-                    size: 72,
-                    color: AppColors.designAccent,
-                  ),
+            color: _isDark(context) ? const Color(0xFF1F1F1F) : Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.designAccent.withValues(alpha: 0.12),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
+          child: inProgress
+              ? const Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(
+                    color: AppColors.designAccent,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Icon(
+                  icon,
+                  size: 72,
+                  color: AppColors.designAccent,
+                ),
         ),
       );
     });

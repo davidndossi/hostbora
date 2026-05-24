@@ -15,6 +15,8 @@ class IncomeRecord {
     this.propertyRef = '',
     this.bookingId = '',
     required this.workspaceType,
+    required this.currencyCode,
+    required this.inputAmountValue,
     required this.createdAtMs,
   });
 
@@ -32,6 +34,9 @@ class IncomeRecord {
   final String bookingId;
   /// `rent` or `bnb` — matches [WorkspaceContextService] persistence.
   final String workspaceType;
+  /// Currency the user entered; [amountValue] is always in base currency.
+  final String currencyCode;
+  final double inputAmountValue;
   final int createdAtMs;
 
   factory IncomeRecord.fromMap(Map<String, Object?> m) {
@@ -47,6 +52,8 @@ class IncomeRecord {
       propertyRef: m['property_ref'] as String? ?? '',
       bookingId: m['booking_id'] as String? ?? '',
       workspaceType: m['workspace_type'] as String? ?? 'rent',
+      currencyCode: m['currency_code'] as String? ?? 'TZS',
+      inputAmountValue: (m['input_amount_value'] as num?)?.toDouble() ?? 0,
       createdAtMs: m['created_at_ms'] as int? ?? 0,
     );
   }
@@ -103,11 +110,15 @@ class IncomeLocalDataSource {
     String apartmentUnit = '',
     String propertyRef = '',
     String bookingId = '',
+    String currencyCode = 'TZS',
+    double inputAmountValue = 0,
   }) async {
     final db = await database;
     return db.insert(_table, {
       'tenant_name': tenantName,
       'amount_value': amountValue,
+      'currency_code': currencyCode.trim().isEmpty ? 'TZS' : currencyCode.trim().toUpperCase(),
+      'input_amount_value': inputAmountValue <= 0 ? amountValue : inputAmountValue,
       'date_paid_iso': datePaidIso,
       'category': category,
       'notes': notes,

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
 import '../../../../core/utils/thousand_separator.dart';
+import '../../../../core/widget/currency_dropdown_field.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_add_new_expense_controller.dart';
 
@@ -251,18 +252,33 @@ class RentAddNewExpenseView extends BaseView<RentAddNewExpenseController> {
               children: [
                 const SizedBox(height: 12),
                 Text(
-                  _isSw ? 'Kiasi (Tsh)' : 'Amount (Tsh)',
+                  _isSw ? 'Kiasi' : 'Amount',
                   style: sectionTitleStyle,
                 ),
                 const SizedBox(height: 7),
-                _field(
-                  isDark,
-                  controller.amountController,
-                  hint: 'Tsh 0.00',
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: controller.validateAmount,
-                  inputFormatters: [
-                    ThousandsSeparatorInputFormatter(),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _field(
+                        isDark,
+                        controller.amountController,
+                        hint: '0.00',
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        validator: controller.validateAmount,
+                        inputFormatters: [
+                          ThousandsSeparatorInputFormatter(),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: CurrencyDropdownField(
+                        selectedCurrency: controller.selectedCurrency,
+                        label: _isSw ? 'Sarafu' : 'Currency',
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),

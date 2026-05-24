@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../rent_theme.dart';
 import '../controllers/manage_payments_controller.dart';
@@ -307,7 +308,8 @@ class ManagePaymentsView extends BaseView<ManagePaymentsController> {
     Color titleColor,
     Color muted,
   ) {
-    final amountLabel = 'Tsh ${ManagePaymentsController.moneyFormat.format(r.amountTsh.round())}';
+    final amountLabel =
+        Get.find<CurrencyService>().formatBase(r.amountTsh.round());
     final statusText = r.isExpected
         ? appLocalization.managePaymentsScheduled
         : !r.hasRentComparableStatus

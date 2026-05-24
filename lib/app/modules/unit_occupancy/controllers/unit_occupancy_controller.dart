@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/bnb_stay_billing.dart';
 import '../../../core/values/property_unit_floor.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/db/property_local_data_source.dart';
@@ -446,10 +447,7 @@ class UnitOccupancyController extends BaseController {
     final ls = _parseTenantLeaseStartDate(t);
     final le = _parseTenantLeaseEndDate(t);
     if (ls == null || le == null) return false;
-    final d = _dateOnly(day);
-    final a = _dateOnly(ls);
-    final end = _dateOnly(le);
-    return !d.isBefore(a) && !d.isAfter(end);
+    return BnbStayBilling.dayInStay(day, ls, le);
   }
 
   DateTime? _parseTenantLeaseStartDate(TenantRecord t) {

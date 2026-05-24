@@ -4,6 +4,7 @@ import 'package:paa_yangu/app/modules/onboarding/views/explanation_view.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../routes/app_pages.dart';
 
 class OnboardingController extends BaseController {
@@ -21,7 +22,16 @@ class OnboardingController extends BaseController {
     currentPage.value = index;
   }
 
+  Future<void> refreshExchangeRates() async {
+    final svc = Get.find<CurrencyService>();
+    final ok = await svc.refreshRatesFromRemote();
+    if (!ok) {
+      showErrorMessage('Could not load exchange rates. You can retry in Settings.');
+    }
+  }
+
   Future<void> completeOnboarding() async {
+    await Get.find<CurrencyService>().refreshRatesFromRemote();
     await _preferenceManager.setBool('seen_onboarding', true);
     Get.offAllNamed(Routes.CREATE_HOST_ACCOUNT);
   }

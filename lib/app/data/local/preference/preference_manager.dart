@@ -12,6 +12,7 @@ abstract class PreferenceManager {
   static const keyFirebaseToken = 'fcm_token';
   static const keyLang = 'language';
   static const keyWorkspaceType = 'workspace_type';
+  static const keyBaseCurrency = 'base_currency';
   static const keyPinCode = 'pin_code';
   static const keyPinEnabled = 'pin_enabled';
   static const keyPinFailedAttempts = 'pin_failed_attempts';

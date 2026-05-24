@@ -1222,6 +1222,33 @@ class AppLocalizationsSw extends AppLocalizations {
   String get recentActivity => 'Shughuli za Hivi Karibuni';
 
   @override
+  String get rentListingActivityLogTitle => 'Kumbukumbu za shughuli';
+
+  @override
+  String get rentListingActivityLogEmpty =>
+      'Hakuna shughuli kwa mali hii bado.';
+
+  @override
+  String get rentListingExpectedMonthlyIncome =>
+      'Mapato yanayotarajiwa kwa mwezi';
+
+  @override
+  String get rentListingMonthlyIncome => 'Mapato ya mwezi';
+
+  @override
+  String get rentAddTenantIncomePromptTitle => 'Mpangaji amehifadhiwa';
+
+  @override
+  String get rentAddTenantIncomePromptBody =>
+      'Rekodi malipo ya kwanza ya kodi sasa? Maelezo yatajazwa kiotomatiki.';
+
+  @override
+  String get rentAddTenantIncomePromptAdd => 'Ongeza mapato';
+
+  @override
+  String get rentAddTenantIncomePromptLater => 'Baadaye';
+
+  @override
   String get loginSecurity => 'USALAMA WA KUINGIA';
 
   @override
@@ -1849,6 +1876,18 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get managePaymentsUnknownStatus => '—';
+
+  @override
+  String get manageExpensesTitle => 'Angalia matumizi';
+
+  @override
+  String get manageExpensesNoRows => 'Hakuna matumizi ya kuonyesha.';
+
+  @override
+  String get manageExpensesCategoryFilter => 'Aina';
+
+  @override
+  String get manageExpensesAllCategories => 'Aina zote';
 
   @override
   String get rentUtilityLukuUsageGraphLink => 'Grafu ya matumizi ya LUKU';

@@ -13,6 +13,8 @@ class ExpenseRecord {
     required this.apartment,
     required this.apartmentUnit,
     required this.workspaceType,
+    required this.currencyCode,
+    required this.inputAmountValue,
     required this.createdAtMs,
   });
 
@@ -27,6 +29,8 @@ class ExpenseRecord {
   /// Unit name when expense is allocated to a specific unit.
   final String apartmentUnit;
   final String workspaceType;
+  final String currencyCode;
+  final double inputAmountValue;
   final int createdAtMs;
 
   factory ExpenseRecord.fromMap(Map<String, Object?> m) {
@@ -40,8 +44,34 @@ class ExpenseRecord {
       apartment: m['apartment'] as String? ?? '',
       apartmentUnit: m['apartment_unit'] as String? ?? '',
       workspaceType: m['workspace_type'] as String? ?? 'rent',
+      currencyCode: m['currency_code'] as String? ?? 'TZS',
+      inputAmountValue: (m['input_amount_value'] as num?)?.toDouble() ?? 0,
       createdAtMs: m['created_at_ms'] as int? ?? 0,
     );
+  }
+
+  /// Interprets [datePaidIso] as a local calendar day when it is `yyyy-MM-dd`.
+  DateTime paidLocalCalendarOrCreated() {
+    final raw = datePaidIso.trim();
+    if (raw.length >= 10 && raw[4] == '-' && raw[7] == '-') {
+      final y = int.tryParse(raw.substring(0, 4));
+      final m = int.tryParse(raw.substring(5, 7));
+      final d = int.tryParse(raw.substring(8, 10));
+      if (y != null &&
+          m != null &&
+          d != null &&
+          m >= 1 &&
+          m <= 12 &&
+          d >= 1 &&
+          d <= 31) {
+        return DateTime(y, m, d);
+      }
+    }
+    try {
+      return DateTime.parse(raw);
+    } catch (_) {
+      return DateTime.fromMillisecondsSinceEpoch(createdAtMs);
+    }
   }
 }
 
@@ -69,11 +99,15 @@ class ExpenseLocalDataSource {
     String notes = '',
     String apartment = '',
     String apartmentUnit = '',
+    String currencyCode = 'TZS',
+    double inputAmountValue = 0,
   }) async {
     final db = await database;
     return db.insert(_table, {
       'tenant_name': tenantName,
       'amount_value': amountValue,
+      'currency_code': currencyCode.trim().isEmpty ? 'TZS' : currencyCode.trim().toUpperCase(),
+      'input_amount_value': inputAmountValue <= 0 ? amountValue : inputAmountValue,
       'date_paid_iso': datePaidIso,
       'category': category,
       'notes': notes,

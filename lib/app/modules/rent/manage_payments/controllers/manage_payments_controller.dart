@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 
@@ -68,7 +69,8 @@ class ManagePaymentsController extends BaseController {
     return m.isAfter(cur);
   }
 
-  String get totalLabel => 'Tsh ${moneyFormat.format(totalTsh.value.round())}';
+  String get totalLabel =>
+      Get.find<CurrencyService>().formatBase(totalTsh.value.round());
 
   @override
   void onInit() {
@@ -361,6 +363,9 @@ class ManagePaymentsController extends BaseController {
     final r = t.rentAmountValue;
     if (r <= 0) return 0;
     switch (freq) {
+      case 'per stay':
+        if (start.year == year && start.month == month) return r;
+        return 0;
       case 'per day':
         return r * overlapDays;
       case 'per week':

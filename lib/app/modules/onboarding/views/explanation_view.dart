@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 import 'package:paa_yangu/app/core/values/text_styles.dart';
 
 import '../../../core/values/app_colors.dart';
+import '../../../core/widget/base_currency_picker.dart';
 import '../../../data/local/service/workspace_context_service.dart';
+import '../controllers/onboarding_controller.dart';
 
 class ExplanationView extends StatelessWidget {
   const ExplanationView({super.key});
@@ -167,6 +169,14 @@ class ExplanationView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: BaseCurrencyPicker(
+              title: currentLang == 'sw'
+                  ? 'Sarafu ya msingi (chaguo-msingi TZS)'
+                  : 'Base currency (default TZS)',
+            ),
+          ),
           SizedBox(
             height: Get.width - 200,
             child: Row(

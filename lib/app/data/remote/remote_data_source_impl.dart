@@ -24,6 +24,7 @@ import '../model/user_profile_request.dart';
 import '../model/create_calendar_subscription_request.dart';
 import '../model/update_calendar_subscription_request.dart';
 import '../model/calendar_sync_request.dart';
+import '../model/fx_response.dart';
 import '/app/core/base/base_remote_source.dart';
 import '../../network/dio_provider.dart';
 import '../model/login_response.dart';
@@ -689,6 +690,19 @@ class RemoteDataSourceImpl extends BaseRemoteSource
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<FxResponse> getExchangeRates() {
+    final endpoint = '${DioProvider.baseUrl}/api/exchange/rates';
+    final dioCall = dioClient.post(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall).then(
+        (response) => FxResponse.fromJson(response.data),
+      );
     } catch (e) {
       rethrow;
     }

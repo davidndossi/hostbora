@@ -6,7 +6,9 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/money_input_helper.dart';
 import '../../../../core/utils/thousand_separator.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -15,6 +17,8 @@ import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../../data/model/record_payment_request.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
+import '../../listing_details/controllers/rent_listing_details_controller.dart';
+import '../../tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 class RentAddIncomeFormController extends BaseController {
   RentAddIncomeFormController()
@@ -49,10 +53,12 @@ class RentAddIncomeFormController extends BaseController {
   final categories = const ['Rent', 'Service Charge', 'Maintenance', 'Other'];
 
   final selectedCategoryIndex = 0.obs;
+  final saving = false.obs;
   final propertyOptions = <String>[].obs;
   final selectedProperty = ''.obs;
   /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
   final selectedIncomeUnitKey = Rxn<String>();
+  final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
 
   List<PropertyRecord> _propertyRows = [];
 
@@ -269,7 +275,44 @@ class RentAddIncomeFormController extends BaseController {
   @override
   void onInit() {
     super.onInit();
-    _loadProperties();
+    selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
+    _loadProperties().then((_) => _applyIncomePrefillFromRoute());
+  }
+
+  void _applyIncomePrefillFromRoute() {
+    final args = Get.arguments;
+    if (args is! Map) return;
+    final prefill = args['prefillIncome'];
+    if (prefill is! Map) return;
+
+    final tenant = (prefill['tenantName'] ?? '').toString().trim();
+    if (tenant.isNotEmpty) {
+      tenantController.text = tenant;
+    }
+
+    final amount = (prefill['amount'] ?? '').toString().trim();
+    if (amount.isNotEmpty) {
+      amountController.text = amount;
+    }
+
+    datePaidController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
+
+    final catIdx = prefill['categoryIndex'];
+    if (catIdx is int && catIdx >= 0 && catIdx < categories.length) {
+      selectedCategoryIndex.value = catIdx;
+    }
+
+    final propertyOption = (args['property'] ?? Get.parameters['property'] ?? '')
+        .toString()
+        .trim();
+    if (propertyOption.isNotEmpty && propertyOptions.contains(propertyOption)) {
+      selectedProperty.value = propertyOption;
+    }
+
+    final unitKey = prefill['unitSelectionKey']?.toString().trim();
+    if (unitKey != null && unitKey.isNotEmpty) {
+      selectedIncomeUnitKey.value = unitKey;
+    }
   }
 
   void selectCategory(int index) {
@@ -304,9 +347,7 @@ class RentAddIncomeFormController extends BaseController {
         fromArgs.isNotEmpty ? fromArgs : (Get.parameters['property']?.trim() ?? '');
     if (fromRoute.isNotEmpty && options.contains(fromRoute)) {
       selectedProperty.value = fromRoute;
-      return;
-    }
-    if (options.length == 1) {
+    } else if (options.length == 1) {
       selectedProperty.value = options.first;
     }
   }
@@ -356,6 +397,7 @@ class RentAddIncomeFormController extends BaseController {
   }
 
   Future<void> saveIncomeOffline() async {
+    if (saving.value) return;
     if (!(formKey.currentState?.validate() ?? false)) return;
     if (selectedProperty.value.trim().isEmpty) {
       showErrorMessage('Please select a property');
@@ -368,8 +410,11 @@ class RentAddIncomeFormController extends BaseController {
     final notes = notesController.text.trim();
     final property = selectedProperty.value.trim();
 
-    final amount = double.tryParse(amountRaw);
-    if (amount == null || amount <= 0) {
+    final parsed = MoneyInputHelper.forSave(
+      amountRaw: amountRaw,
+      selectedCurrency: selectedCurrency.value,
+    );
+    if (parsed.inputAmount <= 0) {
       showErrorMessage('Enter a valid amount greater than 0');
       return;
     }
@@ -395,40 +440,52 @@ class RentAddIncomeFormController extends BaseController {
       baseNotes.writeln(notes);
     }
 
-    await _incomeLocal.insert(
-      tenantName: tenant,
-      amountValue: amount,
-      datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
-      category: selectedCategory,
-      workspaceType: 'rent',
-      notes: baseNotes.toString().trim(),
-      apartment: property,
-      apartmentUnit: unitName,
-      propertyRef: _propertyRefForIncomeInsert(),
-    );
+    saving.value = true;
+    try {
+      await _incomeLocal.insert(
+        tenantName: tenant,
+        amountValue: parsed.baseAmount,
+        datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
+        category: selectedCategory,
+        workspaceType: 'rent',
+        notes: baseNotes.toString().trim(),
+        apartment: property,
+        apartmentUnit: unitName,
+        propertyRef: _propertyRefForIncomeInsert(),
+        currencyCode: parsed.currency,
+        inputAmountValue: parsed.inputAmount,
+      );
 
-    final request = RecordPaymentRequest(
-      amount: amount,
-      paymentMethod: 'Cash',
-      paymentDate: DateFormat('yyyy-MM-dd').format(paidDate),
-      status: 'PAID',
-    );
-    await _syncQueue.enqueue(
-      entityType: 'payment',
-      operation: 'create',
-      payloadJson: jsonEncode(request.toJson()),
-    );
-    await _syncWorker.runNow(maxItems: 20);
-    final pending = await _syncQueue.pendingCountByEntity(
-      entityType: 'payment',
-      operation: 'create',
-    );
-    if (pending > 0) {
-      showSuccessMessage('Income saved offline. Will sync when internet is available.');
-    } else {
-      showSuccessMessage('Income saved and synced.');
+      final request = RecordPaymentRequest(
+        amount: parsed.baseAmount,
+        paymentMethod: 'Cash',
+        paymentDate: DateFormat('yyyy-MM-dd').format(paidDate),
+        status: 'PAID',
+      );
+      await _syncQueue.enqueue(
+        entityType: 'payment',
+        operation: 'create',
+        payloadJson: jsonEncode(request.toJson()),
+      );
+      await _syncWorker.runNow(maxItems: 20);
+      final pending = await _syncQueue.pendingCountByEntity(
+        entityType: 'payment',
+        operation: 'create',
+      );
+      if (pending > 0) {
+        showSuccessMessage(
+            'Income saved offline. Will sync when internet is available.');
+      } else {
+        showSuccessMessage('Income saved and synced.');
+      }
+      await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+      await RentListingDetailsController.refreshIfRegistered();
+      Get.back(result: true);
+    } catch (e) {
+      showErrorMessage('Failed to save income: $e');
+    } finally {
+      saving.value = false;
     }
-    Get.back(result: true);
   }
 
   String? validateTenant(String? value) {

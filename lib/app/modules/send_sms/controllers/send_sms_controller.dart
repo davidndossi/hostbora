@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/base/base_controller.dart';
@@ -376,11 +375,13 @@ class SendSmsController extends BaseController
   }
 
   Future<bool> ensureContactsPermission() async {
-    var status = await Permission.contacts.status;
-    if (!status.isGranted) {
-      status = await Permission.contacts.request();
+    if (await FlutterContacts.permissions.has(PermissionType.read)) {
+      return true;
     }
-    return status.isGranted;
+    final status =
+        await FlutterContacts.permissions.request(PermissionType.read);
+    return status == PermissionStatus.granted ||
+        status == PermissionStatus.limited;
   }
 
   List<DeviceContactEntry> get filteredDeviceContactEntries {
@@ -411,22 +412,24 @@ class SendSmsController extends BaseController
         );
         return false;
       }
-      final contacts = await FlutterContacts.getContacts(
-        withProperties: true,
-        withPhoto: false,
+      final contacts = await FlutterContacts.getAll(
+        properties: {ContactProperty.phone},
       );
       final seenPhones = <String>{};
       final entries = <DeviceContactEntry>[];
       for (final contact in contacts) {
-        final name = contact.displayName.trim().isEmpty
+        if (contact.phones.isEmpty) continue;
+        final name = (contact.displayName ?? '').trim().isEmpty
             ? _t('Unknown', 'Haijulikani')
-            : contact.displayName.trim();
+            : contact.displayName!.trim();
         for (final phone in contact.phones) {
-          final normalized = normalizeToLocalSmsFormat(phone.number);
+          final rawNumber = phone.number.trim();
+          if (rawNumber.isEmpty) continue;
+          final normalized = normalizeToLocalSmsFormat(rawNumber);
           if (normalized == null || !seenPhones.add(normalized)) continue;
           entries.add(
             DeviceContactEntry(
-              contactId: contact.id,
+              contactId: contact.id ?? '',
               displayName: name,
               phone: normalized,
             ),

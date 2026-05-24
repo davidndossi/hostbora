@@ -129,10 +129,13 @@ a {
   text-decoration: none;
   font-weight: 600;
   font-size: 15px;
+}
+
+.nav a:not(.btn) {
   color: rgba(27, 31, 36, 0.82);
 }
 
-.nav a:hover {
+.nav a:not(.btn):hover {
   color: var(--text);
 }
 
@@ -173,6 +176,14 @@ a {
 
 .btn:hover {
   background: var(--primary-dark);
+  color: #fff;
+}
+
+.btn:not(.btn--ghost),
+.btn:not(.btn--ghost):hover,
+.nav a.btn:not(.btn--ghost),
+.nav a.btn:not(.btn--ghost):hover {
+  color: #ffffff !important;
 }
 
 .btn--ghost {
@@ -294,113 +305,71 @@ h1 {
   margin-top: 2px;
 }
 
-/* Hero visual (CSS-only mock) */
+/* Hero visual — app screenshots */
 .hero__visual {
   position: relative;
-  min-height: 380px;
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.hero-card {
-  background: linear-gradient(145deg, #ffffff 0%, #f0f7f6 100%);
-  border: 1px solid rgba(224, 224, 224, 0.9);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+.hero-phones {
+  position: relative;
+  width: min(100%, 520px);
+  height: min(72vh, 520px);
+  margin: 0 auto;
+}
+
+.hero-phone {
+  position: absolute;
+  margin: 0;
+  width: 34%;
+  max-width: 200px;
+  border-radius: 28px;
+  padding: 8px;
+  background: linear-gradient(160deg, #1a1a1a 0%, #2d2d2d 48%, #111 100%);
+  box-shadow:
+    0 24px 48px rgba(20, 92, 84, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
   overflow: hidden;
 }
 
-.hero-card--main {
-  padding: 0;
+.hero-phone img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 20px;
 }
 
-.hero-card__bar {
-  display: flex;
-  gap: 6px;
-  padding: 14px 16px 0;
+.hero-phone--center {
+  left: 50%;
+  top: 50%;
+  width: 42%;
+  max-width: 240px;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  padding: 10px;
+  border-radius: 32px;
+  box-shadow:
+    0 32px 64px rgba(20, 92, 84, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
-.hero-card__bar span {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: rgba(28, 110, 100, 0.2);
+.hero-phone--left {
+  left: 0;
+  bottom: 4%;
+  transform: rotate(-10deg);
+  z-index: 1;
+  opacity: 0.94;
 }
 
-.hero-card__bar span:first-child {
-  background: #e74c3c;
-  opacity: 0.7;
-}
-
-.hero-card__bar span:nth-child(2) {
-  background: var(--warm);
-  opacity: 0.8;
-}
-
-.hero-card__bar span:nth-child(3) {
-  background: var(--accent);
-  opacity: 0.8;
-}
-
-.hero-card__body {
-  padding: 18px 20px 24px;
-  background: linear-gradient(180deg, rgba(28, 110, 100, 0.06) 0%, transparent 40%);
-}
-
-.hero-card__label {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.hero-card__value {
-  margin: 6px 0 18px;
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--primary-dark);
-}
-
-.hero-card__chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  height: 100px;
-}
-
-.hero-card__chart span {
-  flex: 1;
-  height: var(--h, 50%);
-  border-radius: 8px 8px 4px 4px;
-  background: linear-gradient(180deg, var(--accent), var(--primary));
-  opacity: 0.85;
-}
-
-.hero-card--float {
-  position: absolute;
+.hero-phone--right {
   right: 0;
-  bottom: 12px;
-  width: min(280px, 72%);
-  padding: 16px 18px;
-  transform: rotate(-1.5deg);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  border: none;
-  color: #fff;
-  box-shadow: 0 16px 40px rgba(20, 92, 84, 0.35);
-}
-
-.hero-card__mini {
-  margin: 0;
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.hero-card__mini--accent {
-  margin-top: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  opacity: 0.88;
+  bottom: 6%;
+  transform: rotate(9deg);
+  z-index: 2;
+  opacity: 0.97;
 }
 
 /* Sections */
@@ -823,14 +792,22 @@ textarea:focus {
   }
 
   .hero__visual {
-    min-height: 300px;
+    min-height: 360px;
   }
 
-  .hero-card--float {
-    position: static;
-    width: 100%;
-    transform: none;
-    margin-top: 14px;
+  .hero-phones {
+    height: min(64vh, 440px);
+    width: min(100%, 400px);
+  }
+
+  .hero-phone--left {
+    left: -2%;
+    transform: rotate(-8deg);
+  }
+
+  .hero-phone--right {
+    right: -2%;
+    transform: rotate(8deg);
   }
 
   .grid-features,
@@ -870,7 +847,7 @@ textarea:focus {
     border-radius: 12px;
   }
 
-  .nav a:hover {
+  .nav a:not(.btn):hover {
     background: rgba(28, 110, 100, 0.08);
   }
 
@@ -907,5 +884,20 @@ textarea:focus {
 
   .hero__stats li {
     width: 100%;
+  }
+
+  .hero-phones {
+    height: min(58vh, 400px);
+    width: min(100%, 260px);
+  }
+
+  .hero-phone--left,
+  .hero-phone--right {
+    display: none;
+  }
+
+  .hero-phone--center {
+    width: 88%;
+    max-width: 260px;
   }
 }

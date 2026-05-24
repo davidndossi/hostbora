@@ -123,8 +123,8 @@ class RentHubView extends BaseView<RentHubController> {
               _netProfitCard(),
               const SizedBox(height: 12),
               _incomeExpenseRow(context),
-              const SizedBox(height: 12),
-              _managePaymentsShortcut(context),
+              // const SizedBox(height: 12),
+              // _managePaymentsShortcut(context),
               const SizedBox(height: 20),
               _revenueChartCard(context),
               const SizedBox(height: 16),
@@ -342,6 +342,7 @@ class RentHubView extends BaseView<RentHubController> {
             circleColor: isDark ? const Color(0xFF1A3D3D) : const Color(0xFFD8EFEE),
             icon: Icons.arrow_upward_rounded,
             iconColor: isDark ? const Color(0xFF5EC9C3) : _HubTheme.teal,
+            onTap: () => Get.toNamed(Routes.RENT_MANAGE_PAYMENTS),
           ),
         ),
         const SizedBox(width: 10),
@@ -353,6 +354,7 @@ class RentHubView extends BaseView<RentHubController> {
             circleColor: isDark ? const Color(0xFF3D2520) : const Color(0xFFF5D5CE),
             icon: Icons.arrow_downward_rounded,
             iconColor: isDark ? const Color(0xFFFFAB91) : const Color(0xFF9A3412),
+            onTap: () => Get.toNamed(Routes.RENT_MANAGE_EXPENSES),
           ),
         ),
       ],
@@ -366,52 +368,57 @@ class RentHubView extends BaseView<RentHubController> {
     required Color circleColor,
     required IconData icon,
     required Color iconColor,
+    VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? const Color(0xFF2C2C2E) : _HubTheme.cardCream;
     final labelColor = isDark ? const Color(0xFF8E8E93) : _HubTheme.muted.withValues(alpha: 0.95);
     final valueColor = isDark ? Colors.white : _HubTheme.navy;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
-      decoration: BoxDecoration(
-        color: cardBg,
+    return Material(
+      color: cardBg,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.9,
-                    color: labelColor,
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.9,
+                        color: labelColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: valueColor,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: valueColor,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+            ],
           ),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 22),
-          ),
-        ],
+        ),
       ),
     );
   }

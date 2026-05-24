@@ -32,7 +32,7 @@ class NominatimService {
   NominatimService() : _dio = Dio(BaseOptions(
     baseUrl: 'https://nominatim.openstreetmap.org',
     headers: {
-      'User-Agent': 'PaaYangu/1.0 (property listing app)',
+      'User-Agent': 'HostBora/1.0 (property listing app)',
     },
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
