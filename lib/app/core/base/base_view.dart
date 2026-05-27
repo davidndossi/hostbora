@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 import '../../../l10n/app_localizations.dart';
 import '/app/core/base/base_controller.dart';
 import '/app/core/model/page_state.dart';
+import '/app/core/values/text_styles.dart';
 import '/app/core/widget/loading.dart';
 import '/flavors/build_config.dart';
 
@@ -23,6 +24,10 @@ abstract class BaseView<Controller extends BaseController>
   Widget body(BuildContext context);
 
   PreferredSizeWidget? appBar(BuildContext context);
+
+  /// When true, merges [moduleDefaultTextStyle] (16px) into the page [body].
+  /// Rent module views use [RentBaseView] which sets this to false.
+  bool get applyModuleDefaultTextStyle => true;
 
   @override
   Widget build(BuildContext context) {
@@ -89,10 +94,19 @@ abstract class BaseView<Controller extends BaseController>
   }
 
   Widget pageContent(BuildContext context) {
-    return bottomNavigationBar() != null ? body(context) : SafeArea(
-      top: !extendBodyBehindAppBar(),
-      child: body(context),
-    );
+    Widget content = bottomNavigationBar() != null
+        ? body(context)
+        : SafeArea(
+            top: !extendBodyBehindAppBar(),
+            child: body(context),
+          );
+    if (applyModuleDefaultTextStyle) {
+      content = DefaultTextStyle.merge(
+        style: moduleDefaultTextStyle,
+        child: content,
+      );
+    }
+    return content;
   }
 
   Widget showErrorSnackBar(String message) {

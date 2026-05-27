@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../../../../l10n/app_localizations.dart';
 import '../controllers/rent_smart_utility_dashboard_controller.dart';
@@ -26,7 +26,7 @@ class _UtilUi {
   Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
 }
 
-class RentSmartUtilityDashboardView extends BaseView<RentSmartUtilityDashboardController> {
+class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboardController> {
   RentSmartUtilityDashboardView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';

@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/property_listing_image_assigner.dart';
 import '../../../../core/utils/tenant_rent_billing.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
@@ -66,6 +67,7 @@ class RentListingDetailsController extends BaseController {
   final loadingListing = true.obs;
   final listingTitle = ''.obs;
   final heroOverlayTitle = ''.obs;
+  final heroImagePath = ''.obs;
   final occupancyPercent = 0.obs;
   final expectedMonthlyIncomeLabel = '0'.obs;
   final monthlyIncomeLabel = '—'.obs;
@@ -157,9 +159,33 @@ class RentListingDetailsController extends BaseController {
         staff = await _loadStaffFromLocal();
       }
       staffPreview.assignAll(staff);
+      await _syncHeroImage();
     } finally {
       loadingListing.value = false;
     }
+  }
+
+  Future<void> _syncHeroImage() async {
+    if (heroImagePath.value.trim().isNotEmpty &&
+        PropertyListingImageAssigner.isNetworkPath(heroImagePath.value)) {
+      return;
+    }
+    final row = await _findLocalPropertyRowForListing();
+    if (row != null) {
+      heroImagePath.value = PropertyListingImageAssigner.resolveDisplayPath(
+        storedPath: row.coverPhotoPath,
+        propertyRef: row.propertyRef,
+        localPropertyId: row.id,
+        propertyName: row.propertyName,
+      );
+      return;
+    }
+    if (heroImagePath.value.trim().isNotEmpty) return;
+    heroImagePath.value = PropertyListingImageAssigner.resolveDisplayPath(
+      storedPath: null,
+      propertyRef: _propertyId,
+      propertyName: _propertyName,
+    );
   }
 
   /// Refreshes recent activity and monthly revenue without reloading units/staff.
@@ -706,9 +732,16 @@ class RentListingDetailsController extends BaseController {
       final map = Map<String, dynamic>.from(args);
       final name = (map['property_name'] ?? '').toString().trim();
       final location = (map['property_location'] ?? '').toString().trim();
+      final image = (map['property_image'] ?? '').toString().trim();
       if (name.isNotEmpty) {
         listingTitle.value = name;
         heroOverlayTitle.value = location.isEmpty ? name : '$name • $location';
+      } else if (location.isNotEmpty) {
+        listingTitle.value = location;
+        heroOverlayTitle.value = location;
+      }
+      if (image.isNotEmpty) {
+        heroImagePath.value = image;
         return;
       }
     }

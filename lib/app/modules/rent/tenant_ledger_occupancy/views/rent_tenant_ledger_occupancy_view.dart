@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_tenant_ledger_occupancy_controller.dart';
 
@@ -53,7 +53,7 @@ class _LedgerUi {
 }
 
 /// **Ledger overview** — tenancy, financial breakdown, payment timeline, CTA, residence card.
-class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyController> {
+class RentTenantLedgerOccupancyView extends RentBaseView<RentTenantLedgerOccupancyController> {
   RentTenantLedgerOccupancyView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
@@ -260,7 +260,6 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
           Text(
             '${controller.currentStayMonths} Months',
             style: TextStyle(
-              fontFamily: 'Georgia',
               fontSize: 26,
               fontWeight: FontWeight.w700,
               color: u.onSurface,
@@ -651,7 +650,6 @@ class RentTenantLedgerOccupancyView extends BaseView<RentTenantLedgerOccupancyCo
                   () => Text(
                     controller.displayPropertyFull,
                     style: const TextStyle(
-                      fontFamily: 'Georgia',
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,

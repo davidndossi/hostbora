@@ -122,8 +122,14 @@ abstract class RemoteDataSource {
   /// List tasks for current user. Optional [status] to filter: PENDING, IN_PROGRESS, COMPLETED.
   Future<GeneralResponse> getTasks({String? status});
 
+  /// GET /api/tasks/{taskId}
+  Future<GeneralResponse> getTask(String taskId);
+
   /// Create a task (title, optional description, optional dueDate).
   Future<GeneralResponse> addTask(AddTaskRequest request);
+
+  /// Update an existing task (same body shape as create).
+  Future<GeneralResponse> updateTask(String taskId, AddTaskRequest request);
 
   /// List documents in a vault directory (e.g. legal, tax, manuals).
   Future<GeneralResponse> getVaultDocuments(String directoryId);

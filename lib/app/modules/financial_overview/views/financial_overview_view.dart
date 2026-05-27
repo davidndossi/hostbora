@@ -35,23 +35,28 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
         children: [
           _buildHeader(context),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSegmentedToggle(context),
-                  const SizedBox(height: 20),
-                  _buildPerformanceTrendsCard(context),
-                  const SizedBox(height: 16),
-                  _buildTotalRevenueCard(context),
-                  const SizedBox(height: 12),
-                  _buildMetricRow(context),
-                  const SizedBox(height: 20),
-                  _buildMonthlyGrowthSection(context),
-                ],
-              ),
-            ),
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSegmentedToggle(context),
+                    const SizedBox(height: 20),
+                    _buildPerformanceTrendsCard(context),
+                    const SizedBox(height: 16),
+                    _buildTotalRevenueCard(context),
+                    const SizedBox(height: 12),
+                    _buildMetricRow(context),
+                    const SizedBox(height: 20),
+                    _buildMonthlyGrowthSection(context),
+                  ],
+                ),
+              );
+            }),
           ),
         ],
       ),
@@ -158,18 +163,39 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
   }
 
   Widget _buildPerformanceTrendsCard(BuildContext context) {
-    final currentSpots = controller.currentTrendValues
-        .asMap()
-        .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
-        .toList();
-    final previousSpots = controller.previousTrendValues
-        .asMap()
-        .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
-        .toList();
-    final minY = 0.0;
-    final maxY = 6.0;
+    return Obx(() {
+      final isIncome = controller.isIncomeSelected.value;
+      final current = isIncome
+          ? controller.currentTrendValues
+          : controller.currentExpenseTrendValues;
+      final previous = isIncome
+          ? controller.previousTrendValues
+          : controller.previousExpenseTrendValues;
+      final currentSpots = current
+          .asMap()
+          .entries
+          .map((e) => FlSpot(e.key.toDouble(), e.value))
+          .toList();
+      final previousSpots = previous
+          .asMap()
+          .entries
+          .map((e) => FlSpot(e.key.toDouble(), e.value))
+          .toList();
+      return _performanceTrendsChart(
+        context,
+        currentSpots,
+        previousSpots,
+      );
+    });
+  }
+
+  Widget _performanceTrendsChart(
+    BuildContext context,
+    List<FlSpot> currentSpots,
+    List<FlSpot> previousSpots,
+  ) {
+    const minY = 0.0;
+    const maxY = 6.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -369,73 +395,109 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
   }
 
   Widget _buildTotalRevenueCard(BuildContext context) {
-    return _MetricCard(
-      label: _t(context, en: 'Total Revenue', sw: 'Jumla ya Mapato'),
-      value: controller.totalRevenue,
-      change: controller.totalRevenueChange,
-      isPositive: controller.totalRevenueUp,
-      fullWidth: true,
-    );
+    return Obx(() {
+      final isIncome = controller.isIncomeSelected.value;
+      return _MetricCard(
+        label: isIncome
+            ? _t(context, en: 'Total Revenue', sw: 'Jumla ya Mapato')
+            : _t(context, en: 'Total Expenses', sw: 'Jumla ya Gharama'),
+        value: isIncome
+            ? controller.totalRevenue.value
+            : controller.totalExpenses.value,
+        change: isIncome
+            ? controller.totalRevenueChange.value
+            : controller.totalExpensesChange.value,
+        isPositive: isIncome
+            ? controller.totalRevenueUp.value
+            : controller.totalExpensesUp.value,
+        fullWidth: true,
+      );
+    });
   }
 
   Widget _buildMetricRow(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _MetricCard(
-            label: _t(
-              context,
-              en: 'Avg. Daily Rate',
-              sw: 'Wastani wa Bei ya Siku',
+    return Obx(() {
+      final isIncome = controller.isIncomeSelected.value;
+      return Row(
+        children: [
+          Expanded(
+            child: _MetricCard(
+              label: isIncome
+                  ? _t(
+                      context,
+                      en: 'Avg. Daily Rate',
+                      sw: 'Wastani wa Bei ya Siku',
+                    )
+                  : _t(
+                      context,
+                      en: 'Avg. Daily Expense',
+                      sw: 'Wastani wa Gharama kwa Siku',
+                    ),
+              value: isIncome
+                  ? controller.avgDailyRate.value
+                  : controller.avgDailyExpense.value,
+              change: isIncome
+                  ? controller.avgDailyRateChange.value
+                  : controller.avgDailyExpenseChange.value,
+              isPositive: isIncome
+                  ? controller.avgDailyRateUp.value
+                  : controller.avgDailyExpenseUp.value,
             ),
-            value: controller.avgDailyRate,
-            change: controller.avgDailyRateChange,
-            isPositive: controller.avgDailyRateUp,
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _MetricCard(
-            label: _t(context, en: 'Net Profit', sw: 'Faida Halisi'),
-            value: controller.netProfit,
-            change: controller.netProfitChange,
-            isPositive: controller.netProfitUp,
+          const SizedBox(width: 12),
+          Expanded(
+            child: _MetricCard(
+              label: isIncome
+                  ? _t(context, en: 'Net Profit', sw: 'Faida Halisi')
+                  : _t(context, en: 'Month Change', sw: 'Mabadiliko ya Mwezi'),
+              value: isIncome
+                  ? controller.netProfit.value
+                  : controller.totalExpensesChange.value,
+              change: isIncome
+                  ? controller.netProfitChange.value
+                  : _t(context, en: 'vs. prev month', sw: 'dhidi ya mwezi uliopita'),
+              isPositive: isIncome
+                  ? controller.netProfitUp.value
+                  : controller.totalExpensesUp.value,
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   Widget _buildMonthlyGrowthSection(BuildContext context) {
-    final groupBars = controller.monthlyLabels.asMap().entries.map((e) {
-      final i = e.key;
-      return BarChartGroupData(
-        x: i,
-        barRods: [
-          BarChartRodData(
-            fromY: 0,
-            toY: controller.monthlyValuesA[i].toDouble(),
-            color: AppColors.designAccent.withValues(alpha: 0.6),
-            width: 12,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-          ),
-          BarChartRodData(
-            fromY: 0,
-            toY: controller.monthlyValuesB[i].toDouble(),
-            color: AppColors.designAccent,
-            width: 12,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-          ),
-        ],
-        barsSpace: 6,
-      );
-    }).toList();
+    return Obx(() {
+      final labels = controller.monthlyLabels;
+      final valuesA = controller.monthlyValuesA;
+      final valuesB = controller.monthlyValuesB;
+      final isIncome = controller.isIncomeSelected.value;
+      final values = isIncome ? valuesA : valuesB;
+      final len = labels.length;
+      if (len == 0) return const SizedBox.shrink();
 
-    final maxY =
-        (controller.monthlyValuesA.reduce((a, b) => a > b ? a : b).toDouble())
-            .clamp(6.0, 10.0);
+      final groupBars = List.generate(len, (i) {
+        final v = i < values.length ? values[i] : 0.0;
+        return BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              fromY: 0,
+              toY: v,
+              color: AppColors.designAccent.withValues(alpha: 0.6),
+              width: 20,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            ),
+          ],
+        );
+      });
 
-    return Column(
+      final maxVal = values.fold<double>(0, (m, v) => v > m ? v : m);
+      final maxY = maxVal <= 0
+          ? 6.0
+          : (maxVal * 1.08).clamp(6.0, double.infinity);
+
+      return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -486,11 +548,11 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
                         final i = value.toInt();
-                        if (i >= 0 && i < controller.monthlyLabels.length) {
+                        if (i >= 0 && i < labels.length) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
-                              controller.monthlyLabels[i],
+                              labels[i],
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -527,7 +589,8 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
           ),
         ),
       ],
-    );
+      );
+    });
   }
 }
 

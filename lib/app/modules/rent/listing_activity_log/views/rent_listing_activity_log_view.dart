@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../listing_details/models/listing_activity_vm.dart';
 import '../../rent_theme.dart';
 import '../controllers/rent_listing_activity_log_controller.dart';
 
-class RentListingActivityLogView extends BaseView<RentListingActivityLogController> {
+class RentListingActivityLogView extends RentBaseView<RentListingActivityLogController> {
   RentListingActivityLogView({super.key});
 
   @override

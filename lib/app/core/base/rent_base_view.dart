@@ -1,0 +1,11 @@
+import '/app/core/base/base_controller.dart';
+import '/app/core/base/base_view.dart';
+
+/// Rent workspace module screens — opts out of [BaseView.applyModuleDefaultTextStyle].
+abstract class RentBaseView<Controller extends BaseController>
+    extends BaseView<Controller> {
+  RentBaseView({super.key});
+
+  @override
+  bool get applyModuleDefaultTextStyle => false;
+}

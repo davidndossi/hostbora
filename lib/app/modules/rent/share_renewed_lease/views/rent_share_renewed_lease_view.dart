@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../controllers/rent_share_renewed_lease_controller.dart';
 
 /// Design: dark teal accent (~#005F59), cream bg #F9F8F4, serif headlines.
@@ -39,55 +39,84 @@ class _ShareUi {
       ];
 }
 
-class RentShareRenewedLeaseView extends BaseView<RentShareRenewedLeaseController> {
+class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseController> {
   RentShareRenewedLeaseView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  Color pageBackgroundColor(BuildContext context) => _ShareUi(context).canvas;
-
-  @override
-  PreferredSizeWidget? appBar(BuildContext context) => null;
+  PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
+    appBarTitleText: ''
+  );
 
   @override
   Widget body(BuildContext context) {
     final u = _ShareUi(context);
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: u.dark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: u.dark ? Brightness.dark : Brightness.light,
-      ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
       child: Column(
         children: [
-          SafeArea(
-            bottom: false,
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: u.successCircleBg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.check_rounded,
+              size: 40,
+              color: u.dark ? const Color(0xFF80CBC4) : _ShareUi.tealDark,
+            ),
+          ),
+          const SizedBox(height: 22),
+          Text(
+            _isSw ? 'Mkataba Umehuishwa kwa Mafanikio' : 'Lease Renewed Successfully',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'serif',
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              height: 1.2,
+              color: u.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _isSw
+                ? 'Hati iko tayari kusainiwa na kushirikiwa na mpangaji wako.'
+                : 'The document is ready for signing and sharing with your tenant.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.45,
+              color: u.muted,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 28),
+          _documentPreviewCard(context),
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: controller.onPreviewTap,
+            borderRadius: BorderRadius.circular(8),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 12, 0),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
+                  Icon(Icons.visibility_outlined, size: 18, color: u.muted),
+                  const SizedBox(width: 8),
+                  Flexible(
                     child: Text(
-                      'The Concierge',
+                      _isSw
+                          ? 'Kuangalia: ${controller.previewFileName}'
+                          : 'Previewing: ${controller.previewFileName}',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily: 'serif',
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 22,
-                        color: u.dark ? _ShareUi.teal : _ShareUi.tealDark,
-                      ),
-                    ),
-                  ),
-                  Material(
-                    color: u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFE8E8E4),
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () => Get.back(),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Icon(Icons.close_rounded, size: 22, color: u.onSurface),
+                        fontSize: 13,
+                        color: u.muted,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -95,163 +124,86 @@ class RentShareRenewedLeaseView extends BaseView<RentShareRenewedLeaseController
               ),
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-              child: Column(
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: u.successCircleBg,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_rounded,
-                      size: 40,
-                      color: u.dark ? const Color(0xFF80CBC4) : _ShareUi.tealDark,
-                    ),
+          const SizedBox(height: 32),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              _isSw ? 'Tuma kwa Mpangaji' : 'Send to Tenant',
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: u.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _whatsappCard(context),
+          const SizedBox(height: 12),
+          _emailCard(context),
+          const SizedBox(height: 18),
+          Obx(
+            () => Theme(
+              data: Theme.of(context).copyWith(
+                checkboxTheme: CheckboxThemeData(
+                  fillColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return _ShareUi.teal;
+                    }
+                    return null;
+                  }),
+                ),
+              ),
+              child: CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: controller.sendCopyToMyEmail.value,
+                onChanged: controller.toggleSendCopy,
+                title: Text(
+                  _isSw ? 'Tuma nakili kwa barua pepe yangu' : 'Send Copy to My Email',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: u.onSurface,
                   ),
-                  const SizedBox(height: 22),
-                  Text(
-                    _isSw ? 'Mkataba Umehuishwa kwa Mafanikio' : 'Lease Renewed Successfully',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'serif',
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                      color: u.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _isSw
-                        ? 'Hati iko tayari kusainiwa na kushirikiwa na mpangaji wako.'
-                        : 'The document is ready for signing and sharing with your tenant.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.45,
-                      color: u.muted,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  _documentPreviewCard(context),
-                  const SizedBox(height: 10),
-                  InkWell(
-                    onTap: controller.onPreviewTap,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.visibility_outlined, size: 18, color: u.muted),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              _isSw
-                                  ? 'Kuangalia: ${controller.previewFileName}'
-                                  : 'Previewing: ${controller.previewFileName}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: u.muted,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      _isSw ? 'Tuma kwa Mpangaji' : 'Send to Tenant',
-                      style: TextStyle(
-                        fontFamily: 'serif',
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: u.onSurface,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _whatsappCard(context),
-                  const SizedBox(height: 12),
-                  _emailCard(context),
-                  const SizedBox(height: 18),
-                  Obx(
-                    () => Theme(
-                      data: Theme.of(context).copyWith(
-                        checkboxTheme: CheckboxThemeData(
-                          fillColor: WidgetStateProperty.resolveWith((states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return _ShareUi.teal;
-                            }
-                            return null;
-                          }),
-                        ),
-                      ),
-                      child: CheckboxListTile(
-                        contentPadding: EdgeInsets.zero,
-                        controlAffinity: ListTileControlAffinity.leading,
-                        value: controller.sendCopyToMyEmail.value,
-                        onChanged: controller.toggleSendCopy,
-                        title: Text(
-                          _isSw ? 'Tuma nakili kwa barua pepe yangu' : 'Send Copy to My Email',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: u.onSurface,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: controller.onDone,
-                      style: FilledButton.styleFrom(
-                        backgroundColor:
-                            u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E5E0),
-                        foregroundColor: u.onSurface,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        _isSw ? 'Imekamilika' : 'Done',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: controller.returnToContractHub,
-                    child: Text(
-                      _isSw ? 'RUDI KWENYE KITOVU CHA MIKATABA' : 'RETURN TO CONTRACT HUB',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                        color: u.muted,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: controller.onDone,
+              style: FilledButton.styleFrom(
+                backgroundColor:
+                    u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E5E0),
+                foregroundColor: u.onSurface,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                _isSw ? 'Imekamilika' : 'Done',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextButton(
+            onPressed: controller.returnToContractHub,
+            child: Text(
+              _isSw ? 'RUDI KWENYE KITOVU CHA MIKATABA' : 'RETURN TO CONTRACT HUB',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+                color: u.muted,
               ),
             ),
           ),

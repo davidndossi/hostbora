@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../data/local/service/currency_service.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../rent_theme.dart';
 import '../controllers/manage_payments_controller.dart';
 import '../widgets/date_range_box.dart';
 
-class ManagePaymentsView extends BaseView<ManagePaymentsController> {
+class ManagePaymentsView extends RentBaseView<ManagePaymentsController> {
   ManagePaymentsView({super.key});
 
   static final DateFormat _day = DateFormat('d MMM yyyy');

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 import '../controllers/rent_property_roi_analysis_controller.dart';
@@ -37,7 +37,7 @@ class _RoiUi {
 }
 
 /// Financial overview — principal, income yield, investment vs income chart, breakdown, portfolio.
-class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisController> {
+class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisController> {
   RentPropertyRoiAnalysisView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
@@ -61,7 +61,7 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
       if (d == null) {
         return Center(
           child: Text(
-            _isSw ? 'Hakuna data ya ROI bado.' : 'No ROI data available yet.',
+            _isSw ? 'Hakuna taarifa ya ROI bado.' : 'No ROI data available yet.',
             style: TextStyle(color: u.muted),
           ),
         );
@@ -162,7 +162,7 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
                 final ref = controller.selectedPropertyRef.value.trim();
                 if (ref.isEmpty) {
                   controller.showSuccessMessage(
-                    _isSw ? 'Chagua mali kutoka orodha ya mali.' : 'Select a property from your listings first.',
+                    _isSw ? 'Chagua mjengo kutoka orodha ya mijengo.' : 'Select a property from your listings first.',
                   );
                   return;
                 }
@@ -230,7 +230,7 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _isSw ? 'JUMLA YA MAPATO YALIYOTENGenezwa' : 'TOTAL INCOME GENERATED',
+            _isSw ? 'JUMLA YA MAPATO YALIYOTENGENEZWA' : 'TOTAL INCOME GENERATED',
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 1.1,
@@ -270,6 +270,7 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
 
   Widget _chartCard(_RoiUi u, List<double> qInv, List<double> qInc, double maxY) {
     const labels = ['JAN - MAR', 'APR - JUN', 'JUL - SEP', 'OCT - DEC'];
+    final currentYear = DateTime.now().year;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -292,8 +293,8 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
           ),
           Text(
             _isSw
-                ? 'Ulinganisho wa kila mwezi kwa mwaka wa fedha 2024.'
-                : 'Monthly comparative performance for the fiscal year 2024.',
+                ? 'Ulinganisho wa kila mwezi kwa mwaka wa fedha $currentYear.'
+                : 'Monthly comparative performance for the fiscal year $currentYear.',
             style: TextStyle(fontSize: 12, color: u.muted),
           ),
           const SizedBox(height: 12),
@@ -398,7 +399,7 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
       footer: Row(
         children: [
           Text(
-            _isSw ? 'USHURU WA STAMPU UMEOJUMISHWA' : 'STAMP DUTY INCL',
+            _isSw ? 'USHURU WA STAMPU UMEJUMUISHWA' : 'STAMP DUTY INCL',
             style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: u.muted),
           ),
           const Spacer(),
@@ -438,7 +439,7 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
           Row(
             children: [
               Text(
-                _isSw ? 'JUMLA ILIYOJITOLEA' : 'SUM COMMITTED',
+                _isSw ? 'JUMLA ILIYOWEKWA' : 'SUM COMMITTED',
                 style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: u.muted),
               ),
               const Spacer(),
@@ -552,7 +553,7 @@ class RentPropertyRoiAnalysisView extends BaseView<RentPropertyRoiAnalysisContro
       children: [
         Expanded(
           child: Text(
-            _isSw ? 'Kwingineko cha Mali' : 'Property Portfolio',
+            _isSw ? 'Mkusanyiko wa Mali' : 'Property Portfolio',
             style: TextStyle(
               fontFamily: 'serif',
               fontSize: 22,

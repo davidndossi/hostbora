@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../routes/app_pages.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_others_tab_controller.dart';
 
 /// "Others" tab: shortcuts to additional rent flows (no duplicate bottom nav).
-class RentOthersTabView extends BaseView<RentOthersTabController> {
+class RentOthersTabView extends RentBaseView<RentOthersTabController> {
   RentOthersTabView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

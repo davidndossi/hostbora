@@ -36,14 +36,18 @@ class MaintenanceTasksController extends BaseController {
       }
       final raw = res.data!;
       List<dynamic> list = [];
-      if (raw['tasks'] is List) {
+      if (raw is Map && raw['tasks'] is List) {
         list = raw['tasks'] as List;
       } else if (raw is List) {
         list = raw;
-      } else if (raw['content'] is List) {
+      } else if (raw is Map && raw['content'] is List) {
         list = raw['content'] as List;
       }
-      var items = list.map((e) => _taskFromMap(e as Map<String, dynamic>)).where((t) => t.id.isNotEmpty).toList();
+      var items = list
+          .whereType<Map>()
+          .map((e) => MaintenanceTask.fromApiMap(Map<String, dynamic>.from(e)))
+          .where((t) => t.id.isNotEmpty)
+          .toList();
       if (status != null && status.isNotEmpty) {
         items = items.where((t) => _statusMatchesFilter(t, status)).toList();
       }
@@ -53,36 +57,6 @@ class MaintenanceTasksController extends BaseController {
     } finally {
       loading.value = false;
     }
-  }
-
-  static MaintenanceTask _taskFromMap(Map<String, dynamic> m) {
-    final completed = m['completed'] as bool? ?? false;
-    final statusStr = (m['status'] as String?)?.toUpperCase();
-    TaskStatus status = completed ? TaskStatus.completed : TaskStatus.pending;
-    if (statusStr == 'IN_PROGRESS') status = TaskStatus.inProgress;
-    if (statusStr == 'COMPLETED' || completed) status = TaskStatus.completed;
-    if (statusStr == 'PENDING') status = TaskStatus.pending;
-    DateTime? due;
-    final dueStr = m['dueDate'] as String?;
-    if (dueStr != null && dueStr.isNotEmpty) due = DateTime.tryParse(dueStr);
-    DateTime? completedAt;
-    final atStr = m['completedAt'] as String?;
-    if (atStr != null && atStr.isNotEmpty) completedAt = DateTime.tryParse(atStr);
-    final priorityStr = (m['priority'] as String?)?.toUpperCase();
-    TaskPriority priority = TaskPriority.medium;
-    if (priorityStr == 'HIGH') priority = TaskPriority.high;
-    if (priorityStr == 'LOW') priority = TaskPriority.low;
-    final assignee = m['assignee']?.toString() ?? m['assignedTo']?.toString() ?? 'Unassigned';
-    return MaintenanceTask(
-      id: m['taskId']?.toString() ?? m['id']?.toString() ?? '',
-      title: m['title']?.toString() ?? '',
-      assignee: assignee,
-      priority: priority,
-      status: status,
-      dueDate: due,
-      isCompleted: completed,
-      completedAt: completedAt,
-    );
   }
 
   static bool _statusMatchesFilter(MaintenanceTask t, String status) {
@@ -121,7 +95,7 @@ class MaintenanceTasksController extends BaseController {
   }
 
   void openTaskDetail(MaintenanceTask task) {
-    // Placeholder: navigate to task detail
-    Get.snackbar('Task', task.title);
+    Get.toNamed(Routes.TASK_DETAIL, arguments: task.toArguments())
+        ?.then((_) => loadTasks());
   }
 }

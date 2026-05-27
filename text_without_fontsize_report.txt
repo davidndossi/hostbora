@@ -1,0 +1,450 @@
+Total Text widgets without explicit fontSize: 426
+
+Top 20 files by count:
+    24  lib/app/modules/send_sms/views/send_sms_view.dart
+    19  lib/app/modules/reports/views/reports_view.dart
+    14  lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart
+    14  lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart
+    14  lib/app/modules/send_sms/controllers/send_sms_controller.dart
+    13  lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart
+    12  lib/app/modules/booking_details/controllers/booking_details_controller.dart
+    12  lib/app/modules/design_moodboard/views/design_moodboard_view.dart
+    10  lib/app/modules/add_expense/views/add_expense_view.dart
+    10  lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart
+    10  lib/app/modules/settings/views/settings_view.dart
+     9  lib/app/modules/design_moodboards/views/design_moodboards_view.dart
+     9  lib/app/modules/rent/manage_payments/views/manage_payments_view.dart
+     8  lib/app/modules/booking_details/views/booking_details_view.dart
+     8  lib/app/modules/calendar_sync/views/calendar_sync_view.dart
+     8  lib/app/modules/change_password/controllers/change_password_controller.dart
+     8  lib/app/modules/rent/my_properties_hub/views/rent_my_properties_hub_view.dart
+     7  lib/app/modules/design_moodboard/controllers/design_moodboard_controller.dart
+     7  lib/app/modules/rent/add_new_expense/views/rent_add_new_expense_view.dart
+     7  lib/app/modules/subscription/views/subscription_view.dart
+
+lib/app/core/base/base_view.dart:99: Text(message)
+lib/app/core/widget/app_bar_title.dart:14: Text(
+lib/app/core/widget/base_currency_picker.dart:60: Text(c)
+lib/app/core/widget/button_of_numpad.dart:18: Text(
+lib/app/core/widget/currency_dropdown_field.dart:41: Text(c, overflow: TextOverflow.ellipsis)
+lib/app/core/widget/dropdown_input.dart:41: Text(getLabel(value))
+lib/app/core/widget/icon_text_widgets.dart:43: Text(value!, style: TextStyle(color: color))
+lib/app/core/widget/icon_text_widgets.dart:60: Text(value!, style: TextStyle(color: color))
+lib/app/core/widget/input_done_view.dart:23: Text(
+lib/app/core/widget/popup.dart:40: Text(message.description!)
+lib/app/core/widget/popup.dart:49: Text(message.title ?? message.status.title)
+lib/app/core/widget/popup.dart:103: Text(
+lib/app/core/widget/title_view.dart:38: Text(
+lib/app/core/widget/title_view.dart:60: Text(
+lib/app/data/model/dropdown_input.dart:41: Text(getLabel(value))
+lib/app/modules/about/views/about_view.dart:27: Text(text, style: _bodyStyle)
+lib/app/modules/add_expense/views/add_expense_view.dart:86: Text(
+lib/app/modules/add_expense/views/add_expense_view.dart:127: Text(
+lib/app/modules/add_expense/views/add_expense_view.dart:214: Text(
+lib/app/modules/add_expense/views/add_expense_view.dart:237: Text(
+lib/app/modules/add_expense/views/add_expense_view.dart:267: Text(
+lib/app/modules/add_expense/views/add_expense_view.dart:298: Text(
+lib/app/modules/add_expense/views/add_expense_view.dart:314: Text(
+lib/app/modules/add_expense/views/add_expense_view.dart:728: Text(
+lib/app/modules/add_expense/views/add_expense_view.dart:825: Text(e)
+lib/app/modules/add_expense/views/add_expense_view.dart:897: Text(_t(context, en: 'Remove', sw: 'Ondoa'))
+lib/app/modules/add_listing/controllers/add_listing_controller.dart:701: Text('Resume draft?')
+lib/app/modules/add_listing/controllers/add_listing_controller.dart:702: Text(
+lib/app/modules/add_listing/controllers/add_listing_controller.dart:708: Text('Start fresh')
+lib/app/modules/add_listing/controllers/add_listing_controller.dart:712: Text('Resume')
+lib/app/modules/add_listing/views/add_listing_view.dart:133: Text(e)
+lib/app/modules/add_listing/views/add_listing_view.dart:615: Text(_t(Get.context!, en: 'Add Unit', sw: 'Ongeza Chumba'), style: const TextStyle(fontWeight: FontWeight.w700))
+lib/app/modules/add_new_booking/views/add_new_booking_view.dart:319: Text(e)
+lib/app/modules/add_new_booking/views/add_new_booking_view.dart:426: Text(e.propertyName)
+lib/app/modules/add_new_booking/views/add_new_booking_view.dart:482: Text(u.unitName)
+lib/app/modules/add_task/views/add_task_view.dart:160: Text('Add Task')
+lib/app/modules/add_tenant_form/views/add_tenant_form_view.dart:96: Text(
+lib/app/modules/add_tenant_form/views/add_tenant_form_view.dart:117: Text('TENANT NAME', style: _labelStyle(isDark))
+lib/app/modules/add_tenant_form/views/add_tenant_form_view.dart:127: Text('GENDER', style: _labelStyle(isDark))
+lib/app/modules/add_tenant_form/views/add_tenant_form_view.dart:144: Text(
+lib/app/modules/add_tenant_form/views/add_tenant_form_view.dart:210: Text('LEASE PERIOD', style: _labelStyle(isDark))
+lib/app/modules/add_tenant_form/views/add_tenant_form_view.dart:248: Text('PHONE NUMBER', style: _labelStyle(isDark))
+lib/app/modules/auth/controllers/auth_controller.dart:166: Text(_t(
+lib/app/modules/auth/controllers/auth_controller.dart:229: Text(appLocalization.resend)
+lib/app/modules/auth/controllers/auth_controller.dart:233: Text(appLocalization.cancel)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:313: Text(_l10n.cancelBookingTitle)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:314: Text(_l10n.cancelBookingMessage)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:318: Text(_l10n.cancel)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:325: Text(_l10n.cancelBooking)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:356: Text(_l10n.checkOutGuestTitle)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:357: Text(_l10n.checkOutGuestMessage)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:361: Text(_l10n.cancel)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:365: Text(_l10n.checkOutGuest)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:401: Text(_l10n.extendStayTitle)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:409: Text(_l10n.extendStayDays)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:447: Text(_l10n.cancel)
+lib/app/modules/booking_details/controllers/booking_details_controller.dart:451: Text(_l10n.extendStayConfirm)
+lib/app/modules/booking_details/views/booking_details_view.dart:188: Text(
+lib/app/modules/booking_details/views/booking_details_view.dart:809: Text(appLocalization.recordPayment)
+lib/app/modules/booking_details/views/booking_details_view.dart:840: Text(
+lib/app/modules/booking_details/views/booking_details_view.dart:874: Text(
+lib/app/modules/booking_details/views/booking_details_view.dart:902: Text(
+lib/app/modules/booking_details/views/booking_details_view.dart:924: Text(appLocalization.extendStayTitle)
+lib/app/modules/booking_details/views/booking_details_view.dart:941: Text(appLocalization.checkOutGuest)
+lib/app/modules/booking_details/views/booking_details_view.dart:961: Text(
+lib/app/modules/calendar_sync/controllers/calendar_sync_controller.dart:217: Text('Remove calendar link?')
+lib/app/modules/calendar_sync/controllers/calendar_sync_controller.dart:218: Text(
+lib/app/modules/calendar_sync/controllers/calendar_sync_controller.dart:226: Text('Cancel')
+lib/app/modules/calendar_sync/controllers/calendar_sync_controller.dart:230: Text('Remove')
+lib/app/modules/calendar_sync/views/calendar_sync_view.dart:38: Text(
+lib/app/modules/calendar_sync/views/calendar_sync_view.dart:94: Text(l10n.calendarSyncSaveImport)
+lib/app/modules/calendar_sync/views/calendar_sync_view.dart:113: Text(l10n.calendarSyncCreateExport)
+lib/app/modules/calendar_sync/views/calendar_sync_view.dart:129: Text(l10n.calendarSyncSyncNow)
+lib/app/modules/calendar_sync/views/calendar_sync_view.dart:144: Text(
+lib/app/modules/calendar_sync/views/calendar_sync_view.dart:245: Text(l10n.calendarSyncCopyUrl)
+lib/app/modules/calendar_sync/views/calendar_sync_view.dart:270: Text(l10n.calendarSyncSyncFeed)
+lib/app/modules/calendar_sync/views/calendar_sync_view.dart:275: Text(
+lib/app/modules/change_password/controllers/change_password_controller.dart:106: Text('Error!')
+lib/app/modules/change_password/controllers/change_password_controller.dart:119: Text('OK')
+lib/app/modules/change_password/controllers/change_password_controller.dart:152: Text('Success!')
+lib/app/modules/change_password/controllers/change_password_controller.dart:165: Text('OK')
+lib/app/modules/change_password/controllers/change_password_controller.dart:193: Text('You are about to change your password...')
+lib/app/modules/change_password/controllers/change_password_controller.dart:196: Text('A one time password will be sent to your email/phone no. '
+lib/app/modules/change_password/controllers/change_password_controller.dart:204: Text(appLocalization.yes)
+lib/app/modules/change_password/controllers/change_password_controller.dart:211: Text(appLocalization.cancel)
+lib/app/modules/change_password/views/change_password_view.dart:41: Text(
+lib/app/modules/change_password/views/change_password_view.dart:62: Text(
+lib/app/modules/change_password/views/change_password_view.dart:83: Text(
+lib/app/modules/change_pin/controllers/change_pin_controller.dart:163: Text('Your PIN code changed successfully!')
+lib/app/modules/change_pin/controllers/change_pin_controller.dart:182: Text('OK')
+lib/app/modules/change_pin/views/change_pin_view.dart:42: Text(
+lib/app/modules/change_pin/views/change_pin_view.dart:53: Text(_t(context, en: 'OK', sw: 'SAWA'))
+lib/app/modules/create_host_account/views/create_host_account_view.dart:172: Text(
+lib/app/modules/create_host_account/views/create_host_account_view.dart:196: Text(
+lib/app/modules/design_moodboard/controllers/design_moodboard_controller.dart:280: Text(appLocalization.designMoodboardRename)
+lib/app/modules/design_moodboard/controllers/design_moodboard_controller.dart:289: Text(appLocalization.cancel)
+lib/app/modules/design_moodboard/controllers/design_moodboard_controller.dart:293: Text(appLocalization.submit)
+lib/app/modules/design_moodboard/controllers/design_moodboard_controller.dart:308: Text(appLocalization.designMoodboardDelete)
+lib/app/modules/design_moodboard/controllers/design_moodboard_controller.dart:309: Text(appLocalization.designMoodboardDeleteConfirm)
+lib/app/modules/design_moodboard/controllers/design_moodboard_controller.dart:313: Text(appLocalization.cancel)
+lib/app/modules/design_moodboard/controllers/design_moodboard_controller.dart:317: Text(
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:53: Text(
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:70: Text(appLocalization.designMoodboardAddPhoto)
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:110: Text(
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:116: Text(appLocalization.designMoodboardApiGuide)
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:136: Text(
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:144: Text(appLocalization.designMoodboardRetry)
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:172: Text(
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:373: Text(
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:391: Text(
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:415: Text(appLocalization.designMoodboardRename)
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:423: Text(appLocalization.designMoodboardOpenHomeDesigns)
+lib/app/modules/design_moodboard/views/design_moodboard_view.dart:434: Text(appLocalization.designMoodboardDelete)
+lib/app/modules/design_moodboards/controllers/design_moodboards_controller.dart:142: Text(appLocalization.designMoodboardCreateDialogTitle)
+lib/app/modules/design_moodboards/controllers/design_moodboards_controller.dart:154: Text(appLocalization.cancel)
+lib/app/modules/design_moodboards/controllers/design_moodboards_controller.dart:158: Text(appLocalization.submit)
+lib/app/modules/design_moodboards/views/design_moodboards_view.dart:42: Text(appLocalization.designMoodboardsCreateBoard)
+lib/app/modules/design_moodboards/views/design_moodboards_view.dart:118: Text(
+lib/app/modules/design_moodboards/views/design_moodboards_view.dart:182: Text(
+lib/app/modules/design_moodboards/views/design_moodboards_view.dart:190: Text(
+lib/app/modules/design_moodboards/views/design_moodboards_view.dart:203: Text(appLocalization.designMoodboardsCreateBoard)
+lib/app/modules/design_moodboards/views/design_moodboards_view.dart:223: Text(
+lib/app/modules/design_moodboards/views/design_moodboards_view.dart:231: Text(appLocalization.designMoodboardRetry)
+lib/app/modules/design_moodboards/views/design_moodboards_view.dart:350: Text(
+lib/app/modules/design_moodboards/views/design_moodboards_view.dart:359: Text(
+lib/app/modules/document_scanner/views/document_scanner_view.dart:115: Text(l10n.designMoodboardRetry)
+lib/app/modules/document_scanner/views/document_scanner_view.dart:120: Text(l10n.openSettings)
+lib/app/modules/edit_listing/views/edit_listing_view.dart:317: Text(
+lib/app/modules/edit_listing/views/edit_listing_view.dart:372: Text(PropertyUnitFloor.label(l10n, f))
+lib/app/modules/edit_unit/views/edit_unit_view.dart:78: Text(PropertyUnitFloor.label(l10n, f))
+lib/app/modules/edit_unit/views/edit_unit_view.dart:111: Text(e)
+lib/app/modules/entry_logs/views/entry_logs_view.dart:129: Text(
+lib/app/modules/failed/views/failed_view.dart:107: Text(_t(context, en: 'Try Again', sw: 'Jaribu Tena'))
+lib/app/modules/failed/views/failed_view.dart:113: Text(
+lib/app/modules/feedback/views/feedback_view.dart:67: Text(controller.categoryLabel(c))
+lib/app/modules/feedback/views/feedback_view.dart:132: Text(l10n.feedbackSubmitButton)
+lib/app/modules/home/controllers/home_controller.dart:478: Text(isSw ? 'Ongeza Mjengo Kwanza' : 'Add Property First')
+lib/app/modules/home/controllers/home_controller.dart:479: Text(
+lib/app/modules/host_calendar/views/host_calendar_view.dart:61: Text(appLocalization.calendarSyncOpenFromListing)
+lib/app/modules/host_calendar/views/host_calendar_view.dart:240: Text(
+lib/app/modules/host_calendar/views/host_calendar_view.dart:281: Text(
+lib/app/modules/host_calendar/views/host_calendar_view.dart:325: Text(
+lib/app/modules/interior_design_studio/controllers/interior_design_studio_controller.dart:127: Text(_t('Choose from gallery', 'Chagua kutoka gallery'))
+lib/app/modules/interior_design_studio/controllers/interior_design_studio_controller.dart:135: Text(_t('Take a photo', 'Piga picha'))
+lib/app/modules/interior_design_studio/views/interior_design_studio_view.dart:128: Text(
+lib/app/modules/listing_details/controllers/listing_details_controller.dart:1004: Text(_isSw ? 'Futa mali?' : 'Delete property?')
+lib/app/modules/listing_details/controllers/listing_details_controller.dart:1005: Text(
+lib/app/modules/listing_published/views/listing_published_view.dart:84: Text(
+lib/app/modules/listing_published/views/listing_published_view.dart:117: Text(
+lib/app/modules/new_password/views/new_password_view.dart:176: Text(
+lib/app/modules/notifications/controllers/notifications_controller.dart:149: Text(notification.msg ?? '-')
+lib/app/modules/notifications/controllers/notifications_controller.dart:156: Text('Accept')
+lib/app/modules/notifications/controllers/notifications_controller.dart:162: Text('Reject')
+lib/app/modules/notifications/controllers/notifications_controller.dart:185: Text('Success!')
+lib/app/modules/notifications/controllers/notifications_controller.dart:186: Text('User joined successfully!', textAlign: TextAlign.center)
+lib/app/modules/notifications/controllers/notifications_controller.dart:198: Text('OK')
+lib/app/modules/notifications/views/notifications_view.dart:44: Text(notification.title ?? '-')
+lib/app/modules/notifications/views/notifications_view.dart:55: Text(notification.msg ?? '-')
+lib/app/modules/onboarding/views/explanation_view.dart:164: Text(
+lib/app/modules/onboarding/views/explanation_view.dart:308: Text(
+lib/app/modules/onboarding/views/onboarding_view.dart:154: Text(
+lib/app/modules/onboarding/views/onboarding_view.dart:296: Text(
+lib/app/modules/otp/views/otp_view.dart:37: Text(
+lib/app/modules/otp/views/otp_view.dart:142: Text(
+lib/app/modules/otp/views/otp_view.dart:181: Text('Clear All')
+lib/app/modules/otp/views/otp_view.dart:215: Text(
+lib/app/modules/privacy/views/privacy_view.dart:40: Text(title, style: _headingStyle)
+lib/app/modules/privacy/views/privacy_view.dart:42: Text(body, style: _bodyStyle)
+lib/app/modules/privacy/views/privacy_view.dart:56: Text(l10n.privacyLastUpdated, style: _metaStyle)
+lib/app/modules/privacy/views/privacy_view.dart:58: Text(l10n.privacyIntro, style: _bodyStyle)
+lib/app/modules/privacy/views/privacy_view.dart:60: Text(l10n.privacySwHint, style: _metaStyle)
+lib/app/modules/property_vault/views/property_vault_view.dart:70: Text(
+lib/app/modules/property_vault/views/property_vault_view.dart:78: Text(appLocalization.tryAgain)
+lib/app/modules/record_payment/views/record_payment_view.dart:449: Text(e)
+lib/app/modules/registration/controllers/registration_controller.dart:162: Text(
+lib/app/modules/registration/controllers/registration_controller.dart:224: Text(appLocalization.resend)
+lib/app/modules/registration/controllers/registration_controller.dart:228: Text(appLocalization.cancel)
+lib/app/modules/rent/active_loyalty_programs/controllers/rent_active_loyalty_programs_controller.dart:111: Text('Edit loyalty offer')
+lib/app/modules/rent/active_loyalty_programs/controllers/rent_active_loyalty_programs_controller.dart:157: Text('Cancel')
+lib/app/modules/rent/active_loyalty_programs/controllers/rent_active_loyalty_programs_controller.dart:188: Text('Save')
+lib/app/modules/rent/active_loyalty_programs/views/rent_active_loyalty_programs_view.dart:191: Text(_isSw ? 'Hariri' : 'Edit')
+lib/app/modules/rent/active_loyalty_programs/views/rent_active_loyalty_programs_view.dart:201: Text(_isSw ? 'Futa' : 'Delete')
+lib/app/modules/rent/add_new_expense/views/rent_add_new_expense_view.dart:73: Text(
+lib/app/modules/rent/add_new_expense/views/rent_add_new_expense_view.dart:114: Text(
+lib/app/modules/rent/add_new_expense/views/rent_add_new_expense_view.dart:201: Text(
+lib/app/modules/rent/add_new_expense/views/rent_add_new_expense_view.dart:224: Text(
+lib/app/modules/rent/add_new_expense/views/rent_add_new_expense_view.dart:254: Text(
+lib/app/modules/rent/add_new_expense/views/rent_add_new_expense_view.dart:285: Text(
+lib/app/modules/rent/add_new_expense/views/rent_add_new_expense_view.dart:304: Text(
+lib/app/modules/rent/add_new_listing/views/rent_add_new_listing_view.dart:415: Text(_isSw ? 'Ongeza chumba' : 'Add unit', style: const TextStyle(fontWeight: FontWeight.w700))
+lib/app/modules/rent/add_tenant_form/controllers/rent_add_tenant_form_controller.dart:310: Text(appLocalization.rentAddTenantIncomePromptTitle)
+lib/app/modules/rent/add_tenant_form/controllers/rent_add_tenant_form_controller.dart:311: Text(appLocalization.rentAddTenantIncomePromptBody)
+lib/app/modules/rent/add_tenant_form/controllers/rent_add_tenant_form_controller.dart:315: Text(appLocalization.rentAddTenantIncomePromptLater)
+lib/app/modules/rent/add_tenant_form/controllers/rent_add_tenant_form_controller.dart:319: Text(appLocalization.rentAddTenantIncomePromptAdd)
+lib/app/modules/rent/add_tenant_form/views/rent_add_tenant_form_view.dart:67: Text(
+lib/app/modules/rent/add_tenant_form/views/rent_add_tenant_form_view.dart:88: Text('TENANT NAME', style: _labelStyle(isDark))
+lib/app/modules/rent/add_tenant_form/views/rent_add_tenant_form_view.dart:98: Text('GENDER', style: _labelStyle(isDark))
+lib/app/modules/rent/add_tenant_form/views/rent_add_tenant_form_view.dart:114: Text('RENT AMOUNT', style: _labelStyle(isDark))
+lib/app/modules/rent/add_tenant_form/views/rent_add_tenant_form_view.dart:175: Text('LEASE PERIOD', style: _labelStyle(isDark))
+lib/app/modules/rent/add_tenant_form/views/rent_add_tenant_form_view.dart:184: Text('PHONE NUMBER', style: _labelStyle(isDark))
+lib/app/modules/rent/base_shell/views/rent_others_tab_view.dart:87: Text(
+lib/app/modules/rent/base_shell/views/rent_others_tab_view.dart:148: Text(
+lib/app/modules/rent/concierge_inbox/views/rent_concierge_inbox_view.dart:611: Text(item.actionLabel)
+lib/app/modules/rent/concierge_inbox/views/rent_concierge_inbox_view.dart:823: Text(item.actionLabel)
+lib/app/modules/rent/contract_hub/controllers/rent_contract_hub_controller.dart:195: Text(
+lib/app/modules/rent/define_tenant_charges/views/rent_define_tenant_charges_view.dart:143: Text(e)
+lib/app/modules/rent/estate_manager_dashboard/views/rent_estate_manager_dashboard_view.dart:23: Text(_isSw ? 'Hakuna data halisi bado.' : 'No real data available yet.')
+lib/app/modules/rent/financial_comparison/views/rent_financial_comparison_view.dart:258: Text(_isSw ? 'Hakuna data' : 'No data', style: TextStyle(color: u.muted))
+lib/app/modules/rent/financial_comparison/views/rent_financial_comparison_view.dart:560: Text(
+lib/app/modules/rent/host_calendar/views/rent_host_calendar_view.dart:246: Text(
+lib/app/modules/rent/host_calendar/views/rent_host_calendar_view.dart:255: Text(p, style: TextStyle(color: AppColors.textColorPrimary))
+lib/app/modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart:31: Text(
+lib/app/modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart:104: Text(_isSw ? 'Fuatilia Wapangaji Wote' : 'MONITOR ALL TENANTS')
+lib/app/modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart:244: Text(_isSw ? 'Tazama Yote' : 'View All')
+lib/app/modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart:348: Text(_isSw ? 'Weka Kikumbusho' : 'Set Reminder')
+lib/app/modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart:453: Text(
+lib/app/modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart:466: Text(_isSw ? 'Kumbusha' : 'Send Late Notice')
+lib/app/modules/rent/lease_renewal_form/views/rent_lease_renewal_form_view.dart:530: Text(label(e))
+lib/app/modules/rent/listing_analytics_dashboard/views/rent_listing_analytics_dashboard_view.dart:63: Text(
+lib/app/modules/rent/listing_analytics_dashboard/views/rent_listing_analytics_dashboard_view.dart:666: Text(_isSw ? 'Anzisha Utabiri wa AI' : 'Activate Predictive AI')
+lib/app/modules/rent/listing_details/controllers/rent_listing_details_controller.dart:789: Text(_isSw ? 'Futa mali?' : 'Delete property?')
+lib/app/modules/rent/listing_details/controllers/rent_listing_details_controller.dart:790: Text(
+lib/app/modules/rent/loyalty_thresholds/views/rent_loyalty_thresholds_view.dart:23: Text(_isSw ? 'Hakuna data ya uaminifu bado.' : 'No loyalty data available yet.')
+lib/app/modules/rent/maintenance_cost_analysis/views/rent_maintenance_cost_analysis_view.dart:68: Text(
+lib/app/modules/rent/manage_expenses/views/manage_expenses_view.dart:100: Text(
+lib/app/modules/rent/manage_expenses/views/manage_expenses_view.dart:193: Text(appLocalization.managePaymentsAllApartments, overflow: TextOverflow.ellipsis)
+lib/app/modules/rent/manage_expenses/views/manage_expenses_view.dart:200: Text(k, overflow: TextOverflow.ellipsis)
+lib/app/modules/rent/manage_expenses/views/manage_expenses_view.dart:226: Text(appLocalization.manageExpensesAllCategories, overflow: TextOverflow.ellipsis)
+lib/app/modules/rent/manage_expenses/views/manage_expenses_view.dart:233: Text(k, overflow: TextOverflow.ellipsis)
+lib/app/modules/rent/manage_payments/views/manage_payments_view.dart:108: Text(
+lib/app/modules/rent/manage_payments/views/manage_payments_view.dart:201: Text(appLocalization.managePaymentsAllApartments, overflow: TextOverflow.ellipsis)
+lib/app/modules/rent/manage_payments/views/manage_payments_view.dart:208: Text(k, overflow: TextOverflow.ellipsis)
+lib/app/modules/rent/manage_payments/views/manage_payments_view.dart:232: Text(appLocalization.managePaymentsStatusAll)
+lib/app/modules/rent/manage_payments/views/manage_payments_view.dart:236: Text(appLocalization.managePaymentsStatusFull)
+lib/app/modules/rent/manage_payments/views/manage_payments_view.dart:240: Text(appLocalization.managePaymentsStatusPartial)
+lib/app/modules/rent/manage_payments/views/manage_payments_view.dart:262: Text(
+lib/app/modules/rent/manage_payments/views/manage_payments_view.dart:270: Text(
+lib/app/modules/rent/manage_payments/views/manage_payments_view.dart:278: Text(appLocalization.managePaymentsClearDates)
+lib/app/modules/rent/my_properties_hub/views/rent_my_properties_hub_view.dart:154: Text(_isSw ? 'Ongeza Mwenzangu' : 'Add Co-host')
+lib/app/modules/rent/my_properties_hub/views/rent_my_properties_hub_view.dart:161: Text(
+lib/app/modules/rent/my_properties_hub/views/rent_my_properties_hub_view.dart:174: Text(
+lib/app/modules/rent/my_properties_hub/views/rent_my_properties_hub_view.dart:192: Text(
+lib/app/modules/rent/my_properties_hub/views/rent_my_properties_hub_view.dart:205: Text(userId)
+lib/app/modules/rent/my_properties_hub/views/rent_my_properties_hub_view.dart:206: Text(role)
+lib/app/modules/rent/my_properties_hub/views/rent_my_properties_hub_view.dart:232: Text(_isSw ? 'Funga' : 'Close')
+lib/app/modules/rent/my_properties_hub/views/rent_my_properties_hub_view.dart:245: Text(_isSw ? 'Ongeza' : 'Add')
+lib/app/modules/rent/profit_analysis_dashboard/views/rent_profit_analysis_dashboard_view.dart:60: Text(
+lib/app/modules/rent/profit_analysis_dashboard/views/rent_profit_analysis_dashboard_view.dart:426: Text(_isSw ? 'Tumia Mkakati' : 'Apply Strategy')
+lib/app/modules/rent/property_roi_analysis/views/rent_property_roi_analysis_view.dart:63: Text(
+lib/app/modules/rent/property_roi_analysis/views/rent_property_roi_analysis_view.dart:148: Text(
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:38: Text(
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:194: Text(c)
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:222: Text(u)
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:250: Text(
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:261: Text(m)
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:313: Text(value == null ? '-' : DateFormat('dd MMM yyyy').format(value))
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:349: Text(c)
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:411: Text(e.materialName, style: const TextStyle(fontWeight: FontWeight.w700))
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:449: Text(e.key)
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:450: Text('${_money.format(e.value.round())} (${controller.categoryPercent(e.key).toStringAsFixed(1)}%)')
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:463: Text(
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:469: Text(
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:511: Text('No data')
+lib/app/modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart:544: Text('No data')
+lib/app/modules/rent/schedule_maintenance_form/views/rent_schedule_maintenance_form_view.dart:91: Text(e, style: TextStyle(color: primaryText))
+lib/app/modules/rent/schedule_maintenance_form/views/rent_schedule_maintenance_form_view.dart:132: Text(e, style: TextStyle(color: primaryText))
+lib/app/modules/rent/schedule_payment_reminder/views/rent_schedule_payment_reminder_view.dart:334: Text(_isSw ? 'WhatsApp Mpya' : 'New WhatsApp')
+lib/app/modules/rent/schedule_payment_reminder/views/rent_schedule_payment_reminder_view.dart:349: Text('New SMS')
+lib/app/modules/rent/schedule_payment_reminder/views/rent_schedule_payment_reminder_view.dart:435: Text(
+lib/app/modules/rent/schedule_payment_reminder/views/rent_schedule_payment_reminder_view.dart:463: Text(isSw ? 'Ghairi' : 'Cancel')
+lib/app/modules/rent/schedule_payment_reminder/views/rent_schedule_payment_reminder_view.dart:480: Text(isSw ? 'Hifadhi' : 'Save')
+lib/app/modules/rent/smart_utility_dashboard/views/rent_smart_utility_dashboard_view.dart:837: Text(p)
+lib/app/modules/rent/staff_management/views/rent_staff_management_view.dart:172: Text(e.value)
+lib/app/modules/rent/staff_management/views/rent_staff_management_view.dart:244: Text(
+lib/app/modules/rent/staff_management/views/rent_staff_management_view.dart:254: Text(e)
+lib/app/modules/rent/staff_management/views/rent_staff_management_view.dart:473: Text(_isSw ? 'Hariri' : 'Edit')
+lib/app/modules/rent/staff_management/views/rent_staff_management_view.dart:474: Text(_isSw ? 'Ondoa' : 'Remove')
+lib/app/modules/rent/staff_payroll_details/views/rent_staff_payroll_details_view.dart:37: Text(
+lib/app/modules/rent/staff_payroll_details/views/rent_staff_payroll_details_view.dart:52: Text(
+lib/app/modules/rent/staff_payroll_details/views/rent_staff_payroll_details_view.dart:62: Text(name, style: const TextStyle(fontWeight: FontWeight.w700))
+lib/app/modules/rent/staff_payroll_details/views/rent_staff_payroll_details_view.dart:70: Text(pay, style: const TextStyle(fontWeight: FontWeight.w700))
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:254: Text('Tenancy period finished')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:255: Text(
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:264: Text('Renew')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:271: Text('Remind')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:296: Text('Amount tenant has paid')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:308: Text('Cancel')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:312: Text('Submit')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:416: Text('Edit lease terms')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:454: Text('Cancel')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:482: Text('Save')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:511: Text('Send reminder to tenant')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:524: Text('Cancel')
+lib/app/modules/rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart:535: Text('Submit')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:263: Text(
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:561: Text(_isSw ? 'Hariri' : 'Edit')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:570: Text(_isSw ? 'Nakili' : 'Duplicate')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:580: Text(
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:590: Text(
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:606: Text(
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:614: Text(_isSw ? 'Futa kiolezo?' : 'Delete template?')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:615: Text(_isSw
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:621: Text(_isSw ? 'Sitisha' : 'Cancel')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart:627: Text(_isSw ? 'Futa' : 'Delete')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:277: Text(WaTemplateCategory.label(c))
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:290: Text('English (en_US)')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:292: Text('Swahili (sw)')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:293: Text('English (en)')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:294: Text('French (fr)')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:311: Text(_isSw ? 'Hakuna' : 'None')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:325: Text(_isSw ? 'Maandishi' : 'Text')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:375: Text(
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:462: Text(_isSw ? 'Ongeza kitufe' : 'Add button')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:493: Text('Quick reply')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:494: Text('URL')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:496: Text('Phone number')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:711: Text(_isSw ? 'HIFADHI RASIMU' : 'SAVE DRAFT')
+lib/app/modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_editor_view.dart:734: Text(_isSw ? 'TUMA' : 'SUBMIT')
+lib/app/modules/rent/widgets/rent_real_dashboard_sections.dart:245: Text(
+lib/app/modules/reports/controllers/reports_controller.dart:530: Text(
+lib/app/modules/reports/controllers/reports_controller.dart:535: Text(appLocalization.reportsNoData)
+lib/app/modules/reports/views/reports_view.dart:98: Text(
+lib/app/modules/reports/views/reports_view.dart:109: Text(
+lib/app/modules/reports/views/reports_view.dart:127: Text(_periodLabel(value))
+lib/app/modules/reports/views/reports_view.dart:153: Text(
+lib/app/modules/reports/views/reports_view.dart:174: Text(appLocalization.reportsPropertyAll)
+lib/app/modules/reports/views/reports_view.dart:179: Text(
+lib/app/modules/reports/views/reports_view.dart:194: Text(
+lib/app/modules/reports/views/reports_view.dart:201: Text(
+lib/app/modules/reports/views/reports_view.dart:211: Text(appLocalization.reportsNoData)
+lib/app/modules/reports/views/reports_view.dart:288: Text(
+lib/app/modules/reports/views/reports_view.dart:295: Text(
+lib/app/modules/reports/views/reports_view.dart:305: Text(appLocalization.reportsNoData)
+lib/app/modules/reports/views/reports_view.dart:381: Text(
+lib/app/modules/reports/views/reports_view.dart:393: Text(
+lib/app/modules/reports/views/reports_view.dart:428: Text(
+lib/app/modules/reports/views/reports_view.dart:438: Text(appLocalization.reportsNoData)
+lib/app/modules/reports/views/reports_view.dart:530: Text(appLocalization.reportsExportPdf)
+lib/app/modules/reports/views/reports_view.dart:537: Text(appLocalization.reportsExportCsv)
+lib/app/modules/reports/views/reports_view.dart:547: Text(appLocalization.reportsExportExcel)
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:249: Text(_t('Save group link', 'Hifadhi kiungo cha kikundi'))
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:262: Text(_t('Cancel', 'Ghairi'))
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:283: Text(_t('Save', 'Hifadhi'))
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:684: Text(_t('Success', 'Imefanikiwa'))
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:685: Text(
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:698: Text(_t('OK', 'SAWA'))
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:706: Text(_t('Partially sent', 'Imetumwa kwa sehemu'))
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:707: Text(
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:716: Text(_t('OK', 'SAWA'))
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:791: Text(_t('Send via WhatsApp', 'Tuma kupitia WhatsApp'))
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:796: Text(
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:807: Text(number)
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:808: Text(_t('Open WhatsApp', 'Fungua WhatsApp'))
+lib/app/modules/send_sms/controllers/send_sms_controller.dart:829: Text(_t('Close', 'Funga'))
+lib/app/modules/send_sms/views/send_sms_view.dart:60: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:66: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:73: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:141: Text(l10n.sendSmsNoContactsWithPhones)
+lib/app/modules/send_sms/views/send_sms_view.dart:156: Text(entry.displayName)
+lib/app/modules/send_sms/views/send_sms_view.dart:157: Text(entry.phone)
+lib/app/modules/send_sms/views/send_sms_view.dart:174: Text(l10n.sendSmsAddSelectedContactNumbers)
+lib/app/modules/send_sms/views/send_sms_view.dart:226: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:247: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:252: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:273: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:303: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:317: Text(l10n.sendSmsPickFromContacts)
+lib/app/modules/send_sms/views/send_sms_view.dart:357: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:390: Text(_t(context, 'Save', 'Hifadhi'))
+lib/app/modules/send_sms/views/send_sms_view.dart:416: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:651: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:661: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:671: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:862: Text(g.name)
+lib/app/modules/send_sms/views/send_sms_view.dart:881: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:970: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:980: Text(
+lib/app/modules/send_sms/views/send_sms_view.dart:990: Text(
+lib/app/modules/settings/controllers/settings_controller.dart:143: Text(p)
+lib/app/modules/settings/controllers/settings_controller.dart:166: Text(isSw ? 'Sarafu ya msingi' : 'Base currency')
+lib/app/modules/settings/controllers/settings_controller.dart:177: Text(isSw ? 'Funga' : 'Close')
+lib/app/modules/settings/controllers/settings_controller.dart:241: Text(title)
+lib/app/modules/settings/controllers/settings_controller.dart:242: Text(body)
+lib/app/modules/settings/views/settings_view.dart:82: Text(controller.username.value)
+lib/app/modules/settings/views/settings_view.dart:264: Text(appLocalization.changePin)
+lib/app/modules/settings/views/settings_view.dart:375: Text(appLocalization.cancel)
+lib/app/modules/settings/views/settings_view.dart:379: Text(appLocalization.yes)
+lib/app/modules/settings/views/settings_view.dart:385: Text(appLocalization.logout)
+lib/app/modules/settings/views/settings_view.dart:386: Text(appLocalization.logoutConfirm)
+lib/app/modules/settings/views/settings_view.dart:416: Text(appLocalization.tenantReminderTemplateTitle)
+lib/app/modules/settings/views/settings_view.dart:424: Text(
+lib/app/modules/settings/views/settings_view.dart:496: Text(appLocalization.templatePreviewTitle)
+lib/app/modules/settings/views/settings_view.dart:497: Text(preview)
+lib/app/modules/settings/widgets/item_settings_widgets.dart:36: Text(title, style: settingsItemStyle)
+lib/app/modules/staff_detail/controllers/staff_detail_controller.dart:244: Text(appLocalization.staffDetailConfirmRemoveTitle)
+lib/app/modules/staff_detail/controllers/staff_detail_controller.dart:245: Text(
+lib/app/modules/staff_detail/controllers/staff_detail_controller.dart:251: Text(appLocalization.cancel)
+lib/app/modules/staff_detail/controllers/staff_detail_controller.dart:255: Text(
+lib/app/modules/staff_detail/views/staff_detail_view.dart:92: Text(
+lib/app/modules/subscription/views/subscription_view.dart:55: Text(
+lib/app/modules/subscription/views/subscription_view.dart:104: Text(p)
+lib/app/modules/subscription/views/subscription_view.dart:163: Text(
+lib/app/modules/subscription/views/subscription_view.dart:166: Text(
+lib/app/modules/subscription/views/subscription_view.dart:176: Text(_t(context, en: 'Cancel', sw: 'Ghairi'))
+lib/app/modules/subscription/views/subscription_view.dart:183: Text(
+lib/app/modules/subscription/views/subscription_view.dart:230: Text(
+lib/app/modules/support/views/support_view.dart:189: Text(l10n.supportOpenTerms)
+lib/app/modules/support/views/support_view.dart:193: Text(l10n.supportOpenPrivacy)
+lib/app/modules/terms/views/terms_view.dart:40: Text(title, style: _headingStyle)
+lib/app/modules/terms/views/terms_view.dart:42: Text(body, style: _bodyStyle)
+lib/app/modules/terms/views/terms_view.dart:56: Text(l10n.termsLastUpdated, style: _metaStyle)
+lib/app/modules/terms/views/terms_view.dart:58: Text(l10n.termsIntro, style: _bodyStyle)
+lib/app/modules/terms/views/terms_view.dart:60: Text(l10n.termsSwHint, style: _metaStyle)
+lib/app/modules/verify_identity/views/verify_identity_view.dart:188: Text(appLocalization.verify)
+lib/main.dart:106: Text(title)
+lib/main.dart:107: Text(content)
+lib/main.dart:117: Text('View')
+lib/main.dart:121: Text('Cancel')
+lib/main_dev.dart:103: Text(title)
+lib/main_dev.dart:104: Text(content)
+lib/main_dev.dart:114: Text('View')
+lib/main_dev.dart:118: Text('Cancel')
+lib/main_prod.dart:105: Text(title)
+lib/main_prod.dart:106: Text(content)
+lib/main_prod.dart:116: Text('View')
+lib/main_prod.dart:120: Text('Cancel')

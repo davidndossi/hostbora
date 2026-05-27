@@ -95,7 +95,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
           label: Text(
             isSaving
                 ? _t(context, en: 'Saving...', sw: 'Inahifadhi...')
-                : _t(context, en: 'Save Booking', sw: 'Hifadhi Uhifadhi'),
+                : _t(context, en: 'Save Booking', sw: 'Hifadhi Booking'),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -447,7 +447,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                 children: [
                   _buildLabel(
                     context,
-                    _t(context, en: 'Select Property Unit', sw: 'Chagua Unit ya Mali'),
+                    _t(context, en: 'Select Property Unit', sw: 'Chagua Unit ya Jengo'),
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
@@ -489,7 +489,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                         ? _t(
                             context,
                             en: 'Please select a property unit',
-                            sw: 'Tafadhali chagua unit ya mali',
+                            sw: 'Tafadhali chagua unit ya jengo',
                           )
                         : null,
                   ),

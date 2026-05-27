@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
@@ -114,7 +115,12 @@ class MyPropertiesController extends BaseController {
       unitSlots: units,
       status: PropertyStatus.ready,
       isFavorite: false,
-      imageUrl: '',
+      imageUrl: PropertyListingImageAssigner.resolveDisplayPath(
+        storedPath: r.coverPhotoPath,
+        propertyRef: id,
+        localPropertyId: r.id,
+        propertyName: title,
+      ),
     );
   }
 
@@ -142,7 +148,24 @@ class MyPropertiesController extends BaseController {
     final units = (m['units'] as num?)?.toInt() ?? 0;
     final statusStr = (m['status'] as String?)?.toUpperCase() ?? 'ACTIVE';
     final status = statusStr == 'CLEANING' ? PropertyStatus.cleaning : PropertyStatus.ready;
-    final imageUrl = m['coverPhotoUrl']?.toString() ?? m['coverPhoto']?.toString() ?? m['imageUrl']?.toString() ?? '';
+    var imageUrl = m['coverPhotoUrl']?.toString() ??
+        m['coverPhoto']?.toString() ??
+        m['imageUrl']?.toString() ??
+        '';
+    imageUrl = imageUrl.trim();
+    if (imageUrl.isEmpty) {
+      final localRow = await _local.findByHubId(id);
+      if (localRow != null) {
+        imageUrl = PropertyListingImageAssigner.resolveDisplayPath(
+          storedPath: localRow.coverPhotoPath,
+          propertyRef: localRow.propertyRef,
+          localPropertyId: localRow.id,
+          propertyName: title,
+        );
+      } else if (id.isNotEmpty) {
+        imageUrl = PropertyListingImageAssigner.assignForProperty(propertyRef: id);
+      }
+    }
     return PropertyListing(
       id: id,
       title: title,

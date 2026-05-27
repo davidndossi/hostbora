@@ -313,6 +313,12 @@ const descriptionTextStyle = TextStyle(
   fontSize: 16,
 );
 
+/// Default for [Text] under `lib/app/modules/` (excluding `rent/`).
+/// Applied via [BaseView.applyModuleDefaultTextStyle] and [ModuleDefaultTextScope].
+const moduleDefaultTextStyle = TextStyle(
+  fontSize: 16,
+);
+
 final bigTitleCyanStyle =
     bigTitleStyle.copyWith(color: AppColors.textColorCyan);
 

@@ -118,8 +118,4 @@ class RentProfitAnalysisDashboardController extends BaseController
   void onApplyStrategy() {
     showSuccessMessage('Strategy applied');
   }
-
-  void onOpenMenu() {}
-
-  void onOpenProfile() {}
 }

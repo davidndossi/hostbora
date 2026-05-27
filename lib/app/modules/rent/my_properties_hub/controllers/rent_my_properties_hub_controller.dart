@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/property_listing_image_assigner.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/property_members_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
@@ -105,7 +106,10 @@ class RentMyPropertiesHubController extends BaseController {
           rawList = data['listings'] as List;
         }
         final maps = rawList.whereType<Map<String, dynamic>>().toList();
-        remoteRows = maps.map(_rowFromMap).where((e) => e.id.isNotEmpty).toList();
+        remoteRows = await Future.wait(
+          maps.map((m) => _rowFromMap(m, local: _localRent)),
+        );
+        remoteRows = remoteRows.where((e) => e.id.isNotEmpty).toList();
       } catch (_) {
         // Offline or API failure: still show SQLite properties.
       }
@@ -194,7 +198,12 @@ class RentMyPropertiesHubController extends BaseController {
       return RentHubPropertyRow(
         id: propertyRef,
         title: title,
-        imageUrl: '',
+        imageUrl: PropertyListingImageAssigner.resolveDisplayPath(
+          storedPath: r.coverPhotoPath,
+          propertyRef: propertyRef,
+          localPropertyId: r.id,
+          propertyName: title,
+        ),
         propertyTypeLabel: r.propertyType.toUpperCase(),
         activeTenants: tenantCount,
         isLocal: true,
@@ -214,7 +223,12 @@ class RentMyPropertiesHubController extends BaseController {
     return RentHubPropertyRow(
       id: propertyRef,
       title: title,
-      imageUrl: '',
+      imageUrl: PropertyListingImageAssigner.resolveDisplayPath(
+        storedPath: r.coverPhotoPath,
+        propertyRef: propertyRef,
+        localPropertyId: r.id,
+        propertyName: title,
+      ),
       propertyTypeLabel: r.propertyType.toUpperCase(),
       activeTenants: total,
       isLocal: true,
@@ -222,10 +236,33 @@ class RentMyPropertiesHubController extends BaseController {
     );
   }
 
-  static RentHubPropertyRow _rowFromMap(Map<String, dynamic> m) {
+  static Future<RentHubPropertyRow> _rowFromMap(
+    Map<String, dynamic> m, {
+    PropertyLocalDataSource? local,
+  }) async {
     final id = m['id']?.toString() ?? m['listingId']?.toString() ?? '';
     final title = m['propertyName']?.toString() ?? m['title']?.toString() ?? 'Property';
-    final imageUrl = m['coverPhotoUrl']?.toString() ?? m['coverPhoto']?.toString() ?? m['imageUrl']?.toString() ?? '';
+    var imageUrl = m['coverPhotoUrl']?.toString() ??
+        m['coverPhoto']?.toString() ??
+        m['imageUrl']?.toString() ??
+        '';
+    imageUrl = imageUrl.trim();
+    if (imageUrl.isEmpty && id.isNotEmpty) {
+      if (local != null) {
+        final localRow = await local.findByHubId(id);
+        if (localRow != null) {
+          imageUrl = PropertyListingImageAssigner.resolveDisplayPath(
+            storedPath: localRow.coverPhotoPath,
+            propertyRef: localRow.propertyRef,
+            localPropertyId: localRow.id,
+            propertyName: title,
+          );
+        }
+      }
+      if (imageUrl.isEmpty) {
+        imageUrl = PropertyListingImageAssigner.assignForProperty(propertyRef: id);
+      }
+    }
     final propertyTypeLabel =
         (m['propertyType'] ?? m['propertyCategory'] ?? m['category'])?.toString().toUpperCase() ?? 'PROPERTY';
     final activeTenants = (m['activeTenants'] as num?)?.toInt() ?? (m['tenantCount'] as num?)?.toInt() ?? 0;

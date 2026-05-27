@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/utils/thousand_separator.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/property_unit_floor.dart';
@@ -9,7 +9,7 @@ import '../../../../../l10n/app_localizations.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_add_new_listing_controller.dart';
 
-class RentAddNewListingView extends BaseView<RentAddNewListingController> {
+class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
   RentAddNewListingView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

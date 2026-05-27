@@ -2,9 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../rent_theme.dart';
-import '../../widgets/rent_ui.dart';
 import '../controllers/rent_monthly_pl_summary_controller.dart';
 
 class _PlUi {
@@ -40,7 +39,7 @@ class _PlUi {
       ];
 }
 
-class RentMonthlyPlSummaryView extends BaseView<RentMonthlyPlSummaryController> {
+class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryController> {
   RentMonthlyPlSummaryView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
@@ -142,7 +141,7 @@ class RentMonthlyPlSummaryView extends BaseView<RentMonthlyPlSummaryController> 
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isSw ? 'MUHTASARI WA Faida HALISI' : 'NET PROFIT SUMMARY',
+              _isSw ? 'MUHTASARI WA FAIDA HALISI' : 'NET PROFIT SUMMARY',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
@@ -477,7 +476,7 @@ class RentMonthlyPlSummaryView extends BaseView<RentMonthlyPlSummaryController> 
         }
 
         final label = hasRev
-            ? '${margin.round()}% ${_isSw ? 'HAZINA YA Faida' : 'PROFIT MARGIN'}'
+            ? '${margin.round()}% ${_isSw ? 'HAZINA YA FAIDA' : 'PROFIT MARGIN'}'
             : (_isSw ? 'Hakuna mapato' : 'No revenue');
 
         return Container(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_concierge_inbox_controller.dart';
 
@@ -14,7 +14,7 @@ abstract class _InboxPalette {
   static const Color card = Colors.white;
 }
 
-class RentConciergeInboxView extends BaseView<RentConciergeInboxController> {
+class RentConciergeInboxView extends RentBaseView<RentConciergeInboxController> {
   RentConciergeInboxView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

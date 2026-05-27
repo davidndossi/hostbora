@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/app_values.dart';
 import '../../../../core/widget/custom_app_bar.dart';
@@ -12,7 +12,7 @@ import '../enum/day_type.dart';
 
 const _hostCalendarManualRateBg = Color(0xFFE07A5F);
 
-class RentHostCalendarView extends BaseView<RentHostCalendarController> {
+class RentHostCalendarView extends RentBaseView<RentHostCalendarController> {
   RentHostCalendarView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
   String _t(String en, String sw) => _isSw ? sw : en;

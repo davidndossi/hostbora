@@ -59,19 +59,28 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
 
   @override
   Widget body(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildActiveSection(context),
-          const SizedBox(height: 24),
-          _buildUpcomingSection(context),
-          const SizedBox(height: 28),
-          _buildCreateButton(context),
-        ],
-      ),
-    );
+    return Obx(() {
+      if (controller.loading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      return RefreshIndicator(
+        onRefresh: controller.loadAccessCodes,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildActiveSection(context),
+              const SizedBox(height: 24),
+              _buildUpcomingSection(context),
+              const SizedBox(height: 28),
+              _buildCreateButton(context),
+            ],
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildActiveSection(BuildContext context) {
@@ -94,8 +103,9 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
                     : AppColors.textColorPrimary,
               ),
             ),
-            Text(
-              '${_t(context, en: 'Last synced', sw: 'Mara ya mwisho kusawazishwa')}: ${controller.lastSynced}',
+            Obx(
+              () => Text(
+              '${_t(context, en: 'Last synced', sw: 'Mara ya mwisho kusawazishwa')}: ${controller.lastSynced.value}',
               style: TextStyle(
                 fontSize: 12,
                 color: isDark
@@ -103,24 +113,49 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
                     : AppColors.textColorSecondary,
               ),
             ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
-        ...controller.activeAccess.map(
-          (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _AccessCard(
-              item: item,
-              isActive: true,
-              revealedGuestName: controller.revealedGuestName,
-              onReveal: () => controller.toggleReveal(item),
-              onShare: () => controller.shareCode(item),
-              onCopy: () => controller.copyCode(item),
-              onOptions: () => controller.openOptions(item),
-              t: _t,
-            ),
-          ),
-        ),
+        Obx(() {
+          if (controller.activeAccess.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                _t(
+                  context,
+                  en: 'No active guest access codes',
+                  sw: 'Hakuna misimbo ya ufikiaji hai',
+                ),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark
+                      ? theme.colorScheme.onSurfaceVariant
+                      : AppColors.textColorSecondary,
+                ),
+              ),
+            );
+          }
+          return Column(
+            children: controller.activeAccess
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _AccessCard(
+                      item: item,
+                      isActive: true,
+                      revealedId: controller.revealedId,
+                      onReveal: () => controller.toggleReveal(item),
+                      onShare: () => controller.shareCode(item),
+                      onCopy: () => controller.copyCode(item),
+                      onOptions: () => controller.openOptions(item),
+                      t: _t,
+                    ),
+                  ),
+                )
+                .toList(),
+          );
+        }),
       ],
     );
   }
@@ -143,21 +178,45 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
           ),
         ),
         const SizedBox(height: 12),
-        ...controller.upcomingAccess.map(
-          (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _AccessCard(
-              item: item,
-              isActive: false,
-              revealedGuestName: controller.revealedGuestName,
-              onReveal: () => controller.toggleReveal(item),
-              onShare: () => controller.shareCode(item),
-              onCopy: () => controller.copyCode(item),
-              onOptions: () => controller.openOptions(item),
-              t: _t,
-            ),
-          ),
-        ),
+        Obx(() {
+          if (controller.upcomingAccess.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                _t(
+                  context,
+                  en: 'No upcoming access codes',
+                  sw: 'Hakuna misimbo ya ufikiaji ujao',
+                ),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark
+                      ? theme.colorScheme.onSurface
+                      : AppColors.textColorSecondary,
+                ),
+              ),
+            );
+          }
+          return Column(
+            children: controller.upcomingAccess
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _AccessCard(
+                      item: item,
+                      isActive: false,
+                      revealedId: controller.revealedId,
+                      onReveal: () => controller.toggleReveal(item),
+                      onShare: () => controller.shareCode(item),
+                      onCopy: () => controller.copyCode(item),
+                      onOptions: () => controller.openOptions(item),
+                      t: _t,
+                    ),
+                  ),
+                )
+                .toList(),
+          );
+        }),
       ],
     );
   }
@@ -197,7 +256,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
 class _AccessCard extends StatelessWidget {
   final GuestAccessItem item;
   final bool isActive;
-  final Rx<String?> revealedGuestName;
+  final RxnString revealedId;
   final VoidCallback onReveal;
   final VoidCallback onShare;
   final VoidCallback onCopy;
@@ -212,7 +271,7 @@ class _AccessCard extends StatelessWidget {
   const _AccessCard({
     required this.item,
     required this.isActive,
-    required this.revealedGuestName,
+    required this.revealedId,
     required this.onReveal,
     required this.onShare,
     required this.onCopy,
@@ -327,7 +386,7 @@ class _AccessCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Obx(() {
-            final revealed = revealedGuestName.value == item.guestName;
+            final revealed = revealedId.value == item.id;
             final displayPin = revealed
                 ? item.pinFull
                 : '${item.pinVisible}•••';

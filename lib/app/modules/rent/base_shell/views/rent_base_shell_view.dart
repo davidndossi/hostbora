@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../routes/app_pages.dart';
 import '../../hub/views/rent_hub_view.dart';
@@ -12,7 +12,7 @@ import '../../../settings/views/settings_view.dart';
 import '../controllers/rent_base_shell_controller.dart';
 import 'rent_others_tab_view.dart';
 
-class RentBaseShellView extends BaseView<RentBaseShellController> {
+class RentBaseShellView extends RentBaseView<RentBaseShellController> {
   RentBaseShellView({super.key});
 
   @override

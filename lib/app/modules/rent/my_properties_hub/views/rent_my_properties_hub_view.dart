@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../../../routes/app_pages.dart';
+import '../../../../core/widget/property_listing_image.dart';
 import '../controllers/rent_my_properties_hub_controller.dart';
 
-class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
+class RentMyPropertiesHubView extends RentBaseView<RentMyPropertiesHubController> {
   RentMyPropertiesHubView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
@@ -59,6 +60,11 @@ class RentMyPropertiesHubView extends BaseView<RentMyPropertiesHubController> {
                   onOpenListing: () => Get.toNamed(
                     Routes.RENT_LISTING_DETAILS,
                     parameters: {'id': p.id, 'title': p.title},
+                    arguments: {
+                      'property_id': p.id,
+                      'property_name': p.title,
+                      'property_image': p.imageUrl,
+                    },
                   ),
                   onAddEstimate: () => Get.toNamed(
                     Routes.RENT_PROPERTY_ROI_ESTIMATE_FORM,
@@ -362,6 +368,11 @@ void _showMultiUnitPropertySheet(
                                     if (slot.unitId.trim().isNotEmpty) 'unitId': slot.unitId.trim(),
                                     'unitName': slot.unitName.trim(),
                                   },
+                                  arguments: {
+                                    'property_id': row.id,
+                                    'property_name': row.title,
+                                    'property_image': row.imageUrl,
+                                  },
                                 );
                               },
                               child: Text(isSw ? 'Maelezo' : 'View details', style: TextStyle(fontSize: 16)),
@@ -637,15 +648,12 @@ class _ManagementPropertyCard extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: row.imageUrl.isNotEmpty
-              ? Image.network(
-                  row.imageUrl,
-                  height: 180,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => _fallbackImage(),
-                )
-              : _fallbackImage(),
+          child: PropertyListingImage(
+            imagePath: row.imageUrl,
+            height: 180,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
         ),
         Positioned(
           top: 12,
@@ -670,21 +678,6 @@ class _ManagementPropertyCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _fallbackImage() {
-    return Image.asset(
-      'images/luxury_room_view.png',
-      height: 180,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => const SizedBox(
-        height: 180,
-        child: Center(
-          child: Icon(Icons.home_work_outlined, size: 48),
-        ),
-      ),
     );
   }
 

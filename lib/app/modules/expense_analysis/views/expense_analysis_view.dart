@@ -26,9 +26,17 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return CustomAppBar(
       appBarTitleText: appLocalization.expenseAnalysis,
       isCentered: true,
+      actions: [
+        IconButton(
+          onPressed: controller.openMoreOptions,
+          icon: const Icon(Icons.more_vert),
+          color: isDark ? Colors.white : AppColors.appBarIconColor,
+        ),
+      ],
     );
   }
 

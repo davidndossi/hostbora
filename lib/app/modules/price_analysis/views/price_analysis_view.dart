@@ -160,7 +160,6 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: AppColors.colorPrimary,
-            fontFamily: 'Times New Roman',
           ),
         ),
         const Spacer(),

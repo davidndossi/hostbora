@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/values/app_colors.dart';
+import '../../../core/widget/module_default_text_scope.dart';
 import '../../../core/values/app_values.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../controllers/document_scanner_controller.dart';
@@ -38,7 +39,8 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
         ? Colors.white
         : AppColors.textColorPrimary;
 
-    return Scaffold(
+    return ModuleDefaultTextScope(
+      child: Scaffold(
       backgroundColor: scannerBg,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -79,6 +81,7 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
             scannerSecondary: scannerSecondary,
           ),
         ],
+      ),
       ),
     );
   }
@@ -221,7 +224,7 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
             _t(
               context,
               en: 'Position the document within the frame',
-              sw: 'Weka hati ndani ya fremu',
+              sw: 'Weka faili ndani ya fremu',
             ),
             style: TextStyle(
               fontSize: 14,

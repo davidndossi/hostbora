@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_active_loyalty_programs_controller.dart';
 
@@ -40,7 +40,7 @@ class _ActiveLoyaltyUi {
       ];
 }
 
-class RentActiveLoyaltyProgramsView extends BaseView<RentActiveLoyaltyProgramsController> {
+class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgramsController> {
   RentActiveLoyaltyProgramsView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

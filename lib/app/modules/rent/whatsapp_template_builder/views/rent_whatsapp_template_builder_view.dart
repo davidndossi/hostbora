@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
@@ -10,7 +11,7 @@ import '../controllers/rent_whatsapp_template_builder_controller.dart';
 import 'rent_whatsapp_template_editor_view.dart';
 
 class RentWhatsappTemplateBuilderView
-    extends BaseView<RentWhatsappTemplateBuilderController> {
+    extends RentBaseView<RentWhatsappTemplateBuilderController> {
   RentWhatsappTemplateBuilderView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';

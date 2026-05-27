@@ -381,7 +381,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
         label = '${dateFmt.format(start)} – ${dateFmt.format(end)}';
       } else {
         hasRange = false;
-        label = _isSw ? 'Mwanzo wa mkataba – mwisho' : 'Lease start – end';
+        label = _isSw ? 'Mwanzo – mwisho wa mkataba' : 'Lease start – end';
       }
       return Material(
         color: fieldBg,

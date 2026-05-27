@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_schedule_maintenance_form_controller.dart';
 
 /// Concierge **Request Maintenance** — property, category, date, priority, description.
-class RentScheduleMaintenanceFormView extends BaseView<RentScheduleMaintenanceFormController> {
+class RentScheduleMaintenanceFormView extends RentBaseView<RentScheduleMaintenanceFormController> {
   RentScheduleMaintenanceFormView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

@@ -1,6 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:open_file/open_file.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/vault_documents_store.dart';
@@ -162,7 +165,80 @@ class DocumentsController extends BaseController {
   void goBack() => Get.back();
 
   void openSearch() {
-    // TODO: open search
+    final query = ''.obs;
+    final source = List<DocumentItem>.from(documents);
+
+    Get.bottomSheet(
+      SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                autofocus: true,
+                onChanged: (v) => query.value = v.trim().toLowerCase(),
+                decoration: InputDecoration(
+                  hintText: appLocalization.searchVaultDocuments,
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 360),
+                child: Obx(() {
+                  final q = query.value;
+                  final filtered = q.isEmpty
+                      ? source
+                      : source
+                          .where((d) =>
+                              d.name.toLowerCase().contains(q) ||
+                              d.size.toLowerCase().contains(q))
+                          .toList();
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(appLocalization.noDocuments),
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (_, index) {
+                      final item = filtered[index];
+                      return ListTile(
+                        title: Text(
+                          item.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(item.size),
+                        trailing: const Icon(Icons.more_vert),
+                        onTap: () {
+                          Get.back();
+                          openDocumentOptions(item);
+                        },
+                      );
+                    },
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
+      ),
+      backgroundColor: Get.theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+    );
   }
 
   void selectFilter(DocumentFilter filter) {
@@ -170,7 +246,101 @@ class DocumentsController extends BaseController {
   }
 
   void openDocumentOptions(DocumentItem item) {
-    // TODO: show bottom sheet or menu (view, download, delete, etc.)
+    Get.bottomSheet(
+      SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.open_in_new),
+              title: const Text('Open'),
+              onTap: () async {
+                Get.back();
+                await _openDocument(item);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: Text(appLocalization.share),
+              onTap: () async {
+                Get.back();
+                await _shareDocument(item);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Remove from list'),
+              onTap: () {
+                documents.remove(item);
+                Get.back();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: Text(appLocalization.cancel),
+              onTap: Get.back,
+            ),
+          ],
+        ),
+      ),
+      backgroundColor: Get.theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+    );
+  }
+
+  Future<void> _openDocument(DocumentItem item) async {
+    final path = _resolveLocalPath(item);
+    if (path == null) {
+      showErrorMessage('Document is not available offline yet.');
+      return;
+    }
+    final opened = await OpenFile.open(path);
+    if (opened.type == ResultType.noAppToOpen) {
+      showErrorMessage('No app found to open this file.');
+      return;
+    }
+    if (opened.type == ResultType.error) {
+      showErrorMessage(opened.message.isNotEmpty
+          ? opened.message
+          : 'Could not open this document.');
+      return;
+    }
+    await _recentStore.recordDocument(
+      documentId: '${directoryId ?? 'all'}:${item.name.toLowerCase()}',
+      displayName: item.name,
+      directoryId: directoryId,
+      localPath: path,
+    );
+  }
+
+  Future<void> _shareDocument(DocumentItem item) async {
+    final path = _resolveLocalPath(item);
+    if (path == null) {
+      showErrorMessage('Only offline documents can be shared right now.');
+      return;
+    }
+    await _recentStore.recordDocument(
+      documentId: '${directoryId ?? 'all'}:${item.name.toLowerCase()}',
+      displayName: item.name,
+      directoryId: directoryId,
+      localPath: path,
+    );
+    await Share.shareXFiles([XFile(path)], subject: item.name, text: item.name);
+  }
+
+  String? _resolveLocalPath(DocumentItem item) {
+    final dirId = directoryId ?? 'all';
+    final candidates = _vaultStore.loadForDirectory(dirId);
+    final target = item.name.trim().toLowerCase();
+    for (final doc in candidates) {
+      if (doc.fileName.trim().toLowerCase() != target) continue;
+      if (doc.localPath.isEmpty) continue;
+      if (!File(doc.localPath).existsSync()) continue;
+      return doc.localPath;
+    }
+    return null;
   }
 
   void uploadDocument() {

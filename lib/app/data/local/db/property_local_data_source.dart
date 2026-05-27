@@ -21,6 +21,7 @@ class PropertyRecord {
     this.minRentalDuration = '',
     this.unitsJson = '',
     this.floorCount = 1,
+    this.coverPhotoPath = '',
   });
 
   final int id;
@@ -38,6 +39,8 @@ class PropertyRecord {
   final String minRentalDuration;
   final String unitsJson;
   final int floorCount;
+  /// Bundled asset (`images/LR-n.ext`), local file path, or remote URL.
+  final String coverPhotoPath;
 
   /// Rent “apartment suite” field — same as [propertyName] in local schema.
   String get apartmentSuite => propertyName;
@@ -59,6 +62,7 @@ class PropertyRecord {
       minRentalDuration: m['min_rental_duration'] as String? ?? '',
       unitsJson: m['units_json'] as String? ?? '',
       floorCount: (m['floor_count'] as num?)?.toInt() ?? 1,
+      coverPhotoPath: m['cover_photo_path'] as String? ?? '',
     );
   }
 
@@ -77,6 +81,7 @@ class PropertyRecord {
         'min_rental_duration': minRentalDuration,
         'units_json': unitsJson,
         'floor_count': floorCount,
+        'cover_photo_path': coverPhotoPath,
       };
 }
 
@@ -186,29 +191,29 @@ class PropertyLocalDataSource {
     return out;
   }
 
-  // Future<List<PropertyRecord>> getAllVisibleNewestFirst({
-  //   required String userId,
-  //   String workspaceType = 'bnb',
-  // }) async {
-  //   final db = await database;
-  //   if (userId.trim().isEmpty) {
-  //     final maps = await db.query(
-  //       _table,
-  //       where: 'workspace_type = ? OR workspace_type = ""',
-  //       whereArgs: [workspaceType],
-  //       orderBy: 'created_at_ms DESC',
-  //     );
-  //     return maps.map(PropertyRecord.fromMap).toList();
-  //   }
-  //   final maps = await db.query(
-  //     _table,
-  //     where:
-  //         '(workspace_type = ? OR workspace_type = "") AND (owner_user_id = ? OR owner_user_id = "")',
-  //     whereArgs: [workspaceType, userId],
-  //     orderBy: 'created_at_ms DESC',
-  //   );
-  //   return maps.map(PropertyRecord.fromMap).toList();
-  // }
+  Future<List<PropertyRecord>> getAllByWorkspace({
+    required String userId,
+    String workspaceType = 'bnb',
+  }) async {
+    final db = await database;
+    if (userId.trim().isEmpty) {
+      final maps = await db.query(
+        _table,
+        where: 'workspace_type = ? OR workspace_type = ""',
+        whereArgs: [workspaceType],
+        orderBy: 'created_at_ms DESC',
+      );
+      return maps.map(PropertyRecord.fromMap).toList();
+    }
+    final maps = await db.query(
+      _table,
+      where:
+          '(workspace_type = ? OR workspace_type = "") AND (owner_user_id = ? OR owner_user_id = "")',
+      whereArgs: [workspaceType, userId],
+      orderBy: 'created_at_ms DESC',
+    );
+    return maps.map(PropertyRecord.fromMap).toList();
+  }
 
   Future<List<PropertyRecord>> getAllVisibleNewestFirst({
     required String userId,

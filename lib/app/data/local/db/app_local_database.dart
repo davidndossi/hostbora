@@ -2,6 +2,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '/app/core/utils/property_listing_image_assigner.dart';
+
 /// Central SQLite database for offline storage.
 ///
 /// [dbVersion] is **1** for fresh local test cycles.
@@ -63,6 +65,7 @@ class AppLocalDatabase {
         await _ensureIncomePropertyRefColumn(db);
         await _ensureUtilityTopupPropertyRefColumn(db);
         await _ensurePropertiesFloorCountColumn(db);
+        await _ensurePropertiesCoverPhotoPathColumn(db);
         await _ensureIncomeBookingIdColumn(db);
         await _ensureCurrencyColumns(db);
         await _ensureExchangeRatesTable(db);
@@ -88,7 +91,8 @@ class AppLocalDatabase {
         rent_frequency TEXT NOT NULL DEFAULT '',
         min_rental_duration TEXT NOT NULL DEFAULT '',
         units_json TEXT NOT NULL DEFAULT '',
-        floor_count INTEGER NOT NULL DEFAULT 1
+        floor_count INTEGER NOT NULL DEFAULT 1,
+        cover_photo_path TEXT NOT NULL DEFAULT ''
       )
     ''');
     await db.execute(
@@ -461,6 +465,46 @@ class AppLocalDatabase {
       'floor_count',
       'INTEGER NOT NULL DEFAULT 1',
     );
+  }
+
+  static Future<void> _ensurePropertiesCoverPhotoPathColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      propertiesTable,
+      'cover_photo_path',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+    await _backfillPropertyCoverPhotoPaths(db);
+  }
+
+  /// Assigns LR-1..LR-14 images to legacy rows missing a cover path.
+  static Future<void> _backfillPropertyCoverPhotoPaths(Database db) async {
+    if (!await _tableExists(db, propertiesTable)) return;
+    if (!await _columnExists(db, propertiesTable, 'cover_photo_path')) return;
+
+    final rows = await db.query(
+      propertiesTable,
+      columns: ['id', 'property_ref', 'name', 'cover_photo_path'],
+    );
+    for (final row in rows) {
+      final existing = (row['cover_photo_path'] as String?)?.trim() ?? '';
+      if (existing.isNotEmpty) continue;
+      final id = row['id'] as int?;
+      if (id == null) continue;
+      final ref = row['property_ref'] as String? ?? '';
+      final name = row['name'] as String? ?? '';
+      final path = PropertyListingImageAssigner.assignForProperty(
+        propertyRef: ref,
+        localPropertyId: id,
+        propertyName: name,
+      );
+      await db.update(
+        propertiesTable,
+        {'cover_photo_path': path},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
   }
 
   /// Idempotent: adds [workspace_type] on legacy tables and fixes indexes.

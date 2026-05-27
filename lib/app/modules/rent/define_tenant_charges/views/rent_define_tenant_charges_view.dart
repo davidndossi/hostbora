@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/utils/thousand_separator.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_define_tenant_charges_controller.dart';
@@ -63,7 +63,7 @@ class _ChargesUi {
 }
 
 /// **Tenant Charges** — new charge form, property banner, defined charges, insight.
-class RentDefineTenantChargesView extends BaseView<RentDefineTenantChargesController> {
+class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesController> {
   RentDefineTenantChargesView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

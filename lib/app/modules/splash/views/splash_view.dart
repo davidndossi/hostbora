@@ -41,7 +41,7 @@ class SplashView extends BaseView<SplashController> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Connect with your community',
+              'Everything you need to run your BnB or rental business',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,

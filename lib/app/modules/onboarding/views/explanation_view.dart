@@ -5,6 +5,7 @@ import 'package:paa_yangu/app/core/values/text_styles.dart';
 
 import '../../../core/values/app_colors.dart';
 import '../../../core/widget/base_currency_picker.dart';
+import '../../../core/widget/module_default_text_scope.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../controllers/onboarding_controller.dart';
 
@@ -24,7 +25,8 @@ class ExplanationView extends StatelessWidget {
         ? Colors.white
         : AppColors.textColorPrimary;
 
-    return SingleChildScrollView(
+    return ModuleDefaultTextScope(
+      child: SingleChildScrollView(
       child: Column(
         children: [
           Center(
@@ -317,6 +319,7 @@ class ExplanationView extends StatelessWidget {
           //   ),
           // ),
         ],
+      ),
       ),
     );
   }

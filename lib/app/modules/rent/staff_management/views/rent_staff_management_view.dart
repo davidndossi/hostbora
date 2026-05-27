@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
+import '../../../../routes/app_pages.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_staff_management_controller.dart';
@@ -56,7 +57,7 @@ class _StaffUi {
 }
 
 /// Concierge **Staff Registry** — form, payroll summary, active team list.
-class RentStaffManagementView extends BaseView<RentStaffManagementController> {
+class RentStaffManagementView extends RentBaseView<RentStaffManagementController> {
   RentStaffManagementView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
@@ -285,61 +286,91 @@ class RentStaffManagementView extends BaseView<RentStaffManagementController> {
       final total = controller.totalMonthlySalaryPool;
       final nMonthly = controller.monthlyContractCount;
       final nAll = controller.staff.length;
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: _StaffUi.teal,
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Get.toNamed(Routes.RENT_STAFF_PAYROLL_DETAILS)
+              ?.then((_) => controller.loadStaff()),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: u.dark
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: _StaffUi.teal,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: u.dark
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'TOTAL STAFF PAYROLL',
+                        style: TextStyle(
+                          fontSize: 10,
+                          letterSpacing: 1.4,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      size: 22,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  RentStaffPayFormat.formatPayrollTotal(total),
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
-                ]
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'TOTAL STAFF PAYROLL',
-              style: TextStyle(
-                fontSize: 10,
-                letterSpacing: 1.4,
-                fontWeight: FontWeight.w800,
-                color: Colors.white.withValues(alpha: 0.85),
-              ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  nMonthly > 0
+                      ? (_isSw
+                          ? 'Mikataba ya mishahara ya mwezi: $nMonthly · $nAll mwanatimu hai${nAll == 1 ? '' : ''}'
+                          : 'Monthly salary contracts: $nMonthly · $nAll active team member${nAll == 1 ? '' : 's'}')
+                      : (nAll == 0
+                          ? (_isSw
+                              ? 'Sajili wafanyakazi kufuatilia mishahara'
+                              : 'Register staff to track payroll')
+                          : (_isSw
+                              ? 'Bado hakuna mikataba ya mwezi — viwango vya saa/kazi kwa kila mtu vimeorodheshwa.'
+                              : 'No monthly contracts yet — hourly / per-job rates listed per person')),
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _isSw ? 'Gusa kwa maelezo ya mishahara' : 'Tap for payroll details',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.75),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              RentStaffPayFormat.formatPayrollTotal(total),
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              nMonthly > 0
-                  ? (_isSw
-                      ? 'Mikataba ya mishahara ya mwezi: $nMonthly · $nAll mwanatimu hai${nAll == 1 ? '' : ''}'
-                      : 'Monthly salary contracts: $nMonthly · $nAll active team member${nAll == 1 ? '' : 's'}')
-                  : (nAll == 0
-                      ? (_isSw ? 'Sajili wafanyakazi kufuatilia mishahara' : 'Register staff to track payroll')
-                      : (_isSw
-                          ? 'Bado hakuna mikataba ya mwezi — viwango vya saa/kazi kwa kila mtu vimeorodheshwa.'
-                          : 'No monthly contracts yet — hourly / per-job rates listed per person')),
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.35,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
+          ),
         ),
       );
     });

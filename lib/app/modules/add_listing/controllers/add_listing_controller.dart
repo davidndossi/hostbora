@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_listing_units_sync.dart';
@@ -83,7 +84,8 @@ class AddListingController extends BaseController {
           ? selectedPropertyType.value!.trim()
           : propertyType.value.trim());
 
-  bool get hideListingRentAmount => isApartmentProperty && apartmentUnits.isNotEmpty;
+  // bool get hideListingRentAmount => isApartmentProperty && apartmentUnits.isNotEmpty;
+  bool get hideListingRentAmount => isApartmentProperty;
 
   /// Edit mode: when opening from My Properties Manage.
   final isEditMode = false.obs;
@@ -502,6 +504,13 @@ class AddListingController extends BaseController {
             minRentalDuration: minRentalDuration.value,
             unitsJson: unitsJson,
             floorCount: floorCount.value,
+            coverPhotoPath: PropertyListingImageAssigner.coverPathForSave(
+              propertyRef: original.propertyRef,
+              userSelectedPath: propertyCoverPhotoPath.value,
+              existingStoredPath: original.coverPhotoPath,
+              localPropertyId: original.id,
+              propertyName: propertyNameController.text.trim(),
+            ),
           ),
         );
         await syncPropertyUnitsForListingSave(
@@ -522,6 +531,11 @@ class AddListingController extends BaseController {
         Get.snackbar('Saved', 'Property updated on this device');
       } else {
         final propertyRef = 'local_${DateTime.now().millisecondsSinceEpoch}';
+        final coverPath = PropertyListingImageAssigner.coverPathForSave(
+          propertyRef: propertyRef,
+          userSelectedPath: propertyCoverPhotoPath.value,
+          propertyName: propertyNameController.text.trim(),
+        );
         await _local.insert(
           PropertyRecord(
             id: 0,
@@ -539,6 +553,7 @@ class AddListingController extends BaseController {
             minRentalDuration: minRentalDuration.value,
             unitsJson: unitsJson,
             floorCount: floorCount.value,
+            coverPhotoPath: coverPath,
           ),
         );
         await syncPropertyUnitsForListingSave(

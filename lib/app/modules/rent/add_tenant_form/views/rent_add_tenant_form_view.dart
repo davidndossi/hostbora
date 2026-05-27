@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../rent_theme.dart';
 import '../controllers/rent_add_tenant_form_controller.dart';
 
-class RentAddTenantFormView extends BaseView<RentAddTenantFormController> {
+class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
   RentAddTenantFormView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

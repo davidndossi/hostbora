@@ -1,9 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_financial_comparison_controller.dart';
 
@@ -18,7 +17,6 @@ class _FinUi {
   static const Color terracotta = Color(0xFF8B3A2B);
   static const Color cream = Color(0xFFF9F8F3);
   static const Color cardTint = Color(0xFFF2F1EB);
-  static const Color subtitleBrown = Color(0xFF8B7355);
 
   Color get canvas => dark ? _t.scaffoldBackgroundColor : cream;
 
@@ -43,7 +41,7 @@ class _FinUi {
       ];
 }
 
-class RentFinancialComparisonView extends BaseView<RentFinancialComparisonController> {
+class RentFinancialComparisonView extends RentBaseView<RentFinancialComparisonController> {
   RentFinancialComparisonView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
@@ -105,7 +103,7 @@ class RentFinancialComparisonView extends BaseView<RentFinancialComparisonContro
           Expanded(
             child: _metricTile(
               context,
-              label: _isSw ? 'FAIDA YA MWAKA JUMLA' : 'TOTAL ANNUAL PROFIT',
+              label: _isSw ? 'FAIDA JUMLA YA MWAKA' : 'TOTAL ANNUAL PROFIT',
               value: controller.formatTshFull(controller.annualProfit.value),
               valueColor: u.forestOnBg,
             ),
@@ -114,7 +112,7 @@ class RentFinancialComparisonView extends BaseView<RentFinancialComparisonContro
           Expanded(
             child: _metricTile(
               context,
-              label: _isSw ? 'KIWANGO CHA Faida HALISI' : 'NET MARGIN',
+              label: _isSw ? 'KIWANGO CHA FAIDA HALISI' : 'NET MARGIN',
               value: controller.formatMargin(controller.netMarginPct.value),
               valueColor: u.dark ? const Color(0xFFFFAB91) : _FinUi.terracotta,
             ),

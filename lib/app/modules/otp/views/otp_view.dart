@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
 import '../../../core/base/base_view.dart';

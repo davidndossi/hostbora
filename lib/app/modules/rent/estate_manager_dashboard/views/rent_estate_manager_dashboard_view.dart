@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../widgets/rent_real_dashboard_sections.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_estate_manager_dashboard_controller.dart';
 
-class RentEstateManagerDashboardView extends BaseView<RentEstateManagerDashboardController> {
+class RentEstateManagerDashboardView extends RentBaseView<RentEstateManagerDashboardController> {
   RentEstateManagerDashboardView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

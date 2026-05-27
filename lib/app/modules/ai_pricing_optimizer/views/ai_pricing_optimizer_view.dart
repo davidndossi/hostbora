@@ -55,7 +55,6 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
                       fontSize: 32,
                       fontWeight: FontWeight.w700,
                       color: isDark ? theme.colorScheme.onSurface : _kTitleNavy,
-                      fontFamily: 'Times New Roman',
                       height: 1.15,
                     ),
                   ),

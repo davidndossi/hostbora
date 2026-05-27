@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_define_loyalty_offers_controller.dart';
 
@@ -44,7 +44,7 @@ class _LoyaltyUi {
 }
 
 /// Loyalty Thresholds — cream / teal editorial; dark theme aware.
-class RentDefineLoyaltyOffersView extends BaseView<RentDefineLoyaltyOffersController> {
+class RentDefineLoyaltyOffersView extends RentBaseView<RentDefineLoyaltyOffersController> {
   RentDefineLoyaltyOffersView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

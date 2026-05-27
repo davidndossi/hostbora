@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/property_listing_image_assigner.dart';
 import '../../../../data/local/db/property_listing_units_sync.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/property_unit_local_data_source.dart';
@@ -29,7 +30,7 @@ class RentAddNewListingController extends BaseController {
   final rentFrequency = 'Per Month'.obs;
   final minRentalDuration = '6 Months'.obs;
   final propertyTypeOptions = const ['Apartment', 'House', 'Office space', 'Room', 'Storage', 'Other'];
-  final rentFrequencyOptions = const ['Per Week', 'Per Month', 'Per Year'];
+  final rentFrequencyOptions = const ['Per Month', 'Per Year'];
   final minRentalDurationOptions = const ['1 Month', '3 Months', '6 Months', '12 Months'];
 
   static const int minFloorCount = 1;
@@ -315,6 +316,7 @@ class RentAddNewListingController extends BaseController {
             minRentalDuration: minRentalDuration.value,
             unitsJson: unitsJson,
             floorCount: floorCount.value,
+            coverPhotoPath: original.coverPhotoPath,
           ),
         );
         await syncPropertyUnitsForListingSave(
@@ -336,6 +338,10 @@ class RentAddNewListingController extends BaseController {
       } else {
         final workspaceType = await _workspaceContext.getWorkspaceType();
         final propertyRef = 'local_${DateTime.now().millisecondsSinceEpoch}';
+        final coverPath = PropertyListingImageAssigner.assignForProperty(
+          propertyRef: propertyRef,
+          propertyName: apartmentSuiteController.text.trim(),
+        );
         await _local.insert(
           PropertyRecord(
             id: 0,
@@ -353,6 +359,7 @@ class RentAddNewListingController extends BaseController {
             minRentalDuration: minRentalDuration.value,
             unitsJson: unitsJson,
             floorCount: floorCount.value,
+            coverPhotoPath: coverPath,
           ),
         );
         await syncPropertyUnitsForListingSave(

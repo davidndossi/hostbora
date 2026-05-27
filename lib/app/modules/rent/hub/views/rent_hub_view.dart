@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/theme/theme_controller.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/widget/custom_app_bar.dart';
@@ -20,7 +20,7 @@ abstract class _HubTheme {
   static const Color chartMutedBar = Color(0xFFC5D4D6);
 }
 
-class RentHubView extends BaseView<RentHubController> {
+class RentHubView extends RentBaseView<RentHubController> {
   RentHubView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';

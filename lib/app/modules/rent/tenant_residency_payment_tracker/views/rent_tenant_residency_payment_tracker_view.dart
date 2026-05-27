@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 /// **Tenancy Insights** — overview metrics, search, tenant residency cards, FAB, bottom nav.
 class RentTenantResidencyPaymentTrackerView
-    extends BaseView<RentTenantResidencyPaymentTrackerController> {
+    extends RentBaseView<RentTenantResidencyPaymentTrackerController> {
   RentTenantResidencyPaymentTrackerView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
@@ -426,7 +426,6 @@ class RentTenantResidencyPaymentTrackerView
                         text: TextSpan(
                           style: const TextStyle(
                             fontSize: 14,
-                            fontFamily: 'Roboto',
                           ),
                           children: [
                             TextSpan(

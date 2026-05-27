@@ -11,7 +11,6 @@ import '../../../data/local/service/tenant_lease_reminder_service.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/local/service/currency_service.dart';
-import '../../../data/repository/app_repository.dart';
 import '../../../core/widget/base_currency_picker.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../routes/app_pages.dart';
@@ -22,7 +21,6 @@ class SettingsController extends BaseController {
 
   final PreferenceManager _preferenceManager = Get.find(tag: (PreferenceManager)
       .toString());
-  final AppRepository _repository = Get.find(tag: (AppRepository).toString());
 
   final token = ''.obs;
   final account = ''.obs;

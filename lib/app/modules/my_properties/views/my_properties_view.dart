@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/widget/property_listing_image.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/my_properties_controller.dart';
@@ -160,20 +161,11 @@ class _PropertyCard extends StatelessWidget {
         children: [
           Stack(
             children: [
-              Image.asset(
-                'images/bedroom.jpg',
+              PropertyListingImage(
+                imagePath: listing.imageUrl,
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  height: 200,
-                  color: AppColors.designAccent,
-                  child: Icon(
-                    Icons.home_work_outlined,
-                    size: 48,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
               ),
               Positioned(
                 top: 12,

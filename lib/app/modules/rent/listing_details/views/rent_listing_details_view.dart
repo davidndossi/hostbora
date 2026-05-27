@@ -4,7 +4,9 @@ import 'package:paa_yangu/app/core/values/app_values.dart';
 import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/values/app_colors.dart';
+import '../../../../core/widget/property_listing_image.dart';
 import '../controllers/rent_listing_details_controller.dart';
 
 class _ListingUi {
@@ -25,7 +27,7 @@ class _ListingUi {
   Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
 }
 
-class RentListingDetailsView extends BaseView<RentListingDetailsController> {
+class RentListingDetailsView extends RentBaseView<RentListingDetailsController> {
   RentListingDetailsView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
@@ -111,12 +113,10 @@ class RentListingDetailsView extends BaseView<RentListingDetailsController> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              'images/bedroom.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: u.soft,
-                child: Icon(Icons.apartment_rounded, color: u.muted, size: 36),
+            Obx(
+              () => PropertyListingImage(
+                imagePath: controller.heroImagePath.value,
+                fit: BoxFit.cover,
               ),
             ),
             Container(

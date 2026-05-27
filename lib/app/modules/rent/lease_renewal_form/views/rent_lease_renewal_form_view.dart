@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_lease_renewal_form_controller.dart';
@@ -46,7 +46,7 @@ class _RenewalUi {
 }
 
 /// Lease renewal — Concierge Editorial layout (cream, teal, serif sections, white cards).
-class RentLeaseRenewalFormView extends BaseView<RentLeaseRenewalFormController> {
+class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormController> {
   RentLeaseRenewalFormView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';

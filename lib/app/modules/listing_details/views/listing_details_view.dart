@@ -6,6 +6,7 @@ import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/widget/property_listing_image.dart';
 import '../controllers/listing_details_controller.dart';
 
 class _ListingUi {
@@ -108,12 +109,10 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              'images/bedroom.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: u.soft,
-                child: Icon(Icons.apartment_rounded, color: u.muted, size: 36),
+            Obx(
+              () => PropertyListingImage(
+                imagePath: controller.heroImagePath.value,
+                fit: BoxFit.cover,
               ),
             ),
             Container(

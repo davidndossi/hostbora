@@ -20,7 +20,6 @@ Widget rentSectionTitle(String eyebrow, String title, {String? subtitle}) {
       Text(
         title,
         style: const TextStyle(
-          fontFamily: 'Georgia',
           fontSize: 22,
           fontWeight: FontWeight.w700,
           color: RentTheme.navy,

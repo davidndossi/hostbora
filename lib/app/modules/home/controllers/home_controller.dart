@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:paa_yangu/app/core/values/text_styles.dart';
 
 import '../../../data/local/db/tenant_local_data_source.dart';
@@ -340,9 +339,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     return DateTime(p.year, p.month, p.day);
   }
 
-  void viewTrends() {
-    // TODO: navigate to trends screen
-  }
+  void viewTrends() => Get.toNamed(Routes.FINANCIAL_OVERVIEW);
 
   void seeAllCheckIns() => Get.toNamed(Routes.ALL_BOOKINGS);
 

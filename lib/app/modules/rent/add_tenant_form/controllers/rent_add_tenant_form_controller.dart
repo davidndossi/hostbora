@@ -46,7 +46,7 @@ class RentAddTenantFormController extends BaseController {
   PropertyRecord? _linkedProperty;
 
   static const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
-  static const rentFrequencyOptions = ['Per Week', 'Per Month', 'Per Year'];
+  static const rentFrequencyOptions = ['Per Month', 'Per Year'];
 
   List<String> get unitSelectionKeys =>
       availableUnitDrafts.map((u) => u.selectionKey).toList();

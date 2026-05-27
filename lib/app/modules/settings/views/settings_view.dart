@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:settings_ui/settings_ui.dart';
-import '../../../core/values/app_colors.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_view.dart';

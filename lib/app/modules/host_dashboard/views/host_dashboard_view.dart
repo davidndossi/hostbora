@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
@@ -82,28 +83,30 @@ class HostDashboardView extends BaseView<HostDashboardController> {
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                title: _t(context, en: 'Active Bookings', sw: 'Uhifadhi Hai'),
-                value: '${controller.activeBookings}',
-                subtitle: controller.bookingsChange,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                title: _t(
-                  context,
-                  en: 'Monthly Revenue',
-                  sw: 'Mapato ya Mwezi',
+        Obx(
+          () => Row(
+            children: [
+              Expanded(
+                child: _MetricCard(
+                  title: _t(context, en: 'Active Bookings', sw: 'Uhifadhi Hai'),
+                  value: '${controller.activeBookings.value}',
+                  subtitle: controller.bookingsChange.value,
                 ),
-                value: controller.monthlyRevenue,
-                subtitle: controller.revenueChange,
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricCard(
+                  title: _t(
+                    context,
+                    en: 'Monthly Revenue',
+                    sw: 'Mapato ya Mwezi',
+                  ),
+                  value: controller.monthlyRevenue.value,
+                  subtitle: controller.revenueChange.value,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -144,20 +147,31 @@ class HostDashboardView extends BaseView<HostDashboardController> {
           ],
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 200,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: controller.checkIns.length,
-            separatorBuilder: (_, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final item = controller.checkIns[index];
-              return _CheckInCard(
-                item: item,
-                onTap: () => controller.openBookingDetails(item),
+        Obx(
+          () {
+            if (controller.dashboardLoading.value &&
+                controller.checkIns.isEmpty) {
+              return const SizedBox(
+                height: 200,
+                child: Center(child: CircularProgressIndicator()),
               );
-            },
-          ),
+            }
+            return SizedBox(
+              height: 200,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: controller.checkIns.length,
+                separatorBuilder: (_, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final item = controller.checkIns[index];
+                  return _CheckInCard(
+                    item: item,
+                    onTap: () => controller.openBookingDetails(item),
+                  );
+                },
+              ),
+            );
+          },
         ),
       ],
     );

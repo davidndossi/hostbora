@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_contract_hub_controller.dart';
@@ -44,7 +43,7 @@ class _HubUi {
 }
 
 /// Contract Hub — Evergreen / Concierge layout (cream, teal hero, contract cards).
-class RentContractHubView extends BaseView<RentContractHubController> {
+class RentContractHubView extends RentBaseView<RentContractHubController> {
   RentContractHubView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';

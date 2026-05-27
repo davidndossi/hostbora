@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:paa_yangu/app/modules/rent/widgets/rent_ui.dart';
 
 import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../rent_theme.dart';
 import '../controllers/rent_schedule_payment_reminder_controller.dart';
 
@@ -65,7 +66,7 @@ class _ReminderUiColors {
 }
 
 class RentSchedulePaymentReminderView
-    extends BaseView<RentSchedulePaymentReminderController> {
+    extends RentBaseView<RentSchedulePaymentReminderController> {
   RentSchedulePaymentReminderView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

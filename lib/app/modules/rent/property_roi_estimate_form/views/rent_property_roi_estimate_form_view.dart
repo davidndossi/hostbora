@@ -3,13 +3,13 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '/app/core/base/base_view.dart';
+import '/app/core/base/rent_base_view.dart';
 import '/app/core/utils/thousand_separator.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_property_roi_estimate_form_controller.dart';
 
 class RentPropertyRoiEstimateFormView
-    extends BaseView<RentPropertyRoiEstimateFormController> {
+    extends RentBaseView<RentPropertyRoiEstimateFormController> {
   RentPropertyRoiEstimateFormView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
   static final _money = NumberFormat('#,###', 'en_US');

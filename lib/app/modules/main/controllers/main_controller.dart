@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:get/get.dart';
 
-import '../../../data/local/preference/preference_manager.dart';
 import '/app/core/base/base_controller.dart';
 import '/app/modules/dashboard/controllers/dashboard_controller.dart';
 import '/app/modules/home/controllers/home_controller.dart';
@@ -15,20 +14,13 @@ class MainController extends BaseController {
 
   MenuCode get selectedMenuCode => _selectedMenuCodeController.value;
 
-  final isAdmin = false.obs;
-  final isLeader = false.obs;
   final lifeCardUpdateController = false.obs;
   final currentLocale = 'en'.obs;
   final title = ''.obs;
 
-  final PreferenceManager _preferenceManager =
-  Get.find(tag: (PreferenceManager).toString());
-
   @override
   void onInit() async {
     super.onInit();
-    isLeader(await _preferenceManager.getBool('isLeader'));
-    isAdmin(await _preferenceManager.getBool('isAdmin'));
     final args = Get.arguments as Map<String, dynamic>?;
     if (args?['initialMenu'] == 'home') {
       _selectedMenuCodeController(MenuCode.HOME);

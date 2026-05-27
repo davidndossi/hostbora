@@ -10,7 +10,7 @@ class RentListingAnalyticsDashboardController extends BaseController
   String get listingTitleFromRoute =>
       Get.parameters['title']?.trim().isNotEmpty == true
           ? Get.parameters['title']!.trim()
-          : 'The Serengeti Vista';
+          : '';
 
   void setTrendRange(int index) {
     trendRangeIndex.value = index.clamp(0, 2);

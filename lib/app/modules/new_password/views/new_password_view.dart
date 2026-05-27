@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/values/app_colors.dart';
+import '../../../core/widget/module_default_text_scope.dart';
 import '../../../core/values/app_values.dart';
 import '../controllers/new_password_controller.dart';
 
@@ -20,7 +21,8 @@ class NewPasswordView extends GetView<NewPasswordController> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    return ModuleDefaultTextScope(
+      child: Scaffold(
       backgroundColor: isDark
           ? theme.colorScheme.surface
           : AppColors.pageBackground,
@@ -218,6 +220,7 @@ class NewPasswordView extends GetView<NewPasswordController> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

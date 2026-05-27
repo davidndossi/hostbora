@@ -64,7 +64,6 @@ class AiManagerView extends BaseView<AiManagerController> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        fontFamily: 'Roboto',
                         color: AppColors.colorPrimary,
                       ),
                     ),

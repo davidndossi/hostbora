@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:paa_yangu/app/modules/rent/widgets/rent_ui.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../controllers/rent_host_dashboard_payment_alerts_controller.dart';
 
-class RentHostDashboardPaymentAlertsView extends BaseView<RentHostDashboardPaymentAlertsController> {
+class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardPaymentAlertsController> {
   RentHostDashboardPaymentAlertsView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
   bool _isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;

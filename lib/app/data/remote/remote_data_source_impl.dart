@@ -602,9 +602,33 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
+  Future<GeneralResponse> getTask(String taskId) {
+    final endpoint = '${DioProvider.baseUrl}/api/tasks/$taskId';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<GeneralResponse> addTask(AddTaskRequest request) {
     final endpoint = '${DioProvider.baseUrl}/api/tasks';
     final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateTask(String taskId, AddTaskRequest request) {
+    final endpoint = '${DioProvider.baseUrl}/api/tasks/$taskId';
+    final dioCall = dioClient.put(endpoint, data: request.toJson());
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));

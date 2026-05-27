@@ -106,7 +106,11 @@ abstract class AppRepository {
 
   Future<GeneralResponse> getTasks({String? status});
 
+  Future<GeneralResponse> getTask(String taskId);
+
   Future<GeneralResponse> addTask(AddTaskRequest request);
+
+  Future<GeneralResponse> updateTask(String taskId, AddTaskRequest request);
 
   Future<GeneralResponse> getVaultDocuments(String directoryId);
 

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/widget/currency_dropdown_field.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_add_income_form_controller.dart';
 
-class RentAddIncomeFormView extends BaseView<RentAddIncomeFormController> {
+class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
   RentAddIncomeFormView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 

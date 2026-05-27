@@ -5,7 +5,6 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
-import '../../../routes/app_pages.dart';
 import '../controllers/team_and_staff_controller.dart';
 
 class TeamAndStaffView extends BaseView<TeamAndStaffController> {

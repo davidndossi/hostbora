@@ -16,6 +16,7 @@ import '../../../data/repository/app_repository.dart';
 import '../../../data/service/azampay_service.dart';
 import '../../../routes/app_pages.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../guest_access_codes/controllers/guest_access_codes_controller.dart';
 import '../../host_calendar/controllers/host_calendar_controller.dart';
 
 /// Lightweight listing for property dropdown (from GET /api/listings).
@@ -350,6 +351,7 @@ class AddNewBookingController extends BaseController {
       }
       await HostCalendarController.refreshIfRegistered();
       await DashboardController.refreshIfRegistered();
+      await GuestAccessCodesController.refreshIfRegistered();
       Get.back(result: true);
       final pending = pendingCount.value;
       if (pending > 0) {

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../controllers/rent_profit_analysis_dashboard_controller.dart';
 
 class _ProfitUi {
@@ -32,7 +32,7 @@ class _ProfitUi {
       ];
 }
 
-class RentProfitAnalysisDashboardView extends BaseView<RentProfitAnalysisDashboardController> {
+class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDashboardController> {
   RentProfitAnalysisDashboardView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';

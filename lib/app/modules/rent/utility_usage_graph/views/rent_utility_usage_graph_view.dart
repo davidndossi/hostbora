@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_utility_usage_graph_controller.dart';
 
@@ -23,7 +23,7 @@ class _GraphUi {
   Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
 }
 
-class RentUtilityUsageGraphView extends BaseView<RentUtilityUsageGraphController> {
+class RentUtilityUsageGraphView extends RentBaseView<RentUtilityUsageGraphController> {
   RentUtilityUsageGraphView({super.key});
 
   @override

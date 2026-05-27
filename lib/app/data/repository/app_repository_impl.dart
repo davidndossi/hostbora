@@ -229,8 +229,18 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> getTask(String taskId) {
+    return _remoteSource.getTask(taskId);
+  }
+
+  @override
   Future<GeneralResponse> addTask(AddTaskRequest request) {
     return _remoteSource.addTask(request);
+  }
+
+  @override
+  Future<GeneralResponse> updateTask(String taskId, AddTaskRequest request) {
+    return _remoteSource.updateTask(taskId, request);
   }
 
   @override

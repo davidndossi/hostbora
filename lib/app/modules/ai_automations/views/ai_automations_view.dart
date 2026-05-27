@@ -45,7 +45,6 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
                       color: isDark
                           ? theme.colorScheme.onSurface
                           : AppColors.textColorPrimary,
-                      fontFamily: 'Times New Roman',
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -377,7 +376,6 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
                       ? theme.colorScheme.primary
                       : const Color(0xFF0D6D6D),
                   fontSize: 16,
-                  fontFamily: 'Inter',
                   fontWeight: FontWeight.w600,
                   height: 1.50,
                 ),

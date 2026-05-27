@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
+import '../../../../core/base/rent_base_view.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../controllers/rent_maintenance_cost_analysis_controller.dart';
 
@@ -35,7 +35,7 @@ class _McaUi {
 }
 
 /// Maintenance & expense breakdown — totals, categorization table, reserve, trend chart.
-class RentMaintenanceCostAnalysisView extends BaseView<RentMaintenanceCostAnalysisController> {
+class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAnalysisController> {
   RentMaintenanceCostAnalysisView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';

@@ -64,8 +64,8 @@ class RentHostDashboardPaymentAlertsController extends BaseController
 
   Future<void> _loadTenantsAndProperties() async {
     final results = await Future.wait([
-      _tenantLocal.getAllNewestFirst(),
-      _propertyLocal.getAllNewestFirst(),
+      _tenantLocal.getAllNewestFirstByWorkspace('rent'),
+      _propertyLocal.getAllByWorkspace(userId: '', workspaceType: 'rent'),
       _incomeLocal.getAllNewestFirst(workspaceType: 'rent'),
     ]);
     final t = results[0] as List<TenantRecord>;

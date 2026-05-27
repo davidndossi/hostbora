@@ -199,7 +199,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                                 value: null,
                                 child: Text(
                                   _isSw
-                                      ? 'Sio lazima — gharama ya jumla'
+                                      ? 'Sio lazima — jengo lote'
                                       : 'Optional — whole property',
                                   style: TextStyle(
                                     color: hintColor,

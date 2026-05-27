@@ -273,6 +273,7 @@ class EditListingController extends BaseController {
         minRentalDuration: orig.minRentalDuration,
         unitsJson: unitsChanged ? unitsJsonOut : orig.unitsJson,
         floorCount: orig.floorCount,
+        coverPhotoPath: orig.coverPhotoPath,
       );
 
       await _local.update(merged);

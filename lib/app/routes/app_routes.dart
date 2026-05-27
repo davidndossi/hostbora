@@ -61,6 +61,8 @@ abstract class Routes {
   static const ADD_EXPENSE = _Paths.ADD_EXPENSE;
   static const ALL_BOOKINGS = _Paths.ALL_BOOKINGS;
   static const ADD_TASK = _Paths.ADD_TASK;
+  static const TASK_DETAIL = _Paths.TASK_DETAIL;
+  static const EDIT_TASK = _Paths.EDIT_TASK;
   static const INTERIOR_DESIGN_STUDIO = _Paths.INTERIOR_DESIGN_STUDIO;
   static const AI_MANAGER = _Paths.AI_MANAGER;
   static const AI_INSIGHTS = _Paths.AI_INSIGHTS;
@@ -173,6 +175,8 @@ abstract class _Paths {
   static const ADD_EXPENSE = '/add-expense';
   static const ALL_BOOKINGS = '/all-bookings';
   static const ADD_TASK = '/add-task';
+  static const TASK_DETAIL = '/task-detail';
+  static const EDIT_TASK = '/edit-task';
   static const INTERIOR_DESIGN_STUDIO = '/interior-design-studio';
   static const AI_MANAGER = '/ai-manager';
   static const AI_INSIGHTS = '/ai-insights';

@@ -118,6 +118,10 @@ import '../modules/all_bookings/bindings/all_bookings_binding.dart';
 import '../modules/all_bookings/views/all_bookings_view.dart';
 import '../modules/add_task/bindings/add_task_binding.dart';
 import '../modules/add_task/views/add_task_view.dart';
+import '../modules/edit_task/bindings/edit_task_binding.dart';
+import '../modules/edit_task/views/edit_task_view.dart';
+import '../modules/task_detail/bindings/task_detail_binding.dart';
+import '../modules/task_detail/views/task_detail_view.dart';
 import '../modules/interior_design_studio/bindings/interior_design_studio_binding.dart';
 import '../modules/interior_design_studio/views/interior_design_studio_view.dart';
 import '../modules/ai_manager/bindings/ai_manager_binding.dart';
@@ -542,6 +546,16 @@ class AppPages {
       name: _Paths.ADD_TASK,
       page: () => AddTaskView(),
       binding: AddTaskBinding(),
+    ),
+    GetPage(
+      name: _Paths.TASK_DETAIL,
+      page: () => TaskDetailView(),
+      binding: TaskDetailBinding(),
+    ),
+    GetPage(
+      name: _Paths.EDIT_TASK,
+      page: () => EditTaskView(),
+      binding: EditTaskBinding(),
     ),
     GetPage(
       name: _Paths.INTERIOR_DESIGN_STUDIO,
