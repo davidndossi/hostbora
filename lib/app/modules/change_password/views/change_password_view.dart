@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/text_styles.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/change_password_controller.dart';
@@ -14,8 +15,7 @@ class ChangePasswordView extends BaseView<ChangePasswordController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -41,7 +41,7 @@ class ChangePasswordView extends BaseView<ChangePasswordController> {
               Text(
                 _t(context, en: 'Current password', sw: 'Nenosiri la sasa'),
                 style: blackText16.copyWith(
-                  color: _isDark(context) ? Colors.white : Colors.black,
+                  color: FormSurfaceColors.of(context).headline,
                 ),
               ),
               const SizedBox(height: 10),
@@ -62,7 +62,7 @@ class ChangePasswordView extends BaseView<ChangePasswordController> {
               Text(
                 _t(context, en: 'New password', sw: 'Nenosiri jipya'),
                 style: blackText16.copyWith(
-                  color: _isDark(context) ? Colors.white : Colors.black,
+                  color: FormSurfaceColors.of(context).headline,
                 ),
               ),
               const SizedBox(height: 10),
@@ -87,7 +87,7 @@ class ChangePasswordView extends BaseView<ChangePasswordController> {
                   sw: 'Ingiza tena nenosiri jipya',
                 ),
                 style: blackText16.copyWith(
-                  color: _isDark(context) ? Colors.white : Colors.black,
+                  color: FormSurfaceColors.of(context).headline,
                 ),
               ),
               const SizedBox(height: 10),

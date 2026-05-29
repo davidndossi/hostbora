@@ -3,20 +3,21 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/form_surface_colors.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/widget/custom_app_bar.dart';
-import '../../rent_theme.dart';
+import '../../../../core/widget/loading_button.dart';
 import '../controllers/rent_add_tenant_form_controller.dart';
 
 class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
   RentAddTenantFormView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
-  TextStyle _labelStyle(bool isDark) => TextStyle(
+  TextStyle _labelStyle(FormSurfaceColors colors) => TextStyle(
         fontSize: 10,
         letterSpacing: 1.25,
         fontWeight: FontWeight.w700,
-        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+        color: colors.sectionLabel,
       );
 
   @override
@@ -26,9 +27,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
 
   @override
   Widget body(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final introMuted = isDark ? const Color(0xFF8E8E93) : const Color(0xFF4B5563);
-    final introStrong = isDark ? Colors.white : const Color(0xFF1F2937);
+    final c = FormSurfaceColors.of(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
@@ -42,12 +41,12 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
             final name = controller.propertyContextLabel.value;
             return RichText(
               text: TextSpan(
-                style: TextStyle(fontSize: 14, height: 1.4, color: introMuted),
+                style: TextStyle(fontSize: 14, height: 1.4, color: c.secondary),
                 children: [
                   TextSpan(text: _isSw ? 'Unganisha mpangaji na ' : 'Link a tenant to '),
                   TextSpan(
                     text: name,
-                    style: TextStyle(fontWeight: FontWeight.w700, color: introStrong),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: c.headline),
                   ),
                 ],
               ),
@@ -62,15 +61,15 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
             return Padding(
               padding: const EdgeInsets.only(top: 14),
               child: _sectionCard(
-                isDark: isDark,
+                colors: c,
                 children: [
                   Text(
                     _isSw ? 'KITENGO CHA GHOROFA' : 'APARTMENT UNIT',
-                    style: _labelStyle(isDark),
+                    style: _labelStyle(c),
                   ),
                   const SizedBox(height: 8),
                   _whiteDropdown<String>(
-                    isDark: isDark,
+                    colors: c,
                     value: value,
                     options: keys,
                     hintText: _isSw ? 'Chagua kitengo' : 'Select unit',
@@ -83,23 +82,23 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
           }),
           const SizedBox(height: 22),
           _sectionCard(
-            isDark: isDark,
+            colors: c,
             children: [
-              Text('TENANT NAME', style: _labelStyle(isDark)),
+              Text('TENANT NAME', style: _labelStyle(c)),
               const SizedBox(height: 8),
               _whiteField(
-                isDark: isDark,
+                colors: c,
                 controller: controller.tenantNameController,
                 hint: _isSw ? 'mf. Aisha Mohammed' : 'e.g. Julianne Moore',
                 textInputAction: TextInputAction.next,
                 validator: controller.validateTenantName,
               ),
               const SizedBox(height: 16),
-              Text('GENDER', style: _labelStyle(isDark)),
+              Text('GENDER', style: _labelStyle(c)),
               const SizedBox(height: 8),
               Obx(
                 () => _whiteDropdown<String>(
-                  isDark: isDark,
+                  colors: c,
                   value: controller.gender.value,
                   options: RentAddTenantFormController.genderOptions,
                   onChanged: controller.setGender,
@@ -109,9 +108,9 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
           ),
           const SizedBox(height: 14),
           _sectionCard(
-            isDark: isDark,
+            colors: c,
             children: [
-              Text('RENT AMOUNT', style: _labelStyle(isDark)),
+              Text('RENT AMOUNT', style: _labelStyle(c)),
               const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,15 +126,13 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+                        color: c.headline,
                       ),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: isDark ? const Color(0xFF3A3A3C) : Colors.white,
+                        fillColor: c.inputFill,
                         hintText: '0.00',
-                        hintStyle: TextStyle(
-                          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
-                        ),
+                        hintStyle: TextStyle(color: c.hint),
                         prefixIcon: Padding(
                           padding: const EdgeInsets.only(left: 12, right: 4),
                           child: Text(
@@ -143,7 +140,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF4A4A4A),
+                              color: c.secondary,
                             ),
                           ),
                         ),
@@ -161,7 +158,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
                     flex: 3,
                     child: Obx(
                       () => _whiteDropdown<String>(
-                        isDark: isDark,
+                        colors: c,
                         value: controller.rentFrequency.value,
                         options: RentAddTenantFormController.rentFrequencyOptions,
                         onChanged: controller.setRentFrequency,
@@ -172,19 +169,19 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text('LEASE PERIOD', style: _labelStyle(isDark)),
+              Text('LEASE PERIOD', style: _labelStyle(c)),
               const SizedBox(height: 8),
-              _leaseDateRangeField(context, isDark),
+              _leaseDateRangeField(context, c),
             ],
           ),
           const SizedBox(height: 14),
           _sectionCard(
-            isDark: isDark,
+            colors: c,
             children: [
-              Text('PHONE NUMBER', style: _labelStyle(isDark)),
+              Text('PHONE NUMBER', style: _labelStyle(c)),
               const SizedBox(height: 8),
               _whiteField(
-                isDark: isDark,
+                colors: c,
                 controller: controller.phoneController,
                 hint: '0712345678',
                 keyboardType: TextInputType.phone,
@@ -194,7 +191,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
               const SizedBox(height: 16),
               RichText(
                 text: TextSpan(
-                  style: _labelStyle(isDark),
+                  style: _labelStyle(c),
                   children: [
                     const TextSpan(text: 'EMAIL '),
                     TextSpan(
@@ -204,7 +201,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
                         letterSpacing: 1.25,
                         fontWeight: FontWeight.w700,
                         fontStyle: FontStyle.italic,
-                        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+                        color: c.sectionLabel,
                       ),
                     ),
                   ],
@@ -212,7 +209,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
               ),
               const SizedBox(height: 8),
               _whiteField(
-                isDark: isDark,
+                colors: c,
                 controller: controller.emailController,
                 hint: 'julianne@example.com',
                 keyboardType: TextInputType.emailAddress,
@@ -222,7 +219,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
               const SizedBox(height: 14),
               Obx(
                 () => Material(
-                  color: isDark ? const Color(0xFF3A3A3C) : Colors.white,
+                  color: c.inputFill,
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -235,9 +232,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
                             value: controller.isWhatsapp.value,
                             activeColor: AppColors.colorPrimary,
                             checkColor: Colors.white,
-                            side: BorderSide(
-                              color: isDark ? const Color(0xFF636366) : const Color(0xFFD1D5DB),
-                            ),
+                            side: BorderSide(color: c.border),
                             onChanged: controller.setWhatsapp,
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             visualDensity: VisualDensity.compact,
@@ -249,7 +244,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
                             _isSw ? 'Hii ni namba yangu ya WhatsApp' : 'This is my WhatsApp number',
                             style: TextStyle(
                               fontSize: 14,
-                              color: isDark ? const Color(0xFFE8E8ED) : const Color(0xFF374151),
+                              color: c.secondary,
                             ),
                           ),
                         ),
@@ -260,23 +255,12 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
               ),
             ],
           ),
-          // const SizedBox(height: 20),
-          // _residentBanner(),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
+          Obx(
+            () => LoadingButton(
+              label: _isSw ? 'HIFADHI MPANGAJI' : 'SAVE TENANT',
               onPressed: controller.saveTenant,
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(
-                _isSw ? 'HIFADHI MPANGAJI' : 'SAVE TENANT',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: 0.8),
-              ),
+              isLoading: controller.saving.value,
             ),
           ),
           const SizedBox(height: 12),
@@ -285,10 +269,8 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
             child: OutlinedButton(
               onPressed: () => Get.back(),
               style: OutlinedButton.styleFrom(
-                foregroundColor:
-                    isDark ? const Color(0xFFE8E8ED) : const Color(0xFF1A1A1A),
-                backgroundColor:
-                    isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF3F2EF),
+                foregroundColor: c.secondary,
+                backgroundColor: c.isDark ? c.fill : c.chipUnselectedBg,
                 side: BorderSide.none,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -302,10 +284,8 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
     );
   }
 
-  Widget _leaseDateRangeField(BuildContext context, bool isDark) {
+  Widget _leaseDateRangeField(BuildContext context, FormSurfaceColors colors) {
     final dateFmt = DateFormat('dd/MM/yyyy');
-    final fieldBg = isDark ? const Color(0xFF3A3A3C) : Colors.white;
-    final chevronColor = isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D);
 
     return Obx(() {
       final start = controller.leaseStart.value;
@@ -320,7 +300,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
         label = _isSw ? 'Mwanzo wa mkataba – mwisho' : 'Lease start – end';
       }
       return Material(
-        color: fieldBg,
+        color: colors.inputFill,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () async {
@@ -354,13 +334,11 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: hasRange
-                          ? (isDark ? Colors.white : const Color(0xFF1F2937))
-                          : (isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF)),
+                      color: hasRange ? colors.headline : colors.hint,
                     ),
                   ),
                 ),
-                Icon(Icons.expand_more_rounded, color: chevronColor),
+                Icon(Icons.expand_more_rounded, color: colors.secondary),
               ],
             ),
           ),
@@ -369,28 +347,27 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
     });
   }
 
-  Widget _sectionCard({required bool isDark, required List<Widget> children}) {
+  Widget _sectionCard({required FormSurfaceColors colors, required List<Widget> children}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : RentTheme.sectionMist,
+        color: colors.card,
         borderRadius: BorderRadius.circular(16),
-        border: isDark ? Border.all(color: const Color(0xFF3A3A3C)) : null,
+        border: colors.isDark ? Border.all(color: colors.border) : null,
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
     );
   }
 
   Widget _whiteField({
-    required bool isDark,
+    required FormSurfaceColors colors,
     required TextEditingController controller,
     required String hint,
     TextInputType? keyboardType,
     TextInputAction? textInputAction,
     String? Function(String?)? validator,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : Colors.white;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -400,14 +377,14 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
       validator: validator,
       style: TextStyle(
         fontSize: 15,
-        color: isDark ? Colors.white : const Color(0xFF1F2937),
+        color: colors.headline,
       ),
       decoration: InputDecoration(
         filled: true,
-        fillColor: fill,
+        fillColor: colors.inputFill,
         hintText: hint,
         hintStyle: TextStyle(
-          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
+          color: colors.hint,
           fontSize: 15,
         ),
         border: OutlineInputBorder(
@@ -420,7 +397,7 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
   }
 
   Widget _whiteDropdown<T>({
-    required bool isDark,
+    required FormSurfaceColors colors,
     T? value,
     required List<T> options,
     required ValueChanged<T?> onChanged,
@@ -429,29 +406,25 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
     String Function(T value)? labelForOption,
   }) {
     String label(T e) => labelForOption != null ? labelForOption(e) : '$e';
-    final fill = isDark ? const Color(0xFF3A3A3C) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final hintColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF);
-    final iconColor = isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D);
 
     return DropdownButtonFormField<T>(
       initialValue: value != null && options.contains(value) ? value : null,
       isExpanded: true,
       hint: hintText != null
-          ? Text(hintText, style: TextStyle(color: hintColor, fontSize: 15))
+          ? Text(hintText, style: TextStyle(color: colors.hint, fontSize: 15))
           : null,
-      icon: Icon(Icons.expand_more_rounded, color: iconColor),
-      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textColor),
+      icon: Icon(Icons.expand_more_rounded, color: colors.secondary),
+      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: colors.headline),
       decoration: InputDecoration(
         filled: true,
-        fillColor: fill,
+        fillColor: colors.inputFill,
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 12 : 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      dropdownColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+      dropdownColor: colors.dropdownBg,
       items: options
           .map(
             (e) => DropdownMenuItem<T>(
@@ -461,71 +434,13 @@ class RentAddTenantFormView extends RentBaseView<RentAddTenantFormController> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: textColor,
+                  color: colors.headline,
                 ),
               ),
             ),
           )
           .toList(),
       onChanged: onChanged,
-    );
-  }
-
-  Widget _residentBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-      decoration: BoxDecoration(
-        color: AppColors.designAccent,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            right: -8,
-            top: -12,
-            child: Icon(
-              Icons.person_add_alt_1_outlined,
-              size: 96,
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
-          ),
-          Column(
-            children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: Colors.white.withValues(alpha: 0.25),
-                child: const Icon(Icons.face_rounded, size: 44, color: Colors.white),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                _isSw ? 'Mpangaji Mpya Anaingia' : 'New Resident Entry',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                _isSw
-                    ? 'Kuunganisha mpangaji huyu kutazalisha kiotomatiki kifurushi cha ukaribisho na funguo za kidijitali za mali.'
-                    : 'Linking this tenant will automatically generate a welcome package and digital access keys for the property.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  height: 1.45,
-                  color: Colors.white.withValues(alpha: 0.95),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

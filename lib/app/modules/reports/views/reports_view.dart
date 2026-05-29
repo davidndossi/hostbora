@@ -1,5 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -42,7 +44,7 @@ class ReportsView extends BaseView<ReportsController> {
         Expanded(
           child: Obx(
             () => controller.isLoading.value
-                ? const Center(child: CircularProgressIndicator())
+                ? const DefaultScreenSkeleton()
                 : TabBarView(
                     controller: controller.tabController,
                     children: [

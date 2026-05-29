@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
 import '../../../../routes/app_pages.dart';
 import '../../rent_theme.dart';
+import '../../../../core/widget/staff_quick_actions_sheet.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_staff_management_controller.dart';
 import '../utils/rent_staff_pay_format.dart';
@@ -21,19 +26,19 @@ class _StaffUi {
 
   Color get brandTeal => dark ? const Color(0xFF4DB6AC) : teal;
 
-  Color get onSurface => dark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
+  Color get onSurface => context.tokens.textPrimary;
 
-  Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
+  Color get muted => context.tokens.textMuted;
 
-  Color get labelCaps => dark ? const Color(0xFF98989D) : const Color(0xFF616161);
+  Color get labelCaps => context.tokens.textMuted;
 
-  Color get fieldFill => dark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
+  Color get fieldFill => context.tokens.elevatedSurface;
 
-  Color get card => _t.cardColor;
+  Color get card => context.tokens.cardBackground;
 
-  Color get border => dark ? const Color(0xFF48484A) : const Color(0xFFE5E7EB);
+  Color get border => context.tokens.border;
 
-  Color get payAmount => dark ? const Color(0xFFF2F2F7) : const Color(0xFF1F2937);
+  Color get payAmount => context.tokens.textPrimary;
 
   Color get complianceBg => dark ? const Color(0xFF2C2820) : const Color(0xFFF5F0E8);
 
@@ -73,7 +78,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
     final u = _StaffUi(context);
     return Obx(() {
       if (controller.initialLoad.value) {
-        return Center(child: CircularProgressIndicator(color: u.brandTeal));
+        return const DefaultScreenSkeleton();
       }
       return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
@@ -142,7 +147,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               ],
             ),
             const SizedBox(height: 16),
-            _capsLabel(u, 'FULL NAME'),
+            _capsLabel(u, 'Full name'),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.fullNameController,
@@ -155,7 +160,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               decoration: _fieldDeco(u, hint: 'e.g. Zainab Hussein'),
             ),
             const SizedBox(height: 14),
-            _capsLabel(u, 'PAY TYPE'),
+            _capsLabel(u, 'Pay type'),
             const SizedBox(height: 8),
             Obx(
               () => DropdownButtonFormField<String>(
@@ -212,7 +217,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _capsLabel(u, 'PAYMENT DATE'),
+                      _capsLabel(u, 'Payment date'),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: controller.payDateController,
@@ -230,7 +235,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               ],
             ),
             const SizedBox(height: 14),
-            _capsLabel(u, 'PRIMARY ROLE'),
+            _capsLabel(u, 'Primary role'),
             const SizedBox(height: 8),
             Obx(
               () {
@@ -270,7 +275,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
-                  _isSw ? 'SAJILI MTAFANYAKAZI' : 'REGISTER STAFF MEMBER',
+                  _isSw ? 'Sajili mtafanyakazi' : 'Register staff member',
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.6),
                 ),
               ),
@@ -315,7 +320,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                   children: [
                     Expanded(
                       child: Text(
-                        'TOTAL STAFF PAYROLL',
+                        'Total staff payroll',
                         style: TextStyle(
                           fontSize: 10,
                           letterSpacing: 1.4,
@@ -387,7 +392,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
             ),
           ),
           Text(
-            '${controller.staff.length} PERSONNEL',
+            '${controller.staff.length} Personnel',
             style: TextStyle(
               fontSize: 11,
               letterSpacing: 0.8,
@@ -435,6 +440,12 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
         border: u.dark ? Border.all(color: u.border.withValues(alpha: 0.5)) : null,
       ),
       child: ListTile(
+        onLongPress: () => showStaffQuickActionsSheet(
+          context: u.context,
+          staffName: m.name,
+          onEdit: () => controller.editStaff(m),
+          onRemove: () => controller.removeStaff(m.id),
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         leading: CircleAvatar(
           radius: 22,

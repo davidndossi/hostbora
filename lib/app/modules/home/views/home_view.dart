@@ -2,6 +2,9 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
@@ -11,8 +14,13 @@ import '../../../core/widget/custom_app_bar.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_view.dart';
+import '../../../core/widget/hub_insight_banner.dart';
+import '../../../core/widget/skeleton_presets.dart';
+import '../../../core/widget/sync_status_chip.dart';
+import '../../../core/models/item_sync_status.dart';
 import '../../../data/model/check_in_item.dart';
 import '../controllers/home_controller.dart';
+import 'home_guest_quick_actions_sheet.dart';
 
 // ignore: must_be_immutable
 class HomeView extends BaseView<HomeController> {
@@ -24,8 +32,7 @@ class HomeView extends BaseView<HomeController> {
     return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -127,40 +134,40 @@ class HomeView extends BaseView<HomeController> {
   Widget body(BuildContext context) {
     return SafeArea(
       child: Obx(() {
-        if (controller.homeLoading.value) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(48),
-              child: CircularProgressIndicator(),
-            ),
-          );
+        if (controller.homeInitialLoading.value) {
+          return const HomeScreenSkeleton();
         }
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildPropertyOverview(context),
-              const SizedBox(height: 24),
-              _buildHorizontalGuestSection(
-                context,
-                title: appLocalization.homeCheckInGuestsToday,
-                list: controller.checkInsToday,
-                emptyMessage: appLocalization.homeNoCheckInsToday,
-              ),
-              const SizedBox(height: 24),
-              _buildHorizontalGuestSection(
-                context,
-                title: appLocalization.homeCheckOutGuestsToday,
-                list: controller.checkOutsToday,
-                emptyMessage: appLocalization.homeNoCheckOutsToday,
-              ),
-              const SizedBox(height: 24),
-              _buildUpcomingCheckIns(context),
-              const SizedBox(height: 24),
-              _buildQuickActions(context),
-              const SizedBox(height: 24),
-            ],
+        return RefreshIndicator(
+          onRefresh: () => controller.loadHomeData(refresh: true),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildPropertyOverview(context),
+                const HubInsightBanner(),
+                const SizedBox(height: 24),
+                _buildHorizontalGuestSection(
+                  context,
+                  title: appLocalization.homeCheckInGuestsToday,
+                  list: controller.checkInsToday,
+                  emptyMessage: appLocalization.homeNoCheckInsToday,
+                ),
+                const SizedBox(height: 24),
+                _buildHorizontalGuestSection(
+                  context,
+                  title: appLocalization.homeCheckOutGuestsToday,
+                  list: controller.checkOutsToday,
+                  emptyMessage: appLocalization.homeNoCheckOutsToday,
+                ),
+                const SizedBox(height: 24),
+                _buildUpcomingCheckIns(context),
+                const SizedBox(height: 24),
+                _buildQuickActions(context),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         );
       }),
@@ -179,9 +186,7 @@ class HomeView extends BaseView<HomeController> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: _isDark(context)
-                    ? Colors.white
-                    : AppColors.textColorPrimary,
+                color: context.tokens.textPrimary,
               ),
             ),
             TextButton(
@@ -243,9 +248,7 @@ class HomeView extends BaseView<HomeController> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: _isDark(context)
-                      ? Colors.white
-                      : AppColors.textColorPrimary,
+                  color: context.tokens.textPrimary,
                 ),
               ),
             ),
@@ -274,9 +277,7 @@ class HomeView extends BaseView<HomeController> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white54
-                        : AppColors.textColorSecondary,
+                    color: context.tokens.textMuted,
                   ),
                 ),
               ),
@@ -293,6 +294,14 @@ class HomeView extends BaseView<HomeController> {
                 return _CheckInCard(
                   item: item,
                   onTap: () => controller.openBookingDetails(item),
+                  onLongPress: () => showHomeGuestQuickActionsSheet(
+                    context: context,
+                    item: item,
+                    controller: controller,
+                  ),
+                  onRetrySync: item.syncStatus == ItemSyncStatus.failed
+                      ? () => controller.retryBookingSync(item)
+                      : null,
                 );
               },
             ),
@@ -326,7 +335,7 @@ class HomeView extends BaseView<HomeController> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+            color: context.tokens.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -349,6 +358,16 @@ class HomeView extends BaseView<HomeController> {
               onTap: controller.tenants,
             ),
             _QuickActionTile(
+              materialIcon: Icons.sms_outlined,
+              label: _t(context, 'Send SMS / WhatsApp', 'Tuma SMS / WhatsApp'),
+              onTap: controller.sendSmsWhatsapp,
+            ),
+            _QuickActionTile(
+              materialIcon: Icons.chat_outlined,
+              label: _t(context, 'WhatsApp templates', 'Violezo vya WhatsApp'),
+              onTap: controller.whatsappTemplates,
+            ),
+            _QuickActionTile(
               icon: 'ic_calendar.svg',
               label: _t(context, 'Add Booking', 'Ongeza Uhifadhi'),
               onTap: controller.addNewBooking,
@@ -361,30 +380,48 @@ class HomeView extends BaseView<HomeController> {
             ),
             _QuickActionTile(
               icon: 'ic_design_studio.svg',
-              label: _t(context, 'Design studio', 'Studio ya ubunifu'),
-              onTap: controller.designStudio,
+              label: _t(context, 'Design', 'Ubunifu'),
+              onTap: () => _showDesignQuickActions(context),
             ),
-            _QuickActionTile(
-              icon: 'ic_pinterest.svg',
-              label: _t(context, 'Moodboards', 'Moodboard'),
-              onTap: controller.designMoodboards,
-            ),
-            // _QuickActionTile(icon: 'ic_ai_manager.svg', label: 'AI Manager', onTap: controller.aiManager),
-            // _QuickActionTile(icon: 'ic_ai_insights.svg', label: 'AI Insights', onTap: controller.aiInsights),
-            // _QuickActionTile(icon: 'ic_robot.svg', label: 'AI Automations', onTap: controller.aiAutomations),
             _QuickActionTile(
               icon: 'ic_reports.svg',
               label: _t(context, 'Reports', 'Ripoti'),
               onTap: controller.reports,
             ),
-            _QuickActionTile(
-              icon: 'ic_vault.svg',
-              label: _t(context, 'Vault', 'Hifadhi'),
-              onTap: controller.documents,
-            ),
           ],
         ),
       ],
+    );
+  }
+
+  void _showDesignQuickActions(BuildContext context) {
+    final isSw = Get.locale?.languageCode == 'sw';
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.palette_outlined),
+              title: Text(isSw ? 'Studio ya ubunifu' : 'Design studio'),
+              onTap: () {
+                Navigator.pop(ctx);
+                controller.designStudio();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.grid_view_rounded),
+              title: Text(isSw ? 'Moodboard' : 'Moodboards'),
+              onTap: () {
+                Navigator.pop(ctx);
+                controller.designMoodboards();
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -402,7 +439,7 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -423,7 +460,7 @@ class _MetricCard extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 14,
-              color: isDark
+              color: c.isDark
                   ? AppColors.textColorSecondary
                   : AppColors.textColorSecondary,
               fontWeight: FontWeight.w500,
@@ -435,7 +472,7 @@ class _MetricCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : AppColors.textColorPrimary,
+              color: c.headline,
             ),
           ),
           const SizedBox(height: 4),
@@ -443,7 +480,7 @@ class _MetricCard extends StatelessWidget {
             subtitle,
             style: TextStyle(
               fontSize: 12,
-              color: isDark
+              color: c.isDark
                   ? AppColors.textColorSecondary
                   : AppColors.textColorSecondary,
             ),
@@ -459,8 +496,15 @@ class _MetricCard extends StatelessWidget {
 class _CheckInCard extends StatelessWidget {
   final CheckInItem item;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onRetrySync;
 
-  const _CheckInCard({required this.item, this.onTap});
+  const _CheckInCard({
+    required this.item,
+    this.onTap,
+    this.onLongPress,
+    this.onRetrySync,
+  });
 
   Widget _buildNetworkImage({
     required String url,
@@ -494,9 +538,9 @@ class _CheckInCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : AppColors.textColorPrimary;
-    final subTextColor = isDark ? Colors.white70 : AppColors.textColorSecondary;
+    final c = FormSurfaceColors.of(context);
+    final textColor = c.headline;
+    final subTextColor = c.secondary;
     return SizedBox(
       width: 280,
       child: Card(
@@ -506,6 +550,7 @@ class _CheckInCard extends StatelessWidget {
         color: Theme.of(context).cardColor,
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           borderRadius: BorderRadius.circular(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,6 +604,14 @@ class _CheckInCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (item.showSyncBadge) ...[
+                          SyncStatusChip(
+                            status: item.syncStatus,
+                            onRetry: onRetrySync,
+                            compact: true,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                         if (item.isConfirmed)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -774,19 +827,21 @@ class _NetworkImageFromUrlState extends State<_NetworkImageFromUrl> {
 }
 
 class _QuickActionTile extends StatelessWidget {
-  final String icon;
+  final String? icon;
+  final IconData? materialIcon;
   final String label;
   final VoidCallback onTap;
 
   const _QuickActionTile({
-    required this.icon,
+    this.icon,
+    this.materialIcon,
     required this.label,
     required this.onTap,
-  });
+  }) : assert(icon != null || materialIcon != null);
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -817,18 +872,20 @@ class _QuickActionTile extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: SvgPicture.asset(
-                      'images/$icon',
-                      fit: BoxFit.contain,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.colorPrimary,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
+                  child: materialIcon != null
+                      ? Icon(materialIcon, size: 24, color: AppColors.colorPrimary)
+                      : SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: SvgPicture.asset(
+                            'images/$icon',
+                            fit: BoxFit.contain,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.colorPrimary,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -839,7 +896,7 @@ class _QuickActionTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : AppColors.textColorPrimary,
+                    color: c.headline,
                   ),
                 ),
               ],

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '/app/core/base/base_controller.dart';
 import '/app/data/local/db/rent_property_estimate_local_data_source.dart';
+import '/app/data/local/service/property_break_even_notification_service.dart';
 
 enum EstimateInputMode { approximate, itemized }
 
@@ -309,6 +310,7 @@ class RentPropertyRoiEstimateFormController extends BaseController {
         targetOccupancyPercent:
             double.tryParse(targetOccupancyController.text.replaceAll(',', '').trim()) ?? 0,
       );
+      await PropertyBreakEvenNotificationService.refreshIfRegistered();
       showSuccessMessage('Estimates saved');
       Get.back(result: true);
     } catch (_) {

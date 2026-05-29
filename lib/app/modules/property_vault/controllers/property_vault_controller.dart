@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/base/feedback_extensions.dart';
 import '../../../core/model/page_state.dart';
 import '../../../data/local/vault_directories_store.dart';
 import '../../../data/local/vault_documents_store.dart';
@@ -67,20 +68,19 @@ class PropertyVaultController extends BaseController {
   }
 
   Future<void> loadVault() async {
-    showLoading();
     loadError.value = null;
-    try {
-      await _directoriesStore.ensureDefaults();
-      await _tryMergeDirectoriesFromApi();
-      _allDirectories = _buildDirectoryItems();
-      _applySearchFilter();
-      _refreshRecent();
-      hideLoading();
-    } catch (e) {
-      loadError.value = e.toString();
-      hideLoading();
-      updatePageState(PageState.FAILED);
-    }
+    await runBusy(() async {
+      try {
+        await _directoriesStore.ensureDefaults();
+        await _tryMergeDirectoriesFromApi();
+        _allDirectories = _buildDirectoryItems();
+        _applySearchFilter();
+        _refreshRecent();
+      } catch (e) {
+        loadError.value = e.toString();
+        updatePageState(PageState.FAILED);
+      }
+    });
   }
 
   Future<void> _tryMergeDirectoriesFromApi() async {

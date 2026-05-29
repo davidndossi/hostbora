@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
@@ -233,10 +235,10 @@ class _RentWhatsappTemplateEditorViewState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        color: isDark ? context.tokens.cardBackground : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: isDark ? const Color(0xFF3A3A3C) : RentTheme.border),
+            color: isDark ? context.tokens.elevatedSurface : RentTheme.border),
       ),
       child: child,
     );
@@ -694,11 +696,11 @@ class _RentWhatsappTemplateEditorViewState
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          color: isDark ? context.tokens.scaffoldBackground : Colors.white,
           border: Border(
             top: BorderSide(
               color:
-                  isDark ? const Color(0xFF3A3A3C) : RentTheme.border,
+                  isDark ? context.tokens.elevatedSurface : RentTheme.border,
             ),
           ),
         ),
@@ -778,7 +780,7 @@ class _RentWhatsappTemplateEditorViewState
       filled: true,
       fillColor:
           isDark
-              ? const Color(0xFF1C1C1E)
+              ? context.tokens.scaffoldBackground
               : Colors.white,
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

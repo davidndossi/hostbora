@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -22,7 +24,7 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
   Widget body(BuildContext context) {
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       return RefreshIndicator(
         onRefresh: controller.loadPayroll,

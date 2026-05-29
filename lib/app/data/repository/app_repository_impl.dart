@@ -19,6 +19,8 @@ import '../model/reg_request.dart';
 import '../model/update_preference_request.dart';
 import '../model/user_profile_request.dart';
 import '../model/send_sms_request.dart';
+import '../model/send_whatsapp_bulk_request.dart';
+import '../model/send_whatsapp_template_request.dart';
 import '../model/update_request.dart';
 import '../model/create_calendar_subscription_request.dart';
 import '../model/update_calendar_subscription_request.dart';
@@ -123,6 +125,45 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> sendSms(SendSmsRequest request) {
     return _remoteSource.sendSms(request);
+  }
+
+  @override
+  Future<GeneralResponse> getWhatsAppStatus() {
+    return _remoteSource.getWhatsAppStatus();
+  }
+
+  @override
+  Future<GeneralResponse> saveWhatsAppCredentials(Map<String, dynamic> request) {
+    return _remoteSource.saveWhatsAppCredentials(request);
+  }
+
+  @override
+  Future<GeneralResponse> sendWhatsApp(SendSmsRequest request) {
+    return _remoteSource.sendWhatsApp(request);
+  }
+
+  @override
+  Future<GeneralResponse> sendWhatsAppBulk(SendWhatsAppBulkRequest request) {
+    return _remoteSource.sendWhatsAppBulk(request);
+  }
+
+  @override
+  Future<GeneralResponse> sendWhatsAppTemplate(
+    SendWhatsAppTemplateRequest request,
+  ) {
+    return _remoteSource.sendWhatsAppTemplate(request);
+  }
+
+  @override
+  Future<GeneralResponse> sendWhatsAppTemplateBulk(
+    SendWhatsAppTemplateBulkRequest request,
+  ) {
+    return _remoteSource.sendWhatsAppTemplateBulk(request);
+  }
+
+  @override
+  Future<GeneralResponse> getAdminWhatsAppCredentials() {
+    return _remoteSource.getAdminWhatsAppCredentials();
   }
 
   @override

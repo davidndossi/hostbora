@@ -8,7 +8,8 @@ import '../../../l10n/app_localizations.dart';
 import '/app/core/base/base_controller.dart';
 import '/app/core/model/page_state.dart';
 import '/app/core/values/text_styles.dart';
-import '/app/core/widget/loading.dart';
+import '/app/core/theme/app_theme_tokens.dart';
+import '/app/core/widget/skeleton_presets.dart';
 import '/flavors/build_config.dart';
 
 abstract class BaseView<Controller extends BaseController>
@@ -36,7 +37,7 @@ abstract class BaseView<Controller extends BaseController>
         children: [
           annotatedRegion(context),
           Obx(() => controller.pageState == PageState.LOADING
-              ? _showLoading()
+              ? _showLoading(context)
               : Container()),
           Obx(() => controller.errorMessage.isNotEmpty
               ? showErrorSnackBar(controller.errorMessage)
@@ -161,8 +162,18 @@ abstract class BaseView<Controller extends BaseController>
     return null;
   }
 
-  Widget _showLoading() {
-    return const Loading();
+  /// Override to match screen layout during [PageState.LOADING].
+  Widget? pageLoadingSkeleton(BuildContext context) => null;
+
+  Widget _showLoading(BuildContext context) {
+    return Positioned.fill(
+      child: ColoredBox(
+        color: pageBackgroundColor(context).withValues(alpha: 0.94),
+        child: SafeArea(
+          child: pageLoadingSkeleton(context) ?? const DefaultScreenSkeleton(),
+        ),
+      ),
+    );
   }
 
   FloatingActionButtonLocation floatingActionButtonLocation() {

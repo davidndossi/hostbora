@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/base/feedback_extensions.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
@@ -263,16 +264,28 @@ class StaffDetailController extends BaseController {
     );
     if (confirmed != true) return;
 
-    showLoading();
-    try {
-      await _staffLocal.deleteById(id);
-      hideLoading();
-      showSuccessMessage(appLocalization.staffDetailRemovedSuccess);
-      Get.back(result: true);
-    } catch (e) {
-      hideLoading();
-      showErrorMessage(e.toString());
+    final snapshot = await _staffLocal.getById(id);
+    if (snapshot == null) {
+      showErrorMessage(appLocalization.staffDetailRemovedSuccess);
+      return;
     }
+
+    await runDestructiveWithUndo(
+      message: appLocalization.staffDetailRemovedSuccess,
+      action: () async {
+        await _staffLocal.deleteById(id);
+        Get.back(result: true);
+      },
+      onUndo: () async {
+        await _staffLocal.insert(
+          name: snapshot.name,
+          jobTitle: snapshot.jobTitle,
+          payDayLabel: snapshot.payDayLabel,
+          paymentType: snapshot.paymentType,
+          amountValue: snapshot.amountValue,
+        );
+      },
+    );
   }
 }
 

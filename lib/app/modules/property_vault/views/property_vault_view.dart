@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -14,8 +17,7 @@ const _vaultTeal = Color(0xFF1C6E64);
 class PropertyVaultView extends BaseView<PropertyVaultController> {
   PropertyVaultView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -30,7 +32,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
     return Obx(() {
       if (controller.pageState == PageState.LOADING &&
           controller.directories.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       if (controller.pageState == PageState.FAILED) {
         return _buildErrorState(context);
@@ -88,16 +90,16 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
 
   Widget _buildSearchBar(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: isDark
+        color: c.isDark
             ? theme.colorScheme.surfaceContainerHigh
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         border: Border.all(
-          color: isDark
+          color: c.isDark
               ? theme.colorScheme.outlineVariant
               : AppColors.designInputBorder,
         ),
@@ -107,7 +109,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
         decoration: InputDecoration(
           hintText: appLocalization.searchVaultDocuments,
           hintStyle: TextStyle(
-            color: isDark
+            color: c.isDark
                 ? theme.colorScheme.onSurfaceVariant
                 : AppColors.designPlaceholder,
             fontSize: 15,
@@ -115,7 +117,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
           prefixIcon: Icon(
             Icons.search,
             size: 22,
-            color: isDark
+            color: c.isDark
                 ? theme.colorScheme.onSurfaceVariant
                 : AppColors.designPlaceholder,
           ),
@@ -249,12 +251,12 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
 
   Widget _buildVaultSyncedCard(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: (isDark ? theme.colorScheme.primary : _vaultTeal).withValues(
+        color: (c.isDark ? theme.colorScheme.primary : _vaultTeal).withValues(
           alpha: 0.12,
         ),
         borderRadius: BorderRadius.circular(AppValues.radius_12),
@@ -280,7 +282,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
                   appLocalization.vaultSyncedDescription,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark
+                    color: c.isDark
                         ? theme.colorScheme.onSurfaceVariant
                         : AppColors.textColorSecondary,
                   ),
@@ -317,12 +319,12 @@ class _RecentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     final name = item.entry.displayName;
     return SizedBox(
       width: 140,
       child: Material(
-        color: isDark
+        color: c.isDark
             ? theme.colorScheme.surfaceContainerHigh
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
@@ -412,9 +414,9 @@ class _DirectoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Material(
-      color: isDark
+      color: c.isDark
           ? theme.colorScheme.surfaceContainerHigh
           : AppColors.colorWhite,
       borderRadius: BorderRadius.circular(AppValues.radius_12),

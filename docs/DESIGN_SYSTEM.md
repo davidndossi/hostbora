@@ -82,5 +82,32 @@ In code: `AppColors.colorPrimary`, `AppColors.designAccent`, `AppColors.designSu
 ## Implementation notes
 
 - Use `AppColors` and `AppValues` for all spacing, radius, and colors so the app stays aligned with Figma.
+- For semantic surfaces in code, prefer `context.tokens` from `AppThemeTokens` (`lib/app/core/theme/app_theme_tokens.dart`) — especially card backgrounds in dark mode.
 - For new screens, match the structure above (surface background, white cards, teal primary actions).
 - When in doubt, refer to the [Figma file](https://www.figma.com/design/7PeFdWA0oIYMxMEoc8qkxm/PAA-YANGU?node-id=2001-1281&m=dev) and Dev Mode specs.
+
+### Loading UI (2026)
+
+| Scenario | Use |
+|----------|-----|
+| First paint of a list screen | Layout skeleton (`AppSkeleton`, `skeleton_presets.dart`) |
+| Pull-to-refresh | `RefreshIndicator`; keep content visible |
+| Form submit | `LoadingButton` — not `showLoading()` / full-screen overlay |
+| Cold start / auth | Full-screen `Loading` allowed |
+
+See `docs/UI_IMPROVEMENT_PLAN.md` for the full rollout plan.
+
+### App-wide UI patterns (2026 rollout)
+
+| Pattern | API |
+|---------|-----|
+| Theme tokens | `context.tokens` — `AppThemeTokens` |
+| First load | `DefaultScreenSkeleton` / `RentDefaultScreenSkeleton` |
+| List screen body | `AsyncScreenBody(isLoading:, child:)` |
+| Base loading overlay | `BaseView.pageLoadingSkeleton` override |
+| Submit buttons | `LoadingButton` / `rentPrimaryButton(isLoading:)` |
+| Swipe actions | `AppSwipeableCard` / `AppInteractiveCard` |
+| Undo destructive | `controller.runDestructiveWithUndo(...)` — `feedback_extensions.dart` |
+| Haptics | `hapticPrimaryConfirm()` / `hapticValidationError()` |
+
+Batch migration script: `tool/ui_trend_migrate.py`.

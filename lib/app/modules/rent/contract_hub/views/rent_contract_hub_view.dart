@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -64,7 +68,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
       onRefresh: controller.onRefresh,
       child: Obx(() {
         if (controller.loading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const DefaultScreenSkeleton();
         }
         controller.searchQuery.value;
         controller.filterExpiringSoon.value;
@@ -110,7 +114,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
 
   Widget _searchField(BuildContext context) {
     final u = _HubUi(context);
-    final fill = u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFEFEEE9);
+    final fill = u.dark ? context.tokens.elevatedSurface : const Color(0xFFEFEEE9);
     return TextField(
       controller: controller.searchController,
       onChanged: controller.setSearch,
@@ -144,7 +148,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: u.cardShadow(false),
           border: u.dark
-              ? Border.all(color: const Color(0xFF3A3A3C))
+              ? Border.all(color: context.tokens.elevatedSurface)
               : null,
         ),
         child: InkWell(
@@ -309,7 +313,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
             ? Border.all(
                 color: urgent
                     ? _HubUi.urgentRed.withValues(alpha: 0.35)
-                    : const Color(0xFF3A3A3C),
+                    : context.tokens.elevatedSurface,
               )
             : null,
       ),

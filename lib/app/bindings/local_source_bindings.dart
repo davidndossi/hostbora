@@ -14,6 +14,7 @@ import '/app/data/model/record_payment_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/data/local/db/rent_payment_reminder_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
+import '/app/data/local/service/offline_sync_ui_refresh.dart';
 import '/app/data/local/db/property_members_local_data_source.dart';
 import '/app/data/local/db/expense_local_data_source.dart';
 import '/app/data/local/db/exchange_rate_local_data_source.dart';
@@ -30,8 +31,13 @@ import '/app/data/local/db/rent_utility_topup_local_data_source.dart';
 import '/app/data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '/app/data/local/service/local_notification_scheduler_service.dart';
 import '/app/data/local/service/offline_sync_worker_service.dart';
+import '/app/data/local/service/portfolio_ai_context_service.dart';
+import '/app/data/local/service/portfolio_ai_hybrid_service.dart';
 import '/app/data/local/service/rent_real_data_snapshot_service.dart';
+import '/app/data/local/service/property_break_even_notification_service.dart';
 import '/app/data/local/service/rent_notification_rules_service.dart';
+import '/app/data/local/service/bnb_messaging_contacts_service.dart';
+import '/app/data/local/service/scheduled_whatsapp_dispatch_service.dart';
 import '/app/data/local/service/tenant_lease_reminder_service.dart';
 import '/app/data/local/service/workspace_context_service.dart';
 import '/app/data/local/preference/preference_manager.dart';
@@ -141,6 +147,28 @@ class LocalSourceBindings implements Bindings {
       ),
       fenix: true,
     );
+    Get.lazyPut<PortfolioAiContextService>(
+      () => PortfolioAiContextService(
+        propertyLocal: Get.find<PropertyLocalDataSource>(),
+        tenantLocal: Get.find<TenantLocalDataSource>(),
+        incomeLocal: Get.find<IncomeLocalDataSource>(),
+        expenseLocal: Get.find<ExpenseLocalDataSource>(),
+        maintenanceLocal: Get.find<RentScheduledMaintenanceLocalDataSource>(),
+        workspaceContext: Get.find<WorkspaceContextService>(),
+        preferenceManager: Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+        repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
+      ),
+      fenix: true,
+    );
+    Get.lazyPut<PortfolioAiHybridService>(
+      () => PortfolioAiHybridService(
+        contextService: Get.find<PortfolioAiContextService>(),
+        repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
+      ),
+      fenix: true,
+    );
     Get.put<LocalNotificationSchedulerService>(
       LocalNotificationSchedulerService(),
       permanent: true,
@@ -155,6 +183,35 @@ class LocalSourceBindings implements Bindings {
       ),
       permanent: true,
     ).start();
+    Get.lazyPut<BnbMessagingContactsService>(
+      () => BnbMessagingContactsService(
+        repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
+        propertyLocal: Get.find<PropertyLocalDataSource>(),
+        tenantLocal: Get.find<TenantLocalDataSource>(),
+        syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
+      ),
+      fenix: true,
+    );
+    Get.put<ScheduledWhatsappDispatchService>(
+      ScheduledWhatsappDispatchService(
+        repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
+      ),
+      permanent: true,
+    ).start();
+    Get.put<PropertyBreakEvenNotificationService>(
+      PropertyBreakEvenNotificationService(
+        estimateLocal: Get.find<RentPropertyEstimateLocalDataSource>(),
+        incomeLocal: Get.find<IncomeLocalDataSource>(),
+        expenseLocal: Get.find<ExpenseLocalDataSource>(),
+        tenantLocal: Get.find<TenantLocalDataSource>(),
+        notificationLogLocal: Get.find<RentNotificationLogLocalDataSource>(),
+        preferenceManager: Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+        notificationScheduler: Get.find<LocalNotificationSchedulerService>(),
+      ),
+      permanent: true,
+    );
     Get.put<RentNotificationRulesService>(
       RentNotificationRulesService(
         tenantLocal: Get.find<TenantLocalDataSource>(),
@@ -349,6 +406,7 @@ class LocalSourceBindings implements Bindings {
         }
       },
     );
+    registerOfflineSyncUiRefresh(syncWorker);
     syncWorker.start();
   }
 }

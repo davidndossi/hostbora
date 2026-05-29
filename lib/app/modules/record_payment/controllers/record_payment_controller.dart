@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/haptic_feedback_util.dart';
 import '../../../core/utils/money_input_helper.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../data/local/service/currency_service.dart';
@@ -18,10 +19,12 @@ import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../data/local/service/property_break_even_notification_service.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/model/record_payment_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
+import '../../booking_details/controllers/booking_details_controller.dart';
 import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 enum PaymentStatus { paid, pending }
@@ -673,7 +676,7 @@ class RecordPaymentController extends BaseController {
 
     saving.value = true;
     try {
-      await _incomeLocal.insert(
+      final localIncomeId = await _incomeLocal.insert(
         tenantName: tenant,
         amountValue: parsed.baseAmount,
         datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
@@ -695,16 +698,22 @@ class RecordPaymentController extends BaseController {
         paymentDate: DateFormat(_isoDateFormat).format(paidDate),
         status: status.value == PaymentStatus.paid ? 'PAID' : 'PENDING',
       );
+      final payload = <String, dynamic>{
+        ...request.toJson(),
+        'localIncomeId': localIncomeId,
+      };
       await _syncQueue.enqueue(
         entityType: 'payment',
         operation: 'create',
-        payloadJson: jsonEncode(request.toJson()),
+        payloadJson: jsonEncode(payload),
+        dedupeKey: 'payment:create:$localIncomeId',
       );
       await _syncWorker.runNow(maxItems: 20);
       final pending = await _syncQueue.pendingCountByEntity(
         entityType: 'payment',
         operation: 'create',
       );
+      hapticPrimaryConfirm();
       if (pending > 0) {
         showSuccessMessage(
             'Income saved offline. Will sync when internet is available.');
@@ -712,6 +721,10 @@ class RecordPaymentController extends BaseController {
         showSuccessMessage('Income saved and synced.');
       }
       await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+      await BookingDetailsController.refreshIfRegistered();
+      await PropertyBreakEvenNotificationService.checkPropertyIfRegistered(
+        _propertyRefForIncomeInsert(),
+      );
       Get.back(result: true);
     } catch (e) {
       showErrorMessage('Failed to save income: $e');

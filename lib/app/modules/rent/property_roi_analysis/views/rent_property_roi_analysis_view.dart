@@ -1,5 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -22,7 +26,7 @@ class _RoiUi {
 
   Color get bg => dark ? _t.scaffoldBackgroundColor : cream;
   Color get card => dark ? _t.cardColor : Colors.white;
-  Color get cardMuted => dark ? const Color(0xFF2C2C2E) : const Color(0xFFF1F3F2);
+  Color get cardMuted => dark ? context.tokens.cardBackground : const Color(0xFFF1F3F2);
   Color get onSurface => dark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
   Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
   Color get incomeTint => dark ? const Color(0xFF1B3D3A) : const Color(0xFFE0F2F1);
@@ -55,7 +59,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
     final u = _RoiUi(context);
     return Obx(() {
       if (controller.loadingRealData.value) {
-        return Center(child: CircularProgressIndicator(color: u.dark ? _RoiUi.teal : _RoiUi.forest));
+        return const DefaultScreenSkeleton();
       }
       final d = controller.realData.value;
       if (d == null) {
@@ -67,7 +71,9 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
         );
       }
 
-      final incomeTotal = d.incomeTotal;
+      final incomeTotal = controller.incomeForProperty > 0
+          ? controller.incomeForProperty
+          : d.incomeTotal;
       final principal = controller.principalInvestment;
       final yieldPct = controller.yieldToDatePercent(incomeTotal);
       final qInv = controller.quarterlyInvestmentSeries(principal);
@@ -88,7 +94,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
                 // _headerRow(u),
                 const SizedBox(height: 20),
                 Text(
-                  _isSw ? 'MUHTASARI WA KIFEDHA' : 'PRINCIPAL INVESTMENT',
+                  _isSw ? 'Muhtasari wa kifedha' : 'Principal investment',
                   style: TextStyle(
                     fontSize: 12,
                     letterSpacing: 1.3,
@@ -129,6 +135,12 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
                 ),
                 const SizedBox(height: 16),
                 _incomeCard(u, incomeTotal, yieldPct),
+                if (controller.showPrincipalVsIncomeChart) ...[
+                  const SizedBox(height: 16),
+                  _principalVsIncomeCard(u, incomeTotal),
+                  const SizedBox(height: 12),
+                  _breakEvenCard(u),
+                ],
                 const SizedBox(height: 16),
                 _chartCard(u, qInv, qInc, maxChartY),
                 const SizedBox(height: 14),
@@ -217,6 +229,215 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
   //   );
   // }
 
+  Widget _principalVsIncomeCard(_RoiUi u, double incomeTotal) {
+    final principal = controller.principalInvestment;
+    final maintenance = controller.maintenanceCostForChart;
+    final total = principal + maintenance + incomeTotal;
+    if (total <= 0) return const SizedBox.shrink();
+
+    double pct(double v) => (v / total * 100).clamp(0.1, 100);
+
+    final sections = <PieChartSectionData>[
+      if (principal > 0)
+        PieChartSectionData(
+          value: principal,
+          color: _RoiUi.forest,
+          title: '${pct(principal).toStringAsFixed(0)}%',
+          radius: 52,
+          titleStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      if (maintenance > 0)
+        PieChartSectionData(
+          value: maintenance,
+          color: const Color(0xFF5D4037),
+          title: '${pct(maintenance).toStringAsFixed(0)}%',
+          radius: 52,
+          titleStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      if (incomeTotal > 0)
+        PieChartSectionData(
+          value: incomeTotal,
+          color: _RoiUi.teal,
+          title: '${pct(incomeTotal).toStringAsFixed(0)}%',
+          radius: 52,
+          titleStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: u.card,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: u.shadow,
+        border: u.dark ? Border.all(color: const Color(0xFF48484A)) : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _isSw ? 'Mtaji dhidi ya Mapato' : 'Principal Cost vs Income Generated',
+            style: TextStyle(
+              fontFamily: 'serif',
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: u.onSurface,
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 180,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 36,
+                      sections: sections,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (principal > 0)
+                        _legendRow(
+                          u,
+                          _RoiUi.forest,
+                          _isSw ? 'Mtaji (ununuzi + ukarabati)' : 'Principal (purchase + renovation)',
+                          'Tsh ${_money.format(principal.round())}',
+                        ),
+                      if (maintenance > 0) ...[
+                        const SizedBox(height: 8),
+                        _legendRow(
+                          u,
+                          const Color(0xFF5D4037),
+                          _isSw ? 'Matengenezo (makadirio/halisi)' : 'Maintenance (estimate/actual)',
+                          'Tsh ${_money.format(maintenance.round())}',
+                        ),
+                      ],
+                      if (incomeTotal > 0) ...[
+                        const SizedBox(height: 8),
+                        _legendRow(
+                          u,
+                          _RoiUi.teal,
+                          _isSw ? 'Mapato yaliyotengenezwa' : 'Income generated',
+                          'Tsh ${_money.format(incomeTotal.round())}',
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _legendRow(_RoiUi u, Color color, String label, String amount) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          margin: const EdgeInsets.only(top: 4),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 11, color: u.muted)),
+              Text(
+                amount,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: u.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _breakEvenCard(_RoiUi u) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: u.cardMuted,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _RoiUi.teal.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.hourglass_bottom_rounded, color: _RoiUi.teal, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isSw ? 'Makadirio ya umiliki' : 'Break-even estimate',
+                  style: TextStyle(
+                    fontSize: 11,
+                    letterSpacing: 1,
+                    fontWeight: FontWeight.w800,
+                    color: u.muted,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  controller.breakEvenLabel,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    height: 1.35,
+                    color: u.onSurface,
+                  ),
+                ),
+                if (controller.monthlyNetForBreakEven > 0) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    _isSw
+                        ? 'Mtaji halisi kwa mwezi: Tsh ${_money.format(controller.monthlyNetForBreakEven.round())}'
+                        : 'Net cash flow used: Tsh ${_money.format(controller.monthlyNetForBreakEven.round())} / month',
+                    style: TextStyle(fontSize: 11, color: u.muted),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _incomeCard(_RoiUi u, double incomeTotal, double yieldPct) {
     return Container(
       width: double.infinity,
@@ -230,7 +451,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _isSw ? 'JUMLA YA MAPATO YALIYOTENGENEZWA' : 'TOTAL INCOME GENERATED',
+            _isSw ? 'Jumla ya mapato yaliyotengenezwa' : 'Total income generated',
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 1.1,
@@ -300,9 +521,9 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
           const SizedBox(height: 12),
           Row(
             children: [
-              _legendDot(_RoiUi.forest, _isSw ? 'UWEKEZAJI' : 'INVESTMENT'),
+              _legendDot(_RoiUi.forest, _isSw ? 'Uwekezaji' : 'Investment'),
               const SizedBox(width: 16),
-              _legendDot(_RoiUi.teal, _isSw ? 'MAPATO' : 'INCOME'),
+              _legendDot(_RoiUi.teal, _isSw ? 'Mapato' : 'Income'),
             ],
           ),
           const SizedBox(height: 16),
@@ -399,7 +620,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
       footer: Row(
         children: [
           Text(
-            _isSw ? 'USHURU WA STAMPU UMEJUMUISHWA' : 'STAMP DUTY INCL',
+            _isSw ? 'Ushuru wa stampu umejumuishwa' : 'Stamp duty incl',
             style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: u.muted),
           ),
           const Spacer(),
@@ -439,12 +660,12 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
           Row(
             children: [
               Text(
-                _isSw ? 'JUMLA ILIYOWEKWA' : 'SUM COMMITTED',
+                _isSw ? 'Jumla iliyowekwa' : 'Sum committed',
                 style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: u.muted),
               ),
               const Spacer(),
               Text(
-                'Tsh ${_money.format(utilized.round())} ${_isSw ? 'IMETUMIKA' : 'UTILIZED'}',
+                'Tsh ${_money.format(utilized.round())} ${_isSw ? 'Imetumika' : 'Utilized'}',
                 style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: u.muted),
               ),
             ],
@@ -579,7 +800,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
     );
   }
 
-  static const _badges = ['HIGH YIELD', 'COMMERCIAL', 'GROWTH ASSET'];
+  static const _badges = ['High yield', 'Commercial', 'Growth asset'];
 
   Widget _propertyCard(_RoiUi u, PropertyRecord p) {
     final loc = p.propertyLocation.trim();
@@ -677,7 +898,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _isSw ? 'HALI' : 'STATUS',
+                            _isSw ? 'Hali' : 'Status',
                             style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: u.muted),
                           ),
                           Text(

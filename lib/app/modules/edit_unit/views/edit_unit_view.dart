@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../l10n/app_localizations.dart';
@@ -26,7 +28,7 @@ class EditUnitView extends BaseView<EditUnitController> {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       if (controller.loadError.value.isNotEmpty) {
         return Center(

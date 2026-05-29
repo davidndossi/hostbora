@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
-import '../controllers/all_bookings_controller.dart';
+import '../../../core/widget/skeleton_presets.dart';
+import '../../../core/widget/guest_quick_actions_sheet.dart';
+import '../../../core/widget/sync_status_chip.dart';
+import '../../../core/theme/app_theme_tokens.dart';
+import '../../../core/models/item_sync_status.dart';
 import '../../../data/model/check_in_item.dart';
+import '../controllers/all_bookings_controller.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class AllBookingsView extends BaseView<AllBookingsController> {
@@ -16,42 +24,55 @@ class AllBookingsView extends BaseView<AllBookingsController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
       appBarTitleText: _t(context, en: 'All Bookings', sw: 'Uhifadhi Wote'),
       isCentered: true,
+      actions: [
+        IconButton(
+          tooltip: _t(context, en: 'Message guests', sw: 'Watumie wageni'),
+          icon: const Icon(Icons.sms_outlined),
+          onPressed: controller.messageGuestsWithPhones,
+        ),
+      ],
     );
   }
 
   @override
   Widget body(BuildContext context) {
     return Obx(() {
-      if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+      if (controller.initialLoading.value) {
+        return const AllBookingsScreenSkeleton();
       }
       final list = controller.bookings;
       if (list.isEmpty) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              _t(context, en: 'No bookings yet', sw: 'Bado hakuna uhifadhi'),
-              style: TextStyle(
-                fontSize: 16,
-                color: _isDark(context)
-                    ? Colors.white54
-                    : AppColors.textColorSecondary,
+        return RefreshIndicator(
+          onRefresh: () => controller.loadAllBookings(refresh: true),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: MediaQuery.sizeOf(context).height * 0.25),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    _t(context, en: 'No bookings yet', sw: 'Bado hakuna uhifadhi'),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: context.tokens.textMuted,
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         );
       }
       return RefreshIndicator(
-        onRefresh: controller.loadAllBookings,
+        onRefresh: () => controller.loadAllBookings(refresh: true),
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
           itemCount: list.length,
@@ -61,6 +82,14 @@ class AllBookingsView extends BaseView<AllBookingsController> {
             return _BookingCard(
               item: item,
               onTap: () => controller.openBookingDetails(item),
+              onLongPress: () => showGuestQuickActionsSheet(
+                context: context,
+                item: item,
+                onOpenBookingDetails: () => controller.openBookingDetails(item),
+              ),
+              onRetrySync: item.syncStatus == ItemSyncStatus.failed
+                  ? () => controller.retryBookingSync(item)
+                  : null,
             );
           },
         ),
@@ -72,14 +101,21 @@ class AllBookingsView extends BaseView<AllBookingsController> {
 class _BookingCard extends StatelessWidget {
   final CheckInItem item;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onRetrySync;
 
-  const _BookingCard({required this.item, this.onTap});
+  const _BookingCard({
+    required this.item,
+    this.onTap,
+    this.onLongPress,
+    this.onRetrySync,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : AppColors.textColorPrimary;
-    final subTextColor = isDark ? Colors.white70 : AppColors.textColorSecondary;
+    final tokens = context.tokens;
+    final textColor = tokens.textPrimary;
+    final subTextColor = tokens.textSecondary;
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
@@ -89,6 +125,7 @@ class _BookingCard extends StatelessWidget {
       color: Theme.of(context).cardColor,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,9 +138,7 @@ class _BookingCard extends StatelessWidget {
                       color: AppColors.lightGreyColor,
                       child: Icon(
                         Icons.image_not_supported,
-                        color: isDark
-                            ? Colors.white60
-                            : AppColors.textColorSecondary,
+                        color: subTextColor,
                       ),
                     )
                   : Image.network(
@@ -115,9 +150,7 @@ class _BookingCard extends StatelessWidget {
                         color: AppColors.lightGreyColor,
                         child: Icon(
                           Icons.image_not_supported,
-                          color: isDark
-                              ? Colors.white60
-                              : AppColors.textColorSecondary,
+                          color: subTextColor,
                         ),
                       ),
                     ),
@@ -160,6 +193,14 @@ class _BookingCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (item.showSyncBadge) ...[
+                          SyncStatusChip(
+                            status: item.syncStatus,
+                            onRetry: onRetrySync,
+                            compact: true,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                         if (item.isCancelled)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -246,7 +287,7 @@ class _BookingCard extends StatelessWidget {
               padding: const EdgeInsets.only(right: 12, top: 12),
               child: Icon(
                 Icons.chevron_right,
-                color: isDark ? Colors.white60 : AppColors.textColorSecondary,
+                color: subTextColor,
               ),
             ),
           ],

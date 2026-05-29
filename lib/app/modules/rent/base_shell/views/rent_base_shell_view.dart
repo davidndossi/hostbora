@@ -3,6 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../routes/app_pages.dart';
 import '../../hub/views/rent_hub_view.dart';
@@ -40,11 +41,10 @@ class RentBaseShellView extends RentBaseView<RentBaseShellController> {
     return Obx(() {
       final idx = controller.currentTab.value;
       final theme = Theme.of(Get.context!);
+      final tokens = Get.context!.tokens;
       final isDark = theme.brightness == Brightness.dark;
-      final navBg = isDark ? const Color(0xFF2C2C2E) : Colors.white;
-      final navBorder = isDark
-          ? const Color(0xFF3A3A3C)
-          : const Color(0xFFE8E6E1);
+      final navBg = tokens.cardBackground;
+      final navBorder = tokens.border;
       Color selectedFg = isDark
           ? theme.colorScheme.primary
           : AppColors.colorPrimary;
@@ -73,7 +73,7 @@ class RentBaseShellView extends RentBaseView<RentBaseShellController> {
                   onTap: () => controller.setTab(0),
                 ),
                 _ShellTab(
-                  label: 'Listings',
+                  label: 'Properties',
                   icon: 'ic_properties.svg',
                   selected: idx == 1,
                   selectedFg: selectedFg,
@@ -89,15 +89,15 @@ class RentBaseShellView extends RentBaseView<RentBaseShellController> {
                   unselectedFg: unselectedFg,
                   onTap: () => controller.setTab(2),
                 ),
-                // _ShellTab(
-                //   label: 'More',
-                //   icon: 'ic_more.svg',
-                //   iconScale: 1.2,
-                //   selected: idx == 3,
-                //   selectedFg: selectedFg,
-                //   unselectedFg: unselectedFg,
-                //   onTap: () => controller.setTab(3),
-                // ),
+                _ShellTab(
+                  label: 'More',
+                  icon: 'ic_more.svg',
+                  iconScale: 1.2,
+                  selected: idx == 3,
+                  selectedFg: selectedFg,
+                  unselectedFg: unselectedFg,
+                  onTap: () => controller.setTab(3),
+                ),
                 _ShellTab(
                   label: 'Settings',
                   icon: 'ic_settings.svg',

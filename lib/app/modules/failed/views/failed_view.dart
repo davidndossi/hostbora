@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../controllers/failed_controller.dart';
@@ -13,12 +14,11 @@ class FailedView extends BaseView<FailedController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -29,7 +29,7 @@ class FailedView extends BaseView<FailedController> {
       title: Text(
         appLocalization.failed,
         style: TextStyle(
-          color: isDark ? Colors.white : AppColors.appBarTextColor,
+          color: c.isDark ? Colors.white : AppColors.appBarTextColor,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
@@ -40,7 +40,7 @@ class FailedView extends BaseView<FailedController> {
 
   @override
   Widget body(BuildContext context) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppValues.padding),
       child: Column(
@@ -70,7 +70,7 @@ class FailedView extends BaseView<FailedController> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : AppColors.textColorPrimary,
+                color: c.headline,
                 height: 1.4,
               ),
             ),
@@ -83,7 +83,7 @@ class FailedView extends BaseView<FailedController> {
                       '${_t(context, en: 'Code', sw: 'Msimbo')}: ${controller.responseCode.value}',
                       style: TextStyle(
                         fontSize: 15,
-                        color: isDark
+                        color: c.isDark
                             ? Colors.white70
                             : AppColors.textColorSecondary,
                       ),

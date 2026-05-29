@@ -4,8 +4,10 @@ import 'package:get/get.dart';
 import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../core/widget/currency_dropdown_field.dart';
+import '../../../core/widget/loading_button.dart';
 import '../controllers/add_expense_controller.dart';
 
 class AddExpenseView extends BaseView<AddExpenseController> {
@@ -43,7 +45,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   }
 
   // bool _isDark(BuildContext context) =>
-  //     Theme.of(context).brightness == Brightness.dark;
+  //     FormSurfaceColors.of(context).isDark;
 
   // String _t(BuildContext context, {required String en, required String sw}) {
   //   final code =
@@ -62,11 +64,11 @@ class AddExpenseView extends BaseView<AddExpenseController> {
 
   @override
   Widget body(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     final sectionTitleStyle = TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w500,
-      color: isDark ? Colors.white : const Color(0xFF1F2937),
+      color: c.headline,
     );
 
     return SingleChildScrollView(
@@ -78,7 +80,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
           children: [
             const SizedBox(height: 14),
             _expenseCard(
-              isDark: isDark,
+              colors: c,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -91,9 +93,8 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                   Obx(
                         () {
                       final hasProperties = controller.hasProperties;
-                      final hintColor =
-                      isDark ? const Color(0xFF8E8E93) : const Color(0xFF8A8A8A);
-                      final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+                      final hintColor = c.hint;
+                      final textColor = c.headline;
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -107,11 +108,10 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                               fontWeight: FontWeight.w500,
                               color: textColor,
                             ),
-                            dropdownColor:
-                            isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                            dropdownColor: c.dropdownBg,
                             icon: Icon(
                               Icons.expand_more_rounded,
-                              color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D),
+                              color: c.secondary,
                             ),
                             decoration: InputDecoration(
                               hintText: _isSw ? 'Chagua mjengo' : 'Choose property',
@@ -155,10 +155,8 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                     final units = controller.expenseUnitsForSelectedProperty;
                     if (units.isEmpty) return const SizedBox.shrink();
 
-                    final hintColor =
-                    isDark ? const Color(0xFF8E8E93) : const Color(0xFF8A8A8A);
-                    final textColor =
-                    isDark ? Colors.white : const Color(0xFF1F2937);
+                    final hintColor = c.hint;
+                    final textColor = c.headline;
                     final sel = controller.selectedExpenseUnitKey.value;
                     final valid =
                         sel != null && units.any((u) => u.selectionKey == sel);
@@ -182,13 +180,10 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                               fontWeight: FontWeight.w500,
                               color: textColor,
                             ),
-                            dropdownColor:
-                            isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                            dropdownColor: c.dropdownBg,
                             icon: Icon(
                               Icons.expand_more_rounded,
-                              color: isDark
-                                  ? const Color(0xFFAEAEB2)
-                                  : const Color(0xFF3D3D3D),
+                              color: c.secondary,
                             ),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
@@ -229,7 +224,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
             ),
             const SizedBox(height: 10),
             _expenseCard(
-              isDark: isDark,
+              colors: c,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -246,7 +241,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                       children: List.generate(
                         controller.expenses.length,
                             (i) => _ExpenseChip(
-                          isDark: isDark,
+                          colors: c,
                           label: controller.expenses[i],
                           selected: controller.selectedExpenseIndex.value == i,
                           onTap: () => controller.selectExpense(i),
@@ -259,7 +254,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
             ),
             const SizedBox(height: 10),
             _expenseCard(
-              isDark: isDark,
+              colors: c,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -275,7 +270,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                       Expanded(
                         flex: 2,
                         child: _field(
-                          isDark,
+                          c,
                           controller.amountController,
                           hint: '0.00',
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -301,7 +296,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                   ),
                   const SizedBox(height: 7),
                   _field(
-                    isDark,
+                    c,
                     controller.datePaidController,
                     hint: 'dd/MM/yyyy',
                     keyboardType: TextInputType.datetime,
@@ -317,7 +312,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                   ),
                   const SizedBox(height: 7),
                   _field(
-                    isDark,
+                    c,
                     controller.notesController,
                     hint: _isSw
                         ? 'Andika maelezo ya gharama (si lazima)'
@@ -329,22 +324,12 @@ class AddExpenseView extends BaseView<AddExpenseController> {
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
+            Obx(
+              () => LoadingButton(
+                label: _isSw ? 'Rekodi Muamala' : 'Record Transaction',
+                icon: Icons.receipt_long_outlined,
                 onPressed: controller.saveExpenseOffline,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(7)),
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                ),
-                icon: const Icon(Icons.receipt_long_outlined, size: 20),
-                label: Text(_isSw ? 'Rekodi Muamala' : 'Record Transaction',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700)),
+                isLoading: controller.isBusy.value,
               ),
             ),
             const SizedBox(height: 8),
@@ -354,7 +339,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
             // ),
             const SizedBox(height: 14),
             _expenseCard(
-              isDark: isDark,
+              colors: c,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -363,7 +348,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
-                      color: isDark ? Colors.white : const Color(0xFF111111),
+                      color: c.headline,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -371,14 +356,14 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                     children: [
                       Expanded(
                         child: _StatBlock(
-                          isDark: isDark,
+                          colors: c,
                           label: _isSw ? 'BAJETI ILIYOTUMIKA' : 'BUDGET USED',
                           value: '0%',
                         ),
                       ),
                       Expanded(
                         child: _StatBlock(
-                          isDark: isDark,
+                          colors: c,
                           label: _isSw ? 'HALI' : 'STATUS',
                           value: _isSw ? 'Nzuri' : 'Healthy',
                           alignEnd: true,
@@ -451,17 +436,17 @@ class AddExpenseView extends BaseView<AddExpenseController> {
     );
   }
 
-  Widget _expenseCard({required bool isDark, required Widget child}) {
+  Widget _expenseCard({required FormSurfaceColors colors, required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        color: colors.card,
         borderRadius: BorderRadius.circular(12),
-        border: isDark ? Border.all(color: const Color(0xFF3A3A3C)) : null,
+        border: colors.isDark ? Border.all(color: colors.border) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.04),
+            color: Colors.black.withValues(alpha: colors.isDark ? 0.22 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -472,7 +457,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   }
 
   Widget _field(
-      bool isDark,
+      FormSurfaceColors colors,
       TextEditingController fieldController, {
         required String hint,
         IconData? suffix,
@@ -484,23 +469,20 @@ class AddExpenseView extends BaseView<AddExpenseController> {
         bool readOnly = false,
         VoidCallback? onTap,
       }) {
-    final textColor = isDark ? const Color(0xFFE8E8ED) : const Color(0xFF5B5B5B);
-    final hintColor =
-    isDark ? const Color(0xFF8E8E93) : const Color(0xFF5B5B5B).withValues(alpha: 0.72);
+    final textColor = colors.secondary;
     final hintStyle = TextStyle(
       fontSize: 14,
-      color: hintColor,
+      color: colors.hint,
       height: isMultiline ? 1.35 : 1.2,
     );
-    final suffixIconColor =
-    isDark ? const Color(0xFFAEAEB2) : const Color(0xFF2D2D2D);
+    final suffixIconColor = colors.secondary;
 
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: minHeight),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF3A3A3C) : Colors.transparent,
+        color: colors.isDark ? colors.fill : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextFormField(
@@ -546,7 +528,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   // @override
   // Widget body(BuildContext context) {
   //   final theme = Theme.of(context);
-  //   final isDark = _isDark(context);
+  //   final c = FormSurfaceColors.of(context);
   //   return SingleChildScrollView(
   //     padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
   //     child: Form(
@@ -559,7 +541,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //             style: TextStyle(
   //               fontSize: 28,
   //               fontWeight: FontWeight.w700,
-  //               color: isDark
+  //               color: c.isDark
   //                   ? theme.colorScheme.onSurface
   //                   : AppColors.textColorPrimary,
   //               letterSpacing: -0.5,
@@ -574,7 +556,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //             ),
   //             style: TextStyle(
   //               fontSize: 15,
-  //               color: isDark
+  //               color: c.isDark
   //                   ? theme.colorScheme.onSurfaceVariant
   //                   : AppColors.textColorSecondary,
   //               height: 1.4,
@@ -607,7 +589,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //                             prefixText: 'TZS ',
   //                             prefixStyle: TextStyle(
   //                               fontSize: 16,
-  //                               color: isDark
+  //                               color: c.isDark
   //                                   ? theme.colorScheme.onSurface
   //                                   : AppColors.textColorPrimary,
   //                               fontWeight: FontWeight.w500,
@@ -642,7 +624,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //                               icon: Icon(
   //                                 Icons.calendar_today_outlined,
   //                                 size: 20,
-  //                                 color: isDark
+  //                                 color: c.isDark
   //                                     ? theme.colorScheme.onSurfaceVariant
   //                                     : AppColors.designPlaceholder,
   //                               ),
@@ -744,7 +726,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //       fontSize: 12,
   //       fontWeight: FontWeight.w600,
   //       letterSpacing: 0.5,
-  //       color: _isDark(context)
+  //       color: FormSurfaceColors.of(context).isDark
   //           ? Theme.of(context).colorScheme.onSurface
   //           : AppColors.textColorPrimary,
   //     ),
@@ -756,23 +738,23 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //   required String hint,
   // }) {
   //   final theme = Theme.of(context);
-  //   final isDark = _isDark(context);
+  //   final c = FormSurfaceColors.of(context);
   //   return InputDecoration(
   //     hintText: hint,
   //     hintStyle: TextStyle(
-  //       color: isDark
+  //       color: c.isDark
   //           ? theme.colorScheme.onSurfaceVariant
   //           : AppColors.designPlaceholder,
   //     ),
   //     filled: true,
-  //     fillColor: isDark
+  //     fillColor: c.isDark
   //         ? theme.colorScheme.surfaceContainerHigh
   //         : AppColors.colorWhite,
   //     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
   //     border: OutlineInputBorder(
   //       borderRadius: BorderRadius.circular(AppValues.radius_6),
   //       borderSide: BorderSide(
-  //         color: isDark
+  //         color: c.isDark
   //             ? theme.colorScheme.outlineVariant
   //             : AppColors.designInputBorder,
   //       ),
@@ -780,7 +762,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //     enabledBorder: OutlineInputBorder(
   //       borderRadius: BorderRadius.circular(AppValues.radius_6),
   //       borderSide: BorderSide(
-  //         color: isDark
+  //         color: c.isDark
   //             ? theme.colorScheme.outlineVariant
   //             : AppColors.designInputBorder,
   //       ),
@@ -798,7 +780,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
 
   // Widget _buildCategoryField(BuildContext context) {
   //   final theme = Theme.of(context);
-  //   final isDark = _isDark(context);
+  //   final c = FormSurfaceColors.of(context);
   //   return Obx(
   //     () => DropdownButtonFormField<String>(
   //       initialValue: controller.selectedCategory.value,
@@ -809,7 +791,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //       hint: Text(
   //         _t(context, en: 'Select Category', sw: 'Chagua Kundi'),
   //         style: TextStyle(
-  //           color: isDark
+  //           color: c.isDark
   //               ? theme.colorScheme.onSurfaceVariant
   //               : AppColors.designPlaceholder,
   //           fontSize: 16,
@@ -817,7 +799,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //       ),
   //       icon: Icon(
   //         Icons.keyboard_arrow_down,
-  //         color: isDark
+  //         color: c.isDark
   //             ? theme.colorScheme.onSurfaceVariant
   //             : AppColors.designPlaceholder,
   //       ),
@@ -842,12 +824,12 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //         return Container(
   //           width: double.infinity,
   //           decoration: BoxDecoration(
-  //             color: _isDark(context)
+  //             color: FormSurfaceColors.of(context).isDark
   //                 ? Theme.of(context).colorScheme.surfaceContainerHigh
   //                 : AppColors.colorWhite,
   //             borderRadius: BorderRadius.circular(AppValues.radius_12),
   //             border: Border.all(
-  //               color: _isDark(context)
+  //               color: FormSurfaceColors.of(context).isDark
   //                   ? Theme.of(context).colorScheme.outlineVariant
   //                   : AppColors.designInputBorder,
   //             ),
@@ -962,17 +944,17 @@ class AddExpenseView extends BaseView<AddExpenseController> {
 
   // Widget _buildTaxDeductibleCard(BuildContext context) {
   //   final theme = Theme.of(context);
-  //   final isDark = _isDark(context);
+  //   final c = FormSurfaceColors.of(context);
   //   return Obx(
   //     () => Container(
   //       padding: const EdgeInsets.all(16),
   //       decoration: BoxDecoration(
-  //         color: isDark
+  //         color: c.isDark
   //             ? theme.colorScheme.surfaceContainerHigh
   //             : AppColors.colorWhite,
   //         borderRadius: BorderRadius.circular(AppValues.radius_12),
   //         border: Border.all(
-  //           color: isDark
+  //           color: c.isDark
   //               ? theme.colorScheme.outlineVariant
   //               : AppColors.designInputBorder,
   //         ),
@@ -999,7 +981,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //                   style: TextStyle(
   //                     fontSize: 16,
   //                     fontWeight: FontWeight.w600,
-  //                     color: isDark
+  //                     color: c.isDark
   //                         ? theme.colorScheme.onSurface
   //                         : AppColors.textColorPrimary,
   //                   ),
@@ -1013,7 +995,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   //                   ),
   //                   style: TextStyle(
   //                     fontSize: 13,
-  //                     color: isDark
+  //                     color: c.isDark
   //                         ? theme.colorScheme.onSurfaceVariant
   //                         : AppColors.textColorSecondary,
   //                   ),
@@ -1041,22 +1023,21 @@ class AddExpenseView extends BaseView<AddExpenseController> {
 
 class _StatBlock extends StatelessWidget {
   const _StatBlock({
-    required this.isDark,
+    required this.colors,
     required this.label,
     required this.value,
     this.alignEnd = false,
   });
 
-  final bool isDark;
+  final FormSurfaceColors colors;
   final String label;
   final String value;
   final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
-    final labelColor =
-    isDark ? const Color(0xFF8E8E93) : const Color(0xFF8B8B8B);
-    final valueMuted = isDark ? Colors.white : const Color(0xFF111111);
+    final labelColor = colors.hint;
+    final valueMuted = colors.headline;
 
     return Column(
       crossAxisAlignment:
@@ -1078,7 +1059,7 @@ class _StatBlock extends StatelessWidget {
             fontSize: 11.5,
             fontWeight: FontWeight.w800,
             color: (value == 'Healthy' || value == 'Nzuri')
-                ? const Color(0xFF006D73)
+                ? colors.tokens.accent
                 : valueMuted,
           ),
         ),
@@ -1089,13 +1070,13 @@ class _StatBlock extends StatelessWidget {
 
 class _ExpenseChip extends StatelessWidget {
   const _ExpenseChip({
-    required this.isDark,
+    required this.colors,
     required this.label,
     this.selected = false,
     required this.onTap,
   });
 
-  final bool isDark;
+  final FormSurfaceColors colors;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -1103,11 +1084,9 @@ class _ExpenseChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = selected
-        ? const Color(0xFF006D73)
-        : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1EE));
-    final fg = selected
-        ? Colors.white
-        : (isDark ? const Color(0xFFE8E8ED) : const Color(0xFF1E1E1E));
+        ? colors.tokens.accent
+        : (colors.isDark ? colors.fill : const Color(0xFFF1F1EE));
+    final fg = selected ? Colors.white : colors.headline;
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(9),

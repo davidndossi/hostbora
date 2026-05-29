@@ -17,6 +17,8 @@ import '../model/reg_request.dart';
 import '../model/update_preference_request.dart';
 import '../model/user_profile_request.dart';
 import '../model/send_sms_request.dart';
+import '../model/send_whatsapp_bulk_request.dart';
+import '../model/send_whatsapp_template_request.dart';
 import '../model/update_request.dart';
 import '../model/create_calendar_subscription_request.dart';
 import '../model/update_calendar_subscription_request.dart';
@@ -62,6 +64,22 @@ abstract class AppRepository {
   Future<GeneralResponse> updateNotification(String id, String action);
 
   Future<GeneralResponse> sendSms(SendSmsRequest request);
+
+  Future<GeneralResponse> getWhatsAppStatus();
+
+  Future<GeneralResponse> saveWhatsAppCredentials(Map<String, dynamic> request);
+
+  Future<GeneralResponse> sendWhatsApp(SendSmsRequest request);
+
+  Future<GeneralResponse> sendWhatsAppBulk(SendWhatsAppBulkRequest request);
+
+  Future<GeneralResponse> sendWhatsAppTemplate(SendWhatsAppTemplateRequest request);
+
+  Future<GeneralResponse> sendWhatsAppTemplateBulk(
+    SendWhatsAppTemplateBulkRequest request,
+  );
+
+  Future<GeneralResponse> getAdminWhatsAppCredentials();
 
   Future<GeneralResponse> sendAiRequest(Map<String, dynamic> request);
 

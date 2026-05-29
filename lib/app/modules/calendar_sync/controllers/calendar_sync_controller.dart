@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/base/feedback_extensions.dart';
+import '../../../core/widget/undo_snackbar.dart';
 import '../../../data/model/calendar_subscription.dart';
 import '../../../data/model/calendar_sync_request.dart';
 import '../../../data/model/create_calendar_subscription_request.dart';
@@ -234,11 +236,23 @@ class CalendarSyncController extends BaseController {
     );
     if (confirmed != true) return;
 
+    final snapshot = sub;
     await callDataService(
       _repository.deleteCalendarSubscription(sub.id),
       onSuccess: (_) {
         subscriptions.removeWhere((s) => s.id == sub.id);
-        showSuccessMessage('Calendar link removed');
+        showSuccessWithHaptic('Calendar link removed');
+        final ctx = Get.context;
+        if (ctx == null || !ctx.mounted) return;
+        UndoSnackBar.show(
+          ctx,
+          message: 'Calendar link removed',
+          onUndo: () {
+            if (!subscriptions.any((s) => s.id == snapshot.id)) {
+              subscriptions.add(snapshot);
+            }
+          },
+        );
       },
     );
   }

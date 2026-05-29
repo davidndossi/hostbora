@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/property_unit_floor.dart';
@@ -17,9 +18,6 @@ class EditListingView extends BaseView<EditListingController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
-
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
@@ -30,6 +28,7 @@ class EditListingView extends BaseView<EditListingController> {
 
   @override
   Widget body(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
     return Obx(() {
       if (controller.loading.value) {
         return const Center(child: CircularProgressIndicator());
@@ -43,13 +42,12 @@ class EditListingView extends BaseView<EditListingController> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: _isDark(context) ? Colors.white70 : AppColors.textColorSecondary,
+                color: c.secondary,
               ),
             ),
           ),
         );
       }
-      final dividerColor = _isDark(context) ? const Color(0xFF3A3A3C) : const Color(0xFFEDEDED);
       return Column(
         children: [
           Expanded(
@@ -75,7 +73,7 @@ class EditListingView extends BaseView<EditListingController> {
                       maxLines: 3,
                       style: TextStyle(
                         fontSize: 16,
-                        color: _isDark(context) ? Colors.white : const Color(0xFF2E2E2E),
+                        color: c.headline,
                       ),
                       decoration: _inputDecoration(
                         context,
@@ -119,9 +117,9 @@ class EditListingView extends BaseView<EditListingController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 20),
-                          Divider(height: 1, color: dividerColor),
+                          Divider(height: 1, color: c.divider),
                           const SizedBox(height: 18),
-                          _buildUnitsSection(context, isDark: _isDark(context)),
+                          _buildUnitsSection(context),
                         ],
                       ),
                     const SizedBox(height: 28),
@@ -156,9 +154,8 @@ class EditListingView extends BaseView<EditListingController> {
     );
   }
 
-  Widget _buildUnitsSection(BuildContext context, {required bool isDark}) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
-    final labelColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280);
+  Widget _buildUnitsSection(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
     final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +168,7 @@ class EditListingView extends BaseView<EditListingController> {
               controller.apartmentUnits.length,
               (i) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _addedUnitTile(context, i, isDark: isDark),
+                child: _addedUnitTile(context, i),
               ),
             ),
           ),
@@ -183,18 +180,16 @@ class EditListingView extends BaseView<EditListingController> {
             fontSize: 10,
             letterSpacing: 1.2,
             fontWeight: FontWeight.w700,
-            color: labelColor,
+            color: c.hint,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF8F8F8),
+            color: c.tileBg,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFEDEDED),
-            ),
+            border: Border.all(color: c.divider),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,12 +200,12 @@ class EditListingView extends BaseView<EditListingController> {
                   fontSize: 10,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.w700,
-                  color: labelColor,
+                  color: c.hint,
                 ),
               ),
               const SizedBox(height: 8),
               _plainInput(
-                isDark: isDark,
+                context: context,
                 fieldController: controller.draftUnitNameController,
                 hint: _t(context, en: 'e.g. 4B or Unit 1', sw: 'mf. 4B au Unit 1'),
               ),
@@ -221,14 +216,13 @@ class EditListingView extends BaseView<EditListingController> {
                   fontSize: 10,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.w700,
-                  color: labelColor,
+                  color: c.hint,
                 ),
               ),
               const SizedBox(height: 8),
               Obx(
                 () => _unitFloorDropdown(
                   context: context,
-                  isDark: isDark,
                   l10n: l10n,
                   value: controller.draftUnitFloor.value,
                   onChanged: controller.updateDraftUnitFloor,
@@ -241,7 +235,7 @@ class EditListingView extends BaseView<EditListingController> {
                   fontSize: 10,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.w700,
-                  color: labelColor,
+                  color: c.hint,
                 ),
               ),
               const SizedBox(height: 8),
@@ -253,7 +247,7 @@ class EditListingView extends BaseView<EditListingController> {
                 inputFormatters: [ThousandsSeparatorInputFormatter()],
                 style: TextStyle(
                   fontSize: 16,
-                  color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+                  color: c.headline,
                 ),
                 decoration: InputDecoration(
                   prefix: Text(
@@ -261,12 +255,12 @@ class EditListingView extends BaseView<EditListingController> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF4A4A4A),
+                      color: c.secondary,
                     ),
                   ),
                   hintText: '0.00',
                   filled: true,
-                  fillColor: fill,
+                  fillColor: c.fill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -281,7 +275,7 @@ class EditListingView extends BaseView<EditListingController> {
                   fontSize: 10,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.w700,
-                  color: labelColor,
+                  color: c.hint,
                 ),
               ),
               const SizedBox(height: 8),
@@ -292,11 +286,11 @@ class EditListingView extends BaseView<EditListingController> {
                 textCapitalization: TextCapitalization.sentences,
                 style: TextStyle(
                   fontSize: 16,
-                  color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+                  color: c.headline,
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: fill,
+                  fillColor: c.fill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -312,17 +306,16 @@ class EditListingView extends BaseView<EditListingController> {
                   icon: Icon(
                     Icons.add_circle_outline,
                     size: 20,
-                    color: isDark ? const Color(0xFF5EC9C3) : null,
+                    color: c.isDark ? c.tokens.accent : null,
                   ),
                   label: Text(
                     _t(context, en: 'Add unit', sw: 'Ongeza uniti'),
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: isDark ? const Color(0xFF5EC9C3) : const Color(0xFF2E2E2E),
-                    side: BorderSide(
-                      color: isDark ? const Color(0xFF48484A) : const Color(0xFFE5E5E5),
-                    ),
+                    foregroundColor:
+                        c.isDark ? c.tokens.accent : c.headline,
+                    side: BorderSide(color: c.border),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -337,34 +330,29 @@ class EditListingView extends BaseView<EditListingController> {
 
   Widget _unitFloorDropdown({
     required BuildContext context,
-    required bool isDark,
     required AppLocalizations l10n,
     required int value,
     required ValueChanged<int?> onChanged,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
-    final textColor = isDark ? Colors.white : const Color(0xFF2E2E2E);
+    final c = FormSurfaceColors.of(context);
     final floor = PropertyUnitFloor.indices.contains(value)
         ? value
         : PropertyUnitFloor.defaultIndex;
     return DropdownButtonFormField<int>(
       initialValue: floor,
       isExpanded: true,
-      icon: Icon(
-        Icons.expand_more,
-        color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D),
-      ),
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor),
+      icon: Icon(Icons.expand_more, color: c.secondary),
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: c.headline),
       decoration: InputDecoration(
         filled: true,
-        fillColor: fill,
+        fillColor: c.fill,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      dropdownColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+      dropdownColor: c.dropdownBg,
       items: PropertyUnitFloor.indices
           .map(
             (f) => DropdownMenuItem<int>(
@@ -377,17 +365,16 @@ class EditListingView extends BaseView<EditListingController> {
     );
   }
 
-  Widget _addedUnitTile(BuildContext context, int index, {required bool isDark}) {
+  Widget _addedUnitTile(BuildContext context, int index) {
+    final c = FormSurfaceColors.of(context);
     final u = controller.apartmentUnits[index];
     final l10n = AppLocalizations.of(context)!;
-    final tileBg = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF8F8F8);
-    final borderColor = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFEDEDED);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tileBg,
+        color: c.tileBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: c.divider),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,7 +388,7 @@ class EditListingView extends BaseView<EditListingController> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                    color: c.headline,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -410,7 +397,7 @@ class EditListingView extends BaseView<EditListingController> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF374151),
+                    color: c.secondary,
                   ),
                 ),
                 if (u.unitDescription.isNotEmpty) ...[
@@ -420,7 +407,7 @@ class EditListingView extends BaseView<EditListingController> {
                     style: TextStyle(
                       fontSize: 13,
                       height: 1.35,
-                      color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF4B5563),
+                      color: c.hint,
                     ),
                   ),
                 ],
@@ -429,10 +416,7 @@ class EditListingView extends BaseView<EditListingController> {
           ),
           IconButton(
             onPressed: () => controller.removeApartmentUnit(index),
-            icon: Icon(
-              Icons.close_rounded,
-              color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
-            ),
+            icon: Icon(Icons.close_rounded, color: c.hint),
             tooltip: _t(context, en: 'Remove unit', sw: 'Ondoa uniti'),
             visualDensity: VisualDensity.compact,
           ),
@@ -442,26 +426,26 @@ class EditListingView extends BaseView<EditListingController> {
   }
 
   Widget _plainInput({
-    required bool isDark,
+    required BuildContext context,
     required TextEditingController fieldController,
     required String hint,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
+    final c = FormSurfaceColors.of(context);
     return TextField(
       controller: fieldController,
       textInputAction: TextInputAction.next,
       style: TextStyle(
         fontSize: 14,
-        color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+        color: c.headline,
       ),
       textCapitalization: TextCapitalization.words,
       decoration: InputDecoration(
         filled: true,
-        fillColor: fill,
+        fillColor: c.fill,
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 14,
-          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+          color: c.hint,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -473,41 +457,33 @@ class EditListingView extends BaseView<EditListingController> {
   }
 
   Widget _buildLabel(BuildContext context, String text) {
+    final c = FormSurfaceColors.of(context);
     return Text(
       text,
       style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.5,
-        color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+        color: c.headline,
       ),
     );
   }
 
   InputDecoration _inputDecoration(BuildContext context, {required String hint}) {
+    final c = FormSurfaceColors.of(context);
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(
-        color: _isDark(context) ? Colors.white70 : AppColors.designPlaceholder,
-      ),
+      hintStyle: TextStyle(color: c.hint),
       filled: true,
-      fillColor: _isDark(context) ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+      fillColor: c.inputFill,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: BorderSide(
-          color: _isDark(context)
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.designInputBorder,
-        ),
+        borderSide: BorderSide(color: c.inputBorder),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: BorderSide(
-          color: _isDark(context)
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.designInputBorder,
-        ),
+        borderSide: BorderSide(color: c.inputBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),

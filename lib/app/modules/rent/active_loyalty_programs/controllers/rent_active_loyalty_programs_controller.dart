@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/base/feedback_extensions.dart';
 import '../../../../data/local/db/rent_loyalty_offer_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 
@@ -93,9 +94,39 @@ class RentActiveLoyaltyProgramsController extends BaseController {
   void onOpenProfile() {}
 
   Future<void> deleteOffer(int id) async {
-    await _loyaltyLocal.deleteById(id);
-    await loadOffers();
-    showSuccessMessage('Offer deleted');
+    ActiveLoyaltyProgramItem? offer;
+    for (final o in offers) {
+      if (o.id == id) {
+        offer = o;
+        break;
+      }
+    }
+    final offerCopy = offer;
+    if (offerCopy == null) return;
+
+    final confirmed = await confirmDestructive(
+      title: 'Delete loyalty offer?',
+      message: 'Remove "${offerCopy.title}"?',
+      confirmLabel: 'Delete',
+    );
+    if (!confirmed) return;
+
+    await runDestructiveWithUndo(
+      message: 'Offer deleted',
+      action: () async {
+        await _loyaltyLocal.deleteById(id);
+        await loadOffers();
+      },
+      onUndo: () async {
+        await _loyaltyLocal.insert(
+          minStayMonths: offerCopy.minStayMonths,
+          revenueThresholdTsh: offerCopy.revenueThresholdTsh,
+          offerType: offerCopy.title,
+          terms: offerCopy.terms,
+        );
+        await loadOffers();
+      },
+    );
   }
 
   Future<void> openEditOfferDialog(ActiveLoyaltyProgramItem offer) async {

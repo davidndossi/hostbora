@@ -2,9 +2,11 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/rent_portfolio_metrics.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/service/workspace_context_service.dart';
@@ -36,11 +38,13 @@ class RentHubController extends BaseController {
     IncomeLocalDataSource? incomeLocal,
     ExpenseLocalDataSource? expenseLocal,
     PropertyLocalDataSource? propertyLocal,
+    TenantLocalDataSource? tenantLocal,
     PreferenceManager? preferenceManager,
     WorkspaceContextService? workspaceContext,
   })  : _incomeLocal = incomeLocal ?? Get.find<IncomeLocalDataSource>(),
         _expenseLocal = expenseLocal ?? Get.find<ExpenseLocalDataSource>(),
         _propertyLocal = propertyLocal ?? Get.find<PropertyLocalDataSource>(),
+        _tenantLocal = tenantLocal ?? Get.find<TenantLocalDataSource>(),
         _preferenceManager = preferenceManager ??
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
         workspaceContext = workspaceContext ?? Get.find<WorkspaceContextService>();
@@ -51,6 +55,7 @@ class RentHubController extends BaseController {
   final IncomeLocalDataSource _incomeLocal;
   final ExpenseLocalDataSource _expenseLocal;
   final PropertyLocalDataSource _propertyLocal;
+  final TenantLocalDataSource _tenantLocal;
   final PreferenceManager _preferenceManager;
   final WorkspaceContextService workspaceContext;
 
@@ -59,6 +64,10 @@ class RentHubController extends BaseController {
   final _incomeTotal = 0.0.obs;
   final _expenseTotal = 0.0.obs;
   final _profitTrendPercent = 0.0.obs;
+  final _monthlyIncome = 0.0.obs;
+  final _occupancyPercent = 0.obs;
+  final _activeLeases = 0.obs;
+  final _totalArrears = 0.0.obs;
 
   final listings = <RentHubListingItem>[].obs;
 
@@ -76,6 +85,13 @@ class RentHubController extends BaseController {
     final sign = p > 0 ? '+' : '';
     return '$sign${p.toStringAsFixed(1)}%';
   }
+
+  String get monthlyIncomeLabel =>
+      _currency.formatBase(_monthlyIncome.value.round());
+  String get occupancyLabel => '${_occupancyPercent.value}%';
+  String get activeLeasesLabel => '${_activeLeases.value}';
+  String get totalArrearsLabel =>
+      _currency.formatBase(_totalArrears.value.round());
 
   final selectedBottomNavIndex = 0.obs;
 
@@ -148,8 +164,10 @@ class RentHubController extends BaseController {
       userId: userId,
       workspaceType: workspaceType,
     );
+    final rentProperties =
+        propertyRows.where((p) => p.workspaceType.trim().toLowerCase() == 'rent');
     listings.assignAll(
-      propertyRows.map((p) {
+      rentProperties.map((p) {
         return RentHubListingItem(
           hubId: p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}',
           imageAsset: '',
@@ -164,6 +182,18 @@ class RentHubController extends BaseController {
         );
       }),
     );
+
+    final tenants = await _tenantLocal.getAllNewestFirstByWorkspace('rent');
+    final portfolio = await RentPortfolioMetricsCalculator.compute(
+      properties: rentProperties.toList(),
+      tenants: tenants,
+      incomeRows: incomeRows,
+      now: now,
+    );
+    _monthlyIncome.value = portfolio.monthlyIncome;
+    _occupancyPercent.value = portfolio.occupancyPercent;
+    _activeLeases.value = portfolio.activeLeases;
+    _totalArrears.value = portfolio.totalArrears;
   }
 
   void onBottomNavTap(int index) => selectedBottomNavIndex.value = index;
@@ -192,6 +222,11 @@ class RentHubController extends BaseController {
       await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
     }
   }
+
+  void openTenancyInsights() =>
+      Get.toNamed(Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER);
+
+  void openManagePayments() => Get.toNamed(Routes.RENT_MANAGE_PAYMENTS);
 
   Future<void> openHostDashboard() async {
     final hostName = (await _preferenceManager.getString(

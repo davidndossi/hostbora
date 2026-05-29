@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/base/feedback_extensions.dart';
 import '../../../data/local/db/property_listing_units_sync.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
@@ -161,8 +162,8 @@ class EditUnitController extends BaseController {
     final unitsJson = jsonEncode(_units.map((u) => u.toJson()).toList());
 
     saving.value = true;
-    showLoading();
-    try {
+    await runBusy(() async {
+      try {
       await _propertyLocal.update(
         PropertyRecord(
           id: property.id,
@@ -204,14 +205,14 @@ class EditUnitController extends BaseController {
       }
 
       Get.back(result: true);
-      showSuccessMessage(_isSw ? 'Unit imehaririwa' : 'Unit updated');
+      showSuccessWithHaptic(_isSw ? 'Unit imehaririwa' : 'Unit updated');
     } catch (e, st) {
       logger.e('EditUnit save $e $st');
       showErrorMessage(_isSw ? 'Imeshindwa kuhifadhi unit.' : 'Could not save unit changes.');
     } finally {
-      hideLoading();
       saving.value = false;
     }
+    });
   }
 
   @override

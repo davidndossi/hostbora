@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 import 'package:paa_yangu/app/modules/rent/widgets/rent_ui.dart';
 
@@ -8,7 +11,6 @@ import '../controllers/rent_host_dashboard_payment_alerts_controller.dart';
 class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardPaymentAlertsController> {
   RentHostDashboardPaymentAlertsView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
-  bool _isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(
@@ -17,13 +19,13 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
 
   @override
   Color pageBackgroundColor(BuildContext context) =>
-      _isDark(context) ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFFBFAF6);
+      FormSurfaceColors.of(context).isDark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFFBFAF6);
 
   @override
   Widget body(BuildContext context) => Obx(() {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     if (controller.loadingRealData.value) {
-      return const Center(child: CircularProgressIndicator());
+      return const DefaultScreenSkeleton();
     }
     final d = controller.realData.value;
     if (d == null) {
@@ -47,7 +49,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
               fontSize: 10,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
-              color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+              color: c.isDark ? Colors.white70 : const Color(0xFF6B7280),
             ),
           ),
           const SizedBox(height: 8),
@@ -60,7 +62,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
               fontSize: 22,
               fontWeight: FontWeight.w700,
               height: 0.95,
-              color: isDark ? Colors.white : const Color(0xFF111827),
+              color: c.isDark ? Colors.white : const Color(0xFF111827),
             ),
           ),
           const SizedBox(height: 14),
@@ -71,10 +73,10 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+                color: c.isDark ? const Color(0xFF1F1F1F) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF323232) : const Color(0xFFE8E6E1),
+                  color: c.isDark ? const Color(0xFF323232) : const Color(0xFFE8E6E1),
                 ),
               ),
               child: Text(
@@ -83,7 +85,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
                     : 'No tenants with pending balance found in the lease period.',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  color: c.isDark ? Colors.white70 : const Color(0xFF6B7280),
                 ),
               ),
             )
@@ -111,7 +113,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
               fontFamily: 'serif',
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF111827),
+              color: c.isDark ? Colors.white : const Color(0xFF111827),
             ),
           ),
           const SizedBox(height: 10),
@@ -136,7 +138,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
           //   trailing: Container(
           //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           //     decoration: BoxDecoration(
-          //       color: isDark ? const Color(0xFF30364A) : const Color(0xFFEEF2FF),
+          //       color: c.isDark ? const Color(0xFF30364A) : const Color(0xFFEEF2FF),
           //       borderRadius: BorderRadius.circular(10),
           //     ),
           //     child: Text(
@@ -144,7 +146,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
           //       style: TextStyle(
           //         fontSize: 10,
           //         fontWeight: FontWeight.w700,
-          //         color: isDark ? Colors.white : null,
+          //         color: c.isDark ? Colors.white : null,
           //       ),
           //     ),
           //   ),
@@ -195,20 +197,20 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
     required String label,
     required String value,
   }) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        color: c.isDark ? const Color(0xFF1F1F1F) : Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isDark ? const Color(0xFF323232) : const Color(0xFFEAE8E0)),
+        border: Border.all(color: c.isDark ? const Color(0xFF323232) : const Color(0xFFEAE8E0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 10, color: isDark ? Colors.white70 : const Color(0xFF6B7280)),
+            style: TextStyle(fontSize: 10, color: c.isDark ? Colors.white70 : const Color(0xFF6B7280)),
           ),
           const SizedBox(height: 4),
           Text(
@@ -216,7 +218,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 17,
-              color: isDark ? Colors.white : null,
+              color: c.isDark ? Colors.white : null,
             ),
           ),
         ],
@@ -225,7 +227,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
   }
 
   Widget _alertsHeader(BuildContext context) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Row(
       children: [
         Expanded(
@@ -235,7 +237,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
               fontFamily: 'serif',
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF111827),
+              color: c.isDark ? Colors.white : const Color(0xFF111827),
             ),
           ),
         ),
@@ -248,16 +250,16 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
   }
 
   Widget _alertCard(BuildContext context, HostPaymentAlertItem item) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        color: c.isDark ? const Color(0xFF1F1F1F) : Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.07),
+            color: Colors.black.withValues(alpha: c.isDark ? 0.25 : 0.07),
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -273,7 +275,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: const Color(0xFFD32F2F), width: 2),
-                  color: isDark ? const Color(0xFF2A2E36) : const Color(0xFF111827),
+                  color: c.isDark ? const Color(0xFF2A2E36) : const Color(0xFF111827),
                 ),
                 child: const Icon(Icons.person, color: Colors.white),
               ),
@@ -288,12 +290,12 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
                         fontFamily: 'serif',
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
-                        color: isDark ? Colors.white : const Color(0xFF111827),
+                        color: c.isDark ? Colors.white : const Color(0xFF111827),
                       ),
                     ),
                     Text(
                       item.propertyLabel,
-                      style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                      style: TextStyle(fontSize: 11, color: c.isDark ? Colors.white70 : const Color(0xFF6B7280)),
                     ),
                   ],
                 ),
@@ -332,7 +334,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
             child: LinearProgressIndicator(
               minHeight: 8,
               value: item.progressPaid,
-              backgroundColor: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE5E7EB),
+              backgroundColor: c.isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE5E7EB),
               color: const Color(0xFF0A5C5C),
             ),
           ),
@@ -358,18 +360,18 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
     required String label,
     required String value,
   }) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 10, color: isDark ? Colors.white70 : const Color(0xFF6B7280))),
+        Text(label, style: TextStyle(fontSize: 10, color: c.isDark ? Colors.white70 : const Color(0xFF6B7280))),
         const SizedBox(height: 2),
         Text(
           value,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 12,
-            color: isDark ? Colors.white : null,
+            color: c.isDark ? Colors.white : null,
           ),
         ),
       ],
@@ -415,14 +417,14 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
   }
 
   Widget _compactAlertRow(BuildContext context, HostPaymentAlertItem item) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        color: c.isDark ? const Color(0xFF1F1F1F) : Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isDark ? const Color(0xFF323232) : const Color(0xFFE7E5DD)),
+        border: Border.all(color: c.isDark ? const Color(0xFF323232) : const Color(0xFFE7E5DD)),
       ),
       child: Row(
         children: [
@@ -437,12 +439,12 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
-                    color: isDark ? Colors.white : null,
+                    color: c.isDark ? Colors.white : null,
                   ),
                 ),
                 Text(
                   item.propertyLabel,
-                  style: TextStyle(fontSize: 10, color: isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                  style: TextStyle(fontSize: 10, color: c.isDark ? Colors.white70 : const Color(0xFF6B7280)),
                 ),
               ],
             ),
@@ -452,11 +454,11 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
             children: [
               Text(
                 'Tsh ${controller.formatMoney(item.balance)}',
-                style: TextStyle(fontWeight: FontWeight.w700, color: isDark ? Colors.white : null),
+                style: TextStyle(fontWeight: FontWeight.w700, color: c.isDark ? Colors.white : null),
               ),
               Text(
                 controller.formatDueDate(item.dueDate),
-                style: TextStyle(fontSize: 10, color: isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                style: TextStyle(fontSize: 10, color: c.isDark ? Colors.white70 : const Color(0xFF6B7280)),
               ),
             ],
           ),
@@ -476,13 +478,13 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
     required String value,
     required Widget trailing,
   }) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        color: c.isDark ? const Color(0xFF1F1F1F) : Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isDark ? const Color(0xFF323232) : const Color(0xFFE8E6E1)),
+        border: Border.all(color: c.isDark ? const Color(0xFF323232) : const Color(0xFFE8E6E1)),
       ),
       child: Row(
         children: [
@@ -502,7 +504,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 10, color: isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                  style: TextStyle(fontSize: 10, color: c.isDark ? Colors.white70 : const Color(0xFF6B7280)),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -510,7 +512,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : null,
+                    color: c.isDark ? Colors.white : null,
                   ),
                 ),
               ],

@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../controllers/welcome_back_controller.dart';
 
 class WelcomeBackView extends BaseView<WelcomeBackController> {
   WelcomeBackView({super.key});
-
-  bool _isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -36,7 +35,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: _isDark(context) ? Colors.white : AppColors.designSecondaryText,
+                      color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.designSecondaryText,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -49,7 +48,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                               : appLocalization.welcomeAuthenticatingBiometrics,
                       style: TextStyle(
                         fontSize: 15,
-                        color: _isDark(context)
+                        color: FormSurfaceColors.of(context).isDark
                             ? Colors.white70
                             : AppColors.designPlaceholder,
                       ),
@@ -78,7 +77,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: _isDark(context)
+                              color: FormSurfaceColors.of(context).isDark
                                   ? Colors.white70
                                   : AppColors.designPlaceholder,
                               letterSpacing: 0.5,
@@ -156,7 +155,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
-                color: _isDark(context) ? Colors.white : AppColors.designSecondaryText,
+                color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.designSecondaryText,
               ),
               textAlign: TextAlign.center,
             ),
@@ -165,7 +164,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               appLocalization.welcomeSignedInContinueMessage,
               style: TextStyle(
                 fontSize: 15,
-                color: _isDark(context) ? Colors.white70 : AppColors.designPlaceholder,
+                color: FormSurfaceColors.of(context).hint,
               ),
               textAlign: TextAlign.center,
             ),
@@ -210,7 +209,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                 : IconButton(
                     onPressed: controller.close,
                     icon: const Icon(Icons.close),
-                    color: _isDark(context) ? Colors.white : AppColors.designSecondaryText,
+                    color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.designSecondaryText,
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.transparent,
                     ),
@@ -248,7 +247,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               color: AppColors.designAccent,
               width: 2,
             ),
-            color: _isDark(context) ? const Color(0xFF1F1F1F) : Colors.white,
+            color: FormSurfaceColors.of(context).inputFill,
             boxShadow: [
               BoxShadow(
                 color: AppColors.designAccent.withValues(alpha: 0.12),
@@ -304,14 +303,14 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
       decoration: BoxDecoration(
-        color: _isDark(context) ? const Color(0xFF1B1B1B) : Colors.white,
+        color: FormSurfaceColors.of(context).isDark ? const Color(0xFF1B1B1B) : Colors.white,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         border: Border.all(
-          color: _isDark(context) ? const Color(0xFF333333) : AppColors.designInputBorder,
+          color: FormSurfaceColors.of(context).isDark ? const Color(0xFF333333) : AppColors.designInputBorder,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: _isDark(context) ? 0.2 : 0.06),
+            color: Colors.black.withValues(alpha: FormSurfaceColors.of(context).isDark ? 0.2 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -362,7 +361,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                color: _isDark(context) ? Colors.white : AppColors.designSecondaryText,
+                color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.designSecondaryText,
               ),
             ),
           ),
@@ -388,7 +387,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
           // ),
           child: Icon(
             Icons.backspace_outlined,
-            color: _isDark(context) ? Colors.white70 : AppColors.designAccent,
+            color: FormSurfaceColors.of(context).isDark ? Colors.white70 : AppColors.designAccent,
             size: 20,
           ),
         ),

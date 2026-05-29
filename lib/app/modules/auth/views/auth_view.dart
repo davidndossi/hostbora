@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -98,9 +100,7 @@ class AuthView extends BaseView<AuthController> {
                 controller: controller.msisdnController,
                 keyboardType: TextInputType.phone,
                 style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : AppColors.textColorPrimary,
+                  color: context.tokens.textPrimary,
                 ),
                 decoration: _inputDecoration(
                   context: context,
@@ -117,9 +117,7 @@ class AuthView extends BaseView<AuthController> {
               keyboardType: TextInputType.visiblePassword,
               obscureText: true,
               style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : AppColors.textColorPrimary,
+                color: context.tokens.textPrimary,
               ),
               decoration: _inputDecoration(
                 context: context,
@@ -198,7 +196,7 @@ class AuthView extends BaseView<AuthController> {
       hintText: hint,
       errorText: errorText,
       filled: true,
-      fillColor: isDark ? const Color(0xFF2C2C2E) : AppColors.colorWhite,
+      fillColor: isDark ? context.tokens.cardBackground : AppColors.colorWhite,
       labelStyle: TextStyle(
         color: isDark ? const Color(0xFFB0B3BA) : AppColors.designPlaceholder,
       ),
@@ -212,7 +210,7 @@ class AuthView extends BaseView<AuthController> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
         borderSide: BorderSide(
-          color: isDark ? const Color(0xFF3A3A3C) : AppColors.designInputBorder,
+          color: isDark ? context.tokens.elevatedSurface : AppColors.designInputBorder,
         ),
       ),
       focusedBorder: OutlineInputBorder(

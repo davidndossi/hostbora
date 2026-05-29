@@ -4,12 +4,14 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/haptic_feedback_util.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../routes/app_pages.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
 import '../../listing_details/controllers/rent_listing_details_controller.dart';
+import '../../expected_payment_schedule/controllers/rent_expected_payment_schedule_controller.dart';
 import '../../tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 class RentAddTenantFormController extends BaseController {
@@ -39,6 +41,7 @@ class RentAddTenantFormController extends BaseController {
   final gender = 'Female'.obs;
   final rentFrequency = 'Per Month'.obs;
   final isWhatsapp = false.obs;
+  final saving = false.obs;
 
   final leaseStart = Rx<DateTime?>(null);
   final leaseEnd = Rx<DateTime?>(null);
@@ -234,7 +237,11 @@ class RentAddTenantFormController extends BaseController {
   }
 
   Future<void> saveTenant() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (saving.value) return;
+    if (!(formKey.currentState?.validate() ?? false)) {
+      hapticValidationError();
+      return;
+    }
 
     if (leaseStart.value == null || leaseEnd.value == null) {
       showErrorMessage('Lease period is required');
@@ -254,54 +261,61 @@ class RentAddTenantFormController extends BaseController {
       return;
     }
 
-    final draft = _draftForKey(selectedUnitKey.value);
-    final unitLabel = draft?.unitName.trim() ?? '';
-    final apartmentUnitId = draft?.unitId.trim() ?? '';
-    await _markUnitOccupied(
-      unitId: apartmentUnitId,
-      unitName: unitLabel,
-      tenantName: tenantNameController.text.trim(),
-    );
-
-    await _tenantLocal.insert(
-      propertyLabel: propertyContextLabel.value.trim(),
-      propertyRef: propertyRef.value.trim(),
-      apartmentUnitId: apartmentUnitId,
-      unitLabel: unitLabel,
-      tenantName: tenantNameController.text.trim(),
-      gender: gender.value,
-      rentAmountValue: amount,
-      rentFrequency: rentFrequency.value,
-      phoneNumber: phoneController.text.trim(),
-      email: emailController.text.trim(),
-      isWhatsapp: isWhatsapp.value,
-      leaseStartIso: DateFormat('yyyy-MM-dd').format(leaseStart.value!),
-      leaseEndIso: DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
-      contractFilePath: '',
-      contractFileName: '',
-    );
-
-    await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
-    await RentListingDetailsController.refreshIfRegistered();
-
-    showSuccessMessage('Tenant saved offline');
-
-    final addIncome = await _promptAddIncomeAfterTenant();
-    if (addIncome == true) {
-      final nav = _incomeNavigationArgs();
-      Get.back(result: true);
-      await Get.toNamed(
-        Routes.RENT_ADD_INCOME_FORM,
-        parameters: {
-          if (nav['property'] != null) 'property': nav['property'] as String,
-          if (nav['propertyRef'] != null) 'propertyRef': nav['propertyRef'] as String,
-        },
-        arguments: nav,
+    saving.value = true;
+    try {
+      final draft = _draftForKey(selectedUnitKey.value);
+      final unitLabel = draft?.unitName.trim() ?? '';
+      final apartmentUnitId = draft?.unitId.trim() ?? '';
+      await _markUnitOccupied(
+        unitId: apartmentUnitId,
+        unitName: unitLabel,
+        tenantName: tenantNameController.text.trim(),
       );
-      return;
-    }
 
-    Get.back(result: true);
+      await _tenantLocal.insert(
+        propertyLabel: propertyContextLabel.value.trim(),
+        propertyRef: propertyRef.value.trim(),
+        apartmentUnitId: apartmentUnitId,
+        unitLabel: unitLabel,
+        tenantName: tenantNameController.text.trim(),
+        gender: gender.value,
+        rentAmountValue: amount,
+        rentFrequency: rentFrequency.value,
+        phoneNumber: phoneController.text.trim(),
+        email: emailController.text.trim(),
+        isWhatsapp: isWhatsapp.value,
+        leaseStartIso: DateFormat('yyyy-MM-dd').format(leaseStart.value!),
+        leaseEndIso: DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
+        contractFilePath: '',
+        contractFileName: '',
+      );
+
+      await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+      await RentListingDetailsController.refreshIfRegistered();
+      await RentExpectedPaymentScheduleController.refreshIfRegistered();
+
+      hapticPrimaryConfirm();
+      showSuccessMessage('Tenant saved offline');
+
+      final addIncome = await _promptAddIncomeAfterTenant();
+      if (addIncome == true) {
+        final nav = _incomeNavigationArgs();
+        Get.back(result: true);
+        await Get.toNamed(
+          Routes.RENT_ADD_INCOME_FORM,
+          parameters: {
+            if (nav['property'] != null) 'property': nav['property'] as String,
+            if (nav['propertyRef'] != null) 'propertyRef': nav['propertyRef'] as String,
+          },
+          arguments: nav,
+        );
+        return;
+      }
+
+      Get.back(result: true);
+    } finally {
+      saving.value = false;
+    }
   }
 
   Future<bool?> _promptAddIncomeAfterTenant() {

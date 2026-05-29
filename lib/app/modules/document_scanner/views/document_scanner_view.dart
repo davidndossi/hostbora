@@ -1,5 +1,8 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/values/app_colors.dart';
@@ -21,21 +24,20 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   Widget build(BuildContext context) {
-    final isDark = _isDark(context);
-    final scannerBg = isDark ? _scannerBg : const Color(0xFFF3F6F8);
-    final scannerPillBg = isDark
+    final c = FormSurfaceColors.of(context);
+    final scannerBg = c.isDark ? _scannerBg : const Color(0xFFF3F6F8);
+    final scannerPillBg = c.isDark
         ? _scannerPillBg
         : Colors.white.withValues(alpha: 0.92);
-    final scannerSecondary = isDark
+    final scannerSecondary = c.isDark
         ? _scannerSecondary
         : AppColors.textColorSecondary;
-    final topIconColor = isDark ? Colors.white : AppColors.textColorPrimary;
-    final instructionTextColor = isDark
+    final topIconColor = c.headline;
+    final instructionTextColor = c.isDark
         ? Colors.white
         : AppColors.textColorPrimary;
 
@@ -102,9 +104,7 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
                     controller.cameraError.value,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: _isDark(context)
-                          ? Colors.white70
-                          : AppColors.textColorSecondary,
+                      color: context.tokens.textSecondary,
                       fontSize: 15,
                     ),
                   ),

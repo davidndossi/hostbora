@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -30,7 +32,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
   Widget body(BuildContext context) {
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       return SafeArea(
         child: SingleChildScrollView(

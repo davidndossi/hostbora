@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/haptic_feedback_util.dart';
+import '../../../data/model/add_task_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../model/maintenance_task.dart';
@@ -87,6 +90,48 @@ class MaintenanceTasksController extends BaseController {
       status: task.isCompleted ? TaskStatus.pending : TaskStatus.completed,
       completedAt: task.isCompleted ? null : now,
     );
+  }
+
+  void completeTaskFromSwipe(MaintenanceTask task) {
+    if (task.isCompleted) return;
+    toggleComplete(task);
+    hapticPrimaryConfirm();
+  }
+
+  Future<void> snoozeTask(MaintenanceTask task, {int days = 1}) async {
+    final base = task.dueDate ?? DateTime.now();
+    final newDue = DateTime(base.year, base.month, base.day)
+        .add(Duration(days: days));
+    final dueIso = DateFormat('yyyy-MM-dd').format(newDue);
+    final request = AddTaskRequest(
+      title: task.title,
+      description:
+          task.description.trim().isEmpty ? null : task.description.trim(),
+      dueDate: dueIso,
+    );
+    try {
+      final res = await _repository.updateTask(task.id, request);
+      if (res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201') {
+        final idx = tasks.indexWhere((t) => t.id == task.id);
+        if (idx != -1) {
+          tasks[idx] = task.copyWith(dueDate: newDue);
+        }
+        hapticPrimaryConfirm();
+        showSuccessMessage(
+          'Due ${DateFormat('MMM d, yyyy').format(newDue)}',
+        );
+        return;
+      }
+      showErrorMessage(res.message ?? 'Could not snooze task');
+    } catch (e) {
+      final idx = tasks.indexWhere((t) => t.id == task.id);
+      if (idx != -1) {
+        tasks[idx] = task.copyWith(dueDate: newDue);
+      }
+      showSuccessMessage('Due date moved locally to $dueIso');
+    }
   }
 
   void addTask() async {

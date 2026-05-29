@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -26,9 +28,9 @@ class _LoyaltyUi {
 
   Color get card => _t.cardColor;
 
-  Color get curationCard => dark ? const Color(0xFF2C2C2E) : const Color(0xFFEEEDE8);
+  Color get curationCard => dark ? context.tokens.cardBackground : const Color(0xFFEEEDE8);
 
-  Color get inputFill => dark ? const Color(0xFF3A3A3C) : const Color(0xFFF0EFEB);
+  Color get inputFill => dark ? context.tokens.elevatedSurface : const Color(0xFFF0EFEB);
 
   Color get border => dark ? const Color(0xFF48484A) : const Color(0xFFE0DFD9);
 

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -287,7 +289,7 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
         Divider(
           height: 1,
           thickness: 1,
-          color: isDark ? const Color(0xFF3A3A3C) : _InboxPalette.border,
+          color: isDark ? context.tokens.elevatedSurface : _InboxPalette.border,
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 14, 24, 10),
@@ -332,7 +334,7 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
             width: 188,
             height: 188,
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFEAEAE8),
+              color: isDark ? context.tokens.cardBackground : const Color(0xFFEAEAE8),
               shape: BoxShape.circle,
             ),
           ),
@@ -344,7 +346,7 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
                 width: 118,
                 height: 118,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                  color: isDark ? context.tokens.scaffoldBackground : Colors.white,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
@@ -396,7 +398,7 @@ class _UrgentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF2C2C2E) : _InboxPalette.card;
+    final cardColor = isDark ? context.tokens.cardBackground : _InboxPalette.card;
     final titleColor = isDark ? Colors.white : _InboxPalette.navy;
     final mutedColor = isDark ? Colors.white70 : _InboxPalette.muted;
     final teal = item.isPrimaryAction;
@@ -473,7 +475,7 @@ class _UrgentCard extends StatelessWidget {
                 backgroundColor:
                     teal
                         ? _InboxPalette.primaryTeal
-                        : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFECEAE4)),
+                        : (isDark ? context.tokens.elevatedSurface : const Color(0xFFECEAE4)),
                 foregroundColor: teal ? Colors.white : titleColor,
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
@@ -503,7 +505,7 @@ class _RenewalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF2C2C2E) : _InboxPalette.card;
+    final cardColor = isDark ? context.tokens.cardBackground : _InboxPalette.card;
     final titleColor = isDark ? Colors.white : _InboxPalette.navy;
     final mutedColor = isDark ? Colors.white70 : _InboxPalette.muted;
     return Container(
@@ -579,10 +581,10 @@ class _RenewalCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF7F6F3),
+              color: isDark ? context.tokens.scaffoldBackground : const Color(0xFFF7F6F3),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                  color: isDark ? const Color(0xFF3A3A3C) : _InboxPalette.border),
+                  color: isDark ? context.tokens.elevatedSurface : _InboxPalette.border),
             ),
             child: Row(
               children: [
@@ -643,7 +645,7 @@ class _MaintenanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF2C2C2E) : _InboxPalette.card;
+    final cardColor = isDark ? context.tokens.cardBackground : _InboxPalette.card;
     final titleColor = isDark ? Colors.white : _InboxPalette.navy;
     final mutedColor = isDark ? Colors.white70 : _InboxPalette.muted;
     return Container(
@@ -755,7 +757,7 @@ class _GeneralCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF2C2C2E) : _InboxPalette.card;
+    final cardColor = isDark ? context.tokens.cardBackground : _InboxPalette.card;
     final titleColor = isDark ? Colors.white : _InboxPalette.navy;
     final mutedColor = isDark ? Colors.white70 : _InboxPalette.muted;
     return Container(
@@ -871,7 +873,7 @@ class _FilterChip extends StatelessWidget {
     return Material(
       color: selected
           ? _InboxPalette.primaryTeal
-          : (isDark ? const Color(0xFF2C2C2E) : Colors.white),
+          : (isDark ? context.tokens.cardBackground : Colors.white),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -883,7 +885,7 @@ class _FilterChip extends StatelessWidget {
             border: Border.all(
               color: selected
                   ? _InboxPalette.primaryTeal
-                  : (isDark ? const Color(0xFF3A3A3C) : _InboxPalette.border),
+                  : (isDark ? context.tokens.elevatedSurface : _InboxPalette.border),
             ),
           ),
           child: Text(

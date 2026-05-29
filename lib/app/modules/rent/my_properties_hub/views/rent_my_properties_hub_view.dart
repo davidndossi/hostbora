@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/widget/app_skeleton.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../../../routes/app_pages.dart';
 import '../../../../core/widget/property_listing_image.dart';
@@ -20,7 +26,24 @@ class RentMyPropertiesHubView extends RentBaseView<RentMyPropertiesHubController
   Widget body(BuildContext context) {
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+        final tokens = context.tokens;
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
+            for (var i = 0; i < 4; i++)
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                height: 220,
+                decoration: BoxDecoration(
+                  color: tokens.cardBackground,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Center(
+                  child: AppSkeleton(width: 160, height: 18, borderRadius: 6),
+                ),
+              ),
+          ],
+        );
       }
       if (controller.properties.isEmpty) {
         return _emptyState();
@@ -31,7 +54,7 @@ class RentMyPropertiesHubView extends RentBaseView<RentMyPropertiesHubController
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isSw ? 'KITOVU CHA USIMAMIZI' : 'MANAGEMENT HUB',
+              _isSw ? 'Kitovu cha usimamizi' : 'Management hub',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -190,7 +213,7 @@ class RentMyPropertiesHubView extends RentBaseView<RentMyPropertiesHubController
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Center(child: CircularProgressIndicator()),
+                          child: const DefaultScreenSkeleton(),
                         );
                       }
                       final items = snapshot.data ?? const [];
@@ -264,11 +287,12 @@ void _showMultiUnitPropertySheet(
   required VoidCallback onOpenListing,
   required void Function(RentHubUnitSlot slot)? onTenantForUnit,
 }) {
+  final tokens = context.tokens;
   final isDark = Theme.of(context).brightness == Brightness.dark;
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+    backgroundColor: tokens.cardBackground,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -291,7 +315,7 @@ void _showMultiUnitPropertySheet(
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E7EB),
+                    color: isDark ? tokens.border : const Color(0xFFE5E7EB),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -312,7 +336,7 @@ void _showMultiUnitPropertySheet(
                     : '${row.unitSlots.length} units',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+                  color: isDark ? tokens.textMuted : const Color(0xFF6B7280),
                   height: 1.35,
                 ),
               ),
@@ -326,7 +350,7 @@ void _showMultiUnitPropertySheet(
                   itemBuilder: (context, i) {
                     final slot = row.unitSlots[i];
                     return Material(
-                      color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF9FAFB),
+                      color: isDark ? tokens.elevatedSurface : const Color(0xFFF9FAFB),
                       borderRadius: BorderRadius.circular(12),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -454,9 +478,6 @@ class _ManagementPropertyCard extends StatelessWidget {
 
   bool get _hasMultipleUnits => row.unitSlots.length > 1;
 
-  bool get _isApartmentProperty =>
-      row.propertyTypeLabel.trim().toUpperCase() == 'APARTMENT';
-
   void _onCardTap(BuildContext context) {
     if (_hasMultipleUnits) {
       _showMultiUnitPropertySheet(
@@ -473,9 +494,10 @@ class _ManagementPropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+      color: tokens.cardBackground,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       elevation: 0,
@@ -535,7 +557,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                 if (row.unitSlots.length == 1 && onTenantForUnit != null) ...[
                   const SizedBox(height: 16),
                   Text(
-                    isSw ? 'KITENGO' : 'UNIT',
+                    isSw ? 'Kitengo' : 'Unit',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
@@ -552,9 +574,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: isDark
-                              ? const Color(0xFF3A3A3C)
-                              : const Color(0xFFE5E7EB),
+                          color: isDark ? tokens.border : const Color(0xFFE5E7EB),
                         ),
                       ),
                       child: Row(
@@ -576,7 +596,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: isDark
-                                        ? const Color(0xFF8E8E93)
+                                        ? tokens.textMuted
                                         : const Color(0xFF6B7280),
                                   ),
                                 ),
@@ -587,9 +607,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                             Icon(
                               Icons.person_add_alt_1_outlined,
                               size: 22,
-                              color: isDark
-                                  ? const Color(0xFF5EC9C3)
-                                  : const Color(0xFF0D9488),
+                              color: isDark ? tokens.accent : const Color(0xFF0D9488),
                             ),
                         ],
                       ),
@@ -623,7 +641,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                 ],
                 const SizedBox(height: 16),
                 Text(
-                  isSw ? 'VITENDO VYA HARAKA' : 'QUICK ACTIONS',
+                  isSw ? 'Vitendo vya haraka' : 'Quick actions',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,

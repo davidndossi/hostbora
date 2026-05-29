@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -16,12 +19,11 @@ class EntryLogsView extends BaseView<EntryLogsController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -53,7 +55,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
                 subtitle,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+                  color: c.secondary,
                 ),
               );
             },
@@ -86,7 +88,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
 
   @override
   Widget body(BuildContext context) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -95,7 +97,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value && controller.allItems.isEmpty) {
-                return const Center(child: CircularProgressIndicator(color: _teal));
+                return const DefaultScreenSkeleton();
               }
               if (controller.loadError.value.isNotEmpty &&
                   controller.allItems.isEmpty) {
@@ -108,7 +110,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
                         Icon(
                           Icons.error_outline,
                           size: 40,
-                          color: isDark
+                          color: c.isDark
                               ? Colors.white54
                               : AppColors.textColorSecondary,
                         ),
@@ -118,7 +120,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 15,
-                            color: isDark
+                            color: c.isDark
                                 ? Colors.white70
                                 : AppColors.textColorSecondary,
                           ),
@@ -143,7 +145,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
                     _t(context, en: 'No events', sw: 'Hakuna matukio'),
                     style: TextStyle(
                       fontSize: 16,
-                      color: isDark
+                      color: c.isDark
                           ? Colors.white70
                           : AppColors.textColorSecondary,
                     ),
@@ -166,7 +168,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: isDark
+                            color: c.isDark
                                 ? Colors.white70
                                 : AppColors.textColorSecondary,
                             letterSpacing: 0.5,
@@ -230,11 +232,11 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Material(
       color: isSelected
           ? _teal.withValues(alpha: 0.15)
-          : (isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
+          : (c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -246,7 +248,7 @@ class _FilterChip extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? _teal
-                  : (isDark
+                  : (c.isDark
                         ? Colors.white.withValues(alpha: 0.18)
                         : AppColors.designInputBorder),
             ),
@@ -274,21 +276,21 @@ class _LogEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         border: Border.all(
-          color: isDark
+          color: c.isDark
               ? Colors.white.withValues(alpha: 0.18)
               : AppColors.designInputBorder,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.04),
+            color: Colors.black.withValues(alpha: c.isDark ? 0.28 : 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -316,7 +318,7 @@ class _LogEntryCard extends StatelessWidget {
                   item.detail,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark
+                    color: c.isDark
                         ? Colors.white70
                         : AppColors.textColorSecondary,
                   ),
@@ -328,7 +330,7 @@ class _LogEntryCard extends StatelessWidget {
                       item.time,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark
+                        color: c.isDark
                             ? Colors.white70
                             : AppColors.textColorSecondary,
                       ),

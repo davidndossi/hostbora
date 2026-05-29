@@ -6,6 +6,7 @@ import '../../../core/config/homedesigns_config.dart';
 import '../../../data/local/design_moodboards_store.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
+import '/app/core/base/feedback_extensions.dart';
 
 enum MoodboardFilter { all, aiConcepts, materials }
 
@@ -88,21 +89,20 @@ class DesignMoodboardsController extends BaseController {
 
   Future<void> reloadBoards() async {
     loadFailed.value = false;
-    showLoading();
-    try {
-      await _store.seedDefaultsIfEmpty();
-      final stored = _store.loadBoards();
-      boards.assignAll(
-        stored.map(MoodboardListItem.fromStored).toList()
-          ..sort((a, b) => b.savedCount.compareTo(a.savedCount)),
-      );
-    } catch (e, st) {
-      logger.e('Failed to load moodboards', error: e, stackTrace: st);
-      loadFailed.value = true;
-      showErrorMessage(appLocalization.designMoodboardsLoadError);
-    } finally {
-      hideLoading();
-    }
+    await runBusy(() async {
+      try {
+        await _store.seedDefaultsIfEmpty();
+        final stored = _store.loadBoards();
+        boards.assignAll(
+          stored.map(MoodboardListItem.fromStored).toList()
+            ..sort((a, b) => b.savedCount.compareTo(a.savedCount)),
+        );
+      } catch (e, st) {
+        logger.e('Failed to load moodboards', error: e, stackTrace: st);
+        loadFailed.value = true;
+        showErrorMessage(appLocalization.designMoodboardsLoadError);
+      }
+    });
   }
 
   void setFilter(MoodboardFilter f) => filter.value = f;

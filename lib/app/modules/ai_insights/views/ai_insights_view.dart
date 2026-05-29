@@ -1,6 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -18,8 +21,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
@@ -88,9 +90,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                 '${_t(context, en: 'Performance Report', sw: 'Ripoti ya Utendaji')} • $period',
                 style: TextStyle(
                   fontSize: 14,
-                  color: _isDark(context)
-                      ? Colors.white70
-                      : AppColors.textColorSecondary,
+                  color: context.tokens.textSecondary,
                 ),
               ),
             ],
@@ -103,9 +103,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
             color: const Color(0x190D6D6D),
             borderRadius: BorderRadius.circular(21),
             border: Border.all(
-              color: _isDark(context)
-                  ? Colors.white.withValues(alpha: 0.18)
-                  : AppColors.designInputBorder,
+              color: FormSurfaceColors.of(context).inputBorder,
             ),
           ),
           child: Icon(Icons.auto_awesome, color: AppColors.colorPrimary),
@@ -119,14 +117,12 @@ class AiInsightsView extends BaseView<AiInsightsController> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _isDark(context)
+        color: FormSurfaceColors.of(context).isDark
             ? const Color(0xFF1F1F1F)
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         border: Border.all(
-          color: _isDark(context)
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.designInputBorder,
+          color: FormSurfaceColors.of(context).inputBorder,
         ),
       ),
       child: Column(
@@ -211,23 +207,19 @@ class AiInsightsView extends BaseView<AiInsightsController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: _isDark(context)
+        color: FormSurfaceColors.of(context).isDark
             ? Colors.white.withValues(alpha: 0.08)
             : AppColors.pageBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _isDark(context)
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.designInputBorder,
+          color: FormSurfaceColors.of(context).inputBorder,
         ),
       ),
       child: Text(
         text,
         style: TextStyle(
           fontSize: 12,
-          color: _isDark(context)
-              ? Colors.white70
-              : AppColors.textColorSecondary,
+          color: context.tokens.textSecondary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -261,14 +253,12 @@ class AiInsightsView extends BaseView<AiInsightsController> {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
           decoration: BoxDecoration(
-            color: _isDark(context)
+            color: FormSurfaceColors.of(context).isDark
                 ? const Color(0xFF1F1F1F)
                 : AppColors.colorWhite,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
             border: Border.all(
-              color: _isDark(context)
-                  ? Colors.white.withValues(alpha: 0.18)
-                  : AppColors.designInputBorder,
+              color: FormSurfaceColors.of(context).inputBorder,
             ),
           ),
           child: Column(
@@ -288,9 +278,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                           ),
                           style: TextStyle(
                             fontSize: 12,
-                            color: _isDark(context)
-                                ? Colors.white70
-                                : AppColors.textColorSecondary,
+                            color: context.tokens.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -354,9 +342,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                         d,
                         style: TextStyle(
                           fontSize: 11,
-                          color: _isDark(context)
-                              ? Colors.white70
-                              : AppColors.textColorSecondary,
+                          color: context.tokens.textSecondary,
                         ),
                       ),
                     )
@@ -382,9 +368,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
           text,
           style: TextStyle(
             fontSize: 11,
-            color: _isDark(context)
-                ? Colors.white70
-                : AppColors.textColorSecondary,
+            color: context.tokens.textSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -401,16 +385,14 @@ class AiInsightsView extends BaseView<AiInsightsController> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: selected
-                ? (_isDark(context)
+                ? (FormSurfaceColors.of(context).isDark
                       ? const Color(0xFF1F1F1F)
                       : AppColors.colorWhite)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected
-                  ? (_isDark(context)
-                        ? Colors.white.withValues(alpha: 0.18)
-                        : AppColors.designInputBorder)
+                  ? (FormSurfaceColors.of(context).inputBorder)
                   : Colors.transparent,
             ),
           ),
@@ -421,9 +403,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
               fontWeight: FontWeight.w600,
               color: selected
                   ? Theme.of(context).colorScheme.onSurface
-                  : (_isDark(context)
-                        ? Colors.white70
-                        : AppColors.textColorSecondary),
+                  : (context.tokens.textSecondary),
             ),
           ),
         ),
@@ -449,14 +429,12 @@ class AiInsightsView extends BaseView<AiInsightsController> {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: _isDark(context)
+            color: FormSurfaceColors.of(context).isDark
                 ? const Color(0xFF1F1F1F)
                 : AppColors.colorWhite,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
             border: Border.all(
-              color: _isDark(context)
-                  ? Colors.white.withValues(alpha: 0.18)
-                  : AppColors.designInputBorder,
+              color: FormSurfaceColors.of(context).inputBorder,
             ),
           ),
           child: Row(
@@ -466,7 +444,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: _isDark(context)
+                  color: FormSurfaceColors.of(context).isDark
                       ? Colors.white.withValues(alpha: 0.08)
                       : AppColors.pageBackground,
                   borderRadius: BorderRadius.circular(12),
@@ -506,9 +484,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                             style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w700,
-                              color: _isDark(context)
-                                  ? Colors.white
-                                  : AppColors.textColorPrimary,
+                              color: context.tokens.textPrimary,
                             ),
                           ),
                         ),
@@ -519,9 +495,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                       item.description,
                       style: TextStyle(
                         fontSize: 14,
-                        color: _isDark(context)
-                            ? Colors.white70
-                            : AppColors.textColorSecondary,
+                        color: context.tokens.textSecondary,
                         height: 1.45,
                       ),
                     ),
@@ -540,17 +514,13 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                               : AppColors.colorPrimary,
                           foregroundColor:
                               item.impact == RecommendationImpact.observation
-                              ? (_isDark(context)
-                                    ? Colors.white
-                                    : AppColors.textColorPrimary)
+                              ? (context.tokens.textPrimary)
                               : Colors.white,
                           elevation: 0,
                           side: BorderSide(
                             color:
                                 item.impact == RecommendationImpact.observation
-                                ? (_isDark(context)
-                                      ? Colors.white.withValues(alpha: 0.18)
-                                      : AppColors.designInputBorder)
+                                ? (FormSurfaceColors.of(context).inputBorder)
                                 : Colors.transparent,
                           ),
                           shape: RoundedRectangleBorder(
@@ -582,7 +552,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: _isDark(context) ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+      color: FormSurfaceColors.of(context).inputFill,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -593,7 +563,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
           child: Icon(
             icon,
             size: 20,
-            color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+            color: context.tokens.textPrimary,
           ),
         ),
       ),

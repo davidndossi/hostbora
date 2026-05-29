@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../flavors/build_config.dart';
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/haptic_feedback_util.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
@@ -15,8 +16,10 @@ import '../../../data/model/create_booking_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/service/azampay_service.dart';
 import '../../../routes/app_pages.dart';
+import '../../all_bookings/controllers/all_bookings_controller.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../guest_access_codes/controllers/guest_access_codes_controller.dart';
+import '../../home/controllers/home_controller.dart';
 import '../../host_calendar/controllers/host_calendar_controller.dart';
 
 /// Lightweight listing for property dropdown (from GET /api/listings).
@@ -275,7 +278,10 @@ class AddNewBookingController extends BaseController {
   }
 
   Future<void> saveBooking() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (!(formKey.currentState?.validate() ?? false)) {
+      hapticValidationError();
+      return;
+    }
     final listingId = selectedListingId.value;
     if (listingId == null || listingId.isEmpty) {
       Get.snackbar('Required', 'Please select a property');
@@ -338,6 +344,8 @@ class AddNewBookingController extends BaseController {
       );
       await _syncWorker.runNow(maxItems: 20);
       _updatePendingCount();
+      await HomeController.refreshIfRegistered();
+      await AllBookingsController.refreshIfRegistered();
       final bookingId = DateTime.now().millisecondsSinceEpoch.toString();
       if (sendPushToPay.value &&
           guestPhone.isNotEmpty &&
@@ -352,6 +360,7 @@ class AddNewBookingController extends BaseController {
       await HostCalendarController.refreshIfRegistered();
       await DashboardController.refreshIfRegistered();
       await GuestAccessCodesController.refreshIfRegistered();
+      hapticPrimaryConfirm();
       Get.back(result: true);
       final pending = pendingCount.value;
       if (pending > 0) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
@@ -14,8 +15,7 @@ const _screenBg = Color(0xFFF5F5F5);
 class SmartAccessView extends BaseView<SmartAccessController> {
   SmartAccessView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -26,7 +26,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
 
   @override
   Color pageBackgroundColor(BuildContext context) =>
-      _isDark(context) ? Theme.of(context).colorScheme.surface : _screenBg;
+      FormSurfaceColors.of(context).isDark ? Theme.of(context).colorScheme.surface : _screenBg;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -56,7 +56,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
 
   Widget _buildConnectedBadge(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
@@ -80,7 +80,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: isDark ? theme.colorScheme.primary : _connectedGreen,
+              color: c.isDark ? theme.colorScheme.primary : _connectedGreen,
             ),
           ),
         ],
@@ -90,7 +90,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
 
   Widget _buildLockStatus(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Column(
       children: [
         Stack(
@@ -138,7 +138,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w700,
-              color: isDark
+              color: c.isDark
                   ? theme.colorScheme.onSurface
                   : AppColors.textColorPrimary,
             ),
@@ -150,7 +150,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
             '${_t(context, en: 'UPDATED', sw: 'IMESASISHWA')} ${controller.lastUpdated}',
             style: TextStyle(
               fontSize: 13,
-              color: isDark
+              color: c.isDark
                   ? theme.colorScheme.onSurfaceVariant
                   : AppColors.textColorSecondary,
             ),
@@ -162,7 +162,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
 
   Widget _buildActionButtons(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Column(
       children: [
         Obx(
@@ -208,7 +208,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
             icon: Icon(
               Icons.vpn_key,
               size: 22,
-              color: isDark ? theme.colorScheme.primary : _accessTeal,
+              color: c.isDark ? theme.colorScheme.primary : _accessTeal,
             ),
             label: Text(
               _t(
@@ -219,12 +219,12 @@ class SmartAccessView extends BaseView<SmartAccessController> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: isDark ? theme.colorScheme.primary : _accessTeal,
+                color: c.isDark ? theme.colorScheme.primary : _accessTeal,
               ),
             ),
             style: OutlinedButton.styleFrom(
               side: BorderSide(
-                color: isDark ? theme.colorScheme.primary : _accessTeal,
+                color: c.isDark ? theme.colorScheme.primary : _accessTeal,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppValues.radius_12),
@@ -238,12 +238,12 @@ class SmartAccessView extends BaseView<SmartAccessController> {
 
   Widget _buildRecentActivity(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
+        color: c.isDark
             ? theme.colorScheme.surfaceContainerHigh
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
@@ -270,7 +270,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.onSurface
                       : AppColors.textColorPrimary,
                 ),
@@ -282,7 +282,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? theme.colorScheme.primary : _accessTeal,
+                    color: c.isDark ? theme.colorScheme.primary : _accessTeal,
                   ),
                 ),
               ),
@@ -327,7 +327,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: isDark
+                            color: c.isDark
                                 ? theme.colorScheme.onSurface
                                 : AppColors.textColorPrimary,
                           ),
@@ -337,7 +337,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
                           '${e.detail} • ${e.time}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark
+                            color: c.isDark
                                 ? theme.colorScheme.onSurfaceVariant
                                 : AppColors.textColorSecondary,
                           ),

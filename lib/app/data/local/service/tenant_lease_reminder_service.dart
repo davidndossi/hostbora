@@ -73,10 +73,21 @@ class TenantLeaseReminderService extends GetxService {
         if (phone.isEmpty) continue;
 
         try {
-          await _repository.sendSms(
+          var delivered = false;
+          final wa = await _repository.sendWhatsApp(
             SendSmsRequest(phoneNumber: phone, message: msg),
           );
-          await _preferenceManager.setBool(stampKey, true);
+          if (wa.responseCode == '0') {
+            delivered = true;
+          } else {
+            final sms = await _repository.sendSms(
+              SendSmsRequest(phoneNumber: phone, message: msg),
+            );
+            delivered = sms.responseCode == '0';
+          }
+          if (delivered) {
+            await _preferenceManager.setBool(stampKey, true);
+          }
         } catch (_) {
           // Retry next periodic run.
         }

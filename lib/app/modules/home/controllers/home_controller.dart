@@ -11,6 +11,7 @@ import '../../../core/utils/tenant_rent_billing.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/local/service/currency_service.dart';
@@ -62,7 +63,13 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final checkIns = <CheckInItem>[].obs;
   final checkInsToday = <CheckInItem>[].obs;
   final checkOutsToday = <CheckInItem>[].obs;
-  final homeLoading = false.obs;
+  /// True only before the first successful [loadHomeData] (skeleton, not full-screen spinner).
+  final homeInitialLoading = true.obs;
+
+  /// Pull-to-refresh indicator on BnB home.
+  final homeRefreshing = false.obs;
+
+  final homeHasLoaded = false.obs;
 
   @override
   void onInit() {
@@ -71,8 +78,12 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     loadHomeData();
   }
 
-  Future<void> loadHomeData() async {
-    homeLoading.value = true;
+  Future<void> loadHomeData({bool refresh = false}) async {
+    if (refresh) {
+      homeRefreshing.value = true;
+    } else if (!homeHasLoaded.value) {
+      homeInitialLoading.value = true;
+    }
     try {
       await Future.wait([
         _loadOverview(),
@@ -83,7 +94,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         showErrorMessage(e.toString());
       }
     } finally {
-      homeLoading.value = false;
+      homeInitialLoading.value = false;
+      homeRefreshing.value = false;
+      homeHasLoaded.value = true;
     }
   }
 
@@ -350,6 +363,13 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void tenants() => Get.toNamed(
       Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER, arguments: {'ws': 'bnb'});
 
+  void sendSmsWhatsapp() => Get.toNamed(
+        Routes.SEND_SMS,
+        arguments: const {'workspace': 'bnb'},
+      );
+
+  void whatsappTemplates() => Get.toNamed(Routes.RENT_WHATSAPP_TEMPLATE_BUILDER);
+
   Future<void> addNewBooking() async {
     await _guardPropertyBeforeAction(
       onProceed: () async {
@@ -385,9 +405,15 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void aiManager() => Get.toNamed(Routes.AI_MANAGER);
 
-  void aiInsights() => Get.toNamed(Routes.AI_INSIGHTS);
+  void aiInsights() => Get.toNamed(
+        Routes.AI_INSIGHTS,
+        arguments: const {'source': 'insights'},
+      );
 
-  void aiAutomations() => Get.toNamed(Routes.AI_AUTOMATIONS);
+  void aiAutomations() => Get.toNamed(
+        Routes.AI_AUTOMATIONS,
+        arguments: const {'source': 'automations'},
+      );
 
   void documents() => Get.toNamed(Routes.PROPERTY_VAULT);
 
@@ -497,5 +523,21 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+  static Future<void> refreshIfRegistered() async {
+    if (Get.isRegistered<HomeController>()) {
+      await Get.find<HomeController>().loadHomeData(refresh: true);
+    }
+  }
+
+  Future<void> retryBookingSync(CheckInItem item) async {
+    final queueId = item.syncQueueId;
+    if (queueId == null) return;
+    final queue = Get.find<OfflineSyncQueueLocalDataSource>();
+    final worker = Get.find<OfflineSyncWorkerService>();
+    await queue.retryItem(queueId);
+    await worker.runNow(maxItems: 20);
+    await loadHomeData(refresh: true);
   }
 }

@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/base/feedback_extensions.dart';
+import '../../../core/mixins/listing_financial_trends_mixin.dart';
 import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../core/utils/tenant_rent_billing.dart';
 import '../../../data/local/db/property_local_data_source.dart';
@@ -62,7 +64,8 @@ class ListingStaffVm {
   final String jobTitle;
 }
 
-class ListingDetailsController extends BaseController {
+class ListingDetailsController extends BaseController
+    with ListingFinancialTrendsMixin {
   ListingDetailsController()
       : _repository =
             Get.find<AppRepository>(tag: (AppRepository).toString()),
@@ -148,6 +151,12 @@ class ListingDetailsController extends BaseController {
       unitRows.assignAll(realRows.isEmpty ? [] : realRows);
       await _syncOccupancyPercent(remoteListing);
       await _syncMonthlyRevenue(remoteListing);
+      await loadListingFinancialTrends(
+        workspaceType: 'bnb',
+        propertyId: _propertyId,
+        propertyName: _propertyName,
+        propertyLocation: _propertyLocation,
+      );
 
       var activities = remoteListing == null ? <ListingActivityVm>[] : _activityFromAnyMap(remoteListing);
       if (activities.isEmpty) {
@@ -1059,20 +1068,19 @@ class ListingDetailsController extends BaseController {
     );
     if (confirmed != true) return;
 
-    showLoading();
-    try {
-      await _purgeLocalPropertyRelations(row);
-      await _propertyLocal.deleteById(row.id);
-      Get.back();
-      showSuccessMessage(_isSw ? 'Mali imefutwa' : 'Property removed');
-    } catch (e, st) {
-      logger.e('onDeleteProperty $e $st');
-      showErrorMessage(
-        _isSw ? 'Imeshindwa kufuta mali.' : 'Could not delete property.',
-      );
-    } finally {
-      hideLoading();
-    }
+    await runBusy(() async {
+      try {
+        await _purgeLocalPropertyRelations(row);
+        await _propertyLocal.deleteById(row.id);
+        Get.back();
+        showSuccessWithHaptic(_isSw ? 'Mali imefutwa' : 'Property removed');
+      } catch (e, st) {
+        logger.e('onDeleteProperty $e $st');
+        showErrorMessage(
+          _isSw ? 'Imeshindwa kufuta mali.' : 'Could not delete property.',
+        );
+      }
+    });
   }
 
   Future<void> _purgeLocalPropertyRelations(PropertyRecord row) async {

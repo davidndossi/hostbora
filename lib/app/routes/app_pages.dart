@@ -30,6 +30,8 @@ import '../modules/rent/smart_utility_dashboard/bindings/rent_smart_utility_dash
 import '../modules/rent/smart_utility_dashboard/views/rent_smart_utility_dashboard_view.dart';
 import '../modules/rent/utility_usage_graph/bindings/rent_utility_usage_graph_binding.dart';
 import '../modules/rent/utility_usage_graph/views/rent_utility_usage_graph_view.dart';
+import '../modules/admin_whatsapp_credentials/bindings/admin_whatsapp_credentials_binding.dart';
+import '../modules/admin_whatsapp_credentials/views/admin_whatsapp_credentials_view.dart';
 import '../modules/send_sms/bindings/send_sms_binding.dart';
 import '../modules/send_sms/views/send_sms_view.dart';
 import '../modules/subscription/bindings/subscription_binding.dart';
@@ -40,6 +42,9 @@ import '../modules/onboarding/bindings/onboarding_binding.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
 import '../modules/settings/bindings/settings_binding.dart';
 import '../modules/settings/views/settings_view.dart';
+import '../modules/help_center/bindings/help_center_binding.dart';
+import '../modules/help_center/views/help_center_view.dart';
+import '../modules/help_center/views/help_guide_detail_view.dart';
 import '../modules/success/bindings/success_binding.dart';
 import '../modules/success/views/success_view.dart';
 import '../modules/support/bindings/support_binding.dart';
@@ -126,10 +131,7 @@ import '../modules/interior_design_studio/bindings/interior_design_studio_bindin
 import '../modules/interior_design_studio/views/interior_design_studio_view.dart';
 import '../modules/ai_manager/bindings/ai_manager_binding.dart';
 import '../modules/ai_manager/views/ai_manager_view.dart';
-import '../modules/ai_insights/bindings/ai_insights_binding.dart';
-import '../modules/ai_insights/views/ai_insights_view.dart';
-import '../modules/ai_automations/bindings/ai_automations_binding.dart';
-import '../modules/ai_automations/views/ai_automations_view.dart';
+import '../modules/ai_manager/views/ai_manager_redirect_view.dart';
 import '../modules/design_moodboard/bindings/design_moodboard_binding.dart';
 import '../modules/design_moodboard/views/design_moodboard_view.dart';
 import '../modules/design_moodboards/bindings/design_moodboards_binding.dart';
@@ -252,6 +254,8 @@ import '../modules/rent/manage_expenses/bindings/manage_expenses_binding.dart';
 import '../modules/rent/manage_expenses/views/manage_expenses_view.dart';
 import '../modules/rent/manage_payments/bindings/manage_payments_binding.dart';
 import '../modules/rent/manage_payments/views/manage_payments_view.dart';
+import '../modules/rent/expected_payment_schedule/bindings/rent_expected_payment_schedule_binding.dart';
+import '../modules/rent/expected_payment_schedule/views/rent_expected_payment_schedule_view.dart';
 
 part 'app_routes.dart';
 
@@ -293,6 +297,16 @@ class AppPages {
       binding: SettingsBinding(),
     ),
     GetPage(
+      name: _Paths.HELP_CENTER,
+      page: () => HelpCenterView(),
+      binding: HelpCenterBinding(),
+    ),
+    GetPage(
+      name: _Paths.HELP_GUIDE_DETAIL,
+      page: () => HelpGuideDetailView(),
+      binding: HelpGuideDetailBinding(),
+    ),
+    GetPage(
       name: _Paths.NOTIFICATIONS,
       page: () => NotificationsView(),
       binding: NotificationsBinding(),
@@ -331,6 +345,11 @@ class AppPages {
       name: _Paths.SEND_SMS,
       page: () => SendSmsView(),
       binding: SendSmsBinding(),
+    ),
+    GetPage(
+      name: _Paths.ADMIN_WHATSAPP_CREDENTIALS,
+      page: () => AdminWhatsappCredentialsView(),
+      binding: AdminWhatsappCredentialsBinding(),
     ),
     GetPage(
       name: _Paths.SUBSCRIPTION,
@@ -569,13 +588,11 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.AI_INSIGHTS,
-      page: () => AiInsightsView(),
-      binding: AiInsightsBinding(),
+      page: () => const AiManagerRedirectView(source: 'insights'),
     ),
     GetPage(
       name: _Paths.AI_AUTOMATIONS,
-      page: () => AiAutomationsView(),
-      binding: AiAutomationsBinding(),
+      page: () => const AiManagerRedirectView(source: 'automations'),
     ),
     GetPage(
       name: _Paths.DESIGN_MOODBOARD,
@@ -636,6 +653,11 @@ class AppPages {
       name: _Paths.RENT_MANAGE_PAYMENTS,
       page: () => ManagePaymentsView(),
       binding: ManagePaymentsBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_EXPECTED_PAYMENT_SCHEDULE,
+      page: () => RentExpectedPaymentScheduleView(),
+      binding: RentExpectedPaymentScheduleBinding(),
     ),
     GetPage(
       name: _Paths.RENT_MANAGE_EXPENSES,

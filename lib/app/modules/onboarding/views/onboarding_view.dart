@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
@@ -12,8 +15,7 @@ import '../controllers/onboarding_controller.dart';
 class OnboardingView extends BaseView<OnboardingController> {
   OnboardingView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -22,15 +24,15 @@ class OnboardingView extends BaseView<OnboardingController> {
 
   @override
   Widget body(BuildContext context) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     final currentLang = Get.locale?.languageCode == 'sw' ? 'sw' : 'en';
-    final titleColor = isDark ? Colors.white : AppColors.textColorPrimary;
-    final workspaceLabelColor = isDark
+    final titleColor = c.headline;
+    final workspaceLabelColor = c.isDark
         ? Colors.white
         : AppColors.textColorPrimary;
-    final bodyColor = isDark ? Colors.white70 : AppColors.textColorSecondary;
-    final cardBg = isDark
-        ? const Color(0xFF2C2C2E)
+    final bodyColor = c.secondary;
+    final cardBg = c.isDark
+        ? context.tokens.cardBackground
         : Colors.white.withValues(alpha: 0.9);
     return SafeArea(
       child: Column(
@@ -177,7 +179,7 @@ class OnboardingView extends BaseView<OnboardingController> {
                                   width: 120,
                                   height: 120,
                                   decoration: BoxDecoration(
-                                    color: isDark
+                                    color: c.isDark
                                         ? AppColors.colorPrimary.withValues(alpha: 0.25)
                                         : AppColors.colorPrimaryLight,
                                     shape: BoxShape.circle,
@@ -228,7 +230,7 @@ class OnboardingView extends BaseView<OnboardingController> {
                                   width: 120,
                                   height: 120,
                                   decoration: BoxDecoration(
-                                    color: isDark
+                                    color: c.isDark
                                         ? AppColors.colorPrimary.withValues(alpha: 0.25)
                                         : AppColors.colorPrimaryLight,
                                     shape: BoxShape.circle,
@@ -276,8 +278,8 @@ class OnboardingView extends BaseView<OnboardingController> {
                 color: cardBg,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF3A3A3C)
+                  color: c.isDark
+                      ? context.tokens.elevatedSurface
                       : AppColors.designInputBorder,
                 ),
               ),

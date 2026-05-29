@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '/app/core/base/rent_base_view.dart';
 import '/app/core/utils/thousand_separator.dart';
+import '/app/core/widget/loading_button.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_property_roi_estimate_form_controller.dart';
 
@@ -75,20 +76,22 @@ class RentPropertyRoiEstimateFormView
                       ? _approximateSection()
                       : _itemizedSection(context),
                 ),
-                // const SizedBox(height: 14),
-                // _field(
-                //   _isSw ? 'Mapato ya mwezi yanayotarajiwa' : 'Expected Monthly Income',
-                //   controller.expectedMonthlyIncomeController,
-                // ),
-                // _field(
-                //   _isSw ? 'Matumizi ya mwezi yanayotarajiwa' : 'Expected Monthly Expense',
-                //   controller.expectedMonthlyExpenseController,
-                // ),
-                // _field(
-                //   _isSw ? 'Lengo la ukaaji (%)' : 'Target Occupancy (%)',
-                //   controller.targetOccupancyController,
-                //   validator: controller.validatePercent,
-                // ),
+                const SizedBox(height: 14),
+                _field(
+                  _isSw ? 'Mapato ya mwezi yanayotarajiwa' : 'Expected Monthly Income',
+                  controller.expectedMonthlyIncomeController,
+                ),
+                _field(
+                  _isSw
+                      ? 'Matengenezo / matumizi ya mwezi (makadirio)'
+                      : 'Expected Monthly Maintenance / Expense',
+                  controller.expectedMonthlyExpenseController,
+                ),
+                _field(
+                  _isSw ? 'Lengo la ukaaji (%)' : 'Target Occupancy (%)',
+                  controller.targetOccupancyController,
+                  validator: controller.validatePercent,
+                ),
               ],
             ),
           ),
@@ -137,16 +140,13 @@ class RentPropertyRoiEstimateFormView
         Obx(
           () => SizedBox(
             width: double.infinity,
-            child: FilledButton(
-              onPressed: controller.saving.value ? null : controller.save,
-              child: Text(
-                controller.saving.value
-                    ? (_isSw ? 'Inahifadhi...' : 'Saving...')
-                    : (_isSw ? 'Hifadhi makadirio' : 'Save estimate'),
-                style: TextStyle(
-                    fontSize: 16
-                ),
-              ),
+            child: LoadingButton(
+              label: controller.saving.value
+                  ? (_isSw ? 'Inahifadhi...' : 'Saving...')
+                  : (_isSw ? 'Hifadhi makadirio' : 'Save estimate'),
+              onPressed: controller.save,
+              isLoading: controller.saving.value,
+              icon: Icons.save_outlined,
             ),
           ),
         ),

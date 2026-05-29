@@ -6,14 +6,21 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/widget/undo_snackbar.dart';
+import '../../../core/models/item_sync_status.dart';
 import '../../../data/local/bnb_booking_actions.dart';
 import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../data/local/offline_payment_sync_lookup.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../routes/app_pages.dart';
+import '../../all_bookings/controllers/all_bookings_controller.dart';
+import '../../home/controllers/home_controller.dart';
+import '../../record_payment/views/record_payment_sheet.dart';
+import '../views/bnb_guest_whatsapp_schedule_sheet.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class BookingDetailsController extends BaseController {
@@ -23,6 +30,7 @@ class BookingDetailsController extends BaseController {
           syncWorker: Get.find<OfflineSyncWorkerService>(),
         ),
         _incomeLocal = Get.find<IncomeLocalDataSource>(),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
@@ -30,6 +38,7 @@ class BookingDetailsController extends BaseController {
 
   final BnbBookingActions _actions;
   final IncomeLocalDataSource _incomeLocal;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
   final PropertyLocalDataSource _propertyLocal;
   final PreferenceManager _preferenceManager;
 
@@ -45,6 +54,7 @@ class BookingDetailsController extends BaseController {
   final propertyImageUrl = ''.obs;
 
   final guestName = ''.obs;
+  final guestPhone = ''.obs;
   final guestAvatarUrl = ''.obs;
   final guestRating = 0.0;
   final guestReviewCount = 0;
@@ -57,6 +67,7 @@ class BookingDetailsController extends BaseController {
   final isPaid = false.obs;
   final totalPayout = '—'.obs;
   final paymentSummaryLoading = false.obs;
+  final paymentSyncStatus = ItemSyncStatus.synced.obs;
 
   String _propertyRef = '';
   String _propertyLabel = '';
@@ -108,6 +119,7 @@ class BookingDetailsController extends BaseController {
     _item = item;
     _propertyLabel = item.propertyType.trim();
     guestName.value = item.guestName;
+    guestPhone.value = item.guestPhone;
     guestAvatarUrl.value = item.guestAvatarUrl;
     propertyTitle.value = item.propertyType;
     propertyLocation.value = '';
@@ -258,9 +270,28 @@ class BookingDetailsController extends BaseController {
       isPaid.value = total > 0;
       totalPayout.value =
           total > 0 ? 'TZS ${_money.format(total.round())}' : '—';
+      final lookup = await OfflinePaymentSyncLookup.load(_syncQueue);
+      paymentSyncStatus.value = lookup.statusForBooking(_item.bookingKey);
     } finally {
       paymentSummaryLoading.value = false;
     }
+  }
+
+  bool get showPaymentSyncBadge => paymentSyncStatus.value.showSyncBadge;
+
+  static Future<void> refreshIfRegistered() async {
+    if (Get.isRegistered<BookingDetailsController>()) {
+      await Get.find<BookingDetailsController>()._loadPaymentSummary();
+    }
+  }
+
+  Future<void> retryPaymentSync() async {
+    final lookup = await OfflinePaymentSyncLookup.load(_syncQueue);
+    final queueId = lookup.queueIdForBooking(_item.bookingKey);
+    if (queueId == null) return;
+    await _syncQueue.retryItem(queueId);
+    await Get.find<OfflineSyncWorkerService>().runNow(maxItems: 20);
+    await _loadPaymentSummary();
   }
 
   Future<void> recordPayment() async {
@@ -268,18 +299,10 @@ class BookingDetailsController extends BaseController {
     final property = _propertyLabel.isNotEmpty
         ? _propertyLabel
         : propertyTitle.value.trim();
-    final saved = await Get.toNamed(
-      Routes.RECORD_PAYMENT,
-      parameters: {
-        'bookingId': _item.bookingKey,
-        if (_propertyRef.isNotEmpty) 'propertyRef': _propertyRef,
-        if (property.isNotEmpty) 'property': property,
-      },
-      arguments: {
-        'bookingId': _item.bookingKey,
-        if (_propertyRef.isNotEmpty) 'propertyRef': _propertyRef,
-        if (property.isNotEmpty) 'property': property,
-      },
+    final saved = await showRecordPaymentSheet(
+      bookingId: _item.bookingKey,
+      propertyRef: _propertyRef,
+      property: property,
     );
     if (saved == true) {
       await _loadPaymentSummary();
@@ -301,7 +324,57 @@ class BookingDetailsController extends BaseController {
 
   void moreOptions() {}
 
-  void messageGuest() {}
+  void messageGuest() {
+    if (isListingMode) return;
+    final phone = guestPhone.value.trim();
+    if (phone.isEmpty) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Namba ya mgeni haipatikani. Ongeza namba wakati wa kuunda booking.'
+            : 'Guest phone not available. Add it when creating the booking.',
+      );
+      return;
+    }
+    Get.toNamed(
+      Routes.SEND_SMS,
+      arguments: {
+        'phones': [phone],
+        'workspace': 'bnb',
+        'contextLabel': 'Message ${guestName.value.trim()}',
+        if (_propertyRef.isNotEmpty) 'propertyRef': _propertyRef,
+      },
+    );
+  }
+
+  Future<void> scheduleGuestWhatsApp() async {
+    if (isListingMode) return;
+    final phone = guestPhone.value.trim();
+    if (phone.isEmpty) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Namba ya mgeni haipatikani'
+            : 'Guest phone not available',
+      );
+      return;
+    }
+    final isSw = Get.locale?.languageCode == 'sw';
+    final title = propertyTitle.value.trim();
+    final defaultMsg = isSw
+        ? 'Habari ${guestName.value}, tunakukumbusha kuhusu booking yako${title.isNotEmpty ? ' kwenye $title' : ''}.'
+        : 'Hi ${guestName.value}, a reminder about your stay${title.isNotEmpty ? ' at $title' : ''}.';
+    final ok = await showBnbGuestWhatsappScheduleSheet(
+      guestName: guestName.value,
+      guestPhone: phone,
+      initialMessage: defaultMsg,
+    );
+    if (ok) {
+      showSuccessMessage(
+        isSw
+            ? 'WhatsApp imeratibiwa kwa mgeni'
+            : 'WhatsApp scheduled for guest',
+      );
+    }
+  }
 
   bool get _isInactive =>
       isCheckedOut.value || isCancelled.value;
@@ -335,13 +408,37 @@ class BookingDetailsController extends BaseController {
     if (_isInactive || processing.value) return;
     processing.value = true;
     try {
+      final wasLocal = _item.isLocalPending;
+      final pendingSnapshot = wasLocal
+          ? await _actions.snapshotPendingBooking(_item.bookingKey)
+          : null;
       await _actions.cancelBooking(
         bookingKey: _item.bookingKey,
-        isLocalPending: _item.isLocalPending,
+        isLocalPending: wasLocal,
       );
       isCancelled.value = true;
-      Get.snackbar(_l10n.cancelBooking, _l10n.bookingCancelledSuccess);
+      final undoCtx = Get.context;
+      final undoMessage = _l10n.bookingCancelledSuccess;
+      final undoLabel =
+          Get.locale?.languageCode == 'sw' ? 'Rudisha' : 'Undo';
       Get.back(result: true);
+      if (undoCtx != null && undoCtx.mounted) {
+        UndoSnackBar.show(
+          undoCtx,
+          message: undoMessage,
+          undoLabel: undoLabel,
+          onUndo: () async {
+            await _actions.undoCancelBooking(
+              bookingKey: _item.bookingKey,
+              wasLocalPending: wasLocal,
+              pendingSnapshot: pendingSnapshot,
+            );
+            isCancelled.value = false;
+            await HomeController.refreshIfRegistered();
+            await AllBookingsController.refreshIfRegistered();
+          },
+        );
+      }
     } catch (e) {
       Get.snackbar(_l10n.error, e.toString());
     } finally {

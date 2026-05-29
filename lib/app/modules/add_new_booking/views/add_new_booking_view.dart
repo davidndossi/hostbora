@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
+import '../../../core/widget/loading_button.dart';
 import '../../../data/service/azampay_service.dart';
 import '../controllers/add_new_booking_controller.dart';
 
@@ -17,8 +21,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   Widget _buildLabel(BuildContext context, String text) {
     return Text(
@@ -26,7 +29,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
       style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+        color: context.tokens.textPrimary,
       ),
     );
   }
@@ -39,28 +42,24 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(
-        color: _isDark(context) ? Colors.white70 : AppColors.designPlaceholder,
+        color: FormSurfaceColors.of(context).hint,
       ),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: _isDark(context)
+      fillColor: FormSurfaceColors.of(context).isDark
           ? const Color(0xFF1F1F1F)
           : AppColors.colorWhite,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
         borderSide: BorderSide(
-          color: _isDark(context)
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.designInputBorder,
+          color: FormSurfaceColors.of(context).inputBorder,
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
         borderSide: BorderSide(
-          color: _isDark(context)
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.designInputBorder,
+          color: FormSurfaceColors.of(context).inputBorder,
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -77,39 +76,21 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
   Widget _buildSaveButton(BuildContext context) {
     return Obx(() {
       final isSaving = controller.saving.value;
-      return SizedBox(
-        width: double.infinity,
-        height: AppValues.formButtonHeight + 4,
-        child: ElevatedButton.icon(
-          onPressed: isSaving ? null : controller.saveBooking,
-          icon: isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Icon(Icons.calendar_today, size: 20, color: Colors.white),
-          label: Text(
-            isSaving
-                ? _t(context, en: 'Saving...', sw: 'Inahifadhi...')
-                : _t(context, en: 'Save Booking', sw: 'Hifadhi Booking'),
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
+      return LoadingButton(
+        label: isSaving
+            ? _t(context, en: 'Saving...', sw: 'Inahifadhi...')
+            : _t(context, en: 'Save booking', sw: 'Hifadhi booking'),
+        onPressed: controller.saveBooking,
+        isLoading: isSaving,
+        icon: Icons.calendar_today,
+        minimumSize: const Size.fromHeight(AppValues.formButtonHeight + 4),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _bookingNavTeal,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppValues.radius_6),
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _bookingNavTeal,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppValues.radius_6),
-            ),
-            elevation: 0,
-          ),
+          elevation: 0,
         ),
       );
     });
@@ -167,9 +148,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: _isDark(context)
-                                ? Colors.white
-                                : AppColors.textColorPrimary,
+                            color: context.tokens.textPrimary,
                           ),
                         ),
                       ),
@@ -224,7 +203,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                     suffixIcon: Icon(
                       Icons.phone_outlined,
                       size: 22,
-                      color: _isDark(context)
+                      color: FormSurfaceColors.of(context).isDark
                           ? Colors.white70
                           : AppColors.designPlaceholder,
                     ),
@@ -306,7 +285,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                           ).copyWith(
                             suffixIcon: Icon(
                               Icons.keyboard_arrow_down,
-                              color: _isDark(context)
+                              color: FormSurfaceColors.of(context).isDark
                                   ? Colors.white70
                                   : AppColors.designPlaceholder,
                             ),
@@ -331,7 +310,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                       ),
                       style: TextStyle(
                         fontSize: 12,
-                        color: _isDark(context)
+                        color: FormSurfaceColors.of(context).isDark
                             ? Colors.white70
                             : AppColors.designPlaceholder,
                       ),
@@ -355,14 +334,12 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: _isDark(context)
+                    color: FormSurfaceColors.of(context).isDark
                         ? const Color(0xFF1F1F1F)
                         : AppColors.colorWhite,
                     borderRadius: BorderRadius.circular(AppValues.radius_6),
                     border: Border.all(
-                      color: _isDark(context)
-                          ? Colors.white.withValues(alpha: 0.18)
-                          : AppColors.designInputBorder,
+                      color: FormSurfaceColors.of(context).inputBorder,
                     ),
                   ),
                   child: Row(
@@ -374,7 +351,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                           sw: 'Inapakia mali...',
                         ),
                         style: TextStyle(
-                          color: _isDark(context)
+                          color: FormSurfaceColors.of(context).isDark
                               ? Colors.white70
                               : AppColors.designPlaceholder,
                           fontSize: 16,
@@ -403,7 +380,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                     ).copyWith(
                       suffixIcon: Icon(
                         Icons.keyboard_arrow_down,
-                        color: _isDark(context)
+                        color: FormSurfaceColors.of(context).isDark
                             ? Colors.white70
                             : AppColors.designPlaceholder,
                       ),
@@ -411,7 +388,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                 hint: Text(
                   _t(context, en: 'Choose a listing', sw: 'Chagua tangazo'),
                   style: TextStyle(
-                    color: _isDark(context)
+                    color: FormSurfaceColors.of(context).isDark
                         ? Colors.white70
                         : AppColors.designPlaceholder,
                     fontSize: 16,
@@ -459,7 +436,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                         ).copyWith(
                           suffixIcon: Icon(
                             Icons.keyboard_arrow_down,
-                            color: _isDark(context)
+                            color: FormSurfaceColors.of(context).isDark
                                 ? Colors.white70
                                 : AppColors.designPlaceholder,
                           ),
@@ -467,7 +444,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                     hint: Text(
                       _t(context, en: 'Choose a unit', sw: 'Chagua unit'),
                       style: TextStyle(
-                        color: _isDark(context)
+                        color: FormSurfaceColors.of(context).isDark
                             ? Colors.white70
                             : AppColors.designPlaceholder,
                         fontSize: 16,
@@ -525,7 +502,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                               suffixIcon: Icon(
                                 Icons.calendar_today_outlined,
                                 size: 20,
-                                color: _isDark(context)
+                                color: FormSurfaceColors.of(context).isDark
                                     ? Colors.white70
                                     : AppColors.designPlaceholder,
                               ),
@@ -560,7 +537,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                             suffixIcon: Icon(
                               Icons.calendar_today_outlined,
                               size: 20,
-                              color: _isDark(context)
+                              color: FormSurfaceColors.of(context).isDark
                                   ? Colors.white70
                                   : AppColors.designPlaceholder,
                             ),
@@ -588,7 +565,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                     suffixIcon: Icon(
                       Icons.people_outline,
                       size: 22,
-                      color: _isDark(context)
+                      color: FormSurfaceColors.of(context).isDark
                           ? Colors.white70
                           : AppColors.designPlaceholder,
                     ),

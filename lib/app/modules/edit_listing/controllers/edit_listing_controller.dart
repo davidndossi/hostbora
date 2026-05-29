@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/base/feedback_extensions.dart';
 import '../../../data/local/db/property_listing_units_sync.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
@@ -255,8 +256,8 @@ class EditListingController extends BaseController {
       return;
     }
 
-    showLoading();
-    try {
+    await runBusy(() async {
+      try {
       final merged = PropertyRecord(
         id: orig.id,
         propertyLocation: locChanged ? newLoc : orig.propertyLocation,
@@ -312,13 +313,12 @@ class EditListingController extends BaseController {
       }
 
       Get.back(result: true);
-      Get.snackbar('Saved', 'Property updated on this device');
+      showSuccessWithHaptic('Property updated on this device');
     } catch (e, st) {
       logger.e('EditListing save $e $st');
       Get.snackbar('Error', 'Could not save changes');
-    } finally {
-      hideLoading();
     }
+    });
   }
 
   @override

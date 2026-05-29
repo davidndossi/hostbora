@@ -1,5 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -22,7 +26,7 @@ class _FinUi {
 
   Color get card => dark ? _t.cardColor : Colors.white;
 
-  Color get metricCardBg => dark ? const Color(0xFF2C2C2E) : cardTint;
+  Color get metricCardBg => dark ? context.tokens.cardBackground : cardTint;
 
   Color get onSurface =>
       dark ? const Color(0xFFF2F2F7) : const Color(0xFF1A1A1A);
@@ -59,7 +63,7 @@ class RentFinancialComparisonView extends RentBaseView<RentFinancialComparisonCo
     final u = _FinUi(context);
     return Obx(() {
       if (controller.loadingDash.value || controller.loadingRealData.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       return RefreshIndicator(
         color: _FinUi.forest,
@@ -135,7 +139,7 @@ class RentFinancialComparisonView extends RentBaseView<RentFinancialComparisonCo
         color: u.metricCardBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: u.shadow,
-        border: u.dark ? Border.all(color: const Color(0xFF3A3A3C)) : null,
+        border: u.dark ? Border.all(color: context.tokens.elevatedSurface) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,7 +177,7 @@ class RentFinancialComparisonView extends RentBaseView<RentFinancialComparisonCo
         color: u.card,
         borderRadius: BorderRadius.circular(18),
         boxShadow: u.shadow,
-        border: u.dark ? Border.all(color: const Color(0xFF3A3A3C)) : null,
+        border: u.dark ? Border.all(color: context.tokens.elevatedSurface) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,7 +236,7 @@ class RentFinancialComparisonView extends RentBaseView<RentFinancialComparisonCo
         return Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: u.dark ? const Color(0xFF3A3A3C) : _FinUi.cardTint,
+            color: u.dark ? context.tokens.elevatedSurface : _FinUi.cardTint,
             borderRadius: BorderRadius.circular(28),
           ),
           child: Row(
@@ -417,7 +421,7 @@ class RentFinancialComparisonView extends RentBaseView<RentFinancialComparisonCo
         color: u.metricCardBg,
         borderRadius: BorderRadius.circular(18),
         boxShadow: u.shadow,
-        border: u.dark ? Border.all(color: const Color(0xFF3A3A3C)) : null,
+        border: u.dark ? Border.all(color: context.tokens.elevatedSurface) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -459,7 +463,7 @@ class RentFinancialComparisonView extends RentBaseView<RentFinancialComparisonCo
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: u.dark ? const Color(0xFF1C1C1E) : Colors.white.withValues(alpha: 0.65),
+                      color: u.dark ? context.tokens.scaffoldBackground : Colors.white.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: u.muted.withValues(alpha: 0.2)),
                     ),
@@ -590,7 +594,7 @@ class RentFinancialComparisonView extends RentBaseView<RentFinancialComparisonCo
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             boxShadow: u.shadow,
-            border: u.dark ? Border.all(color: const Color(0xFF3A3A3C)) : null,
+            border: u.dark ? Border.all(color: context.tokens.elevatedSurface) : null,
           ),
           padding: const EdgeInsets.all(14),
           child: Column(

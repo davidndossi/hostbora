@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
 import 'package:get/get.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 
@@ -8,6 +9,8 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/loading_button.dart';
+import '../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '../controllers/send_sms_controller.dart';
 
 class SendSmsView extends BaseView<SendSmsController> {
@@ -21,13 +24,18 @@ class SendSmsView extends BaseView<SendSmsController> {
     final theme = Theme.of(context);
     return Obx(() {
       if (controller.savedMessageTemplates.isEmpty) {
+        final isBnb = controller.isBnbWorkspace;
         return Padding(
           padding: const EdgeInsets.only(bottom: AppValues.spacing_20),
           child: Text(
             _t(
               context,
-              'No saved templates yet. Create templates under Rent hub → WhatsApp templates.',
-              'Bado hakuna miolezo. Tengeneza chini ya Rent → Miolezo ya WhatsApp.',
+              isBnb
+                  ? 'No saved templates yet. Create templates under BnB home → WhatsApp templates or Rent hub → More.'
+                  : 'No saved templates yet. Create templates under Rent hub → More → WhatsApp templates.',
+              isBnb
+                  ? 'Bado hakuna miolezo. Tengeneza chini ya BnB → Violezo vya WhatsApp au Rent → Zaidi.'
+                  : 'Bado hakuna miolezo. Tengeneza chini ya Rent → Zaidi → Miolezo ya WhatsApp.',
             ),
             style: TextStyle(
               fontSize: 13,
@@ -85,6 +93,143 @@ class SendSmsView extends BaseView<SendSmsController> {
     });
   }
 
+  Widget _buildMetaTemplateSection(BuildContext context) {
+    final theme = Theme.of(context);
+    return Obx(() {
+      final t = controller.selectedWhatsappTemplate;
+      if (t == null || t.name.trim().isEmpty) {
+        return const SizedBox.shrink();
+      }
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppValues.spacing_20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                _t(
+                  context,
+                  'Send as Meta template',
+                  'Tuma kama kiolezo cha Meta',
+                ),
+              ),
+              subtitle: Text(
+                _t(
+                  context,
+                  'Name must match an approved template in Meta (${t.name}, ${t.language}).',
+                  'Jina lazima lifanane na kiolezo kilichoidhinishwa Meta (${t.name}, ${t.language}).',
+                ),
+                style: theme.textTheme.bodySmall,
+              ),
+              value: controller.sendAsMetaTemplate.value,
+              onChanged: controller.whatsappConfigured.value
+                  ? (v) => controller.sendAsMetaTemplate.value = v
+                  : null,
+            ),
+            if (t.status != WaTemplateStatus.approved)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  _t(
+                    context,
+                    'Status: ${WaTemplateStatus.label(t.status)} — Meta may reject if not approved.',
+                    'Hali: ${WaTemplateStatus.label(t.status)} — Meta inaweza kukataa ikiwa haijaidhinishwa.',
+                  ),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.orange.shade800,
+                  ),
+                ),
+              ),
+            if (controller.sendAsMetaTemplate.value &&
+                controller.templateHeaderParamControllers.isNotEmpty) ...[
+              Text(
+                _t(context, 'Header variables', 'Vigezo vya kichwa'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              ...List.generate(
+                controller.templateHeaderParamControllers.length,
+                (i) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TextFormField(
+                    controller: controller.templateHeaderParamControllers[i],
+                    decoration: InputDecoration(
+                      labelText: '{{${i + 1}}} (header)',
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            if (controller.sendAsMetaTemplate.value &&
+                controller.templateBodyParamControllers.isNotEmpty) ...[
+              Text(
+                _t(context, 'Body variables', 'Vigezo vya mwili'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              ...List.generate(
+                controller.templateBodyParamControllers.length,
+                (i) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TextFormField(
+                    controller: controller.templateBodyParamControllers[i],
+                    decoration: InputDecoration(
+                      labelText: '{{${i + 1}}}',
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildWhatsAppMessageField(BuildContext context) {
+    return Obx(() {
+      if (controller.canUseMetaTemplateApi) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppValues.spacing_20),
+          child: Text(
+            _t(
+              context,
+              'Message content comes from the Meta template variables above.',
+              'Maudhui yanatoka kwenye vigezo vya kiolezo cha Meta hapo juu.',
+            ),
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        );
+      }
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppValues.spacing_20),
+        child: TextFormField(
+          controller: controller.messageController,
+          keyboardType: TextInputType.multiline,
+          maxLines: 5,
+          decoration: InputDecoration(
+            labelText: _t(context, 'Message', 'Ujumbe'),
+            hintText: _t(
+              context,
+              'Enter your message...',
+              'Weka ujumbe wako...',
+            ),
+            border: const OutlineInputBorder(),
+            alignLabelWithHint: true,
+          ),
+          validator: controller.messageValidator,
+        ),
+      );
+    });
+  }
+
   Future<void> _showContactPicker(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     final ready = await controller.prepareContactPicker();
@@ -133,7 +278,7 @@ class SendSmsView extends BaseView<SendSmsController> {
                   Expanded(
                     child: Obx(() {
                       if (controller.isLoadingContacts.value) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const DefaultScreenSkeleton();
                       }
                       final entries = controller.filteredDeviceContactEntries;
                       if (entries.isEmpty) {
@@ -182,6 +327,109 @@ class SendSmsView extends BaseView<SendSmsController> {
       },
     );
     searchController.dispose();
+  }
+
+  Future<void> _showGuestPicker(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: SizedBox(
+              height: 460,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _t(ctx, 'Select guest recipients', 'Chagua wapokeaji wageni'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  Obx(
+                    () => Text(
+                      controller.recipientContextLabel.value.isEmpty
+                          ? _t(
+                              ctx,
+                              'Pick guests from active bookings to append their numbers.',
+                              'Chagua wageni kutoka uhifadhi hai kuongeza namba zao.',
+                            )
+                          : controller.recipientContextLabel.value,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Obx(() {
+                      if (controller.availableGuests.isEmpty) {
+                        return Center(
+                          child: Text(
+                            _t(
+                              ctx,
+                              'No guests with phone numbers in bookings.',
+                              'Hakuna wageni wenye namba katika uhifadhi.',
+                            ),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        itemCount: controller.availableGuests.length,
+                        itemBuilder: (_, index) {
+                          final g = controller.availableGuests[index];
+                          final selected = controller.pickerSelectedGuestKeys
+                              .contains(g.key);
+                          return CheckboxListTile(
+                            value: selected,
+                            onChanged: (v) => controller.toggleGuestForPicker(
+                              g.key,
+                              v ?? false,
+                            ),
+                            title: Text(g.label),
+                            subtitle: Text(
+                              [
+                                if (g.subtitle.trim().isNotEmpty) g.subtitle,
+                                g.phone,
+                              ].join('\n'),
+                              maxLines: 2,
+                            ),
+                            isThreeLine: true,
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        controller.appendSelectedTenantsToRecipients();
+                        Get.back();
+                      },
+                      icon: const Icon(Icons.add_ic_call_outlined),
+                      label: Text(
+                        _t(
+                          ctx,
+                          'Add selected phone numbers',
+                          'Ongeza namba zilizochaguliwa',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _showTenantPicker(BuildContext context) async {
@@ -288,62 +536,115 @@ class SendSmsView extends BaseView<SendSmsController> {
     );
   }
 
+  Widget _buildPropertyScopeChip(BuildContext context) {
+    return Obx(() {
+      final ref = controller.messagingPropertyRef.value.trim();
+      if (ref.isEmpty) return const SizedBox.shrink();
+      final locked = controller.isPropertyRefLockedByRoute;
+      final label = controller.messagingPropertyFilterLabel;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppValues.spacing_10),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: InputChip(
+            avatar: const Icon(Icons.home_work_outlined, size: 18),
+            label: Text(
+              _t(
+                context,
+                'Property: $label',
+                'Mali: $label',
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+            deleteIcon: locked ? null : const Icon(Icons.close, size: 18),
+            onDeleted:
+                locked ? null : () => controller.setMessagingPropertyRef(null),
+          ),
+        ),
+      );
+    });
+  }
+
   Widget _buildRecipientAssistActions(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Obx(
-      () => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showTenantPicker(context),
-                  icon: const Icon(Icons.people_alt_outlined, size: 18),
-                  label: Text(
-                    _t(
-                      context,
-                      'Pick tenant(s)',
-                      'Chagua mpangaji',
+      () {
+        final isBnb = controller.isBnbWorkspace;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (isBnb)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showGuestPicker(context),
+                    icon: const Icon(Icons.hotel_outlined, size: 18),
+                    label: Text(
+                      _t(context, 'Pick guest(s)', 'Chagua mgeni/mageni'),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showContactPicker(context),
-                  icon: const Icon(Icons.contacts_outlined, size: 18),
-                  label: Text(l10n.sendSmsPickFromContacts),
-                ),
-              ),
-            ],
-          ),
-          if (controller.pickerSelectedTenantIds.isNotEmpty ||
-              controller.pickerSelectedContactKeys.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                [
-                  if (controller.pickerSelectedTenantIds.isNotEmpty)
-                    _t(
-                      context,
-                      '${controller.pickerSelectedTenantIds.length} tenant(s)',
-                      'wapangaji ${controller.pickerSelectedTenantIds.length}',
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showTenantPicker(context),
+                    icon: const Icon(Icons.people_alt_outlined, size: 18),
+                    label: Text(
+                      _t(
+                        context,
+                        isBnb ? 'Pick BnB tenant(s)' : 'Pick tenant(s)',
+                        isBnb ? 'Chagua mpangaji BnB' : 'Chagua mpangaji',
+                      ),
                     ),
-                  if (controller.pickerSelectedContactKeys.isNotEmpty)
-                    l10n.sendSmsContactsSelectedCount(
-                      controller.pickerSelectedContactKeys.length,
-                    ),
-                ].join(' · '),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showContactPicker(context),
+                    icon: const Icon(Icons.contacts_outlined, size: 18),
+                    label: Text(l10n.sendSmsPickFromContacts),
+                  ),
+                ),
+              ],
             ),
-        ],
-      ),
+            if (controller.pickerSelectedGuestKeys.isNotEmpty ||
+                controller.pickerSelectedTenantIds.isNotEmpty ||
+                controller.pickerSelectedContactKeys.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  [
+                    if (controller.pickerSelectedGuestKeys.isNotEmpty)
+                      _t(
+                        context,
+                        '${controller.pickerSelectedGuestKeys.length} guest(s)',
+                        'wageni ${controller.pickerSelectedGuestKeys.length}',
+                      ),
+                    if (controller.pickerSelectedTenantIds.isNotEmpty)
+                      _t(
+                        context,
+                        '${controller.pickerSelectedTenantIds.length} tenant(s)',
+                        'wapangaji ${controller.pickerSelectedTenantIds.length}',
+                      ),
+                    if (controller.pickerSelectedContactKeys.isNotEmpty)
+                      l10n.sendSmsContactsSelectedCount(
+                        controller.pickerSelectedContactKeys.length,
+                      ),
+                  ].join(' · '),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -409,7 +710,7 @@ class SendSmsView extends BaseView<SendSmsController> {
       final theme = Theme.of(context);
       final isDark = theme.brightness == Brightness.dark;
       if (controller.isCheckingAccess.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       if (!controller.isAccessAllowed.value) {
         return Center(
@@ -448,6 +749,8 @@ class SendSmsView extends BaseView<SendSmsController> {
                     },
                   ),
                 ),
+                const SizedBox(height: AppValues.spacing_10),
+                _buildPropertyScopeChip(context),
                 const SizedBox(height: AppValues.spacing_20),
                 Obx(
                   () => AnimatedSwitcher(
@@ -512,27 +815,14 @@ class SendSmsView extends BaseView<SendSmsController> {
                               Obx(
                                 () => SizedBox(
                                   width: AppValues.formButtonWidth,
-                                  height: AppValues.formButtonHeight,
-                                  child: ElevatedButton(
-                                    onPressed: controller.isLoading.value
-                                        ? null
-                                        : controller.sendSms,
-                                    child: controller.isLoading.value
-                                        ? const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(
-                                              color: Colors.white,
-                                              strokeWidth: 1.5,
-                                            ),
-                                          )
-                                        : Text(
-                                            _t(context, 'Send SMS', 'Tuma SMS'),
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
+                                  child: LoadingButton(
+                                    label: _t(context, 'Send SMS', 'Tuma SMS'),
+                                    onPressed: controller.sendSms,
+                                    isLoading: controller.isLoading.value,
+                                    icon: Icons.sms_outlined,
+                                    minimumSize: const Size.fromHeight(
+                                      AppValues.formButtonHeight,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -593,6 +883,8 @@ class SendSmsView extends BaseView<SendSmsController> {
                                           height: AppValues.spacing_20,
                                         ),
                                         _buildSavedTemplatesPicker(context),
+                                        _buildMetaTemplateSection(context),
+                                        _buildWhatsAppMessageField(context),
                                         Text(
                                           _t(
                                             context,
@@ -729,33 +1021,61 @@ class SendSmsView extends BaseView<SendSmsController> {
                                         const SizedBox(
                                           height: AppValues.spacing_10,
                                         ),
-                                        ElevatedButton.icon(
-                                          onPressed: controller.isLoading.value
-                                              ? null
-                                              : controller.sendViaWhatsApp,
-                                          icon: SvgPicture.asset(
-                                            'images/ic_whatsapp.svg',
-                                            colorFilter: const ColorFilter.mode(
-                                              Colors.white,
-                                              BlendMode.srcIn,
+                                        Obx(() {
+                                          if (controller.isLoadingWhatsAppStatus.value) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          final linked = controller.whatsappConfigured.value;
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: AppValues.spacing_10,
                                             ),
-                                            height: 24,
-                                          ),
-                                          label: Text(
-                                            _t(
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    linked
+                                                        ? _t(
+                                                            context,
+                                                            'Sending via your WhatsApp Business API',
+                                                            'Inatumwa kupitia WhatsApp Business API yako',
+                                                          )
+                                                        : _t(
+                                                            context,
+                                                            'Link WhatsApp Business to send from the app',
+                                                            'Unganisha WhatsApp Business kutuma kutoka programu',
+                                                          ),
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: linked
+                                                          ? Colors.green.shade700
+                                                          : Colors.orange.shade800,
+                                                    ),
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: controller.linkWhatsAppBusinessAccount,
+                                                  child: Text(
+                                                    linked
+                                                        ? _t(context, 'Update', 'Sasisha')
+                                                        : _t(context, 'Link', 'Unganisha'),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }),
+                                        Obx(
+                                          () => LoadingButton(
+                                            label: _t(
                                               context,
                                               'Send via WhatsApp',
                                               'Tuma kwa WhatsApp',
                                             ),
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            minimumSize: const Size.fromHeight(
-                                              48,
-                                            ),
+                                            onPressed: controller.sendViaWhatsApp,
+                                            isLoading: controller.isLoading.value,
+                                            icon: Icons.send_outlined,
+                                            minimumSize: const Size.fromHeight(48),
                                           ),
                                         ),
                                         const SizedBox(
@@ -1048,29 +1368,18 @@ class SendSmsView extends BaseView<SendSmsController> {
                                         const SizedBox(
                                           height: AppValues.spacing_10,
                                         ),
-                                        ElevatedButton.icon(
-                                          onPressed: controller.isLoading.value
-                                              ? null
-                                              : controller.sendToWhatsAppGroup,
-                                          icon: const Icon(
-                                            Icons.group_add,
-                                            size: 20,
-                                          ),
-                                          label: Text(
-                                            _t(
+                                        Obx(
+                                          () => LoadingButton(
+                                            label: _t(
                                               context,
                                               'Open group & copy message',
                                               'Fungua kikundi na nakili ujumbe',
                                             ),
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            minimumSize: const Size.fromHeight(
-                                              48,
-                                            ),
+                                            onPressed:
+                                                controller.sendToWhatsAppGroup,
+                                            isLoading: controller.isLoading.value,
+                                            icon: Icons.group_add,
+                                            minimumSize: const Size.fromHeight(48),
                                           ),
                                         ),
                                       ],

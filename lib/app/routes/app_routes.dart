@@ -12,12 +12,15 @@ abstract class Routes {
   static const OTHER = _Paths.OTHER;
   static const CHANGE_PASSWORD = _Paths.CHANGE_PASSWORD;
   static const SETTINGS = _Paths.SETTINGS;
+  static const HELP_CENTER = _Paths.HELP_CENTER;
+  static const HELP_GUIDE_DETAIL = _Paths.HELP_GUIDE_DETAIL;
   static const NOTIFICATIONS = _Paths.NOTIFICATIONS;
   static const SUCCESS = _Paths.SUCCESS;
   static const FAILED = _Paths.FAILED;
   static const SUPPORT = _Paths.SUPPORT;
   static const FEEDBACK = _Paths.FEEDBACK;
   static const SEND_SMS = _Paths.SEND_SMS;
+  static const ADMIN_WHATSAPP_CREDENTIALS = _Paths.ADMIN_WHATSAPP_CREDENTIALS;
   static const SUBSCRIPTION = _Paths.SUBSCRIPTION;
   static const SPLASH = _Paths.SPLASH;
   static const ONBOARDING = _Paths.ONBOARDING;
@@ -82,6 +85,7 @@ abstract class Routes {
   static const RENT_ADD_TENANT_FORM = _Paths.RENT_ADD_TENANT_FORM;
   static const RENT_ADD_INCOME_FORM = _Paths.RENT_ADD_INCOME_FORM;
   static const RENT_MANAGE_PAYMENTS = _Paths.RENT_MANAGE_PAYMENTS;
+  static const RENT_EXPECTED_PAYMENT_SCHEDULE = _Paths.RENT_EXPECTED_PAYMENT_SCHEDULE;
   static const RENT_MANAGE_EXPENSES = _Paths.RENT_MANAGE_EXPENSES;
   static const RENT_ADD_NEW_EXPENSE = _Paths.RENT_ADD_NEW_EXPENSE;
   static const RENT_MONTHLY_PL_SUMMARY = _Paths.RENT_MONTHLY_PL_SUMMARY;
@@ -126,12 +130,15 @@ abstract class _Paths {
   static const OTHER = '/other';
   static const NOTIFICATIONS = '/notifications';
   static const SETTINGS = '/settings';
+  static const HELP_CENTER = '/help-center';
+  static const HELP_GUIDE_DETAIL = '/help-center/guide';
   static const SUCCESS = '/success';
   static const FAILED = '/failed';
   static const CHANGE_PASSWORD = '/change-password';
   static const SUPPORT = '/support';
   static const FEEDBACK = '/feedback';
   static const SEND_SMS = '/send-sms';
+  static const ADMIN_WHATSAPP_CREDENTIALS = '/admin/whatsapp-credentials';
   static const SUBSCRIPTION = '/subscription';
   static const SPLASH = '/splash';
   static const ONBOARDING = '/onboarding';
@@ -196,6 +203,7 @@ abstract class _Paths {
   static const RENT_ADD_TENANT_FORM = '/rent/add-tenant-form';
   static const RENT_ADD_INCOME_FORM = '/rent/add-income-form';
   static const RENT_MANAGE_PAYMENTS = '/rent/manage-payments';
+  static const RENT_EXPECTED_PAYMENT_SCHEDULE = '/rent/expected-payment-schedule';
   static const RENT_MANAGE_EXPENSES = '/rent/manage-expenses';
   static const RENT_ADD_NEW_EXPENSE = '/rent/add-new-expense';
   static const RENT_MONTHLY_PL_SUMMARY = '/rent/monthly-pl-summary';

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../core/models/item_sync_status.dart';
 import '../../core/utils/bnb_property_listing.dart';
 import '../model/check_in_item.dart';
 import 'bnb_booking_merge.dart';
@@ -31,7 +32,13 @@ class BnbBookingPendingLoader {
       final listingId = (m['listingId'] ?? '').toString();
       final checkIn = (m['checkIn'] ?? '').toString();
       final createdAt = (m['createdAt'] ?? '').toString();
-      add(m, 'legacy:$listingId|$checkIn|$createdAt');
+      add(
+        <String, dynamic>{
+          ...m,
+          'syncStatus': 'pending',
+        },
+        'legacy:$listingId|$checkIn|$createdAt',
+      );
     }
 
     final queue = _syncQueue;
@@ -45,6 +52,8 @@ class BnbBookingPendingLoader {
             ...map,
             'createdAt': DateTime.fromMillisecondsSinceEpoch(item.createdAtMs)
                 .toIso8601String(),
+            'syncStatus': item.status,
+            'syncQueueId': item.id,
           };
           final listingId = (map['listingId'] ?? '').toString();
           final checkIn = (map['checkIn'] ?? '').toString();
@@ -74,7 +83,10 @@ Future<void> mergePendingBnbBookings({
     final propertyLabel = property?.propertyName.trim().isNotEmpty == true
         ? property!.propertyName.trim()
         : (property?.propertyLocation ?? 'Property');
-    final localId = 'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
+    final syncQueueId = m['syncQueueId'] as int?;
+    final localId = syncQueueId != null
+        ? 'local_sync_$syncQueueId'
+        : 'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
     final pendingMap = Map<String, dynamic>.from(m);
     if (property != null) {
       pendingMap['listingId'] = bnbHubRefForProperty(property);
@@ -83,6 +95,8 @@ Future<void> mergePendingBnbBookings({
       pendingMap,
       propertyLabel: propertyLabel,
       localId: localId,
+      syncStatus: ItemSyncStatusX.fromQueueStatus(m['syncStatus']?.toString()),
+      syncQueueId: syncQueueId,
     );
     if (item.isInactive) continue;
     merged[localId] = item;

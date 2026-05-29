@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -14,8 +17,7 @@ const _scheduledAmber = Color(0xFFE5A500);
 class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
   GuestAccessCodesView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -26,12 +28,12 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
 
   @override
   Color pageBackgroundColor(BuildContext context) =>
-      _isDark(context) ? Theme.of(context).colorScheme.surface : _screenBg;
+      FormSurfaceColors.of(context).isDark ? Theme.of(context).colorScheme.surface : _screenBg;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return CustomAppBar(
       appBarTitleText: appLocalization.guestAccessCodes,
       isCentered: true,
@@ -40,7 +42,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
           margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: (isDark ? theme.colorScheme.primary : _accessTeal)
+            color: (c.isDark ? theme.colorScheme.primary : _accessTeal)
                 .withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
           ),
@@ -49,7 +51,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: isDark ? theme.colorScheme.primary : _accessTeal,
+              color: c.isDark ? theme.colorScheme.primary : _accessTeal,
             ),
           ),
         ),
@@ -61,7 +63,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
   Widget body(BuildContext context) {
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       return RefreshIndicator(
         onRefresh: controller.loadAccessCodes,
@@ -85,7 +87,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
 
   Widget _buildActiveSection(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -98,7 +100,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
-                color: isDark
+                color: c.isDark
                     ? theme.colorScheme.onSurface
                     : AppColors.textColorPrimary,
               ),
@@ -108,7 +110,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
               '${_t(context, en: 'Last synced', sw: 'Mara ya mwisho kusawazishwa')}: ${controller.lastSynced.value}',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark
+                color: c.isDark
                     ? theme.colorScheme.onSurfaceVariant
                     : AppColors.textColorSecondary,
               ),
@@ -129,7 +131,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
                 ),
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.onSurfaceVariant
                       : AppColors.textColorSecondary,
                 ),
@@ -162,7 +164,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
 
   Widget _buildUpcomingSection(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -172,7 +174,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
             fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,
-            color: isDark
+            color: c.isDark
                 ? theme.colorScheme.onSurface
                 : AppColors.textColorPrimary,
           ),
@@ -190,7 +192,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
                 ),
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.onSurface
                       : AppColors.textColorSecondary,
                 ),
@@ -282,7 +284,7 @@ class _AccessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     final statusColor = isActive
         ? AppColors.colorSuccessGreen
         : _scheduledAmber;
@@ -293,7 +295,7 @@ class _AccessCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
+        color: c.isDark
             ? theme.colorScheme.surfaceContainerHigh
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
@@ -318,7 +320,7 @@ class _AccessCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: isDark
+                        color: c.isDark
                             ? theme.colorScheme.onSurface
                             : AppColors.textColorPrimary,
                       ),
@@ -337,7 +339,7 @@ class _AccessCard extends StatelessWidget {
                       statusLabel,
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark
+                        color: c.isDark
                             ? theme.colorScheme.onSurface
                             : AppColors.textColorPrimary,
                       ),
@@ -349,7 +351,7 @@ class _AccessCard extends StatelessWidget {
                 IconButton(
                   onPressed: () => onShare(),
                   icon: const Icon(Icons.share_outlined, size: 22),
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.onSurface
                       : AppColors.textColorPrimary,
                   padding: EdgeInsets.zero,
@@ -362,7 +364,7 @@ class _AccessCard extends StatelessWidget {
                 IconButton(
                   onPressed: onOptions,
                   icon: const Icon(Icons.more_vert, size: 22),
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.onSurface
                       : AppColors.textColorPrimary,
                   padding: EdgeInsets.zero,
@@ -379,7 +381,7 @@ class _AccessCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isDark
+              color: c.isDark
                   ? theme.colorScheme.onSurfaceVariant
                   : AppColors.textColorSecondary,
             ),
@@ -397,7 +399,7 @@ class _AccessCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    color: isDark
+                    color: c.isDark
                         ? theme.colorScheme.onSurface
                         : AppColors.textColorPrimary,
                     letterSpacing: 1,
@@ -413,7 +415,7 @@ class _AccessCard extends StatelessWidget {
                         Icon(
                           revealed ? Icons.visibility_off : Icons.visibility,
                           size: 18,
-                          color: isDark
+                          color: c.isDark
                               ? theme.colorScheme.primary
                               : _accessTeal,
                         ),
@@ -425,7 +427,7 @@ class _AccessCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: isDark
+                            color: c.isDark
                                 ? theme.colorScheme.primary
                                 : _accessTeal,
                           ),
@@ -437,7 +439,7 @@ class _AccessCard extends StatelessWidget {
                   IconButton(
                     onPressed: () => onCopy(),
                     icon: const Icon(Icons.copy, size: 20),
-                    color: isDark
+                    color: c.isDark
                         ? theme.colorScheme.onSurface
                         : AppColors.textColorPrimary,
                     padding: EdgeInsets.zero,
@@ -463,7 +465,7 @@ class _AccessCard extends StatelessWidget {
                   item.dateRange,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark
+                    color: c.isDark
                         ? theme.colorScheme.onSurfaceVariant
                         : AppColors.textColorSecondary,
                   ),

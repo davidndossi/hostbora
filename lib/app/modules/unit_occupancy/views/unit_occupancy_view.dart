@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -55,7 +57,7 @@ class UnitOccupancyView extends BaseView<UnitOccupancyController> {
       color: bg,
       child: Obx(() {
         if (controller.loading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const DefaultScreenSkeleton();
         }
         final building = controller.buildingTitle.value;
         final sections = controller.floorSections;

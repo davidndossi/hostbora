@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/base/feedback_extensions.dart';
+import '../../../../core/utils/haptic_feedback_util.dart';
 import '../../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 import '../utils/rent_staff_pay_format.dart';
@@ -203,44 +205,43 @@ class RentStaffManagementController extends BaseController {
     }
     if (amount == null) return;
 
-    showLoading();
-    try {
-      final editId = editingStaffId.value;
-      if (editId != null) {
-        await _local.updateById(
-          id: editId,
+    await runBusy(() async {
+      try {
+        final editId = editingStaffId.value;
+        if (editId != null) {
+          await _local.updateById(
+            id: editId,
+            name: name,
+            jobTitle: role,
+            payDayLabel: payDay,
+            paymentType: paymentType.value,
+            amountValue: amount,
+          );
+          showSuccessWithHaptic('Staff updated');
+          Get.back(result: true);
+          return;
+        }
+
+        await _local.insert(
           name: name,
           jobTitle: role,
           payDayLabel: payDay,
           paymentType: paymentType.value,
           amountValue: amount,
         );
-        hideLoading();
-        showSuccessMessage('Staff updated');
-        Get.back(result: true);
-        return;
+        fullNameController.clear();
+        amountController.clear();
+        payDateController.clear();
+        selectedPrimaryRole.value = '';
+        paymentType.value = RentStaffPayFormat.monthly;
+        await loadStaff();
+        showSuccessWithHaptic('Staff registered');
+      } catch (e, st) {
+        logger.e('registerStaff $e $st');
+        hapticValidationError();
+        Get.snackbar('Error', 'Could not save staff');
       }
-
-      await _local.insert(
-        name: name,
-        jobTitle: role,
-        payDayLabel: payDay,
-        paymentType: paymentType.value,
-        amountValue: amount,
-      );
-      fullNameController.clear();
-      amountController.clear();
-      payDateController.clear();
-      selectedPrimaryRole.value = '';
-      paymentType.value = RentStaffPayFormat.monthly;
-      await loadStaff();
-      showSuccessMessage('Staff registered');
-    } catch (e, st) {
-      logger.e('registerStaff $e $st');
-      Get.snackbar('Error', 'Could not save staff');
-    } finally {
-      hideLoading();
-    }
+    });
   }
 
   void editStaff(RentStaffListItem member) {
@@ -253,16 +254,33 @@ class RentStaffManagementController extends BaseController {
   Future<void> removeStaff(String id) async {
     final parsed = int.tryParse(id);
     if (parsed == null) return;
-    showLoading();
-    try {
-      await _local.deleteById(parsed);
-      await loadStaff();
-    } catch (e, st) {
-      logger.e('removeStaff $e $st');
-      Get.snackbar('Error', 'Could not remove staff');
-    } finally {
-      hideLoading();
-    }
+    final snapshot = await _local.getById(parsed);
+    if (snapshot == null) return;
+
+    final confirmed = await confirmDestructive(
+      title: 'Remove staff member?',
+      message: 'Remove ${snapshot.name.trim()} from your team list?',
+      confirmLabel: 'Remove',
+    );
+    if (!confirmed) return;
+
+    await runDestructiveWithUndo(
+      message: 'Staff member removed',
+      action: () async {
+        await _local.deleteById(parsed);
+        await loadStaff();
+      },
+      onUndo: () async {
+        await _local.insert(
+          name: snapshot.name,
+          jobTitle: snapshot.jobTitle,
+          payDayLabel: snapshot.payDayLabel,
+          paymentType: snapshot.paymentType,
+          amountValue: snapshot.amountValue,
+        );
+        await loadStaff();
+      },
+    );
   }
 
   @override

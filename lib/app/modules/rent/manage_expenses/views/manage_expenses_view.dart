@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/widget/app_skeleton.dart';
 import '../../../../data/local/service/currency_service.dart';
+import '../../../../core/models/item_sync_status.dart';
 import '../../../../core/widget/custom_app_bar.dart';
+import '../../../../core/widget/app_interactive_card.dart';
+import '../../../../core/widget/expense_row_quick_actions_sheet.dart';
+import '../../../../core/widget/sync_status_chip.dart';
 import '../../manage_payments/widgets/date_range_box.dart';
 import '../../rent_theme.dart';
 import '../controllers/manage_expenses_controller.dart';
@@ -31,14 +39,43 @@ class ManageExpensesView extends RentBaseView<ManageExpensesController> {
 
   @override
   Widget body(BuildContext context) {
+    final tokens = context.tokens;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? const Color(0xFF2C2C2E) : Colors.white;
-    final titleColor = isDark ? Colors.white : RentTheme.navy;
-    final muted = isDark ? const Color(0xFFAEAEB2) : RentTheme.muted;
+    final card = tokens.cardBackground;
+    final titleColor = isDark ? tokens.textPrimary : RentTheme.navy;
+    final muted = isDark ? tokens.textSecondary : RentTheme.muted;
 
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          children: [
+            const AppSkeleton(width: double.infinity, height: 44, borderRadius: 8),
+            const SizedBox(height: 12),
+            const AppSkeleton(width: double.infinity, height: 72, borderRadius: 12),
+            const SizedBox(height: 16),
+            for (var i = 0; i < 5; i++) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: card,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppSkeleton(width: 120, height: 14, borderRadius: 4),
+                    SizedBox(height: 8),
+                    AppSkeleton(width: 180, height: 12, borderRadius: 4),
+                    SizedBox(height: 8),
+                    AppSkeleton(width: 80, height: 16, borderRadius: 4),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        );
       }
       return RefreshIndicator(
         onRefresh: controller.refreshRows,
@@ -272,11 +309,24 @@ class ManageExpensesView extends RentBaseView<ManageExpensesController> {
         ? r.tenantName
         : (r.categoryLabel.isNotEmpty ? r.categoryLabel : '—');
 
+    final isSw = Get.locale?.languageCode == 'sw';
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
+      child: AppInteractiveCard(
         color: card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: 16,
+        dismissKey: ValueKey('expense_row_${r.localExpenseId}'),
+        onLongPress: () => showExpenseRowQuickActionsSheet(
+          context: context,
+          row: r,
+          onRetrySync: r.syncStatus == ItemSyncStatus.failed
+              ? () => controller.retryExpenseSync(r)
+              : () {},
+        ),
+        onSwipeEndToStart: r.syncStatus == ItemSyncStatus.failed
+            ? () async => controller.retryExpenseSync(r)
+            : null,
+        swipeEndLabel: isSw ? 'Sawazisha' : 'Retry sync',
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Column(
@@ -303,9 +353,28 @@ class ManageExpensesView extends RentBaseView<ManageExpensesController> {
                       ],
                     ),
                   ),
-                  Text(
-                    amountLabel,
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: titleColor),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (r.showSyncBadge) ...[
+                        SyncStatusChip(
+                          status: r.syncStatus,
+                          onRetry: r.syncStatus == ItemSyncStatus.failed
+                              ? () => controller.retryExpenseSync(r)
+                              : null,
+                          compact: true,
+                        ),
+                        const SizedBox(height: 4),
+                      ],
+                      Text(
+                        amountLabel,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          color: titleColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

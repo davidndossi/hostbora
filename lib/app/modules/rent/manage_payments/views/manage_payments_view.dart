@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/rent_base_view.dart';
 import '../../../../data/local/service/currency_service.dart';
 import '../../../../core/widget/custom_app_bar.dart';
+import '../../../../routes/app_pages.dart';
 import '../../rent_theme.dart';
 import '../controllers/manage_payments_controller.dart';
 import '../widgets/date_range_box.dart';
@@ -20,25 +25,34 @@ class ManagePaymentsView extends RentBaseView<ManagePaymentsController> {
     return dark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF8F7F4);
   }
 
+  bool get _isSw => Get.locale?.languageCode == 'sw';
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
       appBarTitleText: appLocalization.managePaymentsTitle,
       showLanguageToggle: false,
       showThemeToggle: false,
+      actions: [
+        IconButton(
+          tooltip: _isSw ? 'Ratiba ya mwaka' : 'Year schedule',
+          onPressed: () => Get.toNamed(Routes.RENT_EXPECTED_PAYMENT_SCHEDULE),
+          icon: const Icon(Icons.calendar_month_outlined),
+        ),
+      ],
     );
   }
 
   @override
   Widget body(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? const Color(0xFF2C2C2E) : Colors.white;
+    final card = isDark ? context.tokens.cardBackground : Colors.white;
     final titleColor = isDark ? Colors.white : RentTheme.navy;
     final muted = isDark ? const Color(0xFFAEAEB2) : RentTheme.muted;
 
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       return RefreshIndicator(
         onRefresh: controller.refreshRows,

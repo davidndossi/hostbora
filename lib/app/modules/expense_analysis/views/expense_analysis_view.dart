@@ -1,5 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -21,12 +26,11 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return CustomAppBar(
       appBarTitleText: appLocalization.expenseAnalysis,
       isCentered: true,
@@ -34,7 +38,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
         IconButton(
           onPressed: controller.openMoreOptions,
           icon: const Icon(Icons.more_vert),
-          color: isDark ? Colors.white : AppColors.appBarIconColor,
+          color: c.isDark ? Colors.white : AppColors.appBarIconColor,
         ),
       ],
     );
@@ -80,7 +84,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _isDark(context) ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        color: FormSurfaceColors.of(context).inputFill,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
       ),
       child: Text(
@@ -88,7 +92,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 14,
-          color: _isDark(context) ? Colors.white70 : AppColors.textColorSecondary,
+          color: context.tokens.textSecondary,
         ),
       ),
     );
@@ -155,14 +159,14 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: _isDark(context)
+        color: FormSurfaceColors.of(context).isDark
             ? const Color(0xFF1F1F1F)
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
-              alpha: _isDark(context) ? 0.28 : 0.06,
+              alpha: FormSurfaceColors.of(context).isDark ? 0.28 : 0.06,
             ),
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -193,9 +197,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
-                        color: _isDark(context)
-                            ? Colors.white70
-                            : AppColors.textColorSecondary,
+                        color: context.tokens.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -227,7 +229,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
               _t(context, en: 'No expenses in selected period', sw: 'Hakuna matumizi kwa kipindi hiki'),
               style: TextStyle(
                 fontSize: 13,
-                color: _isDark(context) ? Colors.white70 : AppColors.textColorSecondary,
+                color: context.tokens.textSecondary,
               ),
             ),
         ],
@@ -237,7 +239,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
 
   Widget _buildTopExpenses(BuildContext context) {
     if (controller.loading.value) {
-      return const Center(child: CircularProgressIndicator());
+      return const DefaultScreenSkeleton();
     }
     if (controller.topExpenses.isEmpty) {
       return _emptyStateCard(
@@ -328,9 +330,9 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Material(
-      color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+      color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -340,7 +342,7 @@ class _FilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
             border: Border.all(
-              color: isDark
+              color: c.isDark
                   ? Colors.white.withValues(alpha: 0.18)
                   : AppColors.designInputBorder,
             ),
@@ -361,7 +363,7 @@ class _FilterChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+                color: c.secondary,
               ),
             ],
           ),
@@ -392,9 +394,7 @@ class _LegendDot extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white70
-                : AppColors.textColorSecondary,
+            color: context.tokens.textSecondary,
           ),
         ),
       ],
@@ -409,15 +409,15 @@ class _TopExpenseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+            color: Colors.black.withValues(alpha: c.isDark ? 0.28 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -453,7 +453,7 @@ class _TopExpenseCard extends StatelessWidget {
                       item.subtitle,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark
+                        color: c.isDark
                             ? Colors.white70
                             : AppColors.textColorSecondary,
                       ),
@@ -501,7 +501,7 @@ class _TopExpenseCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+              color: c.secondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -522,7 +522,7 @@ class _TopExpenseCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+              color: c.secondary,
             ),
           ),
           const SizedBox(height: 4),

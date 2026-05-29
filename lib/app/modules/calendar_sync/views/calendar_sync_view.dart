@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -28,7 +30,7 @@ class CalendarSyncView extends BaseView<CalendarSyncController> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF2C2C2E) : Colors.white;
+    final cardColor = isDark ? context.tokens.cardBackground : Colors.white;
     final muted = isDark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
 
     if (controller.listingId.isEmpty) {

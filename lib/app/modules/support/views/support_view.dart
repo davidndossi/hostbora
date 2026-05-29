@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
@@ -26,8 +28,8 @@ class SupportView extends BaseView<SupportController> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bodyColor = isDark ? Colors.white70 : AppColors.textColorSecondary;
     final headingColor = isDark ? Colors.white : AppColors.textColorPrimary;
-    final cardColor = isDark ? const Color(0xFF2C2C2E) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E7EB);
+    final cardColor = isDark ? context.tokens.cardBackground : Colors.white;
+    final borderColor = isDark ? context.tokens.elevatedSurface : const Color(0xFFE5E7EB);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppValues.padding),

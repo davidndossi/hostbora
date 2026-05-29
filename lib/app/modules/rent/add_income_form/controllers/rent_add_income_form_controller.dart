@@ -15,6 +15,7 @@ import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../../data/local/service/property_break_even_notification_service.dart';
 import '../../../../data/model/record_payment_request.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
 import '../../listing_details/controllers/rent_listing_details_controller.dart';
@@ -480,6 +481,9 @@ class RentAddIncomeFormController extends BaseController {
       }
       await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
       await RentListingDetailsController.refreshIfRegistered();
+      await PropertyBreakEvenNotificationService.checkPropertyIfRegistered(
+        _propertyRefForIncomeInsert(),
+      );
       Get.back(result: true);
     } catch (e) {
       showErrorMessage('Failed to save income: $e');

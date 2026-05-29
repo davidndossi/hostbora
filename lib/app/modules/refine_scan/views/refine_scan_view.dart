@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
@@ -12,8 +13,7 @@ import '../controllers/refine_scan_controller.dart';
 class RefineScanView extends BaseView<RefineScanController> {
   RefineScanView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -23,7 +23,7 @@ class RefineScanView extends BaseView<RefineScanController> {
   }
 
   @override
-  Color pageBackgroundColor(BuildContext context) => _isDark(context)
+  Color pageBackgroundColor(BuildContext context) => FormSurfaceColors.of(context).isDark
       ? Theme.of(context).colorScheme.surface
       : AppColors.colorWhite;
 
@@ -58,7 +58,7 @@ class RefineScanView extends BaseView<RefineScanController> {
 
   Widget _buildPreviewWithCrop(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -67,12 +67,12 @@ class RefineScanView extends BaseView<RefineScanController> {
           width: width,
           height: height,
           decoration: BoxDecoration(
-            color: isDark
+            color: c.isDark
                 ? theme.colorScheme.surfaceContainerHigh
                 : AppColors.colorWhite,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
             border: Border.all(
-              color: isDark
+              color: c.isDark
                   ? theme.colorScheme.outlineVariant
                   : AppColors.designInputBorder,
             ),
@@ -147,7 +147,7 @@ class RefineScanView extends BaseView<RefineScanController> {
         height: maxHeight,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: _isDark(context)
+          color: FormSurfaceColors.of(context).isDark
               ? Theme.of(context).colorScheme.surfaceContainerHighest
               : AppColors.pageBackground,
           borderRadius: BorderRadius.circular(8),
@@ -168,7 +168,7 @@ class RefineScanView extends BaseView<RefineScanController> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: _isDark(context)
+                  color: FormSurfaceColors.of(context).isDark
                       ? Theme.of(context).colorScheme.onSurfaceVariant
                       : AppColors.textColorSecondary,
                 ),
@@ -182,7 +182,7 @@ class RefineScanView extends BaseView<RefineScanController> {
 
   Widget _buildCropHint(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Obx(() {
       final hasCrop =
           controller.cropRect.value.left > 0 ||
@@ -203,7 +203,7 @@ class RefineScanView extends BaseView<RefineScanController> {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
-                color: isDark
+                color: c.isDark
                     ? theme.colorScheme.onSurfaceVariant
                     : AppColors.textColorSecondary,
               ),
@@ -262,7 +262,7 @@ class RefineScanView extends BaseView<RefineScanController> {
 
   Widget _buildDestinationFolder(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -271,7 +271,7 @@ class RefineScanView extends BaseView<RefineScanController> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isDark
+            color: c.isDark
                 ? theme.colorScheme.onSurface
                 : AppColors.textColorPrimary,
           ),
@@ -282,12 +282,12 @@ class RefineScanView extends BaseView<RefineScanController> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: isDark
+              color: c.isDark
                   ? theme.colorScheme.surfaceContainerHigh
                   : AppColors.colorWhite,
               borderRadius: BorderRadius.circular(AppValues.radius_6),
               border: Border.all(
-                color: isDark
+                color: c.isDark
                     ? theme.colorScheme.outlineVariant
                     : AppColors.designInputBorder,
               ),
@@ -298,7 +298,7 @@ class RefineScanView extends BaseView<RefineScanController> {
                   : controller.destinationFolder.value,
               style: TextStyle(
                 fontSize: 16,
-                color: isDark
+                color: c.isDark
                     ? theme.colorScheme.onSurface
                     : AppColors.textColorPrimary,
               ),
@@ -311,18 +311,18 @@ class RefineScanView extends BaseView<RefineScanController> {
 
   Widget _buildBottomButtons(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
             onPressed: controller.retake,
             style: OutlinedButton.styleFrom(
-              foregroundColor: isDark
+              foregroundColor: c.isDark
                   ? theme.colorScheme.onSurface
                   : AppColors.textColorPrimary,
               side: BorderSide(
-                color: isDark
+                color: c.isDark
                     ? theme.colorScheme.outlineVariant
                     : AppColors.designInputBorder,
               ),
@@ -610,11 +610,11 @@ class _AdjustButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Material(
       color: isActive
           ? AppColors.designAccent.withValues(alpha: 0.12)
-          : (isDark
+          : (c.isDark
                 ? Theme.of(context).colorScheme.surfaceContainerHighest
                 : AppColors.lightGreyColor.withValues(alpha: 0.4)),
       borderRadius: BorderRadius.circular(AppValues.radius_6),

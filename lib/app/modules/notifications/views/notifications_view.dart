@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -27,7 +29,7 @@ class NotificationsView extends BaseView<NotificationsController> {
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
       child: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const DefaultScreenSkeleton();
         }
 
         if (controller.notificationsLength.value == 0) {

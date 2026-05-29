@@ -42,6 +42,7 @@ class AppLocalDatabase {
   static const propertyMembersTable = 'property_members';
   static const offlineSyncQueueTable = 'offline_sync_queue';
   static const exchangeRatesTable = 'exchange_rates';
+  static const scheduledWhatsappTable = 'scheduled_whatsapp';
 
   static Database? _db;
 
@@ -69,6 +70,7 @@ class AppLocalDatabase {
         await _ensureIncomeBookingIdColumn(db);
         await _ensureCurrencyColumns(db);
         await _ensureExchangeRatesTable(db);
+        await _ensureScheduledWhatsappTable(db);
       },
     );
     return _db!;
@@ -265,6 +267,24 @@ class AppLocalDatabase {
         email_enabled INTEGER NOT NULL DEFAULT 0,
         notification_id INTEGER NOT NULL,
         sync_status TEXT NOT NULL DEFAULT 'pending',
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE $scheduledWhatsappTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workspace TEXT NOT NULL DEFAULT 'rent',
+        recipient_phone TEXT NOT NULL,
+        recipient_label TEXT NOT NULL DEFAULT '',
+        message_body TEXT NOT NULL DEFAULT '',
+        template_name TEXT NOT NULL DEFAULT '',
+        language_code TEXT NOT NULL DEFAULT '',
+        body_parameters_json TEXT NOT NULL DEFAULT '[]',
+        header_parameters_json TEXT NOT NULL DEFAULT '[]',
+        scheduled_at_iso TEXT NOT NULL,
+        notification_id INTEGER NOT NULL DEFAULT 0,
+        sent INTEGER NOT NULL DEFAULT 0,
         created_at_ms INTEGER NOT NULL
       )
     ''');
@@ -534,6 +554,27 @@ class AppLocalDatabase {
     }
   }
 
+  static Future<void> _ensureScheduledWhatsappTable(Database db) async {
+    if (await _tableExists(db, scheduledWhatsappTable)) return;
+    await db.execute('''
+      CREATE TABLE $scheduledWhatsappTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workspace TEXT NOT NULL DEFAULT 'rent',
+        recipient_phone TEXT NOT NULL,
+        recipient_label TEXT NOT NULL DEFAULT '',
+        message_body TEXT NOT NULL DEFAULT '',
+        template_name TEXT NOT NULL DEFAULT '',
+        language_code TEXT NOT NULL DEFAULT '',
+        body_parameters_json TEXT NOT NULL DEFAULT '[]',
+        header_parameters_json TEXT NOT NULL DEFAULT '[]',
+        scheduled_at_iso TEXT NOT NULL,
+        notification_id INTEGER NOT NULL DEFAULT 0,
+        sent INTEGER NOT NULL DEFAULT 0,
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+  }
+
   static Future<bool> _tableExists(Database db, String table) async {
     final rows = await db.rawQuery(
       'SELECT 1 FROM sqlite_master WHERE type = ? AND name = ? LIMIT 1',
@@ -580,6 +621,7 @@ class AppLocalDatabase {
     rentPropertyEstimateTable,
     rentNotificationLogTable,
     rentPaymentReminderTable,
+    scheduledWhatsappTable,
     rentTenantChargeTable,
     rentLoyaltyOfferTable,
     rentStaffTable,

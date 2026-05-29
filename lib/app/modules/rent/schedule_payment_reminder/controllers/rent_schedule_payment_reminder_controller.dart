@@ -5,8 +5,10 @@ import 'dart:convert';
 import 'dart:async';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/haptic_feedback_util.dart';
 import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_payment_reminder_local_data_source.dart';
+import '../../../../data/local/db/scheduled_whatsapp_local_data_source.dart';
 import '../../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
@@ -51,12 +53,15 @@ class RentSchedulePaymentReminderController extends BaseController {
   Timer? _draftSaveDebounce;
 
   final _paymentReminderLocal = Get.find<RentPaymentReminderLocalDataSource>();
+  final _scheduledWhatsappLocal = ScheduledWhatsappLocalDataSource();
   final _whatsappTemplateLocal = Get.find<RentWhatsappTemplateLocalDataSource>();
   final _preferenceManager =
       Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
   final _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>();
   final _notificationScheduler = Get.find<LocalNotificationSchedulerService>();
   final _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+
+  String _recipientPhone = '';
 
   static final NumberFormat _currency =
       NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0);
@@ -67,6 +72,7 @@ class RentSchedulePaymentReminderController extends BaseController {
     super.onInit();
     tenantName.value = Get.parameters['name'] ?? '';
     propertyLine.value = Get.parameters['property'] ?? '';
+    _recipientPhone = Get.parameters['phone']?.trim() ?? '';
     final b = Get.parameters['balance'];
     if (b != null && b.isNotEmpty) {
       final parsed = int.tryParse(b);
@@ -419,6 +425,20 @@ class RentSchedulePaymentReminderController extends BaseController {
       payload: 'payment_reminder:$localId',
     );
 
+    if (whatsappEnabled.value && _recipientPhone.isNotEmpty) {
+      final msg = messageController.text.trim().isEmpty
+          ? resolveTemplate(defaultReminderTemplate)
+          : resolveTemplate(messageController.text.trim());
+      await _scheduledWhatsappLocal.insert(
+        workspace: 'rent',
+        recipientPhone: _recipientPhone,
+        recipientLabel: displayTenantName,
+        messageBody: msg,
+        scheduledAtIso: reminderAt.toIso8601String(),
+        notificationId: notificationId,
+      );
+    }
+
     final taskRequest = AddTaskRequest(
       title: 'Payment Reminder: $displayTenantName',
       description: messageController.text.trim().isEmpty
@@ -430,6 +450,7 @@ class RentSchedulePaymentReminderController extends BaseController {
     try {
       await _repository.addTask(taskRequest);
       await _paymentReminderLocal.updateSyncStatus(localId, 'synced');
+      hapticPrimaryConfirm();
       showSuccessMessage('Saved offline and online. Reminder scheduled.');
     } catch (_) {
       await _syncQueue.enqueue(
@@ -442,6 +463,7 @@ class RentSchedulePaymentReminderController extends BaseController {
           'dueDate': taskRequest.dueDate,
         }),
       );
+      hapticPrimaryConfirm();
       showSuccessMessage('Saved offline. Will sync when internet is available.');
     }
 

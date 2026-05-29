@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -34,7 +36,7 @@ class _RenewalUi {
   Color get forestAccent => dark ? lightTeal : forest;
 
   Color get iconCircleBg =>
-      dark ? const Color(0xFF3A3A3C) : RentTheme.sectionMist;
+      dark ? context.tokens.elevatedSurface : RentTheme.sectionMist;
 
   List<BoxShadow> get cardShadow => [
         BoxShadow(
@@ -190,7 +192,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
                       onPressed: () => Get.back(),
                       style: FilledButton.styleFrom(
                         backgroundColor:
-                            u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFE8E8E8),
+                            u.dark ? context.tokens.elevatedSurface : const Color(0xFFE8E8E8),
                         foregroundColor: u.onSurface,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -297,7 +299,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
         borderRadius: BorderRadius.circular(16),
         boxShadow: u.cardShadow,
         border: u.dark
-            ? Border.all(color: const Color(0xFF3A3A3C).withValues(alpha: 0.85))
+            ? Border.all(color: context.tokens.elevatedSurface.withValues(alpha: 0.85))
             : null,
       ),
       child: Column(
@@ -363,7 +365,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
     int maxLines = 1,
   }) {
     final u = _RenewalUi(context);
-    final fill = u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFFAFAF8);
+    final fill = u.dark ? context.tokens.elevatedSurface : const Color(0xFFFAFAF8);
     return TextFormField(
       controller: controller,
       validator: validator,
@@ -412,7 +414,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
   Widget _leaseDateRangeField(BuildContext context) {
     final u = _RenewalUi(context);
     final dateFmt = DateFormat.yMMMd();
-    final fill = u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFFAFAF8);
+    final fill = u.dark ? context.tokens.elevatedSurface : const Color(0xFFFAFAF8);
 
     return Obx(() {
       final start = controller.newLeaseStart.value;
@@ -486,7 +488,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
 
   Widget _frequencyDropdown(BuildContext context) {
     final u = _RenewalUi(context);
-    final fill = u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFFAFAF8);
+    final fill = u.dark ? context.tokens.elevatedSurface : const Color(0xFFFAFAF8);
 
     String label(String en) {
       if (!_isSw) return en;

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_tenant_ledger_occupancy_controller.dart';
 
@@ -19,15 +22,17 @@ class _LedgerUi {
   static const Color teal = Color(0xFF0E6666);
   static const Color tealMid = Color(0xFF4A9B9B);
 
-  Color get onSurface => dark ? const Color(0xFFF2F2F7) : const Color(0xFF1A1A1A);
+  AppThemeTokens get _tokens => context.tokens;
 
-  Color get onSurfaceSecondary => dark ? const Color(0xFFAEAEB2) : const Color(0xFF374151);
+  Color get onSurface => _tokens.textPrimary;
 
-  Color get labelMuted => dark ? const Color(0xFF8E8E93) : const Color(0xFF757575);
+  Color get onSurfaceSecondary => _tokens.textSecondary;
 
-  Color get card => _t.cardColor;
+  Color get labelMuted => _tokens.textMuted;
 
-  Color get border => dark ? const Color(0xFF48484A) : const Color(0xFFE7E5E4);
+  Color get card => _tokens.cardBackground;
+
+  Color get border => _tokens.border;
 
   Color get alertBg => dark ? const Color(0xFF3D2A28) : const Color(0xFFFCE1D9);
 
@@ -35,11 +40,11 @@ class _LedgerUi {
 
   Color get timelineUnpaid => dark ? const Color(0xFF8B4A3F) : const Color(0xFFF5C4B8);
 
-  Color get timelineUpcomingFill => dark ? const Color(0xFF2C2C2E) : Colors.white;
+  Color get timelineUpcomingFill => _tokens.cardBackground;
 
-  Color get timelineUpcomingBorder => dark ? const Color(0xFF636366) : Color(0xFFBDBDBD);
+  Color get timelineUpcomingBorder => dark ? const Color(0xFF636366) : const Color(0xFFBDBDBD);
 
-  Color get imagePlaceholder => dark ? const Color(0xFF3A3A3C) : Color(0xFFBDBDBD);
+  Color get imagePlaceholder => _tokens.elevatedSurface;
 
   Color get financialCardBg => teal;
 
@@ -87,7 +92,7 @@ class RentTenantLedgerOccupancyView extends RentBaseView<RentTenantLedgerOccupan
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _isSw ? 'MUHTASARI' : 'LEDGER OVERVIEW',
+            _isSw ? 'Muhtasari' : 'Ledger overview',
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 1.4,
@@ -241,7 +246,7 @@ class RentTenantLedgerOccupancyView extends RentBaseView<RentTenantLedgerOccupan
                 size: 26,
               ),
               Text(
-                'TENANCY',
+                'Tenancy',
                 style: TextStyle(
                   fontSize: 10,
                   letterSpacing: 1.2,
@@ -301,7 +306,7 @@ class RentTenantLedgerOccupancyView extends RentBaseView<RentTenantLedgerOccupan
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'FINANCIAL LEDGER BREAKDOWN',
+            'Financial ledger breakdown',
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 1.3,
@@ -454,18 +459,18 @@ class RentTenantLedgerOccupancyView extends RentBaseView<RentTenantLedgerOccupan
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: cell(_LedgerUi.teal, 'FULLY PAID')),
+            Expanded(child: cell(_LedgerUi.teal, 'Fully paid')),
             const SizedBox(width: 12),
-            Expanded(child: cell(_LedgerUi.tealMid, 'PARTIALLY PAID')),
+            Expanded(child: cell(_LedgerUi.tealMid, 'Partially paid')),
           ],
         ),
         const SizedBox(height: 10),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: cell(u.timelineUnpaid, 'UNPAID')),
+            Expanded(child: cell(u.timelineUnpaid, 'Unpaid')),
             const SizedBox(width: 12),
-            Expanded(child: cell(Colors.transparent, 'UPCOMING', outline: true)),
+            Expanded(child: cell(Colors.transparent, 'Upcoming', outline: true)),
           ],
         ),
       ],
@@ -496,7 +501,7 @@ class RentTenantLedgerOccupancyView extends RentBaseView<RentTenantLedgerOccupan
             onPressed: controller.openPaymentReminder,
             icon: const Icon(Icons.campaign_outlined, size: 22),
             label: const Text(
-              'SET PAYMENT REMINDER',
+              'Set payment reminder',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5),
             ),
             style: FilledButton.styleFrom(
@@ -514,7 +519,7 @@ class RentTenantLedgerOccupancyView extends RentBaseView<RentTenantLedgerOccupan
             onPressed: controller.openSendSmsShortcut,
             icon: const Icon(Icons.sms_outlined, size: 20),
             label: Text(
-              _isSw ? 'TUMA SMS / WHATSAPP' : 'SEND SMS / WHATSAPP',
+              _isSw ? 'Tuma SMS / WhatsApp' : 'Send SMS / WhatsApp',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
             ),
             style: OutlinedButton.styleFrom(
@@ -637,7 +642,7 @@ class RentTenantLedgerOccupancyView extends RentBaseView<RentTenantLedgerOccupan
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'RESIDENCE PROFILE',
+                  'Residence profile',
                   style: TextStyle(
                     fontSize: 10,
                     letterSpacing: 1.2,

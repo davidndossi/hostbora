@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
@@ -18,8 +19,7 @@ const _hostCalendarPaidBg = Color(0xFF1C6E64);
 class HostCalendarView extends BaseView<HostCalendarController> {
   HostCalendarView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -168,12 +168,12 @@ class HostCalendarView extends BaseView<HostCalendarController> {
       () => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: _isDark(context)
+          color: FormSurfaceColors.of(context).isDark
               ? theme.colorScheme.surfaceContainerHigh
               : AppColors.colorWhite,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _isDark(context)
+            color: FormSurfaceColors.of(context).isDark
                 ? theme.colorScheme.outlineVariant
                 : AppColors.designInputBorder,
           ),
@@ -304,7 +304,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   }) {
     final theme = Theme.of(context);
     return Material(
-      color: _isDark(context)
+      color: FormSurfaceColors.of(context).isDark
           ? theme.colorScheme.surfaceContainerHigh
           : AppColors.colorWhite,
       borderRadius: BorderRadius.circular(12),
@@ -313,7 +313,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _isDark(context)
+            color: FormSurfaceColors.of(context).isDark
                 ? theme.colorScheme.outlineVariant
                 : AppColors.designInputBorder,
           ),
@@ -454,7 +454,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
     Color? bg;
     if (isCurrentMonth) {
       if (isBlocked) {
-        bg = _isDark(context)
+        bg = FormSurfaceColors.of(context).isDark
             ? theme.colorScheme.surfaceContainerHighest
             : Colors.grey.shade300;
       } else if (bookingStatus == HostCalendarDayBookingStatus.bookedPaid) {
@@ -678,17 +678,17 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     final isMaintenance = event.type == CalendarEventType.maintenance;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
+        color: c.isDark
             ? theme.colorScheme.surfaceContainerHigh
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         border: Border.all(
-          color: isDark
+          color: c.isDark
               ? theme.colorScheme.outlineVariant
               : AppColors.designInputBorder,
         ),

@@ -1,5 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -54,7 +58,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
   Widget body(BuildContext context) {
     return Obx(() {
       if (controller.loadingMonth.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
 
       return RefreshIndicator(
@@ -194,7 +198,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
           borderRadius: BorderRadius.circular(16),
           boxShadow: u.cardShadow,
           border: u.dark
-              ? Border.all(color: const Color(0xFF3A3A3C).withValues(alpha: 0.8))
+              ? Border.all(color: context.tokens.elevatedSurface.withValues(alpha: 0.8))
               : null,
         ),
         child: Column(
@@ -341,7 +345,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
           borderRadius: BorderRadius.circular(16),
           boxShadow: u.cardShadow,
           border: u.dark
-              ? Border.all(color: const Color(0xFF3A3A3C).withValues(alpha: 0.8))
+              ? Border.all(color: context.tokens.elevatedSurface.withValues(alpha: 0.8))
               : null,
         ),
         child: Column(
@@ -486,7 +490,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
             borderRadius: BorderRadius.circular(16),
             boxShadow: u.cardShadow,
             border: u.dark
-                ? Border.all(color: const Color(0xFF3A3A3C).withValues(alpha: 0.8))
+                ? Border.all(color: context.tokens.elevatedSurface.withValues(alpha: 0.8))
                 : null,
           ),
           child: Column(
@@ -676,7 +680,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
           child: FilledButton.icon(
             onPressed: () => controller.onShareWithAccountant(),
             style: FilledButton.styleFrom(
-              backgroundColor: u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFE8E8E8),
+              backgroundColor: u.dark ? context.tokens.elevatedSurface : const Color(0xFFE8E8E8),
               foregroundColor: u.onSurface,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

@@ -168,14 +168,47 @@ class OfflineSyncQueueLocalDataSource {
 
   /// Pending / in-progress / failed `booking:create` rows (not yet removed after sync).
   Future<List<OfflineSyncQueueItem>> listUnsyncedBookingCreates() async {
+    return listUnsynced(
+      entityType: 'booking',
+      operation: 'create',
+    );
+  }
+
+  Future<List<OfflineSyncQueueItem>> listUnsynced({
+    required String entityType,
+    String? operation,
+  }) async {
     final db = await database;
+    final entity = entityType.trim();
+    if (entity.isEmpty) return const [];
+
+    final where = StringBuffer('status IN (?, ?, ?) AND entity_type = ?');
+    final args = <Object>['pending', 'in_progress', 'failed', entity];
+    if (operation != null && operation.trim().isNotEmpty) {
+      where.write(' AND operation = ?');
+      args.add(operation.trim());
+    }
     final rows = await db.query(
       _table,
-      where: 'status IN (?, ?, ?) AND entity_type = ? AND operation = ?',
-      whereArgs: ['pending', 'in_progress', 'failed', 'booking', 'create'],
+      where: where.toString(),
+      whereArgs: args,
       orderBy: 'created_at_ms ASC',
     );
     return rows.map(OfflineSyncQueueItem.fromMap).toList();
+  }
+
+  Future<void> retryItem(int id) async {
+    final db = await database;
+    await db.update(
+      _table,
+      {
+        'status': 'pending',
+        'last_error': '',
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<int> pendingCountByEntity({

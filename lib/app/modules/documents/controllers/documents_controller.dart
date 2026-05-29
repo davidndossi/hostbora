@@ -6,6 +6,9 @@ import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/base/feedback_extensions.dart';
+import '../../../core/utils/haptic_feedback_util.dart';
+import '../../../core/widget/undo_snackbar.dart';
 import '../../../data/local/vault_documents_store.dart';
 import '../../../data/local/vault_recent_access_store.dart';
 import '../../../data/repository/app_repository.dart';
@@ -271,8 +274,25 @@ class DocumentsController extends BaseController {
               leading: const Icon(Icons.delete_outline),
               title: const Text('Remove from list'),
               onTap: () {
-                documents.remove(item);
+                final index = documents.indexOf(item);
                 Get.back();
+                if (index < 0) return;
+                documents.removeAt(index);
+                hapticPrimaryConfirm();
+                final ctx = Get.context;
+                if (ctx != null && ctx.mounted) {
+                  UndoSnackBar.show(
+                    ctx,
+                    message: 'Document removed from list',
+                    onUndo: () {
+                      if (index <= documents.length) {
+                        documents.insert(index, item);
+                      } else {
+                        documents.add(item);
+                      }
+                    },
+                  );
+                }
               },
             ),
             ListTile(

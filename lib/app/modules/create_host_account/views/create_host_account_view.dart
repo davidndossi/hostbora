@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
+import '../../../core/theme/form_surface_colors.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
@@ -11,8 +12,7 @@ import '../controllers/create_host_account_controller.dart';
 class CreateHostAccountView extends BaseView<CreateHostAccountController> {
   CreateHostAccountView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -29,7 +29,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
   @override
   Widget body(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
@@ -49,7 +49,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
-                    color: isDark
+                    color: c.isDark
                         ? theme.colorScheme.primary
                         : AppColors.designAccent,
                     letterSpacing: -0.5,
@@ -67,7 +67,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.onSurfaceVariant
                       : AppColors.designSecondaryText,
                   height: 1.4,
@@ -151,7 +151,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                   text: TextSpan(
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark
+                      color: c.isDark
                           ? theme.colorScheme.onSurfaceVariant
                           : AppColors.designSecondaryText,
                       height: 1.4,
@@ -176,7 +176,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                               sw: 'Masharti ya Huduma',
                             ),
                             style: TextStyle(
-                              color: isDark
+                              color: c.isDark
                                   ? theme.colorScheme.primary
                                   : AppColors.designAccent,
                               fontWeight: FontWeight.w600,
@@ -200,7 +200,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                               sw: 'Sera ya Faragha',
                             ),
                             style: TextStyle(
-                              color: isDark
+                              color: c.isDark
                                   ? theme.colorScheme.primary
                                   : AppColors.designAccent,
                               fontWeight: FontWeight.w600,
@@ -221,7 +221,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                 child: ElevatedButton(
                   onPressed: controller.signUp,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark
+                    backgroundColor: c.isDark
                         ? theme.colorScheme.primary
                         : AppColors.designAccent,
                     foregroundColor: Colors.white,
@@ -244,7 +244,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                     text: TextSpan(
                       style: TextStyle(
                         fontSize: 15,
-                        color: isDark
+                        color: c.isDark
                             ? theme.colorScheme.onSurfaceVariant
                             : AppColors.designSecondaryText,
                       ),
@@ -259,7 +259,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                         TextSpan(
                           text: _t(context, en: 'Login', sw: 'Ingia'),
                           style: TextStyle(
-                            color: isDark
+                            color: c.isDark
                                 ? theme.colorScheme.primary
                                 : AppColors.designAccent,
                             fontWeight: FontWeight.w600,
@@ -277,7 +277,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                   width: 64,
                   height: 4,
                   decoration: ShapeDecoration(
-                    color: isDark
+                    color: c.isDark
                         ? theme.colorScheme.outlineVariant
                         : const Color(0xFFE2E8F0),
                     shape: RoundedRectangleBorder(
@@ -301,7 +301,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
       style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: _isDark(context)
+        color: FormSurfaceColors.of(context).isDark
             ? Theme.of(context).colorScheme.onSurfaceVariant
             : AppColors.designSecondaryText,
       ),
@@ -313,21 +313,21 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
     required String hint,
   }) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(
-        color: isDark
+        color: c.isDark
             ? theme.colorScheme.onSurfaceVariant
             : AppColors.designPlaceholder,
       ),
       filled: true,
-      fillColor: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
+      fillColor: c.isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
         borderSide: BorderSide(
-          color: isDark
+          color: c.isDark
               ? theme.colorScheme.outlineVariant
               : AppColors.designInputBorder,
         ),
@@ -335,7 +335,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
         borderSide: BorderSide(
-          color: isDark
+          color: c.isDark
               ? theme.colorScheme.outlineVariant
               : AppColors.designInputBorder,
         ),
@@ -343,7 +343,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
         borderSide: BorderSide(
-          color: isDark ? theme.colorScheme.primary : AppColors.designAccent,
+          color: c.isDark ? theme.colorScheme.primary : AppColors.designAccent,
           width: 1.5,
         ),
       ),

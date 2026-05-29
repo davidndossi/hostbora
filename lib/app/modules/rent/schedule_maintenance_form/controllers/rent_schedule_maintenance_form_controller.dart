@@ -38,6 +38,7 @@ class RentScheduleMaintenanceFormController extends BaseController {
   final scheduleDate = Rx<DateTime?>(null);
   /// `low` | `medium` | `high`
   final priority = 'medium'.obs;
+  final saving = false.obs;
   final _maintenanceLocal = Get.find<RentScheduledMaintenanceLocalDataSource>();
   final _propertyLocal = Get.find<PropertyLocalDataSource>();
   final _preferenceManager =
@@ -190,6 +191,7 @@ class RentScheduleMaintenanceFormController extends BaseController {
   }
 
   Future<void> scheduleTask() async {
+    if (saving.value) return;
     if (!hasProperties) {
       showErrorMessage('No properties yet — add a property first.');
       return;
@@ -199,62 +201,67 @@ class RentScheduleMaintenanceFormController extends BaseController {
     final scheduledAt = DateTime(date.year, date.month, date.day, 9, 0);
     final notificationId = DateTime.now().millisecondsSinceEpoch % 2147483647;
 
-    final localId = await _maintenanceLocal.insert(
-      propertyLabel: selectedProperty.value,
-      category: selectedCategory.value,
-      description: descriptionController.text.trim(),
-      scheduledDateIso: scheduledAt.toIso8601String(),
-      priority: priority.value,
-      notificationId: notificationId,
-      syncStatus: 'pending',
-      propertyRef: _resolvedPropertyRef,
-      apartmentUnitId: _resolvedApartmentUnitId,
-    );
-
-    final reminderAt = scheduledAt.subtract(const Duration(days: 1));
-    await _notificationScheduler.scheduleOneShot(
-      id: notificationId,
-      when: reminderAt,
-      title: 'Maintenance Reminder',
-      body: '${selectedCategory.value} at ${selectedProperty.value} is tomorrow',
-      payload: 'maintenance:$localId',
-    );
-
-    final taskRequest = AddTaskRequest(
-      title: 'Maintenance: ${selectedCategory.value}',
-      description: '${selectedProperty.value} - ${descriptionController.text.trim()}',
-      dueDate: DateFormat('yyyy-MM-dd').format(scheduledAt),
-    );
-
-    late final String successMsg;
+    saving.value = true;
     try {
-      await _repository.addTask(taskRequest);
-      await _maintenanceLocal.updateSyncStatus(localId, 'synced');
-      successMsg = 'Saved offline and online. Reminder scheduled.';
-    } catch (_) {
-      await _syncQueue.enqueue(
-        entityType: 'rent_scheduled_maintenance',
-        operation: 'create',
-        payloadJson: jsonEncode({
-          'localId': localId,
-          'title': taskRequest.title,
-          'description': taskRequest.description,
-          'dueDate': taskRequest.dueDate,
-        }),
+      final localId = await _maintenanceLocal.insert(
+        propertyLabel: selectedProperty.value,
+        category: selectedCategory.value,
+        description: descriptionController.text.trim(),
+        scheduledDateIso: scheduledAt.toIso8601String(),
+        priority: priority.value,
+        notificationId: notificationId,
+        syncStatus: 'pending',
+        propertyRef: _resolvedPropertyRef,
+        apartmentUnitId: _resolvedApartmentUnitId,
       );
-      successMsg = 'Saved offline. Will sync when internet is available.';
-    }
 
-    if (Get.isRegistered<RentHostCalendarController>()) {
-      await Get.find<RentHostCalendarController>().loadCalendarData();
-    }
-    if (Get.isRegistered<HostCalendarController>()) {
-      await Get.find<HostCalendarController>().loadCalendarData();
-    }
+      final reminderAt = scheduledAt.subtract(const Duration(days: 1));
+      await _notificationScheduler.scheduleOneShot(
+        id: notificationId,
+        when: reminderAt,
+        title: 'Maintenance Reminder',
+        body: '${selectedCategory.value} at ${selectedProperty.value} is tomorrow',
+        payload: 'maintenance:$localId',
+      );
 
-    showSuccessMessage(successMsg);
-    await Future.delayed(const Duration(milliseconds: 500));
-    Get.back(result: true);
+      final taskRequest = AddTaskRequest(
+        title: 'Maintenance: ${selectedCategory.value}',
+        description: '${selectedProperty.value} - ${descriptionController.text.trim()}',
+        dueDate: DateFormat('yyyy-MM-dd').format(scheduledAt),
+      );
+
+      late final String successMsg;
+      try {
+        await _repository.addTask(taskRequest);
+        await _maintenanceLocal.updateSyncStatus(localId, 'synced');
+        successMsg = 'Saved offline and online. Reminder scheduled.';
+      } catch (_) {
+        await _syncQueue.enqueue(
+          entityType: 'rent_scheduled_maintenance',
+          operation: 'create',
+          payloadJson: jsonEncode({
+            'localId': localId,
+            'title': taskRequest.title,
+            'description': taskRequest.description,
+            'dueDate': taskRequest.dueDate,
+          }),
+        );
+        successMsg = 'Saved offline. Will sync when internet is available.';
+      }
+
+      if (Get.isRegistered<RentHostCalendarController>()) {
+        await Get.find<RentHostCalendarController>().loadCalendarData();
+      }
+      if (Get.isRegistered<HostCalendarController>()) {
+        await Get.find<HostCalendarController>().loadCalendarData();
+      }
+
+      showSuccessMessage(successMsg);
+      await Future.delayed(const Duration(milliseconds: 500));
+      Get.back(result: true);
+    } finally {
+      saving.value = false;
+    }
   }
 
   @override

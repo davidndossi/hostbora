@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/loading_button.dart';
 import '../controllers/add_task_controller.dart';
 
 class AddTaskView extends BaseView<AddTaskController> {
   AddTaskView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -20,15 +23,15 @@ class AddTaskView extends BaseView<AddTaskController> {
 
   @override
   Widget body(BuildContext context) {
-    final isDark = _isDark(context);
-    final labelColor = isDark ? Colors.white : AppColors.textColorPrimary;
-    final valueColor = isDark ? Colors.white : AppColors.textColorPrimary;
-    final hintColor = isDark
+    final c = FormSurfaceColors.of(context);
+    final labelColor = c.headline;
+    final valueColor = c.headline;
+    final hintColor = c.isDark
         ? const Color(0xFF8E8E93)
         : AppColors.designPlaceholder;
-    final containerBg = isDark ? const Color(0xFF2C2C2E) : AppColors.colorWhite;
-    final borderColor = isDark
-        ? const Color(0xFF3A3A3C)
+    final containerBg = c.isDark ? context.tokens.cardBackground : AppColors.colorWhite;
+    final borderColor = c.isDark
+        ? context.tokens.elevatedSurface
         : AppColors.designInputBorder;
 
     return SingleChildScrollView(
@@ -135,30 +138,10 @@ class AddTaskView extends BaseView<AddTaskController> {
             }),
             const SizedBox(height: 32),
             Obx(
-              () => SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: controller.saving.value ? null : controller.submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.colorPrimary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppValues.radius_6),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: controller.saving.value
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Add Task'),
-                ),
+              () => LoadingButton(
+                label: 'Add Task',
+                onPressed: controller.submit,
+                isLoading: controller.saving.value,
               ),
             ),
           ],
@@ -168,17 +151,17 @@ class AddTaskView extends BaseView<AddTaskController> {
   }
 
   InputDecoration _decoration(BuildContext context, {required String hint}) {
-    final isDark = _isDark(context);
-    final borderColor = isDark
-        ? const Color(0xFF3A3A3C)
+    final c = FormSurfaceColors.of(context);
+    final borderColor = c.isDark
+        ? context.tokens.elevatedSurface
         : AppColors.designInputBorder;
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(
-        color: isDark ? const Color(0xFF8E8E93) : AppColors.designPlaceholder,
+        color: c.isDark ? const Color(0xFF8E8E93) : AppColors.designPlaceholder,
       ),
       filled: true,
-      fillColor: isDark ? const Color(0xFF2C2C2E) : AppColors.colorWhite,
+      fillColor: c.isDark ? context.tokens.cardBackground : AppColors.colorWhite,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),

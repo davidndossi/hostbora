@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/staff_quick_actions_sheet.dart';
 import '../controllers/team_and_staff_controller.dart';
 
 class TeamAndStaffView extends BaseView<TeamAndStaffController> {
@@ -14,8 +20,7 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -35,7 +40,7 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
             child: Obx(() {
               if (controller.loadingStaff.value &&
                   controller.staffList.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
+                return const DefaultScreenSkeleton();
               }
               final list = controller.filteredStaff;
               if (list.isEmpty) {
@@ -52,9 +57,7 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
-                        color: _isDark(context)
-                            ? Colors.white70
-                            : AppColors.textColorSecondary,
+                        color: context.tokens.textSecondary,
                       ),
                     ),
                   ),
@@ -94,20 +97,20 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
                   sw: 'Tafuta wafanyakazi...',
                 ),
                 hintStyle: TextStyle(
-                  color: _isDark(context)
+                  color: FormSurfaceColors.of(context).isDark
                       ? Colors.white70
                       : AppColors.designPlaceholder,
                   fontSize: 15,
                 ),
                 prefixIcon: Icon(
                   Icons.search,
-                  color: _isDark(context)
+                  color: FormSurfaceColors.of(context).isDark
                       ? Colors.white70
                       : AppColors.designPlaceholder,
                   size: 22,
                 ),
                 filled: true,
-                fillColor: _isDark(context)
+                fillColor: FormSurfaceColors.of(context).isDark
                     ? const Color(0xFF1F1F1F)
                     : AppColors.colorWhite,
                 contentPadding: const EdgeInsets.symmetric(
@@ -117,17 +120,13 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppValues.radius_6),
                   borderSide: BorderSide(
-                    color: _isDark(context)
-                        ? Colors.white.withValues(alpha: 0.18)
-                        : AppColors.designInputBorder,
+                    color: FormSurfaceColors.of(context).inputBorder,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppValues.radius_6),
                   borderSide: BorderSide(
-                    color: _isDark(context)
-                        ? Colors.white.withValues(alpha: 0.18)
-                        : AppColors.designInputBorder,
+                    color: FormSurfaceColors.of(context).inputBorder,
                   ),
                 ),
               ),
@@ -168,20 +167,26 @@ class _StaffCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => onTap(member),
+        onLongPress: () => showStaffQuickActionsSheet(
+          context: context,
+          staffName: member.name,
+          onEdit: () => onEdit(member),
+          onRemove: () => onTap(member),
+        ),
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+            color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+                color: Colors.black.withValues(alpha: c.isDark ? 0.28 : 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -206,7 +211,7 @@ class _StaffCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: isDark
+                              color: c.isDark
                                   ? Colors.white70
                                   : AppColors.textColorSecondary,
                             ),
@@ -225,7 +230,7 @@ class _StaffCard extends StatelessWidget {
                             : AppColors.textColorSecondary,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isDark
+                          color: c.isDark
                               ? const Color(0xFF1F1F1F)
                               : AppColors.colorWhite,
                           width: 2,
@@ -276,7 +281,7 @@ class _StaffCard extends StatelessWidget {
                             fontSize: 13,
                             color: member.isHighTaskCount
                                 ? AppColors.colorOrange
-                                : (isDark
+                                : (c.isDark
                                       ? Colors.white70
                                       : AppColors.textColorSecondary),
                           ),
@@ -312,7 +317,7 @@ class _StaffCard extends StatelessWidget {
                 icon: Icon(
                   Icons.chat_bubble_outline,
                   size: 20,
-                  color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+                  color: c.secondary,
                 ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -322,7 +327,7 @@ class _StaffCard extends StatelessWidget {
                 icon: Icon(
                   Icons.edit_outlined,
                   size: 20,
-                  color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+                  color: c.secondary,
                 ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 40, minHeight: 40),

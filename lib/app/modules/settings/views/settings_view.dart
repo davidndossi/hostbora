@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:settings_ui/settings_ui.dart';
 import '../../../data/local/service/currency_service.dart';
+import '../../../data/help/guided_tour_service.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_view.dart';
 import '/app/core/widget/custom_app_bar.dart';
@@ -199,6 +200,50 @@ class SettingsView extends BaseView<SettingsController> {
           //   ],
           // ),
           SettingsSection(
+            title: _tileTitle(context, _t(context, 'Help', 'Msaada')),
+            tiles: [
+              SettingsTile.navigation(
+                onPressed: (context) => Get.toNamed(Routes.HELP_CENTER),
+                leading: const Icon(Icons.help_outline_rounded),
+                title: _tileTitle(
+                  context,
+                  _t(context, 'Help center', 'Kituo cha msaada'),
+                ),
+                description: _tileDescription(
+                  context,
+                  _t(
+                    context,
+                    'Guides, feature index, and step-by-step tours',
+                    'Miongozo, vipengele, na ziara za hatua kwa hatua',
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) async {
+                  await Get.find<GuidedTourService>().startGuideById('getting_started_bnb');
+                },
+                leading: const Icon(Icons.play_circle_outline),
+                title: _tileTitle(
+                  context,
+                  _t(context, 'Start BnB tour', 'Anza ziara ya BnB'),
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) async {
+                  await Get.find<GuidedTourService>().startGuideById('getting_started_rent');
+                },
+                leading: const Icon(Icons.play_circle_outline),
+                title: _tileTitle(
+                  context,
+                  _t(context, 'Start Rent tour', 'Anza ziara ya Kodi'),
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+            ],
+          ),
+          SettingsSection(
             title: _tileTitle(context, appLocalization.security),
             tiles: <SettingsTile>[
               SettingsTile.navigation(
@@ -208,6 +253,24 @@ class SettingsView extends BaseView<SettingsController> {
                 description: _tileDescription(
                   context,
                   appLocalization.securityDescription,
+                ),
+                trailing: const Icon(Icons.chevron_right_outlined),
+              ),
+              SettingsTile.navigation(
+                onPressed: (context) =>
+                    controller.openAdminWhatsAppCredentials(),
+                leading: const Icon(Icons.admin_panel_settings_outlined),
+                title: _tileTitle(
+                  context,
+                  _t(context, 'WhatsApp credentials (admin)', 'WhatsApp (msimamizi)'),
+                ),
+                description: _tileDescription(
+                  context,
+                  _t(
+                    context,
+                    'Per-host Business API status (admins only)',
+                    'Hali ya API kwa kila mwenye nyumba (wasimamizi tu)',
+                  ),
                 ),
                 trailing: const Icon(Icons.chevron_right_outlined),
               ),

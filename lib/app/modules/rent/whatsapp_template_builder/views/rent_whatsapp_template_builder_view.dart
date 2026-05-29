@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_view.dart';
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/widget/undo_snackbar.dart';
 import '../../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
@@ -26,7 +31,7 @@ class RentWhatsappTemplateBuilderView
       backgroundColor: RentTheme.conciergeTeal,
       foregroundColor: Colors.white,
       icon: const Icon(Icons.add_rounded),
-      label: Text(_isSw ? 'KIOLEZO KIPYA' : 'NEW TEMPLATE', style: TextStyle(fontSize: 16)),
+      label: Text(_isSw ? 'KIOLEZO KIPYA' : 'NEW TEMPLATE', style: TextStyle(fontSize: 14)),
       onPressed: () => _openEditor(),
     );
   }
@@ -40,7 +45,7 @@ class RentWhatsappTemplateBuilderView
     return Obx(() {
       if (controller.loading.value) {
         return const Center(
-            child: CircularProgressIndicator(color: RentTheme.teal));
+            child: const DefaultScreenSkeleton());
       }
       return RefreshIndicator(
         color: RentTheme.teal,
@@ -179,7 +184,7 @@ class RentWhatsappTemplateBuilderView
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isActive
         ? t.color
-        : (isDark ? const Color(0xFF2C2C2E) : Colors.white);
+        : (isDark ? context.tokens.cardBackground : Colors.white);
     final fg = isActive
         ? Colors.white
         : (isDark ? Colors.white : RentTheme.navy);
@@ -194,7 +199,7 @@ class RentWhatsappTemplateBuilderView
           border: Border.all(
             color: isActive
                 ? t.color
-                : (isDark ? const Color(0xFF3A3A3C) : RentTheme.border),
+                : (isDark ? context.tokens.elevatedSurface : RentTheme.border),
           ),
         ),
         child: Row(
@@ -251,10 +256,10 @@ class RentWhatsappTemplateBuilderView
       margin: const EdgeInsets.only(top: 32),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        color: isDark ? context.tokens.cardBackground : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: isDark ? const Color(0xFF3A3A3C) : RentTheme.border),
+            color: isDark ? context.tokens.elevatedSurface : RentTheme.border),
       ),
       child: Column(
         children: [
@@ -289,7 +294,7 @@ class RentWhatsappTemplateBuilderView
     final titleColor = isDark ? Colors.white : RentTheme.navy;
     final mutedColor = isDark ? Colors.white70 : RentTheme.muted;
     return Material(
-      color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+      color: isDark ? context.tokens.cardBackground : Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -300,7 +305,7 @@ class RentWhatsappTemplateBuilderView
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-                color: isDark ? const Color(0xFF3A3A3C) : RentTheme.border),
+                color: isDark ? context.tokens.elevatedSurface : RentTheme.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,7 +543,7 @@ class RentWhatsappTemplateBuilderView
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+      backgroundColor: isDark ? context.tokens.scaffoldBackground : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
@@ -631,7 +636,16 @@ class RentWhatsappTemplateBuilderView
                   ),
                 );
                 if (ok == true) {
+                  final snapshot = t;
                   await controller.delete(t.id);
+                  if (context.mounted) {
+                    UndoSnackBar.show(
+                      context,
+                      message: _isSw ? 'Kiolezo kimefutwa' : 'Template deleted',
+                      undoLabel: _isSw ? 'Rudisha' : 'Undo',
+                      onUndo: () => controller.restoreTemplate(snapshot),
+                    );
+                  }
                 }
               },
             ),

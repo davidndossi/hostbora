@@ -47,7 +47,7 @@ class MainView extends BaseView<MainController> {
       key: _expandableFabKey,
       type: ExpandableFabType.fan,
       pos: ExpandableFabPos.right,
-      fanAngle: 60,
+      fanAngle: 90,
       margin: const EdgeInsets.only(bottom: 8),
       overlayStyle: ExpandableFabOverlayStyle(
         color: Colors.black.withValues(alpha: 0.4),

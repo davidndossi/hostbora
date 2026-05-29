@@ -276,7 +276,7 @@ class RentAddNewExpenseController extends BaseController {
       baseNotes.write(" ");
       baseNotes.writeln(extra);
     }
-    await _expenseLocal.insert(
+    final localExpenseId = await _expenseLocal.insert(
       tenantName: tenantController.text.trim(),
       amountValue: parsed.baseAmount,
       datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
@@ -299,10 +299,15 @@ class RentAddNewExpenseController extends BaseController {
       taxDeductible: true,
       description: baseNotes.toString().trim(),
     );
+    final payload = <String, dynamic>{
+      ...request.toJson(),
+      'localExpenseId': localExpenseId,
+    };
     await _syncQueue.enqueue(
       entityType: 'expense',
       operation: 'create',
-      payloadJson: jsonEncode(request.toJson()),
+      payloadJson: jsonEncode(payload),
+      dedupeKey: 'expense:create:$localExpenseId',
     );
     await _syncWorker.runNow(maxItems: 20);
     final pending = await _syncQueue.pendingCountByEntity(

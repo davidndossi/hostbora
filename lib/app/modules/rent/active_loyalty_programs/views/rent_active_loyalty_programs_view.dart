@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -25,7 +29,7 @@ class _ActiveLoyaltyUi {
 
   Color get border => dark ? const Color(0xFF48484A) : const Color(0xFFE8E6E1);
 
-  Color get tintedCard => dark ? const Color(0xFF2C2C2E) : const Color(0xFFF5F3EF);
+  Color get tintedCard => dark ? context.tokens.cardBackground : const Color(0xFFF5F3EF);
 
   Color get accentLabel => dark ? const Color(0xFFFFAB91) : const Color(0xFF7B311A);
 
@@ -53,7 +57,7 @@ class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgra
     final u = _ActiveLoyaltyUi(context);
     return Obx(() {
       if (controller.loading.value) {
-        return Center(child: CircularProgressIndicator(color: u.brandTeal));
+        return const DefaultScreenSkeleton();
       }
       return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),

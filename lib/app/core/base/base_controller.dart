@@ -36,9 +36,24 @@ abstract class BaseController extends GetxController {
 
   PageState resetPageState() => _pageSateController(PageState.DEFAULT);
 
+  /// Prefer [isBusy] + [LoadingButton] or skeleton bodies over full-screen loading.
+  final isBusy = false.obs;
+
+  /// Prefer button-level or skeleton loading on new screens.
   dynamic showLoading() => updatePageState(PageState.LOADING);
 
   dynamic hideLoading() => resetPageState();
+
+  /// Runs [action] with [isBusy] — use for form submits instead of [showLoading].
+  Future<T?> runBusy<T>(Future<T> Function() action) async {
+    if (isBusy.value) return null;
+    isBusy.value = true;
+    try {
+      return await action();
+    } finally {
+      isBusy.value = false;
+    }
+  }
 
   final _messageController = ''.obs;
 
@@ -67,14 +82,23 @@ abstract class BaseController extends GetxController {
     Function(T response)? onSuccess,
     Function? onStart,
     Function? onComplete,
+    bool useFullScreenLoader = false,
   }) async {
     Exception? _exception;
 
-    onStart == null ? showLoading() : onStart();
+    if (onStart != null) {
+      onStart();
+    } else if (useFullScreenLoader) {
+      showLoading();
+    }
 
     try {
       final T response = await future;
-      onComplete == null ? hideLoading() : onComplete();
+      if (onComplete != null) {
+        onComplete();
+      } else if (useFullScreenLoader) {
+        hideLoading();
+      }
       if (onSuccess != null) onSuccess(response);
 
       return response;
@@ -108,7 +132,11 @@ abstract class BaseController extends GetxController {
 
     if (onError != null) onError(_exception);
 
-    onComplete == null ? hideLoading() : onComplete();
+    if (onComplete != null) {
+      onComplete();
+    } else if (useFullScreenLoader) {
+      hideLoading();
+    }
   }
 
   dynamic callDataServiceSilent<T>(

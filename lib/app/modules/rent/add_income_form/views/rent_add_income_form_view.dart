@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/form_surface_colors.dart';
 import '../../../../core/widget/currency_dropdown_field.dart';
 import '../../../../core/widget/custom_app_bar.dart';
+import '../../../../core/widget/loading_button.dart';
 import '../controllers/rent_add_income_form_controller.dart';
 
 class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
@@ -42,10 +44,8 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
   }
 
   @override
-  Color pageBackgroundColor(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF9F8F6);
-  }
+  Color pageBackgroundColor(BuildContext context) =>
+      FormSurfaceColors.of(context).scaffold;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
@@ -54,11 +54,11 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
 
   @override
   Widget body(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final headlineColor = isDark ? Colors.white : const Color(0xFF2E2E2E);
-    final hintMuted = isDark ? const Color(0xFF8E8E93) : const Color(0xFF8A8A8A);
-    final dropdownText = isDark ? Colors.white : const Color(0xFF1F2937);
-    final chevronColor = isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D);
+    final c = FormSurfaceColors.of(context);
+    final headlineColor = c.headline;
+    final hintMuted = c.hint;
+    final dropdownText = c.headline;
+    final chevronColor = c.secondary;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 26),
@@ -72,7 +72,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
             style: TextStyle(fontSize: 18, color: headlineColor, height: 1.3),
           ),
           const SizedBox(height: 22),
-          _label(_isSw ? 'CHAGUA MJENGO' : 'SELECT PROPERTY', isDark: isDark),
+          _label(_isSw ? 'CHAGUA MJENGO' : 'SELECT PROPERTY', colors: c),
           Obx(
             () {
               final hasProperties = controller.hasProperties;
@@ -89,8 +89,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
                       fontWeight: FontWeight.w500,
                       color: dropdownText,
                     ),
-                    dropdownColor:
-                        isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                    dropdownColor: c.dropdownBg,
                     icon: Icon(Icons.expand_more_rounded, color: chevronColor),
                     decoration: InputDecoration(
                       border: InputBorder.none,
@@ -129,7 +128,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 16),
-                _label(_isSw ? 'KITENGO (HIARI)' : 'UNIT (OPTIONAL)', isDark: isDark),
+                _label(_isSw ? 'KITENGO (HIARI)' : 'UNIT (OPTIONAL)', colors: c),
                 DropdownButtonFormField<String?>(
                   initialValue: value,
                   isExpanded: true,
@@ -138,8 +137,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
                     fontWeight: FontWeight.w500,
                     color: dropdownText,
                   ),
-                  dropdownColor:
-                      isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                  dropdownColor: c.dropdownBg,
                   icon: Icon(Icons.expand_more_rounded, color: chevronColor),
                   decoration: InputDecoration(
                     border: InputBorder.none,
@@ -159,23 +157,23 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
             );
           }),
           const SizedBox(height: 16),
-          // _label(_isSw ? 'CHAGUA MPANGAJI' : 'SELECT TENANT', isDark: isDark),
+          // _label(_isSw ? 'CHAGUA MPANGAJI' : 'SELECT TENANT', colors: c),
           // _field(
-          //   isDark,
+          //   c.isDark,
           //   controller.tenantController,
           //   hint: _isSw ? 'Chagua mgeni au mkazi wa muda mrefu' : 'Choose a guest or long-term resident',
           //   suffix: Icons.expand_more,
           //   validator: controller.validateTenant,
           // ),
           // const SizedBox(height: 16),
-          _label(_isSw ? 'KIASI KILICHOLIPWA' : 'AMOUNT PAID', isDark: isDark),
+          _label(_isSw ? 'KIASI KILICHOLIPWA' : 'AMOUNT PAID', colors: c),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 flex: 2,
                 child: _field(
-                  isDark,
+                  c,
                   controller.amountController,
                   hint: '0.00',
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -193,9 +191,9 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
             ],
           ),
           const SizedBox(height: 16),
-          _label(_isSw ? 'TAREHE YA MALIPO' : 'DATE PAID', isDark: isDark),
+          _label(_isSw ? 'TAREHE YA MALIPO' : 'DATE PAID', colors: c),
           _field(
-            isDark,
+            c,
             controller.datePaidController,
             hint: _isSw ? 'dd/MM/yyyy' : 'dd/MM/yyyy',
             suffix: Icons.calendar_today_outlined,
@@ -204,7 +202,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
             validator: controller.validateDatePaid,
           ),
           const SizedBox(height: 16),
-          _label(_isSw ? 'KATEGORIA' : 'CATEGORY', isDark: isDark),
+          _label(_isSw ? 'KATEGORIA' : 'CATEGORY', colors: c),
           Obx(
             () => Wrap(
               spacing: 8,
@@ -212,7 +210,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
               children: List.generate(
                 controller.categories.length,
                 (i) => _CategoryChip(
-                  isDark: isDark,
+                  colors: c,
                   label: controller.categories[i],
                   selected: controller.selectedCategoryIndex.value == i,
                   onTap: () => controller.selectCategory(i),
@@ -221,9 +219,9 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
             ),
           ),
           const SizedBox(height: 18),
-          _label(_isSw ? 'MAELEZO (HIARI)' : 'NOTES (OPTIONAL)', isDark: isDark),
+          _label(_isSw ? 'MAELEZO (HIARI)' : 'NOTES (OPTIONAL)', colors: c),
           _field(
-            isDark,
+            c,
             controller.notesController,
             hint: _isSw ? 'Ongeza maelezo yoyote kuhusu muamala huu...' : 'Add any specific details regarding this transaction...',
             minHeight: 120,
@@ -234,11 +232,9 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF4F3EF),
+              color: c.impactBannerBg,
               borderRadius: BorderRadius.circular(14),
-              border: isDark
-                  ? Border.all(color: const Color(0xFF3A3A3C))
-                  : null,
+              border: c.isDark ? Border.all(color: c.border) : null,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,7 +248,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
                       Text(
                         _isSw ? 'Athari kwa Utendaji' : 'Impact on Performance',
                         style: TextStyle(
-                          color: isDark ? Colors.white : const Color(0xFF0E0E0E),
+                          color: c.headline,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
@@ -263,9 +259,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
                             ? 'Kurekodi mapato haya\nkutasasisha mara moja\ntakwimu za mapato ya mwezi\nna ripoti za thamani ya ujazaji.'
                             : 'Recording this income will\nimmediately update your monthly\nrevenue stats and occupancy value\nreports.',
                         style: TextStyle(
-                          color: isDark
-                              ? const Color(0xFFAEAEB2)
-                              : const Color(0xFF2B2B2B),
+                          color: c.secondary,
                           fontSize: 13,
                           height: 1.35,
                         ),
@@ -277,40 +271,14 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
             ),
           ),
           const SizedBox(height: 30),
-          Obx(() {
-            final isSaving = controller.saving.value;
-            final onPrimary = Theme.of(context).colorScheme.onPrimary;
-            return SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: isSaving ? null : controller.saveIncomeOffline,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(11)),
-                ),
-                icon: isSaving
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: onPrimary,
-                        ),
-                      )
-                    : const Icon(Icons.check, size: 20),
-                label: Text(
-                  isSaving
-                      ? (_isSw ? 'Inahifadhi...' : 'Saving...')
-                      : (_isSw ? 'Hifadhi Mapato' : 'Save Income'),
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 16),
-                ),
-              ),
-            );
-          }),
+          Obx(
+            () => LoadingButton(
+              label: _isSw ? 'Hifadhi Mapato' : 'Save Income',
+              icon: Icons.check,
+              onPressed: controller.saveIncomeOffline,
+              isLoading: controller.saving.value,
+            ),
+          ),
           const SizedBox(height: 18),
           Align(
             alignment: Alignment.center,
@@ -323,9 +291,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
                   _isSw ? 'Ghairi' : 'Cancel',
                   style: TextStyle(
                     fontSize: 15,
-                    color: isDark
-                        ? const Color(0xFFE8E8ED)
-                        : const Color(0xFF111111),
+                    color: c.headline,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -338,20 +304,20 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
     );
   }
 
-  Widget _label(String text, {required bool isDark}) => Padding(
+  Widget _label(String text, {required FormSurfaceColors colors}) => Padding(
         padding: const EdgeInsets.only(bottom: 7),
         child: Text(
           text,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+            color: colors.sectionLabel,
           ),
         ),
       );
 
   Widget _field(
-    bool isDark,
+    FormSurfaceColors colors,
     TextEditingController fieldController, {
     required String hint,
     IconData? suffix,
@@ -363,24 +329,18 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
     bool readOnly = false,
     VoidCallback? onTap,
   }) {
-    final textColor =
-        isDark ? const Color(0xFFE8E8ED) : const Color(0xFF5B5B5B);
-    final hintColor =
-        isDark ? const Color(0xFF8E8E93) : const Color(0xFF5B5B5B).withValues(alpha: 0.72);
     final hintStyle = TextStyle(
       fontSize: 14,
-      color: hintColor,
+      color: colors.hint,
       height: isMultiline ? 1.35 : 1.2,
     );
-    final suffixColor =
-        isDark ? const Color(0xFFAEAEB2) : const Color(0xFF2D2D2D);
 
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: minHeight),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF3A3A3C) : Colors.transparent,
+        color: colors.fieldWellFill,
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextFormField(
@@ -396,7 +356,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
         validator: validator,
         style: TextStyle(
           fontSize: 14,
-          color: textColor,
+          color: colors.secondary,
           height: isMultiline ? 1.35 : 1.25,
         ),
         decoration: InputDecoration(
@@ -411,7 +371,7 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
                   child: Icon(
                     suffix,
                     size: 20,
-                    color: suffixColor,
+                    color: colors.secondary,
                   ),
                 ),
           suffixIconConstraints: BoxConstraints(
@@ -426,25 +386,21 @@ class RentAddIncomeFormView extends RentBaseView<RentAddIncomeFormController> {
 
 class _CategoryChip extends StatelessWidget {
   const _CategoryChip({
-    required this.isDark,
+    required this.colors,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
-  final bool isDark;
+  final FormSurfaceColors colors;
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected
-        ? const Color(0xFF006D73)
-        : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1EE));
-    final fg = selected
-        ? Colors.white
-        : (isDark ? const Color(0xFFE8E8ED) : const Color(0xFF1E1E1E));
+    final bg = selected ? colors.tokens.accent : colors.chipUnselectedBg;
+    final fg = selected ? Colors.white : colors.headline;
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(9),

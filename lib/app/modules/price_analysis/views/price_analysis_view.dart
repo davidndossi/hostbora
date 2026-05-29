@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -14,8 +17,7 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
@@ -49,9 +51,7 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
                     ),
                     style: TextStyle(
                       fontSize: 15,
-                      color: _isDark(context)
-                          ? Colors.white70
-                          : AppColors.textColorSecondary,
+                      color: context.tokens.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -174,7 +174,7 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: _isDark(context) ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+      color: FormSurfaceColors.of(context).inputFill,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -198,14 +198,12 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
       decoration: BoxDecoration(
         color: isPrimary
             ? const Color(0x0D6D6D1A)
-            : (_isDark(context)
+            : (FormSurfaceColors.of(context).isDark
                   ? const Color(0xFF1F1F1F)
                   : AppColors.colorWhite),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _isDark(context)
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.designInputBorder,
+          color: FormSurfaceColors.of(context).inputBorder,
         ),
       ),
       child: Text(
@@ -227,14 +225,12 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: _isDark(context)
+          color: FormSurfaceColors.of(context).isDark
               ? const Color(0xFF1F1F1F)
               : AppColors.colorWhite,
           borderRadius: BorderRadius.circular(AppValues.radius_12),
           border: Border.all(
-            color: _isDark(context)
-                ? Colors.white.withValues(alpha: 0.18)
-                : AppColors.designInputBorder,
+            color: FormSurfaceColors.of(context).inputBorder,
           ),
         ),
         child: Column(
@@ -243,13 +239,11 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
             Row(
               children: [
                 Text(
-                  _t(context, en: 'AI RECOMMENDATION', sw: 'PENDEKEZO LA AI'),
+                  _t(context, en: 'AI recommendation', sw: 'Pendekezo la AI'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: _isDark(context)
-                        ? Colors.white70
-                        : AppColors.textColorSecondary,
+                    color: context.tokens.textSecondary,
                     letterSpacing: 0.6,
                   ),
                 ),
@@ -353,14 +347,12 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: _isDark(context)
+          color: FormSurfaceColors.of(context).isDark
               ? const Color(0xFF1F1F1F)
               : AppColors.colorWhite,
           borderRadius: BorderRadius.circular(AppValues.radius_12),
           border: Border.all(
-            color: _isDark(context)
-                ? Colors.white.withValues(alpha: 0.18)
-                : AppColors.designInputBorder,
+            color: FormSurfaceColors.of(context).inputBorder,
           ),
         ),
         child: Column(
@@ -397,9 +389,7 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
               ),
               style: TextStyle(
                 fontSize: 12,
-                color: _isDark(context)
-                    ? Colors.white70
-                    : AppColors.textColorSecondary,
+                color: context.tokens.textSecondary,
               ),
             ),
           ],
@@ -443,7 +433,7 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
         Container(
           height: 24,
           decoration: BoxDecoration(
-            color: _isDark(context)
+            color: FormSurfaceColors.of(context).isDark
                 ? Colors.white.withValues(alpha: 0.1)
                 : AppColors.pageBackground,
             borderRadius: BorderRadius.circular(12),
@@ -484,7 +474,7 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: _isDark(context)
+                color: FormSurfaceColors.of(context).isDark
                     ? const Color(0xFF1F1F1F)
                     : AppColors.colorWhite,
                 borderRadius: BorderRadius.circular(14),

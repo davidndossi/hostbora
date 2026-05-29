@@ -18,6 +18,8 @@ import '../model/otp_request.dart';
 import '../model/page_request.dart';
 import '../model/reg_request.dart';
 import '../model/send_sms_request.dart';
+import '../model/send_whatsapp_bulk_request.dart';
+import '../model/send_whatsapp_template_request.dart';
 import '../model/update_preference_request.dart';
 import '../model/update_request.dart';
 import '../model/user_profile_request.dart';
@@ -272,6 +274,94 @@ class RemoteDataSourceImpl extends BaseRemoteSource
     var endpoint = '${DioProvider.baseUrl}/api/sms/send';
     var dioCall = dioClient.post(endpoint, data: request.toJson());
 
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getWhatsAppStatus() {
+    final endpoint = '${DioProvider.baseUrl}/api/whatsapp/status';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> saveWhatsAppCredentials(Map<String, dynamic> request) {
+    final endpoint = '${DioProvider.baseUrl}/api/whatsapp/credentials';
+    final dioCall = dioClient.put(endpoint, data: request);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> sendWhatsApp(SendSmsRequest request) {
+    final endpoint = '${DioProvider.baseUrl}/api/whatsapp/send';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> sendWhatsAppBulk(SendWhatsAppBulkRequest request) {
+    final endpoint = '${DioProvider.baseUrl}/api/whatsapp/send-bulk';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> sendWhatsAppTemplate(
+    SendWhatsAppTemplateRequest request,
+  ) {
+    final endpoint = '${DioProvider.baseUrl}/api/whatsapp/send-template';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> sendWhatsAppTemplateBulk(
+    SendWhatsAppTemplateBulkRequest request,
+  ) {
+    final endpoint = '${DioProvider.baseUrl}/api/whatsapp/send-template-bulk';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getAdminWhatsAppCredentials() {
+    final endpoint = '${DioProvider.baseUrl}/api/admin/whatsapp/credentials';
+    final dioCall = dioClient.get(endpoint);
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));

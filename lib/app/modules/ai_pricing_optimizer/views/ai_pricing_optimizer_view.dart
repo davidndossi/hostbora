@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../controllers/ai_pricing_optimizer_controller.dart';
 
 /// Pricing Rules screen — teal `#149C95`, cream `#F8F7F4`, navy `#0B1320`.
@@ -16,8 +17,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
   static const Color _kBadgeNegBg = Color(0xFFFFF4ED);
   static const Color _kBadgeNegFg = Color(0xFFC45C2A);
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -28,7 +28,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
 
   @override
   Color pageBackgroundColor(BuildContext context) =>
-      _isDark(context) ? Theme.of(context).colorScheme.surface : _kBg;
+      FormSurfaceColors.of(context).isDark ? Theme.of(context).colorScheme.surface : _kBg;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
@@ -36,7 +36,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
   @override
   Widget body(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Column(
       children: [
         Expanded(
@@ -54,7 +54,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w700,
-                      color: isDark ? theme.colorScheme.onSurface : _kTitleNavy,
+                      color: c.isDark ? theme.colorScheme.onSurface : _kTitleNavy,
                       height: 1.15,
                     ),
                   ),
@@ -95,11 +95,11 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
 
   Widget _buildAppBarRow(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Row(
       children: [
         Material(
-          color: isDark
+          color: c.isDark
               ? theme.colorScheme.surfaceContainerHighest
               : Colors.white,
           shape: const CircleBorder(),
@@ -112,7 +112,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
               child: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 18,
-                color: isDark ? theme.colorScheme.onSurface : _kTitleNavy,
+                color: c.isDark ? theme.colorScheme.onSurface : _kTitleNavy,
               ),
             ),
           ),
@@ -124,7 +124,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
               Icon(Icons.auto_awesome, size: 18, color: _kTeal),
               const SizedBox(width: 6),
               Text(
-                _t(context, en: 'AI POWERED', sw: 'INAENDESHWA NA AI'),
+                _t(context, en: 'AI powered', sw: 'Inaendeshwa na AI'),
                 style: TextStyle(
                   fontSize: 12,
                   letterSpacing: 1.2,
@@ -147,14 +147,14 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
 
   Widget _ruleCard(BuildContext context, int index) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     final rule = controller.rules[index];
     final badgePositive = rule.positiveBadge;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
       decoration: BoxDecoration(
-        color: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
+        color: c.isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -185,7 +185,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: badgePositive
-                        ? (isDark ? theme.colorScheme.primary : _kTeal)
+                        ? (c.isDark ? theme.colorScheme.primary : _kTeal)
                         : _kBadgeNegFg,
                   ),
                 ),
@@ -197,7 +197,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? theme.colorScheme.onSurface : _kTitleNavy,
+                    color: c.isDark ? theme.colorScheme.onSurface : _kTitleNavy,
                   ),
                 ),
               ),
@@ -234,7 +234,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
           TextButton.icon(
             onPressed: () => controller.editRule(index),
             style: TextButton.styleFrom(
-              foregroundColor: isDark ? theme.colorScheme.primary : _kTeal,
+              foregroundColor: c.isDark ? theme.colorScheme.primary : _kTeal,
               padding: EdgeInsets.zero,
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -242,7 +242,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
             icon: Icon(
               Icons.edit_outlined,
               size: 16,
-              color: isDark ? theme.colorScheme.primary : _kTeal,
+              color: c.isDark ? theme.colorScheme.primary : _kTeal,
             ),
             label: Text(
               _t(context, en: 'Edit Rule', sw: 'Hariri Sheria'),
@@ -323,8 +323,8 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
                                 Text(
                                   _t(
                                     context,
-                                    en: 'SAMPLE DATE',
-                                    sw: 'TAREHE YA MFANO',
+                                    en: 'Sample date',
+                                    sw: 'Tarehe ya mfano',
                                   ),
                                   style: TextStyle(
                                     fontSize: 10,
@@ -450,10 +450,10 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
 
   Widget _buildBottomNav(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     Widget item(IconData icon, String label, bool active, VoidCallback onTap) {
-      final c = active
-          ? (isDark ? theme.colorScheme.primary : _kTeal)
+      final itemColor = active
+          ? (c.isDark ? theme.colorScheme.primary : _kTeal)
           : theme.colorScheme.onSurfaceVariant;
       return Expanded(
         child: InkWell(
@@ -463,7 +463,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 22, color: c),
+                Icon(icon, size: 22, color: itemColor),
                 const SizedBox(height: 4),
                 Text(
                   label,
@@ -472,7 +472,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                    color: c,
+                    color: itemColor,
                   ),
                 ),
               ],
@@ -484,7 +484,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
+        color: c.isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),

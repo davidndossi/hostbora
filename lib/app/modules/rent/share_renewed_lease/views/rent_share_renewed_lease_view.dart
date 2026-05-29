@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
@@ -25,7 +27,7 @@ class _ShareUi {
   Color get muted =>
       dark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280);
 
-  Color get card => dark ? const Color(0xFF2C2C2E) : Colors.white;
+  Color get card => dark ? context.tokens.cardBackground : Colors.white;
 
   Color get successCircleBg =>
       dark ? teal.withValues(alpha: 0.28) : const Color(0xFFB2DFDB);
@@ -177,7 +179,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
               onPressed: controller.onDone,
               style: FilledButton.styleFrom(
                 backgroundColor:
-                    u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E5E0),
+                    u.dark ? context.tokens.elevatedSurface : const Color(0xFFE5E5E0),
                 foregroundColor: u.onSurface,
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: RoundedRectangleBorder(
@@ -224,7 +226,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
         color: u.card,
         borderRadius: BorderRadius.circular(18),
         boxShadow: u.cardShadow,
-        border: u.dark ? Border.all(color: const Color(0xFF3A3A3C)) : null,
+        border: u.dark ? Border.all(color: context.tokens.elevatedSurface) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -372,7 +374,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
 
   Widget _emailCard(BuildContext context) {
     final u = _ShareUi(context);
-    final bg = u.dark ? const Color(0xFF3A3A3C) : const Color(0xFFF0EFEB);
+    final bg = u.dark ? context.tokens.elevatedSurface : const Color(0xFFF0EFEB);
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(16),

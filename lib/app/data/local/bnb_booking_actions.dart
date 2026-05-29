@@ -65,6 +65,39 @@ class BnbBookingActions {
     );
   }
 
+  /// Captures a pending offline booking row before [cancelBooking] removes it.
+  Future<Map<String, dynamic>?> snapshotPendingBooking(String localId) async {
+    final list = _pending.load();
+    for (final m in list) {
+      final createdAt = (m['createdAt'] ?? '').toString();
+      final listingId = (m['listingId'] ?? '').toString();
+      final checkIn = (m['checkIn'] ?? '').toString();
+      final key = 'local_${createdAt.isNotEmpty ? createdAt : '${listingId}_$checkIn'}';
+      if (key == localId) {
+        return Map<String, dynamic>.from(m);
+      }
+    }
+    return null;
+  }
+
+  Future<void> restorePendingBooking(Map<String, dynamic> snapshot) async {
+    final list = _pending.load();
+    list.add(Map<String, dynamic>.from(snapshot));
+    await _pending.save(list);
+  }
+
+  Future<void> undoCancelBooking({
+    required String bookingKey,
+    required bool wasLocalPending,
+    Map<String, dynamic>? pendingSnapshot,
+  }) async {
+    if (wasLocalPending && pendingSnapshot != null) {
+      await restorePendingBooking(pendingSnapshot);
+      return;
+    }
+    await _overrides.clearCancelled(bookingKey);
+  }
+
   Future<void> extendStay({
     required String bookingKey,
     required bool isLocalPending,

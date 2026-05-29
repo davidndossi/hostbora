@@ -78,6 +78,19 @@ class BnbBookingOverridesStore {
     await _saveAll(all);
   }
 
+  Future<void> clearCancelled(String bookingKey) async {
+    final all = _loadAll();
+    final existing = Map<String, dynamic>.from(all[bookingKey] ?? {});
+    existing.remove('status');
+    existing.remove('cancelledAt');
+    if (existing.isEmpty) {
+      all.remove(bookingKey);
+    } else {
+      all[bookingKey] = existing;
+    }
+    await _saveAll(all);
+  }
+
   Future<void> setCheckOut(String bookingKey, String checkOutIso) async {
     final all = _loadAll();
     final existing = Map<String, dynamic>.from(all[bookingKey] ?? {});

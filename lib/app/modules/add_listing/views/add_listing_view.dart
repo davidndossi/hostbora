@@ -7,7 +7,10 @@ import '../../../core/utils/thousand_separator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/property_unit_floor.dart';
 import '../../../core/values/app_values.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/loading_button.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../controllers/add_listing_controller.dart';
 
 class AddListingView extends BaseView<AddListingController> {
@@ -17,15 +20,13 @@ class AddListingView extends BaseView<AddListingController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
-
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return _buildStepAppBar(context);
   }
 
   PreferredSizeWidget _buildStepAppBar(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
     return CustomAppBar(
       // appBarTitleText: appLocalization.listing,
       appBarTitleText: controller.isEditing.value
@@ -36,7 +37,7 @@ class AddListingView extends BaseView<AddListingController> {
         IconButton(
           onPressed: controller.openHelp,
           icon: const Icon(Icons.help_outline, size: 24),
-          color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+          color: c.headline,
         ),
       ],
     );
@@ -44,10 +45,10 @@ class AddListingView extends BaseView<AddListingController> {
 
   @override
   Widget body(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
     return Obx(() {
-      final dividerColor = _isDark(context) ? const Color(0xFF3A3A3C) : const Color(0xFFEDEDED);
       if (controller.loadingListing.value && controller.isEditMode.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       return Column(
         children: [
@@ -60,7 +61,7 @@ class AddListingView extends BaseView<AddListingController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 14),
-                    _buildLabel(_t(context, en: 'PROPERTY LOCATION', sw: 'MAHALI ILIPO JENGO')),
+                    _buildLabel(context, _t(context, en: 'PROPERTY LOCATION', sw: 'MAHALI ILIPO JENGO')),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: controller.propertyLocationController,
@@ -71,9 +72,10 @@ class AddListingView extends BaseView<AddListingController> {
                       maxLines: 3,
                       style: TextStyle(
                         fontSize: 16,
-                        color: _isDark(context) ? Colors.white : const Color(0xFF2E2E2E),
+                        color: c.headline,
                       ),
                       decoration: _inputDecoration(
+                        context,
                         hint: _t(
                           context,
                           en: 'Enter street address or area',
@@ -82,12 +84,13 @@ class AddListingView extends BaseView<AddListingController> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildLabel(_t(context, en: 'PROPERTY NAME', sw: 'JINA LA MALI')),
+                    _buildLabel(context, _t(context, en: 'PROPERTY NAME', sw: 'JINA LA MALI')),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: controller.propertyNameController,
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDecoration(
+                        context,
                         hint: _t(
                           context,
                           en: 'e.g., AB Apartment',
@@ -100,12 +103,13 @@ class AddListingView extends BaseView<AddListingController> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildLabel(_t(context, en: 'PROPERTY TYPE', sw: 'AINA YA MALI')),
+                    _buildLabel(context, _t(context, en: 'PROPERTY TYPE', sw: 'AINA YA MALI')),
                     const SizedBox(height: 8),
                     Obx(
                       () => DropdownButtonFormField<String>(
                         initialValue: controller.selectedPropertyType.value,
                         decoration: _inputDecoration(
+                          context,
                           hint: _t(
                             context,
                             en: 'Select property type',
@@ -119,15 +123,13 @@ class AddListingView extends BaseView<AddListingController> {
                             sw: 'Chagua aina ya mali',
                           ),
                           style: TextStyle(
-                            color: _isDark(context)
-                                ? Colors.white70
-                                : AppColors.designPlaceholder,
+                            color: c.hint,
                             fontSize: 16,
                           ),
                         ),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.keyboard_arrow_down,
-                          color: AppColors.designPlaceholder,
+                          color: c.hint,
                         ),
                         items: controller.propertyTypes
                             .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -146,7 +148,7 @@ class AddListingView extends BaseView<AddListingController> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildLabel(AppLocalizations.of(context)!.propertyFloorCount),
+                    _buildLabel(context, AppLocalizations.of(context)!.propertyFloorCount),
                     const SizedBox(height: 8),
                     _floorCountStepper(context),
                     const SizedBox(height: 20),
@@ -154,7 +156,7 @@ class AddListingView extends BaseView<AddListingController> {
                       if (!controller.isApartmentProperty) {
                         return const SizedBox.shrink();
                       }
-                      return _addUnitsSection(context, isDark: _isDark(context));
+                      return _addUnitsSection(context);
                     }),
                     Obx(() {
                       if (controller.hideListingRentAmount) {
@@ -162,7 +164,7 @@ class AddListingView extends BaseView<AddListingController> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 20),
-                            Divider(height: 1, color: dividerColor),
+                            Divider(height: 1, color: c.divider),
                             const SizedBox(height: 18),
                           ],
                         );
@@ -171,9 +173,9 @@ class AddListingView extends BaseView<AddListingController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 20),
-                          Divider(height: 1, color: dividerColor),
+                          Divider(height: 1, color: c.divider),
                           const SizedBox(height: 18),
-                          _buildLabel('RENT AMOUNT'),
+                          _buildLabel(context, 'RENT AMOUNT'),
                           const SizedBox(height: 8),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +193,7 @@ class AddListingView extends BaseView<AddListingController> {
                                   ],
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: _isDark(context) ? Colors.white : const Color(0xFF2E2E2E),
+                                    color: c.headline,
                                   ),
                                   decoration: InputDecoration(
                                     prefix: Text(
@@ -199,18 +201,16 @@ class AddListingView extends BaseView<AddListingController> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: _isDark(context) ? const Color(0xFFAEAEB2) : const Color(0xFF4A4A4A),
+                                        color: c.secondary,
                                       ),
                                     ),
                                     hintText: '0.00',
                                     hintStyle: TextStyle(
                                       fontSize: 16,
-                                      color: _isDark(context) ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+                                      color: c.hint,
                                     ),
                                     isDense: false,
                                     contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 4, bottom: 4),
-                                    // filled: true,
-                                    // fillColor: _isDark(context) ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: BorderSide.none,
@@ -225,10 +225,10 @@ class AddListingView extends BaseView<AddListingController> {
                       );
                     }),
                     const SizedBox(height: 20),
-                    _buildLabel('MINIMUM RENTAL DURATION'),
+                    _buildLabel(context, 'MINIMUM RENTAL DURATION'),
                     const SizedBox(height: 8),
                     Obx(() => _dropdownInput(
-                      isDark: _isDark(context),
+                      context: context,
                       value: controller.minRentalDuration.value,
                       options: controller.minRentalDurationOptions,
                       onChanged: controller.updateMinRentalDuration,
@@ -242,9 +242,7 @@ class AddListingView extends BaseView<AddListingController> {
                       ),
                       style: TextStyle(
                         fontSize: 12,
-                        color: _isDark(context)
-                            ? Colors.white70
-                            : AppColors.textColorSecondary,
+                        color: c.secondary,
                         height: 1.4,
                       ),
                     ),
@@ -260,38 +258,34 @@ class AddListingView extends BaseView<AddListingController> {
     });
   }
 
-  Widget _buildLabel(String text) {
-    final context = Get.context!;
+  Widget _buildLabel(BuildContext context, String text) {
+    final c = FormSurfaceColors.of(context);
     return Text(
       text,
       style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.5,
-        color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+        color: c.headline,
       ),
     );
   }
 
   Widget _floorCountStepper(BuildContext context) {
-    final isDark = _isDark(context);
-    final fill = isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite;
-    final iconColor = isDark ? Colors.white : AppColors.textColorPrimary;
+    final c = FormSurfaceColors.of(context);
     return Obx(
       () => Container(
         height: 48,
         decoration: BoxDecoration(
-          color: fill,
+          color: c.inputFill,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? Colors.white24 : AppColors.designInputBorder,
-          ),
+          border: Border.all(color: c.inputBorder),
         ),
         child: Row(
           children: [
             IconButton(
               onPressed: controller.decrementFloorCount,
-              icon: Icon(Icons.remove_rounded, color: iconColor),
+              icon: Icon(Icons.remove_rounded, color: c.headline),
             ),
             Expanded(
               child: Text(
@@ -300,13 +294,13 @@ class AddListingView extends BaseView<AddListingController> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: iconColor,
+                  color: c.headline,
                 ),
               ),
             ),
             IconButton(
               onPressed: controller.incrementFloorCount,
-              icon: Icon(Icons.add_rounded, color: iconColor),
+              icon: Icon(Icons.add_rounded, color: c.headline),
             ),
           ],
         ),
@@ -314,34 +308,22 @@ class AddListingView extends BaseView<AddListingController> {
     );
   }
 
-  InputDecoration _inputDecoration({required String hint, Widget? prefixIcon}) {
-    final context = Get.context!;
+  InputDecoration _inputDecoration(BuildContext context, {required String hint, Widget? prefixIcon}) {
+    final c = FormSurfaceColors.of(context);
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(
-        color: _isDark(context) ? Colors.white70 : AppColors.designPlaceholder,
-      ),
+      hintStyle: TextStyle(color: c.hint),
       prefixIcon: prefixIcon,
       filled: true,
-      fillColor: _isDark(context)
-          ? const Color(0xFF1F1F1F)
-          : AppColors.colorWhite,
+      fillColor: c.inputFill,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: BorderSide(
-          color: _isDark(context)
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.designInputBorder,
-        ),
+        borderSide: BorderSide(color: c.inputBorder),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: BorderSide(
-          color: _isDark(context)
-              ? Colors.white.withValues(alpha: 0.18)
-              : AppColors.designInputBorder,
-        ),
+        borderSide: BorderSide(color: c.inputBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -359,36 +341,27 @@ class AddListingView extends BaseView<AddListingController> {
       width: double.infinity,
       padding: EdgeInsets.all(AppValues.largePadding),
       child: Obx(
-        () => FilledButton(
+        () => LoadingButton(
+          label: controller.isEditing.value
+              ? (_t(context, en: 'Save changes', sw: 'Hifadhi mabadiliko'))
+              : (_t(context, en: 'Save Property', sw: 'Hifadhi Mali')),
           onPressed: controller.saveProperty,
-          style: FilledButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          child: Text(
-            controller.isEditing.value
-                ? (_t(context, en: 'Save changes', sw: 'Hifadhi mabadiliko'))
-                : (_t(context, en: 'Save Property', sw: 'Hifadhi Mali')),
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-          ),
+          isLoading: controller.isBusy.value,
         ),
       ),
     );
   }
 
-  Widget _addedUnitTile(int index, {required bool isDark, required BuildContext context}) {
+  Widget _addedUnitTile(BuildContext context, int index) {
     final u = controller.apartmentUnits[index];
     final l10n = AppLocalizations.of(context)!;
-    final tileBg = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF8F8F8);
-    final borderColor = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFEDEDED);
+    final c = FormSurfaceColors.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tileBg,
+        color: c.tileBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: c.divider),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,7 +375,7 @@ class AddListingView extends BaseView<AddListingController> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                    color: c.headline,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -411,7 +384,7 @@ class AddListingView extends BaseView<AddListingController> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF374151),
+                    color: c.secondary,
                   ),
                 ),
                 if (u.unitDescription.isNotEmpty) ...[
@@ -421,7 +394,7 @@ class AddListingView extends BaseView<AddListingController> {
                     style: TextStyle(
                       fontSize: 13,
                       height: 1.35,
-                      color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF4B5563),
+                      color: c.hint,
                     ),
                   ),
                 ],
@@ -430,11 +403,8 @@ class AddListingView extends BaseView<AddListingController> {
           ),
           IconButton(
             onPressed: () => controller.removeApartmentUnit(index),
-            icon: Icon(
-              Icons.close_rounded,
-              color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
-            ),
-            tooltip: _t(Get.context!, en: 'Remove unit', sw: 'Ondoa chumba'),
+            icon: Icon(Icons.close_rounded, color: c.hint),
+            tooltip: _t(context, en: 'Remove unit', sw: 'Ondoa chumba'),
             visualDensity: VisualDensity.compact,
           ),
         ],
@@ -442,14 +412,13 @@ class AddListingView extends BaseView<AddListingController> {
     );
   }
 
-  Widget _addUnitsSection(BuildContext context, {required bool isDark}) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
-    final labelColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280);
+  Widget _addUnitsSection(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
     final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel('ADD UNIT'),
+        _buildLabel(context, 'ADD UNIT'),
         const SizedBox(height: 8),
         Obx(
           () => Column(
@@ -457,29 +426,28 @@ class AddListingView extends BaseView<AddListingController> {
               controller.apartmentUnits.length,
                   (i) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _addedUnitTile(i, isDark: isDark, context: context),
+                child: _addedUnitTile(context, i),
               ),
             ),
           ),
         ),
         _formCard(
-          isDark: isDark,
+          context: context,
           children: [
-            // const SizedBox(height: 8),
             Text(
               'UNIT NAME',
               style: TextStyle(
                 fontSize: 10,
                 letterSpacing: 1.2,
                 fontWeight: FontWeight.w700,
-                color: labelColor,
+                color: c.hint,
               ),
             ),
             const SizedBox(height: 8),
             _plainInput(
-              isDark: isDark,
+              context: context,
               fieldController: controller.draftUnitNameController,
-              hint: _t(Get.context!, en: 'e.g. 4B or Unit 1', sw: 'mf. 4B au Unit 1'),
+              hint: _t(context, en: 'e.g. 4B or Unit 1', sw: 'mf. 4B au Unit 1'),
             ),
             const SizedBox(height: 12),
             Text(
@@ -488,13 +456,13 @@ class AddListingView extends BaseView<AddListingController> {
                 fontSize: 10,
                 letterSpacing: 1.2,
                 fontWeight: FontWeight.w700,
-                color: labelColor,
+                color: c.hint,
               ),
             ),
             const SizedBox(height: 8),
             Obx(
               () => _unitFloorDropdown(
-                isDark: isDark,
+                context: context,
                 l10n: l10n,
                 value: controller.draftUnitFloor.value,
                 onChanged: controller.updateDraftUnitFloor,
@@ -507,7 +475,7 @@ class AddListingView extends BaseView<AddListingController> {
                 fontSize: 10,
                 letterSpacing: 1.2,
                 fontWeight: FontWeight.w700,
-                color: labelColor,
+                color: c.hint,
               ),
             ),
             const SizedBox(height: 8),
@@ -527,7 +495,7 @@ class AddListingView extends BaseView<AddListingController> {
                     ],
                     style: TextStyle(
                       fontSize: 16,
-                      color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+                      color: c.headline,
                     ),
                     decoration: InputDecoration(
                       prefix: Text(
@@ -535,18 +503,18 @@ class AddListingView extends BaseView<AddListingController> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF4A4A4A),
+                          color: c.secondary,
                         ),
                       ),
                       hintText: '0.00',
                       hintStyle: TextStyle(
                         fontSize: 16,
-                        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+                        color: c.hint,
                       ),
                       isDense: false,
                       contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 4, bottom: 4),
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1),
+                      fillColor: c.fill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -565,16 +533,15 @@ class AddListingView extends BaseView<AddListingController> {
                     fontSize: 10,
                     letterSpacing: 1.2,
                     fontWeight: FontWeight.w700,
-                    color: labelColor,
+                    color: c.hint,
                   ),
                   children: [
                     const TextSpan(text: 'UNIT DESCRIPTION'),
                     TextSpan(
-                      text: _t(Get.context!, en: ' (optional)', sw: ' (hiari)'),
+                      text: _t(context, en: ' (optional)', sw: ' (hiari)'),
                       style: TextStyle(
-                        // fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+                        color: c.hint,
                       ),
                     ),
                   ],
@@ -589,15 +556,15 @@ class AddListingView extends BaseView<AddListingController> {
               maxLines: 4,
               style: TextStyle(
                 fontSize: 16,
-                color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+                color: c.headline,
               ),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: fill,
-                hintText: _t(Get.context!, en: 'Short note for this unit', sw: 'Maelezo mafupi ya hiki chumba'),
+                fillColor: c.fill,
+                hintText: _t(context, en: 'Short note for this unit', sw: 'Maelezo mafupi ya hiki chumba'),
                 hintStyle: TextStyle(
                   fontSize: 16,
-                  color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+                  color: c.hint,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -611,13 +578,18 @@ class AddListingView extends BaseView<AddListingController> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: controller.addApartmentUnit,
-                icon: Icon(Icons.add_circle_outline, size: 20, color: isDark ? const Color(0xFF5EC9C3) : null),
-                label: Text(_t(Get.context!, en: 'Add Unit', sw: 'Ongeza Chumba'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  size: 20,
+                  color: c.isDark ? c.tokens.accent : null,
+                ),
+                label: Text(
+                  _t(context, en: 'Add Unit', sw: 'Ongeza Chumba'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: isDark ? const Color(0xFF5EC9C3) : const Color(0xFF2E2E2E),
-                  side: BorderSide(
-                    color: isDark ? const Color(0xFF48484A) : const Color(0xFFE5E5E5),
-                  ),
+                  foregroundColor: c.isDark ? c.tokens.accent : c.headline,
+                  side: BorderSide(color: c.border),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -630,27 +602,27 @@ class AddListingView extends BaseView<AddListingController> {
   }
 
   Widget _plainInput({
-    required bool isDark,
+    required BuildContext context,
     required TextEditingController fieldController,
     required String hint,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
+    final c = FormSurfaceColors.of(context);
     return TextField(
       controller: fieldController,
       textInputAction: TextInputAction.next,
       style: TextStyle(
         fontSize: 14,
-        color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+        color: c.headline,
       ),
       textCapitalization: TextCapitalization.words,
       decoration: InputDecoration(
         isDense: false,
         filled: true,
-        fillColor: fill,
+        fillColor: c.fill,
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 14,
-          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+          color: c.hint,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -662,34 +634,30 @@ class AddListingView extends BaseView<AddListingController> {
   }
 
   Widget _unitFloorDropdown({
-    required bool isDark,
+    required BuildContext context,
     required AppLocalizations l10n,
     required int value,
     required ValueChanged<int?> onChanged,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
-    final textColor = isDark ? Colors.white : const Color(0xFF2E2E2E);
+    final c = FormSurfaceColors.of(context);
     final floor = PropertyUnitFloor.indices.contains(value)
         ? value
         : PropertyUnitFloor.defaultIndex;
     return DropdownButtonFormField<int>(
       initialValue: floor,
       isExpanded: true,
-      icon: Icon(
-        Icons.expand_more,
-        color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D),
-      ),
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor),
+      icon: Icon(Icons.expand_more, color: c.secondary),
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: c.headline),
       decoration: InputDecoration(
         filled: true,
-        fillColor: fill,
+        fillColor: c.fill,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      dropdownColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+      dropdownColor: c.dropdownBg,
       items: PropertyUnitFloor.indices
           .map(
             (f) => DropdownMenuItem<int>(
@@ -699,7 +667,7 @@ class AddListingView extends BaseView<AddListingController> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: textColor,
+                  color: c.headline,
                 ),
               ),
             ),
@@ -710,32 +678,28 @@ class AddListingView extends BaseView<AddListingController> {
   }
 
   Widget _dropdownInput({
-    required bool isDark,
+    required BuildContext context,
     required String value,
     required List<String> options,
     required ValueChanged<String?> onChanged,
     bool compact = false,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
-    final textColor = isDark ? Colors.white : const Color(0xFF2E2E2E);
+    final c = FormSurfaceColors.of(context);
     return DropdownButtonFormField<String>(
       initialValue: options.contains(value) ? value : null,
       isExpanded: true,
-      icon: Icon(
-        Icons.expand_more,
-        color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D),
-      ),
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor),
+      icon: Icon(Icons.expand_more, color: c.secondary),
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: c.headline),
       decoration: InputDecoration(
         filled: true,
-        fillColor: fill,
+        fillColor: c.fill,
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 12 : 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      dropdownColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+      dropdownColor: c.dropdownBg,
       items: options
           .map(
             (item) => DropdownMenuItem<String>(
@@ -745,7 +709,7 @@ class AddListingView extends BaseView<AddListingController> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: textColor,
+              color: c.headline,
             ),
           ),
         ),
@@ -754,16 +718,18 @@ class AddListingView extends BaseView<AddListingController> {
     );
   }
 
-  Widget _formCard({required bool isDark, required List<Widget> children}) {
+  Widget _formCard({required BuildContext context, required List<Widget> children}) {
+    final c = FormSurfaceColors.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        color: c.card,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.05),
+            color: Colors.black.withValues(alpha: c.isDark ? 0.22 : 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

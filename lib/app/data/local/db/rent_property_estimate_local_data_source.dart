@@ -82,6 +82,15 @@ class RentPropertyEstimateLocalDataSource {
     );
   }
 
+  Future<List<RentPropertyEstimateRecord>> getAllNewestFirst() async {
+    final db = await database;
+    final rows = await db.query(
+      _table,
+      orderBy: 'updated_at_ms DESC',
+    );
+    return rows.map(RentPropertyEstimateRecord.fromMap).toList();
+  }
+
   Future<RentPropertyEstimateRecord?> findByPropertyRef(String propertyRef) async {
     final db = await database;
     final rows = await db.query(

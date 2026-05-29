@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -28,13 +32,13 @@ class RentListingActivityLogView extends RentBaseView<RentListingActivityLogCont
   @override
   Widget body(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? const Color(0xFF2C2C2E) : Colors.white;
+    final card = isDark ? context.tokens.cardBackground : Colors.white;
     final titleColor = isDark ? Colors.white : RentTheme.navy;
     final muted = isDark ? const Color(0xFFAEAEB2) : RentTheme.muted;
 
     return Obx(() {
       if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       return RefreshIndicator(
         onRefresh: controller.loadActivities,

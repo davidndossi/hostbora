@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/base/feedback_extensions.dart';
 import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -481,8 +482,8 @@ class AddListingController extends BaseController {
         return;
       }
     }
-    showLoading();
-    try {
+    await runBusy(() async {
+      try {
       final original = _editingOriginal;
       final unitsJson = _unitsJsonForSave();
       if (original != null) {
@@ -528,7 +529,7 @@ class AddListingController extends BaseController {
           maxGuests: int.tryParse(maxGuestsController.text.trim()) ?? 0,
         );
         Get.back(result: true);
-        Get.snackbar('Saved', 'Property updated on this device');
+        showSuccessWithHaptic('Property updated on this device');
       } else {
         final propertyRef = 'local_${DateTime.now().millisecondsSinceEpoch}';
         final coverPath = PropertyListingImageAssigner.coverPathForSave(
@@ -571,14 +572,13 @@ class AddListingController extends BaseController {
           maxGuests: int.tryParse(maxGuestsController.text.trim()) ?? 0,
         );
         Get.back(result: true);
-        Get.snackbar('Saved', 'Property saved on this device');
+        showSuccessWithHaptic('Property saved on this device');
       }
     } catch (e, st) {
       logger.e('saveProperty $e $st');
       Get.snackbar('Error', 'Could not save property');
-    } finally {
-      hideLoading();
     }
+    });
   }
 
   String _newApartmentUnitId() =>

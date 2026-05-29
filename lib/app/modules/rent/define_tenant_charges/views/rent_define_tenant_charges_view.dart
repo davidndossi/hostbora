@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -27,9 +29,9 @@ class _ChargesUi {
 
   Color get labelCaps => dark ? const Color(0xFF98989D) : const Color(0xFF616161);
 
-  Color get fieldFill => dark ? const Color(0xFF3A3A3C) : const Color(0xFFEBEBEB);
+  Color get fieldFill => dark ? context.tokens.elevatedSurface : const Color(0xFFEBEBEB);
 
-  Color get sectionBg => dark ? const Color(0xFF2C2C2E) : const Color(0xFFF0F0EE);
+  Color get sectionBg => dark ? context.tokens.cardBackground : const Color(0xFFF0F0EE);
 
   Color get card => _t.cardColor;
 
@@ -41,7 +43,7 @@ class _ChargesUi {
 
   Color get prefixText => dark ? const Color(0xFFD1D1D6) : const Color(0xFF4A4A4A);
 
-  Color get imagePlaceholder => dark ? const Color(0xFF3A3A3C) : const Color(0xFFBDBDBD);
+  Color get imagePlaceholder => dark ? context.tokens.elevatedSurface : const Color(0xFFBDBDBD);
 
   Color get dragHandle => dark ? const Color(0xFF636366) : const Color(0xFFBDBDBD);
 

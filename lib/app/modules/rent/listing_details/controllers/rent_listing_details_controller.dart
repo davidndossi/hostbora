@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/base/feedback_extensions.dart';
+import '../../../../core/mixins/listing_financial_trends_mixin.dart';
 import '../../../../core/utils/property_listing_image_assigner.dart';
 import '../../../../core/utils/tenant_rent_billing.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
@@ -43,7 +45,8 @@ class ListingStaffVm {
   final String jobTitle;
 }
 
-class RentListingDetailsController extends BaseController {
+class RentListingDetailsController extends BaseController
+    with ListingFinancialTrendsMixin {
   RentListingDetailsController()
       : _repository =
   Get.find<AppRepository>(tag: (AppRepository).toString()),
@@ -151,6 +154,12 @@ class RentListingDetailsController extends BaseController {
       unitRows.assignAll(realRows.isEmpty ? _fallbackUnitRows() : realRows);
       await _syncOccupancyPercent(remoteListing);
       await _syncMonthlyRevenue(remoteListing);
+      await loadListingFinancialTrends(
+        workspaceType: 'rent',
+        propertyId: _propertyId,
+        propertyName: _propertyName,
+        propertyLocation: _propertyLocation,
+      );
 
       recentActivity.assignAll(await _resolveRecentActivity(remoteListing));
 
@@ -196,6 +205,12 @@ class RentListingDetailsController extends BaseController {
     }
     recentActivity.assignAll(await _resolveRecentActivity(remoteListing));
     await _syncMonthlyRevenue(remoteListing);
+    await loadListingFinancialTrends(
+      workspaceType: 'rent',
+      propertyId: _propertyId,
+      propertyName: _propertyName,
+      propertyLocation: _propertyLocation,
+    );
   }
 
   /// Local income/expense rows win so new entries show immediately after add forms.
@@ -844,20 +859,19 @@ class RentListingDetailsController extends BaseController {
     );
     if (confirmed != true) return;
 
-    showLoading();
-    try {
-      await _purgeLocalPropertyRelations(row);
-      await _propertyLocal.deleteById(row.id);
-      Get.back();
-      showSuccessMessage(_isSw ? 'Mali imefutwa' : 'Property removed');
-    } catch (e, st) {
-      logger.e('onDeleteProperty $e $st');
-      showErrorMessage(
-        _isSw ? 'Imeshindwa kufuta mali.' : 'Could not delete property.',
-      );
-    } finally {
-      hideLoading();
-    }
+    await runBusy(() async {
+      try {
+        await _purgeLocalPropertyRelations(row);
+        await _propertyLocal.deleteById(row.id);
+        Get.back();
+        showSuccessWithHaptic(_isSw ? 'Mali imefutwa' : 'Property removed');
+      } catch (e, st) {
+        logger.e('onDeleteProperty $e $st');
+        showErrorMessage(
+          _isSw ? 'Imeshindwa kufuta mali.' : 'Could not delete property.',
+        );
+      }
+    });
   }
 
   Future<void> _purgeLocalPropertyRelations(PropertyRecord row) async {

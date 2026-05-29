@@ -1,5 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -45,7 +49,7 @@ class RentUtilityUsageGraphView extends RentBaseView<RentUtilityUsageGraphContro
     return Obx(() {
       if (controller.loading.value) {
         return const Center(
-          child: CircularProgressIndicator(color: _GraphUi.forest),
+          child: const DefaultScreenSkeleton(),
         );
       }
       return RefreshIndicator(
@@ -172,7 +176,7 @@ class RentUtilityUsageGraphView extends RentBaseView<RentUtilityUsageGraphContro
                               radius: 3.5,
                               color: _GraphUi.forest,
                               strokeWidth: 2,
-                              strokeColor: u.dark ? const Color(0xFF1C1C1E) : Colors.white,
+                              strokeColor: u.dark ? context.tokens.scaffoldBackground : Colors.white,
                             );
                           },
                         ),
@@ -190,7 +194,7 @@ class RentUtilityUsageGraphView extends RentBaseView<RentUtilityUsageGraphContro
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: u.dark ? const Color(0xFF2C2C2E) : _GraphUi.mint.withValues(alpha: 0.35),
+                color: u.dark ? context.tokens.cardBackground : _GraphUi.mint.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(

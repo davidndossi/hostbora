@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/form_surface_colors.dart';
 import '../../../../core/utils/thousand_separator.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/property_unit_floor.dart';
@@ -33,8 +34,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
       if (controller.awaitingEditLoad.value) {
         return const Center(child: CircularProgressIndicator());
       }
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final dividerColor = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFEDEDED);
+      final c = FormSurfaceColors.of(context);
       return Column(
       children: [
         Expanded(
@@ -46,30 +46,30 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                 _formCard(
-                  isDark: isDark,
+                  colors: c,
                   children: [
                     const SizedBox(height: 14),
-                    _fieldLabel('PROPERTY LOCATION', isDark: isDark),
+                    _fieldLabel('PROPERTY LOCATION', colors: c),
                     _inputRow(
-                      isDark: isDark,
+                      colors: c,
                       fieldController: controller.propertyLocationController,
                       hint: _isSw ? 'Weka anwani kamili ya mtaa au wilaya' : 'Enter full street address or district',
                     ),
                     const SizedBox(height: 16),
-                    _fieldLabel('PROPERTY TYPE', isDark: isDark),
+                    _fieldLabel('PROPERTY TYPE', colors: c),
                     Obx(() => _dropdownInput(
-                      isDark: isDark,
+                      colors: c,
                       value: controller.propertyType.value,
                       options: controller.propertyTypeOptions,
                       onChanged: controller.updatePropertyType,
                     )),
                     const SizedBox(height: 16),
-                    _fieldLabel(_isSw ? 'IDADI YA GHOROFA' : 'NUMBER OF FLOORS', isDark: isDark),
-                    _floorCountStepper(isDark: isDark),
+                    _fieldLabel(_isSw ? 'IDADI YA GHOROFA' : 'NUMBER OF FLOORS', colors: c),
+                    _floorCountStepper(colors: c),
                     const SizedBox(height: 16),
-                    _fieldLabel(_isSw ? 'JINA/NAMBA YA MALI' : 'PROPERTY NAME/NUMBER', isDark: isDark),
+                    _fieldLabel(_isSw ? 'JINA/NAMBA YA MALI' : 'PROPERTY NAME/NUMBER', colors: c),
                     _plainInput(
-                      isDark: isDark,
+                      colors: c,
                       fieldController: controller.apartmentSuiteController,
                       hint: _isSw ? 'mf. Uzuri House' : 'e.g. Uzuri House',
                     ),
@@ -77,7 +77,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                       if (!controller.isApartmentProperty) {
                         return const SizedBox.shrink();
                       }
-                      return _addUnitsSection(context, isDark: isDark);
+                      return _addUnitsSection(context, colors: c);
                     }),
                     Obx(() {
                       if (controller.hideListingRentAmount) {
@@ -85,7 +85,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 20),
-                            Divider(height: 1, color: dividerColor),
+                            Divider(height: 1, color: c.divider),
                             const SizedBox(height: 18),
                           ],
                         );
@@ -94,9 +94,9 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 20),
-                          Divider(height: 1, color: dividerColor),
+                          Divider(height: 1, color: c.divider),
                           const SizedBox(height: 18),
-                          _fieldLabel('RENT AMOUNT', isDark: isDark),
+                          _fieldLabel('RENT AMOUNT', colors: c),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -113,7 +113,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                                   ],
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+                                    color: c.headline,
                                   ),
                                   decoration: InputDecoration(
                                     prefix: Text(
@@ -121,18 +121,18 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF4A4A4A),
+                                        color: c.secondary,
                                       ),
                                     ),
                                     hintText: '0.00',
                                     hintStyle: TextStyle(
                                       fontSize: 16,
-                                      color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+                                      color: c.hint,
                                     ),
                                     isDense: false,
                                     contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 4, bottom: 4),
                                     filled: true,
-                                    fillColor: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1),
+                                    fillColor: c.fill,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: BorderSide.none,
@@ -144,7 +144,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                               Expanded(
                                 flex: 2,
                                 child: Obx(() => _dropdownInput(
-                                  isDark: isDark,
+                                  colors: c,
                                   value: controller.rentFrequency.value,
                                   options: controller.rentFrequencyOptions,
                                   onChanged: controller.updateRentFrequency,
@@ -157,9 +157,9 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                         ],
                       );
                     }),
-                    _fieldLabel('MINIMUM RENTAL DURATION', isDark: isDark),
+                    _fieldLabel('MINIMUM RENTAL DURATION', colors: c),
                     Obx(() => _dropdownInput(
-                      isDark: isDark,
+                      colors: c,
                       value: controller.minRentalDuration.value,
                       options: controller.minRentalDurationOptions,
                       onChanged: controller.updateMinRentalDuration,
@@ -217,10 +217,8 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                       child: OutlinedButton(
                         onPressed: () => Get.back(),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              isDark ? const Color(0xFFE8E8ED) : const Color(0xFF3A3A3A),
-                          backgroundColor:
-                              isDark ? const Color(0xFF3A3A3C) : const Color(0xFFECEBE8),
+                          foregroundColor: c.secondary,
+                          backgroundColor: c.isDark ? c.fill : c.chipUnselectedBg,
                           side: BorderSide.none,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -260,46 +258,44 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
     });
   }
 
-  Widget _addUnitsSection(BuildContext context, {required bool isDark}) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
-    final labelColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280);
+  Widget _addUnitsSection(BuildContext context, {required FormSurfaceColors colors}) {
     final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        _fieldLabel('ADD UNIT', isDark: isDark),
+        _fieldLabel('ADD UNIT', colors: colors),
         Obx(
           () => Column(
             children: List.generate(
               controller.apartmentUnits.length,
               (i) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _addedUnitTile(i, isDark: isDark, context: context),
+                child: _addedUnitTile(i, colors: colors, context: context),
               ),
             ),
           ),
         ),
         const SizedBox(height: 4),
-        _fieldLabel('UNIT NAME', isDark: isDark),
+        _fieldLabel('UNIT NAME', colors: colors),
         _plainInput(
-          isDark: isDark,
+          colors: colors,
           fieldController: controller.draftUnitNameController,
           hint: _isSw ? 'mf. 4B au Unit 1' : 'e.g. 4B or Unit 1',
         ),
         const SizedBox(height: 12),
-        _fieldLabel(l10n.unitFloorLabel.toUpperCase(), isDark: isDark),
+        _fieldLabel(l10n.unitFloorLabel.toUpperCase(), colors: colors),
         const SizedBox(height: 8),
         Obx(
           () => _unitFloorDropdown(
-            isDark: isDark,
+            colors: colors,
             l10n: l10n,
             value: controller.draftUnitFloor.value,
             onChanged: controller.updateDraftUnitFloor,
           ),
         ),
         const SizedBox(height: 12),
-        _fieldLabel('UNIT RENT', isDark: isDark),
+        _fieldLabel('UNIT RENT', colors: colors),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -316,7 +312,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                 ],
                 style: TextStyle(
                   fontSize: 16,
-                  color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+                  color: colors.headline,
                 ),
                 decoration: InputDecoration(
                   prefix: Text(
@@ -324,18 +320,18 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF4A4A4A),
+                      color: colors.secondary,
                     ),
                   ),
                   hintText: '0.00',
                   hintStyle: TextStyle(
                     fontSize: 16,
-                    color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+                    color: colors.hint,
                   ),
                   isDense: false,
                   contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 4, bottom: 4),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1),
+                  fillColor: colors.fill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -347,7 +343,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
             Expanded(
               flex: 2,
               child: Obx(() => _dropdownInput(
-                isDark: isDark,
+                colors: colors,
                 value: controller.draftUnitRentFrequency.value,
                 options: controller.rentFrequencyOptions,
                 onChanged: controller.updateDraftUnitRentFrequency,
@@ -365,7 +361,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                 fontSize: 10,
                 letterSpacing: 1.2,
                 fontWeight: FontWeight.w700,
-                color: labelColor,
+                color: colors.sectionLabel,
               ),
               children: [
                 const TextSpan(text: 'UNIT DESCRIPTION'),
@@ -374,7 +370,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                   style: TextStyle(
                     fontStyle: FontStyle.italic,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+                    color: colors.hint,
                   ),
                 ),
               ],
@@ -389,15 +385,15 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
           maxLines: 4,
           style: TextStyle(
             fontSize: 14,
-            color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+            color: colors.headline,
           ),
           decoration: InputDecoration(
             filled: true,
-            fillColor: fill,
+            fillColor: colors.fill,
             hintText: _isSw ? 'Maelezo mafupi ya hiki chumba' : 'Short note for this unit',
             hintStyle: TextStyle(
               fontSize: 14,
-              color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+              color: colors.hint,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -411,13 +407,15 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: controller.addApartmentUnit,
-            icon: Icon(Icons.add_circle_outline, size: 20, color: isDark ? const Color(0xFF5EC9C3) : null),
+            icon: Icon(
+              Icons.add_circle_outline,
+              size: 20,
+              color: colors.isDark ? colors.tokens.accent : null,
+            ),
             label: Text(_isSw ? 'Ongeza chumba' : 'Add unit', style: const TextStyle(fontWeight: FontWeight.w700)),
             style: OutlinedButton.styleFrom(
-              foregroundColor: isDark ? const Color(0xFF5EC9C3) : const Color(0xFF2E2E2E),
-              side: BorderSide(
-                color: isDark ? const Color(0xFF48484A) : const Color(0xFFE5E5E5),
-              ),
+              foregroundColor: colors.isDark ? colors.tokens.accent : colors.headline,
+              side: BorderSide(color: colors.border),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -427,17 +425,15 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
     );
   }
 
-  Widget _addedUnitTile(int index, {required bool isDark, required BuildContext context}) {
+  Widget _addedUnitTile(int index, {required FormSurfaceColors colors, required BuildContext context}) {
     final u = controller.apartmentUnits[index];
     final l10n = AppLocalizations.of(context)!;
-    final tileBg = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF8F8F8);
-    final borderColor = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFEDEDED);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tileBg,
+        color: colors.tileBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: colors.divider),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,7 +447,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                    color: colors.headline,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -460,7 +456,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF374151),
+                    color: colors.secondary,
                   ),
                 ),
                 if (u.unitDescription.isNotEmpty) ...[
@@ -470,7 +466,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                     style: TextStyle(
                       fontSize: 13,
                       height: 1.35,
-                      color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF4B5563),
+                      color: colors.hint,
                     ),
                   ),
                 ],
@@ -481,7 +477,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
             onPressed: () => controller.removeApartmentUnit(index),
             icon: Icon(
               Icons.close_rounded,
-              color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
+              color: colors.hint,
             ),
             tooltip: _isSw ? 'Ondoa chumba' : 'Remove unit',
             visualDensity: VisualDensity.compact,
@@ -491,16 +487,17 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
     );
   }
 
-  Widget _formCard({required bool isDark, required List<Widget> children}) {
+  Widget _formCard({required FormSurfaceColors colors, required List<Widget> children}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        color: colors.card,
         borderRadius: BorderRadius.circular(16),
+        border: colors.isDark ? Border.all(color: colors.border) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.05),
+            color: Colors.black.withValues(alpha: colors.isDark ? 0.22 : 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -510,7 +507,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
     );
   }
 
-  Widget _fieldLabel(String text, {required bool isDark}) {
+  Widget _fieldLabel(String text, {required FormSurfaceColors colors}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
@@ -519,27 +516,25 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
           fontSize: 10,
           letterSpacing: 1.2,
           fontWeight: FontWeight.w700,
-          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+          color: colors.sectionLabel,
         ),
       ),
     );
   }
 
-  Widget _floorCountStepper({required bool isDark}) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
-    final iconColor = isDark ? Colors.white : const Color(0xFF2E2E2E);
+  Widget _floorCountStepper({required FormSurfaceColors colors}) {
     return Obx(
       () => Container(
         height: 48,
         decoration: BoxDecoration(
-          color: fill,
+          color: colors.fill,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
             IconButton(
               onPressed: controller.decrementFloorCount,
-              icon: Icon(Icons.remove_rounded, color: iconColor),
+              icon: Icon(Icons.remove_rounded, color: colors.headline),
               tooltip: _isSw ? 'Punguza' : 'Decrease',
             ),
             Expanded(
@@ -549,13 +544,13 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: iconColor,
+                  color: colors.headline,
                 ),
               ),
             ),
             IconButton(
               onPressed: controller.incrementFloorCount,
-              icon: Icon(Icons.add_rounded, color: iconColor),
+              icon: Icon(Icons.add_rounded, color: colors.headline),
               tooltip: _isSw ? 'Ongeza' : 'Increase',
             ),
           ],
@@ -565,11 +560,10 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
   }
 
   Widget _inputRow({
-    required bool isDark,
+    required FormSurfaceColors colors,
     required TextEditingController fieldController,
     required String hint,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
     return TextFormField(
       controller: fieldController,
       textInputAction: TextInputAction.next,
@@ -581,13 +575,13 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
       validator: controller.validateLocation,
       style: TextStyle(
         fontSize: 14,
-        color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+        color: colors.headline,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 14,
-          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+          color: colors.hint,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -596,33 +590,32 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
         isDense: false,
         contentPadding: const EdgeInsets.only(left: 12, right: 4, top: 4, bottom: 4),
         filled: true,
-        fillColor: fill,
+        fillColor: colors.fill,
       ),
     );
   }
 
   Widget _plainInput({
-    required bool isDark,
+    required FormSurfaceColors colors,
     required TextEditingController fieldController,
     required String hint,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
     return TextField(
       controller: fieldController,
       textInputAction: TextInputAction.next,
       style: TextStyle(
         fontSize: 14,
-        color: isDark ? Colors.white : const Color(0xFF2E2E2E),
+        color: colors.headline,
       ),
       textCapitalization: TextCapitalization.words,
       decoration: InputDecoration(
         isDense: false,
         filled: true,
-        fillColor: fill,
+        fillColor: colors.fill,
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 14,
-          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF7A7A7A),
+          color: colors.hint,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -634,34 +627,29 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
   }
 
   Widget _unitFloorDropdown({
-    required bool isDark,
+    required FormSurfaceColors colors,
     required AppLocalizations l10n,
     required int value,
     required ValueChanged<int?> onChanged,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
-    final textColor = isDark ? Colors.white : const Color(0xFF2E2E2E);
     final floor = PropertyUnitFloor.indices.contains(value)
         ? value
         : PropertyUnitFloor.defaultIndex;
     return DropdownButtonFormField<int>(
       initialValue: floor,
       isExpanded: true,
-      icon: Icon(
-        Icons.expand_more,
-        color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D),
-      ),
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor),
+      icon: Icon(Icons.expand_more, color: colors.secondary),
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.headline),
       decoration: InputDecoration(
         filled: true,
-        fillColor: fill,
+        fillColor: colors.fill,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      dropdownColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+      dropdownColor: colors.dropdownBg,
       items: PropertyUnitFloor.indices
           .map(
             (f) => DropdownMenuItem<int>(
@@ -671,7 +659,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: textColor,
+                  color: colors.headline,
                 ),
               ),
             ),
@@ -682,32 +670,27 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
   }
 
   Widget _dropdownInput({
-    required bool isDark,
+    required FormSurfaceColors colors,
     required String value,
     required List<String> options,
     required ValueChanged<String?> onChanged,
     bool compact = false,
   }) {
-    final fill = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1F1);
-    final textColor = isDark ? Colors.white : const Color(0xFF2E2E2E);
     return DropdownButtonFormField<String>(
       initialValue: options.contains(value) ? value : null,
       isExpanded: true,
-      icon: Icon(
-        Icons.expand_more,
-        color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D),
-      ),
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor),
+      icon: Icon(Icons.expand_more, color: colors.secondary),
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.headline),
       decoration: InputDecoration(
         filled: true,
-        fillColor: fill,
+        fillColor: colors.fill,
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 12 : 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      dropdownColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+      dropdownColor: colors.dropdownBg,
       items: options
           .map(
             (item) => DropdownMenuItem<String>(
@@ -717,7 +700,7 @@ class RentAddNewListingView extends RentBaseView<RentAddNewListingController> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: textColor,
+                  color: colors.headline,
                 ),
               ),
             ),

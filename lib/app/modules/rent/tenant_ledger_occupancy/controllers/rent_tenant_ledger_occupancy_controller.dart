@@ -193,6 +193,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
         'name': displayTenantName,
         'property': displayPropertyFull,
         'balance': '$remainingBalanceTsh',
+        'phone': tenantRecord.value?.phoneNumber.trim() ?? '',
       },
     );
   }
@@ -211,6 +212,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
         'tenantIds': [rec?.id ?? tenantId.value],
         'propertyRef': rec?.propertyRef ?? '',
         'contextLabel': 'Message ${displayTenantName.trim()}',
+        'workspace': 'rent',
       },
     );
   }

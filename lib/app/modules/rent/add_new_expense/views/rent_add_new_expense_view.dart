@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/form_surface_colors.dart';
 import '../../../../core/utils/thousand_separator.dart';
 import '../../../../core/widget/currency_dropdown_field.dart';
 import '../../../../core/widget/custom_app_bar.dart';
@@ -49,11 +50,11 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
 
   @override
   Widget body(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     final sectionTitleStyle = TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w500,
-      color: isDark ? Colors.white : const Color(0xFF1F2937),
+      color: c.headline,
     );
 
     return SingleChildScrollView(
@@ -65,7 +66,7 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
           children: [
           const SizedBox(height: 14),
           _expenseCard(
-            isDark: isDark,
+            colors: c,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -78,9 +79,8 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
                 Obx(
                   () {
                     final hasProperties = controller.hasProperties;
-                    final hintColor =
-                        isDark ? const Color(0xFF8E8E93) : const Color(0xFF8A8A8A);
-                    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+                    final hintColor = c.hint;
+                    final textColor = c.headline;
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -94,11 +94,10 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
                             fontWeight: FontWeight.w500,
                             color: textColor,
                           ),
-                          dropdownColor:
-                              isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                          dropdownColor: c.dropdownBg,
                           icon: Icon(
                             Icons.expand_more_rounded,
-                            color: isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D),
+                            color: c.secondary,
                           ),
                           decoration: InputDecoration(
                             hintText: _isSw ? 'Chagua mjengo' : 'Choose property',
@@ -142,10 +141,8 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
                   final units = controller.expenseUnitsForSelectedProperty;
                   if (units.isEmpty) return const SizedBox.shrink();
 
-                  final hintColor =
-                      isDark ? const Color(0xFF8E8E93) : const Color(0xFF8A8A8A);
-                  final textColor =
-                      isDark ? Colors.white : const Color(0xFF1F2937);
+                  final hintColor = c.hint;
+                  final textColor = c.headline;
                   final sel = controller.selectedExpenseUnitKey.value;
                   final valid =
                       sel != null && units.any((u) => u.selectionKey == sel);
@@ -169,13 +166,10 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
                             fontWeight: FontWeight.w500,
                             color: textColor,
                           ),
-                          dropdownColor:
-                              isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                          dropdownColor: c.dropdownBg,
                           icon: Icon(
                             Icons.expand_more_rounded,
-                            color: isDark
-                                ? const Color(0xFFAEAEB2)
-                                : const Color(0xFF3D3D3D),
+                            color: c.secondary,
                           ),
                           decoration: const InputDecoration(
                             border: InputBorder.none,
@@ -216,7 +210,7 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
           ),
           const SizedBox(height: 10),
           _expenseCard(
-            isDark: isDark,
+            colors: c,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -233,7 +227,7 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
                     children: List.generate(
                       controller.expenses.length,
                       (i) => _ExpenseChip(
-                        isDark: isDark,
+                        colors: c,
                         label: controller.expenses[i],
                         selected: controller.selectedExpenseIndex.value == i,
                         onTap: () => controller.selectExpense(i),
@@ -246,7 +240,7 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
           ),
           const SizedBox(height: 10),
           _expenseCard(
-            isDark: isDark,
+            colors: c,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -262,7 +256,7 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
                     Expanded(
                       flex: 2,
                       child: _field(
-                        isDark,
+                        c,
                         controller.amountController,
                         hint: '0.00',
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -288,7 +282,7 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
                 ),
                 const SizedBox(height: 7),
                 _field(
-                  isDark,
+                  c,
                   controller.datePaidController,
                   hint: 'dd/MM/yyyy',
                   keyboardType: TextInputType.datetime,
@@ -307,7 +301,7 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
           ),
           const SizedBox(height: 7),
           _field(
-            isDark,
+            c,
             controller.notesController,
             hint: _isSw
                 ? 'Andika maelezo ya gharama (si lazima)'
@@ -335,13 +329,9 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
             ),
           ),
           const SizedBox(height: 8),
-          // const Text(
-          //   'By recording this expense, you update the monthly operational report for The Concierge',
-          //   style: TextStyle(fontSize: 9, height: 1.3, color: Color(0xFF8A8A8A)),
-          // ),
           const SizedBox(height: 14),
           _expenseCard(
-            isDark: isDark,
+            colors: c,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -350,7 +340,7 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
-                    color: isDark ? Colors.white : const Color(0xFF111111),
+                    color: c.headline,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -358,14 +348,14 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
                   children: [
                     Expanded(
                       child: _StatBlock(
-                        isDark: isDark,
+                        colors: c,
                         label: _isSw ? 'BAJETI ILIYOTUMIKA' : 'BUDGET USED',
                         value: '0%',
                       ),
                     ),
                     Expanded(
                       child: _StatBlock(
-                        isDark: isDark,
+                        colors: c,
                         label: _isSw ? 'HALI' : 'STATUS',
                         value: _isSw ? 'Nzuri' : 'Healthy',
                         alignEnd: true,
@@ -378,77 +368,23 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
             ),
           ),
           const SizedBox(height: 10),
-          // ClipRRect(
-          //   borderRadius: BorderRadius.circular(12),
-          //   child: SizedBox(
-          //     width: double.infinity,
-          //     height: 210,
-          //     child: Stack(
-          //       fit: StackFit.expand,
-          //       children: [
-          //         Image.asset('images/luxury_room_view.png',
-          //             fit: BoxFit.cover,
-          //             errorBuilder: (context, error, stackTrace) =>
-          //                 Container(color: const Color(0xFF334444))),
-          //         Container(
-          //           decoration: BoxDecoration(
-          //             gradient: LinearGradient(
-          //               begin: Alignment.topCenter,
-          //               end: Alignment.bottomCenter,
-          //               colors: [
-          //                 Colors.black.withValues(alpha: 0.05),
-          //                 Colors.black.withValues(alpha: 0.6),
-          //               ],
-          //             ),
-          //           ),
-          //         ),
-          //         const Positioned(
-          //           left: 12,
-          //           right: 12,
-          //           bottom: 12,
-          //           child: Column(
-          //             crossAxisAlignment: CrossAxisAlignment.start,
-          //             children: [
-          //               Text('OPERATIONAL EXCELLENCE',
-          //                   style: TextStyle(
-          //                       color: Colors.white,
-          //                       fontSize: 8,
-          //                       letterSpacing: 1.8,
-          //                       fontWeight: FontWeight.w700)),
-          //               SizedBox(height: 4),
-          //               Text(
-          //                 'Invest in quality maintenance to preserve\nasset value.',
-          //                 style: TextStyle(
-          //                     color: Colors.white,
-          //                     fontSize: 13,
-          //                     height: 1.3,
-          //                     fontWeight: FontWeight.w500),
-          //               ),
-          //             ],
-          //           ),
-          //         ),
-          //       ],
-          //     ),
-          //   ),
-          // ),
-          // const SizedBox(height: 86),
         ],
         ),
       ),
     );
   }
 
-  Widget _expenseCard({required bool isDark, required Widget child}) {
+  Widget _expenseCard({required FormSurfaceColors colors, required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        color: colors.card,
         borderRadius: BorderRadius.circular(12),
-        border: isDark ? Border.all(color: const Color(0xFF3A3A3C)) : null,
+        border: colors.isDark ? Border.all(color: colors.border) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.04),
+            color: Colors.black.withValues(alpha: colors.isDark ? 0.22 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -459,7 +395,7 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
   }
 
   Widget _field(
-    bool isDark,
+    FormSurfaceColors colors,
     TextEditingController fieldController, {
     required String hint,
     IconData? suffix,
@@ -471,23 +407,20 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
     bool readOnly = false,
     VoidCallback? onTap,
   }) {
-    final textColor = isDark ? const Color(0xFFE8E8ED) : const Color(0xFF5B5B5B);
-    final hintColor =
-        isDark ? const Color(0xFF8E8E93) : const Color(0xFF5B5B5B).withValues(alpha: 0.72);
+    final textColor = colors.secondary;
     final hintStyle = TextStyle(
       fontSize: 14,
-      color: hintColor,
+      color: colors.hint,
       height: isMultiline ? 1.35 : 1.2,
     );
-    final suffixIconColor =
-        isDark ? const Color(0xFFAEAEB2) : const Color(0xFF2D2D2D);
+    final suffixIconColor = colors.secondary;
 
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: minHeight),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF3A3A3C) : Colors.transparent,
+        color: colors.isDark ? colors.fill : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextFormField(
@@ -533,22 +466,21 @@ class RentAddNewExpenseView extends RentBaseView<RentAddNewExpenseController> {
 
 class _StatBlock extends StatelessWidget {
   const _StatBlock({
-    required this.isDark,
+    required this.colors,
     required this.label,
     required this.value,
     this.alignEnd = false,
   });
 
-  final bool isDark;
+  final FormSurfaceColors colors;
   final String label;
   final String value;
   final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
-    final labelColor =
-        isDark ? const Color(0xFF8E8E93) : const Color(0xFF8B8B8B);
-    final valueMuted = isDark ? Colors.white : const Color(0xFF111111);
+    final labelColor = colors.hint;
+    final valueMuted = colors.headline;
 
     return Column(
       crossAxisAlignment:
@@ -570,7 +502,7 @@ class _StatBlock extends StatelessWidget {
             fontSize: 11.5,
             fontWeight: FontWeight.w800,
             color: (value == 'Healthy' || value == 'Nzuri')
-                ? const Color(0xFF006D73)
+                ? colors.tokens.accent
                 : valueMuted,
           ),
         ),
@@ -581,13 +513,13 @@ class _StatBlock extends StatelessWidget {
 
 class _ExpenseChip extends StatelessWidget {
   const _ExpenseChip({
-    required this.isDark,
+    required this.colors,
     required this.label,
     this.selected = false,
     required this.onTap,
   });
 
-  final bool isDark;
+  final FormSurfaceColors colors;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -595,11 +527,9 @@ class _ExpenseChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = selected
-        ? const Color(0xFF006D73)
-        : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1EE));
-    final fg = selected
-        ? Colors.white
-        : (isDark ? const Color(0xFFE8E8ED) : const Color(0xFF1E1E1E));
+        ? colors.tokens.accent
+        : colors.chipUnselectedBg;
+    final fg = selected ? Colors.white : colors.headline;
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(9),

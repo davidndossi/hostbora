@@ -1,5 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -21,7 +25,7 @@ class _UtilUi {
 
   Color get bg => dark ? _t.scaffoldBackgroundColor : cream;
   Color get card => dark ? _t.cardColor : Colors.white;
-  Color get softSurface => dark ? const Color(0xFF2C2C2E) : const Color(0xFFF4F2EC);
+  Color get softSurface => dark ? context.tokens.cardBackground : const Color(0xFFF4F2EC);
   Color get onSurface => dark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
   Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
 }
@@ -50,7 +54,7 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
       child: Obx(() {
         if (controller.loading.value) {
           return const Center(
-            child: CircularProgressIndicator(color: _UtilUi.forest),
+            child: const DefaultScreenSkeleton(),
           );
         }
         return RefreshIndicator(

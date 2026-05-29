@@ -15,6 +15,7 @@ import '../../../core/widget/base_currency_picker.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
+import '/app/core/base/feedback_extensions.dart';
 
 class SettingsController extends BaseController {
   static const tenantReminderTemplateKey = 'tenant_whatsapp_reminder_template';
@@ -71,6 +72,18 @@ class SettingsController extends BaseController {
     userId(user.id);
     isAdmin(user.isAdmin);
     loadSettings();
+  }
+
+  void openAdminWhatsAppCredentials() {
+    if (!isAdmin.value) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Ruhusa ya msimamizi inahitajika'
+            : 'Admin access required',
+      );
+      return;
+    }
+    Get.toNamed(Routes.ADMIN_WHATSAPP_CREDENTIALS);
   }
 
   void setDefaultLocale() {
@@ -253,22 +266,21 @@ class SettingsController extends BaseController {
     );
     if (ok != true) return;
 
-    showLoading();
-    try {
-      await AppLocalDatabase.deleteAllRows();
-      await PendingBookingsStore().save([]);
-      await PendingPaymentsStore().save([]);
-      await PendingExpensesStore().save([]);
-      await PendingListingsStore().save([]);
-      await DraftListingStore().clear();
-      showSuccessMessage(
-        isSw ? 'Data ya ndani imefutwa.' : 'Offline data cleared.',
-      );
-    } catch (e) {
-      showErrorMessage(e.toString());
-    } finally {
-      hideLoading();
-    }
+    await runBusy(() async {
+      try {
+        await AppLocalDatabase.deleteAllRows();
+        await PendingBookingsStore().save([]);
+        await PendingPaymentsStore().save([]);
+        await PendingExpensesStore().save([]);
+        await PendingListingsStore().save([]);
+        await DraftListingStore().clear();
+        showSuccessWithHaptic(
+          isSw ? 'Data ya ndani imefutwa.' : 'Offline data cleared.',
+        );
+      } catch (e) {
+        showErrorMessage(e.toString());
+      }
+    });
   }
 
   Future<void> runLeaseReminderNow() async {

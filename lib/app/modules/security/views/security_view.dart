@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
@@ -19,8 +20,7 @@ class SecurityView extends BaseView<SecurityController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -56,7 +56,7 @@ class SecurityView extends BaseView<SecurityController> {
                       : appLocalization.set,
                   style: TextStyle(
                     fontSize: 15,
-                    color: _isDark(context) ? Colors.white70 : _secondaryText,
+                    color: FormSurfaceColors.of(context).isDark ? Colors.white70 : _secondaryText,
                   ),
                 ),
                 onTap: controller.openPinCode,
@@ -95,13 +95,13 @@ class SecurityView extends BaseView<SecurityController> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: _isDark(context) ? Colors.white70 : _secondaryText,
+                      color: FormSurfaceColors.of(context).isDark ? Colors.white70 : _secondaryText,
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(
                     Icons.chevron_right,
-                    color: _isDark(context) ? Colors.white : _bodyText,
+                    color: FormSurfaceColors.of(context).isDark ? Colors.white : _bodyText,
                     size: 22,
                   ),
                 ],
@@ -132,13 +132,13 @@ class SecurityView extends BaseView<SecurityController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
-            color: _isDark(context) ? Colors.white70 : _sectionTitle,
+            color: FormSurfaceColors.of(context).isDark ? Colors.white70 : _sectionTitle,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: _isDark(context) ? const Color(0xFF1F1F1F) : _cardBg,
+            color: FormSurfaceColors.of(context).isDark ? const Color(0xFF1F1F1F) : _cardBg,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
           ),
           child: Column(children: children),
@@ -157,7 +157,7 @@ class SecurityView extends BaseView<SecurityController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
-            color: _isDark(context) ? Colors.white70 : _sectionTitle,
+            color: FormSurfaceColors.of(context).isDark ? Colors.white70 : _sectionTitle,
           ),
         ),
         const SizedBox(height: 8),
@@ -165,7 +165,7 @@ class SecurityView extends BaseView<SecurityController> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           decoration: BoxDecoration(
-            color: _isDark(context) ? const Color(0xFF1F1F1F) : _cardBg,
+            color: FormSurfaceColors.of(context).isDark ? const Color(0xFF1F1F1F) : _cardBg,
             borderRadius: BorderRadius.circular(AppValues.radius_12),
           ),
           child: Text(
@@ -173,7 +173,7 @@ class SecurityView extends BaseView<SecurityController> {
             style: TextStyle(
               fontSize: 14,
               height: 1.4,
-              color: _isDark(context) ? Colors.white70 : _secondaryText,
+              color: FormSurfaceColors.of(context).isDark ? Colors.white70 : _secondaryText,
             ),
           ),
         ),
@@ -190,7 +190,7 @@ class SecurityView extends BaseView<SecurityController> {
           text: TextSpan(
             style: TextStyle(
               fontSize: 14,
-              color: _isDark(context) ? Colors.white : _bodyText,
+              color: FormSurfaceColors.of(context).isDark ? Colors.white : _bodyText,
               height: 1.4,
             ),
             children: [
@@ -237,7 +237,7 @@ class _SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -255,7 +255,7 @@ class _SettingsRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white : const Color(0xFF333333),
+                      color: c.isDark ? Colors.white : const Color(0xFF333333),
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -264,7 +264,7 @@ class _SettingsRow extends StatelessWidget {
                       subtitle!,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? Colors.white70 : _secondaryText,
+                        color: c.isDark ? Colors.white70 : _secondaryText,
                       ),
                     ),
                   ],
@@ -275,7 +275,7 @@ class _SettingsRow extends StatelessWidget {
             if (onTap != null && trailing == null)
               Icon(
                 Icons.chevron_right,
-                color: isDark ? Colors.white : _bodyText,
+                color: c.isDark ? Colors.white : _bodyText,
                 size: 22,
               ),
           ],

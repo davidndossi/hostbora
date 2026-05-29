@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -20,8 +23,7 @@ class DocumentsView extends BaseView<DocumentsController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -32,7 +34,7 @@ class DocumentsView extends BaseView<DocumentsController> {
             en: appLocalization.legalDocuments,
             sw: 'Nyaraka za kisheria',
           );
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return CustomAppBar(
       appBarTitleText: title,
       isCentered: true,
@@ -41,7 +43,7 @@ class DocumentsView extends BaseView<DocumentsController> {
           onPressed: controller.openSearch,
           icon: const Icon(Icons.search),
           style: IconButton.styleFrom(
-            backgroundColor: isDark
+            backgroundColor: c.isDark
                 ? Colors.white.withValues(alpha: 0.14)
                 : AppColors.lightGreyColor.withValues(alpha: 0.5),
             foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -53,14 +55,14 @@ class DocumentsView extends BaseView<DocumentsController> {
 
   @override
   Widget body(BuildContext context) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Column(
       children: [
         _buildFilterChips(context),
         Expanded(
           child: Obx(() {
             if (controller.loading.value) {
-              return const Center(child: CircularProgressIndicator());
+              return const DefaultScreenSkeleton();
             }
             if (controller.documents.isEmpty) {
               return Center(
@@ -68,7 +70,7 @@ class DocumentsView extends BaseView<DocumentsController> {
                   appLocalization.noDocuments,
                   style: TextStyle(
                     fontSize: 16,
-                    color: isDark
+                    color: c.isDark
                         ? Colors.white70
                         : AppColors.textColorSecondary,
                   ),
@@ -203,11 +205,11 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Material(
       color: isSelected
           ? _vaultTeal
-          : (isDark
+          : (c.isDark
                 ? Colors.white.withValues(alpha: 0.12)
                 : AppColors.lightGreyColor.withValues(alpha: 0.4)),
       borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
@@ -304,18 +306,18 @@ class _DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     final displayName = item.name.length > 28
         ? '${item.name.substring(0, 25)}...'
         : item.name;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         boxShadow: [
           BoxShadow(
-            color: isDark
+            color: c.isDark
                 ? Colors.black.withValues(alpha: 0.28)
                 : Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
@@ -348,7 +350,7 @@ class _DocumentCard extends StatelessWidget {
                       item.size,
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark
+                        color: c.isDark
                             ? Colors.white70
                             : AppColors.textColorSecondary,
                       ),
@@ -378,7 +380,7 @@ class _DocumentCard extends StatelessWidget {
           IconButton(
             onPressed: onOptionsTap,
             icon: const Icon(Icons.more_vert),
-            color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+            color: c.secondary,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),

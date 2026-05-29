@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../controllers/ai_manager_controller.dart';
@@ -13,22 +14,11 @@ class AiManagerView extends BaseView<AiManagerController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
-
-  String _localizeQuickAction(BuildContext context, String action) {
-    final map = <String, String>{
-      'Show me pricing insights': 'Nionyeshe uchambuzi wa bei',
-      'Optimize weekend rates': 'Boresha bei za wikendi',
-      'Check occupancy forecast': 'Kagua utabiri wa ukodishaji',
-      'Suggest promotion ideas': 'Pendekeza mawazo ya promosheni',
-    };
-    return Get.locale?.languageCode == 'sw' ? (map[action] ?? action) : action;
-  }
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return PreferredSize(
       preferredSize: const Size.fromHeight(72),
       child: SafeArea(
@@ -39,7 +29,7 @@ class AiManagerView extends BaseView<AiManagerController> {
             color: Theme.of(context).scaffoldBackgroundColor,
             border: Border(
               bottom: BorderSide(
-                color: isDark
+                color: c.isDark
                     ? Colors.white.withValues(alpha: 0.14)
                     : AppColors.designInputBorder,
               ),
@@ -79,15 +69,19 @@ class AiManagerView extends BaseView<AiManagerController> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          _t(context, en: 'ONLINE', sw: 'MTANDAONI'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            letterSpacing: 1,
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? Colors.white70
-                                : AppColors.textColorSecondary,
+                        Obx(
+                          () => Text(
+                            controller.isReplying.value
+                                ? _t(context, en: 'Thinking', sw: 'Inafikiria')
+                                : _t(context, en: 'Online', sw: 'Mtandaoni'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              letterSpacing: 1,
+                              fontWeight: FontWeight.w600,
+                              color: c.isDark
+                                  ? Colors.white70
+                                  : AppColors.textColorSecondary,
+                            ),
                           ),
                         ),
                       ],
@@ -95,6 +89,7 @@ class AiManagerView extends BaseView<AiManagerController> {
                   ],
                 ),
               ),
+              const SizedBox(width: 48),
             ],
           ),
         ),
@@ -109,7 +104,7 @@ class AiManagerView extends BaseView<AiManagerController> {
         Expanded(
           child: Obx(
             () => ListView.builder(
-              shrinkWrap: true,
+              controller: controller.scrollController,
               padding: const EdgeInsets.fromLTRB(
                 14 + AppValues.padding,
                 12,
@@ -119,7 +114,7 @@ class AiManagerView extends BaseView<AiManagerController> {
               itemCount: controller.messages.length,
               itemBuilder: (context, index) {
                 final item = controller.messages[index];
-                return _ChatBubble(item: item, isDark: _isDark(context));
+                return _ChatBubble(item: item, isDark: FormSurfaceColors.of(context).isDark);
               },
             ),
           ),
@@ -131,123 +126,135 @@ class AiManagerView extends BaseView<AiManagerController> {
   }
 
   Widget _buildQuickActions(BuildContext context) {
-    final isDark = _isDark(context);
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (context, index) {
-          final action = controller.quickActions[index];
-          return InkWell(
-            borderRadius: BorderRadius.circular(18),
-            onTap: () => controller.tapQuickAction(action),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.18)
-                      : AppColors.designInputBorder,
+    final c = FormSurfaceColors.of(context);
+    return Obx(
+      () => SizedBox(
+        height: 44,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          scrollDirection: Axis.horizontal,
+          itemBuilder: (context, index) {
+            final action = controller.quickActions[index];
+            return InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: controller.isReplying.value
+                  ? null
+                  : () => controller.sendQuickAction(action),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  color:
+                      c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: c.isDark
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : AppColors.designInputBorder,
+                  ),
+                ),
+                child: Text(
+                  action,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.colorPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              child: Text(
-                _localizeQuickAction(context, action),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.colorPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          );
-        },
-        separatorBuilder: (_, index) => const SizedBox(width: 8),
-        itemCount: controller.quickActions.length,
+            );
+          },
+          separatorBuilder: (_, index) => const SizedBox(width: 8),
+          itemCount: controller.quickActions.length,
+        ),
       ),
     );
   }
 
   Widget _buildComposer(BuildContext context) {
-    final isDark = _isDark(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.18)
-                      : AppColors.designInputBorder,
-                ),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: TextField(
-                      onChanged: controller.setInput,
-                      controller: controller.inputController,
-                      decoration: InputDecoration(
-                        hintText: _t(
-                          context,
-                          en: 'Message AI Manager...',
-                          sw: 'Tuma ujumbe kwa Msimamizi wa AI...',
-                        ),
-                        hintStyle: TextStyle(
-                          color: isDark
-                              ? Colors.white70
-                              : AppColors.textColorSecondary,
-                          fontSize: 15,
-                        ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 11,
-                        ),
+    final c = FormSurfaceColors.of(context);
+    return Obx(
+      () {
+        final busy = controller.isReplying.value;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color:
+                        c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: c.isDark
+                          ? Colors.white.withValues(alpha: 0.18)
+                          : AppColors.designInputBorder,
+                    ),
+                  ),
+                  child: TextField(
+                    onChanged: controller.setInput,
+                    controller: controller.inputController,
+                    enabled: !busy,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: busy ? null : (_) => controller.send(),
+                    decoration: InputDecoration(
+                      hintText: _t(
+                        context,
+                        en: 'Ask about your properties...',
+                        sw: 'Uliza kuhusu mali zako...',
+                      ),
+                      hintStyle: TextStyle(
+                        color: c.isDark
+                            ? Colors.white70
+                            : AppColors.textColorSecondary,
+                        fontSize: 15,
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.mic_none_rounded,
-                      color: AppColors.colorPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.colorPrimary,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.colorPrimary.withValues(alpha: 0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
                 ),
-              ],
-            ),
-            child: IconButton(
-              onPressed: controller.send,
-              icon: const Icon(Icons.send_rounded, color: Colors.white),
-            ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: busy
+                      ? AppColors.colorPrimary.withValues(alpha: 0.45)
+                      : AppColors.colorPrimary,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.colorPrimary.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  onPressed: busy ? null : controller.send,
+                  icon: busy
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.send_rounded, color: Colors.white),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -292,6 +299,11 @@ class _ChatBubble extends StatelessWidget {
                     end: Alignment.topRight,
                   ),
                 ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  size: 16,
+                  color: Colors.white,
+                ),
               ),
             Flexible(
               child: Container(
@@ -307,15 +319,41 @@ class _ChatBubble extends StatelessWidget {
                         : Colors.transparent,
                   ),
                 ),
-                child: Text(
-                  item.text,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.5,
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                child: item.isTyping
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.colorPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Text(
+                              item.text,
+                              style: TextStyle(
+                                fontSize: 15,
+                                height: 1.5,
+                                color: textColor,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        item.text,
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1.5,
+                          color: textColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
               ),
             ),
             if (!item.fromAssistant)
@@ -346,7 +384,7 @@ class _ChatBubble extends StatelessWidget {
             '${item.role} • ${item.time}',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+              color: FormSurfaceColors.of(context).secondary,
             ),
           ),
         ),

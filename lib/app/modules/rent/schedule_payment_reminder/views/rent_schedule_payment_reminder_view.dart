@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:paa_yangu/app/modules/rent/widgets/rent_ui.dart';
 
@@ -44,10 +46,10 @@ class _ReminderUiColors {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return _ReminderUiColors(
       isDark: isDark,
-      canvas: isDark ? const Color(0xFF1C1C1E) : RentTheme.canvas,
-      contextCardBg: isDark ? const Color(0xFF2C2C2E) : _ReminderPalette.contextCard,
-      cardSurface: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-      inputFill: isDark ? const Color(0xFF3A3A3C) : _ReminderPalette.inputFill,
+      canvas: isDark ? context.tokens.scaffoldBackground : RentTheme.canvas,
+      contextCardBg: isDark ? context.tokens.cardBackground : _ReminderPalette.contextCard,
+      cardSurface: isDark ? context.tokens.cardBackground : Colors.white,
+      inputFill: isDark ? context.tokens.elevatedSurface : _ReminderPalette.inputFill,
       primaryText: isDark ? Colors.white : _ReminderPalette.navy,
       secondaryText: isDark ? const Color(0xFFE5E5EA) : Colors.grey.shade800,
       mutedText: isDark ? const Color(0xFF8E8E93) : Colors.grey.shade500,

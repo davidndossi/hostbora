@@ -1,5 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -19,8 +24,7 @@ class DashboardView extends BaseView<DashboardController> {
     return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -38,7 +42,7 @@ class DashboardView extends BaseView<DashboardController> {
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
+                return const DefaultScreenSkeleton();
               }
               return RefreshIndicator(
                 onRefresh: controller.loadDashboard,
@@ -117,6 +121,18 @@ class DashboardView extends BaseView<DashboardController> {
               const SizedBox(width: 12),
               Expanded(
                 child: _BnbOverviewCard(
+                  title: _t(context, 'Occupancy rate', 'Kiwango cha ukaaji'),
+                  value: '${controller.bnbOccupancyRate.value}%',
+                  onTap: controller.openProperties,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _BnbOverviewCard(
                   title: appLocalization.dashboardUnits,
                   value: '${controller.bnbUnitsCount.value}',
                   onTap: controller.openProperties,
@@ -179,18 +195,18 @@ class DashboardView extends BaseView<DashboardController> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: AppDecorations.card.copyWith(
-        color: _isDark(context)
+        color: FormSurfaceColors.of(context).isDark
             ? const Color(0xFF1F1F1F)
             : AppColors.colorWhite,
         border: Border.all(
-          color: _isDark(context)
+          color: FormSurfaceColors.of(context).isDark
               ? Colors.white.withValues(alpha: 0.18)
               : Colors.transparent,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
-              alpha: _isDark(context) ? 0.28 : 0.06,
+              alpha: FormSurfaceColors.of(context).isDark ? 0.28 : 0.06,
             ),
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -218,9 +234,7 @@ class DashboardView extends BaseView<DashboardController> {
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
-                  color: _isDark(context)
-                      ? Colors.white70
-                      : AppColors.textColorSecondary,
+                  color: context.tokens.textSecondary,
                 ),
               ),
             ],
@@ -239,9 +253,7 @@ class DashboardView extends BaseView<DashboardController> {
                       return BarTooltipItem(
                         formatTooltip(rod.toY),
                         TextStyle(
-                          color: _isDark(context)
-                              ? Colors.white
-                              : AppColors.textColorPrimary,
+                          color: context.tokens.textPrimary,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -276,9 +288,7 @@ class DashboardView extends BaseView<DashboardController> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: _isDark(context)
-                                  ? Colors.white70
-                                  : AppColors.textColorSecondary,
+                              color: context.tokens.textSecondary,
                             ),
                           ),
                         );
@@ -290,7 +300,7 @@ class DashboardView extends BaseView<DashboardController> {
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: (_isDark(context)
+                    color: (FormSurfaceColors.of(context).isDark
                             ? Colors.white
                             : AppColors.designInputBorder)
                         .withValues(alpha: 0.5),
@@ -408,18 +418,18 @@ class DashboardView extends BaseView<DashboardController> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: AppDecorations.card.copyWith(
-            color: _isDark(context)
+            color: FormSurfaceColors.of(context).isDark
                 ? const Color(0xFF1F1F1F)
                 : AppColors.colorWhite,
             border: Border.all(
-              color: _isDark(context)
+              color: FormSurfaceColors.of(context).isDark
                   ? Colors.white.withValues(alpha: 0.18)
                   : Colors.transparent,
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(
-                  alpha: _isDark(context) ? 0.28 : 0.06,
+                  alpha: FormSurfaceColors.of(context).isDark ? 0.28 : 0.06,
                 ),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
@@ -459,9 +469,7 @@ class DashboardView extends BaseView<DashboardController> {
                         ),
                         style: TextStyle(
                           fontSize: 14,
-                          color: _isDark(context)
-                              ? Colors.white70
-                              : AppColors.textColorSecondary,
+                          color: context.tokens.textSecondary,
                         ),
                       ),
                     ],
@@ -471,26 +479,22 @@ class DashboardView extends BaseView<DashboardController> {
                       _legendDot(AppColors.designAccent),
                       const SizedBox(width: 6),
                       Text(
-                        _t(context, 'CURRENT', 'SASA'),
+                        _t(context, 'Current', 'Sasa'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: _isDark(context)
-                              ? Colors.white70
-                              : AppColors.textColorSecondary,
+                          color: context.tokens.textSecondary,
                         ),
                       ),
                       const SizedBox(width: 12),
                       _legendDot(_chartPreviousColor),
                       const SizedBox(width: 6),
                       Text(
-                        _t(context, 'PREVIOUS', 'KABLA'),
+                        _t(context, 'Previous', 'Kabla'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: _isDark(context)
-                              ? Colors.white70
-                              : AppColors.textColorSecondary,
+                          color: context.tokens.textSecondary,
                         ),
                       ),
                     ],
@@ -513,7 +517,7 @@ class DashboardView extends BaseView<DashboardController> {
                       horizontalInterval: 1.5,
                       getDrawingHorizontalLine: (value) => FlLine(
                         color:
-                            (_isDark(context)
+                            (FormSurfaceColors.of(context).isDark
                                     ? Colors.white
                                     : AppColors.designInputBorder)
                                 .withValues(alpha: 0.5),
@@ -547,9 +551,7 @@ class DashboardView extends BaseView<DashboardController> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: _isDark(context)
-                                        ? Colors.white70
-                                        : AppColors.textColorSecondary,
+                                    color: context.tokens.textSecondary,
                                   ),
                                 ),
                               );
@@ -574,7 +576,7 @@ class DashboardView extends BaseView<DashboardController> {
                                 radius: 4,
                                 color: AppColors.designAccent,
                                 strokeWidth: 2,
-                                strokeColor: _isDark(context)
+                                strokeColor: FormSurfaceColors.of(context).isDark
                                     ? const Color(0xFF1F1F1F)
                                     : AppColors.colorWhite,
                               ),
@@ -729,18 +731,18 @@ class DashboardView extends BaseView<DashboardController> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: AppDecorations.card.copyWith(
-              color: _isDark(context)
+              color: FormSurfaceColors.of(context).isDark
                   ? const Color(0xFF1F1F1F)
                   : AppColors.colorWhite,
               border: Border.all(
-                color: _isDark(context)
+                color: FormSurfaceColors.of(context).isDark
                     ? Colors.white.withValues(alpha: 0.18)
                     : Colors.transparent,
               ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(
-                    alpha: _isDark(context) ? 0.28 : 0.06,
+                    alpha: FormSurfaceColors.of(context).isDark ? 0.28 : 0.06,
                   ),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
@@ -777,9 +779,7 @@ class DashboardView extends BaseView<DashboardController> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: _isDark(context)
-                                      ? Colors.white70
-                                      : AppColors.textColorSecondary,
+                                  color: context.tokens.textSecondary,
                                 ),
                               ),
                             );
@@ -795,7 +795,7 @@ class DashboardView extends BaseView<DashboardController> {
                     drawVerticalLine: false,
                     getDrawingHorizontalLine: (value) => FlLine(
                       color:
-                          (_isDark(context)
+                          (FormSurfaceColors.of(context).isDark
                                   ? Colors.white
                                   : AppColors.designInputBorder)
                               .withValues(alpha: 0.5),
@@ -830,11 +830,11 @@ class _SegmentButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Material(
       color: isSelected
           ? AppColors.designAccent
-          : (isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
+          : (c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -846,7 +846,7 @@ class _SegmentButton extends StatelessWidget {
             border: isSelected
                 ? null
                 : Border.all(
-                    color: isDark
+                    color: c.isDark
                         ? Colors.white.withValues(alpha: 0.18)
                         : AppColors.designInputBorder,
                   ),
@@ -891,9 +891,9 @@ class _BnbOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Material(
-      color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+      color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
       borderRadius: BorderRadius.circular(AppValues.radius_12),
       child: InkWell(
         onTap: onTap,
@@ -902,13 +902,13 @@ class _BnbOverviewCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppValues.radius_12),
             border: Border.all(
-              color: isDark
+              color: c.isDark
                   ? Colors.white.withValues(alpha: 0.18)
                   : Colors.transparent,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+                color: Colors.black.withValues(alpha: c.isDark ? 0.28 : 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -923,7 +923,7 @@ class _BnbOverviewCard extends StatelessWidget {
                   title,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark
+                    color: c.isDark
                         ? Colors.white70
                         : AppColors.textColorSecondary,
                     fontWeight: FontWeight.w500,
@@ -966,7 +966,7 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     final changeColor = isPositive
         ? AppColors.colorSuccessGreen
         : AppColors.paaYanguAlert;
@@ -974,15 +974,15 @@ class _MetricCard extends StatelessWidget {
       width: fullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: AppDecorations.card.copyWith(
-        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         border: Border.all(
-          color: isDark
+          color: c.isDark
               ? Colors.white.withValues(alpha: 0.18)
               : Colors.transparent,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+            color: Colors.black.withValues(alpha: c.isDark ? 0.28 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -995,7 +995,7 @@ class _MetricCard extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+              color: c.secondary,
               fontWeight: FontWeight.w500,
             ),
           ),

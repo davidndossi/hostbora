@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -14,8 +19,7 @@ class HostDashboardView extends BaseView<HostDashboardController> {
     return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -64,9 +68,7 @@ class HostDashboardView extends BaseView<HostDashboardController> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: _isDark(context)
-                    ? Colors.white
-                    : AppColors.textColorPrimary,
+                color: context.tokens.textPrimary,
               ),
             ),
             TextButton(
@@ -128,9 +130,7 @@ class HostDashboardView extends BaseView<HostDashboardController> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: _isDark(context)
-                    ? Colors.white
-                    : AppColors.textColorPrimary,
+                color: context.tokens.textPrimary,
               ),
             ),
             TextButton(
@@ -153,7 +153,7 @@ class HostDashboardView extends BaseView<HostDashboardController> {
                 controller.checkIns.isEmpty) {
               return const SizedBox(
                 height: 200,
-                child: Center(child: CircularProgressIndicator()),
+                child: const DefaultScreenSkeleton(),
               );
             }
             return SizedBox(
@@ -186,7 +186,7 @@ class HostDashboardView extends BaseView<HostDashboardController> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: _isDark(context) ? Colors.white : AppColors.textColorPrimary,
+            color: context.tokens.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -248,15 +248,15 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+            color: Colors.black.withValues(alpha: c.isDark ? 0.28 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -269,7 +269,7 @@ class _MetricCard extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+              color: c.secondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -287,7 +287,7 @@ class _MetricCard extends StatelessWidget {
             subtitle,
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+              color: c.secondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -306,14 +306,14 @@ class _CheckInCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return SizedBox(
       width: 280,
       child: Card(
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 0,
-        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
@@ -330,7 +330,7 @@ class _CheckInCard extends StatelessWidget {
                   color: AppColors.lightGreyColor,
                   child: Icon(
                     Icons.image_not_supported,
-                    color: isDark
+                    color: c.isDark
                         ? Colors.white60
                         : AppColors.textColorSecondary,
                   ),
@@ -356,7 +356,7 @@ class _CheckInCard extends StatelessWidget {
                                       : '?',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDark
+                                    color: c.isDark
                                         ? Colors.white70
                                         : AppColors.textColorSecondary,
                                   ),
@@ -411,7 +411,7 @@ class _CheckInCard extends StatelessWidget {
                       item.dates,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark
+                        color: c.isDark
                             ? Colors.white70
                             : AppColors.textColorSecondary,
                       ),
@@ -440,14 +440,14 @@ class _QuickActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+            color: Colors.black.withValues(alpha: c.isDark ? 0.28 : 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

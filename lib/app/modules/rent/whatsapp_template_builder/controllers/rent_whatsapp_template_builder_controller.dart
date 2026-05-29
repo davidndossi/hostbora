@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/haptic_feedback_util.dart';
 import '../../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
 
 class RentWhatsappTemplateBuilderController extends BaseController {
@@ -262,8 +263,25 @@ class RentWhatsappTemplateBuilderController extends BaseController {
   }
 
   Future<void> delete(int id) async {
+    hapticPrimaryConfirm();
     await _local.deleteById(id);
-    showSuccessMessage(_isSw ? 'Kimefutwa' : 'Template deleted');
+    await loadAll();
+  }
+
+  Future<void> restoreTemplate(RentWhatsappTemplateRecord t) async {
+    await _local.insert(
+      name: t.name,
+      category: t.category,
+      language: t.language,
+      headerType: t.headerType,
+      headerText: t.headerText,
+      bodyText: t.bodyText,
+      footerText: t.footerText,
+      buttons: t.buttons,
+      sampleVariables: t.sampleVariables,
+      status: t.status,
+    );
+    showSuccessMessage(_isSw ? 'Kiolezo kimerudishwa' : 'Template restored');
     await loadAll();
   }
 

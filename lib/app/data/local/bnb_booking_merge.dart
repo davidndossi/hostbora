@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../../core/models/item_sync_status.dart';
 import '../../core/utils/bnb_stay_billing.dart';
 import '../model/check_in_item.dart';
 import 'bnb_booking_overrides_store.dart';
@@ -41,6 +42,7 @@ class BnbBookingMerge {
       isCancelled: cancelled,
       imageUrl: (m['imageUrl'] ?? '').toString(),
       guestName: (m['guestName'] ?? '').toString(),
+      guestPhone: (m['guestPhoneNumber'] ?? m['guestPhone'] ?? '').toString(),
       guestAvatarUrl: (m['guestAvatarUrl'] ?? '').toString(),
       propertyType: (m['propertyType'] ?? m['propertyName'] ?? '').toString(),
       dates: formatDates(checkIn, checkOut, nights),
@@ -52,6 +54,8 @@ class BnbBookingMerge {
     Map<String, dynamic> m, {
     required String propertyLabel,
     required String localId,
+    ItemSyncStatus syncStatus = ItemSyncStatus.pending,
+    int? syncQueueId,
   }) {
     final checkIn = (m['checkIn'] ?? '').toString();
     final rawCheckOut = (m['checkOut'] ?? '').toString();
@@ -65,10 +69,13 @@ class BnbBookingMerge {
       checkOutIso: checkOut,
       listingId: (m['listingId'] ?? '').toString(),
       isLocalPending: true,
+      syncStatus: syncStatus,
+      syncQueueId: syncQueueId,
       isCheckedOut: checkedOut,
       isCancelled: cancelled,
       imageUrl: '',
       guestName: (m['guestName'] ?? '').toString(),
+      guestPhone: (m['guestPhoneNumber'] ?? m['guestPhone'] ?? '').toString(),
       guestAvatarUrl: '',
       propertyType: propertyLabel,
       dates: formatDates(checkIn, checkOut, 0),

@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/widget/app_swipeable_card.dart';
 import '../../../core/values/app_decorations.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
@@ -17,8 +23,7 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -39,7 +44,7 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
           Expanded(
             child: Obx(() {
               if (controller.loading.value) {
-                return const Center(child: CircularProgressIndicator());
+                return const DefaultScreenSkeleton();
               }
               final list = controller.tasks;
               if (list.isEmpty) {
@@ -48,9 +53,7 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
                     _t(context, en: 'No tasks', sw: 'Hakuna kazi'),
                     style: TextStyle(
                       fontSize: 16,
-                      color: _isDark(context)
-                          ? Colors.white70
-                          : AppColors.textColorSecondary,
+                      color: context.tokens.textSecondary,
                     ),
                   ),
                 );
@@ -59,12 +62,18 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
                 itemCount: list.length,
                 separatorBuilder: (_, index) => const SizedBox(height: 12),
-                itemBuilder: (context, index) => _TaskCard(
-                  task: list[index],
-                  onToggleComplete: () =>
-                      controller.toggleComplete(list[index]),
-                  onTap: () => controller.openTaskDetail(list[index]),
-                ),
+                itemBuilder: (context, index) {
+                  final task = list[index];
+                  return _SwipeableTaskCard(
+                    task: task,
+                    onToggleComplete: () => controller.toggleComplete(task),
+                    onTap: () => controller.openTaskDetail(task),
+                    onCompleteSwipe: () => controller.completeTaskFromSwipe(task),
+                    onSnoozeSwipe: () => controller.snoozeTask(task),
+                    labelComplete: _t(context, en: 'Complete', sw: 'Maliza'),
+                    labelSnooze: _t(context, en: 'Snooze 1 day', sw: 'Ahirisha siku 1'),
+                  );
+                },
               );
             }),
           ),
@@ -136,11 +145,11 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Material(
       color: isSelected
           ? AppColors.colorPrimary
-          : (isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
+          : (c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
@@ -152,7 +161,7 @@ class _FilterChip extends StatelessWidget {
             border: isSelected
                 ? null
                 : Border.all(
-                    color: isDark
+                    color: c.isDark
                         ? Colors.white.withValues(alpha: 0.18)
                         : AppColors.designInputBorder,
                   ),
@@ -173,6 +182,94 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _SwipeableTaskCard extends StatelessWidget {
+  const _SwipeableTaskCard({
+    required this.task,
+    required this.onToggleComplete,
+    required this.onTap,
+    required this.onCompleteSwipe,
+    required this.onSnoozeSwipe,
+    required this.labelComplete,
+    required this.labelSnooze,
+  });
+
+  final MaintenanceTask task;
+  final VoidCallback onToggleComplete;
+  final VoidCallback onTap;
+  final VoidCallback onCompleteSwipe;
+  final Future<void> Function() onSnoozeSwipe;
+  final String labelComplete;
+  final String labelSnooze;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSwipeableCard(
+      dismissKey: ValueKey('task_swipe_${task.id}'),
+      startLabel: labelSnooze,
+      endLabel: labelComplete,
+      onSwipeStartToEnd: onSnoozeSwipe,
+      onSwipeEndToStart: () async => onCompleteSwipe(),
+      child: _TaskCard(
+        task: task,
+        onToggleComplete: onToggleComplete,
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _SwipeBg extends StatelessWidget {
+  const _SwipeBg({
+    required this.alignment,
+    required this.color,
+    required this.icon,
+    required this.label,
+  });
+
+  final Alignment alignment;
+  final Color color;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(AppValues.radius_12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (alignment == Alignment.centerRight) ...[
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Icon(icon, color: Colors.white),
+          if (alignment == Alignment.centerLeft) ...[
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _TaskCard extends StatelessWidget {
   final MaintenanceTask task;
   final VoidCallback onToggleComplete;
@@ -186,7 +283,7 @@ class _TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     final isCompleted = task.isCompleted;
     final opacity = isCompleted ? 0.6 : 1.0;
 
@@ -198,15 +295,15 @@ class _TaskCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: AppDecorations.card.copyWith(
-            color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+            color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
             border: Border.all(
-              color: isDark
+              color: c.isDark
                   ? Colors.white.withValues(alpha: 0.18)
                   : Colors.transparent,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),
+                color: Colors.black.withValues(alpha: c.isDark ? 0.28 : 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -227,7 +324,7 @@ class _TaskCard extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color:
-                            (isDark ? Colors.white : AppColors.textColorPrimary)
+                            (c.headline)
                                 .withValues(alpha: opacity),
                         decoration: isCompleted
                             ? TextDecoration.lineThrough
@@ -253,7 +350,7 @@ class _TaskCard extends StatelessWidget {
                             Icons.check_circle_outline,
                             size: 16,
                             color:
-                                (isDark
+                                (c.isDark
                                         ? Colors.white70
                                         : AppColors.textColorSecondary)
                                     .withValues(alpha: opacity),
@@ -264,7 +361,7 @@ class _TaskCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  (isDark
+                                  (c.isDark
                                           ? Colors.white70
                                           : AppColors.textColorSecondary)
                                       .withValues(alpha: opacity),
@@ -279,7 +376,7 @@ class _TaskCard extends StatelessWidget {
                             Icons.calendar_today_outlined,
                             size: 16,
                             color:
-                                (isDark
+                                (c.isDark
                                         ? Colors.white70
                                         : AppColors.textColorSecondary)
                                     .withValues(alpha: opacity),
@@ -294,7 +391,7 @@ class _TaskCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  (isDark
+                                  (c.isDark
                                           ? Colors.white70
                                           : AppColors.textColorSecondary)
                                       .withValues(alpha: opacity),
@@ -311,7 +408,7 @@ class _TaskCard extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right,
-                color: (isDark ? Colors.white70 : AppColors.textColorSecondary)
+                color: (c.secondary)
                     .withValues(alpha: opacity),
                 size: 24,
               ),
@@ -323,7 +420,7 @@ class _TaskCard extends StatelessWidget {
   }
 
   Widget _buildCheckbox(BuildContext context, bool isCompleted) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return GestureDetector(
       onTap: onToggleComplete,
       behavior: HitTestBehavior.opaque,
@@ -337,7 +434,7 @@ class _TaskCard extends StatelessWidget {
           border: Border.all(
             color: isCompleted
                 ? AppColors.colorPrimary
-                : (isDark
+                : (c.isDark
                       ? Colors.white.withValues(alpha: 0.18)
                       : AppColors.designInputBorder),
             width: 2,

@@ -23,6 +23,17 @@ class OfflineSyncWorkerService extends GetxService {
   Timer? _pollTimer;
   bool _isRunning = false;
   bool _started = false;
+  final List<void Function()> _onDrainListeners = [];
+
+  void addOnDrainListener(void Function() listener) {
+    if (!_onDrainListeners.contains(listener)) {
+      _onDrainListeners.add(listener);
+    }
+  }
+
+  void removeOnDrainListener(void Function() listener) {
+    _onDrainListeners.remove(listener);
+  }
 
   /// Start listening for connectivity and processing pending sync queue items.
   void start() {
@@ -95,8 +106,17 @@ class OfflineSyncWorkerService extends GetxService {
       }
 
       await _queue.deleteDone();
+      _notifyDrainListeners();
     } finally {
       _isRunning = false;
+    }
+  }
+
+  void _notifyDrainListeners() {
+    for (final listener in List<void Function()>.from(_onDrainListeners)) {
+      try {
+        listener();
+      } catch (_) {}
     }
   }
 

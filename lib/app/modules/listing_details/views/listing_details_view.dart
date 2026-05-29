@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:paa_yangu/app/core/values/app_values.dart';
 import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
@@ -6,6 +10,7 @@ import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/widget/property_financial_trend_charts.dart';
 import '../../../core/widget/property_listing_image.dart';
 import '../controllers/listing_details_controller.dart';
 
@@ -20,8 +25,8 @@ class _ListingUi {
   static const Color cream = Color(0xFFFBFAF6);
 
   Color get bg => dark ? _t.scaffoldBackgroundColor : cream;
-  Color get card => dark ? const Color(0xFF2C2C2E) : Colors.white;
-  Color get soft => dark ? const Color(0xFF3A3A3C) : const Color(0xFFF4F1EA);
+  Color get card => dark ? context.tokens.cardBackground : Colors.white;
+  Color get soft => dark ? context.tokens.elevatedSurface : const Color(0xFFF4F1EA);
   Color get line => dark ? const Color(0xFF4A4A4C) : const Color(0xFFE6E1D7);
   Color get text => dark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
   Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
@@ -46,7 +51,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     return Obx(() {
       if (controller.loadingListing.value) {
         return const Center(
-          child: CircularProgressIndicator(color: _ListingUi.forest),
+          child: const DefaultScreenSkeleton(),
         );
       }
       return RefreshIndicator(
@@ -65,7 +70,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             const SizedBox(height: 12),
             _kpiMinimal(
               u,
-              label: _isSw ? 'UKAAJI WA SASA' : 'CURRENT OCCUPANCY',
+              label: _isSw ? 'Ukaaji wa sasa' : 'Current occupancy',
               value: '${controller.occupancyPercent.value.clamp(0, 100)}',
               suffix: '%',
               progress: controller.occupancyPercent.value.clamp(0, 100) / 100,
@@ -74,13 +79,20 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             const SizedBox(height: 10),
             _kpiMinimal(
               u,
-              label: _isSw ? 'MAPATO YA MWEZI' : 'MONTHLY REVENUE',
+              label: _isSw ? 'Mapato ya mwezi' : 'Monthly revenue',
               value: controller.monthlyRevenueLabel.value,
               prefix: 'TZS',
               progress: controller.monthlyRevenueProgress.value,
             ),
             const SizedBox(height: 10),
             _estimationCostsLink(u),
+            const SizedBox(height: 14),
+            Obx(
+              () => PropertyFinancialTrendCharts(
+                series: controller.financialTrends.value,
+                loading: controller.financialTrendsLoading.value,
+              ),
+            ),
             const SizedBox(height: 14),
             _quickManagement(u),
             const SizedBox(height: 10),
@@ -426,11 +438,11 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
 
   Widget _quickManagement(_ListingUi u) {
     final items = <(IconData, String, int)>[
-      (Icons.person_add_alt_1_outlined, _isSw ? 'ADD TENANT' : 'ADD TENANT', 0),
-      (Icons.payments_outlined, _isSw ? 'ADD INCOME' : 'ADD INCOME', 1),
-      (Icons.receipt_long_outlined, _isSw ? 'ADD EXPENSE' : 'ADD EXPENSE', 2),
-      (Icons.calendar_today_outlined, _isSw ? 'SCHEDULE\nMAINTENANCE' : 'SCHEDULE\nMAINTENANCE', 3),
-      (Icons.lock_open, _isSw ? 'UNIT LOCK\nCONTROL' : 'UNIT LOCK\nCONTROL', 4),
+      (Icons.person_add_alt_1_outlined, _isSw ? 'Ongeza mpangaji' : 'Add tenant', 0),
+      (Icons.payments_outlined, _isSw ? 'Ongeza mapato' : 'Add income', 1),
+      (Icons.receipt_long_outlined, _isSw ? 'Ongeza matumizi' : 'Add expense', 2),
+      (Icons.calendar_today_outlined, _isSw ? 'Panga\nmatengenezo' : 'Schedule\nmaintenance', 3),
+      (Icons.lock_open, _isSw ? 'Dhibiti kufuli\ncha unit' : 'Unit lock\ncontrol', 4),
       (Icons.bolt_outlined, _isSw ? 'UTILITY\nDASHBOARD' : 'UTILITY\nDASHBOARD', 5),
     ];
 
@@ -529,7 +541,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             TextButton(
               onPressed: controller.onAddNewUnit,
               child: Text(
-                _isSw ? 'ONGEZA UNIT MPYA' : 'ADD NEW UNIT',
+                _isSw ? 'Ongeza unit mpya' : 'Add new unit',
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ),
@@ -572,7 +584,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         : occupied
             ? const Color(0xFF1B6B3A)
             : const Color(0xFF6B7280);
-    final badgeText = due ? 'DUE DATE' : occupied ? 'OCCUPIED' : 'SHORT';
+    final badgeText = due ? 'Due date' : occupied ? 'Occupied' : 'Short';
 
     return Material(
       color: Colors.transparent,
@@ -687,7 +699,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             TextButton(
               onPressed: controller.onViewAllLog,
               child: const Text(
-                'VIEW ALL LOG',
+                'View all log',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ),
@@ -794,7 +806,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               padding: EdgeInsets.all(AppValues.padding),
             ),
             child: Text(
-              _isSw ? 'MANAGE STAFF' : 'MANAGE STAFF',
+              _isSw ? 'Simamia wafanyakazi' : 'Manage staff',
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
             ),
           ),
@@ -841,7 +853,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         ),
         icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
         label: Text(
-          _isSw ? 'FUTA MJENGO' : 'REMOVE PROPERTY',
+          _isSw ? 'Futa mjengo' : 'Remove property',
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w800,

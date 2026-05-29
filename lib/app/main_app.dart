@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../l10n/app_localizations.dart';
 import '/app/bindings/initial_binding.dart';
+import '/app/core/theme/app_theme_tokens.dart';
 import '/app/core/theme/theme_controller.dart';
 import '/app/core/values/app_colors.dart';
 import '/app/core/values/app_values.dart';
@@ -280,6 +281,7 @@ class _MainAppState extends State<MainApp> {
         ),
       ),
       fontFamily: 'Roboto',
+      extensions: const [AppThemeTokens.light],
     );
   }
 
@@ -355,6 +357,7 @@ class _MainAppState extends State<MainApp> {
         ),
       ),
       fontFamily: 'Roboto',
+      extensions: const [AppThemeTokens.dark],
     );
   }
 

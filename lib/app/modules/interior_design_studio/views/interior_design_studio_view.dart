@@ -1,6 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -14,8 +17,7 @@ class InteriorDesignStudioView
     extends BaseView<InteriorDesignStudioController> {
   InteriorDesignStudioView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -37,14 +39,14 @@ class InteriorDesignStudioView
   }
 
   @override
-  Color pageBackgroundColor(BuildContext context) => _isDark(context)
+  Color pageBackgroundColor(BuildContext context) => FormSurfaceColors.of(context).isDark
       ? Theme.of(context).colorScheme.surface
       : AppColors.colorWhite;
 
   @override
   Widget body(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Column(
       children: [
         Expanded(
@@ -70,7 +72,7 @@ class InteriorDesignStudioView
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: isDark
+                    color: c.isDark
                         ? theme.colorScheme.onSurface
                         : AppColors.textColorPrimary,
                   ),
@@ -87,7 +89,7 @@ class InteriorDesignStudioView
 
   Widget _buildUploadCard(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Obx(() {
       final photoPath = controller.selectedRoomPhotoPath.value;
       final hasPhoto =
@@ -98,12 +100,12 @@ class InteriorDesignStudioView
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
         decoration: BoxDecoration(
-          color: isDark
+          color: c.isDark
               ? theme.colorScheme.surfaceContainerHigh
               : AppColors.pageBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark
+            color: c.isDark
                 ? theme.colorScheme.outlineVariant
                 : AppColors.designInputBorder,
           ),
@@ -158,7 +160,7 @@ class InteriorDesignStudioView
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: isDark
+                color: c.isDark
                     ? theme.colorScheme.onSurface
                     : AppColors.textColorPrimary,
               ),
@@ -172,7 +174,7 @@ class InteriorDesignStudioView
               ),
               style: TextStyle(
                 fontSize: 12,
-                color: isDark
+                color: c.isDark
                     ? theme.colorScheme.onSurfaceVariant
                     : AppColors.textColorSecondary,
               ),
@@ -217,7 +219,7 @@ class InteriorDesignStudioView
 
   Widget _buildStyleHeader(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Row(
       children: [
         Text(
@@ -225,7 +227,7 @@ class InteriorDesignStudioView
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: isDark
+            color: c.isDark
                 ? theme.colorScheme.onSurface
                 : AppColors.textColorPrimary,
           ),
@@ -357,7 +359,7 @@ class InteriorDesignStudioView
 
   Widget _buildResultList() {
     return Obx(() {
-      final isDark = _isDark(Get.context!);
+      final c = FormSurfaceColors.of(Get.context!);
       final theme = Theme.of(Get.context!);
       return Column(
         children: controller.results
@@ -365,12 +367,12 @@ class InteriorDesignStudioView
               (item) => Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.surfaceContainerHigh
                       : AppColors.colorWhite,
                   borderRadius: BorderRadius.circular(AppValues.radius_12),
                   border: Border.all(
-                    color: isDark
+                    color: c.isDark
                         ? theme.colorScheme.outlineVariant
                         : AppColors.designInputBorder,
                   ),
@@ -394,7 +396,7 @@ class InteriorDesignStudioView
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: isDark
+                              color: c.isDark
                                   ? theme.colorScheme.onSurface
                                   : AppColors.textColorPrimary,
                             ),
@@ -417,7 +419,7 @@ class InteriorDesignStudioView
                       item.subtitle,
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark
+                        color: c.isDark
                             ? theme.colorScheme.onSurfaceVariant
                             : AppColors.textColorSecondary,
                       ),
@@ -437,12 +439,12 @@ class InteriorDesignStudioView
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: isDark
+                                color: c.isDark
                                     ? theme.colorScheme.surface
                                     : AppColors.pageBackground,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isDark
+                                  color: c.isDark
                                       ? theme.colorScheme.outlineVariant
                                       : AppColors.designInputBorder,
                                 ),
@@ -452,7 +454,7 @@ class InteriorDesignStudioView
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark
+                                  color: c.isDark
                                       ? theme.colorScheme.onSurfaceVariant
                                       : AppColors.textColorSecondary,
                                 ),
@@ -474,11 +476,11 @@ class InteriorDesignStudioView
                             borderRadius: BorderRadius.circular(18),
                           ),
                           side: BorderSide(
-                            color: isDark
+                            color: c.isDark
                                 ? theme.colorScheme.outlineVariant
                                 : AppColors.designInputBorder,
                           ),
-                          foregroundColor: isDark
+                          foregroundColor: c.isDark
                               ? theme.colorScheme.onSurface
                               : AppColors.textColorPrimary,
                         ),
@@ -518,7 +520,7 @@ class InteriorDesignStudioView
           if (progress == null) return child;
           return SizedBox(
             height: height,
-            child: const Center(child: CircularProgressIndicator()),
+            child: const DefaultScreenSkeleton(),
           );
         },
       );

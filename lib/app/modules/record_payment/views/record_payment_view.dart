@@ -3,17 +3,30 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/widget/currency_dropdown_field.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/loading_button.dart';
 import '../controllers/record_payment_controller.dart';
 
 class RecordPaymentView extends BaseView<RecordPaymentController> {
-  RecordPaymentView({super.key});
+  RecordPaymentView({
+    super.key,
+    this.sheetMode = false,
+    this.scrollController,
+  });
+
+  final bool sheetMode;
+  final ScrollController? scrollController;
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
+  bool get applyModuleDefaultTextStyle => !sheetMode;
+
+  @override
   PreferredSizeWidget? appBar(BuildContext context) {
+    if (sheetMode) return null;
     return CustomAppBar(
       appBarTitleText: appLocalization.transaction,
       isCentered: true,
@@ -21,21 +34,20 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   }
 
   @override
-  Color pageBackgroundColor(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF9F8F6);
-  }
+  Color pageBackgroundColor(BuildContext context) =>
+      FormSurfaceColors.of(context).scaffold;
 
   @override
   Widget body(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final headlineColor = isDark ? Colors.white : const Color(0xFF2E2E2E);
-    final hintMuted = isDark ? const Color(0xFF8E8E93) : const Color(0xFF8A8A8A);
-    final dropdownText = isDark ? Colors.white : const Color(0xFF1F2937);
-    final chevronColor = isDark ? const Color(0xFFAEAEB2) : const Color(0xFF3D3D3D);
+    final c = FormSurfaceColors.of(context);
+    final headlineColor = c.headline;
+    final hintMuted = c.hint;
+    final dropdownText = c.headline;
+    final chevronColor = c.secondary;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(18, 10, 18, 26),
+    final content = SingleChildScrollView(
+      controller: scrollController,
+      padding: EdgeInsets.fromLTRB(18, sheetMode ? 4 : 10, 18, 26),
       child: Form(
         key: controller.formKey,
         child: Column(
@@ -46,7 +58,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               style: TextStyle(fontSize: 18, color: headlineColor, height: 1.3),
             ),
             const SizedBox(height: 22),
-            _label(_isSw ? 'CHAGUA MJENGO' : 'SELECT PROPERTY', isDark: isDark),
+            _label(_isSw ? 'CHAGUA MJENGO' : 'SELECT PROPERTY', colors: c),
             Obx(
               () {
                 final hasProperties = controller.hasProperties;
@@ -63,8 +75,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                         fontWeight: FontWeight.w500,
                         color: dropdownText,
                       ),
-                      dropdownColor:
-                      isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                      dropdownColor: c.dropdownBg,
                       icon: Icon(Icons.expand_more_rounded, color: chevronColor),
                       decoration: InputDecoration(
                         border: InputBorder.none,
@@ -103,7 +114,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-                  _label(_isSw ? 'KITENGO (HIARI)' : 'UNIT (OPTIONAL)', isDark: isDark),
+                  _label(_isSw ? 'KITENGO (HIARI)' : 'UNIT (OPTIONAL)', colors: c),
                   DropdownButtonFormField<String?>(
                     initialValue: value,
                     isExpanded: true,
@@ -112,8 +123,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                       fontWeight: FontWeight.w500,
                       color: dropdownText,
                     ),
-                    dropdownColor:
-                    isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                    dropdownColor: c.dropdownBg,
                     icon: Icon(Icons.expand_more_rounded, color: chevronColor),
                     decoration: InputDecoration(
                       border: InputBorder.none,
@@ -143,7 +153,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-                  _label(appLocalization.linkedBookingOptional, isDark: isDark),
+                  _label(appLocalization.linkedBookingOptional, colors: c),
                   if (controller.loadingBookings.value)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -169,8 +179,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                         fontWeight: FontWeight.w500,
                         color: dropdownText,
                       ),
-                      dropdownColor:
-                          isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                      dropdownColor: c.dropdownBg,
                       icon: Icon(Icons.expand_more_rounded, color: chevronColor),
                       decoration: InputDecoration(
                         border: InputBorder.none,
@@ -188,14 +197,14 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               );
             }),
             const SizedBox(height: 16),
-            _label(_isSw ? 'KIASI KILICHOLIPWA' : 'AMOUNT PAID', isDark: isDark),
+            _label(_isSw ? 'KIASI KILICHOLIPWA' : 'AMOUNT PAID', colors: c),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   flex: 2,
                   child: _field(
-                    isDark,
+                    c,
                     controller.amountController,
                     hint: '0.00',
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -213,9 +222,9 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               ],
             ),
             const SizedBox(height: 16),
-            _label(_isSw ? 'TAREHE YA MALIPO' : 'DATE PAID', isDark: isDark),
+            _label(_isSw ? 'TAREHE YA MALIPO' : 'DATE PAID', colors: c),
             _field(
-              isDark,
+              c,
               controller.datePaidController,
               hint: _isSw ? 'dd/MM/yyyy' : 'dd/MM/yyyy',
               suffix: Icons.calendar_today_outlined,
@@ -224,7 +233,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               validator: controller.validateDatePaid,
             ),
             const SizedBox(height: 16),
-            _label(_isSw ? 'KATEGORIA' : 'CATEGORY', isDark: isDark),
+            _label(_isSw ? 'KATEGORIA' : 'CATEGORY', colors: c),
             Obx(
                   () => Wrap(
                 spacing: 8,
@@ -232,7 +241,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                 children: List.generate(
                   controller.categories.length,
                       (i) => _CategoryChip(
-                    isDark: isDark,
+                    colors: c,
                     label: controller.categories[i],
                     selected: controller.selectedCategoryIndex.value == i,
                     onTap: () => controller.selectCategory(i),
@@ -241,9 +250,9 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               ),
             ),
             const SizedBox(height: 18),
-            _label(_isSw ? 'MAELEZO (HIARI)' : 'NOTES (OPTIONAL)', isDark: isDark),
+            _label(_isSw ? 'MAELEZO (HIARI)' : 'NOTES (OPTIONAL)', colors: c),
             _field(
-              isDark,
+              c,
               controller.notesController,
               hint: _isSw ? 'Ongeza maelezo yoyote kuhusu muamala huu...' : 'Add any specific details regarding this transaction...',
               minHeight: 120,
@@ -254,11 +263,9 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF4F3EF),
+                color: c.impactBannerBg,
                 borderRadius: BorderRadius.circular(14),
-                border: isDark
-                    ? Border.all(color: const Color(0xFF3A3A3C))
-                    : null,
+                border: c.isDark ? Border.all(color: c.border) : null,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,7 +279,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                         Text(
                           _isSw ? 'Athari kwa Utendaji' : 'Impact on Performance',
                           style: TextStyle(
-                            color: isDark ? Colors.white : const Color(0xFF0E0E0E),
+                            color: c.headline,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
@@ -283,9 +290,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                               ? 'Kurekodi mapato haya\nkutasasisha mara moja\ntakwimu za mapato ya mwezi\nna ripoti za thamani ya ujazaji.'
                               : 'Recording this income will\nimmediately update your monthly\nrevenue stats and occupancy value\nreports.',
                           style: TextStyle(
-                            color: isDark
-                                ? const Color(0xFFAEAEB2)
-                                : const Color(0xFF2B2B2B),
+                            color: c.secondary,
                             fontSize: 13,
                             height: 1.35,
                           ),
@@ -297,40 +302,14 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               ),
             ),
             const SizedBox(height: 30),
-            Obx(() {
-              final isSaving = controller.saving.value;
-              final onPrimary = Theme.of(context).colorScheme.onPrimary;
-              return SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: isSaving ? null : controller.saveIncomeOffline,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(11)),
-                  ),
-                  icon: isSaving
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: onPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.check, size: 20),
-                  label: Text(
-                    isSaving
-                        ? (_isSw ? 'Inahifadhi...' : 'Saving...')
-                        : (_isSw ? 'Hifadhi Mapato' : 'Save Income'),
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 16),
-                  ),
-                ),
-              );
-            }),
+            Obx(
+              () => LoadingButton(
+                label: _isSw ? 'Hifadhi Mapato' : 'Save Income',
+                icon: Icons.check,
+                onPressed: controller.saveIncomeOffline,
+                isLoading: controller.saving.value,
+              ),
+            ),
             const SizedBox(height: 18),
             Align(
               alignment: Alignment.center,
@@ -343,9 +322,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                     _isSw ? 'Ghairi' : 'Cancel',
                     style: TextStyle(
                       fontSize: 15,
-                      color: isDark
-                          ? const Color(0xFFE8E8ED)
-                          : const Color(0xFF111111),
+                      color: c.headline,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -356,6 +333,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
         ),
       ),
     );
+    return content;
     // return SingleChildScrollView(
     //   padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
     //   child: Form(
@@ -381,7 +359,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     //           ),
     //           style: TextStyle(
     //             fontSize: 15,
-    //             color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+    //             color: c.secondary,
     //             height: 1.4,
     //           ),
     //         ),
@@ -396,7 +374,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     //           decoration: _inputDecoration(context, hint: '0.00').copyWith(
     //             prefixText: 'TZS ',
     //             prefixStyle: TextStyle(
-    //               color: isDark ? Colors.white70 : AppColors.designPlaceholder,
+    //               color: c.isDark ? Colors.white70 : AppColors.designPlaceholder,
     //               fontSize: 16,
     //             ),
     //           ),
@@ -438,7 +416,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     //                 ).copyWith(
     //                   suffixIcon: Icon(
     //                     Icons.keyboard_arrow_down,
-    //                     color: isDark
+    //                     color: c.isDark
     //                         ? Colors.white70
     //                         : AppColors.designPlaceholder,
     //                   ),
@@ -471,7 +449,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     //                 prefixIcon: Icon(
     //                   Icons.search,
     //                   size: 22,
-    //                   color: isDark
+    //                   color: c.isDark
     //                       ? Colors.white70
     //                       : AppColors.designPlaceholder,
     //                 ),
@@ -486,7 +464,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     //         _DateField(
     //           label: controller.paymentDateLabel,
     //           onTap: controller.pickPaymentDate,
-    //           isDark: isDark,
+    //           c.isDark: c.isDark,
     //         ),
     //         const SizedBox(height: 20),
     //         _buildLabel(context, _t(context, en: 'Status', sw: 'Hali')),
@@ -500,20 +478,20 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     // );
   }
 
-  Widget _label(String text, {required bool isDark}) => Padding(
+  Widget _label(String text, {required FormSurfaceColors colors}) => Padding(
     padding: const EdgeInsets.only(bottom: 7),
     child: Text(
       text,
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w700,
-        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+        color: colors.sectionLabel,
       ),
     ),
   );
 
   Widget _field(
-      bool isDark,
+      FormSurfaceColors colors,
       TextEditingController fieldController, {
         required String hint,
         IconData? suffix,
@@ -525,24 +503,18 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
         bool readOnly = false,
         VoidCallback? onTap,
       }) {
-    final textColor =
-    isDark ? const Color(0xFFE8E8ED) : const Color(0xFF5B5B5B);
-    final hintColor =
-    isDark ? const Color(0xFF8E8E93) : const Color(0xFF5B5B5B).withValues(alpha: 0.72);
     final hintStyle = TextStyle(
       fontSize: 14,
-      color: hintColor,
+      color: colors.hint,
       height: isMultiline ? 1.35 : 1.2,
     );
-    final suffixColor =
-    isDark ? const Color(0xFFAEAEB2) : const Color(0xFF2D2D2D);
 
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: minHeight),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF3A3A3C) : Colors.transparent,
+        color: colors.fieldWellFill,
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextFormField(
@@ -558,7 +530,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
         validator: validator,
         style: TextStyle(
           fontSize: 14,
-          color: textColor,
+          color: colors.secondary,
           height: isMultiline ? 1.35 : 1.25,
         ),
         decoration: InputDecoration(
@@ -573,7 +545,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
             child: Icon(
               suffix,
               size: 20,
-              color: suffixColor,
+              color: colors.secondary,
             ),
           ),
           suffixIconConstraints: BoxConstraints(
@@ -631,20 +603,20 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   //   required String hint,
   //   Widget? prefixIcon,
   // }) {
-  //   final isDark = _isDark(context);
+  //   final c = FormSurfaceColors.of(context);
   //   return InputDecoration(
   //     hintText: hint,
   //     hintStyle: TextStyle(
-  //       color: isDark ? Colors.white70 : AppColors.designPlaceholder,
+  //       color: c.isDark ? Colors.white70 : AppColors.designPlaceholder,
   //     ),
   //     prefixIcon: prefixIcon,
   //     filled: true,
-  //     fillColor: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+  //     fillColor: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
   //     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
   //     border: OutlineInputBorder(
   //       borderRadius: BorderRadius.circular(AppValues.radius_6),
   //       borderSide: BorderSide(
-  //         color: isDark
+  //         color: c.isDark
   //             ? Colors.white.withValues(alpha: 0.18)
   //             : AppColors.designInputBorder,
   //       ),
@@ -652,7 +624,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   //     enabledBorder: OutlineInputBorder(
   //       borderRadius: BorderRadius.circular(AppValues.radius_6),
   //       borderSide: BorderSide(
-  //         color: isDark
+  //         color: c.isDark
   //             ? Colors.white.withValues(alpha: 0.18)
   //             : AppColors.designInputBorder,
   //       ),
@@ -739,25 +711,21 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
 
 class _CategoryChip extends StatelessWidget {
   const _CategoryChip({
-    required this.isDark,
+    required this.colors,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
-  final bool isDark;
+  final FormSurfaceColors colors;
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected
-        ? const Color(0xFF006D73)
-        : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF1F1EE));
-    final fg = selected
-        ? Colors.white
-        : (isDark ? const Color(0xFFE8E8ED) : const Color(0xFF1E1E1E));
+    final bg = selected ? colors.tokens.accent : colors.chipUnselectedBg;
+    final fg = selected ? Colors.white : colors.headline;
     return Material(
       color: bg,
       borderRadius: BorderRadius.circular(9),
@@ -812,7 +780,7 @@ class _ImpactIcon extends StatelessWidget {
 //   @override
 //   Widget build(BuildContext context) {
 //     return Material(
-//       color: isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+//       color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
 //       borderRadius: BorderRadius.circular(AppValues.radius_6),
 //       child: InkWell(
 //         onTap: onTap,
@@ -822,7 +790,7 @@ class _ImpactIcon extends StatelessWidget {
 //           decoration: BoxDecoration(
 //             borderRadius: BorderRadius.circular(AppValues.radius_6),
 //             border: Border.all(
-//               color: isDark
+//               color: c.isDark
 //                   ? Colors.white.withValues(alpha: 0.18)
 //                   : AppColors.designInputBorder,
 //             ),
@@ -841,7 +809,7 @@ class _ImpactIcon extends StatelessWidget {
 //               Icon(
 //                 Icons.calendar_today_outlined,
 //                 size: 20,
-//                 color: isDark ? Colors.white70 : AppColors.designPlaceholder,
+//                 color: c.isDark ? Colors.white70 : AppColors.designPlaceholder,
 //               ),
 //             ],
 //           ),
@@ -866,11 +834,11 @@ class _ImpactIcon extends StatelessWidget {
 //
 //   @override
 //   Widget build(BuildContext context) {
-//     final isDark = Theme.of(context).brightness == Brightness.dark;
+//     final c = FormSurfaceColors.of(context);
 //     return Material(
 //       color: isSelected
 //           ? _transactionTeal
-//           : (isDark
+//           : (c.isDark
 //                 ? Colors.white.withValues(alpha: 0.12)
 //                 : AppColors.lightGreyColor.withValues(alpha: 0.4)),
 //       borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -893,7 +861,7 @@ class _ImpactIcon extends StatelessWidget {
 //                   fontWeight: FontWeight.w600,
 //                   color: isSelected
 //                       ? Colors.white
-//                       : (isDark
+//                       : (c.isDark
 //                             ? Colors.white70
 //                             : AppColors.textColorSecondary),
 //                 ),

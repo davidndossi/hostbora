@@ -19,14 +19,14 @@ import '../../add_listing/models/apartment_unit_draft.dart';
 
 class AddExpenseController extends BaseController {
   AddExpenseController()
-      : _expenseLocal = Get.find<ExpenseLocalDataSource>(),
-        _propertyLocal = Get.find<PropertyLocalDataSource>(),
-        _tenantLocal = Get.find<TenantLocalDataSource>(),
-        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
-        _syncWorker = Get.find<OfflineSyncWorkerService>(),
-        _preferenceManager = Get.find<PreferenceManager>(
-          tag: (PreferenceManager).toString(),
-        );
+    : _expenseLocal = Get.find<ExpenseLocalDataSource>(),
+      _propertyLocal = Get.find<PropertyLocalDataSource>(),
+      _tenantLocal = Get.find<TenantLocalDataSource>(),
+      _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+      _syncWorker = Get.find<OfflineSyncWorkerService>(),
+      _preferenceManager = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
 
   final ExpenseLocalDataSource _expenseLocal;
   final PropertyLocalDataSource _propertyLocal;
@@ -42,11 +42,18 @@ class AddExpenseController extends BaseController {
   final formKey = GlobalKey<FormState>();
 
   /// Expense category options (single selection).
-  final expenses = const ['Maintenance', 'Utilities', 'Salary', 'Yearly tax', 'Other'];
+  final expenses = const [
+    'Maintenance',
+    'Utilities',
+    'Salary',
+    'Yearly tax',
+    'Other',
+  ];
 
   final selectedExpenseIndex = 0.obs;
   final propertyOptions = <String>[].obs;
   final selectedProperty = ''.obs;
+
   /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
   final selectedExpenseUnitKey = Rxn<String>();
   final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
@@ -123,7 +130,9 @@ class AddExpenseController extends BaseController {
     final loc = p.propertyLocation.trim();
     final suite = p.propertyName.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : loc;
-    final propertyRef = p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}';
+    final propertyRef = p.propertyRef.trim().isNotEmpty
+        ? p.propertyRef.trim()
+        : 'legacy_${p.id}';
     final r = t.propertyRef.trim();
     if (r.isNotEmpty) {
       return r == propertyRef;
@@ -136,10 +145,10 @@ class AddExpenseController extends BaseController {
   }
 
   static bool _tenantMatchesUnit(
-      TenantRecord t,
-      ApartmentUnitDraft u,
-      PropertyRecord p,
-      ) {
+    TenantRecord t,
+    ApartmentUnitDraft u,
+    PropertyRecord p,
+  ) {
     if (!_tenantMatchesProperty(t, p)) return false;
     final tid = t.apartmentUnitId.trim();
     final uid = u.unitId.trim();
@@ -188,9 +197,9 @@ class AddExpenseController extends BaseController {
     _propertyRows = rows;
     final options = rows
         .map((e) {
-      final suite = e.propertyName.trim();
-      return suite.isNotEmpty ? suite : e.propertyLocation.trim();
-    })
+          final suite = e.propertyName.trim();
+          return suite.isNotEmpty ? suite : e.propertyLocation.trim();
+        })
         .where((e) => e.isNotEmpty)
         .toSet()
         .toList();
@@ -246,59 +255,68 @@ class AddExpenseController extends BaseController {
       return;
     }
 
-    final property = selectedProperty.value.trim();
-    final unitDraft = _draftForExpenseUnitKey(selectedExpenseUnitKey.value);
-    final unitName = unitDraft?.unitName.trim() ?? '';
-    final unitLine = _optionalUnitNotesLine();
-    final baseNotes = StringBuffer('Property: $property');
-    if (unitLine.isNotEmpty) {
-      baseNotes.write(", ");
-      baseNotes.writeln(unitLine);
-    }
-    final extra = notesController.text.trim();
-    if (extra.isNotEmpty) {
-      baseNotes.write(" ");
-      baseNotes.writeln(extra);
-    }
-    await _expenseLocal.insert(
-      tenantName: tenantController.text.trim(),
-      amountValue: parsed.baseAmount,
-      datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
-      category: selectedExpense,
-      workspaceType: 'bnb',
-      notes: baseNotes.toString().trim(),
-      apartment: property,
-      apartmentUnit: unitName,
-      currencyCode: parsed.currency,
-      inputAmountValue: parsed.inputAmount,
-    );
+    await runBusy(() async {
+      final property = selectedProperty.value.trim();
+      final unitDraft = _draftForExpenseUnitKey(selectedExpenseUnitKey.value);
+      final unitName = unitDraft?.unitName.trim() ?? '';
+      final unitLine = _optionalUnitNotesLine();
+      final baseNotes = StringBuffer('Property: $property');
+      if (unitLine.isNotEmpty) {
+        baseNotes.write(", ");
+        baseNotes.writeln(unitLine);
+      }
+      final extra = notesController.text.trim();
+      if (extra.isNotEmpty) {
+        baseNotes.write(" ");
+        baseNotes.writeln(extra);
+      }
+      final localExpenseId = await _expenseLocal.insert(
+        tenantName: tenantController.text.trim(),
+        amountValue: parsed.baseAmount,
+        datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
+        category: selectedExpense,
+        workspaceType: 'bnb',
+        notes: baseNotes.toString().trim(),
+        apartment: property,
+        apartmentUnit: unitName,
+        currencyCode: parsed.currency,
+        inputAmountValue: parsed.inputAmount,
+      );
 
-    final request = AddExpenseRequest(
-      amount: parsed.baseAmount,
-      category: selectedExpense,
-      expenseDate: DateFormat('yyyy-MM-dd').format(paidDate),
-      vendor: tenantController.text.trim().isNotEmpty
-          ? tenantController.text.trim()
-          : property,
-      taxDeductible: true,
-      description: baseNotes.toString().trim(),
-    );
-    await _syncQueue.enqueue(
-      entityType: 'expense',
-      operation: 'create',
-      payloadJson: jsonEncode(request.toJson()),
-    );
-    await _syncWorker.runNow(maxItems: 20);
-    final pending = await _syncQueue.pendingCountByEntity(
-      entityType: 'expense',
-      operation: 'create',
-    );
-    if (pending > 0) {
-      showSuccessMessage('Expense saved offline. Will sync when internet is available.');
-    } else {
-      showSuccessMessage('Expense saved and synced.');
-    }
-    Get.back(result: true);
+      final request = AddExpenseRequest(
+        amount: parsed.baseAmount,
+        category: selectedExpense,
+        expenseDate: DateFormat('yyyy-MM-dd').format(paidDate),
+        vendor: tenantController.text.trim().isNotEmpty
+            ? tenantController.text.trim()
+            : property,
+        taxDeductible: true,
+        description: baseNotes.toString().trim(),
+      );
+      final payload = <String, dynamic>{
+        ...request.toJson(),
+        'localExpenseId': localExpenseId,
+      };
+      await _syncQueue.enqueue(
+        entityType: 'expense',
+        operation: 'create',
+        payloadJson: jsonEncode(payload),
+        dedupeKey: 'expense:create:$localExpenseId',
+      );
+      await _syncWorker.runNow(maxItems: 20);
+      final pending = await _syncQueue.pendingCountByEntity(
+        entityType: 'expense',
+        operation: 'create',
+      );
+      if (pending > 0) {
+        showSuccessMessage(
+          'Expense saved offline. Will sync when internet is available.',
+        );
+      } else {
+        showSuccessMessage('Expense saved and synced.');
+      }
+      Get.back(result: true);
+    });
   }
 
   String? validateAmount(String? value) {
@@ -335,6 +353,7 @@ class AddExpenseController extends BaseController {
     notesController.dispose();
     super.onClose();
   }
+
   // AddExpenseController()
   //     : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
   //       _pendingStore = PendingExpensesStore();

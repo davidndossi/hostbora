@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -11,8 +14,7 @@ import '../controllers/my_properties_controller.dart';
 class MyPropertiesView extends BaseView<MyPropertiesController> {
   MyPropertiesView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -38,7 +40,7 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
         Expanded(
           child: Obx(() {
             if (controller.loading.value) {
-              return const Center(child: CircularProgressIndicator());
+              return const DefaultScreenSkeleton();
             }
             if (controller.properties.isEmpty) {
               return Center(
@@ -80,7 +82,7 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
 
   Widget _buildFilterTabs(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Obx(
       () => SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -92,7 +94,7 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
               padding: const EdgeInsets.only(right: 10),
               child: Material(
                 color: index == controller.selectedFilterIndex.value
-                    ? (isDark
+                    ? (c.isDark
                           ? theme.colorScheme.surfaceContainerHighest
                           : AppColors.colorWhite)
                     : Colors.transparent,
@@ -147,10 +149,10 @@ class _PropertyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final c = FormSurfaceColors.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: isDark
+        color: c.isDark
             ? theme.colorScheme.surfaceContainerHigh
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
@@ -243,7 +245,7 @@ class _PropertyCard extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.person_outline_rounded, size: 18,
-                      color: isDark
+                      color: c.isDark
                           ? theme.colorScheme.primary
                           : AppColors.colorPrimaryLight,
                     ),
@@ -332,8 +334,8 @@ class _StatusBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             isReady
-                ? _t(context, en: 'READY', sw: 'TAYARI')
-                : _t(context, en: 'CLEANING', sw: 'USAFISHAJI'),
+                ? _t(context, en: 'Ready', sw: 'Tayari')
+                : _t(context, en: 'Cleaning', sw: 'Usafishaji'),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,

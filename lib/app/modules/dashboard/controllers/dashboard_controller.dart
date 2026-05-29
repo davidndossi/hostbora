@@ -57,6 +57,8 @@ class DashboardController extends BaseController {
   final bnbGuestsCount = 0.obs;
   final bnbTodayRevenue = 'TZS 0'.obs;
   final bnbUnitsCount = 0.obs;
+  /// Average daily occupancy % for the current week (0–100).
+  final bnbOccupancyRate = 0.obs;
 
   /// Mon–Sun of the current calendar week (same as [RentSmartUtilityDashboardController]).
   static const weeklyDayLabels = [
@@ -506,6 +508,13 @@ class DashboardController extends BaseController {
 
     _assignWeeklyRevenue(incomes, weekStart);
     _assignWeeklyOccupancy(merged.values, unitsTotal, weekStart);
+    final occ = weeklyOccupancyPercent;
+    if (occ.isEmpty) {
+      bnbOccupancyRate.value = 0;
+    } else {
+      bnbOccupancyRate.value =
+          (occ.fold<double>(0, (a, b) => a + b) / occ.length).round().clamp(0, 100);
+    }
   }
 
   /// Monday 00:00 of the current calendar week (local).

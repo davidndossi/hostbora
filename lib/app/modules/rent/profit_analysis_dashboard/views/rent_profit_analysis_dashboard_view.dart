@@ -1,5 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -19,7 +23,7 @@ class _ProfitUi {
 
   Color get bg => dark ? _t.scaffoldBackgroundColor : cream;
   Color get card => dark ? _t.cardColor : Colors.white;
-  Color get cardMuted => dark ? const Color(0xFF2C2C2E) : const Color(0xFFF4F4F2);
+  Color get cardMuted => dark ? context.tokens.cardBackground : const Color(0xFFF4F4F2);
   Color get onSurface => dark ? const Color(0xFFF2F2F7) : const Color(0xFF101828);
   Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
 
@@ -50,9 +54,7 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
     return Obx(() {
       controller.expenses.length;
       if (controller.loadingRealData.value) {
-        return Center(
-          child: CircularProgressIndicator(color: u.dark ? _ProfitUi.deepTeal : _ProfitUi.forest),
-        );
+        return const DefaultScreenSkeleton();
       }
       final data = controller.realData.value;
       if (data == null) {

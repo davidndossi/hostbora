@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:paa_yangu/app/core/values/text_styles.dart';
@@ -19,7 +21,7 @@ class ExplanationView extends StatelessWidget {
     final titleColor = isDark ? Colors.white : AppColors.textColorPrimary;
     final bodyColor = isDark ? Colors.white70 : AppColors.textColorSecondary;
     final cardBg = isDark
-        ? const Color(0xFF2C2C2E)
+        ? context.tokens.cardBackground
         : Colors.white.withValues(alpha: 0.9);
     final workspaceLabelColor = isDark
         ? Colors.white
@@ -291,7 +293,7 @@ class ExplanationView extends StatelessWidget {
           //       borderRadius: BorderRadius.circular(16),
           //       border: Border.all(
           //         color: isDark
-          //             ? const Color(0xFF3A3A3C)
+          //             ? context.tokens.elevatedSurface
           //             : AppColors.designInputBorder,
           //       ),
           //     ),

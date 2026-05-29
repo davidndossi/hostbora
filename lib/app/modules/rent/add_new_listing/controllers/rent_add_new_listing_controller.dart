@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/base/feedback_extensions.dart';
 import '../../../../core/utils/property_listing_image_assigner.dart';
 import '../../../../data/local/db/property_listing_units_sync.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
@@ -293,8 +294,8 @@ class RentAddNewListingController extends BaseController {
         return;
       }
     }
-    showLoading();
-    try {
+    await runBusy(() async {
+      try {
       final original = _editingOriginal;
       final unitsJson = _unitsJsonForSave();
       if (original != null) {
@@ -334,7 +335,7 @@ class RentAddNewListingController extends BaseController {
           maxGuests: 0,
         );
         Get.back(result: true);
-        Get.snackbar('Saved', 'Property updated on this device');
+        showSuccessWithHaptic('Property updated on this device');
       } else {
         final workspaceType = await _workspaceContext.getWorkspaceType();
         final propertyRef = 'local_${DateTime.now().millisecondsSinceEpoch}';
@@ -377,14 +378,13 @@ class RentAddNewListingController extends BaseController {
           maxGuests: 0,
         );
         Get.back(result: true);
-        Get.snackbar('Saved', 'Property saved on this device');
+        showSuccessWithHaptic('Property saved on this device');
       }
     } catch (e, st) {
       logger.e('saveProperty $e $st');
       Get.snackbar('Error', 'Could not save property');
-    } finally {
-      hideLoading();
     }
+    });
   }
 
   String? validateLocation(String? value) {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
@@ -16,7 +18,7 @@ class RentLoyaltyThresholdsView extends RentBaseView<RentLoyaltyThresholdsContro
 
   @override
   Widget body(BuildContext context) => Obx(() {
-        if (controller.loadingRealData.value) return const Center(child: CircularProgressIndicator());
+        if (controller.loadingRealData.value) return const DefaultScreenSkeleton();
         final d = controller.realData.value;
         if (d == null) {
           return Center(

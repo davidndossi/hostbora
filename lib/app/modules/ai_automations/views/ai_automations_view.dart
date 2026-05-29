@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../controllers/ai_automations_controller.dart';
@@ -9,8 +10,7 @@ import '../controllers/ai_automations_controller.dart';
 class AiAutomationsView extends BaseView<AiAutomationsController> {
   AiAutomationsView({super.key});
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -25,7 +25,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
   @override
   Widget body(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return SafeArea(
       child: Column(
         children: [
@@ -42,7 +42,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.w700,
-                      color: isDark
+                      color: c.isDark
                           ? theme.colorScheme.onSurface
                           : AppColors.textColorPrimary,
                     ),
@@ -80,7 +80,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: isDark
+                      color: c.isDark
                           ? theme.colorScheme.onSurface
                           : AppColors.textColorPrimary,
                     ),
@@ -142,7 +142,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
   }) {
     final theme = Theme.of(context);
     return Material(
-      color: _isDark(context)
+      color: FormSurfaceColors.of(context).isDark
           ? theme.colorScheme.surfaceContainerHigh
           : AppColors.colorWhite,
       shape: const CircleBorder(),
@@ -155,7 +155,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
           child: Icon(
             icon,
             size: 20,
-            color: _isDark(context)
+            color: FormSurfaceColors.of(context).isDark
                 ? theme.colorScheme.onSurface
                 : AppColors.textColorPrimary,
           ),
@@ -172,17 +172,17 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
     required ValueChanged<bool> onChanged,
   }) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
       decoration: BoxDecoration(
-        color: isDark
+        color: c.isDark
             ? theme.colorScheme.surfaceContainerHigh
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         border: Border.all(
-          color: isDark
+          color: c.isDark
               ? theme.colorScheme.outlineVariant
               : AppColors.designInputBorder,
         ),
@@ -207,7 +207,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: isDark
+                    color: c.isDark
                         ? theme.colorScheme.onSurface
                         : AppColors.textColorPrimary,
                   ),
@@ -237,14 +237,14 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
             () => Switch(
               value: value.value,
               onChanged: onChanged,
-              activeThumbColor: isDark
+              activeThumbColor: c.isDark
                   ? theme.colorScheme.onPrimary
                   : AppColors.colorWhite,
               activeTrackColor: AppColors.colorPrimary,
-              inactiveThumbColor: isDark
+              inactiveThumbColor: c.isDark
                   ? theme.colorScheme.surface
                   : Colors.white,
-              inactiveTrackColor: isDark
+              inactiveTrackColor: c.isDark
                   ? theme.colorScheme.surfaceContainerHighest
                   : const Color(0xFFE9EDF1),
             ),
@@ -256,17 +256,17 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
 
   Widget _voiceConfigCard(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark
+        color: c.isDark
             ? theme.colorScheme.surfaceContainerHigh
             : AppColors.colorWhite,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
         border: Border.all(
-          color: isDark
+          color: c.isDark
               ? theme.colorScheme.outlineVariant
               : AppColors.designInputBorder,
         ),
@@ -279,7 +279,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: isDark
+              color: c.isDark
                   ? theme.colorScheme.onSurface
                   : AppColors.textColorPrimary,
             ),
@@ -314,7 +314,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: isDark
+              color: c.isDark
                   ? theme.colorScheme.onSurface
                   : AppColors.textColorPrimary,
             ),
@@ -336,7 +336,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.outlineVariant
                       : AppColors.designInputBorder,
                 ),
@@ -344,7 +344,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.outlineVariant
                       : AppColors.designInputBorder,
                 ),
@@ -352,7 +352,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.primary
                       : AppColors.colorPrimary,
                 ),
@@ -372,7 +372,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
               label: Text(
                 _t(context, en: 'Preview AI Voice', sw: 'Sikiliza Sauti ya AI'),
                 style: TextStyle(
-                  color: isDark
+                  color: c.isDark
                       ? theme.colorScheme.primary
                       : const Color(0xFF0D6D6D),
                   fontSize: 16,
@@ -381,7 +381,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isDark
+                backgroundColor: c.isDark
                     ? theme.colorScheme.surfaceContainerHighest
                     : const Color(0xFFE9F3F3),
                 foregroundColor: AppColors.colorPrimary,
@@ -410,14 +410,14 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.colorPrimary
-                : (_isDark(context)
+                : (FormSurfaceColors.of(context).isDark
                       ? theme.colorScheme.surface
                       : AppColors.pageBackground),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: selected
                   ? AppColors.colorPrimary
-                  : (_isDark(context)
+                  : (FormSurfaceColors.of(context).isDark
                         ? theme.colorScheme.outlineVariant
                         : AppColors.designInputBorder),
             ),
@@ -430,7 +430,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
                 fontWeight: FontWeight.w600,
                 color: selected
                     ? Colors.white
-                    : (_isDark(context)
+                    : (FormSurfaceColors.of(context).isDark
                           ? theme.colorScheme.onSurface
                           : AppColors.textColorPrimary),
               ),

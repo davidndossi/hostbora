@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/form_surface_colors.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -16,8 +19,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
+  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -27,7 +29,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
       actions: [
         IconButton(
           icon: const Icon(Icons.edit_outlined),
-          color: Theme.of(context).brightness == Brightness.dark
+          color: FormSurfaceColors.of(context).isDark
               ? Colors.white
               : AppColors.appBarIconColor,
           onPressed: controller.openEdit,
@@ -43,7 +45,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
       final task = controller.task.value;
 
       if (controller.loading.value && task == null) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
 
       if (task == null || task.id.isEmpty) {
@@ -69,9 +71,9 @@ class TaskDetailView extends BaseView<TaskDetailController> {
         );
       }
 
-      final isDark = _isDark(context);
+      final c = FormSurfaceColors.of(context);
       final dateFmt = DateFormat.yMMMd().add_jm();
-      final surface = isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite;
+      final surface = c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite;
 
       return Stack(
         children: [
@@ -113,7 +115,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
                       '${_t(context, en: 'ID', sw: 'Kitambulisho')}: ${task.id}',
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? Colors.white60 : AppColors.textColorSecondary,
+                        color: c.isDark ? Colors.white60 : AppColors.textColorSecondary,
                       ),
                     ),
                   ],
@@ -121,7 +123,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
                   _infoCard(
                     context,
                     surface: surface,
-                    isDark: isDark,
+                    isDark: c.isDark,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -172,7 +174,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
                   _infoCard(
                     context,
                     surface: surface,
-                    isDark: isDark,
+                    isDark: c.isDark,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -182,7 +184,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
-                            color: isDark ? Colors.white70 : AppColors.textColorSecondary,
+                            color: c.secondary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -275,7 +277,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
     String label,
     String value,
   ) {
-    final isDark = _isDark(context);
+    final c = FormSurfaceColors.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -290,7 +292,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white60 : AppColors.textColorSecondary,
+                  color: c.isDark ? Colors.white60 : AppColors.textColorSecondary,
                 ),
               ),
               const SizedBox(height: 4),

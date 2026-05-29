@@ -9,6 +9,7 @@ import '/app/data/local/db/tenant_local_data_source.dart';
 import '/app/data/local/db/rent_notification_log_local_data_source.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/data/local/service/local_notification_scheduler_service.dart';
+import '/app/data/local/service/property_break_even_notification_service.dart';
 
 /// Rule-based reminders:
 /// - Staff salary due: 2 days prior
@@ -55,6 +56,9 @@ class RentNotificationRulesService extends GetxService {
       await _handleStaffSalaryReminders(today);
       await _handleTenantPaymentReminders(today);
       await _handleMaintenanceReminders(today);
+      if (Get.isRegistered<PropertyBreakEvenNotificationService>()) {
+        await Get.find<PropertyBreakEvenNotificationService>().runNow();
+      }
     } finally {
       _running = false;
     }

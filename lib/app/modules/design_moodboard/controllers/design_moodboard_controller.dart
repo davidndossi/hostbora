@@ -9,6 +9,7 @@ import '../../../core/config/homedesigns_config.dart';
 import '../../../data/local/design_moodboards_store.dart';
 import '../../../data/remote/homedesigns_api_client.dart';
 import '/app/core/base/base_controller.dart';
+import '/app/core/base/feedback_extensions.dart';
 
 class ConceptItem {
   const ConceptItem({
@@ -89,22 +90,21 @@ class DesignMoodboardController extends BaseController {
 
   Future<void> reloadBoard() async {
     loadFailed.value = false;
-    showLoading();
-    try {
-      final stored = _store.findById(_boardId);
-      if (stored == null) {
+    await runBusy(() async {
+      try {
+        final stored = _store.findById(_boardId);
+        if (stored == null) {
+          loadFailed.value = true;
+          showErrorMessage(appLocalization.designMoodboardNotFound);
+          return;
+        }
+        _applyBoard(stored);
+      } catch (e, st) {
+        logger.e('Failed to load moodboard', error: e, stackTrace: st);
         loadFailed.value = true;
-        showErrorMessage(appLocalization.designMoodboardNotFound);
-        return;
+        showErrorMessage(appLocalization.designMoodboardsLoadError);
       }
-      _applyBoard(stored);
-    } catch (e, st) {
-      logger.e('Failed to load moodboard', error: e, stackTrace: st);
-      loadFailed.value = true;
-      showErrorMessage(appLocalization.designMoodboardsLoadError);
-    } finally {
-      hideLoading();
-    }
+    });
   }
 
   void _applyBoard(StoredMoodboard stored) {
@@ -323,7 +323,21 @@ class DesignMoodboardController extends BaseController {
       ),
     );
     if (confirmed != true) return;
-    await _store.deleteBoard(_boardId);
-    Get.back<void>();
+    final snapshot = _store.findById(_boardId);
+    if (snapshot == null) {
+      await _store.deleteBoard(_boardId);
+      Get.back<void>();
+      return;
+    }
+    await runDestructiveWithUndo(
+      message: appLocalization.designMoodboardDelete,
+      action: () async {
+        await _store.deleteBoard(_boardId);
+        Get.back<void>();
+      },
+      onUndo: () async {
+        await _store.upsertBoard(snapshot);
+      },
+    );
   }
 }

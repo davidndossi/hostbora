@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../theme/app_theme_tokens.dart';
 import '../../data/local/service/currency_service.dart';
 
 /// Dropdown to choose app base currency from cached FX rates.
@@ -18,7 +19,7 @@ class BaseCurrencyPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final svc = Get.find<CurrencyService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final muted = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280);
+    final muted = context.tokens.textMuted;
 
     return Obx(() {
       if (svc.loadingRates.value) {

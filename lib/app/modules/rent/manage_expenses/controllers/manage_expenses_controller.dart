@@ -3,32 +3,48 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
-import '../../../../data/local/service/currency_service.dart';
+import '../../../../core/models/item_sync_status.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
+import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../../data/local/offline_expense_sync_lookup.dart';
+import '../../../../data/local/service/currency_service.dart';
+import '../../../../data/local/service/offline_sync_worker_service.dart';
 
 class ManageExpensesRowUi {
   const ManageExpensesRowUi({
+    required this.localExpenseId,
     required this.tenantName,
     required this.apartmentLine,
     required this.paidDate,
     required this.categoryLabel,
     required this.notes,
     required this.amountTsh,
+    this.syncStatus = ItemSyncStatus.synced,
+    this.syncQueueId,
   });
 
+  final int localExpenseId;
   final String tenantName;
   final String apartmentLine;
   final DateTime paidDate;
   final String categoryLabel;
   final String notes;
   final double amountTsh;
+  final ItemSyncStatus syncStatus;
+  final int? syncQueueId;
+
+  bool get showSyncBadge => syncStatus.showSyncBadge;
 }
 
 class ManageExpensesController extends BaseController {
   ManageExpensesController()
-      : _expenseLocal = Get.find<ExpenseLocalDataSource>();
+      : _expenseLocal = Get.find<ExpenseLocalDataSource>(),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final ExpenseLocalDataSource _expenseLocal;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
 
   static final NumberFormat moneyFormat = NumberFormat('#,###', 'en_US');
   static final DateFormat monthFormat = DateFormat('MMM yyyy');
@@ -154,6 +170,8 @@ class ManageExpensesController extends BaseController {
       final sortedCat = catKeys.where((k) => k.isNotEmpty).toList()..sort();
       categoryKeys.assignAll(['', ...sortedCat]);
 
+      final syncLookup = await OfflineExpenseSyncLookup.load(_syncQueue);
+
       final built = <ManageExpensesRowUi>[];
       for (final r in expenses) {
         final paid = r.paidLocalCalendarOrCreated();
@@ -166,12 +184,15 @@ class ManageExpensesController extends BaseController {
 
         built.add(
           ManageExpensesRowUi(
+            localExpenseId: r.id,
             tenantName: r.tenantName.trim(),
             apartmentLine: line,
             paidDate: paid,
             categoryLabel: cat,
             notes: r.notes.trim(),
             amountTsh: r.amountValue,
+            syncStatus: syncLookup.statusFor(r.id),
+            syncQueueId: syncLookup.queueIdFor(r.id),
           ),
         );
       }
@@ -196,6 +217,14 @@ class ManageExpensesController extends BaseController {
     final sel = selectedApartmentKey.value.trim();
     if (sel.isEmpty) return true;
     return line.trim() == sel;
+  }
+
+  Future<void> retryExpenseSync(ManageExpensesRowUi row) async {
+    final queueId = row.syncQueueId;
+    if (queueId == null) return;
+    await _syncQueue.retryItem(queueId);
+    await _syncWorker.runNow(maxItems: 20);
+    await refreshRows();
   }
 
   bool _categoryFilterMatches(String category) {
