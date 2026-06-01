@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import 'package:get/get.dart';
@@ -9,6 +8,7 @@ import '../../../core/model/page_state.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../../../data/local/vault_recent_access_store.dart';
 import '../controllers/property_vault_controller.dart';
 

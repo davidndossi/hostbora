@@ -25,7 +25,7 @@ class SplashView extends BaseView<SplashController> {
           children: [
             const Spacer(flex: 2),
             Image.asset(
-              'images/paa_yangu_logo.png',
+              'images/host_bora_logo.png',
               width: 140,
               height: 140,
               fit: BoxFit.contain,

@@ -19,9 +19,11 @@ import '/app/core/base/feedback_extensions.dart';
 
 class SettingsController extends BaseController {
   static const tenantReminderTemplateKey = 'tenant_whatsapp_reminder_template';
+  static const appLockTimeoutOptions = <int>[15, 30, 60, 300, 900, 1800];
 
-  final PreferenceManager _preferenceManager = Get.find(tag: (PreferenceManager)
-      .toString());
+  final PreferenceManager _preferenceManager = Get.find(
+    tag: (PreferenceManager).toString(),
+  );
 
   final token = ''.obs;
   final account = ''.obs;
@@ -33,7 +35,11 @@ class SettingsController extends BaseController {
   final language = 'en'.obs;
   final isFL = false.obs;
   final roles = <String>[].obs;
-  final privacySettings = <String>['PUBLIC', 'PRIVATE', 'COMMUNITY_MEMBERS_ONLY'].obs;
+  final privacySettings = <String>[
+    'PUBLIC',
+    'PRIVATE',
+    'COMMUNITY_MEMBERS_ONLY',
+  ].obs;
 
   var darkMode = false.obs;
   var theme = ''.obs;
@@ -45,6 +51,7 @@ class SettingsController extends BaseController {
   var receiveCommunityUpdates = false.obs;
   final tenantReminderTemplate = ''.obs;
   final runningLeaseReminderNow = false.obs;
+  final appLockTimeoutSeconds = 15.obs;
 
   @override
   void onInit() {
@@ -60,11 +67,19 @@ class SettingsController extends BaseController {
 
   void getPrefValues() async {
     token(await _preferenceManager.getString(PreferenceManager.keyToken));
-    isFL(await _preferenceManager.getBool(PreferenceManager.keyFirstLogin,
-        defaultValue: true));
-    String keyUsername = await _preferenceManager.getString(PreferenceManager.keyUsername);
+    isFL(
+      await _preferenceManager.getBool(
+        PreferenceManager.keyFirstLogin,
+        defaultValue: true,
+      ),
+    );
+    String keyUsername = await _preferenceManager.getString(
+      PreferenceManager.keyUsername,
+    );
     username(keyUsername);
-    deviceName(await _preferenceManager.getString(PreferenceManager.keyFullName));
+    deviceName(
+      await _preferenceManager.getString(PreferenceManager.keyFullName),
+    );
     deviceId(await _preferenceManager.getString(PreferenceManager.keyDeviceId));
     roles(await _preferenceManager.getStringList(PreferenceManager.keyRoles));
     language(await _preferenceManager.getString(PreferenceManager.keyLang));
@@ -132,11 +147,37 @@ class SettingsController extends BaseController {
     final hasPin = pinOn && pinCode.length == 4;
     Get.toNamed(
       Routes.CHANGE_PIN,
-      arguments: {
-        'setup_pin': !hasPin,
-        'change_pin': hasPin,
-      },
+      arguments: {'setup_pin': !hasPin, 'change_pin': hasPin},
     );
+  }
+
+  Future<void> updateAppLockTimeout(int seconds) async {
+    if (!appLockTimeoutOptions.contains(seconds)) return;
+    appLockTimeoutSeconds.value = seconds;
+    await _preferenceManager.setInt(
+      PreferenceManager.keyAppLockTimeoutSeconds,
+      seconds,
+    );
+  }
+
+  String appLockTimeoutLabel(int seconds) {
+    final isSw = Get.locale?.languageCode == 'sw';
+    switch (seconds) {
+      case 15:
+        return isSw ? 'Sekunde 15' : '15 sec';
+      case 30:
+        return isSw ? 'Sekunde 30' : '30 sec';
+      case 60:
+        return isSw ? 'Dakika 1' : '1 min';
+      case 300:
+        return isSw ? 'Dakika 5' : '5 min';
+      case 900:
+        return isSw ? 'Dakika 15' : '15 min';
+      case 1800:
+        return isSw ? 'Dakika 30' : '30 min';
+      default:
+        return isSw ? 'Sekunde 15' : '15 sec';
+    }
   }
 
   void changePrivacySettings(String? value) {
@@ -147,20 +188,23 @@ class SettingsController extends BaseController {
   }
 
   Future<void> showPrivacyChoices(BuildContext context) async {
-    showModalBottomSheet(context: context, builder: (_) => ListView(
-      shrinkWrap: true,
-      children: privacySettings.map((p) {
-        return RadioListTile(
-          title: Text(p),
-          value: p,
-          groupValue: privacy.value,
-          onChanged: (value) {
-            privacy(value);
-            changePrivacySettings(value);
-          },
-        );
-      }).toList(),
-    ));
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => ListView(
+        shrinkWrap: true,
+        children: privacySettings.map((p) {
+          return RadioListTile(
+            title: Text(p),
+            value: p,
+            groupValue: privacy.value,
+            onChanged: (value) {
+              privacy(value);
+              changePrivacySettings(value);
+            },
+          );
+        }).toList(),
+      ),
+    );
   }
 
   Future<void> refreshExchangeRates() async {
@@ -209,6 +253,13 @@ class SettingsController extends BaseController {
       tenantReminderTemplateKey,
       defaultValue: '',
     );
+    final savedTimeout = await _preferenceManager.getInt(
+      PreferenceManager.keyAppLockTimeoutSeconds,
+      defaultValue: 15,
+    );
+    appLockTimeoutSeconds.value = appLockTimeoutOptions.contains(savedTimeout)
+        ? savedTimeout
+        : 15;
     if (Get.isRegistered<CurrencyService>()) {
       await Get.find<CurrencyService>().refreshRatesFromRemote();
     }

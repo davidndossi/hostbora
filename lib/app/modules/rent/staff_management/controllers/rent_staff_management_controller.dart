@@ -30,7 +30,8 @@ class RentStaffListItem {
 }
 
 class RentStaffManagementController extends BaseController {
-  RentStaffManagementController() : _local = Get.find<RentStaffLocalDataSource>();
+  RentStaffManagementController()
+    : _local = Get.find<RentStaffLocalDataSource>();
 
   final RentStaffLocalDataSource _local;
   final formKey = GlobalKey<FormState>();
@@ -229,13 +230,14 @@ class RentStaffManagementController extends BaseController {
           paymentType: paymentType.value,
           amountValue: amount,
         );
+        formKey.currentState?.reset();
         fullNameController.clear();
         amountController.clear();
         payDateController.clear();
         selectedPrimaryRole.value = '';
         paymentType.value = RentStaffPayFormat.monthly;
         await loadStaff();
-        showSuccessWithHaptic('Staff registered');
+        showSuccessWithHaptic('Staff was added successfully');
       } catch (e, st) {
         logger.e('registerStaff $e $st');
         hapticValidationError();

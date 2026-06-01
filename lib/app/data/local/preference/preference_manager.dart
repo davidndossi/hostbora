@@ -18,6 +18,8 @@ abstract class PreferenceManager {
   static const keyPinFailedAttempts = 'pin_failed_attempts';
   static const keyPinLockedUntilMs = 'pin_locked_until_ms';
   static const keyFaceIdEnabled = 'face_id_enabled';
+  static const keyAppLockTimeoutSeconds = 'app_lock_timeout_seconds';
+  static const keyAppBackgroundedAtMs = 'app_backgrounded_at_ms';
 
   Future<String> getString(String key, {String defaultValue = ''});
 
@@ -39,8 +41,10 @@ abstract class PreferenceManager {
 
   Future<bool> setUser(String key, User? value);
 
-  Future<List<String>> getStringList(String key,
-      {List<String> defaultValue = const []});
+  Future<List<String>> getStringList(
+    String key, {
+    List<String> defaultValue = const [],
+  });
 
   Future<bool> setStringList(String key, List<String> value);
 

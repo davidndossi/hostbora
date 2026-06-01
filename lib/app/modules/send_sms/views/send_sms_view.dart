@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import 'package:host_bora/app/core/widget/skeleton_presets.dart';
 
 import 'package:get/get.dart';
 import 'package:toggle_switch/toggle_switch.dart';

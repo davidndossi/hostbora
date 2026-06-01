@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/modules/add_tenant_form/views/add_tenant_form_view.dart';
+import 'package:host_bora/app/modules/add_tenant_form/views/add_tenant_form_view.dart';
 
 import '../modules/add_tenant_form/bindings/add_tenant_form_binding.dart';
 import '../modules/auth/bindings/auth_binding.dart';

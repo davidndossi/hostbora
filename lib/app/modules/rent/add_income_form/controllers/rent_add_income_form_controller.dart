@@ -19,18 +19,19 @@ import '../../../../data/local/service/property_break_even_notification_service.
 import '../../../../data/model/record_payment_request.dart';
 import '../../add_new_listing/models/apartment_unit_draft.dart';
 import '../../listing_details/controllers/rent_listing_details_controller.dart';
+import '../../tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart';
 import '../../tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 class RentAddIncomeFormController extends BaseController {
   RentAddIncomeFormController()
-      : _incomeLocal = Get.find<IncomeLocalDataSource>(),
-        _propertyLocal = Get.find<PropertyLocalDataSource>(),
-        _tenantLocal = Get.find<TenantLocalDataSource>(),
-        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
-        _syncWorker = Get.find<OfflineSyncWorkerService>(),
-        _preferenceManager = Get.find<PreferenceManager>(
-          tag: (PreferenceManager).toString(),
-        );
+    : _incomeLocal = Get.find<IncomeLocalDataSource>(),
+      _propertyLocal = Get.find<PropertyLocalDataSource>(),
+      _tenantLocal = Get.find<TenantLocalDataSource>(),
+      _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+      _syncWorker = Get.find<OfflineSyncWorkerService>(),
+      _preferenceManager = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
 
   final IncomeLocalDataSource _incomeLocal;
   final PropertyLocalDataSource _propertyLocal;
@@ -57,6 +58,7 @@ class RentAddIncomeFormController extends BaseController {
   final saving = false.obs;
   final propertyOptions = <String>[].obs;
   final selectedProperty = ''.obs;
+
   /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
   final selectedIncomeUnitKey = Rxn<String>();
   final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
@@ -223,14 +225,13 @@ class RentAddIncomeFormController extends BaseController {
     return null;
   }
 
-  static bool _tenantMatchesProperty(
-    TenantRecord t,
-    PropertyRecord p,
-  ) {
+  static bool _tenantMatchesProperty(TenantRecord t, PropertyRecord p) {
     final loc = p.propertyLocation.trim();
     final suite = p.propertyName.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : loc;
-    final propertyRef = p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}';
+    final propertyRef = p.propertyRef.trim().isNotEmpty
+        ? p.propertyRef.trim()
+        : 'legacy_${p.id}';
     final r = t.propertyRef.trim();
     if (r.isNotEmpty) {
       return r == propertyRef;
@@ -303,9 +304,10 @@ class RentAddIncomeFormController extends BaseController {
       selectedCategoryIndex.value = catIdx;
     }
 
-    final propertyOption = (args['property'] ?? Get.parameters['property'] ?? '')
-        .toString()
-        .trim();
+    final propertyOption =
+        (args['property'] ?? Get.parameters['property'] ?? '')
+            .toString()
+            .trim();
     if (propertyOption.isNotEmpty && propertyOptions.contains(propertyOption)) {
       selectedProperty.value = propertyOption;
     }
@@ -344,8 +346,9 @@ class RentAddIncomeFormController extends BaseController {
     propertyOptions.assignAll(options);
 
     final fromArgs = _routePropertyLabel();
-    final fromRoute =
-        fromArgs.isNotEmpty ? fromArgs : (Get.parameters['property']?.trim() ?? '');
+    final fromRoute = fromArgs.isNotEmpty
+        ? fromArgs
+        : (Get.parameters['property']?.trim() ?? '');
     if (fromRoute.isNotEmpty && options.contains(fromRoute)) {
       selectedProperty.value = fromRoute;
     } else if (options.length == 1) {
@@ -475,11 +478,13 @@ class RentAddIncomeFormController extends BaseController {
       );
       if (pending > 0) {
         showSuccessMessage(
-            'Income saved offline. Will sync when internet is available.');
+          'Income saved offline. Will sync when internet is available.',
+        );
       } else {
         showSuccessMessage('Income saved and synced.');
       }
       await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+      await RentTenantLedgerOccupancyController.refreshIfRegistered();
       await RentListingDetailsController.refreshIfRegistered();
       await PropertyBreakEvenNotificationService.checkPropertyIfRegistered(
         _propertyRefForIncomeInsert(),

@@ -616,7 +616,7 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
       1 => 'financial',
       _ => 'expenses',
     };
-    return 'paa_yangu_bnb_${slug}_${DateFormat('yyyyMMdd').format(DateTime.now())}.$ext';
+    return 'host_bora_bnb_${slug}_${DateFormat('yyyyMMdd').format(DateTime.now())}.$ext';
   }
 
   String _exportTitle(int tab) {

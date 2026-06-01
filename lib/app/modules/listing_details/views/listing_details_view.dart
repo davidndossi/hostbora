@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
-
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/core/values/app_values.dart';
-import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_values.dart';
+import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/property_financial_trend_charts.dart';
 import '../../../core/widget/property_listing_image.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../controllers/listing_details_controller.dart';
 
 class _ListingUi {
@@ -26,7 +25,8 @@ class _ListingUi {
 
   Color get bg => dark ? _t.scaffoldBackgroundColor : cream;
   Color get card => dark ? context.tokens.cardBackground : Colors.white;
-  Color get soft => dark ? context.tokens.elevatedSurface : const Color(0xFFF4F1EA);
+  Color get soft =>
+      dark ? context.tokens.elevatedSurface : const Color(0xFFF4F1EA);
   Color get line => dark ? const Color(0xFF4A4A4C) : const Color(0xFFE6E1D7);
   Color get text => dark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
   Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
@@ -43,6 +43,13 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         ? (_isSw ? 'Maelezo ya Mali' : 'Listing Details')
         : controller.listingTitle.value,
     isCentered: true,
+    actions: [
+      IconButton(
+        tooltip: _isSw ? 'Mwelekeo wa fedha' : 'Financial trends',
+        onPressed: () => _showFinancialTrendsDialog(context),
+        icon: const Icon(Icons.show_chart_rounded),
+      ),
+    ],
   );
 
   @override
@@ -50,9 +57,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     final u = _ListingUi(context);
     return Obx(() {
       if (controller.loadingListing.value) {
-        return const Center(
-          child: const DefaultScreenSkeleton(),
-        );
+        return const Center(child: DefaultScreenSkeleton());
       }
       return RefreshIndicator(
         onRefresh: () async {
@@ -87,13 +92,6 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             const SizedBox(height: 10),
             _estimationCostsLink(u),
             const SizedBox(height: 14),
-            Obx(
-              () => PropertyFinancialTrendCharts(
-                series: controller.financialTrends.value,
-                loading: controller.financialTrendsLoading.value,
-              ),
-            ),
-            const SizedBox(height: 14),
             _quickManagement(u),
             const SizedBox(height: 10),
             _calendarSyncEntry(context, u),
@@ -106,11 +104,64 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             const SizedBox(height: 12),
             _warning(u),
             const SizedBox(height: 14),
-            _removeButton()
+            _removeButton(),
           ],
         ),
       );
     });
+  }
+
+  void _showFinancialTrendsDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final u = _ListingUi(context);
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          backgroundColor: u.card,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _isSw ? 'Mwelekeo wa Fedha' : 'Financial Trends',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: u.text,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Obx(
+                  () => PropertyFinancialTrendCharts(
+                    series: controller.financialTrends.value,
+                    loading: controller.financialTrendsLoading.value,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _hero(_ListingUi u) {
@@ -237,7 +288,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.colorPrimary.withOpacity(0.18),
+              color: AppColors.colorPrimary.withValues(alpha: 0.18),
             ),
           ),
           child: Row(
@@ -246,7 +297,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppColors.colorPrimary.withOpacity(0.10),
+                  color: AppColors.colorPrimary.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -293,7 +344,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: u.line.withOpacity(0.45),
+                  color: u.line.withValues(alpha: 0.45),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -340,7 +391,11 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           if (prefix.isNotEmpty)
             Text(
               prefix,
-              style: TextStyle(fontSize: 12, color: u.muted, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: 12,
+                color: u.muted,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           RichText(
             text: TextSpan(
@@ -352,7 +407,9 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                     fontSize: 34,
                     fontWeight: FontWeight.w700,
                     height: 1,
-                    color: u.dark ? const Color(0xFFF2F2F7) : AppColors.colorPrimary,
+                    color: u.dark
+                        ? const Color(0xFFF2F2F7)
+                        : AppColors.colorPrimary,
                   ),
                 ),
                 if (suffix.isNotEmpty)
@@ -438,12 +495,32 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
 
   Widget _quickManagement(_ListingUi u) {
     final items = <(IconData, String, int)>[
-      (Icons.person_add_alt_1_outlined, _isSw ? 'Ongeza mpangaji' : 'Add tenant', 0),
+      (
+        Icons.person_add_alt_1_outlined,
+        _isSw ? 'Ongeza mpangaji' : 'Add tenant',
+        0,
+      ),
       (Icons.payments_outlined, _isSw ? 'Ongeza mapato' : 'Add income', 1),
-      (Icons.receipt_long_outlined, _isSw ? 'Ongeza matumizi' : 'Add expense', 2),
-      (Icons.calendar_today_outlined, _isSw ? 'Panga\nmatengenezo' : 'Schedule\nmaintenance', 3),
-      (Icons.lock_open, _isSw ? 'Dhibiti kufuli\ncha unit' : 'Unit lock\ncontrol', 4),
-      (Icons.bolt_outlined, _isSw ? 'UTILITY\nDASHBOARD' : 'UTILITY\nDASHBOARD', 5),
+      (
+        Icons.receipt_long_outlined,
+        _isSw ? 'Ongeza matumizi' : 'Add expense',
+        2,
+      ),
+      (
+        Icons.calendar_today_outlined,
+        _isSw ? 'Panga\nmatengenezo' : 'Schedule\nmaintenance',
+        3,
+      ),
+      (
+        Icons.lock_open,
+        _isSw ? 'Dhibiti kufuli\ncha unit' : 'Unit lock\ncontrol',
+        4,
+      ),
+      (
+        Icons.bolt_outlined,
+        _isSw ? 'UTILITY\nDASHBOARD' : 'UTILITY\nDASHBOARD',
+        5,
+      ),
     ];
 
     return Column(
@@ -542,7 +619,10 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               onPressed: controller.onAddNewUnit,
               child: Text(
                 _isSw ? 'Ongeza unit mpya' : 'Add new unit',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],
@@ -558,10 +638,12 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           }
           return Column(
             children: rows
-                .map((r) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _unitCard(u, r),
-                    ))
+                .map(
+                  (r) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _unitCard(u, r),
+                  ),
+                )
                 .toList(),
           );
         }),
@@ -577,14 +659,18 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     final badgeBg = due
         ? const Color(0xFFFEEAEA)
         : occupied
-            ? const Color(0xFFEAF6EC)
-            : const Color(0xFFF2F2F2);
+        ? const Color(0xFFEAF6EC)
+        : const Color(0xFFF2F2F2);
     final badgeFg = due
         ? const Color(0xFFB42318)
         : occupied
-            ? const Color(0xFF1B6B3A)
-            : const Color(0xFF6B7280);
-    final badgeText = due ? 'Due date' : occupied ? 'Occupied' : 'Short';
+        ? const Color(0xFF1B6B3A)
+        : const Color(0xFF6B7280);
+    final badgeText = due
+        ? 'Due date'
+        : occupied
+        ? 'Occupied'
+        : 'Short';
 
     return Material(
       color: Colors.transparent,
@@ -601,82 +687,111 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  row.name,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: u.text),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: badgeBg,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Text(
-                  badgeText,
-                  style: TextStyle(fontSize: 12, letterSpacing: .45, fontWeight: FontWeight.w800, color: badgeFg),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Text(row.subtitle, style: TextStyle(fontSize: 14, color: u.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 8),
-          if (hasAttachedTenant)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF6EC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFB7E1C0)),
-              ),
-              child: Row(
+              Row(
                 children: [
-                  const Icon(Icons.person_rounded, size: 16, color: Color(0xFF1B6B3A)),
-                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      row.tenantName,
-                      style: const TextStyle(
+                      row.name,
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1B6B3A),
+                        color: u.text,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: badgeBg,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      badgeText,
+                      style: TextStyle(
+                        fontSize: 12,
+                        letterSpacing: .45,
+                        fontWeight: FontWeight.w800,
+                        color: badgeFg,
                       ),
                     ),
                   ),
                 ],
               ),
-            )
-          else
-            SizedBox(
-              height: 40,
-              width: double.infinity,
-              child: FilledButton.tonal(
-                onPressed: () => controller.onUnitPrimaryAction(row),
-                style: FilledButton.styleFrom(
-                  backgroundColor: due
-                      ? const Color(0xFFFFF3F2)
-                      : occupied
+              const SizedBox(height: 3),
+              Text(
+                row.subtitle,
+                style: TextStyle(fontSize: 14, color: u.muted),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              if (hasAttachedTenant)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF6EC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFB7E1C0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.person_rounded,
+                        size: 16,
+                        color: Color(0xFF1B6B3A),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          row.tenantName,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1B6B3A),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                SizedBox(
+                  height: 40,
+                  width: double.infinity,
+                  child: FilledButton.tonal(
+                    onPressed: () => controller.onUnitPrimaryAction(row),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: due
+                          ? const Color(0xFFFFF3F2)
+                          : occupied
                           ? AppColors.colorPrimary
                           : u.soft,
-                  foregroundColor: due
-                      ? const Color(0xFFB42318)
-                      : occupied
+                      foregroundColor: due
+                          ? const Color(0xFFB42318)
+                          : occupied
                           ? Colors.white
                           : AppColors.colorPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Text(
+                      controller.primaryButtonLabel(row, _isSw),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
-                child: Text(
-                  controller.primaryButtonLabel(row, _isSw),
-                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
             ],
           ),
         ),
@@ -693,11 +808,16 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             Expanded(
               child: Text(
                 _isSw ? 'Shughuli za Karibuni' : 'Recent Activity',
-                style: TextStyle(fontFamily: 'serif', fontSize: 22, fontWeight: FontWeight.w700, color: u.text),
+                style: TextStyle(
+                  fontFamily: 'serif',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: u.text,
+                ),
               ),
             ),
             TextButton(
-              onPressed: controller.onViewAllLog,
+              onPressed: () => _showAllActivityLogs(u.context, u),
               child: const Text(
                 'View all log',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
@@ -708,44 +828,190 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         Obx(() {
           final rows = controller.recentActivity;
           if (rows.isEmpty) {
-            return Text('No recent activity', style: TextStyle(fontSize: 14, color: u.muted));
+            return Text(
+              'No recent activity',
+              style: TextStyle(fontSize: 14, color: u.muted),
+            );
           }
           return Column(
             children: rows
                 .take(3)
-                .map((a) => Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundColor: a.accentColor.withValues(alpha: .2),
-                            child: Icon(Icons.circle, size: 8, color: a.accentColor),
+                .map(
+                  (a) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor: a.accentColor.withValues(alpha: .2),
+                          child: Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: a.accentColor,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(a.title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: u.text)),
-                                Text(a.subtitle, style: TextStyle(fontSize: 13, color: u.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(a.trailing, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: u.text)),
-                              Text(a.timeLabel, style: TextStyle(fontSize: 12, color: u.muted)),
+                              Text(
+                                a.title,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: u.text,
+                                ),
+                              ),
+                              Text(
+                                a.subtitle,
+                                style: TextStyle(fontSize: 13, color: u.muted),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ],
                           ),
-                        ],
-                      ),
-                    ))
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              a.trailing,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: u.text,
+                              ),
+                            ),
+                            Text(
+                              a.timeLabel,
+                              style: TextStyle(fontSize: 12, color: u.muted),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
           );
         }),
       ],
+    );
+  }
+
+  void _showAllActivityLogs(BuildContext context, _ListingUi u) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      backgroundColor: u.card,
+      builder: (context) {
+        final sheetHeight = MediaQuery.sizeOf(context).height * 0.72;
+        return SafeArea(
+          child: SizedBox(
+            height: sheetHeight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 4, 18, 12),
+                  child: Text(
+                    _isSw ? 'Kumbukumbu zote' : 'All Activity Logs',
+                    style: TextStyle(
+                      fontFamily: 'serif',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: u.text,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Obx(() {
+                    final rows = controller.recentActivity;
+                    if (rows.isEmpty) {
+                      return Center(
+                        child: Text(
+                          _isSw ? 'Hakuna shughuli.' : 'No activity logs',
+                          style: TextStyle(fontSize: 14, color: u.muted),
+                        ),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                      itemCount: rows.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) =>
+                          _activityLogTile(u, rows[index]),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _activityLogTile(_ListingUi u, ListingActivityVm activity) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: u.soft.withValues(alpha: u.dark ? 0.35 : 0.55),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: u.line),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: activity.accentColor.withValues(alpha: .2),
+            child: Icon(Icons.circle, size: 9, color: activity.accentColor),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activity.title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: u.text,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  activity.subtitle,
+                  style: TextStyle(fontSize: 13, color: u.muted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                activity.trailing,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: u.text,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                activity.timeLabel,
+                style: TextStyle(fontSize: 12, color: u.muted),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -758,39 +1024,65 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             Expanded(
               child: Text(
                 _isSw ? 'Wafanyakazi Waliopangiwa' : 'Staff Assigned',
-                style: TextStyle(fontFamily: 'serif', fontSize: 22, fontWeight: FontWeight.w700, color: u.text),
+                style: TextStyle(
+                  fontFamily: 'serif',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: u.text,
+                ),
               ),
             ),
             TextButton(
               onPressed: controller.onManageStaff,
-              child: const Text('ALL', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+              child: const Text(
+                'ALL',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
             ),
           ],
         ),
         Obx(() {
           final staff = controller.staffPreview;
-          if (staff.isEmpty) return Text('No staff', style: TextStyle(fontSize: 14, color: u.muted));
+          if (staff.isEmpty) {
+            return Text(
+              'No staff',
+              style: TextStyle(fontSize: 14, color: u.muted),
+            );
+          }
           return Column(
             children: staff
                 .take(2)
-                .map((s) => ListTile(
-                      dense: true,
-                      visualDensity: const VisualDensity(vertical: -3),
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        radius: 11,
-                        backgroundColor: u.soft,
-                        child: Text(
-                          s.name.isEmpty ? '?' : s.name[0].toUpperCase(),
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _ListingUi.forest),
+                .map(
+                  (s) => ListTile(
+                    dense: true,
+                    visualDensity: const VisualDensity(vertical: -3),
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      radius: 11,
+                      backgroundColor: u.soft,
+                      child: Text(
+                        s.name.isEmpty ? '?' : s.name[0].toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _ListingUi.forest,
                         ),
                       ),
-                      title: Text(s.name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: u.text)),
-                      subtitle: Text(
-                        s.jobTitle.isEmpty ? 'Staff' : s.jobTitle,
-                        style: TextStyle(fontSize: 12, color: u.muted),
+                    ),
+                    title: Text(
+                      s.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: u.text,
                       ),
-                    ))
+                    ),
+                    subtitle: Text(
+                      s.jobTitle.isEmpty ? 'Staff' : s.jobTitle,
+                      style: TextStyle(fontSize: 12, color: u.muted),
+                    ),
+                  ),
+                )
                 .toList(),
           );
         }),
@@ -801,8 +1093,12 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             onPressed: controller.onManageStaff,
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.colorPrimary,
-              side: BorderSide(color: AppColors.colorPrimaryDark.withValues(alpha: .55)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              side: BorderSide(
+                color: AppColors.colorPrimaryDark.withValues(alpha: .55),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               padding: EdgeInsets.all(AppValues.padding),
             ),
             child: Text(
@@ -825,14 +1121,22 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 14),
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: Color(0xFFD97706),
+            size: 14,
+          ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               _isSw
                   ? 'Kumbukumbu za malipo zinahitaji ufuatiliaji wa karibu.'
                   : 'Payment records in this listing need close follow-up.',
-              style: const TextStyle(fontSize: 13, height: 1.25, color: Color(0xFF92400E)),
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.25,
+                color: Color(0xFF92400E),
+              ),
             ),
           ),
         ],
@@ -848,7 +1152,9 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         style: FilledButton.styleFrom(
           backgroundColor: const Color(0xFFB91C1C),
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           padding: EdgeInsets.all(AppValues.padding),
         ),
         icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),

@@ -1,4 +1,4 @@
-name: paa_yangu
+name: host_bora
 description: "An app for bnb hosts to manage their properties"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.6+7
+version: 1.0.8+9
 
 environment:
   sdk: ^3.11.0-57.0.dev
@@ -109,8 +109,8 @@ flutter_launcher_icons:
   android: 'ic_launcher'
   ios: true
   remove_alpha_ios: true
-  image_path: 'images/paa_yangu_logo.png'
-  adaptive_icon_foreground: 'images/paa_yangu_logo.png'
+  image_path: 'images/host_bora_logo.png'
+  adaptive_icon_foreground: 'images/host_bora_logo.png'
   adaptive_icon_background: '#ffffff'
   # Match iOS: use full canvas (no inset) so icon dimensions align with iOS
   adaptive_icon_foreground_inset: 0

@@ -11,6 +11,8 @@ class AppLifecycleManager with WidgetsBindingObserver {
   Timer? _timer;
   Timer? _expiryCheckTimer;
   bool _lockShownThisResume = false;
+  bool _isPaused = false;
+  DateTime? _pausedAt;
 
   AppLifecycleManager(this.context);
 
@@ -26,11 +28,16 @@ class AppLifecycleManager with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
+      _isPaused = true;
+      final pausedAt = DateTime.now();
+      _pausedAt = pausedAt;
+      _saveBackgroundedAt(pausedAt);
       _lockShownThisResume = false;
       _startTimer();
       _expiryCheckTimer?.cancel();
       _expiryCheckTimer = null;
     } else if (state == AppLifecycleState.resumed) {
+      _isPaused = false;
       _cancelTimer();
       _checkTokenAndLogoutIfExpired();
       _startExpiryCheckTimer();
@@ -47,9 +54,17 @@ class AppLifecycleManager with WidgetsBindingObserver {
 
   Future<void> _checkTokenAndLogoutIfExpired() async {
     try {
-      final pref = Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
-      final expiryTime = await pref.getString(PreferenceManager.keyExpiryTime, defaultValue: '');
-      final token = await pref.getString(PreferenceManager.keyToken, defaultValue: '');
+      final pref = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
+      final expiryTime = await pref.getString(
+        PreferenceManager.keyExpiryTime,
+        defaultValue: '',
+      );
+      final token = await pref.getString(
+        PreferenceManager.keyToken,
+        defaultValue: '',
+      );
       if (token.isEmpty || expiryTime.isEmpty) return;
       final expiryMs = DateTime.tryParse(expiryTime)?.millisecondsSinceEpoch;
       if (expiryMs == null) return;
@@ -63,8 +78,14 @@ class AppLifecycleManager with WidgetsBindingObserver {
   }
 
   Future<bool> _hasValidSession(PreferenceManager pref) async {
-    final token = await pref.getString(PreferenceManager.keyToken, defaultValue: '');
-    final expiryTime = await pref.getString(PreferenceManager.keyExpiryTime, defaultValue: '');
+    final token = await pref.getString(
+      PreferenceManager.keyToken,
+      defaultValue: '',
+    );
+    final expiryTime = await pref.getString(
+      PreferenceManager.keyExpiryTime,
+      defaultValue: '',
+    );
     if (token.isEmpty || expiryTime.isEmpty) return false;
     final expiryMs = DateTime.tryParse(expiryTime)?.millisecondsSinceEpoch;
     if (expiryMs == null) return false;
@@ -75,8 +96,11 @@ class AppLifecycleManager with WidgetsBindingObserver {
     if (_lockShownThisResume) return;
 
     try {
-      final pref = Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
+      final pref = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
       if (!await _hasValidSession(pref)) return;
+      if (!await _hasAppLockTimeoutElapsed(pref)) return;
 
       final pinEnabled = await pref.getBool(
         PreferenceManager.keyPinEnabled,
@@ -98,6 +122,15 @@ class AppLifecycleManager with WidgetsBindingObserver {
     } catch (_) {}
   }
 
+  Future<bool> _hasAppLockTimeoutElapsed(PreferenceManager pref) async {
+    final pausedAt = _pausedAt;
+    if (pausedAt == null) return false;
+
+    final timeoutSeconds = await _appLockTimeoutSeconds(pref);
+    return DateTime.now().difference(pausedAt) >=
+        Duration(seconds: timeoutSeconds);
+  }
+
   void startObserving() {
     WidgetsBinding.instance.addObserver(this);
     _checkTokenAndLogoutIfExpired();
@@ -110,9 +143,36 @@ class AppLifecycleManager with WidgetsBindingObserver {
     _expiryCheckTimer?.cancel();
   }
 
-  void _startTimer() {
-    _timer = Timer(const Duration(seconds: 15), () {
-      debugPrint('App has been in the background for 15 seconds.');
+  Future<int> _appLockTimeoutSeconds(PreferenceManager pref) async {
+    final seconds = await pref.getInt(
+      PreferenceManager.keyAppLockTimeoutSeconds,
+      defaultValue: 15,
+    );
+    return seconds > 0 ? seconds : 15;
+  }
+
+  Future<void> _saveBackgroundedAt(DateTime pausedAt) async {
+    try {
+      final pref = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
+      await pref.setInt(
+        PreferenceManager.keyAppBackgroundedAtMs,
+        pausedAt.millisecondsSinceEpoch,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _startTimer() async {
+    _timer?.cancel();
+    final pref = Get.find<PreferenceManager>(
+      tag: (PreferenceManager).toString(),
+    );
+    final timeoutSeconds = await _appLockTimeoutSeconds(pref);
+    if (!_isPaused) return;
+
+    _timer = Timer(Duration(seconds: timeoutSeconds), () {
+      debugPrint('App has been in the background for $timeoutSeconds seconds.');
       if (Get.currentRoute == '/receipt') {
         Get.until((route) => route.isFirst);
       }

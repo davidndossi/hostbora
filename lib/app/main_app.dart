@@ -29,6 +29,7 @@ class _MainAppState extends State<MainApp> {
 
   bool _isLoggedIn = false;
   bool _hasValidPin = false;
+  bool _shouldShowWelcomeBack = false;
   bool _hasSeenOnboarding = true; // default true so we don't block on first run
   bool _loading = true;
 
@@ -68,6 +69,7 @@ class _MainAppState extends State<MainApp> {
   }
 
   static const _bootstrapTimeout = Duration(seconds: 10);
+  static const _defaultAppLockTimeoutSeconds = 60;
 
   Future<void> _bootstrap() async {
     try {
@@ -83,12 +85,29 @@ class _MainAppState extends State<MainApp> {
         _preferenceManager
             .getString(PreferenceManager.keyPinCode, defaultValue: '')
             .timeout(_bootstrapTimeout),
+        _preferenceManager
+            .getInt(
+              PreferenceManager.keyAppLockTimeoutSeconds,
+              defaultValue: _defaultAppLockTimeoutSeconds,
+            )
+            .timeout(_bootstrapTimeout),
+        _preferenceManager
+            .getInt(PreferenceManager.keyAppBackgroundedAtMs, defaultValue: 0)
+            .timeout(_bootstrapTimeout),
       ]);
       final loggedIn = results[0] as bool;
       final hasSeenOnboarding = results[1] as bool;
       final pinEnabled = results[2];
       final pinCode = results[3] as String;
       final hasValidPin = (pinEnabled as bool) && pinCode.length == 4;
+      final appLockTimeoutSeconds = results[4] as int;
+      final backgroundedAtMs = results[5] as int;
+      final shouldShowWelcomeBack =
+          hasValidPin &&
+          _hasSelectedAppLockTimeoutElapsed(
+            backgroundedAtMs: backgroundedAtMs,
+            timeoutSeconds: appLockTimeoutSeconds,
+          );
 
       if (!mounted) return;
 
@@ -96,6 +115,7 @@ class _MainAppState extends State<MainApp> {
         _isLoggedIn = loggedIn;
         _hasSeenOnboarding = hasSeenOnboarding;
         _hasValidPin = hasValidPin;
+        _shouldShowWelcomeBack = shouldShowWelcomeBack;
         _loading = false;
       });
     } catch (e, stack) {
@@ -113,9 +133,31 @@ class _MainAppState extends State<MainApp> {
         _isLoggedIn = false;
         _hasSeenOnboarding = true; // on error, skip onboarding to avoid loop
         _hasValidPin = false;
+        _shouldShowWelcomeBack = false;
         _loading = false;
       });
     }
+  }
+
+  bool _hasSelectedAppLockTimeoutElapsed({
+    required int backgroundedAtMs,
+    required int timeoutSeconds,
+  }) {
+    if (backgroundedAtMs <= 0) return true;
+    final normalizedTimeout = timeoutSeconds > 0
+        ? timeoutSeconds
+        : _defaultAppLockTimeoutSeconds;
+    final elapsedMs = DateTime.now().millisecondsSinceEpoch - backgroundedAtMs;
+    return elapsedMs >= normalizedTimeout * 1000;
+  }
+
+  String _initialRoute() {
+    if (!_hasSeenOnboarding) return Routes.ONBOARDING;
+    if (_shouldShowWelcomeBack) return Routes.WELCOME_BACK;
+    if (_isLoggedIn) {
+      return _hasValidPin ? Routes.MAIN : Routes.CHANGE_PIN;
+    }
+    return AppPages.auth;
   }
 
   @override
@@ -182,11 +224,7 @@ class _MainAppState extends State<MainApp> {
     return Obx(
       () => GetMaterialApp(
         title: _envConfig.appName,
-        initialRoute: _hasSeenOnboarding
-            ? (_isLoggedIn
-                  ? (_hasValidPin ? Routes.WELCOME_BACK : Routes.CHANGE_PIN)
-                  : (_hasValidPin ? Routes.WELCOME_BACK : AppPages.auth))
-            : Routes.ONBOARDING,
+        initialRoute: _initialRoute(),
         initialBinding: InitialBinding(),
         getPages: AppPages.routes,
         locale: Locale(_lang, _countryCode),

@@ -1,6 +1,6 @@
-# Paa Yangu – Design System
+# Host Bora – Design System
 
-Design source: **[Figma – PAA YANGU](https://www.figma.com/design/7PeFdWA0oIYMxMEoc8qkxm/PAA-YANGU?node-id=2001-1281&m=dev)**
+Design source: **[Figma – HOST BORA](https://www.figma.com/design/7PeFdWA0oIYMxMEoc8qkxm/PAA-YANGU?node-id=2001-1281&m=dev)**
 
 Use this file and the Figma link above as the single source of truth for UI implementation.
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/modules/onboarding/views/explanation_view.dart';
+import 'package:host_bora/app/modules/onboarding/views/explanation_view.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';

@@ -16,12 +16,12 @@ enum LedgerPaymentStatus { fullyPaid, notPaid, partialPaid }
 
 class RentTenantLedgerOccupancyController extends BaseController {
   RentTenantLedgerOccupancyController()
-      : _tenantLocal = Get.find<TenantLocalDataSource>(),
-        _incomeLocal = Get.find<IncomeLocalDataSource>(),
-        _preferenceManager = Get.find<PreferenceManager>(
-          tag: (PreferenceManager).toString(),
-        ),
-        _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+    : _tenantLocal = Get.find<TenantLocalDataSource>(),
+      _incomeLocal = Get.find<IncomeLocalDataSource>(),
+      _preferenceManager = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      ),
+      _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
 
   static const reminderTemplateKey = 'tenant_whatsapp_reminder_template';
   static const _overdueReminderStampPrefix = 'tenant_overdue_reminder_sent_';
@@ -37,6 +37,11 @@ class RentTenantLedgerOccupancyController extends BaseController {
   final tenantId = 0.obs;
   final propertyLine = ''.obs;
   final tenantRecord = Rxn<TenantRecord>();
+  String _sourceWorkspace = 'rent';
+  String _sourcePropertyRef = '';
+  String _sourcePropertyTitle = '';
+  String _sourcePropertyLoc = '';
+  String _sourcePropertySuite = '';
 
   final customReminderController = TextEditingController();
   final amountPaidController = TextEditingController();
@@ -47,6 +52,36 @@ class RentTenantLedgerOccupancyController extends BaseController {
     tenantId.value = int.tryParse(Get.parameters['id'] ?? '') ?? 0;
     tenantName.value = Get.parameters['name'] ?? '';
     propertyLine.value = Get.parameters['property'] ?? '';
+    _captureSourceContext();
+  }
+
+  void _captureSourceContext() {
+    final args = Get.arguments;
+    var ws = Get.parameters['ws']?.trim() ?? '';
+    if (ws.isEmpty && args is Map) {
+      ws = (args['ws'] ?? args['workspace'] ?? '').toString().trim();
+    }
+    _sourceWorkspace = ws.trim().toLowerCase() == 'bnb' ? 'bnb' : 'rent';
+    _sourcePropertyRef = Get.parameters['propertyRef']?.trim() ?? '';
+    _sourcePropertyTitle = Get.parameters['propertyTitle']?.trim() ?? '';
+    _sourcePropertyLoc = Get.parameters['propertyLoc']?.trim() ?? '';
+    _sourcePropertySuite = Get.parameters['propertySuite']?.trim() ?? '';
+  }
+
+  void goBackToTenancyInsights() {
+    Get.offNamed(
+      Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,
+      parameters: {
+        'ws': _sourceWorkspace,
+        if (_sourcePropertyRef.isNotEmpty) 'propertyRef': _sourcePropertyRef,
+        if (_sourcePropertyTitle.isNotEmpty)
+          'propertyTitle': _sourcePropertyTitle,
+        if (_sourcePropertyLoc.isNotEmpty) 'propertyLoc': _sourcePropertyLoc,
+        if (_sourcePropertySuite.isNotEmpty)
+          'propertySuite': _sourcePropertySuite,
+      },
+      arguments: {'ws': _sourceWorkspace},
+    );
   }
 
   @override
@@ -57,8 +92,8 @@ class RentTenantLedgerOccupancyController extends BaseController {
 
   String get displayTenantName => tenantName.value.trim().isEmpty
       ? (tenantRecord.value?.tenantName.trim().isNotEmpty == true
-          ? tenantRecord.value!.tenantName
-          : 'Tenant')
+            ? tenantRecord.value!.tenantName
+            : 'Tenant')
       : tenantName.value;
 
   /// Full line for residence card / subtitles.
@@ -84,21 +119,26 @@ class RentTenantLedgerOccupancyController extends BaseController {
 
   String get rentFrequency =>
       tenantRecord.value?.rentFrequency.trim().isNotEmpty == true
-          ? tenantRecord.value!.rentFrequency
-          : 'Per Month';
+      ? tenantRecord.value!.rentFrequency
+      : 'Per Month';
 
   int get totalDueTsh {
     final rec = tenantRecord.value;
     if (rec == null) return 1200000;
     final range = _leaseRangeDays(rec);
     if (range == null) return currentRentAmountTsh;
-    final units = _billingUnitsBetween(rec.leaseStartIso, rec.leaseEndIso, rec.rentFrequency);
+    final units = _billingUnitsBetween(
+      rec.leaseStartIso,
+      rec.leaseEndIso,
+      rec.rentFrequency,
+    );
     return (units * rec.rentAmountValue).round();
   }
 
   int get totalPaidTsh => totalPaidTshRx.value;
 
-  int get remainingBalanceTsh => (totalDueTsh - totalPaidTsh).clamp(0, totalDueTsh);
+  int get remainingBalanceTsh =>
+      (totalDueTsh - totalPaidTsh).clamp(0, totalDueTsh);
 
   LedgerPaymentStatus get ledgerPaymentStatus {
     final due = totalDueTsh;
@@ -121,15 +161,51 @@ class RentTenantLedgerOccupancyController extends BaseController {
   }
 
   bool _incomeRowMatchesTenant(IncomeRecord r, TenantRecord t) {
-    if (r.tenantName.trim().toLowerCase() != t.tenantName.trim().toLowerCase()) {
+    final incomeTenant = r.tenantName.trim().toLowerCase();
+    final tenantName = t.tenantName.trim().toLowerCase();
+    final tenantMatches = incomeTenant.isNotEmpty && incomeTenant == tenantName;
+    if (incomeTenant.isNotEmpty && !tenantMatches) {
       return false;
     }
+
+    final tenantRef = t.propertyRef.trim();
+    final incomeRef = r.propertyRef.trim();
+    final refMatches =
+        tenantRef.isNotEmpty && incomeRef.isNotEmpty && tenantRef == incomeRef;
+    if (tenantRef.isNotEmpty && incomeRef.isNotEmpty && !refMatches) {
+      return false;
+    }
+
+    final unitMatches = _incomeRowMatchesTenantUnit(r, t);
+    if (refMatches && (tenantMatches || unitMatches)) return true;
+    if (tenantMatches && unitMatches) return true;
+    if (tenantMatches && _incomeRowMatchesTenantProperty(r, t)) return true;
+    return !tenantMatches &&
+        unitMatches &&
+        _incomeRowMatchesTenantProperty(r, t);
+  }
+
+  static bool _incomeRowMatchesTenantUnit(IncomeRecord r, TenantRecord t) {
+    final tenantUnitId = t.apartmentUnitId.trim().toLowerCase();
+    final tenantUnit = t.unitLabel.trim().toLowerCase();
+    final incomeUnit = r.apartmentUnit.trim().toLowerCase();
+    final notes = r.notes.trim().toLowerCase();
+    if (tenantUnitId.isNotEmpty && incomeUnit == tenantUnitId) return true;
+    if (tenantUnit.isNotEmpty && incomeUnit == tenantUnit) return true;
+    if (tenantUnit.isNotEmpty && notes.contains(tenantUnit)) return true;
+    return false;
+  }
+
+  static bool _incomeRowMatchesTenantProperty(IncomeRecord r, TenantRecord t) {
     final pl = t.propertyLabel.trim().toLowerCase();
     if (pl.isEmpty) return true;
     final ap = r.apartment.trim().toLowerCase();
     final unit = r.apartmentUnit.trim().toLowerCase();
-    final blob = '$ap $unit'.trim();
-    return blob.contains(pl) || pl.contains(ap);
+    final notes = r.notes.trim().toLowerCase();
+    final blob = '$ap $unit $notes'.trim();
+    return blob.contains(pl) ||
+        (ap.isNotEmpty && pl.contains(ap)) ||
+        (unit.isNotEmpty && pl.contains(unit));
   }
 
   Future<void> _refreshPaidTotalFromIncome() async {
@@ -157,8 +233,11 @@ class RentTenantLedgerOccupancyController extends BaseController {
   int get currentLeaseMonths {
     final rec = tenantRecord.value;
     if (rec == null) return 6;
-    return _billingUnitsBetween(rec.leaseStartIso, rec.leaseEndIso, 'Per Month')
-        .clamp(1, 1200);
+    return _billingUnitsBetween(
+      rec.leaseStartIso,
+      rec.leaseEndIso,
+      'Per Month',
+    ).clamp(1, 1200);
   }
 
   String get tenancyRangeLabel {
@@ -173,8 +252,8 @@ class RentTenantLedgerOccupancyController extends BaseController {
 
   String get contractFileName =>
       tenantRecord.value?.contractFileName.trim().isNotEmpty == true
-          ? tenantRecord.value!.contractFileName
-          : 'No signed contract uploaded';
+      ? tenantRecord.value!.contractFileName
+      : 'No signed contract uploaded';
 
   bool get isTenancyFinished {
     final rec = tenantRecord.value;
@@ -212,13 +291,15 @@ class RentTenantLedgerOccupancyController extends BaseController {
         'tenantIds': [rec?.id ?? tenantId.value],
         'propertyRef': rec?.propertyRef ?? '',
         'contextLabel': 'Message ${displayTenantName.trim()}',
-        'workspace': 'rent',
+        'workspace': _sourceWorkspace,
       },
     );
   }
 
   Future<void> _loadTenantAndCheckPeriod() async {
-    final byId = tenantId.value > 0 ? await _tenantLocal.findById(tenantId.value) : null;
+    final byId = tenantId.value > 0
+        ? await _tenantLocal.findById(tenantId.value)
+        : null;
     final byRoute = await _tenantLocal.findByNameAndProperty(
       tenantName: displayTenantName,
       propertyLabel: displayPropertyFull,
@@ -228,6 +309,13 @@ class RentTenantLedgerOccupancyController extends BaseController {
     if (isTenancyFinished) {
       await _autoSendOverdueReminderIfNeeded();
       _showTenancyFinishedDialog();
+    }
+  }
+
+  static Future<void> refreshIfRegistered() async {
+    if (Get.isRegistered<RentTenantLedgerOccupancyController>()) {
+      await Get.find<RentTenantLedgerOccupancyController>()
+          ._loadTenantAndCheckPeriod();
     }
   }
 
@@ -284,7 +372,15 @@ class RentTenantLedgerOccupancyController extends BaseController {
       parameters: {
         'name': displayTenantName,
         'property': displayPropertyFull,
+        'ws': _sourceWorkspace,
+        if (_sourcePropertyRef.isNotEmpty) 'propertyRef': _sourcePropertyRef,
+        if (_sourcePropertyTitle.isNotEmpty)
+          'propertyTitle': _sourcePropertyTitle,
+        if (_sourcePropertyLoc.isNotEmpty) 'propertyLoc': _sourcePropertyLoc,
+        if (_sourcePropertySuite.isNotEmpty)
+          'propertySuite': _sourcePropertySuite,
       },
+      arguments: {'ws': _sourceWorkspace},
     );
     Future.delayed(const Duration(milliseconds: 250), () {
       _showRenewDialog();
@@ -305,10 +401,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           FilledButton(
             onPressed: submitRenewalAmount,
             child: const Text('Submit'),
@@ -341,7 +434,11 @@ class RentTenantLedgerOccupancyController extends BaseController {
       return;
     }
     final currentLeaseEnd = _parseIsoDate(rec.leaseEndIso) ?? DateTime.now();
-    final nowDay = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final nowDay = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
     final base = currentLeaseEnd.isAfter(nowDay) ? currentLeaseEnd : nowDay;
     final nextEnd = _advanceByFrequency(base, rec.rentFrequency, periodsPaid);
 
@@ -353,7 +450,8 @@ class RentTenantLedgerOccupancyController extends BaseController {
       leaseStartIso: updatedStartIso,
       leaseEndIso: updatedEndIso,
     );
-    tenantRecord.value = await _tenantLocal.findByNameAndProperty(
+    tenantRecord.value =
+        await _tenantLocal.findByNameAndProperty(
           tenantName: rec.tenantName,
           propertyLabel: rec.propertyLabel,
         ) ??
@@ -366,7 +464,9 @@ class RentTenantLedgerOccupancyController extends BaseController {
     );
 
     if (Get.isDialogOpen ?? false) Get.back();
-    showSuccessMessage('Tenant period updated by $periodsPaid ${_periodLabel(rec.rentFrequency)}');
+    showSuccessMessage(
+      'Tenant period updated by $periodsPaid ${_periodLabel(rec.rentFrequency)}',
+    );
   }
 
   Future<void> pickAndUploadSignedContract() async {
@@ -421,7 +521,9 @@ class RentTenantLedgerOccupancyController extends BaseController {
           children: [
             TextField(
               controller: amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Rent amount',
                 border: OutlineInputBorder(),
@@ -457,7 +559,9 @@ class RentTenantLedgerOccupancyController extends BaseController {
           ),
           FilledButton(
             onPressed: () async {
-              final amount = double.tryParse(amountController.text.trim().replaceAll(',', ''));
+              final amount = double.tryParse(
+                amountController.text.trim().replaceAll(',', ''),
+              );
               final start = _parseIsoDate(startController.text.trim());
               final end = _parseIsoDate(endController.text.trim());
               if (amount == null || amount <= 0) {
@@ -489,7 +593,10 @@ class RentTenantLedgerOccupancyController extends BaseController {
   }
 
   Future<void> onRemindClicked() async {
-    final template = await _preferenceManager.getString(reminderTemplateKey, defaultValue: '');
+    final template = await _preferenceManager.getString(
+      reminderTemplateKey,
+      defaultValue: '',
+    );
     if (template.trim().isNotEmpty) {
       await _sendReminder(_resolveTemplate(template.trim()));
       return;
@@ -499,7 +606,15 @@ class RentTenantLedgerOccupancyController extends BaseController {
       parameters: {
         'name': displayTenantName,
         'property': displayPropertyFull,
+        'ws': _sourceWorkspace,
+        if (_sourcePropertyRef.isNotEmpty) 'propertyRef': _sourcePropertyRef,
+        if (_sourcePropertyTitle.isNotEmpty)
+          'propertyTitle': _sourcePropertyTitle,
+        if (_sourcePropertyLoc.isNotEmpty) 'propertyLoc': _sourcePropertyLoc,
+        if (_sourcePropertySuite.isNotEmpty)
+          'propertySuite': _sourcePropertySuite,
       },
+      arguments: {'ws': _sourceWorkspace},
     );
     Future.delayed(const Duration(milliseconds: 250), () {
       _showCustomReminderDialog();
@@ -521,10 +636,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
               final msg = customReminderController.text.trim();
@@ -549,10 +661,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
     }
     try {
       await _repository.sendSms(
-        SendSmsRequest(
-          phoneNumber: phone,
-          message: message,
-        ),
+        SendSmsRequest(phoneNumber: phone, message: message),
       );
       if (Get.isDialogOpen ?? false) Get.back();
       showSuccessMessage('Reminder sent to tenant');
@@ -572,7 +681,8 @@ class RentTenantLedgerOccupancyController extends BaseController {
     final contractName = tenant.contractFileName.trim().isEmpty
         ? 'Updated lease terms'
         : tenant.contractFileName.trim();
-    final message = '''
+    final message =
+        '''
 UPDATED LEASE DOCUMENT
 Tenant: ${tenant.tenantName}
 Property: ${tenant.propertyLabel}
@@ -580,7 +690,8 @@ Rent Amount: Tsh $amountLabel (${tenant.rentFrequency})
 Lease Start: $updatedStartIso
 Lease End: $updatedEndIso
 Reference: $contractName
-'''.trim();
+'''
+            .trim();
     try {
       await _repository.sendSms(
         SendSmsRequest(phoneNumber: phone, message: message),
@@ -635,7 +746,12 @@ Reference: $contractName
       case 'per week':
         return (days / 7).ceil().clamp(1, 5200);
       case 'per year':
-        return ((end.year - start.year) + ((end.month > start.month || (end.month == start.month && end.day >= start.day)) ? 0 : -1)).clamp(1, 300);
+        return ((end.year - start.year) +
+                ((end.month > start.month ||
+                        (end.month == start.month && end.day >= start.day))
+                    ? 0
+                    : -1))
+            .clamp(1, 300);
       case 'per month':
       default:
         return _monthsBetween(start, end).clamp(1, 1200);

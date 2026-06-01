@@ -20,26 +20,13 @@ import '../../../../data/local/service/local_notification_scheduler_service.dart
 import '../../../../routes/app_pages.dart';
 
 /// Payment box state for M1…M6 ledger.
-enum ResidencyMonthStatus {
-  paid,
-  partial,
-  upcoming,
-}
+enum ResidencyMonthStatus { paid, partial, upcoming }
 
-enum TenancyExcelTemplate {
-  customerRentDetails,
-  customerRentTenantSummary,
-}
+enum TenancyExcelTemplate { customerRentDetails, customerRentTenantSummary }
 
-enum TenantReportFrequency {
-  weekly,
-  monthly,
-}
+enum TenantReportFrequency { weekly, monthly }
 
-enum TenantFinanceWindow {
-  tenure,
-  allTime,
-}
+enum TenantFinanceWindow { tenure, allTime }
 
 class PropertyPrincipalSnapshot {
   const PropertyPrincipalSnapshot({
@@ -86,6 +73,7 @@ class TenantInsight {
   final String propertyLine;
   final String totalStayLabel;
   final String leasePeriodLabel;
+
   /// 0.0 – 1.0
   final double leaseProgress;
   final List<ResidencyMonthStatus> monthStatuses;
@@ -104,13 +92,14 @@ class TenantInsight {
 
 class RentTenantResidencyPaymentTrackerController extends BaseController {
   RentTenantResidencyPaymentTrackerController()
-      : _tenantLocal = Get.find<TenantLocalDataSource>(),
-        _incomeLocal = Get.find<IncomeLocalDataSource>(),
-        _expenseLocal = Get.find<ExpenseLocalDataSource>(),
-        _estimateLocal = Get.find<RentPropertyEstimateLocalDataSource>(),
-        _preferenceManager =
-            Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
-        _notificationScheduler = Get.find<LocalNotificationSchedulerService>();
+    : _tenantLocal = Get.find<TenantLocalDataSource>(),
+      _incomeLocal = Get.find<IncomeLocalDataSource>(),
+      _expenseLocal = Get.find<ExpenseLocalDataSource>(),
+      _estimateLocal = Get.find<RentPropertyEstimateLocalDataSource>(),
+      _preferenceManager = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      ),
+      _notificationScheduler = Get.find<LocalNotificationSchedulerService>();
 
   final TenantLocalDataSource _tenantLocal;
   final IncomeLocalDataSource _incomeLocal;
@@ -131,8 +120,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   final compareRangeEnd = Rxn<DateTime>();
   final whatsappScheduleEnabled = false.obs;
   final whatsappScheduleFrequency = TenantReportFrequency.weekly.obs;
-  final whatsappScheduleTemplate =
-      TenancyExcelTemplate.customerRentDetails.obs;
+  final whatsappScheduleTemplate = TenancyExcelTemplate.customerRentDetails.obs;
   final nextWhatsappScheduleAt = Rxn<DateTime>();
   final propertyPrincipal = Rxn<PropertyPrincipalSnapshot>();
 
@@ -141,12 +129,20 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   static const _waScheduleTemplateKey = 'tenant_report_wa_schedule_template';
   static const _waScheduleNextMsKey = 'tenant_report_wa_schedule_next_ms';
 
-  static final NumberFormat _money =
-      NumberFormat.currency(symbol: r'TZS ', decimalDigits: 0);
+  static final NumberFormat _money = NumberFormat.currency(
+    symbol: r'TZS ',
+    decimalDigits: 0,
+  );
   static final DateFormat _date = DateFormat('dd/MM/yyyy');
   final _tenantRecordsById = <String, TenantRecord>{};
   List<IncomeRecord> _incomeRowsCache = const [];
   List<ExpenseRecord> _expenseRowsCache = const [];
+  bool _routeContextCaptured = false;
+  String _workspaceType = 'rent';
+  String _filterPropertyRef = '';
+  String _filterPropertyTitle = '';
+  String _filterPropertyLoc = '';
+  String _filterPropertySuite = '';
 
   int get activeLeasesCount => tenants.length;
   double get collectionRatePct {
@@ -158,6 +154,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   @override
   void onReady() {
     super.onReady();
+    _captureRouteContext();
     unawaited(
       _restoreFinanceWindow().then((_) async {
         await loadTenants();
@@ -173,12 +170,12 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     final searched = q.isEmpty
         ? base
         : base
-            .where(
-              (t) =>
-                  t.name.toLowerCase().contains(q) ||
-                  t.propertyLine.toLowerCase().contains(q),
-            )
-            .toList();
+              .where(
+                (t) =>
+                    t.name.toLowerCase().contains(q) ||
+                    t.propertyLine.toLowerCase().contains(q),
+              )
+              .toList();
     return searched;
   }
 
@@ -213,8 +210,9 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   }
 
   Future<void> _restoreFinanceWindow() async {
-    final raw =
-        await _preferenceManager.getString(UiPreferenceKeys.tenancyFinanceWindow);
+    final raw = await _preferenceManager.getString(
+      UiPreferenceKeys.tenancyFinanceWindow,
+    );
     if (raw == 'all_time') {
       financeWindow.value = TenantFinanceWindow.allTime;
     } else if (raw == 'tenure') {
@@ -237,10 +235,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     compareRangeEnd.value = null;
   }
 
-  void setCompareRange({
-    required DateTime start,
-    required DateTime end,
-  }) {
+  void setCompareRange({required DateTime start, required DateTime end}) {
     compareRangeStart.value = DateTime(start.year, start.month, start.day);
     compareRangeEnd.value = DateTime(end.year, end.month, end.day);
   }
@@ -277,16 +272,35 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   /// App bar label; includes listing name when opened with `propertyTitle` from listing details.
   String get tenantsScreenTitle {
     final isSw = Get.locale?.languageCode == 'sw';
-    final t = Get.parameters['propertyTitle']?.trim() ?? '';
+    final t = _filterPropertyTitle;
     if (t.isEmpty) return isSw ? 'Maarifa ya Upangaji' : 'Tenancy Insights';
     return isSw ? 'Wapangaji — $t' : 'Tenants — $t';
   }
 
-  static bool _recordMatchesListingFilter(TenantRecord t) {
-    final ref = Get.parameters['propertyRef']?.trim() ?? '';
-    final title = Get.parameters['propertyTitle']?.trim() ?? '';
-    final loc = Get.parameters['propertyLoc']?.trim() ?? '';
-    final suite = Get.parameters['propertySuite']?.trim() ?? '';
+  static String _normalizeWorkspace(String raw) {
+    return raw.trim().toLowerCase() == 'bnb' ? 'bnb' : 'rent';
+  }
+
+  void _captureRouteContext() {
+    if (_routeContextCaptured) return;
+    final args = Get.arguments;
+    var ws = Get.parameters['ws']?.trim() ?? '';
+    if (ws.isEmpty && args is Map) {
+      ws = (args['ws'] ?? args['workspace'] ?? '').toString().trim();
+    }
+    _workspaceType = _normalizeWorkspace(ws);
+    _filterPropertyRef = Get.parameters['propertyRef']?.trim() ?? '';
+    _filterPropertyTitle = Get.parameters['propertyTitle']?.trim() ?? '';
+    _filterPropertyLoc = Get.parameters['propertyLoc']?.trim() ?? '';
+    _filterPropertySuite = Get.parameters['propertySuite']?.trim() ?? '';
+    _routeContextCaptured = true;
+  }
+
+  bool _recordMatchesListingFilter(TenantRecord t) {
+    final ref = _filterPropertyRef;
+    final title = _filterPropertyTitle;
+    final loc = _filterPropertyLoc;
+    final suite = _filterPropertySuite;
     final hasFilter = ref.isNotEmpty || title.isNotEmpty || loc.isNotEmpty;
     if (!hasFilter) return true;
 
@@ -297,12 +311,16 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     if (ref.isNotEmpty && r.isEmpty) {
       if (title.isNotEmpty && pl == title) return true;
       if (loc.isNotEmpty && pl == loc) return true;
-      if (loc.isNotEmpty && suite.isNotEmpty && pl == '$loc · $suite') return true;
+      if (loc.isNotEmpty && suite.isNotEmpty && pl == '$loc · $suite') {
+        return true;
+      }
     }
     if (ref.isEmpty) {
       if (title.isNotEmpty && pl == title) return true;
       if (loc.isNotEmpty && pl == loc) return true;
-      if (loc.isNotEmpty && suite.isNotEmpty && pl == '$loc · $suite') return true;
+      if (loc.isNotEmpty && suite.isNotEmpty && pl == '$loc · $suite') {
+        return true;
+      }
     }
     return false;
   }
@@ -316,13 +334,15 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   }
 
   String get scheduleSubtitle {
-    if (!whatsappScheduleEnabled.value || nextWhatsappScheduleAt.value == null) {
+    if (!whatsappScheduleEnabled.value ||
+        nextWhatsappScheduleAt.value == null) {
       return 'Schedule off';
     }
     final f = whatsappScheduleFrequency.value == TenantReportFrequency.weekly
         ? 'Weekly'
         : 'Monthly';
-    final t = whatsappScheduleTemplate.value ==
+    final t =
+        whatsappScheduleTemplate.value ==
             TenancyExcelTemplate.customerRentDetails
         ? 'Rent details'
         : 'Tenant summary';
@@ -349,7 +369,15 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
         'id': t.id,
         'name': t.name,
         'property': t.propertyLine,
+        'ws': _workspaceType,
+        if (_filterPropertyRef.isNotEmpty) 'propertyRef': _filterPropertyRef,
+        if (_filterPropertyTitle.isNotEmpty)
+          'propertyTitle': _filterPropertyTitle,
+        if (_filterPropertyLoc.isNotEmpty) 'propertyLoc': _filterPropertyLoc,
+        if (_filterPropertySuite.isNotEmpty)
+          'propertySuite': _filterPropertySuite,
       },
+      arguments: {'ws': _workspaceType},
     );
   }
 
@@ -364,18 +392,13 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
       showErrorMessage('No tenant phone numbers available');
       return;
     }
-    final contextTitle = Get.parameters['propertyTitle']?.trim() ?? '';
-    var ws = 'rent';
-    final args = Get.arguments;
-    if (args is Map && args['ws'] != null) {
-      ws = args['ws'].toString();
-    }
+    final contextTitle = _filterPropertyTitle;
     Get.toNamed(
       Routes.SEND_SMS,
       arguments: {
         'phones': phones,
-        'propertyRef': Get.parameters['propertyRef'] ?? '',
-        'workspace': ws,
+        'propertyRef': _filterPropertyRef,
+        'workspace': _workspaceType,
         'contextLabel': contextTitle.isEmpty
             ? 'Tenancy insights recipients'
             : 'Tenants in $contextTitle',
@@ -441,7 +464,8 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   /// Reload tenant cards when income or tenant data changes elsewhere.
   static Future<void> refreshIfRegistered() async {
     if (Get.isRegistered<RentTenantResidencyPaymentTrackerController>()) {
-      await Get.find<RentTenantResidencyPaymentTrackerController>().loadTenants();
+      await Get.find<RentTenantResidencyPaymentTrackerController>()
+          .loadTenants();
     }
   }
 
@@ -456,15 +480,13 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   }
 
   Future<void> _loadTenantsCore() async {
-    var ws = 'rent';
-    final args = Get.arguments;
-    if (args is Map && args['ws'] != null) {
-      ws = args['ws'].toString();
-    }
+    final ws = _workspaceType;
     final rows = await _tenantLocal.getAllNewestFirstByWorkspace(ws);
     final scoped = rows.where(_recordMatchesListingFilter).toList();
     final incomeRows = await _incomeLocal.getAllNewestFirst(workspaceType: ws);
-    final expenseRows = await _expenseLocal.getAllNewestFirst(workspaceType: ws);
+    final expenseRows = await _expenseLocal.getAllNewestFirst(
+      workspaceType: ws,
+    );
     _incomeRowsCache = incomeRows;
     _expenseRowsCache = expenseRows;
     _tenantRecordsById
@@ -477,72 +499,84 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
       expenseRows: expenseRows,
     );
 
-    tenants.assignAll(scoped.map((r) {
-      final start = _parseDate(r.leaseStartIso) ?? DateTime.now();
-      final end = _parseDate(r.leaseEndIso) ?? DateTime.now().add(const Duration(days: 30));
-      final now = DateTime.now();
-      final totalMonths = _monthsBetween(start, end).clamp(1, 240);
-      final spentMonths = _monthsBetween(start, now).clamp(0, totalMonths);
-      final progress = (spentMonths / totalMonths).clamp(0.0, 1.0);
-      final totalAmount = r.rentAmountValue * totalMonths;
-      final paidFromIncome = _sumIncomeForTenant(
-        r,
-        incomeRows,
-        start: financeWindow.value == TenantFinanceWindow.tenure ? start : null,
-        end: financeWindow.value == TenantFinanceWindow.tenure ? end : null,
-      );
-      final expenseForTenure = _sumExpenseForTenant(
-        tenant: r,
-        expenseRows: expenseRows,
-        leaseStart: start,
-        leaseEnd: end,
-        start: financeWindow.value == TenantFinanceWindow.tenure ? start : null,
-        end: financeWindow.value == TenantFinanceWindow.tenure ? end : null,
-      );
-      final paidAmount =
-          paidFromIncome.clamp(0, totalAmount).toDouble();
-      final expectedToDate =
-          (r.rentAmountValue * spentMonths).clamp(0, totalAmount);
-      final arrears = (expectedToDate - paidAmount).clamp(0, double.infinity);
-      final isEndingSoon = !end.isBefore(DateTime(now.year, now.month, now.day)) &&
-          !end.isAfter(
-            DateTime(now.year, now.month, now.day).add(const Duration(days: 30)),
-          );
-      final rentPerMonth =
-          totalMonths > 0 ? totalAmount / totalMonths : r.rentAmountValue;
-      final paidMonthSlots = rentPerMonth > 0
-          ? (paidFromIncome / rentPerMonth).floor().clamp(0, 6)
-          : 0;
-      return TenantInsight(
-        id: '${r.id}',
-        name: r.tenantName,
-        propertyLine: r.propertyLabel,
-        totalStayLabel: '$spentMonths Months',
-        leasePeriodLabel: '${fmt.format(start)} – ${fmt.format(end)}',
-        leaseProgress: progress,
-        monthStatuses: List<ResidencyMonthStatus>.generate(
-          6,
-          (i) {
+    tenants.assignAll(
+      scoped.map((r) {
+        final start = _parseDate(r.leaseStartIso) ?? DateTime.now();
+        final end =
+            _parseDate(r.leaseEndIso) ??
+            DateTime.now().add(const Duration(days: 30));
+        final now = DateTime.now();
+        final totalMonths = _monthsBetween(start, end).clamp(1, 240);
+        final spentMonths = _monthsBetween(start, now).clamp(0, totalMonths);
+        final progress = (spentMonths / totalMonths).clamp(0.0, 1.0);
+        final totalAmount = r.rentAmountValue * totalMonths;
+        final paidFromIncome = _sumIncomeForTenant(
+          r,
+          incomeRows,
+          start: financeWindow.value == TenantFinanceWindow.tenure
+              ? start
+              : null,
+          end: financeWindow.value == TenantFinanceWindow.tenure ? end : null,
+        );
+        final expenseForTenure = _sumExpenseForTenant(
+          tenant: r,
+          expenseRows: expenseRows,
+          leaseStart: start,
+          leaseEnd: end,
+          start: financeWindow.value == TenantFinanceWindow.tenure
+              ? start
+              : null,
+          end: financeWindow.value == TenantFinanceWindow.tenure ? end : null,
+        );
+        final paidAmount = paidFromIncome.clamp(0, totalAmount).toDouble();
+        final expectedToDate = (r.rentAmountValue * spentMonths).clamp(
+          0,
+          totalAmount,
+        );
+        final arrears = (expectedToDate - paidAmount).clamp(0, double.infinity);
+        final isEndingSoon =
+            !end.isBefore(DateTime(now.year, now.month, now.day)) &&
+            !end.isAfter(
+              DateTime(
+                now.year,
+                now.month,
+                now.day,
+              ).add(const Duration(days: 30)),
+            );
+        final rentPerMonth = totalMonths > 0
+            ? totalAmount / totalMonths
+            : r.rentAmountValue;
+        final paidMonthSlots = rentPerMonth > 0
+            ? (paidFromIncome / rentPerMonth).floor().clamp(0, 6)
+            : 0;
+        return TenantInsight(
+          id: '${r.id}',
+          name: r.tenantName,
+          propertyLine: r.propertyLabel,
+          totalStayLabel: '$spentMonths Months',
+          leasePeriodLabel: '${fmt.format(start)} – ${fmt.format(end)}',
+          leaseProgress: progress,
+          monthStatuses: List<ResidencyMonthStatus>.generate(6, (i) {
             if (i < paidMonthSlots) return ResidencyMonthStatus.paid;
             if (i < spentMonths.clamp(0, 6)) {
               return ResidencyMonthStatus.partial;
             }
             return ResidencyMonthStatus.upcoming;
-          },
-        ),
-        onSchedule: paidAmount + 0.01 >= expectedToDate || now.isAfter(end),
-        paidAmount: paidAmount,
-        totalAmount: totalAmount,
-        phoneNumber: r.phoneNumber,
-        leaseStart: start,
-        leaseEnd: end,
-        monthlyRent: r.rentAmountValue,
-        arrearsAmount: arrears.toDouble(),
-        isLeaseEndingSoon: isEndingSoon,
-        incomeForTenure: paidFromIncome,
-        expenseForTenure: expenseForTenure,
-      );
-    }));
+          }),
+          onSchedule: paidAmount + 0.01 >= expectedToDate || now.isAfter(end),
+          paidAmount: paidAmount,
+          totalAmount: totalAmount,
+          phoneNumber: r.phoneNumber,
+          leaseStart: start,
+          leaseEnd: end,
+          monthlyRent: r.rentAmountValue,
+          arrearsAmount: arrears.toDouble(),
+          isLeaseEndingSoon: isEndingSoon,
+          incomeForTenure: paidFromIncome,
+          expenseForTenure: expenseForTenure,
+        );
+      }),
+    );
   }
 
   Future<void> _exportExcel({
@@ -602,8 +636,9 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     );
 
     for (var c = 0; c < headers.length; c++) {
-      final cell =
-          sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0));
+      final cell = sheet.cell(
+        CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0),
+      );
       cell.value = TextCellValue(headers[c]);
       cell.cellStyle = headerStyle;
       sheet.setColumnWidth(c, 23);
@@ -676,45 +711,53 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     final caption = viaWhatsApp
         ? 'Tenant report ($slug).'
         : 'Tenant report ready.';
-    await Share.shareXFiles(
-      [
-        XFile(
-          file.path,
-          mimeType:
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ),
-      ],
-      text: caption,
-    );
+    await Share.shareXFiles([
+      XFile(
+        file.path,
+        mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ),
+    ], text: caption);
     if (!viaWhatsApp) {
       showSuccessMessage('Excel report prepared.');
     }
   }
 
   Future<void> _loadWhatsappSchedule() async {
-    final enabled =
-        await _preferenceManager.getBool(_waScheduleEnabledKey, defaultValue: false);
-    final frequency =
-        await _preferenceManager.getString(_waScheduleFrequencyKey, defaultValue: 'weekly');
+    final enabled = await _preferenceManager.getBool(
+      _waScheduleEnabledKey,
+      defaultValue: false,
+    );
+    final frequency = await _preferenceManager.getString(
+      _waScheduleFrequencyKey,
+      defaultValue: 'weekly',
+    );
     final template = await _preferenceManager.getString(
       _waScheduleTemplateKey,
       defaultValue: 'customer_rent_details',
     );
-    final nextMs = await _preferenceManager.getInt(_waScheduleNextMsKey, defaultValue: 0);
+    final nextMs = await _preferenceManager.getInt(
+      _waScheduleNextMsKey,
+      defaultValue: 0,
+    );
 
     whatsappScheduleEnabled.value = enabled;
-    whatsappScheduleFrequency.value =
-        frequency == 'monthly' ? TenantReportFrequency.monthly : TenantReportFrequency.weekly;
-    whatsappScheduleTemplate.value =
-        template == 'customer_rent_tenant_summary'
-            ? TenancyExcelTemplate.customerRentTenantSummary
-            : TenancyExcelTemplate.customerRentDetails;
-    nextWhatsappScheduleAt.value =
-        nextMs > 0 ? DateTime.fromMillisecondsSinceEpoch(nextMs) : null;
+    whatsappScheduleFrequency.value = frequency == 'monthly'
+        ? TenantReportFrequency.monthly
+        : TenantReportFrequency.weekly;
+    whatsappScheduleTemplate.value = template == 'customer_rent_tenant_summary'
+        ? TenancyExcelTemplate.customerRentTenantSummary
+        : TenancyExcelTemplate.customerRentDetails;
+    nextWhatsappScheduleAt.value = nextMs > 0
+        ? DateTime.fromMillisecondsSinceEpoch(nextMs)
+        : null;
   }
 
   Future<void> _persistWhatsappSchedule() async {
-    await _preferenceManager.setBool(_waScheduleEnabledKey, whatsappScheduleEnabled.value);
+    await _preferenceManager.setBool(
+      _waScheduleEnabledKey,
+      whatsappScheduleEnabled.value,
+    );
     await _preferenceManager.setString(
       _waScheduleFrequencyKey,
       whatsappScheduleFrequency.value == TenantReportFrequency.monthly
@@ -723,7 +766,8 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     );
     await _preferenceManager.setString(
       _waScheduleTemplateKey,
-      whatsappScheduleTemplate.value == TenancyExcelTemplate.customerRentTenantSummary
+      whatsappScheduleTemplate.value ==
+              TenancyExcelTemplate.customerRentTenantSummary
           ? 'customer_rent_tenant_summary'
           : 'customer_rent_details',
     );
@@ -756,7 +800,13 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     if (frequency == TenantReportFrequency.weekly) {
       return base.add(const Duration(days: 7));
     }
-    return DateTime(base.year, base.month + 1, base.day, base.hour, base.minute);
+    return DateTime(
+      base.year,
+      base.month + 1,
+      base.day,
+      base.hour,
+      base.minute,
+    );
   }
 
   Future<void> _loadPropertyPrincipalSnapshot({
@@ -810,8 +860,9 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
       }
     }
 
-    final maintenance =
-        maintenanceEstimate > 0 ? maintenanceEstimate : maintenanceActual;
+    final maintenance = maintenanceEstimate > 0
+        ? maintenanceEstimate
+        : maintenanceActual;
     final monthlyIncome = estimate.expectedMonthlyIncome > 0
         ? estimate.expectedMonthlyIncome
         : (income / 12).clamp(0, double.infinity);
@@ -834,9 +885,10 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
   static double _sumIncomeForTenant(
     TenantRecord tenant,
-    List<IncomeRecord> incomeRows,
-    {DateTime? start, DateTime? end}
-  ) {
+    List<IncomeRecord> incomeRows, {
+    DateTime? start,
+    DateTime? end,
+  }) {
     var sum = 0.0;
     for (final row in incomeRows) {
       final d = row.paidLocalCalendarOrCreated();
@@ -849,25 +901,64 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     return sum;
   }
 
-  static bool _incomeRowMatchesTenant(IncomeRecord income, TenantRecord tenant) {
-    if (income.tenantName.trim().toLowerCase() !=
-        tenant.tenantName.trim().toLowerCase()) {
+  static bool _incomeRowMatchesTenant(
+    IncomeRecord income,
+    TenantRecord tenant,
+  ) {
+    final incomeTenant = income.tenantName.trim().toLowerCase();
+    final tenantName = tenant.tenantName.trim().toLowerCase();
+    final tenantMatches = incomeTenant.isNotEmpty && incomeTenant == tenantName;
+    if (incomeTenant.isNotEmpty && !tenantMatches) {
       return false;
     }
     final tenantRef = tenant.propertyRef.trim();
     final incomeRef = income.propertyRef.trim();
+    final refMatches =
+        tenantRef.isNotEmpty && incomeRef.isNotEmpty && tenantRef == incomeRef;
     if (tenantRef.isNotEmpty &&
         incomeRef.isNotEmpty &&
         tenantRef != incomeRef) {
       return false;
     }
+    final unitMatches = _incomeRowMatchesTenantUnit(income, tenant);
+    if (refMatches && (tenantMatches || unitMatches)) return true;
+    if (tenantMatches && unitMatches) return true;
+    if (tenantMatches && _incomeRowMatchesTenantProperty(income, tenant)) {
+      return true;
+    }
+    return !tenantMatches &&
+        unitMatches &&
+        _incomeRowMatchesTenantProperty(income, tenant);
+  }
+
+  static bool _incomeRowMatchesTenantUnit(
+    IncomeRecord income,
+    TenantRecord tenant,
+  ) {
+    final tenantUnitId = tenant.apartmentUnitId.trim().toLowerCase();
+    final tenantUnit = tenant.unitLabel.trim().toLowerCase();
+    final incomeUnit = income.apartmentUnit.trim().toLowerCase();
+    final notes = income.notes.trim().toLowerCase();
+    if (tenantUnitId.isNotEmpty && incomeUnit == tenantUnitId) return true;
+    if (tenantUnit.isNotEmpty && incomeUnit == tenantUnit) return true;
+    if (tenantUnit.isNotEmpty && notes.contains(tenantUnit)) return true;
+    return false;
+  }
+
+  static bool _incomeRowMatchesTenantProperty(
+    IncomeRecord income,
+    TenantRecord tenant,
+  ) {
     final pl = tenant.propertyLabel.trim().toLowerCase();
     if (pl.isEmpty) return true;
     final ap = income.apartment.trim().toLowerCase();
     final unit = income.apartmentUnit.trim().toLowerCase();
     final notes = income.notes.trim().toLowerCase();
     final blob = '$ap $unit $notes'.trim();
-    return blob.contains(pl) || pl.contains(ap) || ap == pl;
+    return blob.contains(pl) ||
+        (ap.isNotEmpty && pl.contains(ap)) ||
+        (unit.isNotEmpty && pl.contains(unit)) ||
+        ap == pl;
   }
 
   static double _sumExpenseForTenant({
@@ -891,7 +982,10 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     return sum;
   }
 
-  static bool _expenseRowMatchesTenant(ExpenseRecord expense, TenantRecord tenant) {
+  static bool _expenseRowMatchesTenant(
+    ExpenseRecord expense,
+    TenantRecord tenant,
+  ) {
     final tenantName = tenant.tenantName.trim().toLowerCase();
     final expenseTenantName = expense.tenantName.trim().toLowerCase();
     if (expenseTenantName.isNotEmpty && expenseTenantName == tenantName) {

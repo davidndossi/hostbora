@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
+import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
 import '../../../data/service/azampay_service.dart';
 import '../controllers/add_new_booking_controller.dart';

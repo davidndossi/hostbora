@@ -1,16 +1,38 @@
-# paa_yangu
+# Host Bora
 
-An app for bnb hosts to manage their properties
+An app for bnb and rental hosts to manage their properties
 
-## Getting Started
+Guest messages. Spreadsheets. Payment notes. Sound familiar?
+There’s a simpler way to run your rentals.
+Add your property, upload photos, set your price — and go live in minutes.
+Track every stay. Check-ins, check-outs — all in one place.
+Log payments as they come in — cash, card, or mobile money. No more guessing what you’ve earned.
+Listings, bookings, payments, and your calendar — finally, one app for your hosting business.
 
-This project is a starting point for a Flutter application.
+Host Bora. Your property, your bookings
 
-A few resources to get you started if this is your first Flutter project:
+## English
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Welcome to HostBora.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The simple way to manage your rental properties.
+
+Track tenants, payments, expenses, and profits — all in one place.
+
+Send rent reminders through WhatsApp and SMS.
+
+HostBora.
+Manage your properties with greater ease.
+
+## Swahili
+
+Karibu HostBora.
+
+Njia rahisi ya kusimamia nyumba zako za kupangisha.
+
+Fuatilia wapangaji, malipo, matumizi, na faida — yote sehemu moja.
+
+Tuma ukumbusho wa kodi kupitia WhatsApp na SMS.
+
+HostBora.
+Simamia nyumba zako kwa urahisi zaidi.

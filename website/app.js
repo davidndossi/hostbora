@@ -51,7 +51,7 @@
         message || '(no message)',
       ].join('\n');
 
-      const mailto = `mailto:support@paayangu.com?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
+      const mailto = `mailto:support@hostbora.co.tz?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
 
       try {
         await navigator.clipboard.writeText(bodyText);

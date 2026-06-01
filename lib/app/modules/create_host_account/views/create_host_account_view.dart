@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
+import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/create_host_account_controller.dart';
 
 class CreateHostAccountView extends BaseView<CreateHostAccountController> {

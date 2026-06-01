@@ -38,7 +38,7 @@ class AboutView extends BaseView<AboutController> {
           const SizedBox(height: AppValues.margin_20),
           Center(
             child: Image.asset(
-              'images/paa_yangu_logo.png',
+              'images/host_bora_logo.png',
               width: 80,
               height: 80,
               fit: BoxFit.contain,

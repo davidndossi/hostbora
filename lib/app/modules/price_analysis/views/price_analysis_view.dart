@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import 'package:get/get.dart';
@@ -16,8 +16,6 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
   String _t(BuildContext context, {required String en, required String sw}) {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
-
-  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;

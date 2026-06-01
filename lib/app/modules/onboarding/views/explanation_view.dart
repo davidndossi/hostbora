@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/core/values/text_styles.dart';
+import 'package:host_bora/app/core/values/text_styles.dart';
 
 import '../../../core/values/app_colors.dart';
 import '../../../core/widget/base_currency_picker.dart';
@@ -33,7 +33,7 @@ class ExplanationView extends StatelessWidget {
         children: [
           Center(
             child: Image.asset(
-              'images/paa_yangu_logo.png',
+              'images/host_bora_logo.png',
               width: 100,
               errorBuilder: (_, __, ___) => Icon(
                 Icons.home_work_rounded,

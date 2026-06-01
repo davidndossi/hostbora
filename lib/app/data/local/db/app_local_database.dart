@@ -11,7 +11,7 @@ import '/app/core/utils/property_listing_image_assigner.dart';
 /// created in [_createSchema], while [onOpen] keeps legacy repair guards.
 ///
 /// The DB file was renamed to [dbName] so installs that still had the old
-/// `paa_yangu_local.db` (user_version 24) do not hit a downgrade error; that
+/// `host_bora_local.db` (user_version 24) do not hit a downgrade error; that
 /// file is simply left unused until the OS removes it.
 ///
 /// To wipe everything: uninstall the app, or call [deleteLocalDatabaseFile]
@@ -21,7 +21,7 @@ import '/app/core/utils/property_listing_image_assigner.dart';
 class AppLocalDatabase {
   AppLocalDatabase._();
 
-  static const dbName = 'paa_yangu_local_v1.db';
+  static const dbName = 'host_bora_local_v1.db';
   static const dbVersion = 1;
 
   static const propertiesTable = 'properties';

@@ -9,9 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MODULES = ROOT / "lib" / "app" / "modules"
 
-TOKENS_IMPORT = "import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';\n"
-SKELETON_IMPORT = "import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';\n"
-ASYNC_IMPORT = "import 'package:paa_yangu/app/core/widget/async_screen_body.dart';\n"
+TOKENS_IMPORT = "import 'package:host_bora/app/core/theme/app_theme_tokens.dart';\n"
+SKELETON_IMPORT = "import 'package:host_bora/app/core/widget/skeleton_presets.dart';\n"
+ASYNC_IMPORT = "import 'package:host_bora/app/core/widget/async_screen_body.dart';\n"
 
 REPLACEMENTS: list[tuple[re.Pattern[str], str]] = [
     (

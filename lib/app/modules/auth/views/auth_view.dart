@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 
@@ -32,7 +32,7 @@ class AuthView extends BaseView<AuthController> {
             const SizedBox(height: 40),
             Center(
               child: Image.asset(
-                'images/paa_yangu_logo.png',
+                'images/host_bora_logo.png',
                 width: 100,
                 errorBuilder: (_, __, ___) => Icon(
                   Icons.home_work_rounded,

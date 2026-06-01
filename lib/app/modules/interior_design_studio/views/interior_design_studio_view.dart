@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import 'package:get/get.dart';
@@ -10,6 +9,7 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/interior_design_studio_controller.dart';
 

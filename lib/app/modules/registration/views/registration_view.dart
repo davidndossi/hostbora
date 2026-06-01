@@ -61,7 +61,7 @@ class RegistrationView extends BaseView<RegistrationController> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-            Image.asset('images/paa_yangu_logo.png', width: 100),
+            Image.asset('images/host_bora_logo.png', width: 100),
             const SizedBox(height: 20),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),

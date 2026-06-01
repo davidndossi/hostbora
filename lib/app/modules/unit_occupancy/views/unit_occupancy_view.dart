@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
 
 import 'package:get/get.dart';
 
@@ -7,6 +6,7 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/property_unit_floor.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../controllers/unit_occupancy_controller.dart';
 
 /// Legend / card colors aligned with host reference UI.

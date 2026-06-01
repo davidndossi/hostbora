@@ -16,11 +16,11 @@ import '../../tenant_residency_payment_tracker/controllers/rent_tenant_residency
 
 class RentAddTenantFormController extends BaseController {
   RentAddTenantFormController()
-      : _tenantLocal = Get.find<TenantLocalDataSource>(),
-        _propertyLocal = Get.find<PropertyLocalDataSource>(),
-        _preferenceManager = Get.find<PreferenceManager>(
-          tag: (PreferenceManager).toString(),
-        );
+    : _tenantLocal = Get.find<TenantLocalDataSource>(),
+      _propertyLocal = Get.find<PropertyLocalDataSource>(),
+      _preferenceManager = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
 
   final TenantLocalDataSource _tenantLocal;
   final PropertyLocalDataSource _propertyLocal;
@@ -29,6 +29,7 @@ class RentAddTenantFormController extends BaseController {
   final propertyContextLabel = ''.obs;
   final propertyRef = ''.obs;
   final availableUnitDrafts = <ApartmentUnitDraft>[].obs;
+
   /// Selected [ApartmentUnitDraft.selectionKey], or null until user picks.
   final selectedUnitKey = RxnString();
   final formKey = GlobalKey<FormState>();
@@ -48,7 +49,12 @@ class RentAddTenantFormController extends BaseController {
 
   PropertyRecord? _linkedProperty;
 
-  static const genderOptions = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
+  static const genderOptions = [
+    'Female',
+    'Male',
+    'Non-binary',
+    'Prefer not to say',
+  ];
   static const rentFrequencyOptions = ['Per Month', 'Per Year'];
 
   List<String> get unitSelectionKeys =>
@@ -119,7 +125,8 @@ class RentAddTenantFormController extends BaseController {
         final composed = p.propertyName.trim().isNotEmpty
             ? '${p.propertyLocation.trim()} · ${p.propertyName.trim()}'
             : p.propertyLocation.trim();
-        final matches = composed == wanted ||
+        final matches =
+            composed == wanted ||
             p.propertyLocation.trim() == wanted ||
             p.propertyName.trim() == wanted;
         if (matches) {
@@ -136,8 +143,9 @@ class RentAddTenantFormController extends BaseController {
     }
 
     _linkedProperty = selected;
-    propertyRef.value =
-        selected.propertyRef.isNotEmpty ? selected.propertyRef : 'legacy_${selected.id}';
+    propertyRef.value = selected.propertyRef.isNotEmpty
+        ? selected.propertyRef
+        : 'legacy_${selected.id}';
     final composed = selected.propertyName.trim().isNotEmpty
         ? '${selected.propertyLocation.trim()} · ${selected.propertyName.trim()}'
         : selected.propertyLocation.trim();
@@ -171,7 +179,9 @@ class RentAddTenantFormController extends BaseController {
         }
       }
     }
-    selectedUnitKey.value = drafts.length == 1 ? drafts.first.selectionKey : null;
+    selectedUnitKey.value = drafts.length == 1
+        ? drafts.first.selectionKey
+        : null;
     if (drafts.length == 1) {
       _prefillRentFromUnit(drafts.first);
     }
@@ -232,7 +242,11 @@ class RentAddTenantFormController extends BaseController {
   }
 
   void setLeaseDateRange(DateTimeRange range) {
-    leaseStart.value = DateTime(range.start.year, range.start.month, range.start.day);
+    leaseStart.value = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
     leaseEnd.value = DateTime(range.end.year, range.end.month, range.end.day);
   }
 
@@ -305,7 +319,8 @@ class RentAddTenantFormController extends BaseController {
           Routes.RENT_ADD_INCOME_FORM,
           parameters: {
             if (nav['property'] != null) 'property': nav['property'] as String,
-            if (nav['propertyRef'] != null) 'propertyRef': nav['propertyRef'] as String,
+            if (nav['propertyRef'] != null)
+              'propertyRef': nav['propertyRef'] as String,
           },
           arguments: nav,
         );
@@ -343,8 +358,8 @@ class RentAddTenantFormController extends BaseController {
     final propertyOption = p == null
         ? propertyContextLabel.value.trim()
         : (p.propertyName.trim().isNotEmpty
-            ? p.propertyName.trim()
-            : p.propertyLocation.trim());
+              ? p.propertyName.trim()
+              : p.propertyLocation.trim());
     return {
       'property': propertyOption,
       'propertyRef': propertyRef.value.trim(),
@@ -365,7 +380,8 @@ class RentAddTenantFormController extends BaseController {
     final ref = propertyRef.value.trim();
     if (ref.isEmpty) return;
     final property =
-        await _propertyLocal.findByHubId(ref) ?? await _propertyLocal.getByPropertyRef(ref);
+        await _propertyLocal.findByHubId(ref) ??
+        await _propertyLocal.getByPropertyRef(ref);
     if (property == null) return;
     if (property.unitsJson.trim().isEmpty) return;
 
@@ -376,11 +392,16 @@ class RentAddTenantFormController extends BaseController {
       final updated = decoded.map((entry) {
         if (entry is! Map) return entry;
         final unit = Map<String, dynamic>.from(entry);
-        final existingId = (unit['unitId'] ?? unit['id'] ?? '').toString().trim();
-        final existingName = (unit['unitName'] ?? unit['name'] ?? '').toString().trim();
+        final existingId = (unit['unitId'] ?? unit['id'] ?? '')
+            .toString()
+            .trim();
+        final existingName = (unit['unitName'] ?? unit['name'] ?? '')
+            .toString()
+            .trim();
         final idMatches =
             unitId.isNotEmpty && existingId.isNotEmpty && existingId == unitId;
-        final nameMatches = unitName.isNotEmpty &&
+        final nameMatches =
+            unitName.isNotEmpty &&
             existingName.isNotEmpty &&
             existingName.toLowerCase() == unitName.toLowerCase();
         if (!idMatches && !nameMatches) return unit;

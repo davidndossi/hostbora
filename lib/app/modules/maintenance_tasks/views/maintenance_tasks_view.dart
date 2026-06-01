@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/theme/form_surface_colors.dart';
-
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +11,7 @@ import '../../../core/widget/app_swipeable_card.dart';
 import '../../../core/values/app_decorations.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../controllers/maintenance_tasks_controller.dart';
 import '../model/maintenance_task.dart';
 

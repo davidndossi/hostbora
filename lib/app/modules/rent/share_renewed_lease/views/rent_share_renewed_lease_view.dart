@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/core/widget/custom_app_bar.dart';
+import 'package:host_bora/app/core/widget/custom_app_bar.dart';
 
 import '../../../../core/base/rent_base_view.dart';
 import '../controllers/rent_share_renewed_lease_controller.dart';

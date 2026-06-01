@@ -1,6 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import 'package:get/get.dart';

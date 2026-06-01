@@ -2,12 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:paa_yangu/app/core/values/text_styles.dart';
+import 'package:host_bora/app/core/values/text_styles.dart';
 
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
-import '../../../core/utils/tenant_rent_billing.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -39,8 +38,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final PendingBookingsStore _pendingBookingsStore = PendingBookingsStore();
   late final BnbBookingPendingLoader _pendingBookingLoader =
       BnbBookingPendingLoader(
-    syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
-  );
+        syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
+      );
 
   late String username;
   late TabController tabController;
@@ -63,6 +62,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final checkIns = <CheckInItem>[].obs;
   final checkInsToday = <CheckInItem>[].obs;
   final checkOutsToday = <CheckInItem>[].obs;
+
   /// True only before the first successful [loadHomeData] (skeleton, not full-screen spinner).
   final homeInitialLoading = true.obs;
 
@@ -85,10 +85,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       homeInitialLoading.value = true;
     }
     try {
-      await Future.wait([
-        _loadOverview(),
-        _loadBookingLists(),
-      ]);
+      await Future.wait([_loadOverview(), _loadBookingLists()]);
     } catch (e) {
       if (e is Exception) {
         showErrorMessage(e.toString());
@@ -117,13 +114,12 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     final pendingMaps = await _pendingBookingLoader.loadAll();
     final localActive = pendingMaps.length;
 
-    final tenantRows = await _bnbTenantLocal.getAllForBnbWorkspaceByPropertyRefJoin();
+    final tenantRows = await _bnbTenantLocal
+        .getAllForBnbWorkspaceByPropertyRefJoin();
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
     final nextMonthStart = DateTime(now.year, now.month + 1, 1);
     final prevMonthStart = DateTime(now.year, now.month - 1, 1);
-    double localMonthlyRevenue = 0;
-    double prevMonthlyRevenue = 0;
     var localCurrentBookings = 0;
     var localPreviousBookings = 0;
     for (final t in tenantRows) {
@@ -142,35 +138,19 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       }
 
       if (_leaseOverlapsCalendarMonth(
-            leaseStart: leaseStart,
-            leaseEnd: leaseEnd,
-            monthStart: monthStart,
-            nextMonthStart: nextMonthStart,
-          )) {
-        localMonthlyRevenue += TenantRentBilling.revenueInCalendarMonth(
-          rentAmountValue: t.rentAmountValue,
-          rentFrequency: t.rentFrequency,
-          leaseStartIso: t.leaseStartIso,
-          leaseEndIso: t.leaseEndIso,
-          monthStart: monthStart,
-          nextMonthStart: nextMonthStart,
-        );
+        leaseStart: leaseStart,
+        leaseEnd: leaseEnd,
+        monthStart: monthStart,
+        nextMonthStart: nextMonthStart,
+      )) {
         localCurrentBookings++;
       }
       if (_leaseOverlapsCalendarMonth(
-            leaseStart: leaseStart,
-            leaseEnd: leaseEnd,
-            monthStart: prevMonthStart,
-            nextMonthStart: monthStart,
-          )) {
-        prevMonthlyRevenue += TenantRentBilling.revenueInCalendarMonth(
-          rentAmountValue: t.rentAmountValue,
-          rentFrequency: t.rentFrequency,
-          leaseStartIso: t.leaseStartIso,
-          leaseEndIso: t.leaseEndIso,
-          monthStart: prevMonthStart,
-          nextMonthStart: monthStart,
-        );
+        leaseStart: leaseStart,
+        leaseEnd: leaseEnd,
+        monthStart: prevMonthStart,
+        nextMonthStart: monthStart,
+      )) {
         localPreviousBookings++;
       }
     }
@@ -178,7 +158,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     double bnbLocalIncomeThisMonth = 0;
     double bnbLocalIncomePrevMonth = 0;
     try {
-      final incomeRows = await _rentIncomeLocal.getAllForBnbWorkspaceByPropertyRefJoin();
+      final incomeRows = await _rentIncomeLocal
+          .getAllForBnbWorkspaceByPropertyRefJoin();
       for (final r in incomeRows) {
         if (r.workspaceType.trim().toLowerCase() != 'bnb') continue;
         final parsed = DateTime.tryParse(r.datePaidIso.trim());
@@ -192,20 +173,26 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       }
     } catch (_) {}
 
-    final combinedMonthly = localMonthlyRevenue + bnbLocalIncomeThisMonth;
-    final combinedPrev = prevMonthlyRevenue + bnbLocalIncomePrevMonth;
+    final combinedMonthly = bnbLocalIncomeThisMonth;
+    final combinedPrev = bnbLocalIncomePrevMonth;
 
-    activeBookings.value = localActive > remoteActive ? localActive : remoteActive;
+    activeBookings.value = localActive > remoteActive
+        ? localActive
+        : remoteActive;
     if (combinedMonthly > 0) {
-      monthlyRevenue.value =
-          Get.find<CurrencyService>().formatBase(combinedMonthly.round());
+      monthlyRevenue.value = Get.find<CurrencyService>().formatBase(
+        combinedMonthly.round(),
+      );
     } else {
       monthlyRevenue.value = remoteRevenueLabel;
     }
     bookingsChange.value =
         (remoteBookingsChange != null && remoteBookingsChange.isNotEmpty)
-            ? remoteBookingsChange
-            : _formatMoMPercent(localCurrentBookings.toDouble(), localPreviousBookings.toDouble());
+        ? remoteBookingsChange
+        : _formatMoMPercent(
+            localCurrentBookings.toDouble(),
+            localPreviousBookings.toDouble(),
+          );
     revenueChange.value = _formatMoMPercent(combinedMonthly, combinedPrev);
   }
 
@@ -220,7 +207,11 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     final ls = DateTime(leaseStart.year, leaseStart.month, leaseStart.day);
     final le = DateTime(leaseEnd.year, leaseEnd.month, leaseEnd.day);
     final ws = DateTime(monthStart.year, monthStart.month, monthStart.day);
-    final we = DateTime(nextMonthStart.year, nextMonthStart.month, nextMonthStart.day);
+    final we = DateTime(
+      nextMonthStart.year,
+      nextMonthStart.month,
+      nextMonthStart.day,
+    );
     return ls.isBefore(we) && le.isAfter(ws);
   }
 
@@ -315,7 +306,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
     try {
       final properties = await _propertyLocal.getAllVisibleNewestFirst(
-          userId: '', workspaceType: 'bnb');
+        userId: '',
+        workspaceType: 'bnb',
+      );
       await mergePendingBnbBookings(
         merge: merge,
         merged: merged,
@@ -361,14 +354,15 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void properties() => Get.toNamed(Routes.MY_PROPERTIES);
 
   void tenants() => Get.toNamed(
-      Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER, arguments: {'ws': 'bnb'});
+    Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,
+    arguments: {'ws': 'bnb'},
+  );
 
-  void sendSmsWhatsapp() => Get.toNamed(
-        Routes.SEND_SMS,
-        arguments: const {'workspace': 'bnb'},
-      );
+  void sendSmsWhatsapp() =>
+      Get.toNamed(Routes.SEND_SMS, arguments: const {'workspace': 'bnb'});
 
-  void whatsappTemplates() => Get.toNamed(Routes.RENT_WHATSAPP_TEMPLATE_BUILDER);
+  void whatsappTemplates() =>
+      Get.toNamed(Routes.RENT_WHATSAPP_TEMPLATE_BUILDER);
 
   Future<void> addNewBooking() async {
     await _guardPropertyBeforeAction(
@@ -405,15 +399,13 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void aiManager() => Get.toNamed(Routes.AI_MANAGER);
 
-  void aiInsights() => Get.toNamed(
-        Routes.AI_INSIGHTS,
-        arguments: const {'source': 'insights'},
-      );
+  void aiInsights() =>
+      Get.toNamed(Routes.AI_INSIGHTS, arguments: const {'source': 'insights'});
 
   void aiAutomations() => Get.toNamed(
-        Routes.AI_AUTOMATIONS,
-        arguments: const {'source': 'automations'},
-      );
+    Routes.AI_AUTOMATIONS,
+    arguments: const {'source': 'automations'},
+  );
 
   void documents() => Get.toNamed(Routes.PROPERTY_VAULT);
 
@@ -448,7 +440,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void openNotifications() => Get.toNamed(Routes.NOTIFICATIONS);
 
   void openBookingDetails(CheckInItem item) {
-    Get.toNamed(Routes.BOOKING_DETAILS, arguments: item)?.then((refreshed) async {
+    Get.toNamed(Routes.BOOKING_DETAILS, arguments: item)?.then((
+      refreshed,
+    ) async {
       if (refreshed == true) {
         await _loadBookingLists();
         await DashboardController.refreshIfRegistered();
@@ -485,11 +479,15 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         }
       }
       final localRows = await _propertyLocal.getAllVisibleNewestFirst(
-          userId: '', workspaceType: 'bnb');
+        userId: '',
+        workspaceType: 'bnb',
+      );
       return localRows.isNotEmpty;
     } catch (_) {
       final localRows = await _propertyLocal.getAllVisibleNewestFirst(
-          userId: '', workspaceType: 'bnb');
+        userId: '',
+        workspaceType: 'bnb',
+      );
       return localRows.isNotEmpty;
     }
   }

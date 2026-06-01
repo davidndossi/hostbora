@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../../l10n/app_localizations.dart';

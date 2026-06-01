@@ -64,7 +64,7 @@ class ChangePinView extends BaseView<ChangePinController> {
         SizedBox(height: 20),
         Center(
           child: Image.asset(
-            'images/paa_yangu_logo.png',
+            'images/host_bora_logo.png',
             width: 50,
             errorBuilder: (context, error, stackTrace) => Icon(
               Icons.home_work_rounded,

@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,6 +10,7 @@ import 'package:get/get.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_view.dart';
@@ -31,8 +31,6 @@ class HomeView extends BaseView<HomeController> {
   String _t(BuildContext context, String en, String sw) {
     return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
   }
-
-  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -147,23 +145,30 @@ class HomeView extends BaseView<HomeController> {
               children: [
                 _buildPropertyOverview(context),
                 const HubInsightBanner(),
-                const SizedBox(height: 24),
-                _buildHorizontalGuestSection(
-                  context,
-                  title: appLocalization.homeCheckInGuestsToday,
-                  list: controller.checkInsToday,
-                  emptyMessage: appLocalization.homeNoCheckInsToday,
-                ),
-                const SizedBox(height: 24),
-                _buildHorizontalGuestSection(
-                  context,
-                  title: appLocalization.homeCheckOutGuestsToday,
-                  list: controller.checkOutsToday,
-                  emptyMessage: appLocalization.homeNoCheckOutsToday,
-                ),
-                const SizedBox(height: 24),
-                _buildUpcomingCheckIns(context),
-                const SizedBox(height: 24),
+                // const SizedBox(height: 24),
+                const SizedBox(height: 12),
+                const Center(child: _PulsingDownArrow()),
+                const SizedBox(height: 20),
+                if (controller.checkInsToday.isNotEmpty) ...[
+                  _buildHorizontalGuestSection(
+                    context,
+                    title: appLocalization.homeCheckInGuestsToday,
+                    list: controller.checkInsToday,
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (controller.checkOutsToday.isNotEmpty) ...[
+                  _buildHorizontalGuestSection(
+                    context,
+                    title: appLocalization.homeCheckOutGuestsToday,
+                    list: controller.checkOutsToday,
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (controller.checkIns.isNotEmpty) ...[
+                  _buildUpcomingCheckIns(context),
+                  const SizedBox(height: 24),
+                ],
                 _buildQuickActions(context),
                 const SizedBox(height: 24),
               ],
@@ -232,10 +237,13 @@ class HomeView extends BaseView<HomeController> {
     BuildContext context, {
     required String title,
     required RxList<CheckInItem> list,
-    required String emptyMessage,
     VoidCallback? onSeeAll,
     String? seeAllLabel,
   }) {
+    if (list.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -269,19 +277,7 @@ class HomeView extends BaseView<HomeController> {
         const SizedBox(height: 12),
         Obx(() {
           if (list.isEmpty) {
-            return SizedBox(
-              height: 120,
-              child: Center(
-                child: Text(
-                  emptyMessage,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: context.tokens.textMuted,
-                  ),
-                ),
-              ),
-            );
+            return const SizedBox.shrink();
           }
           return SizedBox(
             height: 200,
@@ -312,15 +308,14 @@ class HomeView extends BaseView<HomeController> {
   }
 
   Widget _buildUpcomingCheckIns(BuildContext context) {
+    if (controller.checkIns.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return _buildHorizontalGuestSection(
       context,
       title: _t(context, 'Upcoming Check-ins', 'Wanaoingia Hivi Karibuni'),
       list: controller.checkIns,
-      emptyMessage: _t(
-        context,
-        'No upcoming check-ins',
-        'Hakuna wanaoingia hivi karibuni',
-      ),
       onSeeAll: controller.seeAllCheckIns,
       seeAllLabel: _t(context, 'See All', 'Ona Yote'),
     );
@@ -426,6 +421,71 @@ class HomeView extends BaseView<HomeController> {
   }
 }
 
+class _PulsingDownArrow extends StatefulWidget {
+  const _PulsingDownArrow();
+
+  @override
+  State<_PulsingDownArrow> createState() => _PulsingDownArrowState();
+}
+
+class _PulsingDownArrowState extends State<_PulsingDownArrow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _pulse = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'More content below',
+      child: AnimatedBuilder(
+        animation: _pulse,
+        builder: (context, child) {
+          final progress = _pulse.value;
+          return Opacity(
+            opacity: 0.55 + (progress * 0.45),
+            child: Transform.translate(
+              offset: Offset(0, progress * 6),
+              child: Transform.scale(
+                scale: 0.92 + (progress * 0.08),
+                child: child,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.colorPrimary.withValues(alpha: 0.12),
+          ),
+          child: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.colorPrimary,
+            size: 28,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _MetricCard extends StatelessWidget {
   final String title;
   final String value;
@@ -467,12 +527,20 @@ class _MetricCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: c.headline,
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: c.headline,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 4),
@@ -873,7 +941,11 @@ class _QuickActionTile extends StatelessWidget {
                   ),
                   alignment: Alignment.center,
                   child: materialIcon != null
-                      ? Icon(materialIcon, size: 24, color: AppColors.colorPrimary)
+                      ? Icon(
+                          materialIcon,
+                          size: 24,
+                          color: AppColors.colorPrimary,
+                        )
                       : SizedBox(
                           width: 20,
                           height: 20,

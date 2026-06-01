@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paa_yangu/app/core/theme/app_theme_tokens.dart';
+import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import 'package:flutter_svg/svg.dart';
@@ -48,7 +48,7 @@ class OnboardingView extends BaseView<OnboardingController> {
                   children: [
                     Center(
                       child: Image.asset(
-                        'images/paa_yangu_logo.png',
+                        'images/host_bora_logo.png',
                         width: 100,
                         errorBuilder: (_, __, ___) => Icon(
                           Icons.home_work_rounded,

@@ -1,7 +1,7 @@
 # UI Improvement Implementation Plan
 
 **Based on:** [UI Trends That Are Actually Happening (Mohit Phogat, Apr 2026)](https://medium.com/@mohitphogat/ui-trends-that-are-actually-happening-and-worth-paying-attention-to-4c632440ba8b)  
-**Product:** Paa Yangu (Flutter / GetX — Rent + BnB)  
+**Product:** Host Bora (Flutter / GetX — Rent + BnB)  
 **Baseline alignment:** ~50% across eight trends (see assessment in product discussion, May 2026)  
 **Target after plan:** ~70–75% on trends #2, #5, #6; preserve strengths on #7 and #8
 

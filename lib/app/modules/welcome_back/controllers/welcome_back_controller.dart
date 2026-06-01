@@ -183,6 +183,7 @@ class WelcomeBackController extends BaseController {
       _repository.signIn(loginRequest),
       onError: _handleLoginResponseError,
       onSuccess: _handleLoginResponseSuccess,
+      useFullScreenLoader: true
     );
   }
 
