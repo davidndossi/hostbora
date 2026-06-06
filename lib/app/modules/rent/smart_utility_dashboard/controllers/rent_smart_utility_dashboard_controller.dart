@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -5,7 +7,11 @@ import '../../../../core/base/base_controller.dart';
 import '../../../../routes/app_pages.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
+import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_utility_topup_local_data_source.dart';
+import '../../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../../data/repository/app_repository.dart';
+import '../utils/luku_sms_ocr_parser.dart';
 
 enum UtilityActivityType { lukuTopUp, waterBill, other }
 
@@ -29,13 +35,19 @@ class UtilityActivityItem {
 
 class RentSmartUtilityDashboardController extends BaseController {
   RentSmartUtilityDashboardController()
-      : _expenseLocal = Get.find<ExpenseLocalDataSource>(),
-        _propertyLocal = Get.find<PropertyLocalDataSource>(),
-        _topUpLocal = Get.find<RentUtilityTopUpLocalDataSource>();
+    : _expenseLocal = Get.find<ExpenseLocalDataSource>(),
+      _propertyLocal = Get.find<PropertyLocalDataSource>(),
+      _topUpLocal = Get.find<RentUtilityTopUpLocalDataSource>(),
+      _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+      _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+      _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final ExpenseLocalDataSource _expenseLocal;
   final PropertyLocalDataSource _propertyLocal;
   final RentUtilityTopUpLocalDataSource _topUpLocal;
+  final AppRepository _repository;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
 
   final loading = true.obs;
   final unitLabel = ''.obs;
@@ -76,8 +88,9 @@ class RentSmartUtilityDashboardController extends BaseController {
       if (properties.isNotEmpty) {
         final p = properties.first;
         final loc = p.propertyLocation.trim();
-        final ref =
-            p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}';
+        final ref = p.propertyRef.trim().isNotEmpty
+            ? p.propertyRef.trim()
+            : 'legacy_${p.id}';
         propertyRef.value = ref;
         if (loc.isNotEmpty) {
           unitLabel.value = 'UNIT · ${loc.toUpperCase()}';
@@ -123,9 +136,12 @@ class RentSmartUtilityDashboardController extends BaseController {
 
       // Fall back to utility expenses for any remaining activity context.
       if (activities.isEmpty) {
-        final expenses = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
-        final utilityExpenses =
-            expenses.where((e) => e.category.trim() == 'Utilities').toList();
+        final expenses = await _expenseLocal.getAllNewestFirst(
+          workspaceType: 'rent',
+        );
+        final utilityExpenses = expenses
+            .where((e) => e.category.trim() == 'Utilities')
+            .toList();
         if (utilityExpenses.isNotEmpty) {
           _buildActivityFromExpenses(utilityExpenses);
         }
@@ -143,8 +159,7 @@ class RentSmartUtilityDashboardController extends BaseController {
 
     for (final t in topUps.take(10)) {
       final date = DateTime.tryParse(t.dateIso);
-      final dateLabel =
-          date == null ? '' : DateFormat('MMM d').format(date);
+      final dateLabel = date == null ? '' : DateFormat('dd/MM').format(date);
       final provider = t.provider.trim().isEmpty
           ? (_isSw ? 'Pesa kwa Simu' : 'Mobile Money')
           : t.provider.trim();
@@ -186,31 +201,34 @@ class RentSmartUtilityDashboardController extends BaseController {
 
     for (final e in utilityExpenses.take(6)) {
       final date = DateTime.tryParse(e.datePaidIso);
-      final dateLabel = date == null ? '' : DateFormat('MMM d').format(date);
+      final dateLabel = date == null ? '' : DateFormat('dd/MM').format(date);
       final combined = (e.notes + e.category).toLowerCase();
       final isWater = combined.contains('water') || combined.contains('maji');
       final isLuku = combined.contains('luku') || combined.contains('umeme');
 
       if (isWater) {
-        items.add(UtilityActivityItem(
-          type: UtilityActivityType.waterBill,
-          title: _isSw ? 'Bili ya Maji' : 'Water Bill',
-          subtitle:
-              'Auto-Debit${dateLabel.isEmpty ? '' : ' • $dateLabel'}',
-          impactLabel: '${(e.amountValue / 10).round()} L',
-          amountLabel: 'TZS ${money.format(e.amountValue.round())}',
-          isPositive: false,
-        ));
+        items.add(
+          UtilityActivityItem(
+            type: UtilityActivityType.waterBill,
+            title: _isSw ? 'Bili ya Maji' : 'Water Bill',
+            subtitle: 'Auto-Debit${dateLabel.isEmpty ? '' : ' • $dateLabel'}',
+            impactLabel: '${(e.amountValue / 10).round()} L',
+            amountLabel: 'TZS ${money.format(e.amountValue.round())}',
+            isPositive: false,
+          ),
+        );
       } else if (isLuku) {
-        items.add(UtilityActivityItem(
-          type: UtilityActivityType.lukuTopUp,
-          title: _isSw ? 'Malipo ya LUKU' : 'LUKU Top-up',
-          subtitle:
-              'Via Mobile Money${dateLabel.isEmpty ? '' : ' • $dateLabel'}',
-          impactLabel: '+${(e.amountValue / 700).toStringAsFixed(1)} kWh',
-          amountLabel: 'TZS ${money.format(e.amountValue.round())}',
-          isPositive: true,
-        ));
+        items.add(
+          UtilityActivityItem(
+            type: UtilityActivityType.lukuTopUp,
+            title: _isSw ? 'Malipo ya LUKU' : 'LUKU Top-up',
+            subtitle:
+                'Via Mobile Money${dateLabel.isEmpty ? '' : ' • $dateLabel'}',
+            impactLabel: '+${(e.amountValue / 700).toStringAsFixed(1)} kWh',
+            amountLabel: 'TZS ${money.format(e.amountValue.round())}',
+            isPositive: true,
+          ),
+        );
       }
     }
 
@@ -219,8 +237,11 @@ class RentSmartUtilityDashboardController extends BaseController {
 
   void _updateWeeklyTrend(List<RentUtilityTopUpRecord> topUps) {
     final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    final start = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
     final totals = List<double>.filled(7, 0);
     for (final t in topUps) {
       final d = _parseDateOrCreated(t.dateIso, t.createdAtMs);
@@ -262,13 +283,18 @@ class RentSmartUtilityDashboardController extends BaseController {
     final now = DateTime.now();
     DateTime? latestDate;
     if (topUps.isNotEmpty) {
-      latestDate = _parseDateOrCreated(topUps.first.dateIso, topUps.first.createdAtMs);
+      latestDate = _parseDateOrCreated(
+        topUps.first.dateIso,
+        topUps.first.createdAtMs,
+      );
     }
-    final recencyDays =
-        latestDate == null ? 999 : now.difference(latestDate).inDays;
+    final recencyDays = latestDate == null
+        ? 999
+        : now.difference(latestDate).inDays;
     final hasAnyBalance = lukuUnits.value > 0 || waterLiters.value > 0;
     final isLow =
-        lukuCoverageDays.value <= 2 || (waterCapacity.value > 0 && waterProgress < 0.2);
+        lukuCoverageDays.value <= 2 ||
+        (waterCapacity.value > 0 && waterProgress < 0.2);
 
     if (!hasAnyBalance) {
       globalStatus.value = _isSw ? 'Hakuna data' : 'No Data';
@@ -303,7 +329,7 @@ class RentSmartUtilityDashboardController extends BaseController {
     DateTime? date,
   }) async {
     final when = date ?? DateTime.now();
-    await _topUpLocal.insert(
+    final localId = await _topUpLocal.insert(
       kind: RentUtilityKind.luku,
       unitsAdded: kwh,
       amountTsh: amountTsh,
@@ -313,11 +339,61 @@ class RentSmartUtilityDashboardController extends BaseController {
       propertyRef: propertyRef.value,
       dateIso: when.toIso8601String(),
     );
+
+    final payload = <String, dynamic>{
+      'kind': RentUtilityKind.luku,
+      'unitsAdded': kwh,
+      'amountTsh': amountTsh,
+      'provider': provider,
+      'notes': notes,
+      'propertyLabel': propertyLabel.value,
+      'propertyRef': propertyRef.value,
+      'dateIso': when.toIso8601String(),
+    };
+    try {
+      final res = await _repository.addUtilityTopUp(payload);
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201';
+      if (!ok) throw Exception(res.message ?? 'API error');
+    } catch (_) {
+      await _syncQueue.enqueue(
+        entityType: 'utility',
+        operation: 'create',
+        payloadJson: jsonEncode(payload),
+        dedupeKey: 'utility:create:luku:$localId',
+      );
+      _syncWorker.runNow();
+    }
+
     await loadAll();
     showSuccessMessage(
       _isSw
           ? 'Umeongeza ${kwh.toStringAsFixed(1)} kWh za LUKU'
           : 'Added ${kwh.toStringAsFixed(1)} kWh of LUKU',
+    );
+  }
+
+  Future<void> addLukuTopUpsFromSms(List<LukuSmsTopUpDraft> drafts) async {
+    if (drafts.isEmpty) return;
+    for (final draft in drafts) {
+      await _topUpLocal.insert(
+        kind: RentUtilityKind.luku,
+        unitsAdded: draft.unitsKwh,
+        amountTsh: draft.amountTsh,
+        provider: 'SMS OCR',
+        notes: draft.notes,
+        propertyLabel: propertyLabel.value,
+        propertyRef: propertyRef.value,
+        dateIso: draft.date.toIso8601String(),
+      );
+    }
+    await loadAll();
+    final count = drafts.length;
+    showSuccessMessage(
+      _isSw
+          ? 'Umeingiza malipo $count ya LUKU'
+          : 'Imported $count LUKU top-up${count == 1 ? '' : 's'}',
     );
   }
 
@@ -330,7 +406,7 @@ class RentSmartUtilityDashboardController extends BaseController {
     DateTime? date,
   }) async {
     final when = date ?? DateTime.now();
-    await _topUpLocal.insert(
+    final localId = await _topUpLocal.insert(
       kind: RentUtilityKind.water,
       unitsAdded: liters,
       amountTsh: amountTsh,
@@ -340,6 +416,33 @@ class RentSmartUtilityDashboardController extends BaseController {
       propertyRef: propertyRef.value,
       dateIso: when.toIso8601String(),
     );
+
+    final payload = <String, dynamic>{
+      'kind': RentUtilityKind.water,
+      'unitsAdded': liters,
+      'amountTsh': amountTsh,
+      'provider': provider,
+      'notes': notes,
+      'propertyLabel': propertyLabel.value,
+      'propertyRef': propertyRef.value,
+      'dateIso': when.toIso8601String(),
+    };
+    try {
+      final res = await _repository.addUtilityTopUp(payload);
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201';
+      if (!ok) throw Exception(res.message ?? 'API error');
+    } catch (_) {
+      await _syncQueue.enqueue(
+        entityType: 'utility',
+        operation: 'create',
+        payloadJson: jsonEncode(payload),
+        dedupeKey: 'utility:create:water:$localId',
+      );
+      _syncWorker.runNow();
+    }
+
     await loadAll();
     showSuccessMessage(
       _isSw

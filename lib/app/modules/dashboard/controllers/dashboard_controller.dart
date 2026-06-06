@@ -8,29 +8,31 @@ import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/booking_api_response.dart';
+import '../../../core/utils/rent_portfolio_metrics.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/currency_service.dart';
-import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/model/community.dart';
 import '../../../data/model/user_community.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 class DashboardController extends BaseController {
 
   final isLoading = true.obs;
-  final isMember = false.obs;
-  final isLeader = false.obs;
-  final isAdmin = false.obs;
-  final showList = false.obs;
+  // final isMember = false.obs;
+  // final isLeader = false.obs;
+  // final isAdmin = false.obs;
+  // final showList = false.obs;
 
   final PreferenceManager _preferenceManager = Get.find(tag: (PreferenceManager)
       .toString());
@@ -40,8 +42,7 @@ class DashboardController extends BaseController {
       Get.find<ExpenseLocalDataSource>();
   final PropertyLocalDataSource _propertyLocal =
       Get.find<PropertyLocalDataSource>();
-  final WorkspaceContextService _workspaceContext =
-      Get.find<WorkspaceContextService>();
+  final TenantLocalDataSource _tenantLocal = Get.find<TenantLocalDataSource>();
   final AppRepository _repository =
       Get.find<AppRepository>(tag: (AppRepository).toString());
   final PendingBookingsStore _pendingBookingsStore = PendingBookingsStore();
@@ -49,8 +50,6 @@ class DashboardController extends BaseController {
       BnbBookingPendingLoader(
     syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
   );
-
-  static final _money = NumberFormat('#,###', 'en_US');
 
   final isBnbWorkspace = true.obs;
   final bnbBookingsCount = 0.obs;
@@ -132,6 +131,38 @@ class DashboardController extends BaseController {
   final avgDailyExpenseChange = '+0%'.obs;
   final avgDailyExpenseUp = true.obs;
 
+  final _chartIncome = List<double>.filled(7, 0).obs;
+  final _chartExpense = List<double>.filled(7, 0).obs;
+  final _incomeTotal = 0.0.obs;
+  final _expenseTotal = 0.0.obs;
+  final _profitTrendPercent = 0.0.obs;
+  final _monthlyIncome = 0.0.obs;
+  final _occupancyPercent = 0.obs;
+  final _activeLeases = 0.obs;
+  final _totalArrears = 0.0.obs;
+
+  List<double> get chartIncome => _chartIncome;
+  List<double> get chartExpense => _chartExpense;
+
+  CurrencyService get _currency => Get.find<CurrencyService>();
+
+  String get netProfitLabel =>
+      _currency.formatBase((_incomeTotal.value - _expenseTotal.value).round());
+  String get totalIncomeLabel => _currency.formatBase(_incomeTotal.value.round());
+  String get expensesLabel => _currency.formatBase(_expenseTotal.value.round());
+  String get profitTrendLabel {
+    final p = _profitTrendPercent.value;
+    final sign = p > 0 ? '+' : '';
+    return '$sign${p.toStringAsFixed(1)}%';
+  }
+
+  String get monthlyIncomeLabel =>
+      _currency.formatBase(_monthlyIncome.value.round());
+  String get occupancyLabel => '${_occupancyPercent.value}%';
+  String get activeLeasesLabel => '${_activeLeases.value}';
+  String get totalArrearsLabel =>
+      _currency.formatBase(_totalArrears.value.round());
+
   @override
   void onInit() {
     _bootstrap();
@@ -148,7 +179,6 @@ class DashboardController extends BaseController {
 
   Future<void> _bootstrap() async {
     await getFirebaseToken();
-    isAdmin(await _preferenceManager.getBool('isAdmin'));
   }
 
   Future<void> getFirebaseToken() async {
@@ -162,24 +192,94 @@ class DashboardController extends BaseController {
     }
   }
 
+  Future<void> refreshDashboard() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final weekStart = today.subtract(const Duration(days: 6));
+
+    final incomeRows = await _incomeLocal.getAllNewestFirst();
+    final expenseRows = await _expenseLocal.getAllNewestFirst();
+
+    var incomeTotal = 0.0;
+    var expenseTotal = 0.0;
+    final weekIncome = List<double>.filled(7, 0);
+    final weekExpense = List<double>.filled(7, 0);
+    var thisMonthIncome = 0.0;
+    var thisMonthExpense = 0.0;
+    var lastMonthIncome = 0.0;
+    var lastMonthExpense = 0.0;
+
+    final thisMonthStart = DateTime(now.year, now.month, 1);
+    final lastMonthStart = DateTime(now.year, now.month - 1, 1);
+    final thisMonthEnd = DateTime(now.year, now.month + 1, 1);
+
+    for (final row in incomeRows) {
+      final d = _safeDate(row.datePaidIso, row.createdAtMs);
+      incomeTotal += row.amountValue;
+      if (!d.isBefore(weekStart) && !d.isAfter(today)) {
+        weekIncome[differenceInDays(weekStart, d)] += row.amountValue;
+      }
+      if (!d.isBefore(thisMonthStart) && d.isBefore(thisMonthEnd)) {
+        thisMonthIncome += row.amountValue;
+      } else if (!d.isBefore(lastMonthStart) && d.isBefore(thisMonthStart)) {
+        lastMonthIncome += row.amountValue;
+      }
+    }
+
+    for (final row in expenseRows) {
+      final d = _safeDate(row.datePaidIso, row.createdAtMs);
+      expenseTotal += row.amountValue;
+      if (!d.isBefore(weekStart) && !d.isAfter(today)) {
+        weekExpense[differenceInDays(weekStart, d)] += row.amountValue;
+      }
+      if (!d.isBefore(thisMonthStart) && d.isBefore(thisMonthEnd)) {
+        thisMonthExpense += row.amountValue;
+      } else if (!d.isBefore(lastMonthStart) && d.isBefore(thisMonthStart)) {
+        lastMonthExpense += row.amountValue;
+      }
+    }
+
+    final thisNet = thisMonthIncome - thisMonthExpense;
+    final lastNet = lastMonthIncome - lastMonthExpense;
+    final trend = lastNet.abs() < 0.01 ? (thisNet == 0 ? 0.0 : 100.0) : ((thisNet - lastNet) / lastNet.abs()) * 100.0;
+
+    _incomeTotal.value = incomeTotal;
+    _expenseTotal.value = expenseTotal;
+    _chartIncome.assignAll(weekIncome);
+    _chartExpense.assignAll(weekExpense);
+    _profitTrendPercent.value = trend;
+
+    final userId = (await _preferenceManager.getUser()).id ?? '';
+    final propertyRows = await _propertyLocal.fetchAll(userId: userId);
+    final tenants = await _tenantLocal.getAllNewestFirst();
+    final portfolio = await RentPortfolioMetricsCalculator.compute(
+      properties: propertyRows.toList(),
+      tenants: tenants,
+      incomeRows: incomeRows,
+      now: now,
+    );
+    _monthlyIncome.value = portfolio.monthlyIncome;
+    _occupancyPercent.value = portfolio.occupancyPercent;
+    _activeLeases.value = portfolio.activeLeases;
+    _totalArrears.value = portfolio.totalArrears;
+  }
+
   Future<void> loadDashboard({bool quiet = false}) async {
     if (!quiet) isLoading.value = true;
     try {
-      final ws = await _workspaceContext.getWorkspaceType();
-      isBnbWorkspace.value = ws == 'bnb';
-      if (isBnbWorkspace.value) {
+      // if (isBnbWorkspace.value) {
         await _loadBnbOverviewStats();
-      } else {
-        weeklyRevenue.assignAll(List<double>.filled(7, 0));
-        weeklyOccupancyPercent.assignAll(List<double>.filled(7, 0));
-      }
+      // } else {
+      //   weeklyRevenue.assignAll(List<double>.filled(7, 0));
+      //   weeklyOccupancyPercent.assignAll(List<double>.filled(7, 0));
+      // }
       final incomes =
-          await _incomeLocal.getAllNewestFirst(workspaceType: ws);
+          await _incomeLocal.getAllNewestFirst();
       final expenses =
-          await _expenseLocal.getAllNewestFirst(workspaceType: ws);
+          await _expenseLocal.getAllNewestFirst();
 
       logger.d(
-        'Dashboard loadDashboard workspace=$ws '
+        'Dashboard loadDashboard '
         'incomeRows=${incomes.length} expenseRows=${expenses.length}',
       );
       final incomeSumAll =
@@ -434,13 +534,6 @@ class DashboardController extends BaseController {
   void selectIncome() => isIncomeSelected.value = true;
   void selectExpenses() => isIncomeSelected.value = false;
 
-  void openBookings() => Get.toNamed(Routes.ALL_BOOKINGS);
-
-  void openProperties() => Get.toNamed(Routes.MY_PROPERTIES);
-
-  void openTodayRevenue() =>
-      Get.toNamed(Routes.RENT_MANAGE_PAYMENTS, arguments: {'ws': 'bnb'});
-
   Future<void> _loadBnbOverviewStats() async {
     final weekStart = _currentWeekMondayStart();
     final merge = BnbBookingMerge(pending: _pendingBookingsStore);
@@ -506,8 +599,8 @@ class DashboardController extends BaseController {
     bnbTodayRevenue.value =
         Get.find<CurrencyService>().formatBase(todaySum.round());
 
-    _assignWeeklyRevenue(incomes, weekStart);
-    _assignWeeklyOccupancy(merged.values, unitsTotal, weekStart);
+    // _assignWeeklyRevenue(incomes, weekStart);
+    // _assignWeeklyOccupancy(merged.values, unitsTotal, weekStart);
     final occ = weeklyOccupancyPercent;
     if (occ.isEmpty) {
       bnbOccupancyRate.value = 0;
@@ -522,53 +615,6 @@ class DashboardController extends BaseController {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day)
         .subtract(Duration(days: now.weekday - 1));
-  }
-
-  void _assignWeeklyRevenue(List<IncomeRecord> incomes, DateTime weekStart) {
-    final totals = List<double>.filled(7, 0);
-    for (final r in incomes) {
-      final d = r.paidLocalCalendarOrCreated();
-      final day = DateTime(d.year, d.month, d.day);
-      final diff = day.difference(weekStart).inDays;
-      if (diff >= 0 && diff < 7) totals[diff] += r.amountValue;
-    }
-    weeklyRevenue.assignAll(totals);
-  }
-
-  /// Occupancy per calendar day: for each Mon–Sun day,
-  /// `occupied / totalUnits * 100`, capped at 100.
-  ///
-  /// - **Available** unit-nights for a day = [totalUnits] (all BnB units).
-  /// - **Occupied** unit-nights = count of non-checked-out bookings whose stay
-  ///   overlaps that day on half-open `[checkIn, checkOut)` (checkout day excluded).
-  /// - Each booking counts as one unit (no per-booking unit count in [CheckInItem]).
-  void _assignWeeklyOccupancy(
-    Iterable<CheckInItem> bookings,
-    int totalUnits,
-    DateTime weekStart,
-  ) {
-    final pct = List<double>.filled(7, 0);
-    if (totalUnits <= 0) {
-      weeklyOccupancyPercent.assignAll(pct);
-      return;
-    }
-    for (var i = 0; i < 7; i++) {
-      final day = weekStart.add(Duration(days: i));
-      var occupied = 0;
-      for (final item in bookings) {
-        if (_bookingOccupiesCalendarDay(item, day)) occupied++;
-      }
-      pct[i] = ((occupied / totalUnits) * 100).clamp(0.0, 100.0);
-    }
-    weeklyOccupancyPercent.assignAll(pct);
-  }
-
-  static bool _bookingOccupiesCalendarDay(CheckInItem item, DateTime day) {
-    if (item.isInactive) return false;
-    final ci = _parseCalendarDay(item.checkInIso);
-    final co = _parseCalendarDay(item.checkOutIso);
-    if (ci == null || co == null) return false;
-    return !day.isBefore(ci) && day.isBefore(co);
   }
 
   static DateTime? _parseCalendarDay(String raw) {
@@ -615,6 +661,37 @@ class DashboardController extends BaseController {
     }
     if (p.units > 0) return p.units;
     return 1;
+  }
+
+  Future<void> openAddExpense() async {
+    final saved = await Get.toNamed(Routes.ADD_EXPENSE);
+    if (saved == true) {
+      await refreshDashboard();
+    }
+  }
+
+  Future<void> openAddIncome() async {
+    final saved = await Get.toNamed(Routes.RECORD_PAYMENT);
+    if (saved == true) {
+      await refreshDashboard();
+      await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+    }
+  }
+
+  int differenceInDays(DateTime start, DateTime end) {
+    final s = DateTime(start.year, start.month, start.day);
+    final e = DateTime(end.year, end.month, end.day);
+    return e.difference(s).inDays.clamp(0, 6);
+  }
+
+  DateTime _safeDate(String iso, int createdAtMs) {
+    try {
+      final parsed = DateTime.parse(iso);
+      return DateTime(parsed.year, parsed.month, parsed.day);
+    } catch (_) {
+      final fromMs = DateTime.fromMillisecondsSinceEpoch(createdAtMs);
+      return DateTime(fromMs.year, fromMs.month, fromMs.day);
+    }
   }
 
 }

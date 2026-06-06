@@ -305,7 +305,7 @@ class ExpenseAnalysisController extends BaseController {
       final d = _parseExpenseDateOrCreated(r);
       buf.writeln(
         [
-          _csvEscape(DateFormat.yMMMd().format(d)),
+          _csvEscape(DateFormat('dd/MM/yyyy').format(d)),
           _csvEscape(_normalizedCategory(r.category)),
           _csvEscape(fx.formatBase(r.amountValue.round())),
           _csvEscape(_apartmentLine(r)),
@@ -332,7 +332,7 @@ class ExpenseAnalysisController extends BaseController {
     final start = rangeStart.value;
     final end = rangeEnd.value;
     dateRangeLabel.value =
-        '${DateFormat.MMMd().format(start)} – ${DateFormat.MMMd().format(end)}, ${end.year}';
+        '${DateFormat('dd/MM').format(start)} – ${DateFormat('dd/MM/yyyy').format(end)}';
     selectedProperty.value = selectedPropertyKey.value.trim().isEmpty
         ? _allPropertiesLabel
         : selectedPropertyKey.value.trim();

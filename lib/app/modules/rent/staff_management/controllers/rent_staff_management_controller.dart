@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../core/base/feedback_extensions.dart';
 import '../../../../core/utils/haptic_feedback_util.dart';
+import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_staff_local_data_source.dart';
+import '../../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../../data/repository/app_repository.dart';
 import '../../../../routes/app_pages.dart';
 import '../utils/rent_staff_pay_format.dart';
 
@@ -31,9 +36,15 @@ class RentStaffListItem {
 
 class RentStaffManagementController extends BaseController {
   RentStaffManagementController()
-    : _local = Get.find<RentStaffLocalDataSource>();
+    : _local = Get.find<RentStaffLocalDataSource>(),
+      _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+      _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+      _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final RentStaffLocalDataSource _local;
+  final AppRepository _repository;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
   final formKey = GlobalKey<FormState>();
 
   final staff = <RentStaffListItem>[].obs;
@@ -218,18 +229,63 @@ class RentStaffManagementController extends BaseController {
             paymentType: paymentType.value,
             amountValue: amount,
           );
+          final updatePayload = <String, dynamic>{
+            'id': '$editId',
+            'name': name,
+            'jobTitle': role,
+            'payDayLabel': payDay,
+            'paymentType': paymentType.value,
+            'amountValue': amount,
+          };
+          try {
+            final res = await _repository.updateStaff('$editId', updatePayload);
+            final ok = res.responseCode == '0' ||
+                res.responseCode == '200' ||
+                res.responseCode == '201';
+            if (!ok) throw Exception(res.message ?? 'API error');
+          } catch (_) {
+            await _syncQueue.enqueue(
+              entityType: 'staff',
+              operation: 'update',
+              payloadJson: jsonEncode(updatePayload),
+              dedupeKey: 'staff:update:$editId',
+            );
+            _syncWorker.runNow();
+          }
           showSuccessWithHaptic('Staff updated');
           Get.back(result: true);
           return;
         }
 
-        await _local.insert(
+        final localId = await _local.insert(
           name: name,
           jobTitle: role,
           payDayLabel: payDay,
           paymentType: paymentType.value,
           amountValue: amount,
         );
+        final createPayload = <String, dynamic>{
+          'name': name,
+          'jobTitle': role,
+          'payDayLabel': payDay,
+          'paymentType': paymentType.value,
+          'amountValue': amount,
+        };
+        try {
+          final res = await _repository.createStaff(createPayload);
+          final ok = res.responseCode == '0' ||
+              res.responseCode == '200' ||
+              res.responseCode == '201';
+          if (!ok) throw Exception(res.message ?? 'API error');
+        } catch (_) {
+          await _syncQueue.enqueue(
+            entityType: 'staff',
+            operation: 'create',
+            payloadJson: jsonEncode(createPayload),
+            dedupeKey: 'staff:create:$localId',
+          );
+          _syncWorker.runNow();
+        }
         formKey.currentState?.reset();
         fullNameController.clear();
         amountController.clear();

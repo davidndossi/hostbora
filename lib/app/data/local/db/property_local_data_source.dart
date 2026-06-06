@@ -39,6 +39,7 @@ class PropertyRecord {
   final String minRentalDuration;
   final String unitsJson;
   final int floorCount;
+
   /// Bundled asset (`images/LR-n.ext`), local file path, or remote URL.
   final String coverPhotoPath;
 
@@ -67,22 +68,22 @@ class PropertyRecord {
   }
 
   Map<String, Object?> toInsertMap() => {
-        'name': propertyName,
-        'type': propertyType,
-        'location': propertyLocation,
-        'property_ref': propertyRef,
-        'tenants': tenants,
-        'units': units,
-        'owner_user_id': ownerUserId,
-        'workspace_type': workspaceType,
-        'created_at_ms': createdAtMs,
-        'rent_amount': rentAmount,
-        'rent_frequency': rentFrequency,
-        'min_rental_duration': minRentalDuration,
-        'units_json': unitsJson,
-        'floor_count': floorCount,
-        'cover_photo_path': coverPhotoPath,
-      };
+    'name': propertyName,
+    'type': propertyType,
+    'location': propertyLocation,
+    'property_ref': propertyRef,
+    'tenants': tenants,
+    'units': units,
+    'owner_user_id': ownerUserId,
+    'workspace_type': workspaceType,
+    'created_at_ms': createdAtMs,
+    'rent_amount': rentAmount,
+    'rent_frequency': rentFrequency,
+    'min_rental_duration': minRentalDuration,
+    'units_json': unitsJson,
+    'floor_count': floorCount,
+    'cover_photo_path': coverPhotoPath,
+  };
 }
 
 class PropertyLocalDataSource {
@@ -155,6 +156,25 @@ class PropertyLocalDataSource {
     return getByPropertyRef(id);
   }
 
+  Future<List<PropertyRecord>> fetchAll({required String userId}) async {
+    final db = await database;
+    if (userId.trim().isEmpty) {
+      final maps = await db.query(
+        _table,
+        orderBy: 'created_at_ms DESC',
+      );
+      return maps.map(PropertyRecord.fromMap).toList();
+    }
+    final maps = await db.query(
+      _table,
+      where:
+      '(owner_user_id = ? OR owner_user_id = "")',
+      whereArgs: [userId],
+      orderBy: 'created_at_ms DESC',
+    );
+    return maps.map(PropertyRecord.fromMap).toList();
+  }
+
   Future<List<PropertyRecord>> getAllNewestFirst() async {
     return getAllNewestFirstChunked();
   }
@@ -182,7 +202,10 @@ class PropertyLocalDataSource {
     final out = <PropertyRecord>[];
     var offset = 0;
     while (true) {
-      final page = await getAllNewestFirstPage(limit: safeChunk, offset: offset);
+      final page = await getAllNewestFirstPage(
+        limit: safeChunk,
+        offset: offset,
+      );
       if (page.isEmpty) break;
       out.addAll(page);
       if (page.length < safeChunk) break;
@@ -199,8 +222,9 @@ class PropertyLocalDataSource {
     if (userId.trim().isEmpty) {
       final maps = await db.query(
         _table,
-        where: 'workspace_type = ? OR workspace_type = ""',
-        whereArgs: [workspaceType],
+        where:
+            'workspace_type = ? OR workspace_type = ? OR workspace_type = ""',
+        whereArgs: [workspaceType, 'both'],
         orderBy: 'created_at_ms DESC',
       );
       return maps.map(PropertyRecord.fromMap).toList();
@@ -208,8 +232,8 @@ class PropertyLocalDataSource {
     final maps = await db.query(
       _table,
       where:
-          '(workspace_type = ? OR workspace_type = "") AND (owner_user_id = ? OR owner_user_id = "")',
-      whereArgs: [workspaceType, userId],
+          '(workspace_type = ? OR workspace_type = ? OR workspace_type = "") AND (owner_user_id = ? OR owner_user_id = "")',
+      whereArgs: [workspaceType, 'both', userId],
       orderBy: 'created_at_ms DESC',
     );
     return maps.map(PropertyRecord.fromMap).toList();
@@ -237,8 +261,9 @@ class PropertyLocalDataSource {
     if (userId.trim().isEmpty) {
       final maps = await db.query(
         _table,
-        where: 'workspace_type = ? OR workspace_type = ""',
-        whereArgs: [workspaceType],
+        where:
+            'workspace_type = ? OR workspace_type = ? OR workspace_type = ""',
+        whereArgs: [workspaceType, 'both'],
         orderBy: 'created_at_ms DESC',
         limit: safeLimit,
         offset: safeOffset,
@@ -249,7 +274,7 @@ class PropertyLocalDataSource {
       '''
       SELECT p.*
       FROM $_table p
-      WHERE (p.workspace_type = ? OR p.workspace_type = '')
+      WHERE (p.workspace_type = ? OR p.workspace_type = ? OR p.workspace_type = '')
         AND (
           p.owner_user_id = ?
           OR p.owner_user_id = ''
@@ -261,13 +286,22 @@ class PropertyLocalDataSource {
               ELSE p.property_ref
             END
             AND m.user_id = ?
-            AND m.workspace_type = ?
+            AND (m.workspace_type = ? OR m.workspace_type = ?)
           )
         )
       ORDER BY p.created_at_ms DESC
       LIMIT ? OFFSET ?
       ''',
-      [workspaceType, userId, userId, workspaceType, safeLimit, safeOffset],
+      [
+        workspaceType,
+        'both',
+        userId,
+        userId,
+        workspaceType,
+        'both',
+        safeLimit,
+        safeOffset,
+      ],
     );
     return maps.map(PropertyRecord.fromMap).toList();
   }

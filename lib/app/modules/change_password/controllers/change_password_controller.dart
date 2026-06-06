@@ -168,7 +168,7 @@ class ChangePasswordController extends BaseController {
         )
       );
     } else {
-      Get.toNamed(Routes.REGISTRATION);
+      Get.toNamed(Routes.CREATE_HOST_ACCOUNT);
     }
   }
 

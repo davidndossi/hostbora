@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../core/utils/rent_portfolio_metrics.dart';
@@ -50,7 +49,6 @@ class RentHubController extends BaseController {
         workspaceContext = workspaceContext ?? Get.find<WorkspaceContextService>();
 
   static const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-  static final NumberFormat _money = NumberFormat('#,###', 'en_US');
 
   final IncomeLocalDataSource _incomeLocal;
   final ExpenseLocalDataSource _expenseLocal;
@@ -209,14 +207,14 @@ class RentHubController extends BaseController {
   void onConciergeSupportTap() {}
 
   Future<void> openAddExpense() async {
-    final saved = await Get.toNamed(Routes.RENT_ADD_NEW_EXPENSE);
+    final saved = await Get.toNamed(Routes.ADD_EXPENSE);
     if (saved == true) {
       await refreshDashboard();
     }
   }
 
   Future<void> openAddIncome() async {
-    final saved = await Get.toNamed(Routes.RENT_ADD_INCOME_FORM);
+    final saved = await Get.toNamed(Routes.RECORD_PAYMENT);
     if (saved == true) {
       await refreshDashboard();
       await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../model/general_response.dart';
 import '../../repository/app_repository.dart';
@@ -16,13 +17,28 @@ class PortfolioAiHybridService extends GetxService {
     CurrencyService? currencyService,
   })  : _contextService = contextService,
         _repository = repository,
-        _currency = currencyService ?? Get.find<CurrencyService>();
+        _currencyOverride = currencyService;
 
   final PortfolioAiContextService _contextService;
   final AppRepository _repository;
-  final CurrencyService _currency;
+  final CurrencyService? _currencyOverride;
 
-  Future<PortfolioAiContext> loadContext() => _contextService.build();
+  String formatMoney(num amount) {
+    try {
+      final fx = _currencyOverride ?? Get.find<CurrencyService>();
+      return fx.formatBase(amount);
+    } catch (_) {
+      return 'Tsh ${NumberFormat('#,###', 'en_US').format(amount)}';
+    }
+  }
+
+  Future<PortfolioAiContext> loadContext() async {
+    try {
+      return await _contextService.build();
+    } catch (_) {
+      return PortfolioAiContext.empty();
+    }
+  }
 
   /// Hybrid answer: local metrics when recognized, otherwise LLM with context JSON.
   Future<String> answer({
@@ -30,8 +46,7 @@ class PortfolioAiHybridService extends GetxService {
     required bool isSw,
     List<Map<String, String>> conversation = const [],
   }) async {
-    final ctx = await _contextService.build();
-    final formatMoney = (num n) => _currency.formatBase(n);
+    final ctx = await loadContext();
 
     final local = PortfolioAiLocalResolver.resolve(
       question: question,
@@ -50,11 +65,14 @@ class PortfolioAiHybridService extends GetxService {
   }
 
   Future<String> welcomeMessage({required bool isSw}) async {
-    final ctx = await _contextService.build();
-    return ctx.welcomeSummary(
-      formatMoney: (n) => _currency.formatBase(n),
-      isSw: isSw,
-    );
+    try {
+      final ctx = await loadContext();
+      return ctx.welcomeSummary(formatMoney: formatMoney, isSw: isSw);
+    } catch (_) {
+      return isSw
+          ? 'Nipo tayari kujibu maswali kuhusu mali zako. Uliza kuhusu ukodishaji, mapato, deni, au mikataba.'
+          : 'I am ready to answer questions about your properties. Ask about occupancy, income, arrears, or leases.';
+    }
   }
 
   Future<String> _answerViaLlm({
@@ -71,6 +89,25 @@ class PortfolioAiHybridService extends GetxService {
     final lang = isSw ? 'Swahili' : 'English';
     final prompt = '''
 You are the portfolio AI assistant inside a landlord app (${ctx.workspace} workspace).
+Language rules:
+- The user may ask in English, Swahili, or mixed Swahili-English.
+- Reply in the same language as the user's question.
+- If the app language is Swahili, prefer Swahili unless the user asks in English.
+Domain vocabulary:
+- mapato = income, revenue, rent collected
+- matumizi / gharama = expenses, costs
+- faida = profit
+- mpangaji / wapangaji = tenant / tenants
+- mgeni / wageni = guest / guests
+- nyumba / chumba / unit = property / room / unit
+- deni = arrears, unpaid balance
+- malipo = payment
+- kodi = rent
+- mkataba = lease / contract
+- umeme / LUKU = electricity
+- maji = water
+- matengenezo = maintenance
+- kiwango cha ukodishaji = occupancy rate
 Answer ONLY using the JSON context below. Do not invent numbers.
 If the answer is not in the context, say you do not have that data yet and suggest what the user can record in the app.
 Reply in $lang. Be concise (2-5 sentences). Use plain text, no markdown.

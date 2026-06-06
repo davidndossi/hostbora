@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '/app/core/base/base_controller.dart';
+import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
 import '/app/data/local/db/rent_property_estimate_local_data_source.dart';
+import '/app/data/local/service/offline_sync_worker_service.dart';
 import '/app/data/local/service/property_break_even_notification_service.dart';
+import '/app/data/repository/app_repository.dart';
 
 enum EstimateInputMode { approximate, itemized }
 
@@ -39,9 +44,15 @@ class EstimateCostItem {
 
 class RentPropertyRoiEstimateFormController extends BaseController {
   RentPropertyRoiEstimateFormController()
-      : _estimateLocal = Get.find<RentPropertyEstimateLocalDataSource>();
+      : _estimateLocal = Get.find<RentPropertyEstimateLocalDataSource>(),
+        _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final RentPropertyEstimateLocalDataSource _estimateLocal;
+  final AppRepository _repository;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
 
   final formKey = GlobalKey<FormState>();
 
@@ -73,6 +84,7 @@ class RentPropertyRoiEstimateFormController extends BaseController {
 
   final saving = false.obs;
   final entries = <EstimateCostItem>[].obs;
+  final draftTotal = 0.0.obs;
 
   static const Map<String, List<String>> groupedMaterials = {
     'Structural Materials': ['Cement', 'Sand', 'Aggregates (gravel)', 'Steel (rebars, rods)', 'Blocks / Bricks'],
@@ -93,9 +105,28 @@ class RentPropertyRoiEstimateFormController extends BaseController {
   }
 
   @override
+  void onInit() {
+    super.onInit();
+    quantityController.addListener(_syncDraftTotal);
+    unitCostController.addListener(_syncDraftTotal);
+  }
+
+  @override
   void onReady() {
     super.onReady();
     _loadExisting();
+  }
+
+  void _syncDraftTotal() {
+    final q = double.tryParse(
+          quantityController.text.trim().replaceAll(',', ''),
+        ) ??
+        0;
+    final u = double.tryParse(
+          unitCostController.text.trim().replaceAll(',', ''),
+        ) ??
+        0;
+    draftTotal.value = q * u;
   }
 
   Future<void> _loadExisting() async {
@@ -128,12 +159,6 @@ class RentPropertyRoiEstimateFormController extends BaseController {
 
   List<String> get expenseCategories => groupedMaterials.keys.toList();
   List<String> get filterCategories => ['All', ...expenseCategories];
-
-  double get draftTotalCost {
-    final q = double.tryParse(quantityController.text.trim().replaceAll(',', '')) ?? 0;
-    final unit = double.tryParse(unitCostController.text.trim().replaceAll(',', '')) ?? 0;
-    return q * unit;
-  }
 
   List<EstimateCostItem> get filteredEntries {
     final query = searchController.text.trim().toLowerCase();
@@ -298,18 +323,48 @@ class RentPropertyRoiEstimateFormController extends BaseController {
     saving.value = true;
     try {
       final total = totalProjectCost;
+      final expectedIncome =
+          double.tryParse(expectedMonthlyIncomeController.text.replaceAll(',', '').trim()) ?? 0;
+      final expectedExpense =
+          double.tryParse(expectedMonthlyExpenseController.text.replaceAll(',', '').trim()) ?? 0;
+      final targetOccupancy =
+          double.tryParse(targetOccupancyController.text.replaceAll(',', '').trim()) ?? 0;
       await _estimateLocal.upsert(
         propertyRef: propertyRef,
         propertyLabel: propertyLabel,
         purchaseCost: total,
         renovationCost: 0,
-        expectedMonthlyIncome:
-            double.tryParse(expectedMonthlyIncomeController.text.replaceAll(',', '').trim()) ?? 0,
-        expectedMonthlyExpense:
-            double.tryParse(expectedMonthlyExpenseController.text.replaceAll(',', '').trim()) ?? 0,
-        targetOccupancyPercent:
-            double.tryParse(targetOccupancyController.text.replaceAll(',', '').trim()) ?? 0,
+        expectedMonthlyIncome: expectedIncome,
+        expectedMonthlyExpense: expectedExpense,
+        targetOccupancyPercent: targetOccupancy,
       );
+
+      final existing = await _estimateLocal.findByPropertyRef(propertyRef);
+      final payload = <String, dynamic>{
+        'propertyRef': propertyRef,
+        'propertyLabel': propertyLabel,
+        'purchaseCost': total,
+        'renovationCost': 0,
+        'expectedMonthlyIncome': expectedIncome,
+        'expectedMonthlyExpense': expectedExpense,
+        'targetOccupancyPercent': targetOccupancy,
+      };
+      try {
+        final res = await _repository.saveEstimate(payload);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'API error');
+      } catch (_) {
+        await _syncQueue.enqueue(
+          entityType: 'estimate',
+          operation: existing != null ? 'update' : 'create',
+          payloadJson: jsonEncode(payload),
+          dedupeKey: 'estimate:create:$propertyRef',
+        );
+        _syncWorker.runNow();
+      }
+
       await PropertyBreakEvenNotificationService.refreshIfRegistered();
       showSuccessMessage('Estimates saved');
       Get.back(result: true);
@@ -322,6 +377,8 @@ class RentPropertyRoiEstimateFormController extends BaseController {
 
   @override
   void onClose() {
+    quantityController.removeListener(_syncDraftTotal);
+    unitCostController.removeListener(_syncDraftTotal);
     purchaseCostController.dispose();
     renovationCostController.dispose();
     expectedMonthlyIncomeController.dispose();

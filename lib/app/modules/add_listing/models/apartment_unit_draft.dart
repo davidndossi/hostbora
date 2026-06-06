@@ -9,6 +9,7 @@ class ApartmentUnitDraft {
     required this.unitRent,
     this.unitRentFrequency = 'Per Day',
     this.unitFloor = PropertyUnitFloor.defaultIndex,
+    this.operationMode = 'bnb',
     required this.unitDescription,
   });
 
@@ -16,10 +17,16 @@ class ApartmentUnitDraft {
   final String unitId;
   final String unitName;
   final String unitRent;
+
   /// Same labels as listing [rentFrequency] (e.g. Per Day).
   final String unitRentFrequency;
+
   /// [PropertyUnitFloor] index (0 = ground).
   final int unitFloor;
+
+  /// Unit workspace mode. For a `both` property, each unit must be either `bnb` or `rent`.
+  final String operationMode;
+
   /// Optional; may be empty.
   final String unitDescription;
 
@@ -28,24 +35,31 @@ class ApartmentUnitDraft {
       unitId.trim().isNotEmpty ? unitId.trim() : '__n:${unitName.trim()}';
 
   Map<String, dynamic> toJson() => {
-        'unitId': unitId.trim(),
-        'unitName': unitName,
-        'unitRent': unitRent,
-        'unitRentFrequency': unitRentFrequency,
-        'unitFloor': unitFloor,
-        'unitDescription': unitDescription,
-      };
+    'unitId': unitId.trim(),
+    'unitName': unitName,
+    'unitRent': unitRent,
+    'unitRentFrequency': unitRentFrequency,
+    'unitFloor': unitFloor,
+    'operationMode': operationMode,
+    'unitDescription': unitDescription,
+  };
 
   factory ApartmentUnitDraft.fromJson(Map<String, dynamic> m) {
-    final freq = m['unitRentFrequency']?.toString().trim() ??
+    final freq =
+        m['unitRentFrequency']?.toString().trim() ??
         m['rentFrequency']?.toString().trim() ??
         '';
+    final mode = (m['operationMode'] ?? m['listingMode'] ?? m['workspaceType'])
+        .toString()
+        .trim()
+        .toLowerCase();
     return ApartmentUnitDraft(
       unitId: m['unitId']?.toString() ?? '',
       unitName: m['unitName']?.toString() ?? '',
       unitRent: m['unitRent']?.toString() ?? '',
       unitRentFrequency: freq.isNotEmpty ? freq : 'Per Day',
       unitFloor: PropertyUnitFloor.parse(m['unitFloor']),
+      operationMode: mode == 'rent' ? 'rent' : 'bnb',
       unitDescription: m['unitDescription']?.toString() ?? '',
     );
   }

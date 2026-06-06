@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:host_bora/app/core/widget/skeleton_presets.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
@@ -10,6 +12,7 @@ import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../../../../l10n/app_localizations.dart';
 import '../controllers/rent_smart_utility_dashboard_controller.dart';
+import '../utils/luku_sms_ocr_parser.dart';
 
 class _UtilUi {
   _UtilUi(this.context);
@@ -25,12 +28,15 @@ class _UtilUi {
 
   Color get bg => dark ? _t.scaffoldBackgroundColor : cream;
   Color get card => dark ? _t.cardColor : Colors.white;
-  Color get softSurface => dark ? context.tokens.cardBackground : const Color(0xFFF4F2EC);
-  Color get onSurface => dark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
+  Color get softSurface =>
+      dark ? context.tokens.cardBackground : const Color(0xFFF4F2EC);
+  Color get onSurface =>
+      dark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
   Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
 }
 
-class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboardController> {
+class RentSmartUtilityDashboardView
+    extends RentBaseView<RentSmartUtilityDashboardController> {
   RentSmartUtilityDashboardView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
@@ -53,9 +59,7 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
     return SafeArea(
       child: Obx(() {
         if (controller.loading.value) {
-          return const Center(
-            child: const DefaultScreenSkeleton(),
-          );
+          return const Center(child: DefaultScreenSkeleton());
         }
         return RefreshIndicator(
           color: _UtilUi.forest,
@@ -178,7 +182,9 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
             ? 'Makadirio ya siku: ${controller.lukuCoverageDays.value}'
             : 'Estimated coverage: ${controller.lukuCoverageDays.value} days',
         onUsageGraph: controller.openLukuUsageGraph,
-        usageGraphLabel: AppLocalizations.of(ctx)!.rentUtilityLukuUsageGraphLink,
+        usageGraphLabel: AppLocalizations.of(
+          ctx,
+        )!.rentUtilityLukuUsageGraphLink,
         watermarkIcon: Icons.bolt_rounded,
         watermarkAngle: 0.14,
       ),
@@ -194,7 +200,9 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
         title: _isSw ? 'Salio la Maji' : 'Water Balance',
         actionLabel: _isSw ? 'JAZA' : 'RECHARGE',
         onAction: () => _openTopUpSheet(ctx, isLuku: false),
-        value: controller.waterLiters.value.toStringAsFixed(0).replaceAllMapped(
+        value: controller.waterLiters.value
+            .toStringAsFixed(0)
+            .replaceAllMapped(
               RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
               (m) => '${m[1]},',
             ),
@@ -202,44 +210,51 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
         progress: controller.waterProgress,
         footer: controller.nextMeterReadingLabel.value,
         onUsageGraph: controller.openWaterUsageGraph,
-        usageGraphLabel: AppLocalizations.of(ctx)!.rentUtilityWaterUsageGraphLink,
+        usageGraphLabel: AppLocalizations.of(
+          ctx,
+        )!.rentUtilityWaterUsageGraphLink,
         watermarkIcon: Icons.water_drop_rounded,
       ),
     );
   }
 
-  Future<void> _openTopUpSheet(BuildContext context, {required bool isLuku}) async {
+  Future<void> _openTopUpSheet(
+    BuildContext context, {
+    required bool isLuku,
+  }) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _UtilityTopUpSheet(
         isLuku: isLuku,
-        onSubmit: ({
-          required double units,
-          required double amount,
-          required String provider,
-          required String notes,
-          required DateTime date,
-        }) async {
-          if (isLuku) {
-            await controller.addLukuTopUp(
-              kwh: units,
-              amountTsh: amount,
-              provider: provider,
-              notes: notes,
-              date: date,
-            );
-          } else {
-            await controller.addWaterTopUp(
-              liters: units,
-              amountTsh: amount,
-              provider: provider,
-              notes: notes,
-              date: date,
-            );
-          }
-        },
+        onSubmit:
+            ({
+              required double units,
+              required double amount,
+              required String provider,
+              required String notes,
+              required DateTime date,
+            }) async {
+              if (isLuku) {
+                await controller.addLukuTopUp(
+                  kwh: units,
+                  amountTsh: amount,
+                  provider: provider,
+                  notes: notes,
+                  date: date,
+                );
+              } else {
+                await controller.addWaterTopUp(
+                  liters: units,
+                  amountTsh: amount,
+                  provider: provider,
+                  notes: notes,
+                  date: date,
+                );
+              }
+            },
+        onImportLukuTopUps: controller.addLukuTopUpsFromSms,
       ),
     );
   }
@@ -291,8 +306,13 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
               style: TextButton.styleFrom(
                 backgroundColor: _UtilUi.forest,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: Text(
                 actionLabel,
@@ -344,17 +364,18 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          footer,
-          style: TextStyle(fontSize: 11, color: u.muted),
-        ),
+        Text(footer, style: TextStyle(fontSize: 11, color: u.muted)),
         if (onUsageGraph != null && usageGraphLabel != null) ...[
           const SizedBox(height: 6),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: onUsageGraph,
-              icon: const Icon(Icons.show_chart_rounded, size: 18, color: _UtilUi.forest),
+              icon: const Icon(
+                Icons.show_chart_rounded,
+                size: 18,
+                color: _UtilUi.forest,
+              ),
               label: Text(
                 usageGraphLabel,
                 style: const TextStyle(
@@ -405,16 +426,10 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: column,
-                ),
+                Padding(padding: const EdgeInsets.all(16), child: column),
               ],
             )
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: column,
-            ),
+          : Padding(padding: const EdgeInsets.all(16), child: column),
     );
   }
 
@@ -469,16 +484,24 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
                 gridData: const FlGridData(show: false),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 24,
                       getTitlesWidget: (v, meta) {
                         final i = v.toInt();
-                        if (i < 0 || i >= days.length) return const SizedBox.shrink();
+                        if (i < 0 || i >= days.length) {
+                          return const SizedBox.shrink();
+                        }
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
@@ -627,29 +650,41 @@ class RentSmartUtilityDashboardView extends RentBaseView<RentSmartUtilityDashboa
         border: Border.all(color: const Color(0xFFEAE6DE)),
       ),
       child: Text(
-        _isSw ? 'Bado hakuna shughuli za huduma.' : 'No utility activity recorded yet.',
-        style: TextStyle(fontSize: 13, color: u.muted, fontWeight: FontWeight.w600),
+        _isSw
+            ? 'Bado hakuna shughuli za huduma.'
+            : 'No utility activity recorded yet.',
+        style: TextStyle(
+          fontSize: 13,
+          color: u.muted,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 }
 
-typedef _UtilityTopUpSubmit = Future<void> Function({
-  required double units,
-  required double amount,
-  required String provider,
-  required String notes,
-  required DateTime date,
-});
+typedef _UtilityTopUpSubmit =
+    Future<void> Function({
+      required double units,
+      required double amount,
+      required String provider,
+      required String notes,
+      required DateTime date,
+    });
+
+typedef _LukuTopUpImport =
+    Future<void> Function(List<LukuSmsTopUpDraft> drafts);
 
 class _UtilityTopUpSheet extends StatefulWidget {
   const _UtilityTopUpSheet({
     required this.isLuku,
     required this.onSubmit,
+    required this.onImportLukuTopUps,
   });
 
   final bool isLuku;
   final _UtilityTopUpSubmit onSubmit;
+  final _LukuTopUpImport onImportLukuTopUps;
 
   @override
   State<_UtilityTopUpSheet> createState() => _UtilityTopUpSheetState();
@@ -664,8 +699,10 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
   DateTime _date = DateTime.now();
   String _provider = 'M-Pesa';
   bool _submitting = false;
+  bool _scanning = false;
 
   static const _providers = <String>[
+    'SMS OCR',
     'M-Pesa',
     'Tigo Pesa',
     'Airtel Money',
@@ -692,9 +729,9 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
       lastDate: DateTime.now().add(const Duration(days: 30)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: Theme.of(ctx).colorScheme.copyWith(
-                primary: _UtilUi.forest,
-              ),
+          colorScheme: Theme.of(
+            ctx,
+          ).colorScheme.copyWith(primary: _UtilUi.forest),
         ),
         child: child!,
       ),
@@ -721,6 +758,190 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
     }
   }
 
+  Future<void> _scanLukuSmsPhoto() async {
+    final source = await _pickImageSource();
+    if (source == null || !mounted) return;
+
+    setState(() => _scanning = true);
+    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final image = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 92,
+      );
+      if (image == null) return;
+
+      final recognized = await recognizer.processImage(
+        InputImage.fromFilePath(image.path),
+      );
+      final drafts = const LukuSmsOcrParser().parse(recognized.text);
+      if (!mounted) return;
+
+      if (drafts.isEmpty) {
+        _showScanMessage(
+          _isSw
+              ? 'Hatukupata ujumbe wa LUKU kwenye picha hii.'
+              : 'No LUKU token messages were found in this image.',
+        );
+      } else if (drafts.length == 1) {
+        _applyDraftToForm(drafts.single);
+        _showScanMessage(
+          _isSw
+              ? 'Taarifa za LUKU zimejazwa. Hakiki kisha hifadhi.'
+              : 'LUKU details filled. Review them, then save.',
+        );
+      } else {
+        await _confirmImportMany(drafts);
+      }
+    } catch (_) {
+      if (mounted) {
+        _showScanMessage(
+          _isSw
+              ? 'Imeshindikana kusoma picha. Jaribu picha iliyo wazi zaidi.'
+              : 'Could not read this image. Try a clearer screenshot or photo.',
+        );
+      }
+    } finally {
+      await recognizer.close();
+      if (mounted) setState(() => _scanning = false);
+    }
+  }
+
+  Future<ImageSource?> _pickImageSource() {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_rounded),
+                  title: Text(_isSw ? 'Piga picha' : 'Take photo'),
+                  onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_rounded),
+                  title: Text(_isSw ? 'Chagua picha' : 'Choose from photos'),
+                  onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _applyDraftToForm(LukuSmsTopUpDraft draft) {
+    setState(() {
+      _unitsCtrl.text = _formatNumber(draft.unitsKwh);
+      _amountCtrl.text = _formatNumber(draft.amountTsh);
+      _notesCtrl.text = draft.notes;
+      _date = draft.date;
+      _provider = 'SMS OCR';
+    });
+  }
+
+  Future<void> _confirmImportMany(List<LukuSmsTopUpDraft> drafts) async {
+    final importAll = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(
+            _isSw
+                ? 'Malipo ${drafts.length} yamepatikana'
+                : '${drafts.length} LUKU top-ups found',
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isSw
+                      ? 'Unataka kuyaingiza yote?'
+                      : 'Do you want to import all of them?',
+                ),
+                const SizedBox(height: 12),
+                ...drafts.take(6).map(_importPreviewTile),
+                if (drafts.length > 6)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      _isSw
+                          ? 'Na mengine ${drafts.length - 6}'
+                          : 'And ${drafts.length - 6} more',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(_isSw ? 'HAPANA' : 'NO'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: _UtilUi.forest),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(_isSw ? 'INGIZA YOTE' : 'IMPORT ALL'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted) return;
+    if (importAll == true) {
+      setState(() => _submitting = true);
+      try {
+        await widget.onImportLukuTopUps(drafts);
+        if (mounted) Navigator.of(context).pop();
+      } finally {
+        if (mounted) setState(() => _submitting = false);
+      }
+    } else if (drafts.isNotEmpty) {
+      _applyDraftToForm(drafts.first);
+      _showScanMessage(
+        _isSw
+            ? 'Taarifa ya kwanza imejazwa kwa uhakiki.'
+            : 'The first record has been filled for review.',
+      );
+    }
+  }
+
+  Widget _importPreviewTile(LukuSmsTopUpDraft draft) {
+    final dateLabel =
+        '${draft.date.day.toString().padLeft(2, '0')}/${draft.date.month.toString().padLeft(2, '0')}';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        '$dateLabel • ${_formatNumber(draft.unitsKwh)} kWh • '
+        'TZS ${_formatNumber(draft.amountTsh)} • Meter ${draft.meterNumber}',
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  void _showScanMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _formatNumber(double value) {
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    return value.toStringAsFixed(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLuku = widget.isLuku;
@@ -731,8 +952,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
         ? (_isSw ? 'Vitengo (kWh)' : 'Units (kWh)')
         : (_isSw ? 'Lita (L)' : 'Liters (L)');
     final unitHint = isLuku ? 'e.g. 50' : 'e.g. 1500';
-    final icon =
-        isLuku ? Icons.bolt_rounded : Icons.water_drop_rounded;
+    final icon = isLuku ? Icons.bolt_rounded : Icons.water_drop_rounded;
     final dateLabel =
         '${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}';
 
@@ -799,11 +1019,55 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                     ],
                   ),
                   const SizedBox(height: 14),
+                  if (isLuku) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: (_submitting || _scanning)
+                            ? null
+                            : _scanLukuSmsPhoto,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _UtilUi.forest,
+                          side: const BorderSide(color: _UtilUi.forest),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: _scanning
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: _UtilUi.forest,
+                                ),
+                              )
+                            : const Icon(Icons.document_scanner_rounded),
+                        label: Text(
+                          _scanning
+                              ? (_isSw
+                                    ? 'INASOMA PICHA...'
+                                    : 'SCANNING PHOTO...')
+                              : (_isSw
+                                    ? 'SOMA PICHA YA SMS'
+                                    : 'SCAN SMS PHOTO'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   _fieldLabel(unitLabel),
                   TextFormField(
                     controller: _unitsCtrl,
                     keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true),
+                      decimal: true,
+                    ),
                     decoration: _inputDecoration(hint: unitHint),
                     validator: (v) {
                       final n = double.tryParse((v ?? '').replaceAll(',', ''));
@@ -820,7 +1084,8 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                   TextFormField(
                     controller: _amountCtrl,
                     keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true),
+                      decimal: true,
+                    ),
                     decoration: _inputDecoration(hint: 'e.g. 35000'),
                     validator: (v) {
                       final n = double.tryParse((v ?? '').replaceAll(',', ''));
@@ -853,8 +1118,11 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                       decoration: _inputDecoration(),
                       child: Row(
                         children: [
-                          const Icon(Icons.event_rounded,
-                              size: 18, color: _UtilUi.forest),
+                          const Icon(
+                            Icons.event_rounded,
+                            size: 18,
+                            color: _UtilUi.forest,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             dateLabel,
@@ -876,11 +1144,11 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                     decoration: _inputDecoration(
                       hint: isLuku
                           ? (_isSw
-                              ? 'Mf. Meter 01013211901'
-                              : 'e.g. Meter 01013211901')
+                                ? 'Mf. Meter 01013211901'
+                                : 'e.g. Meter 01013211901')
                           : (_isSw
-                              ? 'Mf. DAWASA Account 12345'
-                              : 'e.g. DAWASA Account 12345'),
+                                ? 'Mf. DAWASA Account 12345'
+                                : 'e.g. DAWASA Account 12345'),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -891,7 +1159,8 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                         backgroundColor: _UtilUi.forest,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: _submitting ? null : _handleSubmit,
                       child: _submitting
@@ -899,14 +1168,14 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : Text(
                               isLuku
                                   ? (_isSw ? 'ONGEZA LUKU' : 'ADD LUKU UNITS')
-                                  : (_isSw
-                                      ? 'ONGEZA MAJI'
-                                      : 'ADD WATER UNITS'),
+                                  : (_isSw ? 'ONGEZA MAJI' : 'ADD WATER UNITS'),
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -925,17 +1194,17 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
   }
 
   Widget _fieldLabel(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 11,
-            letterSpacing: 0.6,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF6B7280),
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 11,
+        letterSpacing: 0.6,
+        fontWeight: FontWeight.w800,
+        color: Color(0xFF6B7280),
+      ),
+    ),
+  );
 
   InputDecoration _inputDecoration({String? hint}) {
     const radius = BorderRadius.all(Radius.circular(12));

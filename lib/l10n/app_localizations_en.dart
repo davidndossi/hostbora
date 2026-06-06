@@ -587,7 +587,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportIntro =>
-      'Answers about Host Bora (Paa Yangu)—BnB and Rent workspaces, bookings, payments, calendar sync, security, and more. For anything not covered here, contact us below.';
+      'Answers about Host Bora—BnB and Rent workspaces, bookings, payments, calendar sync, security, and more. For anything not covered here, contact us below.';
 
   @override
   String get supportTipsHeading => 'Quick tips';
@@ -962,6 +962,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addBooking => 'Add Booking';
+
+  @override
+  String get addPayment => 'Add Payment';
 
   @override
   String get sendMessage => 'Send message';
@@ -2536,4 +2539,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get staffDetailTaskPending => 'Pending';
+
+  @override
+  String get finances => 'Finances';
 }

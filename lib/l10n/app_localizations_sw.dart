@@ -586,7 +586,7 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportIntro =>
-      'Majibu kuhusu Host Bora (Paa Yangu)—BnB na Rent, uhifadhi, malipo, usawazishaji wa kalenda, usalama na zaidi. Kwa mengine, wasiliana nasi hapa chini.';
+      'Majibu kuhusu Host Bora—BnB na Rent, uhifadhi, malipo, usawazishaji wa kalenda, usalama na zaidi. Kwa mengine, wasiliana nasi hapa chini.';
 
   @override
   String get supportTipsHeading => 'Vidokezo muhimu';
@@ -960,6 +960,9 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get addBooking => 'Add Booking';
+
+  @override
+  String get addPayment => 'Add Payment';
 
   @override
   String get sendMessage => 'Tuma ujumbe';
@@ -2541,4 +2544,7 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get staffDetailTaskPending => 'Inasubiri';
+
+  @override
+  String get finances => 'Fedha';
 }

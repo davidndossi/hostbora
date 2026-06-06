@@ -209,7 +209,7 @@
   "middleName": "Jina la kati",
   "lastName": "Jina la mwisho",
   "support": "Msaada",
-  "supportIntro": "Majibu kuhusu Host Bora (Paa Yangu)—BnB na Rent, uhifadhi, malipo, usawazishaji wa kalenda, usalama na zaidi. Kwa mengine, wasiliana nasi hapa chini.",
+  "supportIntro": "Majibu kuhusu Host Bora—BnB na Rent, uhifadhi, malipo, usawazishaji wa kalenda, usalama na zaidi. Kwa mengine, wasiliana nasi hapa chini.",
   "supportTipsHeading": "Vidokezo muhimu",
   "supportTipsBody": "• Badilisha BnB na Rent kutoka skrini ya nyumbani; buruta chini kwenye mali kusasisha idadi na mapato.\n• Rekodi malipo kwa mali na chumba sahihi; hakikisha tarehe ziko katika mwezi huu kwa dashibodi.\n• Unganisha kalenda za nje kwa kila mali kupunguza uhifadhi mara mbili.\n• Tumia Mipangilio → Futa data ya nje ya mtandao tu ukiwa na nia ya kuondoa rekodi za kodi kwenye simu hii.",
   "supportFaqHeading": "Maswali ya kawaida",
@@ -341,6 +341,7 @@
   "access": "Smart Access",
   "bookings": "Bookings",
   "addBooking": "Add Booking",
+  "addPayment": "Add Payment",
   "sendMessage": "Tuma ujumbe",
   "sendSmsWhatsapp": "Tuma SMS au whatsapp",
   "sendSmsPickFromContacts": "Chagua kutoka kwa simu",
@@ -842,5 +843,6 @@
   "staffDetailCannotOpenPhone": "Imeshindwa kufungua programu ya simu.",
   "staffDetailTaskCompleted": "Imekamilika",
   "staffDetailTaskDue": "Inastahili",
-  "staffDetailTaskPending": "Inasubiri"
+  "staffDetailTaskPending": "Inasubiri",
+  "finances": "Fedha"
 }

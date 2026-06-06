@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:get/get.dart';
 
 import '../../dashboard/views/dashboard_view.dart';
-import '../../home/controllers/home_controller.dart';
 import '../../home/views/home_view.dart';
-import '../../host_calendar/views/host_calendar_view.dart';
-import '../../settings/views/settings_view.dart';
+import '../../maintenance_tasks/views/maintenance_tasks_view.dart';
+import '../../my_properties/views/my_properties_view.dart';
+import '../../more/views/more_view.dart';
 import '/app/core/values/app_colors.dart';
 import '/app/core/base/base_view.dart';
 import '/app/modules/main/controllers/main_controller.dart';
@@ -16,13 +15,6 @@ import '/app/modules/main/views/bottom_nav_bar.dart';
 // ignore: must_be_immutable
 class MainView extends BaseView<MainController> {
   MainView({super.key});
-
-  final _expandableFabKey = GlobalKey<ExpandableFabState>();
-
-  String _t({required String en, required String sw}) {
-    final code = Get.locale?.languageCode ?? 'en';
-    return code == 'sw' ? sw : en;
-  }
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -38,110 +30,23 @@ class MainView extends BaseView<MainController> {
   }
 
   @override
-  Widget? floatingActionButton() {
-    final context = Get.context;
-    final theme = context != null ? Theme.of(context) : null;
-    final isDark = theme?.brightness == Brightness.dark;
-    final homeController = Get.find<HomeController>();
-    return ExpandableFab(
-      key: _expandableFabKey,
-      type: ExpandableFabType.fan,
-      pos: ExpandableFabPos.right,
-      fanAngle: 90,
-      margin: const EdgeInsets.only(bottom: 8),
-      overlayStyle: ExpandableFabOverlayStyle(
-        color: Colors.black.withValues(alpha: 0.4),
-        blur: 6,
+  Widget? floatingActionButton() => Obx(() {
+    final isMaintenanceTab =
+        controller.selectedMenuCode == MenuCode.MAINTENANCE;
+    return FloatingActionButton(
+      onPressed: isMaintenanceTab ? controller.addTask : controller.aiManager,
+      backgroundColor: AppColors.designAccent,
+      child: Icon(
+        isMaintenanceTab ? Icons.add : Icons.auto_awesome,
+        color: AppColors.textColorWhite,
+        size: 28,
       ),
-      openButtonBuilder: RotateFloatingActionButtonBuilder(
-        child: const Icon(Icons.add),
-        fabSize: ExpandableFabSize.regular,
-        foregroundColor: Colors.white,
-        backgroundColor: AppColors.colorPrimary,
-        shape: const CircleBorder(),
-      ),
-      closeButtonBuilder: DefaultFloatingActionButtonBuilder(
-        child: const Icon(Icons.close),
-        fabSize: ExpandableFabSize.small,
-        foregroundColor: Colors.white,
-        backgroundColor: AppColors.colorPrimary,
-        shape: const CircleBorder(),
-      ),
-      children: [
-        FloatingActionButton.extended(
-          heroTag: null,
-          backgroundColor: isDark == true
-              ? theme!.colorScheme.surfaceContainerHigh
-              : AppColors.colorWhite,
-          foregroundColor: isDark == true
-              ? theme!.colorScheme.primary
-              : AppColors.colorPrimary,
-          onPressed: () {
-            _closeFabThen(() => homeController.addListing());
-          },
-          tooltip: _t(en: 'Add Listing', sw: 'Ongeza Mjengo'),
-          label: Text(_t(en: 'Property', sw: 'Mjengo'), style: TextStyle(fontSize: 12)),
-          icon: Icon(
-            Icons.house_outlined,
-            size: 18,
-          ),
-        ),
-        FloatingActionButton.extended(
-          heroTag: null,
-          backgroundColor: isDark == true
-              ? theme!.colorScheme.surfaceContainerHigh
-              : AppColors.colorWhite,
-          foregroundColor: isDark == true
-              ? theme!.colorScheme.primary
-              : AppColors.colorPrimary,
-          onPressed: () {
-            _closeFabThen(() => homeController.addExpense());
-          },
-          tooltip: _t(en: 'Add expense', sw: 'Ongeza matumizi'),
-          label: Text(_t(en: 'Expense', sw: 'Matumizi'), style: TextStyle(fontSize: 12)),
-          icon: Icon(
-            Icons.receipt_long_outlined,
-            size: 18,
-          ),
-        ),
-        FloatingActionButton.extended(
-          heroTag: null,
-          backgroundColor: isDark == true
-              ? theme!.colorScheme.surfaceContainerHigh
-              : AppColors.colorWhite,
-          foregroundColor: isDark == true
-              ? theme!.colorScheme.primary
-              : AppColors.colorPrimary,
-          onPressed: () {
-            _closeFabThen(() => homeController.addPayment());
-          },
-          tooltip: _t(en: 'Add payment', sw: 'Ongeza malipo'),
-          label: Text(_t(en: 'Payment', sw: 'Malipo'), style: TextStyle(fontSize: 12)),
-          icon: Icon(
-            Icons.payment_outlined,
-            size: 18,
-          ),
-        ),
-      ],
     );
-  }
+  });
 
   @override
-  FloatingActionButtonLocation floatingActionButtonLocation() {
-    return ExpandableFab.location;
-  }
-
-  void _closeFabThen(VoidCallback action) {
-    final state = _expandableFabKey.currentState;
-    if (state != null && state.isOpen) {
-      state.toggle();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        action();
-      });
-    } else {
-      action();
-    }
-  }
+  FloatingActionButtonLocation floatingActionButtonLocation() =>
+      FloatingActionButtonLocation.endFloat;
 
   @override
   Widget? bottomNavigationBar() {
@@ -149,23 +54,27 @@ class MainView extends BaseView<MainController> {
   }
 
   final HomeView _homeView = HomeView();
+  MyPropertiesView? _myPropertiesView;
   DashboardView? _dashboardView;
-  HostCalendarView? _hostCalendarView;
-  SettingsView? _settingsView;
+  MaintenanceTasksView? _maintenanceTasksView;
+  MoreView? _moreView;
 
   Widget getPageOnSelectedMenu(MenuCode menuCode) {
     switch (menuCode) {
       case MenuCode.HOME:
         return _homeView;
-      case MenuCode.DASHBOARD:
+      case MenuCode.PROPERTIES:
+        _myPropertiesView ??= MyPropertiesView();
+        return _myPropertiesView!;
+      case MenuCode.FINANCES:
         _dashboardView ??= DashboardView();
         return _dashboardView!;
-      case MenuCode.CALENDAR:
-        _hostCalendarView ??= HostCalendarView();
-        return _hostCalendarView!;
-      case MenuCode.SETTINGS:
-        _settingsView ??= SettingsView();
-        return _settingsView!;
+      case MenuCode.MAINTENANCE:
+        _maintenanceTasksView ??= MaintenanceTasksView();
+        return _maintenanceTasksView!;
+      case MenuCode.MORE:
+        _moreView ??= MoreView();
+        return _moreView!;
     }
   }
 }

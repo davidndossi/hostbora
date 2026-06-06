@@ -38,11 +38,14 @@ class HostCalendarView extends BaseView<HostCalendarController> {
 
   @override
   Widget body(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
+    return Obx(
+      () => SafeArea(
+        child: Column(
+          children: [
+            if (controller.loading.value)
+              const LinearProgressIndicator(minHeight: 2),
+            Expanded(
+              child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,7 +85,8 @@ class HostCalendarView extends BaseView<HostCalendarController> {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -229,27 +233,34 @@ class HostCalendarView extends BaseView<HostCalendarController> {
           ),
         ),
         const SizedBox(height: 8),
-        Obx(() => _calendarDropdown<int>(
-              context: context,
-              value: controller.selectedPropertyLocalId.value,
-              hint: _t(context, en: 'Select property', sw: 'Chagua mali'),
-              items: controller.bnbProperties
-                  .map(
-                    (p) => DropdownMenuItem<int>(
-                      value: p.localId,
-                      child: Text(
-                        p.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+        Obx(() {
+          final props = controller.calendarProperties;
+          final sel = controller.selectedPropertyKey.value;
+          final value = sel.isNotEmpty && props.any((p) => p.selectionKey == sel)
+              ? sel
+              : null;
+          return _calendarDropdown<String>(
+            context: context,
+            value: value,
+            hint: _t(context, en: 'Select property', sw: 'Chagua mali'),
+            items: props
+                .map(
+                  (p) => DropdownMenuItem<String>(
+                    value: p.selectionKey,
+                    child: Text(
+                      p.displayName,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  )
-                  .toList(),
-              onChanged: controller.bnbProperties.isEmpty
-                  ? null
-                  : (id) {
-                      if (id != null) controller.selectProperty(id);
-                    },
-            )),
+                  ),
+                )
+                .toList(),
+            onChanged: props.isEmpty
+                ? null
+                : (key) {
+                    if (key != null) controller.selectProperty(key);
+                  },
+          );
+        }),
       ],
     );
   }
@@ -341,7 +352,8 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   Widget _buildCalendarGrid(BuildContext context) {
     return Obx(() {
       controller.calendarRevision.value;
-      controller.bnbProperties.length;
+      controller.calendarProperties.length;
+      controller.selectedPropertyKey.value;
       controller.selectedUnitKey.value;
       final focused = controller.currentMonth.value;
       final selected = controller.selectedDate.value;
@@ -680,6 +692,7 @@ class _EventCard extends StatelessWidget {
     final theme = Theme.of(context);
     final c = FormSurfaceColors.of(context);
     final isMaintenance = event.type == CalendarEventType.maintenance;
+    final isPaymentReminder = event.type == CalendarEventType.paymentReminder;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -706,11 +719,11 @@ class _EventCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                isMaintenance
-                    ? t(context, en: 'MAINTENANCE', sw: 'MATENGENEZO')
-                    : (event.type == CalendarEventType.checkOut
-                        ? t(context, en: 'CHECK-OUT', sw: 'KUONDOKA')
-                        : t(context, en: 'CHECK-IN', sw: 'KUINGIA')),
+                _eventTypeHeader(
+                  context,
+                  isMaintenance: isMaintenance,
+                  isPaymentReminder: isPaymentReminder,
+                ),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -739,7 +752,7 @@ class _EventCard extends StatelessWidget {
               color: AppColors.textColorPrimary,
             ),
           ),
-          if (isMaintenance) ...[
+          if (isMaintenance || isPaymentReminder) ...[
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -767,7 +780,9 @@ class _EventCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    Icons.notes_outlined,
+                    isPaymentReminder
+                        ? Icons.payments_outlined
+                        : Icons.notes_outlined,
                     size: 16,
                     color: AppColors.textColorSecondary,
                   ),
@@ -777,6 +792,8 @@ class _EventCard extends StatelessWidget {
                       event.subtitle,
                       style: TextStyle(
                         fontSize: 13,
+                        fontWeight:
+                            isPaymentReminder ? FontWeight.w600 : FontWeight.normal,
                         color: AppColors.textColorSecondary,
                       ),
                     ),
@@ -832,5 +849,28 @@ class _EventCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _eventTypeHeader(
+    BuildContext context, {
+    required bool isMaintenance,
+    required bool isPaymentReminder,
+  }) {
+    if (isMaintenance) {
+      return t(context, en: 'MAINTENANCE', sw: 'MATENGENEZO');
+    }
+    if (isPaymentReminder) {
+      return t(context, en: 'PAYMENT REMINDER', sw: 'UKUMBUSHO WA MALIPO');
+    }
+    if (event.type == CalendarEventType.leaseEnd) {
+      return t(context, en: 'LEASE END', sw: 'MWISHO WA MKATABA');
+    }
+    if (event.type == CalendarEventType.leaseStart) {
+      return t(context, en: 'LEASE START', sw: 'MWANZO WA MKATABA');
+    }
+    if (event.type == CalendarEventType.checkOut) {
+      return t(context, en: 'CHECK-OUT', sw: 'KUONDOKA');
+    }
+    return t(context, en: 'CHECK-IN', sw: 'KUINGIA');
   }
 }

@@ -669,7 +669,7 @@ class RentWhatsappTemplateBuilderView
     if (diff.inDays < 7) {
       return _isSw ? 'siku ${diff.inDays}' : '${diff.inDays}d';
     }
-    return DateFormat('MMM d').format(d);
+    return DateFormat('dd/MM').format(d);
   }
 }
 

@@ -323,4 +323,101 @@ class AppRepositoryImpl implements AppRepository {
   Future<FxResponse> getExchangeRates() {
     return _remoteSource.getExchangeRates();
   }
+
+  @override
+  Future<GeneralResponse> createTenant(Map<String, dynamic> body) {
+    return _remoteSource.createTenant(body);
+  }
+
+  @override
+  Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body) {
+    return _remoteSource.updateTenant(id, body);
+  }
+
+  @override
+  Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body) {
+    return _remoteSource.uploadVaultDocument(body);
+  }
+
+  @override
+  Future<GeneralResponse> createStaff(Map<String, dynamic> body) {
+    return _remoteSource.createStaff(body);
+  }
+
+  @override
+  Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body) {
+    return _remoteSource.updateStaff(id, body);
+  }
+
+  @override
+  Future<GeneralResponse> deleteStaff(String id) {
+    return _remoteSource.deleteStaff(id);
+  }
+
+  @override
+  Future<GeneralResponse> submitFeedback(Map<String, dynamic> body) {
+    return _remoteSource.submitFeedback(body);
+  }
+
+  @override
+  Future<GeneralResponse> createLoyaltyOffer(Map<String, dynamic> body) {
+    return _remoteSource.createLoyaltyOffer(body);
+  }
+
+  @override
+  Future<GeneralResponse> createTenantCharge(Map<String, dynamic> body) {
+    return _remoteSource.createTenantCharge(body);
+  }
+
+  @override
+  Future<GeneralResponse> renewLease(Map<String, dynamic> body) {
+    return _remoteSource.renewLease(body);
+  }
+
+  @override
+  Future<GeneralResponse> saveEstimate(Map<String, dynamic> body) {
+    return _remoteSource.saveEstimate(body);
+  }
+
+  @override
+  Future<GeneralResponse> updateEstimate(String id, Map<String, dynamic> body) {
+    return _remoteSource.updateEstimate(id, body);
+  }
+
+  @override
+  Future<GeneralResponse> addUtilityTopUp(Map<String, dynamic> body) {
+    return _remoteSource.addUtilityTopUp(body);
+  }
+
+  @override
+  Future<GeneralResponse> saveWhatsAppTemplateDraft(Map<String, dynamic> body) {
+    return _remoteSource.saveWhatsAppTemplateDraft(body);
+  }
+
+  @override
+  Future<GeneralResponse> updateWhatsAppTemplateDraft(
+    String id,
+    Map<String, dynamic> body,
+  ) {
+    return _remoteSource.updateWhatsAppTemplateDraft(id, body);
+  }
+
+  @override
+  Future<GeneralResponse> deleteWhatsAppTemplateDraft(String id) {
+    return _remoteSource.deleteWhatsAppTemplateDraft(id);
+  }
+
+  @override
+  Future<GeneralResponse> updateUnit(
+    String listingId,
+    String unitId,
+    Map<String, dynamic> body,
+  ) {
+    return _remoteSource.updateUnit(listingId, unitId, body);
+  }
+
+  @override
+  Future<GeneralResponse> changePinOnServer(Map<String, dynamic> body) {
+    return _remoteSource.changePinOnServer(body);
+  }
 }

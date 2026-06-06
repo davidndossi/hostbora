@@ -413,7 +413,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
 
   Widget _leaseDateRangeField(BuildContext context) {
     final u = _RenewalUi(context);
-    final dateFmt = DateFormat.yMMMd();
+    final dateFmt = DateFormat('dd/MM/yyyy');
     final fill = u.dark ? context.tokens.elevatedSurface : const Color(0xFFFAFAF8);
 
     return Obx(() {

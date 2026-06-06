@@ -1235,7 +1235,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportIntro.
   ///
   /// In en, this message translates to:
-  /// **'Answers about Host Bora (Paa Yangu)—BnB and Rent workspaces, bookings, payments, calendar sync, security, and more. For anything not covered here, contact us below.'**
+  /// **'Answers about Host Bora—BnB and Rent workspaces, bookings, payments, calendar sync, security, and more. For anything not covered here, contact us below.'**
   String get supportIntro;
 
   /// No description provided for @supportTipsHeading.
@@ -1909,6 +1909,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Booking'**
   String get addBooking;
+
+  /// No description provided for @addPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Payment'**
+  String get addPayment;
 
   /// No description provided for @sendMessage.
   ///
@@ -4825,6 +4831,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pending'**
   String get staffDetailTaskPending;
+
+  /// No description provided for @finances.
+  ///
+  /// In en, this message translates to:
+  /// **'Finances'**
+  String get finances;
 }
 
 class _AppLocalizationsDelegate

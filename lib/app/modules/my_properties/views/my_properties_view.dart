@@ -188,7 +188,7 @@ class _PropertyCard extends StatelessWidget {
               Positioned(
                 top: 12,
                 right: 12,
-                child: _StatusBadge(status: listing.status),
+                child: _ModeBadge(mode: listing.mode),
               ),
             ],
           ),
@@ -302,10 +302,10 @@ class _PropertyCard extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  final PropertyStatus status;
+class _ModeBadge extends StatelessWidget {
+  final String mode;
 
-  const _StatusBadge({required this.status});
+  const _ModeBadge({required this.mode});
 
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
@@ -314,32 +314,57 @@ class _StatusBadge extends StatelessWidget {
     return code == 'sw' ? sw : en;
   }
 
+  ({Color bg, Color fg, IconData icon, String labelEn, String labelSw})
+      _style() {
+    switch (mode.trim().toLowerCase()) {
+      case 'rent':
+        return (
+          bg: const Color(0xFF2563EB),
+          fg: Colors.white,
+          icon: Icons.key_outlined,
+          labelEn: 'Rent',
+          labelSw: 'Kodi',
+        );
+      case 'both':
+        return (
+          bg: const Color(0xFF7C3AED),
+          fg: Colors.white,
+          icon: Icons.swap_horiz_rounded,
+          labelEn: 'Both',
+          labelSw: 'Zote',
+        );
+      case 'bnb':
+      default:
+        return (
+          bg: AppColors.colorSuccessGreen,
+          fg: Colors.white,
+          icon: Icons.house_outlined,
+          labelEn: 'BnB',
+          labelSw: 'BnB',
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isReady = status == PropertyStatus.ready;
+    final style = _style();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isReady ? AppColors.colorSuccessGreen : AppColors.colorYellow,
+        color: style.bg,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isReady ? Icons.check : Icons.cleaning_services,
-            size: 16,
-            color: isReady ? Colors.white : Colors.black87,
-          ),
+          Icon(style.icon, size: 16, color: style.fg),
           const SizedBox(width: 6),
           Text(
-            isReady
-                ? _t(context, en: 'Ready', sw: 'Tayari')
-                : _t(context, en: 'Cleaning', sw: 'Usafishaji'),
+            _t(context, en: style.labelEn, sw: style.labelSw),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isReady ? Colors.white : Colors.black87,
+              color: style.fg,
             ),
           ),
         ],

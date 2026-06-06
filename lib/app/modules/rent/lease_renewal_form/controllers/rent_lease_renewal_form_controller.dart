@@ -1,11 +1,26 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../../data/repository/app_repository.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
 class RentLeaseRenewalFormController extends BaseController
     with RentRealDataControllerMixin {
+  RentLeaseRenewalFormController()
+      : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>();
+
+  final AppRepository _repository;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
+
   final formKey = GlobalKey<FormState>();
 
   final tenantNameController = TextEditingController();
@@ -82,7 +97,7 @@ class RentLeaseRenewalFormController extends BaseController
     return s != null && e != null && !e.isBefore(s);
   }
 
-  void submitRenewal() {
+  Future<void> submitRenewal() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
     if (!_datesValid()) {
       showErrorMessage(
@@ -92,11 +107,41 @@ class RentLeaseRenewalFormController extends BaseController
       );
       return;
     }
+
+    final fmt = DateFormat('yyyy-MM-dd');
+    final payload = <String, dynamic>{
+      'tenantName': tenantNameController.text.trim(),
+      'propertyLine': propertyLineController.text.trim(),
+      'rentAmount': rentAmountController.text.trim().replaceAll(',', ''),
+      'rentFrequency': rentFrequency.value,
+      'leaseStart': fmt.format(newLeaseStart.value!),
+      'leaseEnd': fmt.format(newLeaseEnd.value!),
+      'notes': notesController.text.trim(),
+    };
+
+    try {
+      final res = await _repository.renewLease(payload);
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201';
+      if (!ok) throw Exception(res.message ?? 'API error');
+    } catch (_) {
+      await _syncQueue.enqueue(
+        entityType: 'lease',
+        operation: 'create',
+        payloadJson: jsonEncode(payload),
+        dedupeKey:
+            'lease:create:${payload['tenantName']}:${payload['leaseStart']}',
+      );
+      _syncWorker.runNow();
+    }
+
     showSuccessMessage(
       Get.locale?.languageCode == 'sw'
-          ? 'Ombi la uhuishaji limewasilishwa (hifadhi ya ndani — hivi karibuni).'
-          : 'Renewal request submitted (local save — coming soon).',
+          ? 'Uhuishaji wa mkataba umehifadhiwa.'
+          : 'Lease renewal saved.',
     );
+    Get.back(result: true);
   }
 
   @override

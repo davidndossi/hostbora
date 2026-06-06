@@ -51,6 +51,9 @@ abstract class PortfolioAiLocalResolver {
       'mapato',
       'monthly income',
       'collection',
+      'kodi iliyolipwa',
+      'nimekusanya',
+      'malipo ya mwezi',
     ]) &&
         !_matches(q, const ['expense', 'profit', 'net', 'gharama'])) {
       return PortfolioAiLocalAnswer(
@@ -93,6 +96,10 @@ abstract class PortfolioAiLocalResolver {
       'deni',
       'malipo',
       'behind',
+      'madeni',
+      'hawajalipa',
+      'bado kulipa',
+      'malimbikizo',
     ])) {
       return PortfolioAiLocalAnswer(
         matched: true,

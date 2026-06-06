@@ -149,4 +149,23 @@ abstract class AppRepository {
 
   /// POST /api/exchange/rates — FX list (currency, buying, selling).
   Future<FxResponse> getExchangeRates();
+
+  Future<GeneralResponse> createTenant(Map<String, dynamic> body);
+  Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body);
+  Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body);
+  Future<GeneralResponse> createStaff(Map<String, dynamic> body);
+  Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body);
+  Future<GeneralResponse> deleteStaff(String id);
+  Future<GeneralResponse> submitFeedback(Map<String, dynamic> body);
+  Future<GeneralResponse> createLoyaltyOffer(Map<String, dynamic> body);
+  Future<GeneralResponse> createTenantCharge(Map<String, dynamic> body);
+  Future<GeneralResponse> renewLease(Map<String, dynamic> body);
+  Future<GeneralResponse> saveEstimate(Map<String, dynamic> body);
+  Future<GeneralResponse> updateEstimate(String id, Map<String, dynamic> body);
+  Future<GeneralResponse> addUtilityTopUp(Map<String, dynamic> body);
+  Future<GeneralResponse> saveWhatsAppTemplateDraft(Map<String, dynamic> body);
+  Future<GeneralResponse> updateWhatsAppTemplateDraft(String id, Map<String, dynamic> body);
+  Future<GeneralResponse> deleteWhatsAppTemplateDraft(String id);
+  Future<GeneralResponse> updateUnit(String listingId, String unitId, Map<String, dynamic> body);
+  Future<GeneralResponse> changePinOnServer(Map<String, dynamic> body);
 }

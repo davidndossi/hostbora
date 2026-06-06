@@ -214,6 +214,19 @@ class TenantLocalDataSource {
     );
   }
 
+  Future<void> updatePaymentStatus({
+    required int id,
+    required String paymentStatus,
+  }) async {
+    final db = await database;
+    await db.update(
+      _table,
+      {'payment_status': paymentStatus.trim().toLowerCase()},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<void> updateContractFile({
     required int id,
     required String contractFilePath,

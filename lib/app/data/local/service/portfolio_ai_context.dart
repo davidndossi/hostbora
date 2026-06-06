@@ -43,6 +43,29 @@ class PortfolioAiContext {
   bool get isRent => workspace == 'rent';
   bool get isBnb => workspace == 'bnb';
 
+  factory PortfolioAiContext.empty({String workspace = 'rent'}) {
+    return PortfolioAiContext(
+      workspace: workspace,
+      monthLabel: '',
+      propertyCount: 0,
+      totalUnits: 0,
+      occupiedUnits: 0,
+      occupancyPercent: 0,
+      activeTenants: 0,
+      monthIncome: 0,
+      monthExpenses: 0,
+      monthNet: 0,
+      arrearsTenantCount: 0,
+      arrearsTotal: 0,
+      leasesExpiring30Days: 0,
+      activeBookingsToday: 0,
+      checkInsToday: 0,
+      checkOutsToday: 0,
+      maintenanceTasks: 0,
+      propertyNames: const [],
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'workspace': workspace,
         'month': monthLabel,

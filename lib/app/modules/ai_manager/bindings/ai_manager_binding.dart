@@ -41,6 +41,9 @@ class AiManagerBinding extends Bindings {
         fenix: true,
       );
     }
-    Get.lazyPut<AiManagerController>(AiManagerController.new);
+    Get.lazyPut<AiManagerController>(
+      AiManagerController.new,
+      fenix: true,
+    );
   }
 }

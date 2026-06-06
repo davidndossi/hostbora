@@ -5,7 +5,6 @@ import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
-import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/theme/theme_controller.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/widget/custom_app_bar.dart';
@@ -953,7 +952,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                 onTap: () {
                   controller.onListingTap(item);
                   Get.toNamed(
-                    Routes.RENT_LISTING_DETAILS,
+                    Routes.LISTING_DETAILS,
                     parameters: {
                       if (item.hubId.trim().isNotEmpty) 'id': item.hubId.trim(),
                       if (item.title.trim().isNotEmpty) 'title': item.title.trim(),

@@ -44,20 +44,12 @@ class AddExpenseView extends BaseView<AddExpenseController> {
     controller.datePaidController.text = '$day/$month/$year';
   }
 
-  // bool _isDark(BuildContext context) =>
-  //     FormSurfaceColors.of(context).isDark;
-
-  // String _t(BuildContext context, {required String en, required String sw}) {
-  //   final code =
-  //       Get.locale?.languageCode ??
-  //       Localizations.localeOf(context).languageCode;
-  //   return code == 'sw' ? sw : en;
-  // }
-
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
-      appBarTitleText: appLocalization.addExpense,
+      appBarTitleText: controller.isEditMode
+          ? (_isSw ? 'Hariri Gharama' : 'Edit Expense')
+          : (_isSw ? 'Ongeza Gharama' : 'Add Expense'),
       isCentered: true,
     );
   }
@@ -90,64 +82,71 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                     style: sectionTitleStyle,
                   ),
                   const SizedBox(height: 10),
-                  Obx(
-                        () {
-                      final hasProperties = controller.hasProperties;
-                      final hintColor = c.hint;
-                      final textColor = c.headline;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          DropdownButtonFormField<String>(
-                            initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
-                                ? controller.selectedProperty.value
-                                : null,
-                            isExpanded: true,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: textColor,
-                            ),
-                            dropdownColor: c.dropdownBg,
-                            icon: Icon(
-                              Icons.expand_more_rounded,
-                              color: c.secondary,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: _isSw ? 'Chagua mjengo' : 'Choose property',
-                              hintStyle: TextStyle(color: hintColor, fontSize: 16),
-                              border: InputBorder.none,
-                            ),
-                            validator: controller.validateSelectedProperty,
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
-                            items: controller.propertyOptions
-                                .map(
-                                  (p) => DropdownMenuItem<String>(
-                                value: p,
-                                child: Text(
-                                  p,
-                                  style: TextStyle(color: textColor),
-                                ),
-                              ),
-                            )
-                                .toList(),
-                            onChanged: hasProperties ? controller.updateSelectedProperty : null,
+                  Obx(() {
+                    final hasProperties = controller.hasProperties;
+                    final hintColor = c.hint;
+                    final textColor = c.headline;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          initialValue:
+                              controller.propertyOptions.contains(
+                                controller.selectedProperty.value,
+                              )
+                              ? controller.selectedProperty.value
+                              : null,
+                          isExpanded: true,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: textColor,
                           ),
-                          if (!hasProperties)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 6, left: 2),
-                              child: Text(
-                                _isSw ? 'Bado hakuna mjengo - ongeza mjengo kwanza.' : 'No properties yet - add property first.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: hintColor,
-                                ),
-                              ),
+                          dropdownColor: c.dropdownBg,
+                          icon: Icon(
+                            Icons.expand_more_rounded,
+                            color: c.secondary,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: _isSw
+                                ? 'Chagua mjengo'
+                                : 'Choose property',
+                            hintStyle: TextStyle(
+                              color: hintColor,
+                              fontSize: 16,
                             ),
-                        ],
-                      );
-                    },
-                  ),
+                            border: InputBorder.none,
+                          ),
+                          validator: controller.validateSelectedProperty,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          items: controller.propertyOptions
+                              .map(
+                                (p) => DropdownMenuItem<String>(
+                                  value: p,
+                                  child: Text(
+                                    p,
+                                    style: TextStyle(color: textColor),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: hasProperties
+                              ? controller.updateSelectedProperty
+                              : null,
+                        ),
+                        if (!hasProperties)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6, left: 2),
+                            child: Text(
+                              _isSw
+                                  ? 'Bado hakuna mjengo - ongeza mjengo kwanza.'
+                                  : 'No properties yet - add property first.',
+                              style: TextStyle(fontSize: 12, color: hintColor),
+                            ),
+                          ),
+                      ],
+                    );
+                  }),
                   Obx(() {
                     if (!controller.showExpenseUnitPicker) {
                       return const SizedBox.shrink();
@@ -204,7 +203,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                                 ),
                               ),
                               ...units.map(
-                                    (u) => DropdownMenuItem<String?>(
+                                (u) => DropdownMenuItem<String?>(
                                   value: u.selectionKey,
                                   child: Text(
                                     u.unitName,
@@ -235,12 +234,12 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                   ),
                   const SizedBox(height: 10),
                   Obx(
-                        () => Wrap(
+                    () => Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: List.generate(
                         controller.expenses.length,
-                            (i) => _ExpenseChip(
+                        (i) => _ExpenseChip(
                           colors: c,
                           label: controller.expenses[i],
                           selected: controller.selectedExpenseIndex.value == i,
@@ -259,25 +258,27 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 12),
-                  Text(
-                    _isSw ? 'Kiasi' : 'Amount',
-                    style: sectionTitleStyle,
-                  ),
+                  Text(_isSw ? 'Kiasi' : 'Amount', style: sectionTitleStyle),
                   const SizedBox(height: 7),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         flex: 2,
-                        child: _field(
-                          c,
-                          controller.amountController,
-                          hint: '0.00',
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          validator: controller.validateAmount,
-                          inputFormatters: [
-                            ThousandsSeparatorInputFormatter(),
-                          ],
+                        child: Obx(
+                          () => _field(
+                            c,
+                            controller.amountController,
+                            hint: '0.00',
+                            prefixText: '${controller.selectedCurrency.value} ',
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: controller.validateAmount,
+                            inputFormatters: [
+                              ThousandsSeparatorInputFormatter(),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -326,17 +327,14 @@ class AddExpenseView extends BaseView<AddExpenseController> {
             const SizedBox(height: 12),
             Obx(
               () => LoadingButton(
-                label: _isSw ? 'Rekodi Muamala' : 'Record Transaction',
+                label: controller.isEditMode
+                    ? (_isSw ? 'Sasisha Gharama' : 'Update Expense')
+                    : (_isSw ? 'Rekodi Muamala' : 'Record Transaction'),
                 icon: Icons.receipt_long_outlined,
                 onPressed: controller.saveExpenseOffline,
                 isLoading: controller.isBusy.value,
               ),
             ),
-            const SizedBox(height: 8),
-            // const Text(
-            //   'By recording this expense, you update the monthly operational report for The Concierge',
-            //   style: TextStyle(fontSize: 9, height: 1.3, color: Color(0xFF8A8A8A)),
-            // ),
             const SizedBox(height: 14),
             _expenseCard(
               colors: c,
@@ -376,67 +374,16 @@ class AddExpenseView extends BaseView<AddExpenseController> {
               ),
             ),
             const SizedBox(height: 10),
-            // ClipRRect(
-            //   borderRadius: BorderRadius.circular(12),
-            //   child: SizedBox(
-            //     width: double.infinity,
-            //     height: 210,
-            //     child: Stack(
-            //       fit: StackFit.expand,
-            //       children: [
-            //         Image.asset('images/luxury_room_view.png',
-            //             fit: BoxFit.cover,
-            //             errorBuilder: (context, error, stackTrace) =>
-            //                 Container(color: const Color(0xFF334444))),
-            //         Container(
-            //           decoration: BoxDecoration(
-            //             gradient: LinearGradient(
-            //               begin: Alignment.topCenter,
-            //               end: Alignment.bottomCenter,
-            //               colors: [
-            //                 Colors.black.withValues(alpha: 0.05),
-            //                 Colors.black.withValues(alpha: 0.6),
-            //               ],
-            //             ),
-            //           ),
-            //         ),
-            //         const Positioned(
-            //           left: 12,
-            //           right: 12,
-            //           bottom: 12,
-            //           child: Column(
-            //             crossAxisAlignment: CrossAxisAlignment.start,
-            //             children: [
-            //               Text('OPERATIONAL EXCELLENCE',
-            //                   style: TextStyle(
-            //                       color: Colors.white,
-            //                       fontSize: 8,
-            //                       letterSpacing: 1.8,
-            //                       fontWeight: FontWeight.w700)),
-            //               SizedBox(height: 4),
-            //               Text(
-            //                 'Invest in quality maintenance to preserve\nasset value.',
-            //                 style: TextStyle(
-            //                     color: Colors.white,
-            //                     fontSize: 13,
-            //                     height: 1.3,
-            //                     fontWeight: FontWeight.w500),
-            //               ),
-            //             ],
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-            // ),
-            // const SizedBox(height: 86),
           ],
         ),
       ),
     );
   }
 
-  Widget _expenseCard({required FormSurfaceColors colors, required Widget child}) {
+  Widget _expenseCard({
+    required FormSurfaceColors colors,
+    required Widget child,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -457,18 +404,19 @@ class AddExpenseView extends BaseView<AddExpenseController> {
   }
 
   Widget _field(
-      FormSurfaceColors colors,
-      TextEditingController fieldController, {
-        required String hint,
-        IconData? suffix,
-        bool isMultiline = false,
-        double minHeight = 48,
-        TextInputType? keyboardType,
-        String? Function(String?)? validator,
-        List<TextInputFormatter>? inputFormatters,
-        bool readOnly = false,
-        VoidCallback? onTap,
-      }) {
+    FormSurfaceColors colors,
+    TextEditingController fieldController, {
+    required String hint,
+    IconData? suffix,
+    bool isMultiline = false,
+    double minHeight = 48,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    String prefixText = '',
+  }) {
     final textColor = colors.secondary;
     final hintStyle = TextStyle(
       fontSize: 14,
@@ -506,16 +454,18 @@ class AddExpenseView extends BaseView<AddExpenseController> {
           border: InputBorder.none,
           hintText: hint,
           hintStyle: hintStyle,
+          prefixText: prefixText.isEmpty ? null : prefixText,
+          prefixStyle: TextStyle(
+            fontSize: 14,
+            color: textColor,
+            fontWeight: FontWeight.w700,
+          ),
           suffixIcon: suffix == null
               ? null
               : Padding(
-            padding: EdgeInsets.only(left: 8, top: isMultiline ? 12 : 0),
-            child: Icon(
-              suffix,
-              size: 20,
-              color: suffixIconColor,
-            ),
-          ),
+                  padding: EdgeInsets.only(left: 8, top: isMultiline ? 12 : 0),
+                  child: Icon(suffix, size: 20, color: suffixIconColor),
+                ),
           suffixIconConstraints: BoxConstraints(
             minWidth: suffix != null ? 40 : 0,
             minHeight: suffix != null ? (isMultiline ? 52 : 40) : 0,
@@ -524,501 +474,6 @@ class AddExpenseView extends BaseView<AddExpenseController> {
       ),
     );
   }
-
-  // @override
-  // Widget body(BuildContext context) {
-  //   final theme = Theme.of(context);
-  //   final c = FormSurfaceColors.of(context);
-  //   return SingleChildScrollView(
-  //     padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-  //     child: Form(
-  //       key: controller.formKey,
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text(
-  //             _t(context, en: 'Add Expense', sw: 'Ongeza Matumizi'),
-  //             style: TextStyle(
-  //               fontSize: 28,
-  //               fontWeight: FontWeight.w700,
-  //               color: c.isDark
-  //                   ? theme.colorScheme.onSurface
-  //                   : AppColors.textColorPrimary,
-  //               letterSpacing: -0.5,
-  //             ),
-  //           ),
-  //           const SizedBox(height: 8),
-  //           Text(
-  //             _t(
-  //               context,
-  //               en: 'Track your property overhead and stay tax-ready.',
-  //               sw: 'Fuatilia gharama za mali yako na uwe tayari kwa kodi.',
-  //             ),
-  //             style: TextStyle(
-  //               fontSize: 15,
-  //               color: c.isDark
-  //                   ? theme.colorScheme.onSurfaceVariant
-  //                   : AppColors.textColorSecondary,
-  //               height: 1.4,
-  //             ),
-  //           ),
-  //           const SizedBox(height: 24),
-  //           _label(
-  //             context,
-  //             _t(context, en: 'EXPENSE CATEGORY', sw: 'KUNDI LA GHARAMA'),
-  //           ),
-  //           const SizedBox(height: 8),
-  //           _buildCategoryField(context),
-  //           const SizedBox(height: 20),
-  //           Row(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Expanded(
-  //                 child: Column(
-  //                   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   children: [
-  //                     _label(context, _t(context, en: 'AMOUNT', sw: 'KIASI')),
-  //                     const SizedBox(height: 8),
-  //                     TextFormField(
-  //                       controller: controller.amountController,
-  //                       keyboardType: const TextInputType.numberWithOptions(
-  //                         decimal: true,
-  //                       ),
-  //                       decoration: _inputDecoration(context, hint: '0.00')
-  //                           .copyWith(
-  //                             prefixText: 'TZS ',
-  //                             prefixStyle: TextStyle(
-  //                               fontSize: 16,
-  //                               color: c.isDark
-  //                                   ? theme.colorScheme.onSurface
-  //                                   : AppColors.textColorPrimary,
-  //                               fontWeight: FontWeight.w500,
-  //                             ),
-  //                           ),
-  //                       validator: controller.validateAmount,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //               const SizedBox(width: 12),
-  //               Expanded(
-  //                 child: Column(
-  //                   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   children: [
-  //                     _label(context, _t(context, en: 'DATE', sw: 'TAREHE')),
-  //                     const SizedBox(height: 8),
-  //                     TextFormField(
-  //                       controller: controller.dateController,
-  //                       readOnly: true,
-  //                       decoration:
-  //                           _inputDecoration(
-  //                             context,
-  //                             hint: _t(
-  //                               context,
-  //                               en: 'mm/dd/yyyy',
-  //                               sw: 'mm/dd/yyyy',
-  //                             ),
-  //                           ).copyWith(
-  //                             suffixIcon: IconButton(
-  //                               onPressed: () => controller.pickDate(context),
-  //                               icon: Icon(
-  //                                 Icons.calendar_today_outlined,
-  //                                 size: 20,
-  //                                 color: c.isDark
-  //                                     ? theme.colorScheme.onSurfaceVariant
-  //                                     : AppColors.designPlaceholder,
-  //                               ),
-  //                             ),
-  //                           ),
-  //                       validator: (v) => controller.validateRequired(
-  //                         v,
-  //                         _t(context, en: 'Date', sw: 'Tarehe'),
-  //                       ),
-  //                       onTap: () => controller.pickDate(context),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //           const SizedBox(height: 20),
-  //           _label(
-  //             context,
-  //             _t(context, en: 'VENDOR NAME', sw: 'JINA LA MUUZAJI'),
-  //           ),
-  //           const SizedBox(height: 8),
-  //           TextFormField(
-  //             controller: controller.vendorController,
-  //             decoration: _inputDecoration(
-  //               context,
-  //               hint: _t(
-  //                 context,
-  //                 en: 'e.g. CleanCo Inc.',
-  //                 sw: 'mf. CleanCo Inc.',
-  //               ),
-  //             ),
-  //             validator: (v) => controller.validateRequired(
-  //               v,
-  //               _t(context, en: 'Vendor name', sw: 'Jina la muuzaji'),
-  //             ),
-  //           ),
-  //           const SizedBox(height: 20),
-  //           _label(
-  //             context,
-  //             _t(
-  //               context,
-  //               en: 'PROOF OF PURCHASE',
-  //               sw: 'UTHIBITISHO WA MANUNUZI',
-  //             ),
-  //           ),
-  //           const SizedBox(height: 8),
-  //           _buildUploadArea(context),
-  //           const SizedBox(height: 20),
-  //           _buildTaxDeductibleCard(context),
-  //           const SizedBox(height: 28),
-  //           Obx(() {
-  //             final saving = controller.saving.value;
-  //             return SizedBox(
-  //               width: double.infinity,
-  //               child: ElevatedButton(
-  //                 onPressed: saving ? null : controller.submit,
-  //                 style: ElevatedButton.styleFrom(
-  //                   backgroundColor: AppColors.colorPrimary,
-  //                   foregroundColor: AppColors.textColorWhite,
-  //                   disabledBackgroundColor: AppColors.colorPrimary.withValues(
-  //                     alpha: 0.6,
-  //                   ),
-  //                   padding: const EdgeInsets.symmetric(vertical: 16),
-  //                   shape: RoundedRectangleBorder(
-  //                     borderRadius: BorderRadius.circular(
-  //                       AppValues.roundedButtonRadius,
-  //                     ),
-  //                   ),
-  //                   elevation: 0,
-  //                 ),
-  //                 child: saving
-  //                     ? const SizedBox(
-  //                         height: 22,
-  //                         width: 22,
-  //                         child: CircularProgressIndicator(
-  //                           strokeWidth: 2,
-  //                           valueColor: AlwaysStoppedAnimation<Color>(
-  //                             AppColors.textColorWhite,
-  //                           ),
-  //                         ),
-  //                       )
-  //                     : Text(
-  //                         _t(context, en: 'Add Expense', sw: 'Ongeza Matumizi'),
-  //                       ),
-  //               ),
-  //             );
-  //           }),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // Widget _label(BuildContext context, String text) {
-  //   return Text(
-  //     text,
-  //     style: TextStyle(
-  //       fontSize: 12,
-  //       fontWeight: FontWeight.w600,
-  //       letterSpacing: 0.5,
-  //       color: FormSurfaceColors.of(context).isDark
-  //           ? Theme.of(context).colorScheme.onSurface
-  //           : AppColors.textColorPrimary,
-  //     ),
-  //   );
-  // }
-
-  // InputDecoration _inputDecoration(
-  //   BuildContext context, {
-  //   required String hint,
-  // }) {
-  //   final theme = Theme.of(context);
-  //   final c = FormSurfaceColors.of(context);
-  //   return InputDecoration(
-  //     hintText: hint,
-  //     hintStyle: TextStyle(
-  //       color: c.isDark
-  //           ? theme.colorScheme.onSurfaceVariant
-  //           : AppColors.designPlaceholder,
-  //     ),
-  //     filled: true,
-  //     fillColor: c.isDark
-  //         ? theme.colorScheme.surfaceContainerHigh
-  //         : AppColors.colorWhite,
-  //     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-  //     border: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(AppValues.radius_6),
-  //       borderSide: BorderSide(
-  //         color: c.isDark
-  //             ? theme.colorScheme.outlineVariant
-  //             : AppColors.designInputBorder,
-  //       ),
-  //     ),
-  //     enabledBorder: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(AppValues.radius_6),
-  //       borderSide: BorderSide(
-  //         color: c.isDark
-  //             ? theme.colorScheme.outlineVariant
-  //             : AppColors.designInputBorder,
-  //       ),
-  //     ),
-  //     focusedBorder: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(AppValues.radius_6),
-  //       borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
-  //     ),
-  //     errorBorder: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(AppValues.radius_6),
-  //       borderSide: const BorderSide(color: AppColors.errorColor),
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildCategoryField(BuildContext context) {
-  //   final theme = Theme.of(context);
-  //   final c = FormSurfaceColors.of(context);
-  //   return Obx(
-  //     () => DropdownButtonFormField<String>(
-  //       initialValue: controller.selectedCategory.value,
-  //       decoration: _inputDecoration(
-  //         context,
-  //         hint: _t(context, en: 'Select Category', sw: 'Chagua Kundi'),
-  //       ),
-  //       hint: Text(
-  //         _t(context, en: 'Select Category', sw: 'Chagua Kundi'),
-  //         style: TextStyle(
-  //           color: c.isDark
-  //               ? theme.colorScheme.onSurfaceVariant
-  //               : AppColors.designPlaceholder,
-  //           fontSize: 16,
-  //         ),
-  //       ),
-  //       icon: Icon(
-  //         Icons.keyboard_arrow_down,
-  //         color: c.isDark
-  //             ? theme.colorScheme.onSurfaceVariant
-  //             : AppColors.designPlaceholder,
-  //       ),
-  //       items: controller.categories
-  //           .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-  //           .toList(),
-  //       onChanged: controller.selectCategory,
-  //       validator: (v) => controller.validateRequired(
-  //         v ?? '',
-  //         _t(context, en: 'Category', sw: 'Kundi'),
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildUploadArea(BuildContext context) {
-  //   return Obx(() {
-  //     final path = controller.receiptFilePath.value;
-  //     if (path != null && path.isNotEmpty) {
-  //       final file = File(path);
-  //       if (file.existsSync()) {
-  //         return Container(
-  //           width: double.infinity,
-  //           decoration: BoxDecoration(
-  //             color: FormSurfaceColors.of(context).isDark
-  //                 ? Theme.of(context).colorScheme.surfaceContainerHigh
-  //                 : AppColors.colorWhite,
-  //             borderRadius: BorderRadius.circular(AppValues.radius_12),
-  //             border: Border.all(
-  //               color: FormSurfaceColors.of(context).isDark
-  //                   ? Theme.of(context).colorScheme.outlineVariant
-  //                   : AppColors.designInputBorder,
-  //             ),
-  //           ),
-  //           child: Column(
-  //             crossAxisAlignment: CrossAxisAlignment.stretch,
-  //             children: [
-  //               ClipRRect(
-  //                 borderRadius: const BorderRadius.vertical(
-  //                   top: Radius.circular(AppValues.radius_12),
-  //                 ),
-  //                 child: AspectRatio(
-  //                   aspectRatio: 16 / 10,
-  //                   child: Image.file(file, fit: BoxFit.cover),
-  //                 ),
-  //               ),
-  //               Padding(
-  //                 padding: const EdgeInsets.symmetric(
-  //                   horizontal: 12,
-  //                   vertical: 8,
-  //                 ),
-  //                 child: Row(
-  //                   children: [
-  //                     Icon(
-  //                       Icons.receipt_long,
-  //                       size: 20,
-  //                       color: AppColors.colorPrimary,
-  //                     ),
-  //                     const SizedBox(width: 8),
-  //                     Expanded(
-  //                       child: Text(
-  //                         _t(
-  //                           context,
-  //                           en: 'Receipt captured',
-  //                           sw: 'Risiti imechukuliwa',
-  //                         ),
-  //                         style: TextStyle(
-  //                           fontSize: 14,
-  //                           fontWeight: FontWeight.w600,
-  //                           color: AppColors.textColorPrimary,
-  //                         ),
-  //                       ),
-  //                     ),
-  //                     TextButton.icon(
-  //                       onPressed: controller.clearReceipt,
-  //                       icon: const Icon(Icons.close, size: 18),
-  //                       label: Text(_t(context, en: 'Remove', sw: 'Ondoa')),
-  //                       style: TextButton.styleFrom(
-  //                         foregroundColor: AppColors.textColorSecondary,
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         );
-  //       }
-  //     }
-  //     return GestureDetector(
-  //       onTap: controller.uploadReceipt,
-  //       child: Container(
-  //         width: double.infinity,
-  //         padding: const EdgeInsets.symmetric(vertical: 32),
-  //         decoration: BoxDecoration(
-  //           color: AppColors.colorPrimaryLight.withValues(alpha: 0.25),
-  //           borderRadius: BorderRadius.circular(AppValues.radius_12),
-  //           border: Border.all(
-  //             color: AppColors.colorPrimary.withValues(alpha: 0.5),
-  //             width: 2,
-  //             strokeAlign: BorderSide.strokeAlignInside,
-  //           ),
-  //         ),
-  //         child: Column(
-  //           children: [
-  //             Icon(
-  //               Icons.camera_alt_outlined,
-  //               size: 48,
-  //               color: AppColors.colorPrimary,
-  //             ),
-  //             const SizedBox(height: 12),
-  //             Text(
-  //               _t(
-  //                 context,
-  //                 en: 'Tap to capture receipt',
-  //                 sw: 'Gusa kupiga picha ya risiti',
-  //               ),
-  //               style: TextStyle(
-  //                 fontSize: 16,
-  //                 fontWeight: FontWeight.w600,
-  //                 color: AppColors.colorPrimary,
-  //               ),
-  //             ),
-  //             const SizedBox(height: 4),
-  //             Text(
-  //               _t(
-  //                 context,
-  //                 en: 'Take a photo of your receipt',
-  //                 sw: 'Piga picha ya risiti yako',
-  //               ),
-  //               style: TextStyle(
-  //                 fontSize: 12,
-  //                 color: AppColors.textColorSecondary,
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     );
-  //   });
-  // }
-
-  // Widget _buildTaxDeductibleCard(BuildContext context) {
-  //   final theme = Theme.of(context);
-  //   final c = FormSurfaceColors.of(context);
-  //   return Obx(
-  //     () => Container(
-  //       padding: const EdgeInsets.all(16),
-  //       decoration: BoxDecoration(
-  //         color: c.isDark
-  //             ? theme.colorScheme.surfaceContainerHigh
-  //             : AppColors.colorWhite,
-  //         borderRadius: BorderRadius.circular(AppValues.radius_12),
-  //         border: Border.all(
-  //           color: c.isDark
-  //               ? theme.colorScheme.outlineVariant
-  //               : AppColors.designInputBorder,
-  //         ),
-  //         boxShadow: [
-  //           BoxShadow(
-  //             color: Colors.black.withValues(alpha: 0.04),
-  //             blurRadius: 6,
-  //             offset: const Offset(0, 2),
-  //           ),
-  //         ],
-  //       ),
-  //       child: Row(
-  //         children: [
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text(
-  //                   _t(
-  //                     context,
-  //                     en: 'Tax Deductible',
-  //                     sw: 'Inakatwa Kwenye Kodi',
-  //                   ),
-  //                   style: TextStyle(
-  //                     fontSize: 16,
-  //                     fontWeight: FontWeight.w600,
-  //                     color: c.isDark
-  //                         ? theme.colorScheme.onSurface
-  //                         : AppColors.textColorPrimary,
-  //                   ),
-  //                 ),
-  //                 const SizedBox(height: 4),
-  //                 Text(
-  //                   _t(
-  //                     context,
-  //                     en: 'This expense can be written off',
-  //                     sw: 'Gharama hii inaweza kukatwa kwenye kodi',
-  //                   ),
-  //                   style: TextStyle(
-  //                     fontSize: 13,
-  //                     color: c.isDark
-  //                         ? theme.colorScheme.onSurfaceVariant
-  //                         : AppColors.textColorSecondary,
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           Switch(
-  //             value: controller.taxDeductible.value,
-  //             onChanged: controller.setTaxDeductible,
-  //             activeTrackColor: AppColors.colorPrimaryLight,
-  //             thumbColor: WidgetStateProperty.resolveWith((states) {
-  //               if (states.contains(WidgetState.selected)) {
-  //                 return AppColors.colorPrimary;
-  //               }
-  //               return AppColors.designInputBorder;
-  //             }),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 }
 
 class _StatBlock extends StatelessWidget {
@@ -1040,8 +495,9 @@ class _StatBlock extends StatelessWidget {
     final valueMuted = colors.headline;
 
     return Column(
-      crossAxisAlignment:
-      alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -1083,9 +539,10 @@ class _ExpenseChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected
-        ? colors.tokens.accent
-        : (colors.isDark ? colors.fill : const Color(0xFFF1F1EE));
+    // final bg = selected
+    //     ? colors.tokens.accent
+    //     : (colors.isDark ? colors.fill : const Color(0xFFF1F1EE));
+    final bg = selected ? colors.tokens.accent : colors.chipUnselectedBg;
     final fg = selected ? Colors.white : colors.headline;
     return Material(
       color: bg,

@@ -22,7 +22,7 @@ class AppLifecycleManager with WidgetsBindingObserver {
     Routes.CHANGE_PIN,
     Routes.ONBOARDING,
     Routes.OTP,
-    Routes.REGISTRATION,
+    Routes.CREATE_HOST_ACCOUNT,
   };
 
   @override

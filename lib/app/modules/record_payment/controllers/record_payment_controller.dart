@@ -25,6 +25,8 @@ import '../../../data/model/record_payment_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
 import '../../booking_details/controllers/booking_details_controller.dart';
+import '../../rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart';
+import '../../rent/tenant_ledger_occupancy/utils/tenant_ledger_finance.dart';
 import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 enum PaymentStatus { paid, pending }
@@ -43,16 +45,16 @@ class BookingPickerOption {
 
 class RecordPaymentController extends BaseController {
   RecordPaymentController()
-      : _incomeLocal = Get.find<IncomeLocalDataSource>(),
-        _propertyLocal = Get.find<PropertyLocalDataSource>(),
-        _tenantLocal = Get.find<TenantLocalDataSource>(),
-        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
-        _syncWorker = Get.find<OfflineSyncWorkerService>(),
-        _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
-        _pendingBookingsStore = PendingBookingsStore(),
-        _preferenceManager = Get.find<PreferenceManager>(
-          tag: (PreferenceManager).toString(),
-        );
+    : _incomeLocal = Get.find<IncomeLocalDataSource>(),
+      _propertyLocal = Get.find<PropertyLocalDataSource>(),
+      _tenantLocal = Get.find<TenantLocalDataSource>(),
+      _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+      _syncWorker = Get.find<OfflineSyncWorkerService>(),
+      _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+      _pendingBookingsStore = PendingBookingsStore(),
+      _preferenceManager = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
 
   final IncomeLocalDataSource _incomeLocal;
   final PropertyLocalDataSource _propertyLocal;
@@ -72,18 +74,26 @@ class RecordPaymentController extends BaseController {
   /// Reused across rebuilds so opening the keyboard does not allocate a new
   /// [intl.NumberFormat] on every frame ([ThousandsSeparatorInputFormatter]).
   final ThousandsSeparatorInputFormatter amountThousandsFormatter =
-  ThousandsSeparatorInputFormatter();
+      ThousandsSeparatorInputFormatter();
 
   /// Income category options (single selection).
   final categories = const ['Lease', 'Service Charge', 'Maintenance', 'Other'];
-  final paymentMethods = ['Cash', 'Card', 'Bank Transfer', 'Mobile Money', 'Other'];
+  final paymentMethods = [
+    'Cash',
+    'Card',
+    'Bank Transfer',
+    'Mobile Money',
+    'Other',
+  ];
 
   final selectedCategoryIndex = 0.obs;
   final propertyOptions = <String>[].obs;
   final selectedProperty = ''.obs;
+
   /// Optional apartment unit ([ApartmentUnitDraft.selectionKey]); null = not specified.
   final selectedIncomeUnitKey = Rxn<String>();
   final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
+
   /// Optional BnB booking ([CheckInItem.bookingKey]); null = not linked.
   final selectedBookingKey = Rxn<String>();
   final bookingOptions = <BookingPickerOption>[].obs;
@@ -113,7 +123,8 @@ class RecordPaymentController extends BaseController {
   String get selectedCategory => categories[selectedCategoryIndex.value];
   bool get hasProperties => propertyOptions.isNotEmpty;
 
-  String get paymentDateLabel => DateFormat(_dateFormat).format(paymentDate.value);
+  String get paymentDateLabel =>
+      DateFormat(_dateFormat).format(paymentDate.value);
 
   void goBack() => Get.back();
 
@@ -169,17 +180,17 @@ class RecordPaymentController extends BaseController {
       _propertyMenuItems = list
           .map(
             (p) => DropdownMenuItem<String>(
-          value: p,
-          child: Text(
-            p,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: itemColor,
+              value: p,
+              child: Text(
+                p,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: itemColor,
+                ),
+              ),
             ),
-          ),
-        ),
-      )
+          )
           .toList();
     }
     return _propertyMenuItems;
@@ -218,7 +229,7 @@ class RecordPaymentController extends BaseController {
         ),
       ),
       ...units.map(
-            (u) => DropdownMenuItem<String?>(
+        (u) => DropdownMenuItem<String?>(
           value: u.selectionKey,
           child: Text(
             u.unitName,
@@ -328,14 +339,31 @@ class RecordPaymentController extends BaseController {
     return null;
   }
 
-  static bool _tenantMatchesProperty(
-      TenantRecord t,
-      PropertyRecord p,
-      ) {
+  String _workspaceForIncomeSave(ApartmentUnitDraft? unitDraft) {
+    final propertyMode = _normalizeWorkspace(
+      selectedPropertyRecord?.workspaceType,
+    );
+    if (propertyMode == 'both') {
+      return _normalizeWorkspace(unitDraft?.operationMode, fallback: 'bnb');
+    }
+    return propertyMode;
+  }
+
+  String _normalizeWorkspace(String? raw, {String fallback = 'bnb'}) {
+    final value = raw?.trim().toLowerCase() ?? '';
+    if (value == 'bnb' || value == 'rent' || value == 'both') {
+      return value;
+    }
+    return fallback;
+  }
+
+  static bool _tenantMatchesProperty(TenantRecord t, PropertyRecord p) {
     final loc = p.propertyLocation.trim();
     final suite = p.propertyName.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : loc;
-    final propertyRef = p.propertyRef.trim().isNotEmpty ? p.propertyRef.trim() : 'legacy_${p.id}';
+    final propertyRef = p.propertyRef.trim().isNotEmpty
+        ? p.propertyRef.trim()
+        : 'legacy_${p.id}';
     final r = t.propertyRef.trim();
     if (r.isNotEmpty) {
       return r == propertyRef;
@@ -348,10 +376,10 @@ class RecordPaymentController extends BaseController {
   }
 
   static bool _tenantMatchesUnit(
-      TenantRecord t,
-      ApartmentUnitDraft u,
-      PropertyRecord p,
-      ) {
+    TenantRecord t,
+    ApartmentUnitDraft u,
+    PropertyRecord p,
+  ) {
     if (!_tenantMatchesProperty(t, p)) return false;
     final tid = t.apartmentUnitId.trim();
     final uid = u.unitId.trim();
@@ -417,17 +445,18 @@ class RecordPaymentController extends BaseController {
     _propertyRows = rows;
     final options = rows
         .map((e) {
-      final suite = e.propertyName.trim();
-      return suite.isNotEmpty ? suite : e.propertyLocation.trim();
-    })
+          final suite = e.propertyName.trim();
+          return suite.isNotEmpty ? suite : e.propertyLocation.trim();
+        })
         .where((e) => e.isNotEmpty)
         .toSet()
         .toList();
     propertyOptions.assignAll(options);
 
     final fromArgs = _routePropertyLabel();
-    final fromRoute =
-    fromArgs.isNotEmpty ? fromArgs : (Get.parameters['property']?.trim() ?? '');
+    final fromRoute = fromArgs.isNotEmpty
+        ? fromArgs
+        : (Get.parameters['property']?.trim() ?? '');
     if (fromRoute.isNotEmpty && options.contains(fromRoute)) {
       selectedProperty.value = fromRoute;
       return;
@@ -450,8 +479,9 @@ class RecordPaymentController extends BaseController {
   }
 
   void updateSelectedBooking(String? bookingKey) {
-    selectedBookingKey.value =
-        bookingKey == null || bookingKey.trim().isEmpty ? null : bookingKey.trim();
+    selectedBookingKey.value = bookingKey == null || bookingKey.trim().isEmpty
+        ? null
+        : bookingKey.trim();
     if (bookingKey == null || bookingKey.trim().isEmpty) return;
     for (final o in bookingOptions) {
       if (o.bookingKey == bookingKey) {
@@ -505,7 +535,9 @@ class RecordPaymentController extends BaseController {
         final res = await _repository.getAllBookings();
         final data = res.data;
         List<dynamic> rows = const [];
-        if (res.responseCode == '0' && data is Map && data['bookings'] is List) {
+        if (res.responseCode == '0' &&
+            data is Map &&
+            data['bookings'] is List) {
           rows = data['bookings'] as List;
         } else if (res.responseCode == '0' && data is List) {
           rows = data;
@@ -521,14 +553,18 @@ class RecordPaymentController extends BaseController {
           final listingId = (m['listingId'] ?? '').toString().trim();
           final checkIn = (m['checkIn'] ?? '').toString();
           final checkOut = (m['checkOut'] ?? '').toString();
-          if (listingId.isEmpty || checkIn.isEmpty || checkOut.isEmpty) continue;
+          if (listingId.isEmpty || checkIn.isEmpty || checkOut.isEmpty) {
+            continue;
+          }
           final propertyLabel = prop.propertyName.trim().isNotEmpty
               ? prop.propertyName.trim()
               : prop.propertyLocation.trim();
           final localId = 'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
           final item = merge.fromPendingMap(
             m,
-            propertyLabel: propertyLabel.isNotEmpty ? propertyLabel : 'Property',
+            propertyLabel: propertyLabel.isNotEmpty
+                ? propertyLabel
+                : 'Property',
             localId: localId,
           );
           merged[localId] = item;
@@ -539,7 +575,9 @@ class RecordPaymentController extends BaseController {
       for (final item in merged.values) {
         if (!_bookingMatchesProperty(item, prop)) continue;
         if (!_isActiveOrUpcoming(item)) continue;
-        final guest = item.guestName.trim().isEmpty ? 'Guest' : item.guestName.trim();
+        final guest = item.guestName.trim().isEmpty
+            ? 'Guest'
+            : item.guestName.trim();
         final dates = item.dates.trim();
         options.add(
           BookingPickerOption(
@@ -642,10 +680,8 @@ class RecordPaymentController extends BaseController {
     final notes = notesController.text.trim();
     final property = selectedProperty.value.trim();
 
-    final parsed = MoneyInputHelper.forSave(
-      amountRaw: amountRaw,
-      selectedCurrency: selectedCurrency.value,
-    );
+    final parsed = _parseMoneyForSave(amountRaw);
+    if (parsed == null) return;
     if (parsed.inputAmount <= 0) {
       showErrorMessage('Enter a valid amount greater than 0');
       return;
@@ -661,6 +697,7 @@ class RecordPaymentController extends BaseController {
 
     final unitDraft = _draftForIncomeUnitKey(selectedIncomeUnitKey.value);
     final unitName = unitDraft?.unitName.trim() ?? '';
+    final workspaceType = _workspaceForIncomeSave(unitDraft);
     final unitLine = _optionalUnitNotesLine();
     final baseNotes = StringBuffer('Property: $property');
     if (unitLine.isNotEmpty) {
@@ -670,6 +707,12 @@ class RecordPaymentController extends BaseController {
     if (notes.isNotEmpty) {
       baseNotes.write(" ");
       baseNotes.writeln(notes);
+    }
+    final tenantIdParam = int.tryParse(Get.parameters['tenantId'] ?? '');
+    if (tenantIdParam != null && tenantIdParam > 0) {
+      baseNotes.writeln(
+        TenantLedgerFinance.appendTenantIdNote('', tenantIdParam),
+      );
     }
 
     final bookingId = _selectedBookingIdForSave() ?? '';
@@ -681,7 +724,7 @@ class RecordPaymentController extends BaseController {
         amountValue: parsed.baseAmount,
         datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
         category: selectedCategory,
-        workspaceType: 'bnb',
+        workspaceType: workspaceType,
         notes: baseNotes.toString().trim(),
         apartment: property,
         apartmentUnit: unitName,
@@ -716,11 +759,13 @@ class RecordPaymentController extends BaseController {
       hapticPrimaryConfirm();
       if (pending > 0) {
         showSuccessMessage(
-            'Income saved offline. Will sync when internet is available.');
+          'Income saved offline. Will sync when internet is available.',
+        );
       } else {
         showSuccessMessage('Income saved and synced.');
       }
       await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+      await RentTenantLedgerOccupancyController.refreshIfRegistered();
       await BookingDetailsController.refreshIfRegistered();
       await PropertyBreakEvenNotificationService.checkPropertyIfRegistered(
         _propertyRefForIncomeInsert(),
@@ -730,6 +775,19 @@ class RecordPaymentController extends BaseController {
       showErrorMessage('Failed to save income: $e');
     } finally {
       saving.value = false;
+    }
+  }
+
+  ({double baseAmount, double inputAmount, String currency})?
+  _parseMoneyForSave(String amountRaw) {
+    try {
+      return MoneyInputHelper.forSave(
+        amountRaw: amountRaw,
+        selectedCurrency: selectedCurrency.value,
+      );
+    } on CurrencyConversionException catch (e) {
+      showErrorMessage(e.message);
+      return null;
     }
   }
 
@@ -774,6 +832,7 @@ class RecordPaymentController extends BaseController {
     notesController.dispose();
     super.onClose();
   }
+
   // RecordPaymentController()
   //     : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
   //       _preferenceManager = Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),

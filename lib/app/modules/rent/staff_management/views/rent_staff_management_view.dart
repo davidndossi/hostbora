@@ -32,7 +32,8 @@ class _StaffUi {
 
   Color get labelCaps => context.tokens.textMuted;
 
-  Color get fieldFill => context.tokens.elevatedSurface;
+  Color get fieldFill =>
+      dark ? context.tokens.elevatedSurface : const Color(0xFFF2F2F2);
 
   Color get card => context.tokens.cardBackground;
 
@@ -617,6 +618,11 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
   }
 
   InputDecoration _fieldDeco(_StaffUi u, {required String hint}) {
+    final borderSide = BorderSide(
+      color: u.dark
+          ? u.border.withValues(alpha: 0.45)
+          : const Color(0xFFD0D0D0),
+    );
     return InputDecoration(
       filled: true,
       fillColor: u.fieldFill,
@@ -624,11 +630,11 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
       hintStyle: TextStyle(color: u.muted),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: borderSide,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: u.border.withValues(alpha: u.dark ? 0.45 : 0)),
+        borderSide: borderSide,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -639,16 +645,21 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
   }
 
   InputDecoration _dropdownDeco(_StaffUi u) {
+    final borderSide = BorderSide(
+      color: u.dark
+          ? u.border.withValues(alpha: 0.45)
+          : const Color(0xFFD0D0D0),
+    );
     return InputDecoration(
       filled: true,
       fillColor: u.fieldFill,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: borderSide,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: u.border.withValues(alpha: u.dark ? 0.45 : 0)),
+        borderSide: borderSide,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

@@ -5,19 +5,25 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/base/feedback_extensions.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_listing_units_sync.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
+import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../core/values/property_unit_floor.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
 
 class EditUnitController extends BaseController {
   EditUnitController()
       : _propertyLocal = Get.find<PropertyLocalDataSource>(),
-        _unitLocal = Get.find<PropertyUnitLocalDataSource>();
+        _unitLocal = Get.find<PropertyUnitLocalDataSource>(),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final PropertyLocalDataSource _propertyLocal;
   final PropertyUnitLocalDataSource _unitLocal;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
 
   final formKey = GlobalKey<FormState>();
   final unitNameController = TextEditingController();
@@ -202,6 +208,28 @@ class EditUnitController extends BaseController {
           rooms: 0,
           maxGuests: 0,
         );
+      }
+
+      final listingId = property.propertyRef.trim().isNotEmpty
+          ? property.propertyRef.trim()
+          : 'local_${property.id}';
+      final unitId = updated.unitId.trim().isNotEmpty
+          ? updated.unitId.trim()
+          : 'unit_index_$_targetIndex';
+      try {
+        await _syncQueue.enqueue(
+          entityType: 'unit',
+          operation: 'update',
+          payloadJson: jsonEncode({
+            'listingId': listingId,
+            'unitId': unitId,
+            'unit': updated.toJson(),
+          }),
+          dedupeKey: 'unit:update:${listingId}_$unitId',
+        );
+        _syncWorker.runNow();
+      } catch (_) {
+        // Sync queue failure should not block the UI save
       }
 
       Get.back(result: true);

@@ -241,12 +241,17 @@ class LocalSourceBindings implements Bindings {
       operation: 'create',
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
-        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
         await repository.addTask(
           AddTaskRequest(
             title: map['title'] as String? ?? 'Maintenance',
             description: map['description'] as String?,
             dueDate: map['dueDate'] as String?,
+            propertyLabel: map['propertyLabel'] as String?,
+            propertyRef: map['propertyRef'] as String?,
+            workspaceType: map['workspaceType'] as String?,
           ),
         );
         final localId = map['localId'] as int?;
@@ -261,18 +266,25 @@ class LocalSourceBindings implements Bindings {
       operation: 'create',
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
-        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
         await repository.addTask(
           AddTaskRequest(
             title: map['title'] as String? ?? 'Payment reminder',
             description: map['description'] as String?,
             dueDate: map['dueDate'] as String?,
+            propertyLabel: map['propertyLabel'] as String?,
+            propertyRef: map['propertyRef'] as String?,
+            workspaceType: map['workspaceType'] as String?,
           ),
         );
         final localId = map['localId'] as int?;
         if (localId != null) {
-          await Get.find<RentPaymentReminderLocalDataSource>()
-              .updateSyncStatus(localId, 'synced');
+          await Get.find<RentPaymentReminderLocalDataSource>().updateSyncStatus(
+            localId,
+            'synced',
+          );
         }
       },
     );
@@ -281,9 +293,14 @@ class LocalSourceBindings implements Bindings {
       operation: 'create',
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
-        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
-        final res = await repository.createBooking(CreateBookingRequest.fromJson(map));
-        final ok = res.responseCode == null ||
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.createBooking(
+          CreateBookingRequest.fromJson(map),
+        );
+        final ok =
+            res.responseCode == null ||
             res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
@@ -297,11 +314,14 @@ class LocalSourceBindings implements Bindings {
       operation: 'checkout',
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
-        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
         final res = await repository.checkoutBooking(
           CheckoutBookingRequest.fromJson(map),
         );
-        final ok = res.responseCode == null ||
+        final ok =
+            res.responseCode == null ||
             res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
@@ -315,11 +335,14 @@ class LocalSourceBindings implements Bindings {
       operation: 'cancel',
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
-        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
         final res = await repository.cancelBooking(
           CancelBookingRequest.fromJson(map),
         );
-        final ok = res.responseCode == null ||
+        final ok =
+            res.responseCode == null ||
             res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
@@ -333,9 +356,14 @@ class LocalSourceBindings implements Bindings {
       operation: 'update',
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
-        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
-        final res = await repository.updateBooking(UpdateBookingRequest.fromJson(map));
-        final ok = res.responseCode == null ||
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.updateBooking(
+          UpdateBookingRequest.fromJson(map),
+        );
+        final ok =
+            res.responseCode == null ||
             res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
@@ -349,9 +377,14 @@ class LocalSourceBindings implements Bindings {
       operation: 'create',
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
-        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
-        final res = await repository.recordPayment(RecordPaymentRequest.fromJson(map));
-        final ok = res.responseCode == null ||
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.recordPayment(
+          RecordPaymentRequest.fromJson(map),
+        );
+        final ok =
+            res.responseCode == null ||
             res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
@@ -365,9 +398,14 @@ class LocalSourceBindings implements Bindings {
       operation: 'create',
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
-        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
-        final res = await repository.addExpense(AddExpenseRequest.fromJson(map));
-        final ok = res.responseCode == null ||
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.addExpense(
+          AddExpenseRequest.fromJson(map),
+        );
+        final ok =
+            res.responseCode == null ||
             res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
@@ -381,14 +419,21 @@ class LocalSourceBindings implements Bindings {
       operation: 'create',
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
-        final repository = Get.find<AppRepository>(tag: (AppRepository).toString());
-        final listingMap = (map['listing'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final listingMap =
+            (map['listing'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
         final roomPhotoPathsRaw =
-            (map['roomPhotoPaths'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+            (map['roomPhotoPaths'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
         final roomPhotoPaths = <String, List<String>>{};
         for (final e in roomPhotoPathsRaw.entries) {
           if (e.value is List) {
-            roomPhotoPaths[e.key] = (e.value as List).map((v) => v.toString()).toList();
+            roomPhotoPaths[e.key] = (e.value as List)
+                .map((v) => v.toString())
+                .toList();
           }
         }
         final coverPath = (map['coverPhotoPath'] ?? '').toString().trim();
@@ -397,13 +442,314 @@ class LocalSourceBindings implements Bindings {
           roomPhotoPaths,
           coverPhotoPath: coverPath.isEmpty ? null : coverPath,
         );
-        final ok = res.responseCode == null ||
+        final ok =
+            res.responseCode == null ||
             res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) {
           throw Exception(res.message ?? 'Listing sync failed');
         }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'task',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final req = AddTaskRequest(
+          title: map['title'] as String? ?? '',
+          description: map['description'] as String?,
+          dueDate: map['dueDate'] as String?,
+          propertyLabel: map['propertyLabel'] as String?,
+          propertyRef: map['propertyRef'] as String?,
+          workspaceType: map['workspaceType'] as String?,
+          assignee: map['assignee'] as String?,
+        );
+        final res = await repository.addTask(req);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Task sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'listing',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final listingId = map['listingId'] as String? ?? '';
+        if (listingId.isEmpty) throw Exception('No listingId in payload');
+        final listingData =
+            (map['listing'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
+        final roomPhotoPathsRaw =
+            (map['roomPhotoPaths'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
+        final roomPhotoPaths = <String, List<String>>{};
+        for (final e in roomPhotoPathsRaw.entries) {
+          if (e.value is List) {
+            roomPhotoPaths[e.key] =
+                (e.value as List).map((v) => v.toString()).toList();
+          }
+        }
+        final coverPath = (map['coverPhotoPath'] ?? '').toString().trim();
+        final res = await repository.updateListing(
+          listingId,
+          AddListingRequest.fromJson(listingData),
+          roomPhotoPaths,
+          coverPhotoPath: coverPath.isEmpty ? null : coverPath,
+        );
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Listing update sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'unit',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final listingId = map['listingId'] as String? ?? '';
+        final unitId = map['unitId'] as String? ?? '';
+        if (listingId.isEmpty || unitId.isEmpty) {
+          throw Exception('Missing listingId or unitId in unit:update payload');
+        }
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final unitData =
+            (map['unit'] as Map?)?.cast<String, dynamic>() ?? map;
+        final res = await repository.updateUnit(listingId, unitId, unitData);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Unit update sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'wa_template',
+      operation: 'submit',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.saveWhatsAppTemplateDraft(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'WA template submit sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'tenant',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.createTenant(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'tenant',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final id = (map['id'] as String?) ?? '';
+        if (id.isEmpty) throw Exception('Missing id in tenant:update payload');
+        final res = await repository.updateTenant(id, map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'document',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.uploadVaultDocument(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'staff',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.createStaff(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'staff',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final id = (map['id'] as String?) ?? '';
+        if (id.isEmpty) throw Exception('Missing id in staff:update payload');
+        final res = await repository.updateStaff(id, map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'loyalty',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.createLoyaltyOffer(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'tenant_charge',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.createTenantCharge(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'lease',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.renewLease(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'estimate',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.saveEstimate(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'estimate',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final id = (map['id'] as String?) ?? '';
+        if (id.isEmpty) throw Exception('Missing id in estimate:update payload');
+        final res = await repository.updateEstimate(id, map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'utility',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.addUtilityTopUp(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'wa_template',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.saveWhatsAppTemplateDraft(map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'wa_template',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final id = (map['id'] as String?) ?? '';
+        if (id.isEmpty) throw Exception('Missing id in wa_template:update payload');
+        final res = await repository.updateWhatsAppTemplateDraft(id, map);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
       },
     );
     registerOfflineSyncUiRefresh(syncWorker);

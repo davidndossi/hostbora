@@ -7,19 +7,21 @@ import 'package:intl/intl.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/currency_service.dart';
-import '../../../data/local/service/workspace_context_service.dart';
 import '../../../routes/app_pages.dart';
+import '../../rent/tenant_ledger_occupancy/utils/tenant_ledger_finance.dart';
 
 class FinancialOverviewController extends BaseController {
   FinancialOverviewController()
       : _incomeLocal = Get.find<IncomeLocalDataSource>(),
         _expenseLocal = Get.find<ExpenseLocalDataSource>(),
-        _workspaceContext = Get.find<WorkspaceContextService>();
+        _tenantLocal = Get.find<TenantLocalDataSource>();
 
   final IncomeLocalDataSource _incomeLocal;
   final ExpenseLocalDataSource _expenseLocal;
-  final WorkspaceContextService _workspaceContext;
+  final TenantLocalDataSource _tenantLocal;
 
   final isLoading = true.obs;
   final isIncomeSelected = true.obs;
@@ -58,6 +60,41 @@ class FinancialOverviewController extends BaseController {
   final customRangeStart = Rxn<DateTime>();
   final customRangeEndInclusive = Rxn<DateTime>();
 
+  final _chartIncome = List<double>.filled(7, 0).obs;
+  final _chartExpense = List<double>.filled(7, 0).obs;
+  final _incomeTotal = 0.0.obs;
+  final _expenseTotal = 0.0.obs;
+  final _profitTrendPercent = 0.0.obs;
+  final _monthlyIncome = 0.0.obs;
+  final _occupancyPercent = 0.obs;
+  final _activeLeases = 0.obs;
+  final _totalArrears = 0.0.obs;
+
+  List<double> get chartIncome => _chartIncome;
+  List<double> get chartExpense => _chartExpense;
+
+  CurrencyService get _currency => Get.find<CurrencyService>();
+
+  String get netProfitLabel =>
+      _currency.formatBase((_incomeTotal.value - _expenseTotal.value).round());
+  String get totalIncomeLabel => _currency.formatBase(_incomeTotal.value.round());
+  String get expensesLabel => _currency.formatBase(_expenseTotal.value.round());
+  String get profitTrendLabel {
+    final p = _profitTrendPercent.value;
+    final sign = p > 0 ? '+' : '';
+    return '$sign${p.toStringAsFixed(1)}%';
+  }
+
+  String get monthlyIncomeLabel =>
+      _currency.formatBase(_monthlyIncome.value.round());
+  String get occupancyLabel => '${_occupancyPercent.value}%';
+  String get activeLeasesLabel => '${_activeLeases.value}';
+  String get totalArrearsLabel =>
+      _currency.formatBase(_totalArrears.value.round());
+
+  final PreferenceManager _preferenceManager = Get.find(tag: (PreferenceManager)
+      .toString());
+
   @override
   void onInit() {
     super.onInit();
@@ -73,7 +110,7 @@ class FinancialOverviewController extends BaseController {
   Future<void> loadOverview({bool quiet = false}) async {
     if (!quiet) isLoading.value = true;
     try {
-      final ws = await _workspaceContext.getWorkspaceType();
+      final ws = 'bnb';
       final fx = Get.find<CurrencyService>();
       final incomes =
           await _incomeLocal.getAllNewestFirst(workspaceType: ws);
@@ -259,10 +296,44 @@ class FinancialOverviewController extends BaseController {
       monthlyLabels.assignAll(labels);
       monthlyValuesA.assignAll(monthlyA);
       monthlyValuesB.assignAll(monthlyB);
+
+      // Compute arrears across all tenants (expected rent - income received).
+      await _computeArrears(incomes);
     } catch (_) {
       // Keep last loaded values on error.
     } finally {
       if (!quiet) isLoading.value = false;
+    }
+  }
+
+  Future<void> _computeArrears(List<IncomeRecord> bnbIncomes) async {
+    try {
+      final tenants = await _tenantLocal.getAllNewestFirst();
+      if (tenants.isEmpty) {
+        _totalArrears.value = 0;
+        return;
+      }
+      // Load rent income as well for full matching.
+      final rentIncomes = await _incomeLocal.getAllNewestFirst(
+        workspaceType: 'rent',
+      );
+      final allIncomes = [...bnbIncomes, ...rentIncomes];
+      var arrears = 0.0;
+      for (final t in tenants) {
+        final due = TenantLedgerFinance.totalDueTsh(t).toDouble();
+        if (due <= 0) continue;
+        var paid = 0.0;
+        for (final r in allIncomes) {
+          if (TenantLedgerFinance.incomeMatchesTenant(r, t)) {
+            paid += r.amountValue;
+          }
+        }
+        final gap = due - paid;
+        if (gap > 0) arrears += gap;
+      }
+      _totalArrears.value = arrears;
+    } catch (_) {
+      // Keep previous arrears value on error.
     }
   }
 
@@ -457,4 +528,21 @@ class FinancialOverviewController extends BaseController {
 
   void selectIncome() => isIncomeSelected.value = true;
   void selectExpenses() => isIncomeSelected.value = false;
+
+  void openManagePayments() => Get.toNamed(Routes.RENT_MANAGE_PAYMENTS);
+
+  void openTenancyInsights() =>
+      Get.toNamed(Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER);
+
+  Future<void> openHostDashboard() async {
+    final hostName = (await _preferenceManager.getString(
+      PreferenceManager.keyFullName,
+      defaultValue: '',
+    ))
+        .trim();
+    Get.toNamed(
+      Routes.RENT_HOST_DASHBOARD_PAYMENT_ALERTS,
+      parameters: {if (hostName.isNotEmpty) 'hostName': hostName},
+    );
+  }
 }

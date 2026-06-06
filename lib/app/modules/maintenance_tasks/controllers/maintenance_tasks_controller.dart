@@ -75,6 +75,15 @@ class MaintenanceTasksController extends BaseController {
     }
   }
 
+  /// Counts from the currently-loaded list so chips are always accurate.
+  int get countAll => tasks.length;
+  int get countPending =>
+      tasks.where((t) => t.status == TaskStatus.pending).length;
+  int get countInProgress =>
+      tasks.where((t) => t.status == TaskStatus.inProgress).length;
+  int get countCompleted =>
+      tasks.where((t) => t.status == TaskStatus.completed).length;
+
   void setFilter(TaskFilter filter) {
     if (selectedFilter.value == filter) return;
     selectedFilter.value = filter;

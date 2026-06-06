@@ -209,7 +209,7 @@
   "middleName": "Middle Name",
   "lastName": "Last Name",
   "support": "Support",
-  "supportIntro": "Answers about Host Bora (Paa Yangu)—BnB and Rent workspaces, bookings, payments, calendar sync, security, and more. For anything not covered here, contact us below.",
+  "supportIntro": "Answers about Host Bora—BnB and Rent workspaces, bookings, payments, calendar sync, security, and more. For anything not covered here, contact us below.",
   "supportTipsHeading": "Quick tips",
   "supportTipsBody": "• Switch BnB and Rent from the home screen; pull down on listings to refresh occupancy and revenue.\n• Record payments against the correct property and unit; check dates fall in the current month for dashboards.\n• Link external calendars per listing to reduce double bookings.\n• Use Settings → Clear offline data only if you intend to remove local rent records from this phone.",
   "supportFaqHeading": "Common questions",
@@ -341,6 +341,7 @@
   "access": "Smart Access",
   "bookings": "Bookings",
   "addBooking": "Add Booking",
+  "addPayment": "Add Payment",
   "sendMessage": "Send message",
   "sendSmsWhatsapp": "Send SMS or whatsapp",
   "sendSmsPickFromContacts": "Pick from contacts",
@@ -885,5 +886,6 @@
   "staffDetailCannotOpenPhone": "Could not open phone app.",
   "staffDetailTaskCompleted": "Completed",
   "staffDetailTaskDue": "Due",
-  "staffDetailTaskPending": "Pending"
+  "staffDetailTaskPending": "Pending",
+  "finances": "Finances"
 }

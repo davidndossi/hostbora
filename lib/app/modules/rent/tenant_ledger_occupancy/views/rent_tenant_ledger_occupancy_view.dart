@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/base/rent_base_view.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_tenant_ledger_occupancy_controller.dart';
+import '../utils/tenant_ledger_document_store.dart';
 
 /// Semantic colors for ledger screen (light + dark).
 class _LedgerUi {
@@ -125,6 +126,10 @@ class RentTenantLedgerOccupancyView
             Obx(() => _tenancyCard(u)),
             const SizedBox(height: 14),
             Obx(() => _financialBreakdownCard(u, currency)),
+            const SizedBox(height: 22),
+            Obx(() => _paymentHistorySection(u, currency)),
+            const SizedBox(height: 22),
+            Obx(() => _documentsSection(u)),
             const SizedBox(height: 22),
             _actionSection(u),
             const SizedBox(height: 22),
@@ -273,7 +278,7 @@ class RentTenantLedgerOccupancyView
           ),
           const SizedBox(height: 4),
           Text(
-            '${controller.currentStayMonths} Months',
+            controller.currentStayLabel,
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w700,
@@ -287,7 +292,9 @@ class RentTenantLedgerOccupancyView
           ),
           const SizedBox(height: 4),
           Text(
-            'Current Lease: ${controller.currentLeaseMonths} Months',
+            _isSw
+                ? 'Mkataba: ${controller.leaseDurationLabel}'
+                : 'Lease term: ${controller.leaseDurationLabel}',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -401,12 +408,13 @@ class RentTenantLedgerOccupancyView
     );
   }
 
-  Widget _actionSection(_LedgerUi u) {
+  Widget _paymentHistorySection(_LedgerUi u, NumberFormat currency) {
+    final rows = controller.paymentHistory;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Immediate Action Recommended',
+          _isSw ? 'Malipo yaliyofanywa' : 'Payments made',
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 16,
@@ -414,15 +422,234 @@ class RentTenantLedgerOccupancyView
           ),
         ),
         const SizedBox(height: 8),
+        if (rows.isEmpty)
+          Text(
+            _isSw ? 'Hakuna malipo yaliyorekodiwa bado.' : 'No payments recorded yet.',
+            style: TextStyle(fontSize: 14, color: u.onSurfaceSecondary),
+          )
+        else
+          ...rows.map(
+            (p) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: u.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: u.border),
+                boxShadow: u.cardShadow,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          currency.format(p.amountTsh),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                            color: u.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${p.category} · ${p.dateLabel}',
+                          style: TextStyle(fontSize: 12, color: u.labelMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: _isSw ? 'Tengeneza risiti' : 'Generate receipt',
+                    onPressed: () => controller.generateReceipt(payment: p),
+                    icon: const Icon(Icons.receipt_long_outlined),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _documentsSection(_LedgerUi u) {
+    final docs = controller.documentHistory;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Text(
-          'Automate communication to resolve the pending balance for July and August.',
+          _isSw ? 'Ankara na risiti' : 'Invoices & receipts',
           style: TextStyle(
-            fontSize: 14,
-            height: 1.45,
-            color: u.onSurfaceSecondary,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            color: u.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (docs.isEmpty)
+          Text(
+            _isSw
+                ? 'Hakuna hati zilizotengenezwa bado.'
+                : 'No documents generated yet.',
+            style: TextStyle(fontSize: 14, color: u.onSurfaceSecondary),
+          )
+        else
+          ...docs.map((d) {
+            final isInvoice = d.type == TenantLedgerDocumentType.invoice;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: u.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: u.border),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isInvoice ? Icons.request_quote_outlined : Icons.receipt_outlined,
+                    color: _LedgerUi.teal,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          d.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: u.onSurface,
+                          ),
+                        ),
+                        Text(
+                          d.summary,
+                          style: TextStyle(fontSize: 12, color: u.labelMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => controller.openDocument(d),
+                    icon: const Icon(Icons.open_in_new, size: 20),
+                  ),
+                  IconButton(
+                    onPressed: () => controller.shareDocument(d, viaWhatsApp: true),
+                    icon: const Icon(Icons.chat_outlined, size: 20),
+                  ),
+                  IconButton(
+                    onPressed: () => controller.shareDocument(d, viaWhatsApp: false),
+                    icon: const Icon(Icons.email_outlined, size: 20),
+                  ),
+                ],
+              ),
+            );
+          }),
+      ],
+    );
+  }
+
+  Widget _actionSection(_LedgerUi u) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _isSw ? 'Hatua inayopendekezwa' : 'Immediate Action Recommended',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            color: u.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Obx(
+          () => Text(
+            controller.actionRecommendationText,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.45,
+              color: u.onSurfaceSecondary,
+            ),
           ),
         ),
         const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: controller.openRecordPayment,
+            icon: const Icon(Icons.payments_outlined, size: 22),
+            label: Text(
+              _isSw ? 'Rekodi malipo' : 'Record payment',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: _LedgerUi.teal,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: controller.generateInvoice,
+                icon: const Icon(Icons.request_quote_outlined, size: 18),
+                label: Text(
+                  _isSw ? 'Ankara' : 'Invoice',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => controller.generateReceipt(),
+                icon: const Icon(Icons.receipt_outlined, size: 18),
+                label: Text(
+                  _isSw ? 'Risiti' : 'Receipt',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: controller.shareLatestInvoiceViaWhatsApp,
+                icon: const Icon(Icons.chat_outlined, size: 18),
+                label: Text(
+                  'WhatsApp',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: controller.shareLatestInvoiceViaEmail,
+                icon: const Icon(Icons.email_outlined, size: 18),
+                label: Text(
+                  _isSw ? 'Barua pepe' : 'Email',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(

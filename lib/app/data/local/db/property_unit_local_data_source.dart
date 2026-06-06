@@ -15,6 +15,7 @@ class PropertyUnitRecord {
     required this.maxGuests,
     required this.rooms,
     required this.floor,
+    required this.operationMode,
     required this.notes,
     required this.createdAtMs,
   });
@@ -30,6 +31,7 @@ class PropertyUnitRecord {
   final int maxGuests;
   final int rooms;
   final int floor;
+  final String operationMode;
   final String notes;
   final int createdAtMs;
 
@@ -46,25 +48,34 @@ class PropertyUnitRecord {
       maxGuests: m['max_guests'] as int? ?? 0,
       rooms: m['rooms'] as int? ?? 0,
       floor: (m['floor'] as num?)?.toInt() ?? 0,
+      operationMode: _normalizeOperationMode(
+        m['operation_mode'] as String? ?? '',
+      ),
       notes: m['notes'] as String? ?? '',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
     );
   }
 
   Map<String, Object?> toInsertMap() => {
-        'property_unit_ref': propertyUnitRef,
-        'property_ref': propertyRef,
-        'unit_name': unitName,
-        'status': status,
-        'rent_amount': rentAmount,
-        'rent_frequency': rentFrequency,
-        'min_rent_duration': minRentDuration,
-        'max_guests': maxGuests,
-        'rooms': rooms,
-        'floor': floor,
-        'notes': notes,
-        'created_at_ms': createdAtMs,
-      };
+    'property_unit_ref': propertyUnitRef,
+    'property_ref': propertyRef,
+    'unit_name': unitName,
+    'status': status,
+    'rent_amount': rentAmount,
+    'rent_frequency': rentFrequency,
+    'min_rent_duration': minRentDuration,
+    'max_guests': maxGuests,
+    'rooms': rooms,
+    'floor': floor,
+    'operation_mode': _normalizeOperationMode(operationMode),
+    'notes': notes,
+    'created_at_ms': createdAtMs,
+  };
+
+  static String _normalizeOperationMode(String raw) {
+    final value = raw.trim().toLowerCase();
+    return value == 'rent' ? 'rent' : 'bnb';
+  }
 }
 
 class PropertyUnitLocalDataSource {
@@ -168,7 +179,10 @@ class PropertyUnitLocalDataSource {
     final out = <PropertyUnitRecord>[];
     var offset = 0;
     while (true) {
-      final page = await getAllNewestFirstPage(limit: safeChunk, offset: offset);
+      final page = await getAllNewestFirstPage(
+        limit: safeChunk,
+        offset: offset,
+      );
       if (page.isEmpty) break;
       out.addAll(page);
       if (page.length < safeChunk) break;
@@ -247,11 +261,16 @@ class PropertyUnitLocalDataSource {
         FROM $_table u
         INNER JOIN ${AppLocalDatabase.propertiesTable} p
           ON p.property_ref = u.property_ref
-        WHERE (p.workspace_type = ? OR p.workspace_type = '')
+        WHERE (p.workspace_type = ? OR p.workspace_type = ? OR p.workspace_type = '')
+          AND (
+            p.workspace_type != ?
+            OR u.operation_mode = ?
+            OR u.operation_mode = ''
+          )
         ORDER BY u.created_at_ms DESC
         LIMIT ? OFFSET ?
         ''',
-        [workspaceType, safeLimit, safeOffset],
+        [workspaceType, 'both', 'both', workspaceType, safeLimit, safeOffset],
       );
     } else {
       maps = await db.rawQuery(
@@ -260,7 +279,12 @@ class PropertyUnitLocalDataSource {
         FROM $_table u
         INNER JOIN ${AppLocalDatabase.propertiesTable} p
           ON p.property_ref = u.property_ref
-        WHERE (p.workspace_type = ? OR p.workspace_type = '')
+        WHERE (p.workspace_type = ? OR p.workspace_type = ? OR p.workspace_type = '')
+          AND (
+            p.workspace_type != ?
+            OR u.operation_mode = ?
+            OR u.operation_mode = ''
+          )
           AND (
             p.owner_user_id = ?
             OR p.owner_user_id = ''
@@ -272,13 +296,24 @@ class PropertyUnitLocalDataSource {
                 ELSE p.property_ref
               END
               AND m.user_id = ?
-              AND m.workspace_type = ?
+              AND (m.workspace_type = ? OR m.workspace_type = ?)
             )
           )
         ORDER BY u.created_at_ms DESC
         LIMIT ? OFFSET ?
         ''',
-        [workspaceType, uid, uid, workspaceType, safeLimit, safeOffset],
+        [
+          workspaceType,
+          'both',
+          'both',
+          workspaceType,
+          uid,
+          uid,
+          workspaceType,
+          'both',
+          safeLimit,
+          safeOffset,
+        ],
       );
     }
     return maps.map(PropertyUnitRecord.fromMap).toList();

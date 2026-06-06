@@ -5,6 +5,7 @@ import '../../../core/base/base_view.dart';
 import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../controllers/ai_manager_controller.dart';
 
 class AiManagerView extends BaseView<AiManagerController> {
@@ -98,48 +99,84 @@ class AiManagerView extends BaseView<AiManagerController> {
   }
 
   @override
+  Widget? pageLoadingSkeleton(BuildContext context) {
+    return const DefaultScreenSkeleton();
+  }
+
+  @override
   Widget body(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: Obx(
-            () => ListView.builder(
-              controller: controller.scrollController,
-              padding: const EdgeInsets.fromLTRB(
-                14 + AppValues.padding,
-                12,
-                14 + AppValues.padding,
-                8,
+    return Obx(() {
+      if (controller.isBootstrapping.value) {
+        return const Center(child: DefaultScreenSkeleton());
+      }
+      return Column(
+        children: [
+          Expanded(child: _buildMessageList(context)),
+          _buildQuickActions(context),
+          _buildComposer(context),
+        ],
+      );
+    });
+  }
+
+  Widget _buildMessageList(BuildContext context) {
+    return Obx(() {
+      final messages = controller.messages;
+      if (messages.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              _t(
+                context,
+                en: 'Loading your portfolio assistant...',
+                sw: 'Inapakia msaidizi wa portfolio...',
               ),
-              itemCount: controller.messages.length,
-              itemBuilder: (context, index) {
-                final item = controller.messages[index];
-                return _ChatBubble(item: item, isDark: FormSurfaceColors.of(context).isDark);
-              },
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: FormSurfaceColors.of(context).secondary,
+              ),
             ),
           ),
+        );
+      }
+      return ListView.builder(
+        controller: controller.scrollController,
+        padding: const EdgeInsets.fromLTRB(
+          14 + AppValues.padding,
+          12,
+          14 + AppValues.padding,
+          8,
         ),
-        _buildQuickActions(context),
-        _buildComposer(context),
-      ],
-    );
+        itemCount: messages.length,
+        itemBuilder: (context, index) {
+          final item = messages[index];
+          return _ChatBubble(
+            item: item,
+            isDark: FormSurfaceColors.of(context).isDark,
+          );
+        },
+      );
+    });
   }
 
   Widget _buildQuickActions(BuildContext context) {
     final c = FormSurfaceColors.of(context);
-    return Obx(
-      () => SizedBox(
+    final actions = controller.quickActions;
+    return Obx(() {
+      final disabled =
+          controller.isReplying.value || controller.isBootstrapping.value;
+      return SizedBox(
         height: 44,
         child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           scrollDirection: Axis.horizontal,
           itemBuilder: (context, index) {
-            final action = controller.quickActions[index];
+            final action = actions[index];
             return InkWell(
               borderRadius: BorderRadius.circular(18),
-              onTap: controller.isReplying.value
-                  ? null
-                  : () => controller.sendQuickAction(action),
+              onTap: disabled ? null : () => controller.sendQuickAction(action),
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -165,17 +202,18 @@ class AiManagerView extends BaseView<AiManagerController> {
             );
           },
           separatorBuilder: (_, index) => const SizedBox(width: 8),
-          itemCount: controller.quickActions.length,
+          itemCount: actions.length,
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildComposer(BuildContext context) {
     final c = FormSurfaceColors.of(context);
     return Obx(
       () {
-        final busy = controller.isReplying.value;
+        final busy =
+            controller.isReplying.value || controller.isBootstrapping.value;
         return Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           child: Row(

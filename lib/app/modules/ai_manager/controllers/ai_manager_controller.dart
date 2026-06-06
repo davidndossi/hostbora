@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/service/portfolio_ai_hybrid_service.dart';
 
 class AiChatMessage {
@@ -22,12 +23,11 @@ class AiChatMessage {
 }
 
 class AiManagerController extends BaseController {
-  AiManagerController()
-      : _hybrid = Get.find<PortfolioAiHybridService>();
-
-  final PortfolioAiHybridService _hybrid;
+  late final PortfolioAiHybridService _hybrid;
 
   final messages = <AiChatMessage>[].obs;
+  final isBootstrapping = true.obs;
+  final bootstrapFailed = false.obs;
   final isReplying = false.obs;
   final messageInput = ''.obs;
   final inputController = TextEditingController();
@@ -94,6 +94,24 @@ class AiManagerController extends BaseController {
     return null;
   }
 
+  bool _looksSwahili(String text) {
+    final q = text.toLowerCase();
+    return [
+      'mapato',
+      'matumizi',
+      'mpangaji',
+      'wapangaji',
+      'deni',
+      'malipo',
+      'kodi',
+      'mkataba',
+      'nyumba',
+      'chumba',
+      'umeme',
+      'maji',
+    ].any(q.contains);
+  }
+
   String? _routeInitialQuestion() {
     final args = Get.arguments;
     if (args is Map) {
@@ -104,9 +122,44 @@ class AiManagerController extends BaseController {
   }
 
   @override
-  void onReady() {
-    super.onReady();
-    _loadWelcome().then((_) => _maybeAskInitialQuestion());
+  void onInit() {
+    super.onInit();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    isBootstrapping.value = true;
+    bootstrapFailed.value = false;
+    try {
+      await _ensureDependencies();
+      await _loadWelcome();
+      await _maybeAskInitialQuestion();
+    } catch (e, st) {
+      logger.e('AiManager bootstrap failed: $e $st');
+      bootstrapFailed.value = true;
+      messages.assignAll([
+        AiChatMessage(
+          fromAssistant: true,
+          role: _isSw ? 'Msaidizi wa AI' : 'AI Assistant',
+          time: _nowLabel(),
+          text: _isSw
+              ? 'Imeshindwa kupakia data ya portfolio. Bado unaweza kuuliza maswali — jaribu "Muhtasari wa portfolio".'
+              : 'Could not load portfolio data. You can still ask questions — try "Portfolio summary".',
+        ),
+      ]);
+    } finally {
+      isBootstrapping.value = false;
+    }
+  }
+
+  Future<void> _ensureDependencies() async {
+    if (!Get.isRegistered<CurrencyService>()) {
+      await Get.putAsync<CurrencyService>(() => CurrencyService().init());
+    }
+    if (!Get.isRegistered<PortfolioAiHybridService>()) {
+      throw StateError('PortfolioAiHybridService is not registered');
+    }
+    _hybrid = Get.find<PortfolioAiHybridService>();
   }
 
   Future<void> _maybeAskInitialQuestion() async {
@@ -138,6 +191,18 @@ class AiManagerController extends BaseController {
         ),
       ]);
       _scrollToEnd();
+    } catch (e, st) {
+      logger.e('AiManager welcome failed: $e $st');
+      messages.assignAll([
+        AiChatMessage(
+          fromAssistant: true,
+          role: _isSw ? 'Msaidizi wa AI' : 'AI Assistant',
+          time: _nowLabel(),
+          text: _isSw
+              ? 'Karibu! Uliza kuhusu ukodishaji, mapato, deni, au mikataba yako.'
+              : 'Welcome! Ask about occupancy, income, arrears, or your leases.',
+        ),
+      ]);
     } finally {
       isReplying.value = false;
     }
@@ -194,7 +259,7 @@ class AiManagerController extends BaseController {
 
       final reply = await _hybrid.answer(
         question: text,
-        isSw: _isSw,
+        isSw: _isSw || _looksSwahili(text),
         conversation: history,
       );
 

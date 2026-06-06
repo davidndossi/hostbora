@@ -91,6 +91,63 @@ class RentScheduleMaintenanceFormView extends RentBaseView<RentScheduleMaintenan
                 ],
               );
             }),
+            Obx(() {
+              if (!controller.showUnitPicker) return const SizedBox.shrink();
+              final keys = controller.unitSelectionKeys;
+              if (keys.isEmpty) return const SizedBox.shrink();
+              final sel = controller.selectedUnitKey.value;
+              final valid = sel != null && keys.contains(sel);
+              final value = valid ? sel : null;
+              return Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _capsLabel(
+                      _isSw ? 'Kitengo (si lazima)' : 'Unit (optional)',
+                      colors: c,
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String?>(
+                      key: ValueKey(
+                        '${controller.selectedProperty.value}:${keys.length}:$value',
+                      ),
+                      initialValue: value,
+                      isExpanded: true,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: c.headline,
+                      ),
+                      dropdownColor: c.dropdownBg,
+                      decoration: _dropdownDecoration(c),
+                      icon: Icon(Icons.expand_more_rounded, color: c.secondary),
+                      items: [
+                        DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text(
+                            _isSw
+                                ? 'Sio lazima — jengo lote'
+                                : 'Optional — whole property',
+                            style: TextStyle(color: c.hint),
+                          ),
+                        ),
+                        ...keys.map(
+                          (key) => DropdownMenuItem<String?>(
+                            value: key,
+                            child: Text(
+                              controller.unitDisplayLabel(key),
+                              style: TextStyle(color: c.headline),
+                            ),
+                          ),
+                        ),
+                      ],
+                      onChanged: controller.updateSelectedUnit,
+                    ),
+                  ],
+                ),
+              );
+            }),
             const SizedBox(height: 16),
             _capsLabel('Category', colors: c),
             const SizedBox(height: 8),

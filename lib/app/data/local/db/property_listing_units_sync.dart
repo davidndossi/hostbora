@@ -13,6 +13,7 @@ Future<void> syncPropertyUnitsForListingSave({
   required String singleUnitName,
   required int rooms,
   required int maxGuests,
+  String listingMode = 'bnb',
 }) async {
   final ref = propertyRef.trim();
   if (ref.isEmpty) return;
@@ -38,6 +39,10 @@ Future<void> syncPropertyUnitsForListingSave({
 
       final notes = (m['unitDescription'] ?? '').toString();
       final floor = PropertyUnitFloor.parse(m['unitFloor']);
+      final operationMode = _normalizeUnitOperationMode(
+        m['operationMode'],
+        fallback: listingMode,
+      );
 
       await unitLocal.insert(
         PropertyUnitRecord(
@@ -52,6 +57,7 @@ Future<void> syncPropertyUnitsForListingSave({
           maxGuests: maxGuests,
           rooms: rooms,
           floor: floor,
+          operationMode: operationMode,
           notes: notes,
           createdAtMs: now,
         ),
@@ -61,7 +67,9 @@ Future<void> syncPropertyUnitsForListingSave({
   }
 
   final rent = double.tryParse(listingRentRaw.replaceAll(',', '')) ?? 0;
-  final name = singleUnitName.trim().isNotEmpty ? singleUnitName.trim() : 'Main unit';
+  final name = singleUnitName.trim().isNotEmpty
+      ? singleUnitName.trim()
+      : 'Main unit';
 
   await unitLocal.insert(
     PropertyUnitRecord(
@@ -76,8 +84,16 @@ Future<void> syncPropertyUnitsForListingSave({
       maxGuests: maxGuests,
       rooms: rooms,
       floor: 0,
+      operationMode: _normalizeUnitOperationMode(listingMode),
       notes: '',
       createdAtMs: now,
     ),
   );
+}
+
+String _normalizeUnitOperationMode(dynamic raw, {String fallback = 'bnb'}) {
+  final value = (raw ?? '').toString().trim().toLowerCase();
+  if (value == 'rent') return 'rent';
+  if (value == 'bnb') return 'bnb';
+  return fallback.trim().toLowerCase() == 'rent' ? 'rent' : 'bnb';
 }

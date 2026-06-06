@@ -11,7 +11,12 @@ import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/property_financial_trend_charts.dart';
 import '../../../core/widget/property_listing_image.dart';
 import '../../../core/widget/skeleton_presets.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../controllers/listing_details_controller.dart';
+import '../models/listing_activity_vm.dart';
+import '../models/listing_details_tab.dart';
+import '../widgets/listing_details_payroll_panel.dart';
+import '../widgets/listing_details_staff_panel.dart';
 
 class _ListingUi {
   _ListingUi(this.context);
@@ -20,7 +25,6 @@ class _ListingUi {
   ThemeData get _t => Theme.of(context);
   bool get dark => _t.brightness == Brightness.dark;
 
-  static const Color forest = Color(0xFF0A5C5C);
   static const Color cream = Color(0xFFFBFAF6);
 
   Color get bg => dark ? _t.scaffoldBackgroundColor : cream;
@@ -43,13 +47,6 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         ? (_isSw ? 'Maelezo ya Mali' : 'Listing Details')
         : controller.listingTitle.value,
     isCentered: true,
-    actions: [
-      IconButton(
-        tooltip: _isSw ? 'Mwelekeo wa fedha' : 'Financial trends',
-        onPressed: () => _showFinancialTrendsDialog(context),
-        icon: const Icon(Icons.show_chart_rounded),
-      ),
-    ],
   );
 
   @override
@@ -59,116 +56,640 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
       if (controller.loadingListing.value) {
         return const Center(child: DefaultScreenSkeleton());
       }
-      return RefreshIndicator(
-        onRefresh: () async {
-          await Future.wait([
-            controller.loadListingDetail(),
-            controller.loadRealDataSnapshot(),
-          ]);
-        },
-        child: ListView(
-          controller: controller.listingScrollController,
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
-          children: [
-            const SizedBox(height: 14),
-            _hero(u),
-            const SizedBox(height: 12),
-            _kpiMinimal(
-              u,
-              label: _isSw ? 'Ukaaji wa sasa' : 'Current occupancy',
-              value: '${controller.occupancyPercent.value.clamp(0, 100)}',
-              suffix: '%',
-              progress: controller.occupancyPercent.value.clamp(0, 100) / 100,
-              onTap: controller.onOpenUnitOccupancy,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _tabBar(u),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await Future.wait([
+                  controller.loadListingDetail(),
+                  controller.loadRealDataSnapshot(),
+                ]);
+              },
+              child: _tabBody(context, u),
             ),
-            const SizedBox(height: 10),
-            _kpiMinimal(
-              u,
-              label: _isSw ? 'Mapato ya mwezi' : 'Monthly revenue',
-              value: controller.monthlyRevenueLabel.value,
-              prefix: 'TZS',
-              progress: controller.monthlyRevenueProgress.value,
-            ),
-            const SizedBox(height: 10),
-            _estimationCostsLink(u),
-            const SizedBox(height: 14),
-            _quickManagement(u),
-            const SizedBox(height: 10),
-            _calendarSyncEntry(context, u),
-            const SizedBox(height: 14),
-            _units(u),
-            const SizedBox(height: 12),
-            _activity(u),
-            const SizedBox(height: 12),
-            _staff(u),
-            const SizedBox(height: 12),
-            _warning(u),
-            const SizedBox(height: 14),
-            _removeButton(),
-          ],
-        ),
+          ),
+        ],
       );
     });
   }
 
-  void _showFinancialTrendsDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        final u = _ListingUi(context);
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 24,
-          ),
-          backgroundColor: u.card,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
+  Widget _tabBar(_ListingUi u) {
+    return Obx(() {
+      final tabs = controller.visibleTabs;
+      final selected = controller.selectedTab.value;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+            child: Row(
+              children: tabs.map((tab) {
+                final isSelected = tab == selected;
+                final label = _isSw ? tab.labelSw() : tab.labelEn();
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () => controller.selectTab(tab),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.colorPrimary
+                            : u.card,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.colorPrimary
+                              : u.line,
+                        ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.colorPrimary
+                                      .withValues(alpha: 0.22),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
                       child: Text(
-                        _isSw ? 'Mwelekeo wa Fedha' : 'Financial Trends',
+                        label,
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: u.text,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected ? Colors.white : u.muted,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-                  ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          Divider(height: 1, thickness: 1, color: u.line),
+        ],
+      );
+    });
+  }
+
+  Widget _tabBody(BuildContext context, _ListingUi u) {
+    return Obx(() {
+      switch (controller.selectedTab.value) {
+        case ListingDetailsTab.overview:
+          return _overviewTab(context, u);
+        case ListingDetailsTab.bnb:
+          return _workspaceUnitsTab(u, workspace: 'bnb');
+        case ListingDetailsTab.rent:
+          return _workspaceUnitsTab(u, workspace: 'rent');
+        case ListingDetailsTab.finance:
+          return _financeTab(u);
+        case ListingDetailsTab.staff:
+          return _staffTab(u);
+        case ListingDetailsTab.maintenance:
+          return _maintenanceTab(u);
+      }
+    });
+  }
+
+  Widget _overviewTab(BuildContext context, _ListingUi u) {
+    final currencyCode = Get.find<CurrencyService>().baseCurrency.value;
+    return ListView(
+      controller: controller.listingScrollController,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+      children: [
+        const SizedBox(height: 6),
+        _hero(u),
+        const SizedBox(height: 12),
+        _kpiMinimal(
+          u,
+          label: _isSw ? 'Ukaaji wa sasa' : 'Current occupancy',
+          value: '${controller.occupancyPercent.value.clamp(0, 100)}',
+          suffix: '%',
+          progress: controller.occupancyPercent.value.clamp(0, 100) / 100,
+          onTap: controller.onOpenUnitOccupancy,
+        ),
+        const SizedBox(height: 10),
+        _kpiMinimal(
+          u,
+          label: _isSw ? 'Mapato ya mwezi' : 'Monthly revenue',
+          value: controller.monthlyRevenueLabel.value,
+          prefix: currencyCode,
+          progress: controller.monthlyRevenueProgress.value,
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _kpiMinimal(
+                u,
+                label: _isSw ? 'Matumizi ya mwezi' : 'This month expenses',
+                value: controller.monthlyExpensesLabel.value,
+                prefix: currencyCode,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _kpiMinimal(
+                u,
+                label: _isSw ? 'Faida halisi' : 'Net income',
+                value: controller.netIncomeLabel.value,
+                prefix: currencyCode,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        _estimationCostsLink(u),
+        const SizedBox(height: 14),
+        _quickManagement(u),
+        const SizedBox(height: 10),
+        _calendarSyncEntry(context, u),
+        const SizedBox(height: 12),
+        _paymentFollowUpBanner(u),
+        const SizedBox(height: 12),
+        _activity(u),
+        const SizedBox(height: 14),
+        _removeButton(),
+      ],
+    );
+  }
+
+  Widget _financeTab(_ListingUi u) {
+    return ListView(
+      controller: controller.listingScrollController,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
+      children: [
+        Text(
+          _isSw ? 'Mwelekeo wa Fedha' : 'Financial Trends',
+          style: TextStyle(
+            fontFamily: 'serif',
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+            color: u.text,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _isSw
+              ? 'Geuza mwonekano kwa kutumia kichaguo'
+              : 'Switch view using the dropdown on the chart',
+          style: TextStyle(fontSize: 12.5, color: u.muted),
+        ),
+        const SizedBox(height: 14),
+        Obx(
+          () => PropertyFinancialTrendCharts(
+            series: controller.financialTrends.value,
+            loading: controller.financialTrendsLoading.value,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _staffTab(_ListingUi u) {
+    return ListView(
+      controller: controller.listingScrollController,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _isSw ? 'Wafanyakazi Waliopangiwa' : 'Staff Assigned',
+                style: TextStyle(
+                  fontFamily: 'serif',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: u.text,
                 ),
-                const SizedBox(height: 8),
-                Obx(
-                  () => PropertyFinancialTrendCharts(
-                    series: controller.financialTrends.value,
-                    loading: controller.financialTrendsLoading.value,
+              ),
+            ),
+            TextButton(
+              onPressed: controller.onAddStaff,
+              child: Text(
+                _isSw ? 'Ongeza mfanyakazi' : 'Add staff',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ListingDetailsPayrollPanel(isSw: _isSw),
+        const SizedBox(height: 20),
+        ListingDetailsStaffPanel(
+          isSw: _isSw,
+          compactListOnly: false,
+          showPayrollSummary: false,
+          onStaffChanged: controller.refreshStaffPanel,
+        ),
+      ],
+    );
+  }
+
+  static const _btnShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(14)),
+  );
+
+  Widget _maintenanceTab(_ListingUi u) {
+    return ListView(
+      controller: controller.listingScrollController,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
+      children: [
+        Text(
+          _isSw ? 'Matengenezo' : 'Maintenance',
+          style: TextStyle(
+            fontFamily: 'serif',
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+            color: u.text,
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // ── Assignment card ─────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+          decoration: BoxDecoration(
+            color: u.card,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: u.line),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _isSw ? 'Mkabidhi kwa mfanyakazi' : 'Assign to staff',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.6,
+                  color: u.muted,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Obx(() {
+                final options = controller.assigneeStaffOptions;
+                final selected = controller.selectedAssigneeStaffId.value;
+                return DropdownButtonFormField<String>(
+                  initialValue: selected != null &&
+                          options.any((s) => s.id.toString() == selected)
+                      ? selected
+                      : null,
+                  decoration: InputDecoration(
+                    hintText:
+                        _isSw ? 'Chagua mfanyakazi' : 'Select staff member',
+                    filled: true,
+                    fillColor: u.soft,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: u.line),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: u.line),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppColors.colorPrimary,
+                        width: 1.5,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 13,
+                    ),
+                  ),
+                  items: options
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s.id.toString(),
+                          child: Text(s.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: controller.updateAssigneeStaff,
+                );
+              }),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // ── Action buttons ───────────────────────────────────────────────
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: controller.onScheduleMaintenance,
+                  style: OutlinedButton.styleFrom(
+                    shape: _btnShape,
+                    side: BorderSide(color: u.line, width: 1.5),
+                    foregroundColor: u.text,
+                    padding: EdgeInsets.zero,
+                  ),
+                  icon: Icon(
+                    Icons.calendar_today_outlined,
+                    size: 17,
+                    color: u.muted,
+                  ),
+                  label: Text(
+                    _isSw ? 'Panga matengenezo' : 'Schedule',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: FilledButton.icon(
+                  onPressed: controller.onAddMaintenanceTask,
+                  style: FilledButton.styleFrom(
+                    shape: _btnShape,
+                    backgroundColor: AppColors.colorPrimary,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                  ),
+                  icon: const Icon(Icons.add_task_outlined, size: 17),
+                  label: Text(
+                    _isSw ? 'Ongeza kazi' : 'Add task',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 18),
+
+        // ── Scheduled maintenance list ────────────────────────────────────
+        Obx(() {
+          final rows = controller.maintenanceRows;
+          if (rows.isEmpty) {
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: u.card,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: u.line),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_outline, color: u.muted, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    _isSw
+                        ? 'Hakuna matengenezo yaliyopangwa.'
+                        : 'No scheduled maintenance yet.',
+                    style: TextStyle(fontSize: 14, color: u.muted),
+                  ),
+                ],
+              ),
+            );
+          }
+          return Column(
+            children: rows.map((r) => _maintenanceCard(u, r)).toList(),
+          );
+        }),
+
+        const SizedBox(height: 24),
+
+        // ── Staff payroll section ─────────────────────────────────────────
+        Text(
+          _isSw ? 'Malipo ya wafanyakazi' : 'Staff payroll',
+          style: TextStyle(
+            fontFamily: 'serif',
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+            color: u.text,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ListingDetailsStaffPanel(
+          isSw: _isSw,
+          compactListOnly: false,
+          onStaffChanged: controller.refreshStaffPanel,
+        ),
+      ],
+    );
+  }
+
+  Color _priorityBadgeBg(String priority) {
+    switch (priority.trim().toLowerCase()) {
+      case 'high':
+        return const Color(0xFFFEE2E2);
+      case 'medium':
+      case 'normal':
+        return const Color(0xFFFEF9C3);
+      default:
+        return const Color(0xFFDCFCE7);
+    }
+  }
+
+  Color _priorityBadgeFg(String priority) {
+    switch (priority.trim().toLowerCase()) {
+      case 'high':
+        return const Color(0xFFB91C1C);
+      case 'medium':
+      case 'normal':
+        return const Color(0xFF92400E);
+      default:
+        return const Color(0xFF15803D);
+    }
+  }
+
+  Widget _maintenanceCard(_ListingUi u, ListingMaintenanceRowVm row) {
+    final badgeBg = _priorityBadgeBg(row.priority);
+    final badgeFg = _priorityBadgeFg(row.priority);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: u.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: u.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  row.category,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: u.text,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(
+                  color: badgeBg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  row.priority,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: badgeFg,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (row.description.trim().isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              row.description,
+              style: TextStyle(fontSize: 13, color: u.muted, height: 1.35),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.calendar_today_outlined, size: 13, color: u.muted),
+              const SizedBox(width: 5),
+              Text(
+                row.scheduledLabel,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: u.muted,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _workspaceUnitsTab(_ListingUi u, {required String workspace}) {
+    return ListView(
+      controller: controller.listingScrollController,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+      children: [
+        _units(u, workspace: workspace),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => controller.onAddTenantForWorkspace(workspace),
+            icon: const Icon(Icons.person_add_alt_1_outlined),
+            label: Text(
+              _isSw ? 'Ongeza mpangaji' : 'Add tenant',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _paymentFollowUpBanner(_ListingUi u) {
+    return Obx(() {
+      final banner = controller.paymentFollowUp.value;
+      if (banner == null) return const SizedBox.shrink();
+      return Material(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: controller.onPaymentFollowUpTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFDE68A)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 1),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    color: Color(0xFFD97706),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    banner.message,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: Color(0xFF78350F),
+                    ),
+                  ),
+                ),
+                if (banner.actionLabel != null) ...[
+                  const SizedBox(width: 8),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        banner.actionLabel!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFFD97706),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: Color(0xFFD97706),
+                  ),
+                ],
               ],
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
   }
 
   Widget _hero(_ListingUi u) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: SizedBox(
-        height: 158,
+        height: 186,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -184,52 +705,72 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.12),
-                    Colors.black.withValues(alpha: 0.66),
+                    Colors.black.withValues(alpha: 0.08),
+                    Colors.black.withValues(alpha: 0.72),
                   ],
+                  stops: const [0.35, 1.0],
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    controller.heroOverlayTitle.value,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: 'serif',
-                      color: Colors.white,
-                      fontSize: 27,
-                      fontWeight: FontWeight.w700,
-                      height: 0.95,
+                  Obx(
+                    () => Text(
+                      controller.heroOverlayTitle.value,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'serif',
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        height: 1.05,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black38,
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 24,
-                    child: OutlinedButton(
-                      onPressed: controller.onEditListing,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                        backgroundColor: Colors.white.withValues(alpha: 0.16),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: controller.onEditListing,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.55),
                         ),
                       ),
-                      child: Text(
-                        _isSw ? 'Hariri listing' : 'Edit Listing',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.edit_outlined,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            _isSw ? 'Hariri listing' : 'Edit listing',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -369,74 +910,97 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     double? progress,
     VoidCallback? onTap,
   }) {
+    final valueColor = u.dark
+        ? const Color(0xFFF2F2F7)
+        : AppColors.colorPrimary;
     final inner = Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: u.card,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: u.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: u.muted,
-            ),
-          ),
-          const SizedBox(height: 3),
-          if (prefix.isNotEmpty)
-            Text(
-              prefix,
-              style: TextStyle(
-                fontSize: 12,
-                color: u.muted,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: value,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label.toUpperCase(),
                   style: TextStyle(
-                    fontFamily: 'serif',
-                    fontSize: 34,
-                    fontWeight: FontWeight.w700,
-                    height: 1,
-                    color: u.dark
-                        ? const Color(0xFFF2F2F7)
-                        : AppColors.colorPrimary,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: u.muted,
+                    letterSpacing: 0.6,
                   ),
                 ),
-                if (suffix.isNotEmpty)
-                  TextSpan(
-                    text: suffix,
-                    style: TextStyle(
-                      fontFamily: 'serif',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: u.text,
-                    ),
-                  ),
-              ],
-            ),
+              ),
+              if (onTap != null)
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: u.muted,
+                ),
+            ],
           ),
           const SizedBox(height: 6),
-          Container(
-            height: 2,
-            color: u.line,
-            child: progress == null
-                ? null
-                : FractionallySizedBox(
-                    widthFactor: progress.clamp(0, 1),
-                    alignment: Alignment.centerLeft,
-                    child: const ColoredBox(color: AppColors.colorPrimaryDark),
-                  ),
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: RichText(
+                text: TextSpan(
+                  children: [
+                    if (prefix.isNotEmpty)
+                      TextSpan(
+                        text: '$prefix ',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: u.muted,
+                          height: 1,
+                        ),
+                      ),
+                    TextSpan(
+                      text: value,
+                      style: TextStyle(
+                        fontFamily: 'serif',
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                        height: 1,
+                        color: valueColor,
+                      ),
+                    ),
+                    if (suffix.isNotEmpty)
+                      TextSpan(
+                        text: suffix,
+                        style: TextStyle(
+                          fontFamily: 'serif',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          height: 1,
+                          color: u.text,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
+          if (progress != null) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                minHeight: 3,
+                backgroundColor: u.line,
+                color: AppColors.colorPrimaryDark,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -444,7 +1008,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: inner,
       ),
@@ -455,15 +1019,31 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     final l10n = AppLocalizations.of(context)!;
     return Material(
       color: u.card,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: controller.onOpenCalendarSync,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: u.line),
+          ),
           child: Row(
             children: [
-              const Icon(Icons.sync, color: AppColors.colorPrimary, size: 22),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.colorPrimary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.sync,
+                  color: AppColors.colorPrimary,
+                  size: 20,
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -473,7 +1053,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                       l10n.calendarSyncOpenFromListing,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontSize: 15,
+                        fontSize: 14.5,
                         color: u.text,
                       ),
                     ),
@@ -485,7 +1065,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: u.muted),
+              Icon(Icons.chevron_right_rounded, color: u.muted, size: 22),
             ],
           ),
         ),
@@ -513,43 +1093,28 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
       ),
       (
         Icons.lock_open,
-        _isSw ? 'Dhibiti kufuli\ncha unit' : 'Unit lock\ncontrol',
+        _isSw ? 'Dhibiti kufuli\nya unit' : 'Unit lock\ncontrol',
         4,
       ),
       (
         Icons.bolt_outlined,
-        _isSw ? 'UTILITY\nDASHBOARD' : 'UTILITY\nDASHBOARD',
+        _isSw ? 'Dashibodi ya\nHuduma' : 'Utility\nDashboard',
         5,
       ),
     ];
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                _isSw ? 'Usimamizi wa Haraka' : 'Quick Management',
-                style: TextStyle(
-                  fontFamily: 'serif',
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: u.text,
-                ),
-              ),
-            ),
-            Text(
-              _isSw ? 'MODULI 6\nHAI' : '6 ACTIVE\nMODULES',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.2,
-                fontWeight: FontWeight.w700,
-                letterSpacing: .8,
-                color: u.muted,
-              ),
-            ),
-          ],
+        Text(
+          _isSw ? 'Usimamizi wa Haraka' : 'Quick Management',
+          style: TextStyle(
+            fontFamily: 'serif',
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+            color: u.text,
+          ),
         ),
         const SizedBox(height: 10),
         GridView.builder(
@@ -558,37 +1123,53 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           itemCount: items.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio: 0.95,
+            childAspectRatio: 1.0,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
           ),
           itemBuilder: (context, i) {
             final item = items[i];
-            return InkWell(
-              onTap: () => controller.onQuickAction(item.$3),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: u.card,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(item.$1, size: 24, color: AppColors.colorPrimary),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.$2,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.2,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: .45,
-                        color: u.text,
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => controller.onQuickAction(item.$3),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: u.card,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: u.line),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.colorPrimary.withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          item.$1,
+                          size: 22,
+                          color: AppColors.colorPrimary,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 7),
+                      Text(
+                        item.$2,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          height: 1.2,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .25,
+                          color: u.text,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -598,7 +1179,8 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     );
   }
 
-  Widget _units(_ListingUi u) {
+  Widget _units(_ListingUi u, {required String workspace}) {
+    final isBnb = workspace == 'bnb';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -606,7 +1188,9 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           children: [
             Expanded(
               child: Text(
-                _isSw ? 'Uniti za Mjengo' : 'Property Units',
+                isBnb
+                    ? (_isSw ? 'Uniti za BnB' : 'BnB Units')
+                    : (_isSw ? 'Uniti za Kodi' : 'Rent Units'),
                 style: TextStyle(
                   fontFamily: 'serif',
                   fontSize: 22,
@@ -629,7 +1213,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         ),
         const SizedBox(height: 4),
         Obx(() {
-          final rows = controller.unitRows;
+          final rows = isBnb ? controller.bnbUnitRows : controller.rentUnitRows;
           if (rows.isEmpty) {
             return Text(
               _isSw ? 'Hakuna units.' : 'No units listed.',
@@ -641,7 +1225,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 .map(
                   (r) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: _unitCard(u, r),
+                    child: _unitCard(u, r, workspace: workspace),
                   ),
                 )
                 .toList(),
@@ -651,7 +1235,11 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     );
   }
 
-  Widget _unitCard(_ListingUi u, ListingUnitRowVm row) {
+  Widget _unitCard(
+    _ListingUi u,
+    ListingUnitRowVm row, {
+    required String workspace,
+  }) {
     final due = row.status == ListingUnitStatus.dueDate;
     final occupied = row.status == ListingUnitStatus.occupied;
     final hasAttachedTenant = row.tenantName.trim().isNotEmpty;
@@ -675,14 +1263,17 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
         onTap: () => controller.onEditUnitDetails(row),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+          padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
           decoration: BoxDecoration(
             color: u.card,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: u.line),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: due ? const Color(0xFFFCA5A5) : u.line,
+              width: due ? 1.5 : 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -693,26 +1284,26 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                     child: Text(
                       row.name,
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
                         color: u.text,
                       ),
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 2,
+                      horizontal: 9,
+                      vertical: 3,
                     ),
                     decoration: BoxDecoration(
                       color: badgeBg,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       badgeText,
                       style: TextStyle(
-                        fontSize: 12,
-                        letterSpacing: .45,
+                        fontSize: 11,
+                        letterSpacing: .4,
                         fontWeight: FontWeight.w800,
                         color: badgeFg,
                       ),
@@ -723,11 +1314,11 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               const SizedBox(height: 3),
               Text(
                 row.subtitle,
-                style: TextStyle(fontSize: 14, color: u.muted),
+                style: TextStyle(fontSize: 13, color: u.muted),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 9),
               if (hasAttachedTenant)
                 Container(
                   width: double.infinity,
@@ -766,7 +1357,8 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                   height: 40,
                   width: double.infinity,
                   child: FilledButton.tonal(
-                    onPressed: () => controller.onUnitPrimaryAction(row),
+                    onPressed: () =>
+                        controller.onUnitPrimaryActionForWorkspace(row, workspace),
                     style: FilledButton.styleFrom(
                       backgroundColor: due
                           ? const Color(0xFFFFF3F2)
@@ -838,19 +1430,29 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 .take(3)
                 .map(
                   (a) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.only(bottom: 10),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor: a.accentColor.withValues(alpha: .2),
-                          child: Icon(
-                            Icons.circle,
-                            size: 8,
-                            color: a.accentColor,
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: a.accentColor.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: a.accentColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -858,20 +1460,21 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                               Text(
                                 a.title,
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                   color: u.text,
                                 ),
                               ),
                               Text(
                                 a.subtitle,
-                                style: TextStyle(fontSize: 13, color: u.muted),
+                                style: TextStyle(fontSize: 12.5, color: u.muted),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -885,7 +1488,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                             ),
                             Text(
                               a.timeLabel,
-                              style: TextStyle(fontSize: 12, color: u.muted),
+                              style: TextStyle(fontSize: 11.5, color: u.muted),
                             ),
                           ],
                         ),
@@ -955,8 +1558,8 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
   }
 
   Widget _activityLogTile(_ListingUi u, ListingActivityVm activity) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    final tile = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
         color: u.soft.withValues(alpha: u.dark ? 0.35 : 0.55),
         borderRadius: BorderRadius.circular(14),
@@ -965,10 +1568,23 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: activity.accentColor.withValues(alpha: .2),
-            child: Icon(Icons.circle, size: 9, color: activity.accentColor),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: activity.accentColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Container(
+                width: 11,
+                height: 11,
+                decoration: BoxDecoration(
+                  color: activity.accentColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1005,7 +1621,11 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               ),
               const SizedBox(height: 2),
               Text(
-                activity.timeLabel,
+                activity.isExpense
+                    ? (_isSw
+                          ? 'Hariri • ${activity.timeLabel}'
+                          : 'Edit • ${activity.timeLabel}')
+                    : activity.timeLabel,
                 style: TextStyle(fontSize: 12, color: u.muted),
               ),
             ],
@@ -1013,133 +1633,14 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         ],
       ),
     );
-  }
-
-  Widget _staff(_ListingUi u) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                _isSw ? 'Wafanyakazi Waliopangiwa' : 'Staff Assigned',
-                style: TextStyle(
-                  fontFamily: 'serif',
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: u.text,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: controller.onManageStaff,
-              child: const Text(
-                'ALL',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-              ),
-            ),
-          ],
-        ),
-        Obx(() {
-          final staff = controller.staffPreview;
-          if (staff.isEmpty) {
-            return Text(
-              'No staff',
-              style: TextStyle(fontSize: 14, color: u.muted),
-            );
-          }
-          return Column(
-            children: staff
-                .take(2)
-                .map(
-                  (s) => ListTile(
-                    dense: true,
-                    visualDensity: const VisualDensity(vertical: -3),
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      radius: 11,
-                      backgroundColor: u.soft,
-                      child: Text(
-                        s.name.isEmpty ? '?' : s.name[0].toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: _ListingUi.forest,
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      s.name,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: u.text,
-                      ),
-                    ),
-                    subtitle: Text(
-                      s.jobTitle.isEmpty ? 'Staff' : s.jobTitle,
-                      style: TextStyle(fontSize: 12, color: u.muted),
-                    ),
-                  ),
-                )
-                .toList(),
-          );
-        }),
-        const SizedBox(height: 6),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: controller.onManageStaff,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.colorPrimary,
-              side: BorderSide(
-                color: AppColors.colorPrimaryDark.withValues(alpha: .55),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: EdgeInsets.all(AppValues.padding),
-            ),
-            child: Text(
-              _isSw ? 'Simamia wafanyakazi' : 'Manage staff',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _warning(_ListingUi u) {
-    return Container(
-      padding: const EdgeInsets.all(9),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF5EB),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF2D7B8)),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.warning_amber_rounded,
-            color: Color(0xFFD97706),
-            size: 14,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              _isSw
-                  ? 'Kumbukumbu za malipo zinahitaji ufuatiliaji wa karibu.'
-                  : 'Payment records in this listing need close follow-up.',
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.25,
-                color: Color(0xFF92400E),
-              ),
-            ),
-          ),
-        ],
+    if (!activity.isExpense) return tile;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => controller.onEditExpenseActivity(activity),
+        onLongPress: () => controller.onDeleteExpenseActivity(activity),
+        child: tile,
       ),
     );
   }
@@ -1147,24 +1648,20 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
   Widget _removeButton() {
     return SizedBox(
       width: double.infinity,
-      child: FilledButton.icon(
+      child: OutlinedButton.icon(
         onPressed: controller.onDeleteProperty,
-        style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFFB91C1C),
-          foregroundColor: Colors.white,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFB91C1C),
+          side: const BorderSide(color: Color(0xFFB91C1C), width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           padding: EdgeInsets.all(AppValues.padding),
         ),
-        icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+        icon: const Icon(Icons.delete_outline_rounded),
         label: Text(
           _isSw ? 'Futa mjengo' : 'Remove property',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
         ),
       ),
     );

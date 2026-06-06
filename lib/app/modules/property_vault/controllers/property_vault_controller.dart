@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
-import '../../../core/base/feedback_extensions.dart';
 import '../../../core/model/page_state.dart';
 import '../../../data/local/vault_directories_store.dart';
 import '../../../data/local/vault_documents_store.dart';
@@ -167,7 +166,7 @@ class PropertyVaultController extends BaseController {
     if (diff.inHours < 1) return '${diff.inMinutes}m ago';
     if (diff.inDays < 1) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return DateFormat.MMMd().format(
+    return DateFormat('dd/MM').format(
       DateTime.fromMillisecondsSinceEpoch(timestampMs),
     );
   }
@@ -176,7 +175,7 @@ class PropertyVaultController extends BaseController {
     if (dt == null) return '—';
     final diff = DateTime.now().difference(dt);
     if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return DateFormat.MMMd().format(dt);
+    return DateFormat('dd/MM/yyyy').format(dt);
   }
 
   void onSearchChanged(String value) {
@@ -248,7 +247,7 @@ class PropertyVaultController extends BaseController {
   }
 
   void onFabTap() {
-    Get.toNamed(Routes.DOCUMENTS)?.then((_) => loadVault());
+    Get.toNamed(Routes.ADD_DOCUMENT)?.then((_) => loadVault());
   }
 
   Future<void> retry() => loadVault();

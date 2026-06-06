@@ -81,21 +81,31 @@ class BottomNavBar extends StatelessWidget {
         menuCode: MenuCode.HOME,
       ),
       BottomNavItem(
-        navTitle: appLocalization.dashboard,
-        iconSvgName: 'ic_dashboard.svg',
-        menuCode: MenuCode.DASHBOARD,
+        navTitle: capitalizeFirst(appLocalization.properties),
+        iconSvgName: 'ic_building.svg',
+        menuCode: MenuCode.PROPERTIES,
       ),
       BottomNavItem(
-        navTitle: appLocalization.calendar,
-        iconSvgName: 'ic_booking.svg',
-        menuCode: MenuCode.CALENDAR,
+        navTitle: appLocalization.finances,
+        iconSvgName: 'ic_wallet.svg',
+        menuCode: MenuCode.FINANCES,
       ),
       BottomNavItem(
-        navTitle: appLocalization.settings,
-        iconSvgName: 'ic_settings.svg',
-        menuCode: MenuCode.SETTINGS,
+        navTitle: appLocalization.maintenance,
+        iconSvgName: 'ic_completion.svg',
+        menuCode: MenuCode.MAINTENANCE,
       ),
+      BottomNavItem(
+        navTitle: appLocalization.more,
+        iconSvgName: 'ic_burger.svg',
+        menuCode: MenuCode.MORE,
+      )
     ];
+  }
+
+  String capitalizeFirst(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 }
 
@@ -129,11 +139,14 @@ class _NavBarTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SvgPicture.asset(
-                'images/${item.iconSvgName}',
-                height: AppValues.iconDefaultSize,
+              SizedBox(
                 width: AppValues.iconDefaultSize,
-                colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                height: AppValues.iconDefaultSize,
+                child: SvgPicture.asset(
+                  'images/${item.iconSvgName}',
+                  fit: BoxFit.contain,
+                  colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                ),
               ),
               const SizedBox(height: 4),
               Text(

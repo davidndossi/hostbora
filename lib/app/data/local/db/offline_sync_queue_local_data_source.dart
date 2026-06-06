@@ -83,7 +83,9 @@ class OfflineSyncQueueLocalDataSource {
     return db.insert(
       _table,
       data,
-      conflictAlgorithm: dedupeKey.isEmpty ? ConflictAlgorithm.abort : ConflictAlgorithm.replace,
+      conflictAlgorithm: dedupeKey.isEmpty
+          ? ConflictAlgorithm.abort
+          : ConflictAlgorithm.replace,
     );
   }
 
@@ -168,10 +170,7 @@ class OfflineSyncQueueLocalDataSource {
 
   /// Pending / in-progress / failed `booking:create` rows (not yet removed after sync).
   Future<List<OfflineSyncQueueItem>> listUnsyncedBookingCreates() async {
-    return listUnsynced(
-      entityType: 'booking',
-      operation: 'create',
-    );
+    return listUnsynced(entityType: 'booking', operation: 'create');
   }
 
   Future<List<OfflineSyncQueueItem>> listUnsynced({
@@ -209,6 +208,13 @@ class OfflineSyncQueueLocalDataSource {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> deleteByDedupeKey(String dedupeKey) async {
+    final key = dedupeKey.trim();
+    if (key.isEmpty) return;
+    final db = await database;
+    await db.delete(_table, where: 'dedupe_key = ?', whereArgs: [key]);
   }
 
   Future<int> pendingCountByEntity({

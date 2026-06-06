@@ -58,7 +58,7 @@ class RentStaffPayrollDetailsController extends BaseController {
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 0);
     final locale = Get.locale?.toString() ?? 'en_US';
-    final fmt = DateFormat.MMMd(locale);
+    final fmt = DateFormat('dd/MM', locale);
     return '${fmt.format(start)} – ${fmt.format(end)}, ${now.year}';
   }
 

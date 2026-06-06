@@ -17,8 +17,6 @@ const _vaultTeal = Color(0xFF1C6E64);
 class PropertyVaultView extends BaseView<PropertyVaultController> {
   PropertyVaultView({super.key});
 
-  
-
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(

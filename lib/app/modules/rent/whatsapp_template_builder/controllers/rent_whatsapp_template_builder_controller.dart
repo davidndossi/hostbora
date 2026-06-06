@@ -1,14 +1,25 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../core/utils/haptic_feedback_util.dart';
+import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
+import '../../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../../data/repository/app_repository.dart';
 
 class RentWhatsappTemplateBuilderController extends BaseController {
   RentWhatsappTemplateBuilderController()
-      : _local = Get.find<RentWhatsappTemplateLocalDataSource>();
+      : _local = Get.find<RentWhatsappTemplateLocalDataSource>(),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>(),
+        _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
 
   final RentWhatsappTemplateLocalDataSource _local;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
+  final AppRepository _repository;
 
   final loading = true.obs;
   final templates = <RentWhatsappTemplateRecord>[].obs;
@@ -156,6 +167,33 @@ class RentWhatsappTemplateBuilderController extends BaseController {
           buttons: buttons,
           sampleVariables: sampleVariables,
         );
+
+        final payload = <String, dynamic>{
+          'name': name.trim(),
+          'category': category,
+          'language': language,
+          'headerType': headerType,
+          'headerText': headerText.trim(),
+          'bodyText': bodyText.trim(),
+          'footerText': footerText.trim(),
+          'sampleVariables': sampleVariables,
+        };
+        try {
+          final res = await _repository.saveWhatsAppTemplateDraft(payload);
+          final ok = res.responseCode == '0' ||
+              res.responseCode == '200' ||
+              res.responseCode == '201';
+          if (!ok) throw Exception(res.message ?? 'API error');
+        } catch (_) {
+          await _syncQueue.enqueue(
+            entityType: 'wa_template',
+            operation: 'create',
+            payloadJson: jsonEncode(payload),
+            dedupeKey: 'wa_template:create:${name.trim()}',
+          );
+          _syncWorker.runNow();
+        }
+
         showSuccessMessage(
             _isSw ? 'Kiolezo kimehifadhiwa' : 'Template saved as draft');
         await loadAll();
@@ -174,6 +212,35 @@ class RentWhatsappTemplateBuilderController extends BaseController {
           sampleVariables: sampleVariables,
           status: WaTemplateStatus.draft,
         );
+
+        final updatePayload = <String, dynamic>{
+          'id': '$id',
+          'name': name.trim(),
+          'category': category,
+          'language': language,
+          'headerType': headerType,
+          'headerText': headerText.trim(),
+          'bodyText': bodyText.trim(),
+          'footerText': footerText.trim(),
+          'sampleVariables': sampleVariables,
+        };
+        try {
+          final res =
+              await _repository.updateWhatsAppTemplateDraft('$id', updatePayload);
+          final ok = res.responseCode == '0' ||
+              res.responseCode == '200' ||
+              res.responseCode == '201';
+          if (!ok) throw Exception(res.message ?? 'API error');
+        } catch (_) {
+          await _syncQueue.enqueue(
+            entityType: 'wa_template',
+            operation: 'update',
+            payloadJson: jsonEncode(updatePayload),
+            dedupeKey: 'wa_template:update:$id',
+          );
+          _syncWorker.runNow();
+        }
+
         showSuccessMessage(
             _isSw ? 'Kiolezo kimesasishwa' : 'Template updated');
         await loadAll();
@@ -209,6 +276,26 @@ class RentWhatsappTemplateBuilderController extends BaseController {
       showErrorMessage(error);
       return false;
     }
+    try {
+      await _syncQueue.enqueue(
+        entityType: 'wa_template',
+        operation: 'submit',
+        payloadJson: jsonEncode({
+          'name': name.trim(),
+          'category': category,
+          'language': language,
+          'bodyText': bodyText.trim(),
+          'headerText': headerText.trim(),
+          'footerText': footerText.trim(),
+          'status': WaTemplateStatus.submitted,
+        }),
+        dedupeKey: 'wa_template:submit:${name.trim()}',
+      );
+      _syncWorker.runNow();
+    } catch (_) {
+      // Sync queue failure should not block the local status update
+    }
+
     await _local.update(
       id: id,
       name: name.trim(),
@@ -220,11 +307,11 @@ class RentWhatsappTemplateBuilderController extends BaseController {
       footerText: footerText.trim(),
       buttons: buttons,
       sampleVariables: sampleVariables,
-      status: WaTemplateStatus.approved, // WaTemplateStatus.submitted,
+      status: WaTemplateStatus.submitted,
       submittedAtMs: DateTime.now().millisecondsSinceEpoch,
     );
     showSuccessMessage(
-        _isSw ? 'Kimetumwa kwa ukaguzi' : 'Submitted for approval');
+        _isSw ? 'Kimetumwa kwa ukaguzi' : 'Template submitted for approval');
     await loadAll();
     return true;
   }

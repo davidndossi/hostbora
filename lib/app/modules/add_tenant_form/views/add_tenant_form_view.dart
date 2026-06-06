@@ -7,6 +7,7 @@ import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/utils/tenant_rent_billing.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/loading_button.dart';
 import '../controllers/add_tenant_form_controller.dart';
 
 class AddTenantFormView extends BaseView<AddTenantFormController> {
@@ -18,8 +19,9 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
     final f = frequency.trim().toLowerCase();
     if (_isSw) {
       switch (f) {
+        case 'per night':
         case 'per day':
-          return 'KODI (KWA SIKU)';
+          return 'KODI (KWA USIKU)';
         case 'per week':
           return 'KODI (KWA WIKI)';
         case 'per year':
@@ -30,8 +32,9 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
       }
     }
     switch (f) {
+      case 'per night':
       case 'per day':
-        return 'RENT RATE (PER DAY)';
+        return 'RATE PER NIGHT';
       case 'per week':
         return 'RENT RATE (PER WEEK)';
       case 'per year':
@@ -141,7 +144,9 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
             children: [
               Obx(
                 () => Text(
-                  _rentRateLabel(controller.rentFrequency.value),
+                  controller.isRentFlow.value
+                      ? (_isSw ? 'KODI' : 'RENT AMOUNT')
+                      : _rentRateLabel(controller.rentFrequency.value),
                   style: _labelStyle(c),
                 ),
               ),
@@ -151,12 +156,15 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: TextFormField(
+                    child: Obx(
+                      () => TextFormField(
                       controller: controller.rentAmountController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       textInputAction: TextInputAction.next,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      onChanged: controller.onRentAmountChanged,
+                      onChanged: controller.isRentFlow.value
+                          ? null
+                          : controller.onRentAmountChanged,
                       validator: controller.validateRentAmount,
                       style: TextStyle(
                         fontSize: 15,
@@ -187,6 +195,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
                       ),
                     ),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -195,7 +204,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                       () => _whiteDropdown<String>(
                         colors: c,
                         value: controller.rentFrequency.value,
-                        options: AddTenantFormController.rentFrequencyOptions,
+                        options: controller.rentFrequencyOptions,
                         onChanged: controller.setRentFrequency,
                         compact: true,
                       ),
@@ -208,11 +217,12 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
               const SizedBox(height: 8),
               _leaseDateRangeField(context, c),
               Obx(() {
+                if (controller.isRentFlow.value) return const SizedBox.shrink();
                 final total = controller.stayTotalPreview.value;
                 final units = controller.stayBillingUnits.value;
                 if (total <= 0 || units <= 0) return const SizedBox.shrink();
                 final freq = controller.rentFrequency.value;
-                final isPerDay = freq.trim().toLowerCase() == 'per day';
+                final isPerDay = freq.trim().toLowerCase() == 'per night' || freq.trim().toLowerCase() == 'per day';
                 final unitLabel = isPerDay
                     ? (units == 1
                         ? (_isSw ? 'usiku' : 'night')
@@ -320,20 +330,11 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
             ],
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
+          Obx(
+            () => LoadingButton(
+              label: _isSw ? 'HIFADHI MPANGAJI' : 'SAVE TENANT',
               onPressed: controller.saveTenant,
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(
-                _isSw ? 'HIFADHI MPANGAJI' : 'SAVE TENANT',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: 0.8),
-              ),
+              isLoading: controller.saving.value,
             ),
           ),
           const SizedBox(height: 12),
@@ -358,7 +359,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
   }
 
   Widget _leaseDateRangeField(BuildContext context, FormSurfaceColors colors) {
-    final dateFmt = DateFormat.yMMMd();
+    final dateFmt = DateFormat('dd/MM/yyyy');
 
     return Obx(() {
       final start = controller.leaseStart.value;

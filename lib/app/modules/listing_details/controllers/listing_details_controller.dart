@@ -11,14 +11,23 @@ import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_members_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
+import '../../../data/local/db/rent_payment_reminder_local_data_source.dart';
 import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/service/currency_service.dart';
+import '../../../core/utils/property_financial_time_series.dart';
+import '../../../core/utils/property_listing_finance_scope.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../rent/listing_activity_log/controllers/rent_listing_activity_log_controller.dart';
+import '../../rent/staff_management/controllers/rent_staff_management_controller.dart';
+import '../../rent/staff_payroll_details/controllers/rent_staff_payroll_details_controller.dart';
+import '../models/listing_activity_vm.dart';
+import '../models/listing_details_tab.dart';
 
 enum ListingUnitStatus { short, occupied, dueDate }
 
@@ -30,6 +39,7 @@ class ListingUnitRowVm {
     this.tenantName = '',
     this.tenantId,
     this.unitId = '',
+    this.operationMode = 'bnb',
   });
 
   final String name;
@@ -38,22 +48,33 @@ class ListingUnitRowVm {
   final String tenantName;
   final int? tenantId;
   final String unitId;
+  final String operationMode;
 }
 
-class ListingActivityVm {
-  ListingActivityVm({
-    required this.title,
-    required this.subtitle,
-    required this.trailing,
-    required this.timeLabel,
-    required this.accentColor,
+class ListingMaintenanceRowVm {
+  const ListingMaintenanceRowVm({
+    required this.id,
+    required this.category,
+    required this.description,
+    required this.scheduledLabel,
+    required this.priority,
   });
 
-  final String title;
-  final String subtitle;
-  final String trailing;
-  final String timeLabel;
-  final Color accentColor;
+  final int id;
+  final String category;
+  final String description;
+  final String scheduledLabel;
+  final String priority;
+}
+
+class PaymentFollowUpBannerVm {
+  const PaymentFollowUpBannerVm({
+    required this.message,
+    this.actionLabel,
+  });
+
+  final String message;
+  final String? actionLabel;
 }
 
 class ListingStaffVm {
@@ -70,28 +91,41 @@ class ListingDetailsController extends BaseController
       _propertyLocal = Get.find<PropertyLocalDataSource>(),
       _incomeLocal = Get.find<IncomeLocalDataSource>(),
       _expenseLocal = Get.find<ExpenseLocalDataSource>(),
+      _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
       _staffLocal = Get.find<RentStaffLocalDataSource>(),
       _tenantLocal = Get.find<TenantLocalDataSource>(),
       _unitLocal = Get.find<PropertyUnitLocalDataSource>(),
       _membersLocal = Get.find<PropertyMembersLocalDataSource>(),
-      _maintenanceLocal = Get.find<RentScheduledMaintenanceLocalDataSource>();
+      _maintenanceLocal = Get.find<RentScheduledMaintenanceLocalDataSource>(),
+      _paymentReminderLocal = Get.find<RentPaymentReminderLocalDataSource>();
 
   final AppRepository _repository;
   final PropertyLocalDataSource _propertyLocal;
   final IncomeLocalDataSource _incomeLocal;
   final ExpenseLocalDataSource _expenseLocal;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
   final RentStaffLocalDataSource _staffLocal;
   final TenantLocalDataSource _tenantLocal;
   final PropertyUnitLocalDataSource _unitLocal;
   final PropertyMembersLocalDataSource _membersLocal;
   final RentScheduledMaintenanceLocalDataSource _maintenanceLocal;
+  final RentPaymentReminderLocalDataSource _paymentReminderLocal;
 
   final loadingListing = true.obs;
+  final selectedTab = ListingDetailsTab.overview.obs;
+  final propertyWorkspaceMode = 'bnb'.obs;
+  final paymentFollowUp = Rxn<PaymentFollowUpBannerVm>();
+  final maintenanceRows = <ListingMaintenanceRowVm>[].obs;
+  final selectedAssigneeStaffId = RxnString();
+  final assigneeStaffOptions = <RentStaffRecord>[].obs;
+
   final listingTitle = ''.obs;
   final heroOverlayTitle = ''.obs;
   final heroImagePath = ''.obs;
   final occupancyPercent = 0.obs;
   final monthlyRevenueLabel = '0'.obs;
+  final monthlyExpensesLabel = '0'.obs;
+  final netIncomeLabel = '0'.obs;
   final monthlyRevenueProgress = 0.0.obs;
 
   final listingScrollController = ScrollController();
@@ -102,6 +136,61 @@ class ListingDetailsController extends BaseController
   static final _money = NumberFormat('#,###', 'en_US');
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
+
+  List<String> get financeWorkspaceTypes {
+    final mode = propertyWorkspaceMode.value;
+    if (mode == 'both') return const ['bnb', 'rent'];
+    if (mode == 'rent') return const ['rent'];
+    return const ['bnb'];
+  }
+
+  List<ListingDetailsTab> get visibleTabs {
+    final mode = propertyWorkspaceMode.value;
+    final tabs = <ListingDetailsTab>[ListingDetailsTab.overview];
+    if (mode == 'bnb' || mode == 'both') tabs.add(ListingDetailsTab.bnb);
+    if (mode == 'rent' || mode == 'both') tabs.add(ListingDetailsTab.rent);
+    tabs.addAll([
+      ListingDetailsTab.finance,
+      ListingDetailsTab.staff,
+      ListingDetailsTab.maintenance,
+    ]);
+    return tabs;
+  }
+
+  List<ListingUnitRowVm> get bnbUnitRows {
+    final mode = propertyWorkspaceMode.value;
+    if (mode == 'rent') return const [];
+    return unitRows.where((u) {
+      final um = u.operationMode.trim().toLowerCase();
+      if (mode == 'both') return um != 'rent';
+      return um != 'rent';
+    }).toList();
+  }
+
+  List<ListingUnitRowVm> get rentUnitRows {
+    final mode = propertyWorkspaceMode.value;
+    if (mode == 'bnb') return const [];
+    if (mode == 'rent') return unitRows.toList();
+    return unitRows
+        .where((u) => u.operationMode.trim().toLowerCase() == 'rent')
+        .toList();
+  }
+
+  void selectTab(ListingDetailsTab tab) {
+    if (!visibleTabs.contains(tab)) return;
+    selectedTab.value = tab;
+    if (tab == ListingDetailsTab.staff ||
+        tab == ListingDetailsTab.maintenance) {
+      refreshStaffPanel();
+    }
+  }
+
+  void ensureSelectedTabValid() {
+    if (!visibleTabs.contains(selectedTab.value)) {
+      selectedTab.value = ListingDetailsTab.overview;
+    }
+  }
+
   String get _propertyId => (Get.arguments is Map)
       ? ((Get.arguments as Map)['property_id'] ?? '').toString().trim()
       : '';
@@ -121,13 +210,45 @@ class ListingDetailsController extends BaseController
   @override
   void onReady() {
     super.onReady();
-    loadListingDetail();
+    loadListingDetail().then((_) => refreshStaffPanel());
   }
 
   @override
   void onClose() {
     listingScrollController.dispose();
     super.onClose();
+  }
+
+  static Future<void> refreshIfRegistered() async {
+    await RentListingActivityLogController.refreshIfRegistered();
+    if (!Get.isRegistered<ListingDetailsController>()) return;
+    await Get.find<ListingDetailsController>().refreshRecentActivityAndRevenue();
+  }
+
+  /// Refreshes recent activity and monthly revenue without reloading units/staff.
+  Future<void> refreshRecentActivityAndRevenue() async {
+    Map<String, dynamic>? remoteListing;
+    if (_propertyId.isNotEmpty) {
+      remoteListing = await _fetchListingMapFromRepository(_propertyId);
+    }
+    recentActivity.assignAll(await _resolveRecentActivity(remoteListing));
+    await _syncMonthlyRevenue(remoteListing);
+    await loadListingFinancialTrends(
+      workspaceType: 'rent',
+      propertyId: _propertyId,
+      propertyName: _propertyName,
+      propertyLocation: _propertyLocation,
+    );
+  }
+
+  /// Local income/expense rows win so new entries show immediately after add forms.
+  Future<List<ListingActivityVm>> _resolveRecentActivity(
+      Map<String, dynamic>? remoteListing,
+      ) async {
+    final local = await _loadActivityFromLocal();
+    if (local.isNotEmpty) return local;
+    if (remoteListing == null) return const [];
+    return _activityFromAnyMap(remoteListing);
   }
 
   Future<void> loadListingDetail() async {
@@ -146,14 +267,14 @@ class ListingDetailsController extends BaseController
         realRows = await _loadUnitRowsFromLocal();
       }
       unitRows.assignAll(realRows.isEmpty ? [] : realRows);
+      await _syncPropertyWorkspaceMode();
+      ensureSelectedTabValid();
       await _syncOccupancyPercent(remoteListing);
       await _syncMonthlyRevenue(remoteListing);
-      await loadListingFinancialTrends(
-        workspaceType: 'bnb',
-        propertyId: _propertyId,
-        propertyName: _propertyName,
-        propertyLocation: _propertyLocation,
-      );
+      await _loadPropertyFinanceTrends();
+      await _loadPaymentFollowUp();
+      await _loadMaintenanceRows();
+      await _loadAssigneeStaffOptions();
 
       var activities = remoteListing == null
           ? <ListingActivityVm>[]
@@ -235,10 +356,17 @@ class ListingDetailsController extends BaseController
   }
 
   Future<void> _syncMonthlyRevenue(Map<String, dynamic>? remoteListing) async {
-    final incomes = await _incomeLocal.getAllByPropertyRefAndWorkspace(
-      propertyRef: _propertyId,
-      workspaceType: 'bnb',
-    );
+    final incomes = <IncomeRecord>[];
+    final expenses = <ExpenseRecord>[];
+    for (final ws in financeWorkspaceTypes) {
+      incomes.addAll(
+        await _incomeLocal.getAllByPropertyRefAndWorkspace(
+          propertyRef: _propertyId,
+          workspaceType: ws,
+        ),
+      );
+      expenses.addAll(await _expenseLocal.getAllNewestFirst(workspaceType: ws));
+    }
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 1);
@@ -257,23 +385,30 @@ class ListingDetailsController extends BaseController
       }
     }
 
-    bool matchesListingScope(IncomeRecord row) {
-      final pr = row.propertyRef.trim();
+    bool matchesListingScope({
+      required String propertyRef,
+      required String apartment,
+      required String apartmentUnit,
+      required String notes,
+    }) {
+      final pr = propertyRef.trim();
       if (pr.isNotEmpty && scopeRefs.isNotEmpty && scopeRefs.contains(pr)) {
         return true;
       }
-      final apt = row.apartment.trim().toLowerCase();
-      final unit = row.apartmentUnit.trim().toLowerCase();
-      final notes = row.notes.trim().toLowerCase();
+      final apt = apartment.trim().toLowerCase();
+      final unit = apartmentUnit.trim().toLowerCase();
+      final rowNotes = notes.trim().toLowerCase();
       final name = _propertyName.toLowerCase();
       final loc = _propertyLocation.toLowerCase();
       if (name.isEmpty && loc.isEmpty) return false;
       if (name.isNotEmpty &&
-          (apt.contains(name) || unit.contains(name) || notes.contains(name))) {
+          (apt.contains(name) ||
+              unit.contains(name) ||
+              rowNotes.contains(name))) {
         return true;
       }
       if (loc.isNotEmpty &&
-          (apt.contains(loc) || unit.contains(loc) || notes.contains(loc))) {
+          (apt.contains(loc) || unit.contains(loc) || rowNotes.contains(loc))) {
         return true;
       }
       return false;
@@ -282,8 +417,30 @@ class ListingDetailsController extends BaseController
     for (final row in incomes) {
       final d = row.paidLocalCalendarOrCreated();
       if (d.isBefore(start) || !d.isBefore(end)) continue;
-      if (!matchesListingScope(row)) continue;
+      if (!matchesListingScope(
+        propertyRef: row.propertyRef,
+        apartment: row.apartment,
+        apartmentUnit: row.apartmentUnit,
+        notes: row.notes,
+      )) {
+        continue;
+      }
       paymentTotal += row.amountValue;
+    }
+
+    var expenseTotal = 0.0;
+    for (final row in expenses) {
+      final d = row.paidLocalCalendarOrCreated();
+      if (d.isBefore(start) || !d.isBefore(end)) continue;
+      if (!matchesListingScope(
+        propertyRef: '',
+        apartment: row.apartment,
+        apartmentUnit: row.apartmentUnit,
+        notes: row.notes,
+      )) {
+        continue;
+      }
+      expenseTotal += row.amountValue;
     }
 
     final localTotal = paymentTotal;
@@ -296,6 +453,8 @@ class ListingDetailsController extends BaseController
     final displayTotal = localTotal > 0 ? localTotal : remoteMonthly;
 
     monthlyRevenueLabel.value = _money.format(displayTotal.round());
+    monthlyExpensesLabel.value = _money.format(expenseTotal.round());
+    netIncomeLabel.value = _money.format((displayTotal - expenseTotal).round());
 
     final expectedRemote = remoteListing != null
         ? _extractExpectedMonthlyIncome(remoteListing)
@@ -662,10 +821,12 @@ class ListingDetailsController extends BaseController
       }
     } catch (_) {}
 
-    final incomes = await _incomeLocal.getAllNewestFirst(workspaceType: 'bnb');
-    final expenses = await _expenseLocal.getAllNewestFirst(
-      workspaceType: 'bnb',
-    );
+    final incomes = <IncomeRecord>[];
+    final expenses = <ExpenseRecord>[];
+    for (final ws in financeWorkspaceTypes) {
+      incomes.addAll(await _incomeLocal.getAllNewestFirst(workspaceType: ws));
+      expenses.addAll(await _expenseLocal.getAllNewestFirst(workspaceType: ws));
+    }
     final propNameLc = _propertyName.toLowerCase();
 
     bool matchProperty(String apartment, String notes) {
@@ -700,6 +861,7 @@ class ListingDetailsController extends BaseController
           ),
           timeLabel: _relativeDate(e.datePaidIso, e.createdAtMs),
           accentColor: const Color(0xFFF59E0B),
+          expenseId: e.id,
         ),
       ));
     }
@@ -795,7 +957,7 @@ class ListingDetailsController extends BaseController
     if (day == today.subtract(const Duration(days: 1))) {
       return _isSw ? 'Jana' : 'Yesterday';
     }
-    return DateFormat('MMM d').format(day);
+    return DateFormat('dd/MM').format(day);
   }
 
   Future<List<ListingUnitRowVm>> _loadUnitRowsFromLocal() async {
@@ -854,6 +1016,7 @@ class ListingDetailsController extends BaseController
         final attachedTenant = listingTenants.isEmpty
             ? null
             : listingTenants.first;
+        final ws = target.workspaceType.trim().toLowerCase();
         return [
           ListingUnitRowVm(
             name: target.apartmentSuite.trim().isNotEmpty
@@ -865,6 +1028,7 @@ class ListingDetailsController extends BaseController
                 : ListingUnitStatus.occupied,
             tenantName: attachedTenant?.tenantName ?? '',
             tenantId: attachedTenant?.id,
+            operationMode: ws == 'rent' ? 'rent' : 'bnb',
           ),
         ];
       }
@@ -892,6 +1056,10 @@ class ListingDetailsController extends BaseController
           }
         }
         final rent = (m['unitRent'] ?? m['rent'] ?? '').toString().trim();
+        final mode = (m['operationMode'] ?? m['listingMode'] ?? m['workspaceType'])
+            .toString()
+            .trim()
+            .toLowerCase();
         out.add(
           ListingUnitRowVm(
             name: unitName,
@@ -904,6 +1072,7 @@ class ListingDetailsController extends BaseController
             tenantName: attachedTenant?.tenantName ?? '',
             tenantId: attachedTenant?.id,
             unitId: unitId,
+            operationMode: mode == 'rent' ? 'rent' : 'bnb',
           ),
         );
       }
@@ -975,7 +1144,160 @@ class ListingDetailsController extends BaseController
   }
 
   Future<void> loadRealDataSnapshot() async {
-    // Kept for refresh compatibility with the view.
+    await _loadPropertyFinanceTrends();
+  }
+
+  Future<void> _syncPropertyWorkspaceMode() async {
+    final row = await _findLocalPropertyRowForListing();
+    final raw = row?.workspaceType.trim().toLowerCase() ?? '';
+    if (raw == 'rent' || raw == 'bnb' || raw == 'both') {
+      propertyWorkspaceMode.value = raw;
+      return;
+    }
+    propertyWorkspaceMode.value = 'bnb';
+  }
+
+  Future<void> _loadPropertyFinanceTrends() async {
+    financialTrendsLoading.value = true;
+    try {
+      final scope = await PropertyListingFinanceScope.resolve(
+        propertyId: _propertyId,
+        propertyName: _propertyName,
+        propertyLocation: _propertyLocation,
+        propertyLocal: _propertyLocal,
+      );
+      final incomes = <IncomeRecord>[];
+      final expenses = <ExpenseRecord>[];
+      for (final ws in financeWorkspaceTypes) {
+        incomes.addAll(await _incomeLocal.getAllNewestFirst(workspaceType: ws));
+        expenses.addAll(await _expenseLocal.getAllNewestFirst(workspaceType: ws));
+      }
+      financialTrends.value = PropertyFinancialTimeSeriesBuilder.build(
+        scope: scope,
+        incomes: incomes,
+        expenses: expenses,
+      );
+    } catch (_) {
+      financialTrends.value = const PropertyFinancialTimeSeries(
+        dateLabels: [],
+        incomeByPeriod: [],
+        costsByPeriod: [],
+      );
+    } finally {
+      financialTrendsLoading.value = false;
+    }
+  }
+
+  Future<void> _loadPaymentFollowUp() async {
+    paymentFollowUp.value = null;
+    final scopeRefs = await _listingPropertyRefsForActivity();
+    final reminders = await _paymentReminderLocal.getAllNewestFirst();
+    final now = DateTime.now();
+    for (final r in reminders) {
+      if (!_paymentReminderMatchesListing(r, scopeRefs)) continue;
+      DateTime? at;
+      try {
+        at = DateTime.parse(r.reminderAtIso.trim());
+      } catch (_) {
+        continue;
+      }
+      if (at.isAfter(now.add(const Duration(days: 14)))) continue;
+      final balance = NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0)
+          .format(r.balanceTsh);
+      paymentFollowUp.value = PaymentFollowUpBannerVm(
+        message: _isSw
+            ? 'Malipo ya ${r.tenantName.trim().isEmpty ? 'mpangaji' : r.tenantName} ($balance) yanahitaji ufuatiliaji.'
+            : 'Payment for ${r.tenantName.trim().isEmpty ? 'tenant' : r.tenantName} ($balance) needs follow-up.',
+        actionLabel: _isSw ? 'Tuma ukumbusho' : 'Send reminder',
+      );
+      return;
+    }
+
+    final tenants = await _tenantLocal.getAllNewestFirst();
+    for (final t in tenants) {
+      if (!_tenantMatchesListingForActivity(t, scopeRefs)) continue;
+      final end = _tryParseDate(t.leaseEndIso);
+      if (end == null) continue;
+      if (end.isBefore(now) || end.isBefore(now.add(const Duration(days: 7)))) {
+        paymentFollowUp.value = PaymentFollowUpBannerVm(
+          message: _isSw
+              ? 'Mkataba wa ${t.tenantName} unakaribia au umepita — angalia malipo.'
+              : '${t.tenantName}\'s lease is ending or overdue — review payments.',
+          actionLabel: _isSw ? 'Angalia mpangaji' : 'Review tenant',
+        );
+        return;
+      }
+    }
+  }
+
+  bool _paymentReminderMatchesListing(
+    RentPaymentReminderRecord r,
+    Set<String> scopeRefs,
+  ) {
+    final label = r.propertyLabel.trim().toLowerCase();
+    if (label.isEmpty) return false;
+    final nameLc = _propertyName.toLowerCase();
+    final locLc = _propertyLocation.toLowerCase();
+    if (nameLc.isNotEmpty && label.contains(nameLc)) return true;
+    if (locLc.isNotEmpty && label.contains(locLc)) return true;
+    return scopeRefs.isNotEmpty && label.isNotEmpty;
+  }
+
+  DateTime? _tryParseDate(String raw) {
+    if (raw.trim().isEmpty) return null;
+    try {
+      return DateTime.parse(raw.trim());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _loadMaintenanceRows() async {
+    final scopeRefs = await _listingPropertyRefsForActivity();
+    final rows = await _maintenanceLocal.getAllNewestFirst();
+    final out = <ListingMaintenanceRowVm>[];
+    for (final r in rows) {
+      if (!_maintenanceMatchesListing(r, scopeRefs)) continue;
+      DateTime? scheduled;
+      try {
+        scheduled = DateTime.parse(r.scheduledDateIso.trim());
+      } catch (_) {
+        scheduled = null;
+      }
+      out.add(
+        ListingMaintenanceRowVm(
+          id: r.id,
+          category: r.category,
+          description: r.description,
+          scheduledLabel: scheduled != null
+              ? DateFormat('MMM d, yyyy').format(scheduled)
+              : '—',
+          priority: r.priority,
+        ),
+      );
+    }
+    maintenanceRows.assignAll(out);
+  }
+
+  Future<void> _loadAssigneeStaffOptions() async {
+    final rows = await _staffLocal.getAllNewestFirst();
+    assigneeStaffOptions.assignAll(rows);
+  }
+
+  String? get selectedAssigneeStaffName {
+    final id = selectedAssigneeStaffId.value;
+    if (id == null || id.isEmpty) return null;
+    final parsed = int.tryParse(id);
+    if (parsed == null) return null;
+    for (final s in assigneeStaffOptions) {
+      if (s.id == parsed) return s.name.trim();
+    }
+    return null;
+  }
+
+  void updateAssigneeStaff(String? staffId) {
+    selectedAssigneeStaffId.value =
+        staffId == null || staffId.isEmpty ? null : staffId;
   }
 
   void onOpenUnitOccupancy() {
@@ -1219,33 +1541,116 @@ class ListingDetailsController extends BaseController
     await loadListingDetail();
   }
 
+  Future<void> onEditExpenseActivity(ListingActivityVm activity) async {
+    final id = activity.expenseId;
+    if (id == null) return;
+    await Get.toNamed(
+      Routes.ADD_EXPENSE,
+      arguments: {'mode': 'edit', 'expenseId': id},
+    );
+    await loadListingDetail();
+  }
+
+  Future<void> onDeleteExpenseActivity(ListingActivityVm activity) async {
+    final id = activity.expenseId;
+    if (id == null) return;
+    final confirmed = await confirmDestructive(
+      title: _isSw ? 'Futa gharama?' : 'Delete expense?',
+      message: _isSw
+          ? 'Gharama hii itaondolewa kwenye shughuli na hesabu za mwezi.'
+          : 'This expense will be removed from activity and monthly totals.',
+      confirmLabel: _isSw ? 'Futa' : 'Delete',
+      cancelLabel: _isSw ? 'Ghairi' : 'Cancel',
+    );
+    if (!confirmed) return;
+    await _expenseLocal.deleteById(id);
+    await _syncQueue.deleteByDedupeKey('expense:create:$id');
+    showSuccessWithHaptic(_isSw ? 'Gharama imefutwa' : 'Expense deleted');
+    await loadListingDetail();
+  }
+
+  String _workspaceParamForMode(String mode) =>
+      mode.trim().toLowerCase() == 'rent' ? 'rent' : 'bnb';
+
+  void onAddTenantForWorkspace(String workspace) {
+    Get.toNamed(
+      Routes.ADD_NEW_TENANT,
+      parameters: {
+        if (_propertyName.isNotEmpty) 'property': _propertyName,
+        if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+        'workspaceType': _workspaceParamForMode(workspace),
+      },
+      arguments: {
+        if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+        if (_propertyName.isNotEmpty) 'property': _propertyName,
+      },
+    )?.then((_) => loadListingDetail());
+  }
+
+  void onAddIncomeForWorkspace(String workspace) {
+    Get.toNamed(
+      Routes.RECORD_PAYMENT,
+      parameters: {
+        if (_propertyName.isNotEmpty) 'property': _propertyName,
+        if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+        'workspaceType': _workspaceParamForMode(workspace),
+      },
+      arguments: {
+        if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+        if (_propertyName.isNotEmpty) 'property': _propertyName,
+      },
+    )?.then((_) => loadListingDetail());
+  }
+
+  void onScheduleMaintenance() {
+    final assignee = selectedAssigneeStaffName;
+    Get.toNamed(
+      Routes.RENT_SCHEDULE_MAINTENANCE_FORM,
+      parameters: {
+        if (_propertyName.isNotEmpty) 'property': _propertyName,
+        if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+        'workspaceType': propertyWorkspaceMode.value,
+        if (assignee != null && assignee.isNotEmpty) 'description': 'Assigned to: $assignee',
+      },
+    )?.then((_) => loadListingDetail());
+  }
+
+  void onAddMaintenanceTask() {
+    final assignee = selectedAssigneeStaffName;
+    Get.toNamed(
+      Routes.ADD_TASK,
+      parameters: {
+        if (_propertyName.isNotEmpty) 'property': _propertyName,
+        if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+      },
+      arguments: {
+        if (assignee != null && assignee.isNotEmpty)
+          'description': 'Assigned to: $assignee',
+      },
+    )?.then((_) => loadListingDetail());
+  }
+
+  void onPaymentFollowUpTap() {
+    Get.toNamed(
+      Routes.RENT_SCHEDULE_PAYMENT_REMINDER,
+      parameters: {
+        if (_propertyName.isNotEmpty) 'property': _propertyName,
+        if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+      },
+    )?.then((_) => loadListingDetail());
+  }
+
   void onQuickAction(int index) {
     switch (index) {
       case 0:
-        Get.toNamed(
-          Routes.ADD_NEW_TENANT,
-          parameters: {
-            if (_propertyName.isNotEmpty) 'property': _propertyName,
-            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
-          },
-          arguments: {
-            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
-            if (_propertyName.isNotEmpty) 'property': _propertyName,
-          },
-        )?.then((_) => loadListingDetail());
+        onAddTenantForWorkspace(
+          propertyWorkspaceMode.value == 'rent' ? 'rent' : 'bnb',
+        );
         break;
       case 1:
-        Get.toNamed(
-          Routes.RECORD_PAYMENT,
-          parameters: {
-            if (_propertyName.isNotEmpty) 'property': _propertyName,
-            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
-          },
-          arguments: {
-            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
-            if (_propertyName.isNotEmpty) 'property': _propertyName,
-          },
-        )?.then((_) => loadListingDetail());
+        onAddIncomeForWorkspace(
+          propertyWorkspaceMode.value == 'rent' ? 'rent' : 'bnb',
+        );
         break;
       case 2:
         Get.toNamed(
@@ -1257,13 +1662,7 @@ class ListingDetailsController extends BaseController
         )?.then((_) => loadListingDetail());
         break;
       case 3:
-        Get.toNamed(
-          Routes.RENT_SCHEDULE_MAINTENANCE_FORM,
-          parameters: {
-            if (_propertyName.isNotEmpty) 'property': _propertyName,
-            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
-          },
-        )?.then((_) => loadListingDetail());
+        onScheduleMaintenance();
         break;
       case 4:
         showSuccessMessage(_isSw ? 'Udhibiti wa lock' : 'Unit lock control');
@@ -1276,13 +1675,10 @@ class ListingDetailsController extends BaseController
     }
   }
 
-  void onAnalyticsQuickAction(int index) {
-    if (index == 1) {
-      Get.toNamed(Routes.RENT_MONTHLY_PL_SUMMARY);
-    }
-  }
-
-  void onUnitPrimaryAction(ListingUnitRowVm row) {
+  void onUnitPrimaryActionForWorkspace(
+    ListingUnitRowVm row,
+    String workspace,
+  ) {
     switch (row.status) {
       case ListingUnitStatus.dueDate:
         showSuccessMessage(_isSw ? 'Tuma ankara' : 'Send invoice');
@@ -1297,10 +1693,38 @@ class ListingDetailsController extends BaseController
             if (_propertyName.isNotEmpty) 'property': _propertyName,
             if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
             'unitName': row.name,
+            'workspaceType': _workspaceParamForMode(workspace),
           },
         )?.then((_) => loadListingDetail());
         break;
     }
+  }
+
+  void onAnalyticsQuickAction(int index) {
+    if (index == 1) {
+      Get.toNamed(Routes.RENT_MONTHLY_PL_SUMMARY);
+    }
+  }
+
+  void onUnitPrimaryAction(ListingUnitRowVm row) {
+    final ws = row.operationMode.trim().toLowerCase() == 'rent' ? 'rent' : 'bnb';
+    onUnitPrimaryActionForWorkspace(row, ws);
+  }
+
+  Future<void> onAddStaff() async {
+    await Get.toNamed(Routes.RENT_STAFF_MANAGEMENT);
+    await _loadAssigneeStaffOptions();
+    await loadListingDetail();
+  }
+
+  Future<void> refreshStaffPanel() async {
+    if (Get.isRegistered<RentStaffManagementController>()) {
+      await Get.find<RentStaffManagementController>().loadStaff();
+    }
+    if (Get.isRegistered<RentStaffPayrollDetailsController>()) {
+      await Get.find<RentStaffPayrollDetailsController>().loadPayroll();
+    }
+    await _loadAssigneeStaffOptions();
   }
 
   String primaryButtonLabel(ListingUnitRowVm row, bool isSw) {

@@ -6,8 +6,6 @@ import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/auth_view.dart';
 import '../modules/change_password/bindings/change_password_binding.dart';
 import '../modules/change_password/views/change_password_view.dart';
-import '../modules/failed/bindings/failed_binding.dart';
-import '../modules/failed/views/failed_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/listing_details/bindings/listing_details_binding.dart';
@@ -24,8 +22,6 @@ import '../modules/other/bindings/other_binding.dart';
 import '../modules/other/views/other_view.dart';
 import '../modules/otp/bindings/otp_binding.dart';
 import '../modules/otp/views/otp_view.dart';
-import '../modules/registration/bindings/registration_binding.dart';
-import '../modules/registration/views/registration_view.dart';
 import '../modules/rent/smart_utility_dashboard/bindings/rent_smart_utility_dashboard_binding.dart';
 import '../modules/rent/smart_utility_dashboard/views/rent_smart_utility_dashboard_view.dart';
 import '../modules/rent/utility_usage_graph/bindings/rent_utility_usage_graph_binding.dart';
@@ -36,8 +32,6 @@ import '../modules/send_sms/bindings/send_sms_binding.dart';
 import '../modules/send_sms/views/send_sms_view.dart';
 import '../modules/subscription/bindings/subscription_binding.dart';
 import '../modules/subscription/views/subscription_view.dart';
-import '../modules/splash/bindings/splash_binding.dart';
-import '../modules/splash/views/splash_view.dart';
 import '../modules/onboarding/bindings/onboarding_binding.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
 import '../modules/settings/bindings/settings_binding.dart';
@@ -45,8 +39,6 @@ import '../modules/settings/views/settings_view.dart';
 import '../modules/help_center/bindings/help_center_binding.dart';
 import '../modules/help_center/views/help_center_view.dart';
 import '../modules/help_center/views/help_guide_detail_view.dart';
-import '../modules/success/bindings/success_binding.dart';
-import '../modules/success/views/success_view.dart';
 import '../modules/support/bindings/support_binding.dart';
 import '../modules/support/views/support_view.dart';
 import '../modules/feedback/bindings/feedback_binding.dart';
@@ -105,6 +97,10 @@ import '../modules/document_scanner/bindings/document_scanner_binding.dart';
 import '../modules/document_scanner/views/document_scanner_view.dart';
 import '../modules/refine_scan/bindings/refine_scan_binding.dart';
 import '../modules/refine_scan/views/refine_scan_view.dart';
+import '../modules/add_document/bindings/add_document_binding.dart';
+import '../modules/add_document/views/add_document_view.dart';
+import '../modules/guest_history/bindings/guest_history_binding.dart';
+import '../modules/guest_history/views/guest_history_view.dart';
 import '../modules/smart_access/bindings/smart_access_binding.dart';
 import '../modules/smart_access/views/smart_access_view.dart';
 import '../modules/guest_access_codes/bindings/guest_access_codes_binding.dart';
@@ -142,36 +138,14 @@ import '../modules/ai_pricing_optimizer/bindings/ai_pricing_optimizer_binding.da
 import '../modules/ai_pricing_optimizer/views/ai_pricing_optimizer_view.dart';
 import '../modules/rent/concierge_inbox/bindings/rent_concierge_inbox_binding.dart';
 import '../modules/rent/concierge_inbox/views/rent_concierge_inbox_view.dart';
-import '../modules/rent/loyalty_thresholds/bindings/rent_loyalty_thresholds_binding.dart';
-import '../modules/rent/loyalty_thresholds/views/rent_loyalty_thresholds_view.dart';
-import '../modules/rent/estate_manager_dashboard/bindings/rent_estate_manager_dashboard_binding.dart';
-import '../modules/rent/estate_manager_dashboard/views/rent_estate_manager_dashboard_view.dart';
-import '../modules/rent/base_shell/bindings/rent_base_shell_binding.dart';
-import '../modules/rent/base_shell/views/rent_base_shell_view.dart';
 import '../modules/rent/listing_activity_log/bindings/rent_listing_activity_log_binding.dart';
 import '../modules/rent/listing_activity_log/views/rent_listing_activity_log_view.dart';
-import '../modules/rent/listing_details/bindings/rent_listing_details_binding.dart';
-import '../modules/rent/listing_details/views/rent_listing_details_view.dart';
-import '../modules/rent/add_new_listing/bindings/rent_add_new_listing_binding.dart';
-import '../modules/rent/add_new_listing/views/rent_add_new_listing_view.dart';
 import '../modules/rent/property_roi_estimate_form/bindings/rent_property_roi_estimate_form_binding.dart';
 import '../modules/rent/property_roi_estimate_form/views/rent_property_roi_estimate_form_view.dart';
 import '../modules/rent/listing_analytics_dashboard/bindings/rent_listing_analytics_dashboard_binding.dart'
     as split_listing_analytics_binding;
 import '../modules/rent/listing_analytics_dashboard/views/rent_listing_analytics_dashboard_view.dart'
     as split_listing_analytics_view;
-import '../modules/rent/add_income_form/bindings/rent_add_income_form_binding.dart'
-    as split_add_income_binding;
-import '../modules/rent/add_income_form/views/rent_add_income_form_view.dart'
-    as split_add_income_view;
-import '../modules/rent/add_new_expense/bindings/rent_add_new_expense_binding.dart'
-    as split_add_expense_binding;
-import '../modules/rent/add_new_expense/views/rent_add_new_expense_view.dart'
-    as split_add_expense_view;
-import '../modules/rent/add_tenant_form/bindings/rent_add_tenant_form_binding.dart'
-    as split_add_tenant_binding;
-import '../modules/rent/add_tenant_form/views/rent_add_tenant_form_view.dart'
-    as split_add_tenant_view;
 import '../modules/rent/monthly_pl_summary/bindings/rent_monthly_pl_summary_binding.dart'
     as split_monthly_pl_binding;
 import '../modules/rent/monthly_pl_summary/views/rent_monthly_pl_summary_view.dart'
@@ -200,10 +174,6 @@ import '../modules/rent/maintenance_cost_analysis/bindings/rent_maintenance_cost
     as split_maintenance_cost_binding;
 import '../modules/rent/maintenance_cost_analysis/views/rent_maintenance_cost_analysis_view.dart'
     as split_maintenance_cost_view;
-import '../modules/rent/financial_comparison/bindings/rent_financial_comparison_binding.dart'
-    as split_financial_comparison_binding;
-import '../modules/rent/financial_comparison/views/rent_financial_comparison_view.dart'
-    as split_financial_comparison_view;
 import '../modules/rent/staff_management/bindings/rent_staff_management_binding.dart'
     as split_staff_management_binding;
 import '../modules/rent/staff_management/views/rent_staff_management_view.dart'
@@ -232,10 +202,6 @@ import '../modules/rent/host_dashboard_payment_alerts/bindings/rent_host_dashboa
     as split_host_alerts_binding;
 import '../modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart'
     as split_host_alerts_view;
-import '../modules/rent/host_calendar/bindings/rent_host_calendar_binding.dart'
-    as split_rent_host_calendar_binding;
-import '../modules/rent/host_calendar/views/rent_host_calendar_view.dart'
-    as split_rent_host_calendar_view;
 import '../modules/rent/profit_analysis_dashboard/bindings/rent_profit_analysis_dashboard_binding.dart'
     as split_profit_analysis_binding;
 import '../modules/rent/profit_analysis_dashboard/views/rent_profit_analysis_dashboard_view.dart'
@@ -280,11 +246,6 @@ class AppPages {
       name: _Paths.AUTH,
       page: () => AuthView(),
       binding: AuthBinding(),
-    ),
-    GetPage(
-      name: _Paths.REGISTRATION,
-      page: () => RegistrationView(),
-      binding: RegistrationBinding(),
     ),
     GetPage(
       name: _Paths.CHANGE_PASSWORD,
@@ -332,16 +293,6 @@ class AppPages {
       binding: OtpBinding(),
     ),
     GetPage(
-      name: _Paths.SUCCESS,
-      page: () => SuccessView(),
-      binding: SuccessBinding(),
-    ),
-    GetPage(
-      name: _Paths.FAILED,
-      page: () => FailedView(),
-      binding: FailedBinding(),
-    ),
-    GetPage(
       name: _Paths.SEND_SMS,
       page: () => SendSmsView(),
       binding: SendSmsBinding(),
@@ -355,11 +306,6 @@ class AppPages {
       name: _Paths.SUBSCRIPTION,
       page: () => SubscriptionView(),
       binding: SubscriptionBinding(),
-    ),
-    GetPage(
-      name: _Paths.SPLASH,
-      page: () => SplashView(),
-      binding: SplashBinding(),
     ),
     GetPage(
       name: _Paths.ONBOARDING,
@@ -517,6 +463,16 @@ class AppPages {
       binding: DocumentScannerBinding(),
     ),
     GetPage(
+      name: _Paths.ADD_DOCUMENT,
+      page: () => AddDocumentView(),
+      binding: AddDocumentBinding(),
+    ),
+    GetPage(
+      name: _Paths.GUEST_HISTORY,
+      page: () => const GuestHistoryView(),
+      binding: GuestHistoryBinding(),
+    ),
+    GetPage(
       name: _Paths.REFINE_SCAN,
       page: () => RefineScanView(),
       binding: RefineScanBinding(),
@@ -615,16 +571,6 @@ class AppPages {
       binding: AiPricingOptimizerBinding(),
     ),
     GetPage(
-      name: _Paths.RENT_HUB,
-      page: () => RentBaseShellView(),
-      binding: RentBaseShellBinding(),
-    ),
-    GetPage(
-      name: _Paths.RENT_HOST_CALENDAR,
-      page: () => split_rent_host_calendar_view.RentHostCalendarView(),
-      binding: split_rent_host_calendar_binding.HostCalendarBinding(),
-    ),
-    GetPage(
       name: _Paths.RENT_HOST_DASHBOARD_PAYMENT_ALERTS,
       page: () => split_host_alerts_view.RentHostDashboardPaymentAlertsView(),
       binding: split_host_alerts_binding.RentHostDashboardPaymentAlertsBinding(),
@@ -640,16 +586,6 @@ class AppPages {
       binding: split_listing_analytics_binding.RentListingAnalyticsDashboardBinding(),
     ),
     GetPage(
-      name: _Paths.RENT_ADD_TENANT_FORM,
-      page: () => split_add_tenant_view.RentAddTenantFormView(),
-      binding: split_add_tenant_binding.RentAddTenantFormBinding(),
-    ),
-    GetPage(
-      name: _Paths.RENT_ADD_INCOME_FORM,
-      page: () => split_add_income_view.RentAddIncomeFormView(),
-      binding: split_add_income_binding.RentAddIncomeFormBinding(),
-    ),
-    GetPage(
       name: _Paths.RENT_MANAGE_PAYMENTS,
       page: () => ManagePaymentsView(),
       binding: ManagePaymentsBinding(),
@@ -663,11 +599,6 @@ class AppPages {
       name: _Paths.RENT_MANAGE_EXPENSES,
       page: () => ManageExpensesView(),
       binding: ManageExpensesBinding(),
-    ),
-    GetPage(
-      name: _Paths.RENT_ADD_NEW_EXPENSE,
-      page: () => split_add_expense_view.RentAddNewExpenseView(),
-      binding: split_add_expense_binding.RentAddNewExpenseBinding(),
     ),
     GetPage(
       name: _Paths.RENT_MONTHLY_PL_SUMMARY,
@@ -703,11 +634,6 @@ class AppPages {
       name: _Paths.RENT_MAINTENANCE_COST_ANALYSIS,
       page: () => split_maintenance_cost_view.RentMaintenanceCostAnalysisView(),
       binding: split_maintenance_cost_binding.RentMaintenanceCostAnalysisBinding(),
-    ),
-    GetPage(
-      name: _Paths.RENT_FINANCIAL_COMPARISON,
-      page: () => split_financial_comparison_view.RentFinancialComparisonView(),
-      binding: split_financial_comparison_binding.RentFinancialComparisonBinding(),
     ),
     GetPage(
       name: _Paths.RENT_STAFF_MANAGEMENT,
@@ -753,26 +679,6 @@ class AppPages {
       name: _Paths.RENT_CONCIERGE_INBOX,
       page: () => RentConciergeInboxView(),
       binding: RentConciergeInboxBinding()
-    ),
-    GetPage(
-      name: _Paths.RENT_LOYALTY_THRESHOLDS,
-      page: () => RentLoyaltyThresholdsView(),
-      binding: RentLoyaltyThresholdsBinding()
-    ),
-    GetPage(
-      name: _Paths.RENT_ESTATE_MANAGER_DASHBOARD,
-      page: () => RentEstateManagerDashboardView(),
-      binding: RentEstateManagerDashboardBinding()
-    ),
-    GetPage(
-      name: _Paths.RENT_ADD_NEW_LISTING,
-      page: () => RentAddNewListingView(),
-      binding: RentAddNewListingBinding()
-    ),
-    GetPage(
-      name: _Paths.RENT_LISTING_DETAILS,
-      page: () => RentListingDetailsView(),
-      binding: RentListingDetailsBinding(),
     ),
     GetPage(
       name: _Paths.RENT_LISTING_ACTIVITY_LOG,

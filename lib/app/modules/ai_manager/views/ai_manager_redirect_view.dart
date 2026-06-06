@@ -41,7 +41,7 @@ class _AiManagerRedirectViewState extends State<AiManagerRedirectView> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: const DefaultScreenSkeleton(),
+      body: DefaultScreenSkeleton(),
     );
   }
 }

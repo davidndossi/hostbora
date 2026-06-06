@@ -17,11 +17,9 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
 
   static const _chartPreviousColor = Color(0xFFE07A5F);
 
-  String _t(BuildContext context, {required String en, required String sw}) {
+  String _t(BuildContext context, String en, String sw) {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
-
-  
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -47,6 +45,10 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _portfolioKpiGrid(context),
+                    const SizedBox(height: 16),
+                    _hostDashboard(context),
+                    const SizedBox(height: 16),
                     _buildSegmentedToggle(context),
                     const SizedBox(height: 20),
                     _buildPerformanceTrendsCard(context),
@@ -80,7 +82,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
           TextButton(
             onPressed: controller.recordPayment,
             child: Text(
-              _t(context, en: 'Record Payment', sw: 'Rekodi Malipo'),
+              _t(context, 'Record Payment', 'Rekodi Malipo'),
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -130,7 +132,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _t(context, en: 'Financial Overview', sw: 'Muhtasari wa Fedha'),
+          _t(context, 'Financial Overview', 'Muhtasari wa Fedha'),
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -143,7 +145,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
             children: [
               Expanded(
                 child: _SegmentButton(
-                  label: _t(context, en: 'Income', sw: 'Mapato'),
+                  label: _t(context, 'Income', 'Mapato'),
                   icon: Icons.description_outlined,
                   isSelected: controller.isIncomeSelected.value,
                   onTap: controller.selectIncome,
@@ -152,7 +154,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
               const SizedBox(width: 12),
               Expanded(
                 child: _SegmentButton(
-                  label: _t(context, en: 'Expenses', sw: 'Matumizi'),
+                  label: _t(context, 'Expenses', 'Matumizi'),
                   icon: Icons.account_balance_wallet_outlined,
                   isSelected: !controller.isIncomeSelected.value,
                   onTap: controller.selectExpenses,
@@ -230,8 +232,8 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   Text(
                     _t(
                       context,
-                      en: 'Performance Trends',
-                      sw: 'Mwelekeo wa Utendaji',
+                      'Performance Trends',
+                      'Mwelekeo wa Utendaji',
                     ),
                     style: TextStyle(
                       fontSize: 16,
@@ -243,8 +245,8 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   Text(
                     _t(
                       context,
-                      en: 'Current vs. Previous Period',
-                      sw: 'Kipindi cha sasa dhidi ya kilichopita',
+                      'Current vs. Previous Period',
+                      'Kipindi cha sasa dhidi ya kilichopita',
                     ),
                     style: TextStyle(
                       fontSize: 14,
@@ -258,7 +260,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   _legendDot(AppColors.designAccent),
                   const SizedBox(width: 6),
                   Text(
-                    _t(context, en: 'CURRENT', sw: 'SASA'),
+                    _t(context, 'CURRENT', 'SASA'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -269,7 +271,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   _legendDot(_chartPreviousColor),
                   const SizedBox(width: 6),
                   Text(
-                    _t(context, en: 'PREVIOUS', sw: 'KILICHOPITA'),
+                    _t(context, 'PREVIOUS', 'KILICHOPITA'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -394,8 +396,8 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
       final isIncome = controller.isIncomeSelected.value;
       return _MetricCard(
         label: isIncome
-            ? _t(context, en: 'Total Revenue', sw: 'Jumla ya Mapato')
-            : _t(context, en: 'Total Expenses', sw: 'Jumla ya Gharama'),
+            ? _t(context, 'Total Revenue', 'Jumla ya Mapato')
+            : _t(context, 'Total Expenses', 'Jumla ya Gharama'),
         value: isIncome
             ? controller.totalRevenue.value
             : controller.totalExpenses.value,
@@ -420,13 +422,13 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
               label: isIncome
                   ? _t(
                       context,
-                      en: 'Avg. Daily Rate',
-                      sw: 'Wastani wa Bei ya Siku',
+                      'Avg. Daily Rate',
+                      'Wastani wa Bei ya Siku',
                     )
                   : _t(
                       context,
-                      en: 'Avg. Daily Expense',
-                      sw: 'Wastani wa Gharama kwa Siku',
+                      'Avg. Daily Expense',
+                      'Wastani wa Gharama kwa Siku',
                     ),
               value: isIncome
                   ? controller.avgDailyRate.value
@@ -443,14 +445,14 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
           Expanded(
             child: _MetricCard(
               label: isIncome
-                  ? _t(context, en: 'Net Profit', sw: 'Faida Halisi')
-                  : _t(context, en: 'Month Change', sw: 'Mabadiliko ya Mwezi'),
+                  ? _t(context, 'Net Profit', 'Faida Halisi')
+                  : _t(context, 'Month Change', 'Mabadiliko ya Mwezi'),
               value: isIncome
                   ? controller.netProfit.value
                   : controller.totalExpensesChange.value,
               change: isIncome
                   ? controller.netProfitChange.value
-                  : _t(context, en: 'vs. prev month', sw: 'dhidi ya mwezi uliopita'),
+                  : _t(context, 'vs. prev month', 'dhidi ya mwezi uliopita'),
               isPositive: isIncome
                   ? controller.netProfitUp.value
                   : controller.totalExpensesUp.value,
@@ -496,7 +498,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _t(context, en: 'Monthly Growth', sw: 'Ukuaji wa Kila Mwezi'),
+          _t(context, 'Monthly Growth', 'Ukuaji wa Kila Mwezi'),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -584,6 +586,167 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
       ],
       );
     });
+  }
+
+  Widget _portfolioKpiGrid(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    final card = c.card;
+    final muted = context.tokens.textMuted;
+    final incomeColor = context.tokens.accent;
+    final leaseColor = c.isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32);
+    final arrearsColor = c.isDark ? const Color(0xFFFF8A80) : const Color(0xFFB91C1C);
+
+    return Obx(
+          () => Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _kpiCard(
+                  context,
+                  card: card,
+                  label: _t(context, 'Monthly income', 'Mapato ya mwezi'),
+                  value: controller.monthlyIncomeLabel,
+                  valueColor: incomeColor,
+                  icon: Icons.payments_outlined,
+                  onTap: controller.openManagePayments,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _kpiCard(
+                  context,
+                  card: card,
+                  label: _t(context, 'Occupancy', 'Ukaaji'),
+                  value: controller.occupancyLabel,
+                  valueColor: incomeColor,
+                  icon: Icons.pie_chart_outline_rounded,
+                  onTap: controller.openTenancyInsights,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _kpiCard(
+                  context,
+                  card: card,
+                  label: _t(context, 'Active leases', 'Mikataba hai'),
+                  value: controller.activeLeasesLabel,
+                  valueColor: leaseColor,
+                  icon: Icons.assignment_ind_outlined,
+                  onTap: controller.openTenancyInsights,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _kpiCard(
+                  context,
+                  card: card,
+                  label: _t(context, 'Arrears', 'Deni'),
+                  value: controller.totalArrearsLabel,
+                  valueColor: arrearsColor,
+                  icon: Icons.warning_amber_rounded,
+                  onTap: controller.openTenancyInsights,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _t(context, 'Portfolio totals across all properties (this month)', 'Makadirio kwa mali zote (mwezi huu)'),
+            style: TextStyle(fontSize: 11, color: muted),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _kpiCard(
+      BuildContext context, {
+        required Color card,
+        required String label,
+        required String value,
+        required Color valueColor,
+        required IconData icon,
+        required VoidCallback onTap,
+      }) {
+    return Material(
+      color: card,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 20, color: valueColor),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 9,
+                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w800,
+                  color: FormSurfaceColors.of(context).hint,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: valueColor,
+                  height: 1.1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _hostDashboard(BuildContext context) {
+    final s = FormSurfaceColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: s.card,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: controller.openHostDashboard,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(Icons.dashboard_outlined, color: context.tokens.accent, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _t(context, 'Payment Alerts', 'Taarifa za Malipo'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: context.tokens.accent,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: context.tokens.accent),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

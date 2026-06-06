@@ -215,7 +215,7 @@ class RentHostDashboardPaymentAlertsController extends BaseController
 
   String formatMoney(double amount) => NumberFormat('#,###', 'en_US').format(amount.round());
 
-  String formatDueDate(DateTime date) => DateFormat('MMM d').format(date);
+  String formatDueDate(DateTime date) => DateFormat('dd/MM').format(date);
 
   String get estateName {
     if (properties.isEmpty) return 'N/A';

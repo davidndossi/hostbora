@@ -27,6 +27,7 @@ class BnbStayBilling {
       case 'per stay':
         return 1;
       case 'per day':
+      case 'per night':
         return nights;
       case 'per week':
         return (nights / 7).ceil().clamp(1, 5200);

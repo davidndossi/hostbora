@@ -14,7 +14,7 @@ import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
 import '../../../../data/model/add_task_request.dart';
 import '../../../../data/repository/app_repository.dart';
-import '../../host_calendar/controllers/rent_host_calendar_controller.dart';
+import '../../../host_calendar/controllers/host_calendar_controller.dart';
 
 class ReminderTemplateOption {
   const ReminderTemplateOption({
@@ -54,17 +54,21 @@ class RentSchedulePaymentReminderController extends BaseController {
 
   final _paymentReminderLocal = Get.find<RentPaymentReminderLocalDataSource>();
   final _scheduledWhatsappLocal = ScheduledWhatsappLocalDataSource();
-  final _whatsappTemplateLocal = Get.find<RentWhatsappTemplateLocalDataSource>();
-  final _preferenceManager =
-      Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
+  final _whatsappTemplateLocal =
+      Get.find<RentWhatsappTemplateLocalDataSource>();
+  final _preferenceManager = Get.find<PreferenceManager>(
+    tag: (PreferenceManager).toString(),
+  );
   final _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>();
   final _notificationScheduler = Get.find<LocalNotificationSchedulerService>();
   final _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
 
   String _recipientPhone = '';
 
-  static final NumberFormat _currency =
-      NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0);
+  static final NumberFormat _currency = NumberFormat.currency(
+    symbol: 'Tsh ',
+    decimalDigits: 0,
+  );
   static final DateFormat _dateDisplay = DateFormat('dd/MM/yyyy');
 
   @override
@@ -187,7 +191,9 @@ class RentSchedulePaymentReminderController extends BaseController {
       whatsappTemplates.assignAll(waOptions);
       if (waOptions.isEmpty) {
         selectedWhatsappTemplateId.value = null;
-      } else if (!waOptions.any((e) => e.id == selectedWhatsappTemplateId.value)) {
+      } else if (!waOptions.any(
+        (e) => e.id == selectedWhatsappTemplateId.value,
+      )) {
         selectedWhatsappTemplateId.value = waOptions.first.id;
       }
 
@@ -300,11 +306,15 @@ class RentSchedulePaymentReminderController extends BaseController {
   }) async {
     final cleanedName = _normalizeTemplateName(name);
     if (cleanedName.isEmpty) {
-      showErrorMessage(_isSw ? 'Weka jina la kiolezo' : 'Template name is required');
+      showErrorMessage(
+        _isSw ? 'Weka jina la kiolezo' : 'Template name is required',
+      );
       return;
     }
     if (body.trim().isEmpty) {
-      showErrorMessage(_isSw ? 'Weka ujumbe wa kiolezo' : 'Template message is required');
+      showErrorMessage(
+        _isSw ? 'Weka ujumbe wa kiolezo' : 'Template message is required',
+      );
       return;
     }
     try {
@@ -322,7 +332,9 @@ class RentSchedulePaymentReminderController extends BaseController {
       );
       await _loadSavedTemplates();
       await applyWhatsappTemplate(id.toString());
-      showSuccessMessage(_isSw ? 'Kiolezo cha WhatsApp kimeongezwa' : 'WhatsApp template added');
+      showSuccessMessage(
+        _isSw ? 'Kiolezo cha WhatsApp kimeongezwa' : 'WhatsApp template added',
+      );
     } catch (_) {
       showErrorMessage(
         _isSw
@@ -348,12 +360,17 @@ class RentSchedulePaymentReminderController extends BaseController {
     }
     final existing = await _preferenceManager.getStringList(_smsTemplatesKey);
     final entry = '$cleanedName|||$cleanedBody';
-    final updated = [...existing.where((e) => !e.startsWith('$cleanedName|||')), entry];
+    final updated = [
+      ...existing.where((e) => !e.startsWith('$cleanedName|||')),
+      entry,
+    ];
     await _preferenceManager.setStringList(_smsTemplatesKey, updated);
     await _loadSavedTemplates();
     final id = cleanedName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
     await applySmsTemplate(id);
-    showSuccessMessage(_isSw ? 'Kiolezo cha SMS kimeongezwa' : 'SMS template added');
+    showSuccessMessage(
+      _isSw ? 'Kiolezo cha SMS kimeongezwa' : 'SMS template added',
+    );
   }
 
   String _normalizeTemplateName(String raw) {
@@ -445,6 +462,8 @@ class RentSchedulePaymentReminderController extends BaseController {
           ? 'Balance $formattedBalance for $displayPropertyTitle'
           : resolveTemplate(messageController.text.trim()),
       dueDate: DateFormat('yyyy-MM-dd').format(reminderAt),
+      propertyLabel: calendarPropertyFilterLabel,
+      workspaceType: 'rent',
     );
 
     try {
@@ -461,15 +480,17 @@ class RentSchedulePaymentReminderController extends BaseController {
           'title': taskRequest.title,
           'description': taskRequest.description,
           'dueDate': taskRequest.dueDate,
+          'propertyLabel': taskRequest.propertyLabel,
+          'workspaceType': taskRequest.workspaceType,
         }),
       );
       hapticPrimaryConfirm();
-      showSuccessMessage('Saved offline. Will sync when internet is available.');
+      showSuccessMessage(
+        'Saved offline. Will sync when internet is available.',
+      );
     }
 
-    if (Get.isRegistered<RentHostCalendarController>()) {
-      await Get.find<RentHostCalendarController>().loadCalendarData();
-    }
+    await HostCalendarController.refreshIfRegistered();
     await _clearSavedDraftMessage();
     Get.back();
   }

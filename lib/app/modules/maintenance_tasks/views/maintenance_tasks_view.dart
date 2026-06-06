@@ -81,50 +81,51 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
     );
   }
 
-  @override
-  Widget? floatingActionButton() => FloatingActionButton(
-    onPressed: controller.addTask,
-    backgroundColor: AppColors.designAccent,
-    child: const Icon(Icons.add, color: AppColors.textColorWhite, size: 28),
-  );
-
   Widget _buildFilterTabs(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Obx(
-          () => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _FilterChip(
-                label: _t(context, en: 'All', sw: 'Zote'),
-                isSelected: controller.selectedFilter.value == TaskFilter.all,
-                onTap: () => controller.setFilter(TaskFilter.all),
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: _t(context, en: 'Pending', sw: 'Inasubiri'),
-                isSelected:
-                    controller.selectedFilter.value == TaskFilter.pending,
-                onTap: () => controller.setFilter(TaskFilter.pending),
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: _t(context, en: 'In Progress', sw: 'Inaendelea'),
-                isSelected:
-                    controller.selectedFilter.value == TaskFilter.inProgress,
-                onTap: () => controller.setFilter(TaskFilter.inProgress),
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: _t(context, en: 'Completed', sw: 'Imekamilika'),
-                isSelected:
-                    controller.selectedFilter.value == TaskFilter.completed,
-                onTap: () => controller.setFilter(TaskFilter.completed),
-              ),
-            ],
-          ),
+          () {
+            final f = controller.selectedFilter.value;
+            final all = controller.countAll;
+            final pending = controller.countPending;
+            final inProg = controller.countInProgress;
+            final done = controller.countCompleted;
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _FilterChip(
+                  label: _t(context, en: 'All', sw: 'Zote'),
+                  count: all,
+                  isSelected: f == TaskFilter.all,
+                  onTap: () => controller.setFilter(TaskFilter.all),
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: _t(context, en: 'Pending', sw: 'Inasubiri'),
+                  count: pending,
+                  isSelected: f == TaskFilter.pending,
+                  onTap: () => controller.setFilter(TaskFilter.pending),
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: _t(context, en: 'In Progress', sw: 'Inaendelea'),
+                  count: inProg,
+                  isSelected: f == TaskFilter.inProgress,
+                  onTap: () => controller.setFilter(TaskFilter.inProgress),
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: _t(context, en: 'Completed', sw: 'Imekamilika'),
+                  count: done,
+                  isSelected: f == TaskFilter.completed,
+                  onTap: () => controller.setFilter(TaskFilter.completed),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -133,11 +134,13 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
 
 class _FilterChip extends StatelessWidget {
   final String label;
+  final int count;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _FilterChip({
     required this.label,
+    required this.count,
     required this.isSelected,
     required this.onTap,
   });
@@ -145,6 +148,17 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = FormSurfaceColors.of(context);
+    final chipColor = isSelected ? AppColors.colorPrimary : Colors.transparent;
+    final textColor = isSelected
+        ? AppColors.textColorWhite
+        : Theme.of(context).colorScheme.onSurface;
+    final badgeBg = isSelected
+        ? Colors.white.withValues(alpha: 0.25)
+        : (c.isDark
+            ? Colors.white.withValues(alpha: 0.15)
+            : AppColors.colorPrimary.withValues(alpha: 0.1));
+    final badgeFg = isSelected ? AppColors.textColorWhite : AppColors.colorPrimary;
+
     return Material(
       color: isSelected
           ? AppColors.colorPrimary
@@ -154,8 +168,9 @@ class _FilterChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppValues.radius_6),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
+            color: chipColor,
             borderRadius: BorderRadius.circular(AppValues.radius_6),
             border: isSelected
                 ? null
@@ -165,15 +180,34 @@ class _FilterChip extends StatelessWidget {
                         : AppColors.designInputBorder,
                   ),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: isSelected
-                  ? AppColors.textColorWhite
-                  : Theme.of(context).colorScheme.onSurface,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: badgeBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: badgeFg,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -212,58 +246,6 @@ class _SwipeableTaskCard extends StatelessWidget {
         task: task,
         onToggleComplete: onToggleComplete,
         onTap: onTap,
-      ),
-    );
-  }
-}
-
-class _SwipeBg extends StatelessWidget {
-  const _SwipeBg({
-    required this.alignment,
-    required this.color,
-    required this.icon,
-    required this.label,
-  });
-
-  final Alignment alignment;
-  final Color color;
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppValues.radius_12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (alignment == Alignment.centerRight) ...[
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Icon(icon, color: Colors.white),
-          if (alignment == Alignment.centerLeft) ...[
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }

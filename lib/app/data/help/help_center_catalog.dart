@@ -84,7 +84,7 @@ class HelpCenterCatalog {
           titleSw: 'Ongeza mali ya kukodisha',
           bodyEn: 'Create a listing with units, expected rent, and location details.',
           bodySw: 'Unda tangazo lenye vyumba, kodi inayotarajiwa, na maelezo ya eneo.',
-          route: Routes.RENT_ADD_NEW_LISTING,
+          route: Routes.ADD_LISTING,
         ),
         HelpGuideStep(
           titleEn: 'Onboard a tenant',
@@ -93,7 +93,7 @@ class HelpCenterCatalog {
               'Add tenant name, lease dates, rent amount, and frequency. This powers payment tracking and reminders.',
           bodySw:
               'Ongeza jina, tarehe za mkataba, kodi, na mzunguko wa malipo. Hii inaendesha ufuatiliaji na vikumbusho.',
-          route: Routes.RENT_ADD_TENANT_FORM,
+          route: Routes.ADD_NEW_TENANT,
         ),
         HelpGuideStep(
           titleEn: 'Record rent income',
@@ -101,7 +101,7 @@ class HelpCenterCatalog {
           bodyEn: 'Log each payment received. Income updates hub KPIs and tenant ledgers automatically.',
           bodySw:
               'Andika kila malipo yaliyopokelewa. Mapato yanasasisha kadi za kitovu na daftari la mpangaji.',
-          route: Routes.RENT_ADD_INCOME_FORM,
+          route: Routes.RECORD_PAYMENT,
         ),
         HelpGuideStep(
           titleEn: 'Open Tenancy Insights',
@@ -130,7 +130,7 @@ class HelpCenterCatalog {
           titleSw: 'Chagua mpangaji na kiasi',
           bodyEn: 'Open Add income, select the tenant and property, enter amount and payment date.',
           bodySw: 'Fungua Ongeza mapato, chagua mpangaji na mali, weka kiasi na tarehe.',
-          route: Routes.RENT_ADD_INCOME_FORM,
+          route: Routes.RECORD_PAYMENT,
         ),
         HelpGuideStep(
           titleEn: 'Verify in Manage payments',
@@ -164,7 +164,7 @@ class HelpCenterCatalog {
           titleSw: 'Anza fomu ya mpangaji',
           bodyEn: 'From a property or Tenancy Insights, tap Add tenant.',
           bodySw: 'Kutoka kwenye mali au Maarifa ya Upangaji, gusa Ongeza mpangaji.',
-          route: Routes.RENT_ADD_TENANT_FORM,
+          route: Routes.ADD_NEW_TENANT,
         ),
         HelpGuideStep(
           titleEn: 'Set lease & rent',
@@ -305,7 +305,7 @@ class HelpCenterCatalog {
           titleSw: 'Rekodi gharama za matengenezo',
           bodyEn: 'Add expenses tagged to the property so ROI and P&L stay accurate.',
           bodySw: 'Ongeza matumizi yaliyowekwa lebo kwa mali ili ROI iwe sahihi.',
-          route: Routes.RENT_ADD_NEW_EXPENSE,
+          route: Routes.ADD_EXPENSE,
         ),
         HelpGuideStep(
           titleEn: 'Maintenance analysis',

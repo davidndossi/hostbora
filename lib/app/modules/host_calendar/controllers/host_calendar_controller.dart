@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/booking_api_response.dart';
@@ -10,7 +11,9 @@ import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
+import '../../../data/local/db/rent_payment_reminder_local_data_source.dart';
 import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
+import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/repository/app_repository.dart';
@@ -40,32 +43,57 @@ class _BookingSpan {
 }
 
 class HostCalendarPropertyOption {
-  const HostCalendarPropertyOption(this.record);
+  const HostCalendarPropertyOption({
+    required this.selectionKey,
+    required this.displayName,
+    this.record,
+  });
 
-  final PropertyRecord record;
-
-  int get localId => record.id;
-
-  String get hubRef {
+  factory HostCalendarPropertyOption.fromRecord(PropertyRecord record) {
     final ref = record.propertyRef.trim();
-    return ref.isNotEmpty ? ref : 'legacy_${record.id}';
+    final key = ref.isNotEmpty ? ref : 'legacy_${record.id}';
+    final name = record.propertyName.trim().isNotEmpty
+        ? record.propertyName.trim()
+        : record.propertyLocation.trim();
+    return HostCalendarPropertyOption(
+      selectionKey: key,
+      displayName: name,
+      record: record,
+    );
   }
 
-  String get displayName {
-    final name = record.propertyName.trim();
-    if (name.isNotEmpty) return name;
-    return record.propertyLocation.trim();
+  factory HostCalendarPropertyOption.remoteOnly(String name) {
+    final trimmed = name.trim();
+    return HostCalendarPropertyOption(
+      selectionKey: 'remote:${trimmed.toLowerCase()}',
+      displayName: trimmed,
+    );
+  }
+
+  final String selectionKey;
+  final String displayName;
+  final PropertyRecord? record;
+
+  bool get hasLocalRecord => record != null;
+
+  String get hubRef {
+    final r = record;
+    if (r == null) return '';
+    final ref = r.propertyRef.trim();
+    return ref.isNotEmpty ? ref : 'legacy_${r.id}';
   }
 
   bool get isApartment =>
-      record.propertyType.trim().toLowerCase() == 'apartment';
+      record?.propertyType.trim().toLowerCase() == 'apartment';
 
   bool matchesListingId(String listingId) {
+    final r = record;
+    if (r == null) return false;
     final id = listingId.trim();
     if (id.isEmpty) return false;
     return id == hubRef ||
-        id == 'local_${record.id}' ||
-        id == 'legacy_${record.id}';
+        id == 'local_${r.id}' ||
+        id == 'legacy_${r.id}';
   }
 }
 
@@ -89,6 +117,8 @@ class HostCalendarController extends BaseController {
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _unitLocal = Get.find<PropertyUnitLocalDataSource>(),
         _incomeLocal = Get.find<IncomeLocalDataSource>(),
+        _tenantLocal = Get.find<TenantLocalDataSource>(),
+        _paymentReminderLocal = Get.find<RentPaymentReminderLocalDataSource>(),
         _preferenceManager =
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
         _maintenanceLocal = Get.find<RentScheduledMaintenanceLocalDataSource>(),
@@ -104,6 +134,8 @@ class HostCalendarController extends BaseController {
   final PropertyLocalDataSource _propertyLocal;
   final PropertyUnitLocalDataSource _unitLocal;
   final IncomeLocalDataSource _incomeLocal;
+  final TenantLocalDataSource _tenantLocal;
+  final RentPaymentReminderLocalDataSource _paymentReminderLocal;
   final PreferenceManager _preferenceManager;
   final RentScheduledMaintenanceLocalDataSource _maintenanceLocal;
   final PendingBookingsStore _pendingBookingsStore;
@@ -111,10 +143,10 @@ class HostCalendarController extends BaseController {
 
   final selectedDate = Rx<DateTime>(DateTime.now());
   final currentMonth = Rx<DateTime>(DateTime.now());
-  final dynamicPricingOn = true.obs;
+  final dynamicPricingOn = false.obs;
 
-  final bnbProperties = <HostCalendarPropertyOption>[].obs;
-  final selectedPropertyLocalId = Rxn<int>();
+  final calendarProperties = <HostCalendarPropertyOption>[].obs;
+  final selectedPropertyKey = ''.obs;
   final apartmentUnits = <HostCalendarUnitOption>[].obs;
   final selectedUnitKey = ''.obs;
 
@@ -129,6 +161,7 @@ class HostCalendarController extends BaseController {
   final _paidBookingKeys = <String>{};
 
   List<_BookingSpan> _bookingSpans = const [];
+  List<PropertyRecord> _allLocalProperties = const [];
 
   @override
   void onReady() {
@@ -137,10 +170,10 @@ class HostCalendarController extends BaseController {
   }
 
   HostCalendarPropertyOption? get selectedProperty {
-    final id = selectedPropertyLocalId.value;
-    if (id == null) return null;
-    for (final p in bnbProperties) {
-      if (p.localId == id) return p;
+    final key = selectedPropertyKey.value.trim();
+    if (key.isEmpty) return null;
+    for (final p in calendarProperties) {
+      if (p.selectionKey == key) return p;
     }
     return null;
   }
@@ -153,11 +186,15 @@ class HostCalendarController extends BaseController {
   Future<void> loadCalendarData() async {
     loading.value = true;
     try {
-      await _loadBnbProperties();
+      await _loadCalendarProperties();
       await _loadBookingsAndIncome();
-      final maintenanceEvents = await _loadLocalMaintenanceEvents();
-      final bookingEvents = _bookingSpansToCalendarEvents();
-      _indexEvents([...bookingEvents, ...maintenanceEvents]);
+      final allEvents = <CalendarEvent>[
+        ..._allBookingSpansToCalendarEvents(),
+        ...await _loadLocalMaintenanceEvents(),
+        ...await _loadLocalTenantEvents(),
+        ...await _loadLocalPaymentReminderEvents(),
+      ];
+      _indexEvents(allEvents);
       _rebuildDayMarkers();
     } finally {
       loading.value = false;
@@ -165,36 +202,97 @@ class HostCalendarController extends BaseController {
     }
   }
 
-  Future<void> _loadBnbProperties() async {
+  Future<void> _loadCalendarProperties() async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
-    final rows = await _propertyLocal.getAllVisibleNewestFirst(
-      userId: userId,
-      workspaceType: 'bnb',
-    );
-    final options = rows.map(HostCalendarPropertyOption.new).toList();
-    options.sort(
-      (a, b) => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
-    );
-    bnbProperties.assignAll(options);
+    final rowsByKey = <String, PropertyRecord>{};
+    for (final workspace in const ['bnb', 'rent']) {
+      final rows = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: userId,
+        workspaceType: workspace,
+      );
+      for (final row in rows) {
+        final key = row.propertyRef.trim().isNotEmpty
+            ? row.propertyRef.trim()
+            : 'legacy_${row.id}';
+        rowsByKey[key] = row;
+      }
+    }
+    _allLocalProperties = rowsByKey.values.toList();
 
-    if (bnbProperties.isEmpty) {
-      selectedPropertyLocalId.value = null;
+    final options = _allLocalProperties
+        .map(HostCalendarPropertyOption.fromRecord)
+        .toList();
+    final seenNames = options
+        .map((o) => o.displayName.toLowerCase())
+        .toSet();
+
+    final remoteNames = await _loadRemotePropertyNames();
+    for (final name in remoteNames) {
+      final lower = name.toLowerCase();
+      if (lower.isEmpty || seenNames.contains(lower)) continue;
+      seenNames.add(lower);
+      options.add(HostCalendarPropertyOption.remoteOnly(name));
+    }
+
+    options.sort(
+      (a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+    );
+    calendarProperties.assignAll(options);
+
+    if (calendarProperties.isEmpty) {
+      selectedPropertyKey.value = '';
       apartmentUnits.clear();
       selectedUnitKey.value = '';
       return;
     }
 
-    final current = selectedPropertyLocalId.value;
-    if (current == null ||
-        !bnbProperties.any((p) => p.localId == current)) {
-      await selectProperty(bnbProperties.first.localId);
+    final current = selectedPropertyKey.value.trim();
+    if (current.isEmpty ||
+        !calendarProperties.any((p) => p.selectionKey == current)) {
+      await selectProperty(calendarProperties.first.selectionKey);
     } else {
       await _loadUnitsForSelectedProperty();
     }
   }
 
-  Future<void> selectProperty(int localId) async {
-    selectedPropertyLocalId.value = localId;
+  Future<List<String>> _loadRemotePropertyNames() async {
+    try {
+      final res = await _repository.getMyListings(status: null);
+      if (res.responseCode != '0' || res.data == null) return const [];
+      final list = _extractListFromResponse(res.data);
+      return list
+          .map(
+            (m) =>
+                (m['propertyName'] ?? m['title'] ?? m['name'])
+                    ?.toString()
+                    .trim() ??
+                '',
+          )
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  static List<Map<String, dynamic>> _extractListFromResponse(dynamic data) {
+    if (data is List) return data.whereType<Map<String, dynamic>>().toList();
+    if (data is Map && data['content'] is List) {
+      return (data['content'] as List)
+          .whereType<Map<String, dynamic>>()
+          .toList();
+    }
+    if (data is Map && data['listings'] is List) {
+      return (data['listings'] as List)
+          .whereType<Map<String, dynamic>>()
+          .toList();
+    }
+    return const [];
+  }
+
+  Future<void> selectProperty(String selectionKey) async {
+    selectedPropertyKey.value = selectionKey.trim();
     await _loadUnitsForSelectedProperty();
     _rebuildDayMarkers();
     calendarRevision.value++;
@@ -204,7 +302,7 @@ class HostCalendarController extends BaseController {
     final prop = selectedProperty;
     apartmentUnits.clear();
     selectedUnitKey.value = '';
-    if (prop == null || !prop.isApartment) return;
+    if (prop == null || !prop.isApartment || prop.record == null) return;
 
     final seen = <String>{};
     final opts = <HostCalendarUnitOption>[];
@@ -217,7 +315,7 @@ class HostCalendarController extends BaseController {
       opts.add(HostCalendarUnitOption(key: k, label: name));
     }
 
-    final raw = prop.record.unitsJson.trim();
+    final raw = prop.record!.unitsJson.trim();
     if (raw.isNotEmpty) {
       try {
         final decoded = jsonDecode(raw);
@@ -278,13 +376,7 @@ class HostCalendarController extends BaseController {
       }
     } catch (_) {}
 
-    List<PropertyRecord> properties = const [];
-    try {
-      properties = await _propertyLocal.getAllVisibleNewestFirst(
-        userId: '',
-        workspaceType: 'bnb',
-      );
-    } catch (_) {}
+    final properties = _allLocalProperties;
 
     try {
       final res = await _repository.getAllBookings();
@@ -378,7 +470,7 @@ class HostCalendarController extends BaseController {
     final unpaid = <String>{};
     final paid = <String>{};
     final prop = selectedProperty;
-    if (prop == null) {
+    if (prop == null || !prop.hasLocalRecord) {
       _bookedUnpaidDayKeys
         ..clear()
         ..refresh();
@@ -443,16 +535,21 @@ class HostCalendarController extends BaseController {
     return null;
   }
 
-  static bool _matchesProperty(_BookingSpan span, HostCalendarPropertyOption prop) {
+  static bool _matchesProperty(
+    _BookingSpan span,
+    HostCalendarPropertyOption prop,
+  ) {
     if (prop.matchesListingId(span.listingId)) return true;
     final label = span.propertyLabel.trim();
     if (label.isNotEmpty && label == prop.displayName) return true;
-    final loc = prop.record.propertyLocation.trim();
-    if (label.isNotEmpty && loc.isNotEmpty && label == loc) return true;
+    final r = prop.record;
+    if (r != null) {
+      final loc = r.propertyLocation.trim();
+      if (label.isNotEmpty && loc.isNotEmpty && label == loc) return true;
+    }
     return false;
   }
 
-  /// Reload calendar after a booking is created or updated elsewhere.
   static Future<void> refreshIfRegistered() async {
     if (Get.isRegistered<HostCalendarController>()) {
       await Get.find<HostCalendarController>().loadCalendarData();
@@ -476,17 +573,13 @@ class HostCalendarController extends BaseController {
     return HostCalendarDayBookingStatus.none;
   }
 
-  List<CalendarEvent> _bookingSpansToCalendarEvents() {
-    final prop = selectedProperty;
-    if (prop == null) return const [];
-    final unitKey = selectedUnitKey.value.trim();
+  List<CalendarEvent> _allBookingSpansToCalendarEvents() {
     final out = <CalendarEvent>[];
     for (final span in _bookingSpans) {
       if (span.isCancelled) continue;
-      if (!_matchesProperty(span, prop)) continue;
-      if (prop.isApartment && apartmentUnits.isNotEmpty) {
-        if (unitKey.isEmpty || !_matchesUnit(span, unitKey)) continue;
-      }
+      final propertyName = span.propertyLabel.trim().isNotEmpty
+          ? span.propertyLabel.trim()
+          : 'Property';
       out.add(
         CalendarEvent(
           type: CalendarEventType.checkIn,
@@ -497,7 +590,7 @@ class HostCalendarController extends BaseController {
               ? 'Paid stay'
               : 'Booked',
           subtitleHighlight: !_paidBookingKeys.contains(span.bookingKey),
-          propertyName: prop.displayName,
+          propertyName: propertyName,
           eventDate: span.checkIn,
         ),
       );
@@ -511,7 +604,7 @@ class HostCalendarController extends BaseController {
             guests: 1,
             subtitle: 'Check-out',
             subtitleHighlight: false,
-            propertyName: prop.displayName,
+            propertyName: propertyName,
             eventDate: co,
           ),
         );
@@ -536,6 +629,103 @@ class HostCalendarController extends BaseController {
           subtitleHighlight: false,
           propertyName: r.propertyLabel,
           eventDate: d,
+        ),
+      );
+    }
+    return out;
+  }
+
+  Future<List<CalendarEvent>> _loadLocalTenantEvents() async {
+    final tenants = await _tenantLocal.getAllNewestFirst();
+    final out = <CalendarEvent>[];
+    for (final t in tenants) {
+      final propertyName =
+          _calendarPropertyNameForTenant(t, _allLocalProperties);
+      final checkIn = _tryDate(t.leaseStartIso);
+      final checkOut = _tryDate(t.leaseEndIso);
+      if (checkIn != null) {
+        out.add(
+          CalendarEvent(
+            type: CalendarEventType.leaseStart,
+            guestName: t.tenantName.isEmpty ? 'Tenant' : t.tenantName,
+            time: '03:00 PM',
+            guests: 1,
+            subtitle: 'Lease start',
+            subtitleHighlight: false,
+            propertyName: propertyName,
+            eventDate: checkIn,
+          ),
+        );
+      }
+      if (checkOut != null) {
+        out.add(
+          CalendarEvent(
+            type: CalendarEventType.leaseEnd,
+            guestName: t.tenantName.isEmpty ? 'Tenant' : t.tenantName,
+            time: '11:00 AM',
+            guests: 1,
+            subtitle: 'Lease end',
+            subtitleHighlight: false,
+            propertyName: propertyName,
+            eventDate: checkOut,
+          ),
+        );
+      }
+    }
+    return out;
+  }
+
+  static String _calendarPropertyNameForTenant(
+    TenantRecord t,
+    List<PropertyRecord> visibleProperties,
+  ) {
+    final ref = t.propertyRef.trim();
+    if (ref.isNotEmpty) {
+      for (final p in visibleProperties) {
+        final legacy = 'legacy_${p.id}';
+        final pRef = p.propertyRef.trim().isNotEmpty
+            ? p.propertyRef.trim()
+            : legacy;
+        if (pRef == ref || legacy == ref) {
+          return p.propertyName.trim().isNotEmpty
+              ? p.propertyName.trim()
+              : p.propertyLocation.trim();
+        }
+      }
+    }
+    final label = t.propertyLabel.trim();
+    const sep = ' · ';
+    if (label.contains(sep)) {
+      return label.split(sep).last.trim();
+    }
+    return label;
+  }
+
+  Future<List<CalendarEvent>> _loadLocalPaymentReminderEvents() async {
+    final currency = NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0);
+    final timeFmt = DateFormat('hh:mm a');
+    final records = await _paymentReminderLocal.getAllNewestFirst();
+    final out = <CalendarEvent>[];
+    for (final r in records) {
+      final raw = r.reminderAtIso.trim();
+      if (raw.isEmpty) continue;
+      DateTime? dt;
+      try {
+        dt = DateTime.parse(raw);
+      } catch (_) {
+        continue;
+      }
+      final day = DateTime(dt.year, dt.month, dt.day);
+      out.add(
+        CalendarEvent(
+          type: CalendarEventType.paymentReminder,
+          guestName: r.tenantName.isEmpty ? 'Tenant' : r.tenantName,
+          time: timeFmt.format(dt),
+          guests: 0,
+          subtitle: currency.format(r.balanceTsh),
+          subtitleHighlight: false,
+          propertyName: r.propertyLabel,
+          eventDate: day,
         ),
       );
     }
@@ -595,9 +785,10 @@ class HostCalendarController extends BaseController {
     if (bookingStatusForDay(day) != HostCalendarDayBookingStatus.none) {
       return DayType.standard;
     }
+    if (!dynamicPricingOn.value) return DayType.standard;
     if (day.month != currentMonth.value.month) return DayType.standard;
     final count = eventsCountForDay(day);
-    if (count >= 2 && dynamicPricingOn.value) return DayType.aiOptimized;
+    if (count >= 2) return DayType.aiOptimized;
     if (count == 1) return DayType.manualRate;
     return DayType.standard;
   }
@@ -617,15 +808,17 @@ class HostCalendarController extends BaseController {
   List<CalendarEvent> get eventsForSelectedDay {
     final key = _dateKey(selectedDate.value);
     final items = _eventsByDate[key] ?? const <CalendarEvent>[];
-    final prop = selectedProperty;
-    if (prop == null) return items;
-    return items
+    final selected = selectedPropertyName.trim();
+    if (selected.isEmpty) return items;
+    final filtered = items
         .where(
           (e) =>
               e.propertyName.trim().isEmpty ||
-              e.propertyName.trim() == prop.displayName,
+              e.propertyName.trim() == selected,
         )
         .toList();
+    if (filtered.isNotEmpty) return filtered;
+    return items;
   }
 
   String get selectedDayHeader {
@@ -663,6 +856,10 @@ class HostCalendarController extends BaseController {
       showErrorMessage('Select a property first');
       return;
     }
+    if (!prop.hasLocalRecord) {
+      showErrorMessage('Calendar sync requires a saved local property');
+      return;
+    }
     final listingId = prop.hubRef.trim();
     if (listingId.isEmpty) {
       showErrorMessage('This property has no listing id for calendar sync');
@@ -678,7 +875,14 @@ class HostCalendarController extends BaseController {
   }
 }
 
-enum CalendarEventType { checkIn, checkOut, maintenance }
+enum CalendarEventType {
+  checkIn,
+  checkOut,
+  leaseStart,
+  leaseEnd,
+  maintenance,
+  paymentReminder,
+}
 
 class CalendarEvent {
   final CalendarEventType type;

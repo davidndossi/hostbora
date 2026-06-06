@@ -6,6 +6,7 @@ import 'package:local_auth/local_auth.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/general_response.dart';
+import '../../../data/repository/app_repository.dart';
 import '/app/core/base/base_controller.dart';
 
 enum PINStatus { verifyCurrent, enterFirst, enterSecond, equals, unequals }
@@ -19,11 +20,17 @@ class ChangePinController extends BaseController {
   final PreferenceManager _preferenceManager =
       Get.find(tag: (PreferenceManager).toString());
 
+  AppRepository? _repository;
+
   String _storedPin = '';
 
   @override
   void onInit() {
     super.onInit();
+    try {
+      _repository =
+          Get.find<AppRepository>(tag: (AppRepository).toString());
+    } catch (_) {}
     final args = Get.arguments;
     if (args is Map && args['change_pin'] == true) {
       changePinMode.value = true;
@@ -207,13 +214,22 @@ class ChangePinController extends BaseController {
   }
 
   Future<void> _persistNewPin(String newPin) async {
+    final oldPin = _storedPin;
     await _preferenceManager.setString(PreferenceManager.keyPinCode, newPin);
     await _preferenceManager.setBool(PreferenceManager.keyPinEnabled, true);
     await _preferenceManager.setBool(PreferenceManager.keyFirstLogin, false);
     await _preferenceManager.setInt(PreferenceManager.keyPinFailedAttempts, 0);
     await _preferenceManager.setInt(PreferenceManager.keyPinLockedUntilMs, 0);
 
-    // Future: sync with backend via AppRepository + ChangePinRequest when available.
+    // Best-effort sync with backend — failure is logged only, never blocks UI.
+    try {
+      await _repository?.changePinOnServer({
+        'currentPin': oldPin,
+        'newPin': newPin,
+      });
+    } catch (e) {
+      logger.w('changePinOnServer failed (non-blocking): $e');
+    }
   }
 
   Future<bool> isPinOrBiometricSet() async {

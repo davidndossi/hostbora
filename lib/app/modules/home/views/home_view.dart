@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
@@ -8,11 +9,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_decorations.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/theme/app_theme_tokens.dart';
-import '../../../data/local/service/workspace_context_service.dart';
-import '../../../routes/app_pages.dart';
+import '../../../data/local/service/currency_service.dart';
 import '/app/core/base/base_view.dart';
 import '../../../core/widget/hub_insight_banner.dart';
 import '../../../core/widget/skeleton_presets.dart';
@@ -25,8 +26,6 @@ import 'home_guest_quick_actions_sheet.dart';
 // ignore: must_be_immutable
 class HomeView extends BaseView<HomeController> {
   HomeView({super.key});
-  final WorkspaceContextService _workspaceContext =
-      Get.find<WorkspaceContextService>();
 
   String _t(BuildContext context, String en, String sw) {
     return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
@@ -36,95 +35,7 @@ class HomeView extends BaseView<HomeController> {
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
       appBarTitleText: appLocalization.home,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Obx(() {
-                  final ws = _workspaceContext.currentWorkspace.value;
-                  final activeLabel = ws == 'bnb' ? 'BnB' : 'RENT';
-                  return Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.colorPrimary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      activeLabel,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  );
-                }),
-                InkWell(
-                  onTap: () async {
-                    await _workspaceContext.switchWorkspace('rent');
-                    Get.offNamed(Routes.RENT_HUB);
-                  },
-                  borderRadius: BorderRadius.circular(4),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
-                    ),
-                    child: Text(
-                      'RENT',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        letterSpacing: 0.6,
-                        color: AppColors.textColorSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(
-                    '|',
-                    style: TextStyle(
-                      color: AppColors.textColorSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                Text(
-                  'BnB',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                    letterSpacing: 0.4,
-                    color: AppColors.colorPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // IconButton(
-        //   onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
-        //   icon: Obx(
-        //     () => controller.unreadCount.value > 0
-        //         ? Badge.count(
-        //             count: controller.unreadCount.value,
-        //             child: const Icon(Icons.notifications_none_outlined))
-        //         : const Icon(Icons.notifications_none_outlined),
-        //   ),
-        // ),
-        // IconButton(
-        //   onPressed: () => Get.toNamed(Routes.SETTINGS),
-        //   icon: const Icon(Icons.more_vert_outlined)
-        // )
-      ],
+      isCentered: true,
     );
   }
 
@@ -144,11 +55,14 @@ class HomeView extends BaseView<HomeController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildPropertyOverview(context),
-                const HubInsightBanner(),
-                // const SizedBox(height: 24),
                 const SizedBox(height: 12),
-                const Center(child: _PulsingDownArrow()),
-                const SizedBox(height: 20),
+                const HubInsightBanner(),
+                const SizedBox(height: 24),
+                // const SizedBox(height: 12),
+                // const Center(child: _PulsingDownArrow()),
+                // const SizedBox(height: 20),
+                _buildOverviewSection(context),
+                _buildBnbWeeklyReportsSection(context),
                 if (controller.checkInsToday.isNotEmpty) ...[
                   _buildHorizontalGuestSection(
                     context,
@@ -416,6 +330,277 @@ class HomeView extends BaseView<HomeController> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOverviewSection(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isSw = Localizations.localeOf(context).languageCode == 'sw';
+    return Obx(() {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _t(context, 'Overview', 'Muhtasari'),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Row 1 – total units | BnB occupancy
+          Row(
+            children: [
+              Expanded(
+                child: _BnbOverviewCard(
+                  title: isSw ? 'Jumla ya Vyumbo' : 'Total Units',
+                  value: '${controller.totalUnitsCount.value}',
+                  subtitle: isSw ? 'BnB + Rent' : 'BnB + Rent',
+                  onTap: controller.openProperties,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _BnbOverviewCard(
+                  title: isSw ? 'Ukaaji wa BnB' : 'BnB Occupancy',
+                  value: '${controller.bnbOccupancyRate.value}%',
+                  subtitle: isSw ? 'Wiki hii' : 'This week',
+                  onTap: controller.openProperties,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Row 2 – rent occupancy | tenants
+          Row(
+            children: [
+              Expanded(
+                child: _BnbOverviewCard(
+                  title: isSw ? 'Ukaaji wa Rent' : 'Rent Occupancy',
+                  value: '${controller.rentOccupancyRate.value}%',
+                  subtitle: isSw ? 'Vyumbo vilivyokaliwa' : 'Units occupied',
+                  onTap: controller.openProperties,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _BnbOverviewCard(
+                  title: isSw ? 'Wapangaji' : 'Tenants',
+                  value: '${controller.rentTenantsCount.value}',
+                  subtitle: isSw ? 'Wanaokaa sasa' : 'Active now',
+                  onTap: controller.openProperties,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Row 3 – collection rate (full width with donut chart)
+          _CollectionRateCard(
+            title: isSw ? 'Ukusanyaji wa Kodi' : 'Collection',
+            rate: controller.collectionRate.value,
+            tenantCount: controller.rentTenantsCount.value,
+            subtitle: isSw
+                ? 'Kodi iliyokusanywa mwezi huu'
+                : 'Rent collected this month',
+            onTap: controller.openTodayRevenue,
+          ),
+          const SizedBox(height: 20),
+        ],
+      );
+    });
+  }
+
+  Widget _buildBnbWeeklyReportsSection(BuildContext context) {
+    return Obx(() {
+      // Observe list contents so charts update after quiet reloads.
+      final revenue = List<double>.from(controller.weeklyRevenue);
+      final occupancy = List<double>.from(controller.weeklyOccupancyPercent);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildWeeklyBarChartCard(
+            context,
+            title: appLocalization.dashboardWeeklyRevenue,
+            subtitle: appLocalization.dashboardWeekTrend,
+            values: revenue,
+            maxYCap: null,
+            formatTooltip: (v) =>
+                Get.find<CurrencyService>().formatBase(v.round()),
+          ),
+          const SizedBox(height: 16),
+          _buildWeeklyBarChartCard(
+            context,
+            title: appLocalization.dashboardWeeklyOccupancy,
+            subtitle: appLocalization.dashboardWeekTrend,
+            values: occupancy,
+            maxYCap: 100,
+            formatTooltip: (v) => '${v.round()}%',
+          ),
+          const SizedBox(height: 20),
+        ],
+      );
+    });
+  }
+
+  Widget _buildWeeklyBarChartCard(
+      BuildContext context, {
+        required String title,
+        required String subtitle,
+        required List<double> values,
+        required double? maxYCap,
+        required String Function(double) formatTooltip,
+      }) {
+    final data = values;
+    final maxVal = data.fold<double>(0, (a, b) => a > b ? a : b);
+    final chartMax = maxYCap ?? (maxVal <= 0 ? 1.0 : maxVal * 1.12);
+    final peakValue = maxVal;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: AppDecorations.card.copyWith(
+        color: FormSurfaceColors.of(context).isDark
+            ? const Color(0xFF1F1F1F)
+            : AppColors.colorWhite,
+        border: Border.all(
+          color: FormSurfaceColors.of(context).isDark
+              ? Colors.white.withValues(alpha: 0.18)
+              : Colors.transparent,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: FormSurfaceColors.of(context).isDark ? 0.28 : 0.06,
+            ),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                  color: context.tokens.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 180,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: chartMax,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        formatTooltip(rod.toY),
+                        TextStyle(
+                          color: context.tokens.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      getTitlesWidget: (value, meta) {
+                        final i = value.toInt();
+                        if (i < 0 ||
+                            i >= HomeController.weeklyDayLabels.length) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            HomeController.weeklyDayLabels[i],
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: context.tokens.textSecondary,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: (FormSurfaceColors.of(context).isDark
+                        ? Colors.white
+                        : AppColors.designInputBorder)
+                        .withValues(alpha: 0.5),
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: List.generate(
+                  HomeController.weeklyDayLabels.length,
+                      (i) {
+                    final v = i < data.length ? data[i] : 0.0;
+                    final isPeak = peakValue > 0 && v == peakValue;
+                    return BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          fromY: 0,
+                          toY: v,
+                          width: 18,
+                          color: isPeak
+                              ? AppColors.designAccent
+                              : AppColors.designAccent.withValues(alpha: 0.55),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              duration: const Duration(milliseconds: 150),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -976,6 +1161,320 @@ class _QuickActionTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SegmentButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _SegmentButton({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    return Material(
+      color: isSelected
+          ? AppColors.designAccent
+          : (c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
+      borderRadius: BorderRadius.circular(AppValues.radius_6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppValues.radius_6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppValues.radius_6),
+            border: isSelected
+                ? null
+                : Border.all(
+              color: c.isDark
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : AppColors.designInputBorder,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? Colors.white : AppColors.textColorSecondary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BnbOverviewCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String? subtitle;
+  final VoidCallback? onTap;
+
+  const _BnbOverviewCard({
+    required this.title,
+    required this.value,
+    this.subtitle,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    final cs = Theme.of(context).colorScheme;
+    final card = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppValues.radius_12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              color: c.isDark ? Colors.white70 : AppColors.textColorSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle!,
+              style: TextStyle(
+                fontSize: 11,
+                color: c.isDark
+                    ? Colors.white38
+                    : AppColors.textColorSecondary.withValues(alpha: 0.7),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+    if (onTap == null) return card;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppValues.radius_12),
+      child: card,
+    );
+  }
+}
+
+// ── Collection rate card with donut chart ─────────────────────────────────────
+
+class _CollectionRateCard extends StatelessWidget {
+  final String title;
+  final int rate; // 0–100+ (clamped to 100 visually)
+  final int tenantCount;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  const _CollectionRateCard({
+    required this.title,
+    required this.rate,
+    required this.tenantCount,
+    required this.subtitle,
+    this.onTap,
+  });
+
+  static const _green = Color(0xFF4CAF82);
+  static const _track = Color(0xFFE8ECF0);
+
+  @override
+  Widget build(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    final cs = Theme.of(context).colorScheme;
+    final isDark = c.isDark;
+    final trackColor = isDark ? const Color(0xFF2A2A2A) : _track;
+    final filled = rate.clamp(0, 100).toDouble();
+    final empty = (100 - filled).clamp(0.0, 100.0);
+
+    final card = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppValues.radius_12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // ── Left: text info ────────────────────────────────────────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1,
+                    color: isDark ? Colors.white54 : AppColors.textColorSecondary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '$rate%',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: cs.onSurface,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark
+                        ? Colors.white38
+                        : AppColors.textColorSecondary.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: _green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$tenantCount tenants',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white70 : cs.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // ── Right: donut chart ─────────────────────────────────────────
+          SizedBox(
+            width: 96,
+            height: 96,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                PieChart(
+                  PieChartData(
+                    startDegreeOffset: -90,
+                    sectionsSpace: 0,
+                    centerSpaceRadius: 34,
+                    sections: [
+                      PieChartSectionData(
+                        value: filled > 0 ? filled : 0.01,
+                        color: _green,
+                        radius: 14,
+                        showTitle: false,
+                      ),
+                      PieChartSectionData(
+                        value: empty > 0 ? empty : 0.01,
+                        color: trackColor,
+                        radius: 14,
+                        showTitle: false,
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$rate%',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      rate >= 80 ? 'healthy' : rate >= 50 ? 'fair' : 'low',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: isDark ? Colors.white54 : AppColors.textColorSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) return card;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppValues.radius_12),
+      child: card,
     );
   }
 }

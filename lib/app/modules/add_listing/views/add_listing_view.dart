@@ -30,8 +30,8 @@ class AddListingView extends BaseView<AddListingController> {
     return CustomAppBar(
       // appBarTitleText: appLocalization.listing,
       appBarTitleText: controller.isEditing.value
-        ? _t(context, sw: 'Hariri Mali', en: 'Edit Property')
-        : _t(context, sw: 'Ongeza Mjengo', en: 'Add Property'),
+          ? _t(context, sw: 'Hariri Mali', en: 'Edit Property')
+          : _t(context, sw: 'Ongeza Mjengo', en: 'Add Property'),
       isCentered: true,
       actions: [
         IconButton(
@@ -61,7 +61,14 @@ class AddListingView extends BaseView<AddListingController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 14),
-                    _buildLabel(context, _t(context, en: 'PROPERTY LOCATION', sw: 'MAHALI ILIPO JENGO')),
+                    _buildLabel(
+                      context,
+                      _t(
+                        context,
+                        en: 'PROPERTY LOCATION',
+                        sw: 'MAHALI ILIPO JENGO',
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: controller.propertyLocationController,
@@ -70,10 +77,7 @@ class AddListingView extends BaseView<AddListingController> {
                       textCapitalization: TextCapitalization.words,
                       minLines: 1,
                       maxLines: 3,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: c.headline,
-                      ),
+                      style: TextStyle(fontSize: 16, color: c.headline),
                       decoration: _inputDecoration(
                         context,
                         hint: _t(
@@ -84,7 +88,10 @@ class AddListingView extends BaseView<AddListingController> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildLabel(context, _t(context, en: 'PROPERTY NAME', sw: 'JINA LA MALI')),
+                    _buildLabel(
+                      context,
+                      _t(context, en: 'PROPERTY NAME', sw: 'JINA LA MALI'),
+                    ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: controller.propertyNameController,
@@ -103,7 +110,10 @@ class AddListingView extends BaseView<AddListingController> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildLabel(context, _t(context, en: 'PROPERTY TYPE', sw: 'AINA YA MALI')),
+                    _buildLabel(
+                      context,
+                      _t(context, en: 'PROPERTY TYPE', sw: 'AINA YA MALI'),
+                    ),
                     const SizedBox(height: 8),
                     Obx(
                       () => DropdownButtonFormField<String>(
@@ -122,17 +132,13 @@ class AddListingView extends BaseView<AddListingController> {
                             en: 'Select property type',
                             sw: 'Chagua aina ya mali',
                           ),
-                          style: TextStyle(
-                            color: c.hint,
-                            fontSize: 16,
-                          ),
+                          style: TextStyle(color: c.hint, fontSize: 16),
                         ),
-                        icon: Icon(
-                          Icons.keyboard_arrow_down,
-                          color: c.hint,
-                        ),
+                        icon: Icon(Icons.keyboard_arrow_down, color: c.hint),
                         items: controller.propertyTypes
-                            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
                             .toList(),
                         onChanged: controller.selectPropertyType,
                         validator: (v) {
@@ -148,7 +154,55 @@ class AddListingView extends BaseView<AddListingController> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildLabel(context, AppLocalizations.of(context)!.propertyFloorCount),
+                    _buildLabel(
+                      context,
+                      _t(context, en: 'LISTING MODE', sw: 'MATUMIZI YA MALI'),
+                    ),
+                    const SizedBox(height: 8),
+                    Obx(
+                      () => DropdownButtonFormField<String>(
+                        initialValue: controller.listingMode.value,
+                        decoration: _inputDecoration(
+                          context,
+                          hint: _t(
+                            context,
+                            en: 'Select listing mode',
+                            sw: 'Chagua matumizi ya mali',
+                          ),
+                        ),
+                        icon: Icon(Icons.keyboard_arrow_down, color: c.hint),
+                        items: controller.listingModeOptions
+                            .map(
+                              (mode) => DropdownMenuItem(
+                                value: mode,
+                                child: Text(switch (mode) {
+                                  'bnb' => _t(
+                                    context,
+                                    en: 'BnB / short stays',
+                                    sw: 'BnB / ukaaji mfupi',
+                                  ),
+                                  'rent' => _t(
+                                    context,
+                                    en: 'Rent / long-term',
+                                    sw: 'Kodi / muda mrefu',
+                                  ),
+                                  _ => _t(
+                                    context,
+                                    en: 'Both BnB and Rent',
+                                    sw: 'Zote BnB na Kodi',
+                                  ),
+                                }),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: controller.updateListingMode,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildLabel(
+                      context,
+                      AppLocalizations.of(context)!.propertyFloorCount,
+                    ),
                     const SizedBox(height: 8),
                     _floorCountStepper(context),
                     const SizedBox(height: 20),
@@ -184,12 +238,16 @@ class AddListingView extends BaseView<AddListingController> {
                                 flex: 3,
                                 child: TextFormField(
                                   controller: controller.rentAmountController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
                                   textInputAction: TextInputAction.next,
-                                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   validator: controller.validateRentAmount,
                                   inputFormatters: [
-                                    ThousandsSeparatorInputFormatter()
+                                    ThousandsSeparatorInputFormatter(),
                                   ],
                                   style: TextStyle(
                                     fontSize: 16,
@@ -197,7 +255,7 @@ class AddListingView extends BaseView<AddListingController> {
                                   ),
                                   decoration: InputDecoration(
                                     prefix: Text(
-                                      'Tshs ',
+                                      '${controller.selectedCurrency.value} ',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -210,7 +268,12 @@ class AddListingView extends BaseView<AddListingController> {
                                       color: c.hint,
                                     ),
                                     isDense: false,
-                                    contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 4, bottom: 4),
+                                    contentPadding: const EdgeInsets.only(
+                                      left: 12,
+                                      right: 8,
+                                      top: 4,
+                                      bottom: 4,
+                                    ),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: BorderSide.none,
@@ -227,12 +290,14 @@ class AddListingView extends BaseView<AddListingController> {
                     const SizedBox(height: 20),
                     _buildLabel(context, 'MINIMUM RENTAL DURATION'),
                     const SizedBox(height: 8),
-                    Obx(() => _dropdownInput(
-                      context: context,
-                      value: controller.minRentalDuration.value,
-                      options: controller.minRentalDurationOptions,
-                      onChanged: controller.updateMinRentalDuration,
-                    )),
+                    Obx(
+                      () => _dropdownInput(
+                        context: context,
+                        value: controller.minRentalDuration.value,
+                        options: controller.minRentalDurationOptions,
+                        onChanged: controller.updateMinRentalDuration,
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     Text(
                       _t(
@@ -246,10 +311,9 @@ class AddListingView extends BaseView<AddListingController> {
                         height: 1.4,
                       ),
                     ),
-
                   ],
                 ),
-              )
+              ),
             ),
           ),
           _buildBottomBar(context),
@@ -308,7 +372,11 @@ class AddListingView extends BaseView<AddListingController> {
     );
   }
 
-  InputDecoration _inputDecoration(BuildContext context, {required String hint, Widget? prefixIcon}) {
+  InputDecoration _inputDecoration(
+    BuildContext context, {
+    required String hint,
+    Widget? prefixIcon,
+  }) {
     final c = FormSurfaceColors.of(context);
     return InputDecoration(
       hintText: hint,
@@ -380,7 +448,7 @@ class AddListingView extends BaseView<AddListingController> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${PropertyUnitFloor.label(l10n, u.unitFloor)} · Tshs ${u.unitRent} · ${u.unitRentFrequency}',
+                  '${PropertyUnitFloor.label(l10n, u.unitFloor)} · ${controller.selectedCurrency.value} ${u.unitRent} · ${u.unitRentFrequency}${controller.listingMode.value == 'both' ? ' · ${_unitModeLabel(context, u.operationMode)}' : ''}',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -391,11 +459,7 @@ class AddListingView extends BaseView<AddListingController> {
                   const SizedBox(height: 6),
                   Text(
                     u.unitDescription,
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.35,
-                      color: c.hint,
-                    ),
+                    style: TextStyle(fontSize: 13, height: 1.35, color: c.hint),
                   ),
                 ],
               ],
@@ -424,7 +488,7 @@ class AddListingView extends BaseView<AddListingController> {
           () => Column(
             children: List.generate(
               controller.apartmentUnits.length,
-                  (i) => Padding(
+              (i) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: _addedUnitTile(context, i),
               ),
@@ -447,8 +511,65 @@ class AddListingView extends BaseView<AddListingController> {
             _plainInput(
               context: context,
               fieldController: controller.draftUnitNameController,
-              hint: _t(context, en: 'e.g. 4B or Unit 1', sw: 'mf. 4B au Unit 1'),
+              hint: _t(
+                context,
+                en: 'e.g. 4B or Unit 1',
+                sw: 'mf. 4B au Unit 1',
+              ),
             ),
+            Obx(() {
+              if (controller.listingMode.value != 'both') {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
+                  Text(
+                    'UNIT MODE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w700,
+                      color: c.hint,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    initialValue: controller.draftUnitMode.value,
+                    isExpanded: true,
+                    icon: Icon(Icons.expand_more, color: c.secondary),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: c.headline,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: c.fill,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    dropdownColor: c.dropdownBg,
+                    items: ['bnb', 'rent']
+                        .map(
+                          (mode) => DropdownMenuItem<String>(
+                            value: mode,
+                            child: Text(_unitModeLabel(context, mode)),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: controller.updateDraftUnitMode,
+                  ),
+                ],
+              );
+            }),
             const SizedBox(height: 12),
             Text(
               l10n.unitFloorLabel.toUpperCase(),
@@ -486,20 +607,17 @@ class AddListingView extends BaseView<AddListingController> {
                   flex: 3,
                   child: TextFormField(
                     controller: controller.draftUnitRentController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     textInputAction: TextInputAction.next,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     validator: controller.validateDraftUnitRent,
-                    inputFormatters: [
-                      ThousandsSeparatorInputFormatter()
-                    ],
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: c.headline,
-                    ),
+                    inputFormatters: [ThousandsSeparatorInputFormatter()],
+                    style: TextStyle(fontSize: 16, color: c.headline),
                     decoration: InputDecoration(
                       prefix: Text(
-                        'Tshs ',
+                        '${controller.selectedCurrency.value} ',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -507,12 +625,14 @@ class AddListingView extends BaseView<AddListingController> {
                         ),
                       ),
                       hintText: '0.00',
-                      hintStyle: TextStyle(
-                        fontSize: 16,
-                        color: c.hint,
-                      ),
+                      hintStyle: TextStyle(fontSize: 16, color: c.hint),
                       isDense: false,
-                      contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 4, bottom: 4),
+                      contentPadding: const EdgeInsets.only(
+                        left: 12,
+                        right: 8,
+                        top: 4,
+                        bottom: 4,
+                      ),
                       filled: true,
                       fillColor: c.fill,
                       border: OutlineInputBorder(
@@ -554,23 +674,26 @@ class AddListingView extends BaseView<AddListingController> {
               textCapitalization: TextCapitalization.words,
               minLines: 2,
               maxLines: 4,
-              style: TextStyle(
-                fontSize: 16,
-                color: c.headline,
-              ),
+              style: TextStyle(fontSize: 16, color: c.headline),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: c.fill,
-                hintText: _t(context, en: 'Short note for this unit', sw: 'Maelezo mafupi ya hiki chumba'),
-                hintStyle: TextStyle(
-                  fontSize: 16,
-                  color: c.hint,
+                hintText: _t(
+                  context,
+                  en: 'Short note for this unit',
+                  sw: 'Maelezo mafupi ya hiki chumba',
                 ),
+                hintStyle: TextStyle(fontSize: 16, color: c.hint),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.only(left: 12, right: 8, top: 12, bottom: 12),
+                contentPadding: const EdgeInsets.only(
+                  left: 12,
+                  right: 8,
+                  top: 12,
+                  bottom: 12,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -591,14 +714,22 @@ class AddListingView extends BaseView<AddListingController> {
                   foregroundColor: c.isDark ? c.tokens.accent : c.headline,
                   side: BorderSide(color: c.border),
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
-          ]
-        )
+          ],
+        ),
       ],
     );
+  }
+
+  String _unitModeLabel(BuildContext context, String mode) {
+    return mode.trim().toLowerCase() == 'rent'
+        ? _t(context, en: 'Rent', sw: 'Kodi')
+        : _t(context, en: 'BnB', sw: 'BnB');
   }
 
   Widget _plainInput({
@@ -610,25 +741,24 @@ class AddListingView extends BaseView<AddListingController> {
     return TextField(
       controller: fieldController,
       textInputAction: TextInputAction.next,
-      style: TextStyle(
-        fontSize: 14,
-        color: c.headline,
-      ),
+      style: TextStyle(fontSize: 14, color: c.headline),
       textCapitalization: TextCapitalization.words,
       decoration: InputDecoration(
         isDense: false,
         filled: true,
         fillColor: c.fill,
         hintText: hint,
-        hintStyle: TextStyle(
-          fontSize: 14,
-          color: c.hint,
-        ),
+        hintStyle: TextStyle(fontSize: 14, color: c.hint),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.only(left: 12, right: 4, top: 4, bottom: 4),
+        contentPadding: const EdgeInsets.only(
+          left: 12,
+          right: 4,
+          top: 4,
+          bottom: 4,
+        ),
       ),
     );
   }
@@ -647,11 +777,18 @@ class AddListingView extends BaseView<AddListingController> {
       initialValue: floor,
       isExpanded: true,
       icon: Icon(Icons.expand_more, color: c.secondary),
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: c.headline),
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: c.headline,
+      ),
       decoration: InputDecoration(
         filled: true,
         fillColor: c.fill,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -689,11 +826,18 @@ class AddListingView extends BaseView<AddListingController> {
       initialValue: options.contains(value) ? value : null,
       isExpanded: true,
       icon: Icon(Icons.expand_more, color: c.secondary),
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: c.headline),
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: c.headline,
+      ),
       decoration: InputDecoration(
         filled: true,
         fillColor: c.fill,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 12 : 14),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: compact ? 12 : 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -703,22 +847,26 @@ class AddListingView extends BaseView<AddListingController> {
       items: options
           .map(
             (item) => DropdownMenuItem<String>(
-          value: item,
-          child: Text(
-            item,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: c.headline,
+              value: item,
+              child: Text(
+                item,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: c.headline,
+                ),
+              ),
             ),
-          ),
-        ),
-      ).toList(),
+          )
+          .toList(),
       onChanged: onChanged,
     );
   }
 
-  Widget _formCard({required BuildContext context, required List<Widget> children}) {
+  Widget _formCard({
+    required BuildContext context,
+    required List<Widget> children,
+  }) {
     final c = FormSurfaceColors.of(context);
     return Container(
       width: double.infinity,
@@ -735,7 +883,10 @@ class AddListingView extends BaseView<AddListingController> {
           ),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 }

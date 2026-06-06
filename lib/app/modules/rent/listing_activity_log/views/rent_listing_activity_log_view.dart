@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
-
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/widget/custom_app_bar.dart';
-import '../../listing_details/models/listing_activity_vm.dart';
+import '../../../../core/widget/skeleton_presets.dart';
+import '../../../listing_details/models/listing_activity_vm.dart';
 import '../../rent_theme.dart';
 import '../controllers/rent_listing_activity_log_controller.dart';
 
-class RentListingActivityLogView extends RentBaseView<RentListingActivityLogController> {
+class RentListingActivityLogView
+    extends RentBaseView<RentListingActivityLogController> {
   RentListingActivityLogView({super.key});
 
   @override
   Color pageBackgroundColor(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    return dark ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF8F7F4);
+    return dark
+        ? Theme.of(context).scaffoldBackgroundColor
+        : const Color(0xFFF8F7F4);
   }
 
   @override
@@ -83,61 +85,68 @@ class RentListingActivityLogView extends RentBaseView<RentListingActivityLogCont
     return Material(
       color: card,
       borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: a.accentColor.withValues(alpha: 0.2),
-              child: Icon(Icons.circle, size: 10, color: a.accentColor),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: a.isExpense ? () => controller.editExpenseActivity(a) : null,
+        onLongPress: a.isExpense
+            ? () => controller.deleteExpenseActivity(a)
+            : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: a.accentColor.withValues(alpha: 0.2),
+                child: Icon(Icons.circle, size: 10, color: a.accentColor),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      a.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: titleColor,
+                      ),
+                    ),
+                    if (a.subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        a.subtitle,
+                        style: TextStyle(fontSize: 13, color: muted),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    a.title,
+                    a.trailing,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 15,
+                      fontSize: 13,
                       color: titleColor,
                     ),
                   ),
-                  if (a.subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      a.subtitle,
-                      style: TextStyle(fontSize: 13, color: muted),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                  const SizedBox(height: 2),
+                  Text(
+                    a.isExpense ? 'Edit • ${a.timeLabel}' : a.timeLabel,
+                    style: TextStyle(fontSize: 12, color: muted),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  a.trailing,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: titleColor,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  a.timeLabel,
-                  style: TextStyle(fontSize: 12, color: muted),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -72,7 +72,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
       }
 
       final c = FormSurfaceColors.of(context);
-      final dateFmt = DateFormat.yMMMd().add_jm();
+      final dateFmt = DateFormat('dd/MM/yyyy HH:mm');
       final surface = c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite;
 
       return Stack(
@@ -141,14 +141,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
                           _priorityLabel(context, task.priority),
                         ),
                         const Divider(height: 28),
-                        _row(
-                          context,
-                          Icons.person_outline,
-                          _t(context, en: 'Assignee', sw: 'Aliyepewa'),
-                          task.assignee.isEmpty
-                              ? _t(context, en: 'Unassigned', sw: 'Hajapewa mtu')
-                              : task.assignee,
-                        ),
+                        _assigneeRow(context, task),
                         if (task.dueDate != null) ...[
                           const Divider(height: 28),
                           _row(
@@ -241,6 +234,201 @@ class TaskDetailView extends BaseView<TaskDetailController> {
         ],
       );
     });
+  }
+
+  bool _isUnassigned(String assignee) {
+    final a = assignee.trim().toLowerCase();
+    return a.isEmpty || a == 'unassigned';
+  }
+
+  Widget _assigneeRow(BuildContext context, MaintenanceTask task) {
+    final c = FormSurfaceColors.of(context);
+    final unassigned = _isUnassigned(task.assignee);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Icon(Icons.person_outline, size: 22, color: AppColors.colorPrimary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _t(context, en: 'Assignee', sw: 'Aliyepewa'),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: c.isDark
+                      ? Colors.white60
+                      : AppColors.textColorSecondary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                unassigned
+                    ? _t(context, en: 'Unassigned', sw: 'Hajapewa mtu')
+                    : task.assignee,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: unassigned
+                      ? (c.isDark ? Colors.white38 : AppColors.textColorSecondary)
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Obx(() {
+          if (controller.assigningStaff.value) {
+            return const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            );
+          }
+          return OutlinedButton.icon(
+            onPressed: () => _showAssignSheet(context),
+            icon: Icon(
+              unassigned ? Icons.person_add_outlined : Icons.edit_outlined,
+              size: 16,
+            ),
+            label: Text(
+              unassigned
+                  ? _t(context, en: 'Assign', sw: 'Peleka')
+                  : _t(context, en: 'Change', sw: 'Badilisha'),
+              style: const TextStyle(fontSize: 13),
+            ),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              side: BorderSide(
+                color: AppColors.colorPrimary.withValues(alpha: 0.5),
+              ),
+              foregroundColor: AppColors.colorPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  void _showAssignSheet(BuildContext context) {
+    final names = controller.staffNames;
+    if (names.isEmpty) {
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(_t(context, en: 'No staff', sw: 'Hakuna wafanyakazi')),
+          content: Text(_t(
+            context,
+            en: 'Register staff members first in the Staff Management section.',
+            sw: 'Sajili wafanyakazi kwanza katika sehemu ya usimamizi wa wafanyakazi.',
+          )),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: Text(_t(context, en: 'OK', sw: 'Sawa')),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final c = FormSurfaceColors.of(ctx);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: c.isDark
+                      ? Colors.white24
+                      : AppColors.textColorSecondary.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  _t(ctx, en: 'Assign task to', sw: 'Peleka kazi kwa'),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(ctx).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Divider(height: 1),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.45,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: names.length,
+                  itemBuilder: (_, i) {
+                    final name = names[i];
+                    final isCurrentAssignee =
+                        name.toLowerCase() ==
+                        controller.task.value?.assignee.toLowerCase();
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor:
+                            AppColors.colorPrimary.withValues(alpha: 0.12),
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.colorPrimary,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        name,
+                        style: TextStyle(
+                          fontWeight: isCurrentAssignee
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: Theme.of(ctx).colorScheme.onSurface,
+                        ),
+                      ),
+                      trailing: isCurrentAssignee
+                          ? const Icon(Icons.check_circle,
+                              color: AppColors.colorPrimary, size: 20)
+                          : null,
+                      onTap: () {
+                        Get.back();
+                        controller.assignStaff(name);
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _infoCard(

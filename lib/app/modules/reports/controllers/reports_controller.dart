@@ -85,7 +85,7 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
 
   static final _money = NumberFormat('#,###', 'en_US');
   static final _month = DateFormat('MMM yyyy');
-  static final _day = DateFormat('MMM d');
+  static final _day = DateFormat('dd/MM');
 
   @override
   void onInit() {
@@ -528,7 +528,7 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
         build: (ctx) => [
           pw.Header(level: 0, text: title),
           pw.Text(
-            '${DateFormat.yMMMd().format(rangeStart.value)} – ${DateFormat.yMMMd().format(rangeEnd.value)}',
+            '${DateFormat('dd/MM/yyyy').format(rangeStart.value)} – ${DateFormat('dd/MM/yyyy').format(rangeEnd.value)}',
           ),
           pw.SizedBox(height: 12),
           if (rows.isEmpty)

@@ -81,11 +81,20 @@ class MyPropertiesController extends BaseController {
     required String? status,
   }) async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
-    final rows = await _local.getAllVisibleNewestFirst(
-      userId: userId,
-      workspaceType: 'bnb',
-    );
-    final local = await Future.wait(rows.map(_listingFromLocal));
+    final rowsByKey = <String, PropertyRecord>{};
+    for (final workspace in const ['bnb', 'rent']) {
+      final rows = await _local.getAllVisibleNewestFirst(
+        userId: userId,
+        workspaceType: workspace,
+      );
+      for (final row in rows) {
+        final key = row.propertyRef.trim().isNotEmpty
+            ? row.propertyRef.trim()
+            : 'local_${row.id}';
+        rowsByKey[key] = row;
+      }
+    }
+    final local = await Future.wait(rowsByKey.values.map(_listingFromLocal));
     if (status == null) return local;
     if (status == 'ACTIVE') {
       return local;
@@ -113,7 +122,7 @@ class MyPropertiesController extends BaseController {
       // pricePerNight: price,
       activeTenants: tenants,
       unitSlots: units,
-      status: PropertyStatus.ready,
+      mode: _normalizeListingMode(r.workspaceType),
       isFavorite: false,
       imageUrl: PropertyListingImageAssigner.resolveDisplayPath(
         storedPath: r.coverPhotoPath,
@@ -146,8 +155,9 @@ class MyPropertiesController extends BaseController {
     final location = m['propertyLocation']?.toString() ?? m['location']?.toString() ?? '';
     final tenants = await _tenantLocal.countByPropertyRef(id);
     final units = (m['units'] as num?)?.toInt() ?? 0;
-    final statusStr = (m['status'] as String?)?.toUpperCase() ?? 'ACTIVE';
-    final status = statusStr == 'CLEANING' ? PropertyStatus.cleaning : PropertyStatus.ready;
+    var mode = _normalizeListingMode(
+      m['workspaceType'] ?? m['listingMode'] ?? m['operationMode'],
+    );
     var imageUrl = m['coverPhotoUrl']?.toString() ??
         m['coverPhoto']?.toString() ??
         m['imageUrl']?.toString() ??
@@ -156,6 +166,7 @@ class MyPropertiesController extends BaseController {
     if (imageUrl.isEmpty) {
       final localRow = await _local.findByHubId(id);
       if (localRow != null) {
+        mode = _normalizeListingMode(localRow.workspaceType);
         imageUrl = PropertyListingImageAssigner.resolveDisplayPath(
           storedPath: localRow.coverPhotoPath,
           propertyRef: localRow.propertyRef,
@@ -174,10 +185,17 @@ class MyPropertiesController extends BaseController {
       // pricePerNight: price,
       activeTenants: tenants,
       unitSlots: units,
-      status: status,
+      mode: mode,
       isFavorite: false,
       imageUrl: imageUrl,
     );
+  }
+
+  static String _normalizeListingMode(dynamic raw) {
+    final value = raw?.toString().trim().toLowerCase() ?? '';
+    if (value == 'rent') return 'rent';
+    if (value == 'both') return 'both';
+    return 'bnb';
   }
 
   void selectFilter(int index) {
@@ -197,7 +215,7 @@ class MyPropertiesController extends BaseController {
         // pricePerNight: p.pricePerNight,
         activeTenants: p.activeTenants,
         unitSlots: p.unitSlots,
-        status: p.status,
+        mode: p.mode,
         isFavorite: !p.isFavorite,
         imageUrl: p.imageUrl,
       );
@@ -228,8 +246,6 @@ class MyPropertiesController extends BaseController {
   }
 }
 
-enum PropertyStatus { ready, cleaning }
-
 class PropertyListing {
   final String id;
   final String title;
@@ -238,7 +254,8 @@ class PropertyListing {
   // final int pricePerNight;
   final int activeTenants;
   final int unitSlots;
-  final PropertyStatus status;
+  /// Property operation mode: `bnb`, `rent`, or `both`.
+  final String mode;
   final bool isFavorite;
   final String imageUrl;
 
@@ -250,7 +267,7 @@ class PropertyListing {
     // required this.pricePerNight,
     required this.activeTenants,
     required this.unitSlots,
-    required this.status,
+    required this.mode,
     required this.isFavorite,
     required this.imageUrl,
   });

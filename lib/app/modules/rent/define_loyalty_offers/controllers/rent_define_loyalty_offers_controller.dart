@@ -1,15 +1,26 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_loyalty_offer_local_data_source.dart';
+import '../../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../../data/repository/app_repository.dart';
 import '../../../../routes/app_pages.dart';
 
 class RentDefineLoyaltyOffersController extends BaseController {
   RentDefineLoyaltyOffersController()
-      : _local = Get.find<RentLoyaltyOfferLocalDataSource>();
+      : _local = Get.find<RentLoyaltyOfferLocalDataSource>(),
+        _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final RentLoyaltyOfferLocalDataSource _local;
+  final AppRepository _repository;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
   final formKey = GlobalKey<FormState>();
 
   final minStayController = TextEditingController(text: '12');
@@ -74,12 +85,34 @@ class RentDefineLoyaltyOffersController extends BaseController {
       return;
     }
 
-    await _local.insert(
+    final localId = await _local.insert(
       minStayMonths: minStay,
       revenueThresholdTsh: revenue,
       offerType: offerTypeLabels[selectedOfferType.value],
       terms: terms,
     );
+
+    final payload = <String, dynamic>{
+      'minStayMonths': minStay,
+      'revenueThresholdTsh': revenue,
+      'offerType': offerTypeLabels[selectedOfferType.value],
+      'terms': terms,
+    };
+    try {
+      final res = await _repository.createLoyaltyOffer(payload);
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201';
+      if (!ok) throw Exception(res.message ?? 'API error');
+    } catch (_) {
+      await _syncQueue.enqueue(
+        entityType: 'loyalty',
+        operation: 'create',
+        payloadJson: jsonEncode(payload),
+        dedupeKey: 'loyalty:create:$localId',
+      );
+      _syncWorker.runNow();
+    }
 
     showSuccessMessage('Loyalty offer saved offline');
   }

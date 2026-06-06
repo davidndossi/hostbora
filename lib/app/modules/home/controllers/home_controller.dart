@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:host_bora/app/core/values/text_styles.dart';
 
+import '../../../core/utils/booking_api_response.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
@@ -33,8 +35,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       Get.find<PropertyLocalDataSource>();
   final TenantLocalDataSource _bnbTenantLocal =
       Get.find<TenantLocalDataSource>();
-  final IncomeLocalDataSource _rentIncomeLocal =
-      Get.find<IncomeLocalDataSource>();
+  final IncomeLocalDataSource _incomeLocal = Get.find<IncomeLocalDataSource>();
   final PendingBookingsStore _pendingBookingsStore = PendingBookingsStore();
   late final BnbBookingPendingLoader _pendingBookingLoader =
       BnbBookingPendingLoader(
@@ -71,6 +72,39 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   final homeHasLoaded = false.obs;
 
+  /// Mon–Sun of the current calendar week (same as [RentSmartUtilityDashboardController]).
+  static const weeklyDayLabels = [
+    'MON',
+    'TUE',
+    'WED',
+    'THU',
+    'FRI',
+    'SAT',
+    'SUN',
+  ];
+
+  /// BnB income per day (TZS), indexed 0 = Monday … 6 = Sunday.
+  final weeklyRevenue = <double>[0, 0, 0, 0, 0, 0, 0].obs;
+
+  /// Daily occupancy % (0–100): occupied unit-nights ÷ available unit-nights.
+  final weeklyOccupancyPercent = <double>[0, 0, 0, 0, 0, 0, 0].obs;
+
+  final bnbBookingsCount = 0.obs;
+  final bnbGuestsCount = 0.obs;
+  final bnbTodayRevenue = 'TZS 0'.obs;
+  final bnbUnitsCount = 0.obs;
+  /// Average daily occupancy % for the current week (0–100).
+  final bnbOccupancyRate = 0.obs;
+
+  /// Total units across both BnB and Rent workspaces.
+  final totalUnitsCount = 0.obs;
+  /// % of rent units currently occupied by an active tenant.
+  final rentOccupancyRate = 0.obs;
+  /// Number of active rent tenants (lease not yet expired).
+  final rentTenantsCount = 0.obs;
+  /// % of expected monthly rent that has been collected this month.
+  final collectionRate = 0.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -85,7 +119,12 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       homeInitialLoading.value = true;
     }
     try {
-      await Future.wait([_loadOverview(), _loadBookingLists()]);
+      await Future.wait([
+        _loadOverview(),
+        _loadBookingLists(),
+        _loadBnbOverviewStats(),
+        _loadRentOverviewStats(),
+      ]);
     } catch (e) {
       if (e is Exception) {
         showErrorMessage(e.toString());
@@ -158,7 +197,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     double bnbLocalIncomeThisMonth = 0;
     double bnbLocalIncomePrevMonth = 0;
     try {
-      final incomeRows = await _rentIncomeLocal
+      final incomeRows = await _incomeLocal
           .getAllForBnbWorkspaceByPropertyRefJoin();
       for (final r in incomeRows) {
         if (r.workspaceType.trim().toLowerCase() != 'bnb') continue;
@@ -194,6 +233,209 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
             localPreviousBookings.toDouble(),
           );
     revenueChange.value = _formatMoMPercent(combinedMonthly, combinedPrev);
+  }
+
+  /// Monday 00:00 of the current calendar week (local).
+  static DateTime _currentWeekMondayStart() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+  }
+
+  static int _bnbUnitCountForProperty(PropertyRecord p) {
+    final raw = p.unitsJson.trim();
+    if (raw.isNotEmpty && raw != '[]') {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List && decoded.isNotEmpty) return decoded.length;
+      } catch (_) {}
+    }
+    if (p.units > 0) return p.units;
+    return 1;
+  }
+
+  static bool _isActiveBnbBooking(CheckInItem item) {
+    if (item.isInactive) return false;
+    final co = DateTime.tryParse(item.checkOutIso.trim());
+    if (co != null) {
+      final now = DateTime.now();
+      final end = DateTime(co.year, co.month, co.day);
+      final today = DateTime(now.year, now.month, now.day);
+      if (end.isBefore(today)) return false;
+    }
+    return true;
+  }
+
+  Future<void> _loadBnbOverviewStats() async {
+    final weekStart = _currentWeekMondayStart();
+    final merge = BnbBookingMerge(pending: _pendingBookingsStore);
+    final merged = <String, CheckInItem>{};
+    var unitsTotal = 0;
+
+    try {
+      final res = await _repository.getAllBookings();
+      if (BookingApiResponse.isSuccess(res.responseCode)) {
+        for (final m in BookingApiResponse.parseBookingsList(res.data)) {
+          final item = merge.fromApiMap(m);
+          if (item.isCancelled) continue;
+          merged[item.bookingKey] = item;
+        }
+      }
+    } catch (_) {}
+
+    try {
+      final properties = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: '',
+        workspaceType: 'bnb',
+      );
+      await mergePendingBnbBookings(
+        merge: merge,
+        merged: merged,
+        properties: properties,
+        loader: _pendingBookingLoader,
+      );
+
+      for (final p in properties) {
+        unitsTotal += _bnbUnitCountForProperty(p);
+      }
+      bnbUnitsCount.value = unitsTotal;
+    } catch (_) {
+      bnbUnitsCount.value = 0;
+      unitsTotal = 0;
+    }
+
+    final active = merged.values.where(_isActiveBnbBooking).toList();
+    bnbBookingsCount.value = active.length;
+
+    final guestKeys = <String>{};
+    for (final item in active) {
+      final name = item.guestName.trim().toLowerCase();
+      if (name.isNotEmpty) guestKeys.add(name);
+    }
+    bnbGuestsCount.value = guestKeys.length;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    var todaySum = 0.0;
+    var incomes = <IncomeRecord>[];
+    try {
+      incomes = await _incomeLocal.getAllNewestFirst(workspaceType: 'bnb');
+      for (final r in incomes) {
+        final d = r.paidLocalCalendarOrCreated();
+        if (!d.isBefore(today) && d.isBefore(tomorrow)) {
+          todaySum += r.amountValue;
+        }
+      }
+    } catch (_) {}
+    bnbTodayRevenue.value =
+        Get.find<CurrencyService>().formatBase(todaySum.round());
+
+    _assignWeeklyRevenue(incomes, weekStart);
+    _assignWeeklyOccupancy(merged.values, unitsTotal, weekStart);
+    final occ = weeklyOccupancyPercent;
+    if (occ.isEmpty) {
+      bnbOccupancyRate.value = 0;
+    } else {
+      bnbOccupancyRate.value =
+          (occ.fold<double>(0, (a, b) => a + b) / occ.length).round().clamp(0, 100);
+    }
+  }
+
+  Future<void> _loadRentOverviewStats() async {
+    try {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final monthStart = DateTime(now.year, now.month, 1);
+      final nextMonthStart = DateTime(now.year, now.month + 1, 1);
+
+      // ── Units: count across both workspaces ──────────────────────────────
+      final rentProperties = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: '',
+        workspaceType: 'rent',
+      );
+      var rentUnits = 0;
+      for (final p in rentProperties) {
+        rentUnits += _bnbUnitCountForProperty(p);
+      }
+      // Total = rent + BnB (already counted in _loadBnbOverviewStats)
+      // We re-count BnB here to avoid a race condition with the parallel call.
+      final bnbProperties = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: '',
+        workspaceType: 'bnb',
+      );
+      var bnbUnits = 0;
+      for (final p in bnbProperties) {
+        bnbUnits += _bnbUnitCountForProperty(p);
+      }
+      totalUnitsCount.value = rentUnits + bnbUnits;
+
+      // ── Rent tenants & occupancy ─────────────────────────────────────────
+      final allRentTenants = await _bnbTenantLocal
+          .getAllNewestFirstByWorkspace('rent');
+      final activeTenants = allRentTenants.where((t) {
+        final raw = t.leaseEndIso.trim();
+        if (raw.isEmpty) return true; // open-ended
+        final end = DateTime.tryParse(raw);
+        if (end == null) return true;
+        return !DateTime(end.year, end.month, end.day).isBefore(today);
+      }).toList();
+
+      rentTenantsCount.value = activeTenants.length;
+
+      // Occupancy: distinct occupied unit slots / total rent units
+      if (rentUnits > 0) {
+        final occupiedUnitIds = <String>{};
+        for (final t in activeTenants) {
+          final uid = t.apartmentUnitId.trim();
+          if (uid.isNotEmpty) {
+            occupiedUnitIds.add('${t.propertyRef}::$uid');
+          } else {
+            // Tenant without a unit ID still occupies one slot
+            occupiedUnitIds.add('${t.propertyRef}::tenant_${t.id}');
+          }
+        }
+        rentOccupancyRate.value =
+            ((occupiedUnitIds.length / rentUnits) * 100).round().clamp(0, 100);
+      } else {
+        rentOccupancyRate.value = 0;
+      }
+
+      // ── Collection rate ──────────────────────────────────────────────────
+      // Expected = sum of active tenants' rent amounts (stored as monthly-ish)
+      var expectedIncome = 0.0;
+      for (final t in activeTenants) {
+        expectedIncome += t.rentAmountValue;
+      }
+
+      // Collected = rent income recorded this calendar month
+      var collectedIncome = 0.0;
+      try {
+        final rentIncomes = await _incomeLocal.getAllNewestFirst(
+          workspaceType: 'rent',
+        );
+        for (final r in rentIncomes) {
+          final parsed = DateTime.tryParse(r.datePaidIso.trim());
+          if (parsed == null) continue;
+          final d = DateTime(parsed.year, parsed.month, parsed.day);
+          if (!d.isBefore(monthStart) && d.isBefore(nextMonthStart)) {
+            collectedIncome += r.amountValue;
+          }
+        }
+      } catch (_) {}
+
+      if (expectedIncome > 0) {
+        collectionRate.value =
+            ((collectedIncome / expectedIncome) * 100).round().clamp(0, 999);
+      } else {
+        collectionRate.value = 0;
+      }
+    } catch (_) {
+      totalUnitsCount.value = 0;
+      rentOccupancyRate.value = 0;
+      rentTenantsCount.value = 0;
+      collectionRate.value = 0;
+    }
   }
 
   /// True when [leaseStart]–[leaseEnd] overlaps half-open calendar month
@@ -399,6 +641,10 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void aiManager() => Get.toNamed(Routes.AI_MANAGER);
 
+  void openBookings() => Get.toNamed(Routes.ALL_BOOKINGS);
+
+  void openProperties() => Get.toNamed(Routes.MY_PROPERTIES);
+
   void aiInsights() =>
       Get.toNamed(Routes.AI_INSIGHTS, arguments: const {'source': 'insights'});
 
@@ -408,6 +654,56 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   );
 
   void documents() => Get.toNamed(Routes.PROPERTY_VAULT);
+
+  void openTodayRevenue() =>
+      Get.toNamed(Routes.RENT_MANAGE_PAYMENTS, arguments: {'ws': 'bnb'});
+
+  void _assignWeeklyRevenue(List<IncomeRecord> incomes, DateTime weekStart) {
+    final totals = List<double>.filled(7, 0);
+    for (final r in incomes) {
+      final d = r.paidLocalCalendarOrCreated();
+      final day = DateTime(d.year, d.month, d.day);
+      final diff = day.difference(weekStart).inDays;
+      if (diff >= 0 && diff < 7) totals[diff] += r.amountValue;
+    }
+    weeklyRevenue.assignAll(totals);
+  }
+
+  static bool _bookingOccupiesCalendarDay(CheckInItem item, DateTime day) {
+    if (item.isInactive) return false;
+    final ci = _parseCalendarDay(item.checkInIso);
+    final co = _parseCalendarDay(item.checkOutIso);
+    if (ci == null || co == null) return false;
+    return !day.isBefore(ci) && day.isBefore(co);
+  }
+
+  /// Occupancy per calendar day: for each Mon–Sun day,
+  /// `occupied / totalUnits * 100`, capped at 100.
+  ///
+  /// - **Available** unit-nights for a day = [totalUnits] (all BnB units).
+  /// - **Occupied** unit-nights = count of non-checked-out bookings whose stay
+  ///   overlaps that day on half-open `[checkIn, checkOut)` (checkout day excluded).
+  /// - Each booking counts as one unit (no per-booking unit count in [CheckInItem]).
+  void _assignWeeklyOccupancy(
+      Iterable<CheckInItem> bookings,
+      int totalUnits,
+      DateTime weekStart,
+      ) {
+    final pct = List<double>.filled(7, 0);
+    if (totalUnits <= 0) {
+      weeklyOccupancyPercent.assignAll(pct);
+      return;
+    }
+    for (var i = 0; i < 7; i++) {
+      final day = weekStart.add(Duration(days: i));
+      var occupied = 0;
+      for (final item in bookings) {
+        if (_bookingOccupiesCalendarDay(item, day)) occupied++;
+      }
+      pct[i] = ((occupied / totalUnits) * 100).clamp(0.0, 100.0);
+    }
+    weeklyOccupancyPercent.assignAll(pct);
+  }
 
   Future<void> addExpense() async {
     await _guardPropertyBeforeAction(

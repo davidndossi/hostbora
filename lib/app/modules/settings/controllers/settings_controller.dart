@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:get_storage/get_storage.dart';
+
 import '../../../data/local/db/app_local_database.dart';
-import '../../../data/local/draft_listing_store.dart';
-import '../../../data/local/pending_bookings_store.dart';
-import '../../../data/local/pending_expenses_store.dart';
-import '../../../data/local/pending_listings_store.dart';
-import '../../../data/local/pending_payments_store.dart';
+import '../../all_bookings/controllers/all_bookings_controller.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../financial_overview/controllers/financial_overview_controller.dart';
+import '../../home/controllers/home_controller.dart';
+import '../../host_calendar/controllers/host_calendar_controller.dart';
+import '../../listing_details/controllers/listing_details_controller.dart';
+import '../../rent/expected_payment_schedule/controllers/rent_expected_payment_schedule_controller.dart';
+import '../../rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart';
+import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 import '../../../data/local/service/tenant_lease_reminder_service.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
@@ -288,14 +294,15 @@ class SettingsController extends BaseController {
         .replaceAll('{remainingBalance}', '300000');
   }
 
-  /// Clears SQLite (all tables) and offline GetStorage queues. Login session is kept.
+  /// Clears all SQLite tables and every GetStorage key on this device.
+  /// The login session (token/user) is preserved.
   Future<void> promptClearOfflineLocalData() async {
     final isSw = Get.locale?.languageCode == 'sw';
-    final title = isSw ? 'Futa data ya ndani?' : 'Clear offline data?';
+    final title = isSw ? 'Futa data yote ya ndani?' : 'Clear all offline data?';
     final body = isSw
-        ? 'Hii inafuta mali, mapato, matumizi, wapangaji, foleni za usawazishi, na miruko ya orodha/alipayo iliyohifadhiwa kwenye simu. Huwezi kurudisha.'
-        : 'This removes all properties, income, expenses, tenants, sync queues, and offline listing/booking/expense queues stored on this device. This cannot be undone.';
-    final confirmLabel = isSw ? 'Futa' : 'Erase';
+        ? 'Hii inafuta mali, mapato, matumizi, wapangaji, foleni za usawazishi, hati za vault, historia ya wageni, kumbukumbu za noti, na data yote iliyohifadhiwa kwenye simu. Huwezi kurudisha.'
+        : 'This permanently removes all properties, income, expenses, tenants, sync queues, vault documents, guest history, booking overrides, moodboards, entry logs, access codes, and all other offline data stored on this device. This cannot be undone.';
+    final confirmLabel = isSw ? 'Futa Yote' : 'Erase All';
     final cancelLabel = isSw ? 'Ghairi' : 'Cancel';
 
     final ok = await Get.dialog<bool>(
@@ -308,6 +315,9 @@ class SettingsController extends BaseController {
             child: Text(cancelLabel, style: TextStyle(fontSize: 16)),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Get.theme.colorScheme.error,
+            ),
             onPressed: () => Get.back(result: true),
             child: Text(confirmLabel, style: TextStyle(fontSize: 16)),
           ),
@@ -319,19 +329,44 @@ class SettingsController extends BaseController {
 
     await runBusy(() async {
       try {
+        // 1. Wipe all SQLite tables (properties, income, expenses, tenants,
+        //    staff, sync queue, maintenance, loyalty, estimates, exchange rates…).
         await AppLocalDatabase.deleteAllRows();
-        await PendingBookingsStore().save([]);
-        await PendingPaymentsStore().save([]);
-        await PendingExpensesStore().save([]);
-        await PendingListingsStore().save([]);
-        await DraftListingStore().clear();
+
+        // 2. Wipe every GetStorage key (pending queues, vault docs/dirs,
+        //    entry logs, booking overrides, moodboards, access codes, ledger
+        //    docs, recent access, draft listings, etc.).
+        //    Note: login credentials live in FlutterSecureStorage (PreferenceManager)
+        //    and are NOT affected by GetStorage().erase().
+        await GetStorage().erase();
+
+        // 3. Reload every live controller so their Rx observables reflect
+        //    the now-empty database immediately (no stale values on screen).
+        await _refreshAllRegisteredControllers();
+
         showSuccessWithHaptic(
-          isSw ? 'Data ya ndani imefutwa.' : 'Offline data cleared.',
+          isSw ? 'Data yote ya ndani imefutwa.' : 'All offline data cleared.',
         );
       } catch (e) {
         showErrorMessage(e.toString());
       }
     });
+  }
+
+  /// Calls refreshIfRegistered() on every controller that holds cached data,
+  /// so the UI reflects the empty database straight away.
+  static Future<void> _refreshAllRegisteredControllers() async {
+    await Future.wait([
+      HomeController.refreshIfRegistered(),
+      DashboardController.refreshIfRegistered(),
+      AllBookingsController.refreshIfRegistered(),
+      HostCalendarController.refreshIfRegistered(),
+      FinancialOverviewController.refreshIfRegistered(),
+      ListingDetailsController.refreshIfRegistered(),
+      RentTenantLedgerOccupancyController.refreshIfRegistered(),
+      RentTenantResidencyPaymentTrackerController.refreshIfRegistered(),
+      RentExpectedPaymentScheduleController.refreshIfRegistered(),
+    ]);
   }
 
   Future<void> runLeaseReminderNow() async {

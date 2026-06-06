@@ -4,7 +4,6 @@ part of 'app_pages.dart';
 abstract class Routes {
   Routes._();
 
-  static const REGISTRATION = _Paths.REGISTRATION;
   static const AUTH = _Paths.AUTH;
   static const OTP = _Paths.OTP;
   static const MAIN = _Paths.MAIN;
@@ -55,6 +54,8 @@ abstract class Routes {
   static const PROPERTY_VAULT = _Paths.PROPERTY_VAULT;
   static const DOCUMENT_SCANNER = _Paths.DOCUMENT_SCANNER;
   static const REFINE_SCAN = _Paths.REFINE_SCAN;
+  static const ADD_DOCUMENT = _Paths.ADD_DOCUMENT;
+  static const GUEST_HISTORY = _Paths.GUEST_HISTORY;
   static const SMART_ACCESS = _Paths.SMART_ACCESS;
   static const GUEST_ACCESS_CODES = _Paths.GUEST_ACCESS_CODES;
   static const MAINTENANCE_TASKS = _Paths.MAINTENANCE_TASKS;
@@ -75,19 +76,12 @@ abstract class Routes {
   static const PRICE_ANALYSIS = _Paths.PRICE_ANALYSIS;
   static const AI_PRICING_OPTIMIZER = _Paths.AI_PRICING_OPTIMIZER;
   static const RENT_HUB = _Paths.RENT_HUB;
-  static const RENT_HOST_CALENDAR = _Paths.RENT_HOST_CALENDAR;
   static const RENT_HOST_DASHBOARD_PAYMENT_ALERTS = _Paths.RENT_HOST_DASHBOARD_PAYMENT_ALERTS;
   static const RENT_PROFIT_ANALYSIS_DASHBOARD = _Paths.RENT_PROFIT_ANALYSIS_DASHBOARD;
-  static const RENT_ADD_PROPERTY_EXPENSE = _Paths.RENT_ADD_PROPERTY_EXPENSE;
-  static const RENT_FOLDER_LABEL_MANAGEMENT = _Paths.RENT_FOLDER_LABEL_MANAGEMENT;
-  static const RENT_MY_LISTINGS_MAINTENANCE = _Paths.RENT_MY_LISTINGS_MAINTENANCE;
   static const RENT_LISTING_ANALYTICS_DASHBOARD = _Paths.RENT_LISTING_ANALYTICS_DASHBOARD;
-  static const RENT_ADD_TENANT_FORM = _Paths.RENT_ADD_TENANT_FORM;
-  static const RENT_ADD_INCOME_FORM = _Paths.RENT_ADD_INCOME_FORM;
   static const RENT_MANAGE_PAYMENTS = _Paths.RENT_MANAGE_PAYMENTS;
   static const RENT_EXPECTED_PAYMENT_SCHEDULE = _Paths.RENT_EXPECTED_PAYMENT_SCHEDULE;
   static const RENT_MANAGE_EXPENSES = _Paths.RENT_MANAGE_EXPENSES;
-  static const RENT_ADD_NEW_EXPENSE = _Paths.RENT_ADD_NEW_EXPENSE;
   static const RENT_MONTHLY_PL_SUMMARY = _Paths.RENT_MONTHLY_PL_SUMMARY;
   static const RENT_STAFF_PAYROLL_DETAILS = _Paths.RENT_STAFF_PAYROLL_DETAILS;
   static const RENT_LEASE_RENEWAL_FORM = _Paths.RENT_LEASE_RENEWAL_FORM;
@@ -105,24 +99,18 @@ abstract class Routes {
   static const RENT_TENANT_LEDGER_OCCUPANCY = _Paths.RENT_TENANT_LEDGER_OCCUPANCY;
   static const RENT_SCHEDULE_PAYMENT_REMINDER = _Paths.RENT_SCHEDULE_PAYMENT_REMINDER;
   static const RENT_DEFINE_LOYALTY_OFFERS = _Paths.RENT_DEFINE_LOYALTY_OFFERS;
-  static const RENT_DEFINE_ACTIVE_LOYALTY = _Paths.RENT_DEFINE_ACTIVE_LOYALTY;
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = _Paths.RENT_ACTIVE_LOYALTY_PROGRAMS;
   static const RENT_SMART_UTILITY_DASHBOARD = _Paths.RENT_SMART_UTILITY_DASHBOARD;
   static const RENT_UTILITY_USAGE_GRAPH = _Paths.RENT_UTILITY_USAGE_GRAPH;
-  static const RENT_NOTIFICATION_CENTER_MARK_ALL = _Paths.RENT_NOTIFICATION_CENTER_MARK_ALL;
-  static const RENT_NO_NOTIFICATIONS_EMPTY = _Paths.RENT_NO_NOTIFICATIONS_EMPTY;
   static const RENT_CONCIERGE_INBOX = _Paths.RENT_CONCIERGE_INBOX;
   static const RENT_LOYALTY_THRESHOLDS = _Paths.RENT_LOYALTY_THRESHOLDS;
   static const RENT_ESTATE_MANAGER_DASHBOARD = _Paths.RENT_ESTATE_MANAGER_DASHBOARD;
-  static const RENT_ADD_NEW_LISTING = _Paths.RENT_ADD_NEW_LISTING;
-  static const RENT_LISTING_DETAILS = _Paths.RENT_LISTING_DETAILS;
   static const RENT_LISTING_ACTIVITY_LOG = _Paths.RENT_LISTING_ACTIVITY_LOG;
   static const RENT_PROPERTY_ROI_ESTIMATE_FORM = _Paths.RENT_PROPERTY_ROI_ESTIMATE_FORM;
   static const RENT_WHATSAPP_TEMPLATE_BUILDER = _Paths.RENT_WHATSAPP_TEMPLATE_BUILDER;
 }
 
 abstract class _Paths {
-  static const REGISTRATION = '/registration';
   static const AUTH = '/auth';
   static const OTP = '/otp';
   static const MAIN = '/main';
@@ -173,6 +161,8 @@ abstract class _Paths {
   static const PROPERTY_VAULT = '/property-vault';
   static const DOCUMENT_SCANNER = '/document-scanner';
   static const REFINE_SCAN = '/refine-scan';
+  static const ADD_DOCUMENT = '/add-document';
+  static const GUEST_HISTORY = '/guest-history';
   static const SMART_ACCESS = '/smart-access';
   static const GUEST_ACCESS_CODES = '/guest-access-codes';
   static const MAINTENANCE_TASKS = '/maintenance-tasks';
@@ -193,19 +183,12 @@ abstract class _Paths {
   static const PRICE_ANALYSIS = '/price-analysis';
   static const AI_PRICING_OPTIMIZER = '/ai-pricing-optimizer';
   static const RENT_HUB = '/rent';
-  static const RENT_HOST_CALENDAR = '/rent/host-calendar';
   static const RENT_HOST_DASHBOARD_PAYMENT_ALERTS = '/rent/host-dashboard-payment-alerts';
   static const RENT_PROFIT_ANALYSIS_DASHBOARD = '/rent/profit-analysis-dashboard';
-  static const RENT_ADD_PROPERTY_EXPENSE = '/rent/add-property-expense';
-  static const RENT_FOLDER_LABEL_MANAGEMENT = '/rent/folder-label-management';
-  static const RENT_MY_LISTINGS_MAINTENANCE = '/rent/my-listings-maintenance';
   static const RENT_LISTING_ANALYTICS_DASHBOARD = '/rent/listing-analytics-dashboard';
-  static const RENT_ADD_TENANT_FORM = '/rent/add-tenant-form';
-  static const RENT_ADD_INCOME_FORM = '/rent/add-income-form';
   static const RENT_MANAGE_PAYMENTS = '/rent/manage-payments';
   static const RENT_EXPECTED_PAYMENT_SCHEDULE = '/rent/expected-payment-schedule';
   static const RENT_MANAGE_EXPENSES = '/rent/manage-expenses';
-  static const RENT_ADD_NEW_EXPENSE = '/rent/add-new-expense';
   static const RENT_MONTHLY_PL_SUMMARY = '/rent/monthly-pl-summary';
   static const RENT_STAFF_PAYROLL_DETAILS = '/rent/staff-payroll-details';
   static const RENT_LEASE_RENEWAL_FORM = '/rent/lease-renewal-form';
@@ -221,17 +204,12 @@ abstract class _Paths {
   static const RENT_TENANT_LEDGER_OCCUPANCY = '/rent/tenant-ledger-occupancy';
   static const RENT_SCHEDULE_PAYMENT_REMINDER = '/rent/schedule-payment-reminder';
   static const RENT_DEFINE_LOYALTY_OFFERS = '/rent/define-loyalty-offers';
-  static const RENT_DEFINE_ACTIVE_LOYALTY = '/rent/define-active-loyalty';
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = '/rent/active-loyalty-programs';
   static const RENT_SMART_UTILITY_DASHBOARD = '/rent/smart-utility-dashboard';
   static const RENT_UTILITY_USAGE_GRAPH = '/rent/utility-usage-graph';
-  static const RENT_NOTIFICATION_CENTER_MARK_ALL = '/rent/notification-center-mark-all';
-  static const RENT_NO_NOTIFICATIONS_EMPTY = '/rent/no-notifications-empty';
   static const RENT_CONCIERGE_INBOX = '/rent/concierge-inbox';
   static const RENT_LOYALTY_THRESHOLDS = '/rent/loyalty-thresholds';
   static const RENT_ESTATE_MANAGER_DASHBOARD = '/rent/estate-manager-dashboard';
-  static const RENT_ADD_NEW_LISTING = '/rent/add-new-listing';
-  static const RENT_LISTING_DETAILS = '/rent/listing-details';
   static const RENT_LISTING_ACTIVITY_LOG = '/rent/listing-activity-log';
   static const RENT_PROPERTY_ROI_ESTIMATE_FORM = '/rent/property-roi-estimate-form';
   static const RENT_WHATSAPP_TEMPLATE_BUILDER = '/rent/whatsapp-template-builder';

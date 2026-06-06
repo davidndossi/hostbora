@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_tenant_charge_local_data_source.dart';
+import '../../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../../data/repository/app_repository.dart';
 
 class TenantChargeEntry {
   TenantChargeEntry({
@@ -32,9 +37,15 @@ class TenantChargeEntry {
 
 class RentDefineTenantChargesController extends BaseController {
   RentDefineTenantChargesController()
-      : _local = Get.find<RentTenantChargeLocalDataSource>();
+      : _local = Get.find<RentTenantChargeLocalDataSource>(),
+        _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final RentTenantChargeLocalDataSource _local;
+  final AppRepository _repository;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
   final amountController = TextEditingController();
   final descriptionController = TextEditingController();
   final formKey = GlobalKey<FormState>();
@@ -86,12 +97,34 @@ class RentDefineTenantChargesController extends BaseController {
       return;
     }
 
-    await _local.insert(
+    final localId = await _local.insert(
       propertyLabel: selectedPropertyTitle.value,
       chargeType: selectedChargeType.value,
       amountTsh: amount,
       description: desc,
     );
+
+    final payload = <String, dynamic>{
+      'propertyLabel': selectedPropertyTitle.value,
+      'chargeType': selectedChargeType.value,
+      'amountTsh': amount,
+      'description': desc,
+    };
+    try {
+      final res = await _repository.createTenantCharge(payload);
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201';
+      if (!ok) throw Exception(res.message ?? 'API error');
+    } catch (_) {
+      await _syncQueue.enqueue(
+        entityType: 'tenant_charge',
+        operation: 'create',
+        payloadJson: jsonEncode(payload),
+        dedupeKey: 'tenant_charge:create:$localId',
+      );
+      _syncWorker.runNow();
+    }
 
     charges.add(
       TenantChargeEntry(

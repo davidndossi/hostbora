@@ -1,19 +1,27 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/db/rent_staff_local_data_source.dart';
+import '../../../data/model/add_task_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../maintenance_tasks/model/maintenance_task.dart';
 
 class TaskDetailController extends BaseController {
   TaskDetailController()
-      : _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+      : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _staffLocal = Get.find<RentStaffLocalDataSource>();
 
   final AppRepository _repository;
+  final RentStaffLocalDataSource _staffLocal;
 
   final task = Rxn<MaintenanceTask>();
   final loading = false.obs;
   final loadError = RxnString();
+
+  /// Staff names loaded from local DB for the assign sheet.
+  final staffNames = <String>[].obs;
+  final assigningStaff = false.obs;
 
   @override
   void onInit() {
@@ -22,6 +30,51 @@ class TaskDetailController extends BaseController {
     if (args is Map) {
       task.value =
           MaintenanceTask.fromArguments(Map<String, dynamic>.from(args));
+    }
+    _loadStaff();
+  }
+
+  Future<void> _loadStaff() async {
+    try {
+      final rows = await _staffLocal.getAllNewestFirst();
+      final names = rows
+          .map((r) => r.name.trim())
+          .where((n) => n.isNotEmpty)
+          .toSet()
+          .toList();
+      staffNames.assignAll(names);
+    } catch (_) {
+      staffNames.clear();
+    }
+  }
+
+  Future<void> assignStaff(String name) async {
+    final t = task.value;
+    if (t == null || name.trim().isEmpty) return;
+    assigningStaff.value = true;
+    try {
+      final request = AddTaskRequest(
+        title: t.title,
+        description: t.description.trim().isEmpty ? null : t.description.trim(),
+        assignee: name.trim(),
+      );
+      final res = await _repository.updateTask(t.id, request);
+      if (res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201') {
+        task.value = t.copyWith(assignee: name.trim());
+        showSuccessMessage('Assigned to $name');
+      } else {
+        // Optimistic local update even if API fails
+        task.value = t.copyWith(assignee: name.trim());
+        showSuccessMessage('Assigned locally');
+      }
+    } catch (_) {
+      final t2 = task.value;
+      if (t2 != null) task.value = t2.copyWith(assignee: name.trim());
+      showSuccessMessage('Assigned locally');
+    } finally {
+      assigningStaff.value = false;
     }
   }
 

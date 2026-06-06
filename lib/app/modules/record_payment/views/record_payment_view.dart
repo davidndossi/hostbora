@@ -10,11 +10,7 @@ import '../../../core/widget/loading_button.dart';
 import '../controllers/record_payment_controller.dart';
 
 class RecordPaymentView extends BaseView<RecordPaymentController> {
-  RecordPaymentView({
-    super.key,
-    this.sheetMode = false,
-    this.scrollController,
-  });
+  RecordPaymentView({super.key, this.sheetMode = false, this.scrollController});
 
   final bool sheetMode;
   final ScrollController? scrollController;
@@ -28,7 +24,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   PreferredSizeWidget? appBar(BuildContext context) {
     if (sheetMode) return null;
     return CustomAppBar(
-      appBarTitleText: appLocalization.transaction,
+      appBarTitleText: appLocalization.addPayment,
       isCentered: true,
     );
   }
@@ -54,51 +50,58 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isSw ? 'Rekodi malipo kwa mjengo huu' : 'Record a payment for this property',
+              _isSw
+                  ? 'Rekodi malipo kwa mjengo huu'
+                  : 'Record a payment for this property',
               style: TextStyle(fontSize: 18, color: headlineColor, height: 1.3),
             ),
             const SizedBox(height: 22),
             _label(_isSw ? 'CHAGUA MJENGO' : 'SELECT PROPERTY', colors: c),
-            Obx(
-              () {
-                final hasProperties = controller.hasProperties;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
-                          ? controller.selectedProperty.value
-                          : null,
-                      isExpanded: true,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: dropdownText,
-                      ),
-                      dropdownColor: c.dropdownBg,
-                      icon: Icon(Icons.expand_more_rounded, color: chevronColor),
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: _isSw ? 'Chagua mjengo' : 'Choose property',
-                        hintStyle: TextStyle(color: hintMuted, fontSize: 16),
-                      ),
-                      validator: controller.validateSelectedProperty,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      items: controller.propertyDropdownMenuItems(dropdownText),
-                      onChanged: hasProperties ? controller.updateSelectedProperty : null,
+            Obx(() {
+              final hasProperties = controller.hasProperties;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue:
+                        controller.propertyOptions.contains(
+                          controller.selectedProperty.value,
+                        )
+                        ? controller.selectedProperty.value
+                        : null,
+                    isExpanded: true,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: dropdownText,
                     ),
-                    if (!hasProperties)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6, left: 2),
-                        child: Text(
-                          _isSw ? 'Bado hakuna mjengo - ongeza mjengo kwanza.' : 'No properties yet - add property first.',
-                          style: TextStyle(fontSize: 12, color: hintMuted),
-                        ),
+                    dropdownColor: c.dropdownBg,
+                    icon: Icon(Icons.expand_more_rounded, color: chevronColor),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: _isSw ? 'Chagua mjengo' : 'Choose property',
+                      hintStyle: TextStyle(color: hintMuted, fontSize: 16),
+                    ),
+                    validator: controller.validateSelectedProperty,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    items: controller.propertyDropdownMenuItems(dropdownText),
+                    onChanged: hasProperties
+                        ? controller.updateSelectedProperty
+                        : null,
+                  ),
+                  if (!hasProperties)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, left: 2),
+                      child: Text(
+                        _isSw
+                            ? 'Bado hakuna mjengo - ongeza mjengo kwanza.'
+                            : 'No properties yet - add property first.',
+                        style: TextStyle(fontSize: 12, color: hintMuted),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            }),
             Obx(() {
               if (!controller.showIncomeUnitPicker) {
                 return const SizedBox.shrink();
@@ -114,7 +117,10 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-                  _label(_isSw ? 'KITENGO (HIARI)' : 'UNIT (OPTIONAL)', colors: c),
+                  _label(
+                    _isSw ? 'KITENGO (HIARI)' : 'UNIT (OPTIONAL)',
+                    colors: c,
+                  ),
                   DropdownButtonFormField<String?>(
                     initialValue: value,
                     isExpanded: true,
@@ -146,7 +152,8 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               if (!controller.hasProperties) return const SizedBox.shrink();
               final options = controller.bookingOptions;
               final sel = controller.selectedBookingKey.value;
-              final valid = sel != null && options.any((o) => o.bookingKey == sel);
+              final valid =
+                  sel != null && options.any((o) => o.bookingKey == sel);
               final value = valid ? sel : null;
 
               return Column(
@@ -180,7 +187,10 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                         color: dropdownText,
                       ),
                       dropdownColor: c.dropdownBg,
-                      icon: Icon(Icons.expand_more_rounded, color: chevronColor),
+                      icon: Icon(
+                        Icons.expand_more_rounded,
+                        color: chevronColor,
+                      ),
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: appLocalization.chooseBooking,
@@ -189,7 +199,8 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                       items: controller.bookingDropdownMenuItems(
                         itemColor: dropdownText,
                         hintColor: hintMuted,
-                        optionalNoBookingLabel: appLocalization.optionalNoBooking,
+                        optionalNoBookingLabel:
+                            appLocalization.optionalNoBooking,
                       ),
                       onChanged: controller.updateSelectedBooking,
                     ),
@@ -203,13 +214,18 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: _field(
-                    c,
-                    controller.amountController,
-                    hint: '0.00',
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    validator: controller.validateAmount,
-                    inputFormatters: [controller.amountThousandsFormatter],
+                  child: Obx(
+                    () => _field(
+                      c,
+                      controller.amountController,
+                      hint: '0.00',
+                      prefixText: '${controller.selectedCurrency.value} ',
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: controller.validateAmount,
+                      inputFormatters: [controller.amountThousandsFormatter],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -235,12 +251,12 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
             const SizedBox(height: 16),
             _label(_isSw ? 'KATEGORIA' : 'CATEGORY', colors: c),
             Obx(
-                  () => Wrap(
+              () => Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: List.generate(
                   controller.categories.length,
-                      (i) => _CategoryChip(
+                  (i) => _CategoryChip(
                     colors: c,
                     label: controller.categories[i],
                     selected: controller.selectedCategoryIndex.value == i,
@@ -254,7 +270,9 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
             _field(
               c,
               controller.notesController,
-              hint: _isSw ? 'Ongeza maelezo yoyote kuhusu muamala huu...' : 'Add any specific details regarding this transaction...',
+              hint: _isSw
+                  ? 'Ongeza maelezo yoyote kuhusu muamala huu...'
+                  : 'Add any specific details regarding this transaction...',
               minHeight: 120,
               isMultiline: true,
             ),
@@ -277,7 +295,9 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _isSw ? 'Athari kwa Utendaji' : 'Impact on Performance',
+                          _isSw
+                              ? 'Athari kwa Utendaji'
+                              : 'Impact on Performance',
                           style: TextStyle(
                             color: c.headline,
                             fontSize: 16,
@@ -317,7 +337,10 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                 onTap: () => Get.back(),
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   child: Text(
                     _isSw ? 'Ghairi' : 'Cancel',
                     style: TextStyle(
@@ -491,18 +514,19 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   );
 
   Widget _field(
-      FormSurfaceColors colors,
-      TextEditingController fieldController, {
-        required String hint,
-        IconData? suffix,
-        bool isMultiline = false,
-        double minHeight = 48,
-        TextInputType? keyboardType,
-        String? Function(String?)? validator,
-        List<TextInputFormatter>? inputFormatters,
-        bool readOnly = false,
-        VoidCallback? onTap,
-      }) {
+    FormSurfaceColors colors,
+    TextEditingController fieldController, {
+    required String hint,
+    IconData? suffix,
+    bool isMultiline = false,
+    double minHeight = 48,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    String prefixText = '',
+  }) {
     final hintStyle = TextStyle(
       fontSize: 14,
       color: colors.hint,
@@ -538,16 +562,18 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
           border: InputBorder.none,
           hintText: hint,
           hintStyle: hintStyle,
+          prefixText: prefixText.isEmpty ? null : prefixText,
+          prefixStyle: TextStyle(
+            fontSize: 14,
+            color: colors.secondary,
+            fontWeight: FontWeight.w700,
+          ),
           suffixIcon: suffix == null
               ? null
               : Padding(
-            padding: EdgeInsets.only(left: 8, top: isMultiline ? 12 : 0),
-            child: Icon(
-              suffix,
-              size: 20,
-              color: colors.secondary,
-            ),
-          ),
+                  padding: EdgeInsets.only(left: 8, top: isMultiline ? 12 : 0),
+                  child: Icon(suffix, size: 20, color: colors.secondary),
+                ),
           suffixIconConstraints: BoxConstraints(
             minWidth: suffix != null ? 40 : 0,
             minHeight: suffix != null ? (isMultiline ? 52 : 40) : 0,
@@ -760,8 +786,11 @@ class _ImpactIcon extends StatelessWidget {
         color: const Color(0xFFA34E2E),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Icon(Icons.account_balance_wallet_outlined,
-          color: Colors.white, size: 19),
+      child: const Icon(
+        Icons.account_balance_wallet_outlined,
+        color: Colors.white,
+        size: 19,
+      ),
     );
   }
 }

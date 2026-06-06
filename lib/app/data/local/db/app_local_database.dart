@@ -67,10 +67,12 @@ class AppLocalDatabase {
         await _ensureUtilityTopupPropertyRefColumn(db);
         await _ensurePropertiesFloorCountColumn(db);
         await _ensurePropertiesCoverPhotoPathColumn(db);
+        await _ensurePropertyUnitOperationModeColumn(db);
         await _ensureIncomeBookingIdColumn(db);
         await _ensureCurrencyColumns(db);
         await _ensureExchangeRatesTable(db);
         await _ensureScheduledWhatsappTable(db);
+        await _ensureScheduledMaintenanceWorkspaceTypeColumn(db);
       },
     );
     return _db!;
@@ -113,6 +115,7 @@ class AppLocalDatabase {
         max_guests INTEGER NOT NULL DEFAULT 0,
         rooms INTEGER NOT NULL DEFAULT 0,
         floor INTEGER NOT NULL DEFAULT 0,
+        operation_mode TEXT NOT NULL DEFAULT 'bnb',
         notes TEXT NOT NULL DEFAULT '',
         created_at_ms INTEGER NOT NULL
       )
@@ -210,6 +213,7 @@ class AppLocalDatabase {
         property_label TEXT NOT NULL,
         property_ref TEXT NOT NULL DEFAULT '',
         apartment_unit_id TEXT NOT NULL DEFAULT '',
+        workspace_type TEXT NOT NULL DEFAULT 'rent',
         category TEXT NOT NULL,
         description TEXT NOT NULL,
         scheduled_date_iso TEXT NOT NULL,
@@ -398,7 +402,11 @@ class AppLocalDatabase {
     );
   }
 
-  static Future<void> _migrate(Database db, int oldVersion, int newVersion) async {
+  static Future<void> _migrate(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     if (oldVersion < 3) {
       await _ensureWorkspaceTypeColumns(db);
     }
@@ -538,13 +546,25 @@ class AppLocalDatabase {
     await _addColumnIfMissing(db, incomeTable, 'workspace_type', colDef);
     await _addColumnIfMissing(db, expenseTable, 'workspace_type', colDef);
 
-    final hadPmWorkspace =
-        await _columnExists(db, propertyMembersTable, 'workspace_type');
-    await _addColumnIfMissing(db, propertyMembersTable, 'workspace_type', colDef);
+    final hadPmWorkspace = await _columnExists(
+      db,
+      propertyMembersTable,
+      'workspace_type',
+    );
+    await _addColumnIfMissing(
+      db,
+      propertyMembersTable,
+      'workspace_type',
+      colDef,
+    );
     if (!hadPmWorkspace &&
         await _columnExists(db, propertyMembersTable, 'workspace_type')) {
-      await db.execute('DROP INDEX IF EXISTS idx_${propertyMembersTable}_unique');
-      await db.execute('DROP INDEX IF EXISTS idx_${propertyMembersTable}_workspace_user');
+      await db.execute(
+        'DROP INDEX IF EXISTS idx_${propertyMembersTable}_unique',
+      );
+      await db.execute(
+        'DROP INDEX IF EXISTS idx_${propertyMembersTable}_workspace_user',
+      );
       await db.execute(
         'CREATE UNIQUE INDEX idx_${propertyMembersTable}_unique ON $propertyMembersTable(property_ref, user_id, workspace_type)',
       );
@@ -575,6 +595,28 @@ class AppLocalDatabase {
     ''');
   }
 
+  static Future<void> _ensurePropertyUnitOperationModeColumn(
+    Database db,
+  ) async {
+    await _addColumnIfMissing(
+      db,
+      propertyUnitsTable,
+      'operation_mode',
+      "TEXT NOT NULL DEFAULT 'bnb'",
+    );
+  }
+
+  static Future<void> _ensureScheduledMaintenanceWorkspaceTypeColumn(
+    Database db,
+  ) async {
+    await _addColumnIfMissing(
+      db,
+      scheduledMaintenanceTable,
+      'workspace_type',
+      "TEXT NOT NULL DEFAULT 'rent'",
+    );
+  }
+
   static Future<bool> _tableExists(Database db, String table) async {
     final rows = await db.rawQuery(
       'SELECT 1 FROM sqlite_master WHERE type = ? AND name = ? LIMIT 1',
@@ -583,7 +625,11 @@ class AppLocalDatabase {
     return rows.isNotEmpty;
   }
 
-  static Future<bool> _columnExists(Database db, String table, String column) async {
+  static Future<bool> _columnExists(
+    Database db,
+    String table,
+    String column,
+  ) async {
     if (!await _tableExists(db, table)) return false;
     final rows = await db.rawQuery('PRAGMA table_info($table)');
     return rows.any((r) => r['name'] == column);
@@ -597,7 +643,9 @@ class AppLocalDatabase {
   ) async {
     if (!await _tableExists(db, table)) return;
     if (await _columnExists(db, table, column)) return;
-    await db.execute('ALTER TABLE $table ADD COLUMN $column $sqlTypeAndConstraints');
+    await db.execute(
+      'ALTER TABLE $table ADD COLUMN $column $sqlTypeAndConstraints',
+    );
   }
 
   /// Closes the singleton handle (if any) and deletes the DB file from disk.
@@ -632,6 +680,7 @@ class AppLocalDatabase {
     staffTable,
     propertyUnitsTable,
     propertiesTable,
+    exchangeRatesTable,
   ];
 
   /// Deletes every row from all local tables (schema and DB user version unchanged).
@@ -671,7 +720,11 @@ class AppLocalDatabase {
       await txn.delete(rentPropertyEstimateTable);
       await txn.delete(rentUtilityTopupTable);
       await txn.delete(rentWhatsappTemplateTable);
-      await txn.delete(propertyMembersTable, where: 'workspace_type = ?', whereArgs: ['rent']);
+      await txn.delete(
+        propertyMembersTable,
+        where: 'workspace_type = ?',
+        whereArgs: ['rent'],
+      );
       await txn.delete(offlineSyncQueueTable);
     });
   }
@@ -694,7 +747,11 @@ class AppLocalDatabase {
             "lower(trim(coalesce(nullif(trim(workspace_type), ''), 'rent'))) = ?",
         whereArgs: ['bnb'],
       );
-      await txn.delete(propertyMembersTable, where: 'workspace_type = ?', whereArgs: ['bnb']);
+      await txn.delete(
+        propertyMembersTable,
+        where: 'workspace_type = ?',
+        whereArgs: ['bnb'],
+      );
     });
   }
 }

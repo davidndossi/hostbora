@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -12,10 +14,14 @@ class CurrencyService extends GetxService {
     PreferenceManager? preferenceManager,
     ExchangeRateLocalDataSource? exchangeRateLocal,
     AppRepository? repository,
-  })  : _preferenceManager = preferenceManager ??
-            Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
-        _exchangeRateLocal = exchangeRateLocal ?? Get.find<ExchangeRateLocalDataSource>(),
-        _repository = repository ?? Get.find<AppRepository>(tag: (AppRepository).toString());
+  }) : _preferenceManager =
+           preferenceManager ??
+           Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
+       _exchangeRateLocal =
+           exchangeRateLocal ?? Get.find<ExchangeRateLocalDataSource>(),
+       _repository =
+           repository ??
+           Get.find<AppRepository>(tag: (AppRepository).toString());
 
   static const defaultBaseCurrency = 'TZS';
 
@@ -32,8 +38,11 @@ class CurrencyService extends GetxService {
       PreferenceManager.keyBaseCurrency,
       defaultValue: defaultBaseCurrency,
     );
-    baseCurrency.value = saved.trim().isEmpty ? defaultBaseCurrency : saved.trim().toUpperCase();
+    baseCurrency.value = saved.trim().isEmpty
+        ? defaultBaseCurrency
+        : saved.trim().toUpperCase();
     await _loadRatesFromLocal();
+    unawaited(refreshRatesFromRemote());
     return this;
   }
 
@@ -46,10 +55,7 @@ class CurrencyService extends GetxService {
     final codes = list.map((e) => e.currency).toSet();
     final base = baseCurrency.value;
     if (!codes.contains(base)) {
-      return [
-        ExchangeRate(currency: base, buying: 1, selling: 1),
-        ...list,
-      ];
+      return [ExchangeRate(currency: base, buying: 1, selling: 1), ...list];
     }
     return list;
   }

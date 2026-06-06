@@ -821,4 +821,227 @@ class RemoteDataSourceImpl extends BaseRemoteSource
       rethrow;
     }
   }
+
+  @override
+  Future<GeneralResponse> createTenant(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/tenants';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/tenants/$id';
+    final dioCall = dioClient.put(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/vault/documents';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> createStaff(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/staff';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/staff/$id';
+    final dioCall = dioClient.put(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> deleteStaff(String id) {
+    final endpoint = '${DioProvider.baseUrl}/api/staff/$id';
+    final dioCall = dioClient.delete(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> submitFeedback(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/feedback';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> createLoyaltyOffer(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/loyalty';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> createTenantCharge(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/tenant-charges';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> renewLease(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/leases';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> saveEstimate(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/estimates';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateEstimate(String id, Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/estimates/$id';
+    final dioCall = dioClient.put(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> addUtilityTopUp(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/utilities/topup';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> saveWhatsAppTemplateDraft(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/whatsapp/templates';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateWhatsAppTemplateDraft(
+    String id,
+    Map<String, dynamic> body,
+  ) {
+    final endpoint = '${DioProvider.baseUrl}/api/whatsapp/templates/$id';
+    final dioCall = dioClient.put(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> deleteWhatsAppTemplateDraft(String id) {
+    final endpoint = '${DioProvider.baseUrl}/api/whatsapp/templates/$id';
+    final dioCall = dioClient.delete(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateUnit(
+    String listingId,
+    String unitId,
+    Map<String, dynamic> body,
+  ) {
+    final endpoint = '${DioProvider.baseUrl}/api/listings/$listingId/units/$unitId';
+    final dioCall = dioClient.put(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> changePinOnServer(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/users/change/pin';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

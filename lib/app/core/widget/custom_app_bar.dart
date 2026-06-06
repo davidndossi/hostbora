@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../../routes/app_pages.dart';
 import '/app/core/theme/theme_controller.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/core/values/app_colors.dart';
@@ -82,6 +83,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             }
           },
         ),
+      IconButton(
+        tooltip: currentLang == 'sw' ? 'Kikasha' : 'Inbox',
+        icon: Icon(Icons.inbox_outlined, color: actionColor),
+        onPressed: () => Get.toNamed(Routes.RENT_CONCIERGE_INBOX),
+      ),
     ];
 
     return AppBar(

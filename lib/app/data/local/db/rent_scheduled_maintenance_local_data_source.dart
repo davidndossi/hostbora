@@ -15,6 +15,7 @@ class RentScheduledMaintenanceRecord {
     required this.createdAtMs,
     this.propertyRef = '',
     this.apartmentUnitId = '',
+    this.workspaceType = 'rent',
   });
 
   final int id;
@@ -26,10 +27,9 @@ class RentScheduledMaintenanceRecord {
   final int notificationId;
   final String syncStatus;
   final int createdAtMs;
-  /// Hub id / `local_<id>` — matches [PropertyRecord.propertyRef].
   final String propertyRef;
-  /// Matches [ApartmentUnitDraft.unitId] when scoped to a unit.
   final String apartmentUnitId;
+  final String workspaceType;
 
   factory RentScheduledMaintenanceRecord.fromMap(Map<String, Object?> m) {
     return RentScheduledMaintenanceRecord(
@@ -44,6 +44,7 @@ class RentScheduledMaintenanceRecord {
       createdAtMs: m['created_at_ms'] as int? ?? 0,
       propertyRef: m['property_ref'] as String? ?? '',
       apartmentUnitId: m['apartment_unit_id'] as String? ?? '',
+      workspaceType: m['workspace_type'] as String? ?? 'rent',
     );
   }
 }
@@ -69,8 +70,11 @@ class RentScheduledMaintenanceLocalDataSource {
     required String syncStatus,
     String propertyRef = '',
     String apartmentUnitId = '',
+    String workspaceType = 'rent',
   }) async {
     final db = await database;
+    final ws = workspaceType.trim().toLowerCase();
+    final normalizedWs = ws == 'bnb' || ws == 'rent' ? ws : 'rent';
     return db.insert(_table, {
       'property_label': propertyLabel,
       'category': category,
@@ -81,6 +85,7 @@ class RentScheduledMaintenanceLocalDataSource {
       'sync_status': syncStatus,
       'property_ref': propertyRef.trim(),
       'apartment_unit_id': apartmentUnitId.trim(),
+      'workspace_type': normalizedWs,
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });
   }

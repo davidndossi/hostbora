@@ -24,8 +24,10 @@ class ExpenseRecord {
   final String datePaidIso;
   final String category;
   final String notes;
+
   /// Selected property location (building / listing line).
   final String apartment;
+
   /// Unit name when expense is allocated to a specific unit.
   final String apartmentUnit;
   final String workspaceType;
@@ -106,8 +108,12 @@ class ExpenseLocalDataSource {
     return db.insert(_table, {
       'tenant_name': tenantName,
       'amount_value': amountValue,
-      'currency_code': currencyCode.trim().isEmpty ? 'TZS' : currencyCode.trim().toUpperCase(),
-      'input_amount_value': inputAmountValue <= 0 ? amountValue : inputAmountValue,
+      'currency_code': currencyCode.trim().isEmpty
+          ? 'TZS'
+          : currencyCode.trim().toUpperCase(),
+      'input_amount_value': inputAmountValue <= 0
+          ? amountValue
+          : inputAmountValue,
       'date_paid_iso': datePaidIso,
       'category': category,
       'notes': notes,
@@ -116,6 +122,60 @@ class ExpenseLocalDataSource {
       'workspace_type': _normalizeWorkspace(workspaceType),
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });
+  }
+
+  Future<ExpenseRecord?> getById(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return ExpenseRecord.fromMap(maps.first);
+  }
+
+  Future<int> update({
+    required int id,
+    required String tenantName,
+    required double amountValue,
+    required String datePaidIso,
+    required String category,
+    required String workspaceType,
+    String notes = '',
+    String apartment = '',
+    String apartmentUnit = '',
+    String currencyCode = 'TZS',
+    double inputAmountValue = 0,
+  }) async {
+    final db = await database;
+    return db.update(
+      _table,
+      {
+        'tenant_name': tenantName,
+        'amount_value': amountValue,
+        'currency_code': currencyCode.trim().isEmpty
+            ? 'TZS'
+            : currencyCode.trim().toUpperCase(),
+        'input_amount_value': inputAmountValue <= 0
+            ? amountValue
+            : inputAmountValue,
+        'date_paid_iso': datePaidIso,
+        'category': category,
+        'notes': notes,
+        'apartment': apartment,
+        'apartment_unit': apartmentUnit,
+        'workspace_type': _normalizeWorkspace(workspaceType),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteById(int id) async {
+    final db = await database;
+    await db.delete(_table, where: 'id = ?', whereArgs: [id]);
   }
 
   /// See [RentIncomeLocalDataSource.getAllNewestFirst].

@@ -28,12 +28,16 @@ class IncomeRecord {
   final String notes;
   final String apartment;
   final String apartmentUnit;
+
   /// Hub id / [PropertyRecord.propertyRef] / `local_<id>` for listing-scoped totals.
   final String propertyRef;
+
   /// BnB booking key ([CheckInItem.bookingKey]) when payment is linked to a stay.
   final String bookingId;
+
   /// `rent` or `bnb` — matches [WorkspaceContextService] persistence.
   final String workspaceType;
+
   /// Currency the user entered; [amountValue] is always in base currency.
   final String currencyCode;
   final double inputAmountValue;
@@ -117,8 +121,12 @@ class IncomeLocalDataSource {
     return db.insert(_table, {
       'tenant_name': tenantName,
       'amount_value': amountValue,
-      'currency_code': currencyCode.trim().isEmpty ? 'TZS' : currencyCode.trim().toUpperCase(),
-      'input_amount_value': inputAmountValue <= 0 ? amountValue : inputAmountValue,
+      'currency_code': currencyCode.trim().isEmpty
+          ? 'TZS'
+          : currencyCode.trim().toUpperCase(),
+      'input_amount_value': inputAmountValue <= 0
+          ? amountValue
+          : inputAmountValue,
       'date_paid_iso': datePaidIso,
       'category': category,
       'notes': notes,
@@ -186,10 +194,10 @@ class IncomeLocalDataSource {
       FROM ${AppLocalDatabase.incomeTable} i
       INNER JOIN ${AppLocalDatabase.propertiesTable} p
         ON p.property_ref = i.property_ref
-      WHERE lower(trim(coalesce(nullif(trim(p.workspace_type), ''), 'rent'))) = ?
+      WHERE lower(trim(coalesce(nullif(trim(p.workspace_type), ''), 'rent'))) IN (?, ?)
       ORDER BY i.created_at_ms DESC
       ''',
-      ['bnb'],
+      ['bnb', 'both'],
     );
     return maps.map(IncomeRecord.fromMap).toList();
   }

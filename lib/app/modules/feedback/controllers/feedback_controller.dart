@@ -7,6 +7,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../data/local/feedback_pending_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
+import '../../../data/repository/app_repository.dart';
 
 enum FeedbackCategory { general, bug, feature, other }
 
@@ -20,6 +21,10 @@ class FeedbackController extends BaseController {
 
   final PreferenceManager _preferenceManager = Get.find(
     tag: (PreferenceManager).toString(),
+  );
+
+  final AppRepository _repository = Get.find(
+    tag: (AppRepository).toString(),
   );
 
   late final FeedbackPendingStore _pendingStore = FeedbackPendingStore(
@@ -130,6 +135,18 @@ class FeedbackController extends BaseController {
       } else {
         await _pendingStore.saveEntry(entry);
         showSuccessMessage(appLocalization.feedbackThankYou);
+      }
+
+      // Always attempt API submission alongside mailto/pending-store path.
+      try {
+        await _repository.submitFeedback({
+          'category': categoryText,
+          'email': email,
+          'message': message,
+          'appVersion': appVersion,
+        });
+      } catch (_) {
+        // Non-blocking — feedback already stored locally above.
       }
     } catch (e, st) {
       logger.e('submitFeedback $e $st');

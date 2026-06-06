@@ -24,8 +24,6 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
     return Get.locale?.languageCode == 'sw' ? sw : en;
   }
 
-  
-
   @override
   Widget build(BuildContext context) {
     final c = FormSurfaceColors.of(context);
