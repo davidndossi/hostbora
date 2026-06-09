@@ -23,16 +23,34 @@ class MainView extends BaseView<MainController> {
 
   @override
   Widget body(BuildContext context) {
-    return Container(
-      key: UniqueKey(),
-      child: Obx(() => getPageOnSelectedMenu(controller.selectedMenuCode)),
-    );
+    return Obx(() => getPageOnSelectedMenu(controller.selectedMenuCode));
   }
 
   @override
   Widget? floatingActionButton() => Obx(() {
-    final isMaintenanceTab =
-        controller.selectedMenuCode == MenuCode.MAINTENANCE;
+    final menu = controller.selectedMenuCode;
+    final isMaintenanceTab = menu == MenuCode.MAINTENANCE;
+    final isPropertiesTab  = menu == MenuCode.PROPERTIES;
+
+    if (isPropertiesTab) {
+      return FloatingActionButton.extended(
+        onPressed: controller.addProperty,
+        backgroundColor: AppColors.designAccent,
+        icon: const Icon(Icons.add_home_work_rounded, color: Colors.white, size: 22),
+        label: Obx(() {
+          final isSw = controller.currentLocale.value == 'sw';
+          return Text(
+            isSw ? 'Ongeza Mali' : 'Add Property',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          );
+        }),
+      );
+    }
+
     return FloatingActionButton(
       onPressed: isMaintenanceTab ? controller.addTask : controller.aiManager,
       backgroundColor: AppColors.designAccent,

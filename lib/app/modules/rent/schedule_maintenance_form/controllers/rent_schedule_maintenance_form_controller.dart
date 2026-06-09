@@ -361,7 +361,9 @@ class RentScheduleMaintenanceFormController extends BaseController {
       initialDate: initial,
       firstDate: now,
       lastDate: DateTime(now.year + 2),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked != null) {
       scheduleDate.value = picked;
       scheduleDateFieldController.text = DateFormat(

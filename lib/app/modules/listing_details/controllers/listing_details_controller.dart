@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../core/utils/property_financial_time_series.dart';
 import '../../../core/utils/property_listing_finance_scope.dart';
+import '../../../data/model/general_response.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../rent/listing_activity_log/controllers/rent_listing_activity_log_controller.dart';
@@ -71,10 +73,18 @@ class PaymentFollowUpBannerVm {
   const PaymentFollowUpBannerVm({
     required this.message,
     this.actionLabel,
+    this.tenantName = '',
+    this.phone = '',
+    this.balanceTsh = 0,
   });
 
   final String message;
   final String? actionLabel;
+
+  /// Pre-fill data forwarded to the schedule-payment-reminder screen.
+  final String tenantName;
+  final String phone;
+  final int balanceTsh;
 }
 
 class ListingStaffVm {
@@ -127,6 +137,18 @@ class ListingDetailsController extends BaseController
   final monthlyExpensesLabel = '0'.obs;
   final netIncomeLabel = '0'.obs;
   final monthlyRevenueProgress = 0.0.obs;
+
+  /// All-time totals shown in the overview KPI cards.
+  final totalIncomeLabel = '0'.obs;
+  final totalExpensesLabel = '0'.obs;
+
+  /// Expected monthly income based on current active tenant contracts (rent)
+  /// or listed unit nightly rates (BnB).
+  final expectedIncomeLabel = '0'.obs;
+
+  /// Per-workspace breakdown for the income detail sheet.
+  final rentIncomeTotalLabel = '0'.obs;
+  final bnbIncomeTotalLabel = '0'.obs;
 
   final listingScrollController = ScrollController();
 
@@ -191,15 +213,11 @@ class ListingDetailsController extends BaseController
     }
   }
 
-  String get _propertyId => (Get.arguments is Map)
-      ? ((Get.arguments as Map)['property_id'] ?? '').toString().trim()
-      : '';
-  String get _propertyName => (Get.arguments is Map)
-      ? ((Get.arguments as Map)['property_name'] ?? '').toString().trim()
-      : '';
-  String get _propertyLocation => (Get.arguments is Map)
-      ? ((Get.arguments as Map)['property_location'] ?? '').toString().trim()
-      : '';
+  // Cached at init from route arguments so they remain stable even after
+  // Get.arguments changes when child routes are pushed (e.g. edit screens).
+  String _propertyId = '';
+  String _propertyName = '';
+  String _propertyLocation = '';
 
   @override
   void onInit() {
@@ -302,15 +320,22 @@ class ListingDetailsController extends BaseController
   void _applyRouteArguments() {
     final args = Get.arguments;
     if (args is! Map) return;
-    final name = (args['property_name'] ?? '').toString().trim();
-    final location = (args['property_location'] ?? '').toString().trim();
+
+    // Cache property identifiers immediately so they survive any subsequent
+    // Get.toNamed() calls that overwrite Get.arguments.
+    _propertyId = (args['property_id'] ?? '').toString().trim();
+    _propertyName = (args['property_name'] ?? '').toString().trim();
+    _propertyLocation = (args['property_location'] ?? '').toString().trim();
+
     final image = (args['property_image'] ?? '').toString().trim();
-    if (name.isNotEmpty) {
-      listingTitle.value = name;
-      heroOverlayTitle.value = location.isEmpty ? name : '$name • $location';
-    } else if (location.isNotEmpty) {
-      listingTitle.value = location;
-      heroOverlayTitle.value = location;
+    if (_propertyName.isNotEmpty) {
+      listingTitle.value = _propertyName;
+      heroOverlayTitle.value = _propertyLocation.isEmpty
+          ? _propertyName
+          : '$_propertyName • $_propertyLocation';
+    } else if (_propertyLocation.isNotEmpty) {
+      listingTitle.value = _propertyLocation;
+      heroOverlayTitle.value = _propertyLocation;
     }
     if (image.isNotEmpty) {
       heroImagePath.value = image;
@@ -370,7 +395,6 @@ class ListingDetailsController extends BaseController
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
     final end = DateTime(now.year, now.month + 1, 1);
-    double paymentTotal = 0;
 
     final scopeRefs = <String>{};
     if (_propertyId.isNotEmpty) {
@@ -414,56 +438,99 @@ class ListingDetailsController extends BaseController
       return false;
     }
 
+    // Monthly totals — for the revenue and expense labels.
+    double monthlyIncomeTotal = 0;
+    double monthlyExpenseTotal = 0;
+
+    // All-time totals — used for net income (all units, entire tenancy history).
+    double allTimeIncomeTotal = 0;
+    double allTimeExpenseTotal = 0;
+
     for (final row in incomes) {
-      final d = row.paidLocalCalendarOrCreated();
-      if (d.isBefore(start) || !d.isBefore(end)) continue;
       if (!matchesListingScope(
         propertyRef: row.propertyRef,
         apartment: row.apartment,
         apartmentUnit: row.apartmentUnit,
         notes: row.notes,
-      )) {
-        continue;
+      )) { continue; }
+      allTimeIncomeTotal += row.amountValue;
+      final d = row.paidLocalCalendarOrCreated();
+      if (!d.isBefore(start) && d.isBefore(end)) {
+        monthlyIncomeTotal += row.amountValue;
       }
-      paymentTotal += row.amountValue;
     }
 
-    var expenseTotal = 0.0;
     for (final row in expenses) {
-      final d = row.paidLocalCalendarOrCreated();
-      if (d.isBefore(start) || !d.isBefore(end)) continue;
+      // Expense table has no property_ref column; match by apartment name/notes.
       if (!matchesListingScope(
         propertyRef: '',
         apartment: row.apartment,
         apartmentUnit: row.apartmentUnit,
         notes: row.notes,
-      )) {
-        continue;
+      )) { continue; }
+      allTimeExpenseTotal += row.amountValue;
+      final d = row.paidLocalCalendarOrCreated();
+      if (!d.isBefore(start) && d.isBefore(end)) {
+        monthlyExpenseTotal += row.amountValue;
       }
-      expenseTotal += row.amountValue;
     }
 
-    final localTotal = paymentTotal;
-
-    // Local rows (including newly saved income) are authoritative; use API
-    // only when there is no matching local income for this month.
+    // Local rows (including newly saved income) are authoritative; fall back
+    // to the remote monthly figure only when no local income exists yet.
     final remoteMonthly = remoteListing != null
         ? _extractRemoteMonthlyIncome(remoteListing)
         : 0.0;
-    final displayTotal = localTotal > 0 ? localTotal : remoteMonthly;
+    final displayMonthly =
+        monthlyIncomeTotal > 0 ? monthlyIncomeTotal : remoteMonthly;
 
-    monthlyRevenueLabel.value = _money.format(displayTotal.round());
-    monthlyExpensesLabel.value = _money.format(expenseTotal.round());
-    netIncomeLabel.value = _money.format((displayTotal - expenseTotal).round());
+    monthlyRevenueLabel.value = _money.format(displayMonthly.round());
+    monthlyExpensesLabel.value = _money.format(monthlyExpenseTotal.round());
+
+    // All-time KPI labels.
+    totalIncomeLabel.value = _money.format(allTimeIncomeTotal.round());
+    totalExpensesLabel.value = _money.format(allTimeExpenseTotal.round());
+
+    // Per-workspace income breakdown (from the already-loaded list).
+    double rentTotal = 0;
+    double bnbTotal = 0;
+    for (final row in incomes) {
+      final ws = row.workspaceType.trim().toLowerCase();
+      if (ws == 'bnb') {
+        bnbTotal += row.amountValue;
+      } else {
+        rentTotal += row.amountValue;
+      }
+    }
+    rentIncomeTotalLabel.value = _money.format(rentTotal.round());
+    bnbIncomeTotalLabel.value = _money.format(bnbTotal.round());
+
+    // Net income = all-time income for all units − all-time expenses for all
+    // units in this property.  When there is no local income at all, add the
+    // remote monthly figure as the best available estimate.
+    final netIncomeBase = allTimeIncomeTotal > 0
+        ? allTimeIncomeTotal
+        : (monthlyIncomeTotal > 0 ? monthlyIncomeTotal : remoteMonthly);
+    netIncomeLabel.value =
+        _money.format((netIncomeBase - allTimeExpenseTotal).round());
 
     final expectedRemote = remoteListing != null
         ? _extractExpectedMonthlyIncome(remoteListing)
         : 0.0;
     final expectedLocal = await _expectedIncomeFromLocalUnits();
-    final expected = expectedLocal > 0 ? expectedLocal : expectedRemote;
+
+    // For rent/both: active tenant contracted rents are more meaningful
+    // than unit list prices.
+    final tenantExpected = await _expectedIncomeFromTenants(scopeRefs);
+
+    // Priority: active tenants > unit rates > remote estimate
+    final expected = tenantExpected > 0
+        ? tenantExpected
+        : (expectedLocal > 0 ? expectedLocal : expectedRemote);
+
+    expectedIncomeLabel.value = _money.format(expected.round());
     monthlyRevenueProgress.value = expected <= 0
         ? 0
-        : (displayTotal / expected).clamp(0, 1).toDouble();
+        : (displayMonthly / expected).clamp(0, 1).toDouble();
   }
 
   double _extractRemoteMonthlyIncome(Map<String, dynamic> listing) {
@@ -526,6 +593,56 @@ class ListingDetailsController extends BaseController
         final n = double.tryParse(raw.replaceAll(',', '').trim());
         if (n != null && n > 0) total += n;
       }
+      return total;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Computes the expected monthly income from active tenant contracts.
+  ///
+  /// Workspace type is inferred from [TenantRecord.rentFrequency]:
+  /// - "per day" / "per night" / "nightly" → BnB (nightly × 30 as monthly proxy)
+  /// - "per stay" → BnB one-off (counted as-is)
+  /// - "per week" → monthly × 4.333
+  /// - "per year" → monthly ÷ 12
+  /// - "per quarter" → monthly ÷ 3
+  /// - everything else → treat as monthly rent
+  Future<double> _expectedIncomeFromTenants(Set<String> scopeRefs) async {
+    try {
+      final tenants = await _tenantLocal.getAllNewestFirst();
+      final mode = propertyWorkspaceMode.value;
+      double total = 0;
+
+      for (final t in tenants) {
+        if (!_tenantMatchesListingForActivity(t, scopeRefs)) continue;
+        final amount = t.rentAmountValue;
+        if (amount <= 0) continue;
+
+        final freq = t.rentFrequency.trim().toLowerCase();
+        final isBnb = freq.contains('day') ||
+            freq.contains('night') ||
+            freq.contains('stay');
+
+        if (isBnb) {
+          if (mode == 'bnb' || mode == 'both') {
+            // "per stay" is a fixed amount; nightly → monthly via ×30.
+            total += freq.contains('stay') ? amount : amount * 30;
+          }
+        } else {
+          if (mode == 'rent' || mode == 'both') {
+            final monthly = freq.contains('week')
+                ? amount * 4.333
+                : freq.contains('year')
+                    ? amount / 12
+                    : freq.contains('quarter')
+                        ? amount / 3
+                        : amount; // default: monthly
+            total += monthly;
+          }
+        }
+      }
+
       return total;
     } catch (_) {
       return 0;
@@ -727,6 +844,8 @@ class ListingDetailsController extends BaseController
             trailing: scheduledLabel,
             timeLabel: _relativeDateFromMs(r.createdAtMs),
             accentColor: const Color(0xFF6366F1),
+            activityType: ActivityType.maintenance,
+            maintenanceId: r.id,
           ),
         ));
       }
@@ -748,6 +867,10 @@ class ListingDetailsController extends BaseController
                 : '',
             timeLabel: _relativeDateFromMs(u.createdAtMs),
             accentColor: const Color(0xFF2563EB),
+            activityType: ActivityType.unit,
+            unitLocalId: u.id,
+            unitLocalPropertyRef: u.propertyRef,
+            unitLocalName: name,
           ),
         ));
       }
@@ -798,6 +921,8 @@ class ListingDetailsController extends BaseController
                 : '',
             timeLabel: _relativeDateFromMs(t.createdAtMs),
             accentColor: const Color(0xFF16A34A),
+            activityType: ActivityType.tenant,
+            tenantId: t.id,
           ),
         ));
       }
@@ -816,6 +941,8 @@ class ListingDetailsController extends BaseController
             trailing: s.displayAmountLine == '—' ? '' : s.displayAmountLine,
             timeLabel: _relativeDateFromMs(s.createdAtMs),
             accentColor: const Color(0xFF7C3AED),
+            activityType: ActivityType.staff,
+            staffId: s.id,
           ),
         ));
       }
@@ -846,6 +973,8 @@ class ListingDetailsController extends BaseController
               '+ ${Get.find<CurrencyService>().formatBase(i.amountValue.round())}',
           timeLabel: _relativeDate(i.datePaidIso, i.createdAtMs),
           accentColor: const Color(0xFF0EA5A4),
+          activityType: ActivityType.income,
+          incomeId: i.id,
         ),
       ));
     }
@@ -861,6 +990,7 @@ class ListingDetailsController extends BaseController
           ),
           timeLabel: _relativeDate(e.datePaidIso, e.createdAtMs),
           accentColor: const Color(0xFFF59E0B),
+          activityType: ActivityType.expense,
           expenseId: e.id,
         ),
       ));
@@ -1209,6 +1339,8 @@ class ListingDetailsController extends BaseController
             ? 'Malipo ya ${r.tenantName.trim().isEmpty ? 'mpangaji' : r.tenantName} ($balance) yanahitaji ufuatiliaji.'
             : 'Payment for ${r.tenantName.trim().isEmpty ? 'tenant' : r.tenantName} ($balance) needs follow-up.',
         actionLabel: _isSw ? 'Tuma ukumbusho' : 'Send reminder',
+        tenantName: r.tenantName.trim(),
+        balanceTsh: r.balanceTsh,
       );
       return;
     }
@@ -1224,6 +1356,8 @@ class ListingDetailsController extends BaseController
               ? 'Mkataba wa ${t.tenantName} unakaribia au umepita — angalia malipo.'
               : '${t.tenantName}\'s lease is ending or overdue — review payments.',
           actionLabel: _isSw ? 'Angalia mpangaji' : 'Review tenant',
+          tenantName: t.tenantName.trim(),
+          phone: t.phoneNumber.trim(),
         );
         return;
       }
@@ -1308,6 +1442,28 @@ class ListingDetailsController extends BaseController
         'property_name': _propertyName,
         'property_location': _propertyLocation,
       },
+    );
+  }
+
+  void onShowIncomeBreakdown() {
+    final isSw = _isSw;
+    final currency = Get.find<CurrencyService>().baseCurrency.value;
+
+    final workspaceMode = propertyWorkspaceMode.value;
+    final showRent = workspaceMode == 'rent' || workspaceMode == 'both';
+    final showBnb = workspaceMode == 'bnb' || workspaceMode == 'both';
+
+    Get.bottomSheet(
+      _IncomeBreakdownSheet(
+        isSw: isSw,
+        currency: currency,
+        totalLabel: totalIncomeLabel.value,
+        rentLabel: rentIncomeTotalLabel.value,
+        bnbLabel: bnbIncomeTotalLabel.value,
+        showRent: showRent,
+        showBnb: showBnb,
+      ),
+      isScrollControlled: true,
     );
   }
 
@@ -1541,32 +1697,245 @@ class ListingDetailsController extends BaseController
     await loadListingDetail();
   }
 
-  Future<void> onEditExpenseActivity(ListingActivityVm activity) async {
-    final id = activity.expenseId;
-    if (id == null) return;
-    await Get.toNamed(
-      Routes.ADD_EXPENSE,
-      arguments: {'mode': 'edit', 'expenseId': id},
-    );
+  Future<void> onEditActivity(ListingActivityVm activity) async {
+    switch (activity.activityType) {
+      case ActivityType.expense:
+        final id = activity.expenseId;
+        if (id == null) return;
+        await Get.toNamed(
+          Routes.ADD_EXPENSE,
+          arguments: {'mode': 'edit', 'expenseId': id},
+        );
+
+      case ActivityType.income:
+        await Get.toNamed(
+          Routes.RECORD_PAYMENT,
+          parameters: {
+            if (_propertyName.isNotEmpty) 'property': _propertyName,
+            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+            'workspaceType': _workspaceParamForMode(propertyWorkspaceMode.value),
+          },
+        );
+
+      case ActivityType.tenant:
+        final id = activity.tenantId;
+        if (id == null) return;
+        await Get.toNamed(
+          Routes.RENT_TENANT_LEDGER_OCCUPANCY,
+          parameters: {'tenantId': id.toString()},
+        );
+
+      case ActivityType.maintenance:
+        await Get.toNamed(
+          Routes.RENT_SCHEDULE_MAINTENANCE_FORM,
+          parameters: {
+            if (_propertyName.isNotEmpty) 'property': _propertyName,
+            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+            'workspaceType': propertyWorkspaceMode.value,
+          },
+        );
+
+      case ActivityType.staff:
+        await Get.toNamed(Routes.RENT_STAFF_MANAGEMENT);
+
+      case ActivityType.unit:
+        final ref = activity.unitLocalPropertyRef ?? _propertyId;
+        final name = activity.unitLocalName ?? '';
+        await Get.toNamed(
+          Routes.EDIT_UNIT,
+          arguments: {
+            'property_ref': ref,
+            'unit_name': name,
+          },
+        );
+
+      case ActivityType.remote:
+        return;
+    }
     await loadListingDetail();
   }
 
-  Future<void> onDeleteExpenseActivity(ListingActivityVm activity) async {
-    final id = activity.expenseId;
-    if (id == null) return;
+  Future<void> onDeleteActivity(ListingActivityVm activity) async {
+    if (!activity.canDelete) return;
+
+    final (deleteTitle, deleteMsg) = switch (activity.activityType) {
+      ActivityType.expense => (
+          _isSw ? 'Futa gharama?' : 'Delete expense?',
+          _isSw
+              ? 'Gharama hii itaondolewa kwenye shughuli na hesabu za mali.'
+              : 'This expense will be removed from activity and property totals.',
+        ),
+      ActivityType.income => (
+          _isSw ? 'Futa malipo?' : 'Delete payment?',
+          _isSw
+              ? 'Malipo haya yatafutwa kwenye shughuli na hesabu.'
+              : 'This payment record will be permanently removed.',
+        ),
+      ActivityType.tenant => (
+          _isSw ? 'Futa mpangaji?' : 'Delete tenant?',
+          _isSw
+              ? 'Rekodi ya mpangaji itafutwa. Hii haitabatilisha mkataba.'
+              : 'The tenant record will be deleted. This does not cancel any contract.',
+        ),
+      ActivityType.maintenance => (
+          _isSw ? 'Futa matengenezo?' : 'Delete maintenance?',
+          _isSw
+              ? 'Rekodi hii ya matengenezo itafutwa.'
+              : 'This scheduled maintenance record will be deleted.',
+        ),
+      ActivityType.staff => (
+          _isSw ? 'Futa mfanyakazi?' : 'Remove staff member?',
+          _isSw
+              ? 'Rekodi ya mfanyakazi itafutwa.'
+              : 'This staff record will be permanently removed.',
+        ),
+      ActivityType.unit => (
+          _isSw ? 'Futa unit?' : 'Delete unit?',
+          _isSw
+              ? 'Unit hii itafutwa kwenye orodha ya mali.'
+              : 'This unit will be removed from the property.',
+        ),
+      ActivityType.remote => ('', ''),
+    };
+
+    if (deleteTitle.isEmpty) return;
+
     final confirmed = await confirmDestructive(
-      title: _isSw ? 'Futa gharama?' : 'Delete expense?',
-      message: _isSw
-          ? 'Gharama hii itaondolewa kwenye shughuli na hesabu za mwezi.'
-          : 'This expense will be removed from activity and monthly totals.',
+      title: deleteTitle,
+      message: deleteMsg,
       confirmLabel: _isSw ? 'Futa' : 'Delete',
       cancelLabel: _isSw ? 'Ghairi' : 'Cancel',
     );
     if (!confirmed) return;
-    await _expenseLocal.deleteById(id);
-    await _syncQueue.deleteByDedupeKey('expense:create:$id');
-    showSuccessWithHaptic(_isSw ? 'Gharama imefutwa' : 'Expense deleted');
+
+    switch (activity.activityType) {
+      case ActivityType.expense:
+        final id = activity.expenseId!;
+        await _expenseLocal.deleteById(id);
+        await _syncQueue.deleteByDedupeKey('expense:create:$id');
+        unawaited(_remoteDeleteExpense(id));
+
+      case ActivityType.income:
+        final incomeId = activity.incomeId!;
+        final record = await _incomeLocal.getById(incomeId);
+        await _incomeLocal.deleteById(incomeId);
+        if (record != null && record.backendPaymentId.isNotEmpty) {
+          unawaited(_remoteDeletePayment(record.backendPaymentId));
+        }
+
+      case ActivityType.tenant:
+        final tenantId = activity.tenantId!;
+        final tenantRec = await _tenantLocal.findById(tenantId);
+        await _tenantLocal.deleteById(tenantId);
+        if (tenantRec != null && tenantRec.backendTenantId.isNotEmpty) {
+          unawaited(_remoteDeleteTenant(tenantRec.backendTenantId));
+        }
+
+      case ActivityType.maintenance:
+        final maintenanceId = activity.maintenanceId!;
+        final maintenanceRec = await _maintenanceLocal.getById(maintenanceId);
+        await _maintenanceLocal.deleteById(maintenanceId);
+        if (maintenanceRec != null && maintenanceRec.backendTaskId.isNotEmpty) {
+          unawaited(_remoteDeleteTask(maintenanceRec.backendTaskId));
+        }
+
+      case ActivityType.staff:
+        await _staffLocal.deleteById(activity.staffId!);
+
+      case ActivityType.unit:
+        await _unitLocal.deleteById(activity.unitLocalId!);
+
+      case ActivityType.remote:
+        return;
+    }
+
+    final successMsg = switch (activity.activityType) {
+      ActivityType.expense =>
+        _isSw ? 'Gharama imefutwa' : 'Expense deleted',
+      ActivityType.income =>
+        _isSw ? 'Malipo yamefutwa' : 'Payment deleted',
+      ActivityType.tenant =>
+        _isSw ? 'Mpangaji amefutwa' : 'Tenant deleted',
+      ActivityType.maintenance =>
+        _isSw ? 'Matengenezo yamefutwa' : 'Maintenance deleted',
+      ActivityType.staff =>
+        _isSw ? 'Mfanyakazi amefutwa' : 'Staff member removed',
+      ActivityType.unit =>
+        _isSw ? 'Unit imefutwa' : 'Unit deleted',
+      ActivityType.remote => '',
+    };
+    if (successMsg.isNotEmpty) {
+      showSuccessWithHaptic(successMsg);
+    }
     await loadListingDetail();
+  }
+
+  // ── Remote delete helpers (fire-and-forget with offline queue fallback) ──
+
+  Future<void> _remoteDeleteExpense(int localId) async {
+    final backendId = await _expenseLocal.getBackendExpenseId(localId);
+    if (backendId == null || backendId.isEmpty) return;
+    await _tryOrQueue(
+      remoteCall: () => _repository.deleteExpense(backendId),
+      entityType: 'expense',
+      operation: 'delete',
+      payload: {'backendExpenseId': backendId},
+      dedupeKey: 'expense:delete:$backendId',
+    );
+  }
+
+  Future<void> _remoteDeletePayment(String backendPaymentId) async {
+    await _tryOrQueue(
+      remoteCall: () => _repository.deletePayment(backendPaymentId),
+      entityType: 'payment',
+      operation: 'delete',
+      payload: {'paymentId': backendPaymentId},
+      dedupeKey: 'payment:delete:$backendPaymentId',
+    );
+  }
+
+  Future<void> _remoteDeleteTenant(String backendTenantId) async {
+    await _tryOrQueue(
+      remoteCall: () => _repository.deleteTenant(backendTenantId),
+      entityType: 'tenant',
+      operation: 'delete',
+      payload: {'id': backendTenantId},
+      dedupeKey: 'tenant:delete:$backendTenantId',
+    );
+  }
+
+  Future<void> _remoteDeleteTask(String backendTaskId) async {
+    await _tryOrQueue(
+      remoteCall: () => _repository.deleteTask(backendTaskId),
+      entityType: 'task',
+      operation: 'delete',
+      payload: {'taskId': backendTaskId},
+      dedupeKey: 'task:delete:$backendTaskId',
+    );
+  }
+
+  Future<void> _tryOrQueue({
+    required Future<GeneralResponse> Function() remoteCall,
+    required String entityType,
+    required String operation,
+    required Map<String, dynamic> payload,
+    required String dedupeKey,
+  }) async {
+    try {
+      final res = await remoteCall();
+      final ok = res.responseCode == null ||
+          res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201';
+      if (!ok) throw Exception(res.message ?? 'Remote $entityType:$operation failed');
+    } catch (_) {
+      await _syncQueue.enqueue(
+        entityType: entityType,
+        operation: operation,
+        payloadJson: jsonEncode(payload),
+        dedupeKey: dedupeKey,
+      );
+    }
   }
 
   String _workspaceParamForMode(String mode) =>
@@ -1631,11 +2000,18 @@ class ListingDetailsController extends BaseController
   }
 
   void onPaymentFollowUpTap() {
+    final banner = paymentFollowUp.value;
     Get.toNamed(
       Routes.RENT_SCHEDULE_PAYMENT_REMINDER,
       parameters: {
         if (_propertyName.isNotEmpty) 'property': _propertyName,
         if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+        if (banner != null && banner.tenantName.isNotEmpty)
+          'name': banner.tenantName,
+        if (banner != null && banner.phone.isNotEmpty)
+          'phone': banner.phone,
+        if (banner != null && banner.balanceTsh > 0)
+          'balance': banner.balanceTsh.toString(),
       },
     )?.then((_) => loadListingDetail());
   }
@@ -1735,5 +2111,167 @@ class ListingDetailsController extends BaseController
       return isSw ? 'Angalia Maelezo' : 'View Details';
     }
     return isSw ? 'Ongeza Mpangaji' : 'Add Tenant';
+  }
+}
+
+/// ─── Income breakdown bottom sheet ──────────────────────────────────────────
+
+class _IncomeBreakdownSheet extends StatelessWidget {
+  const _IncomeBreakdownSheet({
+    required this.isSw,
+    required this.currency,
+    required this.totalLabel,
+    required this.rentLabel,
+    required this.bnbLabel,
+    required this.showRent,
+    required this.showBnb,
+  });
+
+  final bool isSw;
+  final String currency;
+  final String totalLabel;
+  final String rentLabel;
+  final String bnbLabel;
+  final bool showRent;
+  final bool showBnb;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final line = isDark ? const Color(0xFF3A3A3C) : const Color(0xFFE5E7EB);
+    final textPrimary = isDark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
+    final textMuted = isDark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 16),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: line,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Text(
+            isSw ? 'Mgawanyo wa Mapato' : 'Income Breakdown',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isSw
+                ? 'Mapato yote kulingana na aina ya mali'
+                : 'All-time income by property mode',
+            style: TextStyle(fontSize: 13, color: textMuted),
+          ),
+          const SizedBox(height: 20),
+          if (showRent)
+            _row(
+              icon: Icons.home_work_outlined,
+              iconColor: const Color(0xFF2563EB),
+              label: isSw ? 'Kodi (Rent)' : 'Rent',
+              value: '$currency $rentLabel',
+              textPrimary: textPrimary,
+              textMuted: textMuted,
+              line: line,
+            ),
+          if (showRent && showBnb) const SizedBox(height: 2),
+          if (showBnb)
+            _row(
+              icon: Icons.bed_outlined,
+              iconColor: const Color(0xFF0EA5A4),
+              label: isSw ? 'BnB (Usiku)' : 'BnB',
+              value: '$currency $bnbLabel',
+              textPrimary: textPrimary,
+              textMuted: textMuted,
+              line: line,
+            ),
+          if (showRent || showBnb) ...[
+            const SizedBox(height: 12),
+            Divider(color: line),
+            const SizedBox(height: 8),
+          ],
+          _row(
+            icon: Icons.account_balance_wallet_outlined,
+            iconColor: scheme.primary,
+            label: isSw ? 'Jumla' : 'Total',
+            value: '$currency $totalLabel',
+            textPrimary: textPrimary,
+            textMuted: textMuted,
+            line: line,
+            isBold: true,
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _row({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+    required Color textPrimary,
+    required Color textMuted,
+    required Color line,
+    bool isBold = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        border: Border.all(color: line),
+        borderRadius: BorderRadius.circular(14),
+        color: isBold ? iconColor.withValues(alpha: 0.08) : Colors.transparent,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: textMuted,
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: isBold ? FontWeight.w800 : FontWeight.w700,
+              color: textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

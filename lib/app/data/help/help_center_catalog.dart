@@ -77,7 +77,7 @@ class HelpCenterCatalog {
               'Switch to the Rent workspace from the hub header. Review monthly income, occupancy, active leases, and arrears cards.',
           bodySw:
               'Badilisha kwenye nafasi ya Kodi kutoka kichwa cha ukurasa. Angalia mapato, ukaaji, mikataba hai, na deni.',
-          route: Routes.RENT_HUB,
+          route: Routes.HOME,
         ),
         HelpGuideStep(
           titleEn: 'Add a rental property',
@@ -197,7 +197,7 @@ class HelpCenterCatalog {
           titleSw: 'Kadi ya deni la jumla',
           bodyEn: 'Rent hub shows total arrears across all properties for quick triage.',
           bodySw: 'Kitovu cha Kodi kinaonyesha jumla ya deni kwa mali zote.',
-          route: Routes.RENT_HUB,
+          route: Routes.FINANCIAL_OVERVIEW,
         ),
         HelpGuideStep(
           titleEn: 'Tenancy Insights',
@@ -365,7 +365,7 @@ class HelpCenterCatalog {
           titleSw: 'Nafasi ya Kodi',
           bodyEn: 'Tap RENT in the hub header (or switch from BnB link) for leases and tenants.',
           bodySw: 'Gusa KODI kwenye kichwa (au kiungo cha BnB) kwa mikataba na wapangaji.',
-          route: Routes.RENT_HUB,
+          route: Routes.MAIN,
         ),
       ],
     ),
@@ -441,7 +441,7 @@ class HelpCenterCatalog {
       descriptionSw: 'Vipimo vya mali, faida halisi, na chati ya mapato dhidi ya matumizi.',
       workspace: HelpWorkspace.rent,
       icon: Icons.apartment,
-      route: Routes.RENT_HUB,
+      route: Routes.MAIN,
       relatedGuideId: 'getting_started_rent',
     ),
     HelpFeature(

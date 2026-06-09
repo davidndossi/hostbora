@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_define_loyalty_offers_controller.dart';
 

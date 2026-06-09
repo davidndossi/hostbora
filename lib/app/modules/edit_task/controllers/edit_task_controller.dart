@@ -85,7 +85,9 @@ class EditTaskController extends BaseController {
       initialDate: dueDate.value ?? now,
       firstDate: DateTime(now.year - 1),
       lastDate: now.add(const Duration(days: 365 * 2)),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked != null) dueDate.value = picked;
   }
 

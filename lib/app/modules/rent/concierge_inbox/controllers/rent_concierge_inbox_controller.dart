@@ -172,7 +172,7 @@ class RentConciergeInboxController extends BaseController {
     if (ctx != null && Navigator.canPop(ctx)) {
       Get.back();
     } else {
-      Get.offNamed(Routes.RENT_HUB);
+      Get.offNamed(Routes.HOME);
     }
   }
 

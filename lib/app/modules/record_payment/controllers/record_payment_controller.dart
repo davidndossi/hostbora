@@ -12,6 +12,7 @@ import '../../../core/utils/money_input_helper.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/bnb_booking_merge.dart';
+import '../../../data/local/db/client_event_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
@@ -59,6 +60,7 @@ class RecordPaymentController extends BaseController {
   final IncomeLocalDataSource _incomeLocal;
   final PropertyLocalDataSource _propertyLocal;
   final TenantLocalDataSource _tenantLocal;
+  final _clientEventLocal = Get.find<ClientEventLocalDataSource>();
   final OfflineSyncQueueLocalDataSource _syncQueue;
   final OfflineSyncWorkerService _syncWorker;
   final AppRepository _repository;
@@ -138,6 +140,7 @@ class RecordPaymentController extends BaseController {
       initialDate: paymentDate.value,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('en', 'GB'),
     );
     if (picked != null) paymentDate.value = picked;
   }
@@ -414,11 +417,17 @@ class RecordPaymentController extends BaseController {
 
   Future<void> _initForm() async {
     selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
+    String workspace;
+    if (Get.parameters['workspaceType'] != null) {
+      workspace = Get.parameters['workspaceType'].toString();
+    } else {
+      workspace = _normalizeWorkspace(selectedPropertyRecord?.workspaceType);
+    }
     final presetBooking = _routeBookingId();
     if (presetBooking.isNotEmpty) {
       selectedBookingKey.value = presetBooking;
     }
-    await _loadProperties();
+    await _loadProperties(workspace);
     await _loadBookingsForSelectedProperty();
     final preset = selectedBookingKey.value?.trim();
     if (preset != null && preset.isNotEmpty) {
@@ -432,11 +441,11 @@ class RecordPaymentController extends BaseController {
     }
   }
 
-  Future<void> _loadProperties() async {
+  Future<void> _loadProperties(String workspace) async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
     final rows = await _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
-      workspaceType: 'bnb',
+      workspaceType: workspace,
     );
     _cachedUnitsPropertyId = null;
     _cachedUnitsJsonSnapshot = '';
@@ -733,6 +742,23 @@ class RecordPaymentController extends BaseController {
         currencyCode: parsed.currency,
         inputAmountValue: parsed.inputAmount,
       );
+
+      // Write client event for this payment (phone resolved later via tenant lookup)
+      unawaited(_clientEventLocal.insert(
+        phoneNumber: '',
+        clientName: tenant,
+        propertyRef: _propertyRefForIncomeInsert(),
+        propertyLabel: property,
+        unitLabel: unitName,
+        workspace: workspaceType,
+        eventType: ClientEventType.paymentPartial,
+        amountTsh: parsed.baseAmount.round(),
+        metadata: {
+          'category': selectedCategory,
+          'bookingId': bookingId,
+          'localIncomeId': localIncomeId,
+        },
+      ));
 
       final request = RecordPaymentRequest(
         amount: parsed.baseAmount,

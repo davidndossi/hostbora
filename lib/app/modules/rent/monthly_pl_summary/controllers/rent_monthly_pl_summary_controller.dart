@@ -280,6 +280,7 @@ class RentMonthlyPlSummaryController extends BaseController
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       helpText: Get.locale?.languageCode == 'sw' ? 'Chagua mwezi' : 'Select month',
+      locale: const Locale('en', 'GB'),
     );
     if (picked != null) {
       selectedMonth.value = DateTime(picked.year, picked.month);

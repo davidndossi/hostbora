@@ -1,8 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'dart:async';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../core/utils/haptic_feedback_util.dart';
@@ -12,7 +13,8 @@ import '../../../../data/local/db/scheduled_whatsapp_local_data_source.dart';
 import '../../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
-import '../../../../data/model/add_task_request.dart';
+import '../../../../data/local/db/client_event_local_data_source.dart';
+import '../../../../data/model/schedule_payment_reminder_request.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../host_calendar/controllers/host_calendar_controller.dart';
 
@@ -389,7 +391,9 @@ class RentSchedulePaymentReminderController extends BaseController {
       initialDate: reminderDate.value ?? now,
       firstDate: DateTime(now.year, now.month, now.day),
       lastDate: now.add(const Duration(days: 365 * 3)),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked != null) reminderDate.value = picked;
   }
 
@@ -456,18 +460,19 @@ class RentSchedulePaymentReminderController extends BaseController {
       );
     }
 
-    final taskRequest = AddTaskRequest(
-      title: 'Payment Reminder: $displayTenantName',
-      description: messageController.text.trim().isEmpty
-          ? 'Balance $formattedBalance for $displayPropertyTitle'
-          : resolveTemplate(messageController.text.trim()),
-      dueDate: DateFormat('yyyy-MM-dd').format(reminderAt),
+    final reminderRequest = SchedulePaymentReminderRequest(
+      tenantName: displayTenantName,
       propertyLabel: calendarPropertyFilterLabel,
-      workspaceType: 'rent',
+      balanceTsh: balanceTsh.value,
+      reminderAtIso: reminderAt.toIso8601String(),
+      pushEnabled: pushEnabled.value,
+      whatsappEnabled: whatsappEnabled.value,
+      emailEnabled: emailEnabled.value,
+      notificationId: notificationId,
     );
 
     try {
-      await _repository.addTask(taskRequest);
+      await _repository.schedulePaymentReminder(reminderRequest);
       await _paymentReminderLocal.updateSyncStatus(localId, 'synced');
       hapticPrimaryConfirm();
       showSuccessMessage('Saved offline and online. Reminder scheduled.');
@@ -477,11 +482,7 @@ class RentSchedulePaymentReminderController extends BaseController {
         operation: 'create',
         payloadJson: jsonEncode({
           'localId': localId,
-          'title': taskRequest.title,
-          'description': taskRequest.description,
-          'dueDate': taskRequest.dueDate,
-          'propertyLabel': taskRequest.propertyLabel,
-          'workspaceType': taskRequest.workspaceType,
+          ...reminderRequest.toJson(),
         }),
       );
       hapticPrimaryConfirm();
@@ -489,6 +490,22 @@ class RentSchedulePaymentReminderController extends BaseController {
         'Saved offline. Will sync when internet is available.',
       );
     }
+
+    // Write reminder_sent event to client story
+    unawaited(
+      Get.find<ClientEventLocalDataSource>().insert(
+        phoneNumber: _recipientPhone,
+        clientName: displayTenantName,
+        propertyLabel: calendarPropertyFilterLabel,
+        workspace: 'rent',
+        eventType: ClientEventType.reminderSent,
+        metadata: {
+          'channel': whatsappEnabled.value ? 'whatsapp' : 'push',
+          'scheduledAt': reminderAt.toIso8601String(),
+          'balanceTsh': balanceTsh.value,
+        },
+      ),
+    );
 
     await HostCalendarController.refreshIfRegistered();
     await _clearSavedDraftMessage();

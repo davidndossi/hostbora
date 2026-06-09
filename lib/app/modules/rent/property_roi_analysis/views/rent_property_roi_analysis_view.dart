@@ -1,13 +1,12 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
-
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/widget/skeleton_presets.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../routes/app_pages.dart';
 import '../controllers/rent_property_roi_analysis_controller.dart';

@@ -1,5 +1,8 @@
 import '../model/add_listing_request.dart';
 import '../model/add_task_request.dart';
+import '../model/record_client_event_request.dart';
+import '../model/schedule_payment_reminder_request.dart';
+import '../model/submit_tenant_rating_request.dart';
 import '../model/change_password_request.dart';
 import '../model/cancel_booking_request.dart';
 import '../model/checkout_booking_request.dart';
@@ -111,8 +114,11 @@ abstract class AppRepository {
   Future<GeneralResponse> updateBooking(UpdateBookingRequest request);
 
   Future<GeneralResponse> recordPayment(RecordPaymentRequest request);
+  Future<GeneralResponse> deletePayment(String paymentId);
 
   Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]);
+  Future<GeneralResponse> updateExpense(String expenseId, AddExpenseRequest request);
+  Future<GeneralResponse> deleteExpense(String expenseId);
 
   Future<GeneralResponse> getHomeOverview();
 
@@ -127,8 +133,14 @@ abstract class AppRepository {
   Future<GeneralResponse> getTask(String taskId);
 
   Future<GeneralResponse> addTask(AddTaskRequest request);
+  Future<GeneralResponse> schedulePaymentReminder(SchedulePaymentReminderRequest request);
+  Future<GeneralResponse> recordClientEvent(RecordClientEventRequest request);
+  Future<GeneralResponse> submitTenantRating(SubmitTenantRatingRequest request);
+  Future<GeneralResponse> searchTenantScore(String phoneNumber);
+  Future<GeneralResponse> contributeTenantScore(String phoneNumber, String tenantName);
 
   Future<GeneralResponse> updateTask(String taskId, AddTaskRequest request);
+  Future<GeneralResponse> deleteTask(String taskId);
 
   Future<GeneralResponse> getVaultDocuments(String directoryId);
 
@@ -152,6 +164,7 @@ abstract class AppRepository {
 
   Future<GeneralResponse> createTenant(Map<String, dynamic> body);
   Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body);
+  Future<GeneralResponse> deleteTenant(String id);
   Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body);
   Future<GeneralResponse> createStaff(Map<String, dynamic> body);
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body);
@@ -168,4 +181,13 @@ abstract class AppRepository {
   Future<GeneralResponse> deleteWhatsAppTemplateDraft(String id);
   Future<GeneralResponse> updateUnit(String listingId, String unitId, Map<String, dynamic> body);
   Future<GeneralResponse> changePinOnServer(Map<String, dynamic> body);
+
+  /// POST /api/properties
+  Future<GeneralResponse> createProperty(Map<String, dynamic> body);
+
+  /// PUT /api/properties/{id}
+  Future<GeneralResponse> updateProperty(int id, Map<String, dynamic> body);
+
+  /// PUT /api/properties/ref/{propertyRef}
+  Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body);
 }

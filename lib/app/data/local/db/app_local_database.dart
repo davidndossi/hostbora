@@ -43,6 +43,8 @@ class AppLocalDatabase {
   static const offlineSyncQueueTable = 'offline_sync_queue';
   static const exchangeRatesTable = 'exchange_rates';
   static const scheduledWhatsappTable = 'scheduled_whatsapp';
+  static const clientEventTable = 'client_event';
+  static const tenantRatingTable = 'tenant_rating';
 
   static Database? _db;
 
@@ -73,6 +75,13 @@ class AppLocalDatabase {
         await _ensureExchangeRatesTable(db);
         await _ensureScheduledWhatsappTable(db);
         await _ensureScheduledMaintenanceWorkspaceTypeColumn(db);
+        await _ensureExpenseBackendIdColumn(db);
+        await _ensureClientEventTable(db);
+        await _ensureTenantRatingTable(db);
+        await _ensureTenantStatusColumns(db);
+        await _ensureIncomeBackendPaymentIdColumn(db);
+        await _ensureTenantBackendTenantIdColumn(db);
+        await _ensureMaintenanceBackendTaskIdColumn(db);
       },
     );
     return _db!;
@@ -614,6 +623,111 @@ class AppLocalDatabase {
       scheduledMaintenanceTable,
       'workspace_type',
       "TEXT NOT NULL DEFAULT 'rent'",
+    );
+  }
+
+  static Future<void> _ensureExpenseBackendIdColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      expenseTable,
+      'backend_expense_id',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
+  static Future<void> _ensureIncomeBackendPaymentIdColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      incomeTable,
+      'backend_payment_id',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
+  static Future<void> _ensureTenantBackendTenantIdColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      tenantTable,
+      'backend_tenant_id',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
+  static Future<void> _ensureMaintenanceBackendTaskIdColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      scheduledMaintenanceTable,
+      'backend_task_id',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
+  static Future<void> _ensureClientEventTable(Database db) async {
+    if (await _tableExists(db, clientEventTable)) return;
+    await db.execute('''
+      CREATE TABLE $clientEventTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_local_id INTEGER NOT NULL DEFAULT 0,
+        phone_number TEXT NOT NULL DEFAULT '',
+        client_name TEXT NOT NULL DEFAULT '',
+        property_ref TEXT NOT NULL DEFAULT '',
+        property_label TEXT NOT NULL DEFAULT '',
+        unit_label TEXT NOT NULL DEFAULT '',
+        workspace TEXT NOT NULL DEFAULT 'rent',
+        event_type TEXT NOT NULL,
+        amount_tsh INTEGER NOT NULL DEFAULT 0,
+        balance_before INTEGER NOT NULL DEFAULT 0,
+        balance_after INTEGER NOT NULL DEFAULT 0,
+        metadata_json TEXT NOT NULL DEFAULT '{}',
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_${clientEventTable}_phone ON $clientEventTable(phone_number)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_${clientEventTable}_tenant ON $clientEventTable(tenant_local_id)',
+    );
+  }
+
+  static Future<void> _ensureTenantRatingTable(Database db) async {
+    if (await _tableExists(db, tenantRatingTable)) return;
+    await db.execute('''
+      CREATE TABLE $tenantRatingTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_local_id INTEGER NOT NULL,
+        phone_number TEXT NOT NULL DEFAULT '',
+        tenant_name TEXT NOT NULL DEFAULT '',
+        overall_stars INTEGER NOT NULL DEFAULT 0,
+        payment_stars INTEGER NOT NULL DEFAULT 0,
+        property_care_stars INTEGER NOT NULL DEFAULT 0,
+        communication_stars INTEGER NOT NULL DEFAULT 0,
+        rent_again TEXT NOT NULL DEFAULT 'yes',
+        comment TEXT NOT NULL DEFAULT '',
+        workspace TEXT NOT NULL DEFAULT 'rent',
+        share_consent INTEGER NOT NULL DEFAULT 0,
+        is_published INTEGER NOT NULL DEFAULT 0,
+        publish_after_ms INTEGER NOT NULL DEFAULT 0,
+        tenancy_duration_days INTEGER NOT NULL DEFAULT 0,
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  static Future<void> _ensureTenantStatusColumns(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      tenantTable,
+      'tenancy_status',
+      "TEXT NOT NULL DEFAULT 'active'",
+    );
+    await _addColumnIfMissing(
+      db,
+      tenantTable,
+      'ended_at_ms',
+      'INTEGER NOT NULL DEFAULT 0',
     );
   }
 

@@ -56,7 +56,7 @@ class AddListingController extends BaseController {
   final propertyType = 'Apartment'.obs;
   final rentFrequency = 'Per Day'.obs;
   final minRentalDuration = '2 Days'.obs;
-  final listingMode = 'bnb'.obs;
+  final listingMode = 'both'.obs;
   final propertyTypeOptions = const [
     'Apartment',
     'House',
@@ -571,6 +571,20 @@ class AddListingController extends BaseController {
               ),
             ),
           );
+          // Sync property update to backend in the background.
+          _syncPropertyUpdate(
+            propertyRef: original.propertyRef,
+            location: location,
+            name: propertyNameController.text.trim(),
+            type: _effectivePropertyType,
+            units: _listedUnitCount(),
+            workspaceType: listingMode.value,
+            rentAmount: hideListingRentAmount ? '' : rentAmountController.text.trim(),
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            unitsJson: unitsJson,
+            floorCount: floorCount.value,
+          );
           await syncPropertyUnitsForListingSave(
             unitLocal: _unitLocal,
             propertyRef: original.propertyRef,
@@ -593,6 +607,8 @@ class AddListingController extends BaseController {
             userSelectedPath: propertyCoverPhotoPath.value,
             propertyName: propertyNameController.text.trim(),
           );
+          final nowMs = DateTime.now().millisecondsSinceEpoch;
+          final ownerUserId = (await _preferenceManager.getUser()).id ?? '';
           await _local.insert(
             PropertyRecord(
               id: 0,
@@ -602,9 +618,9 @@ class AddListingController extends BaseController {
               propertyRef: propertyRef,
               tenants: 0,
               units: _listedUnitCount(),
-              ownerUserId: (await _preferenceManager.getUser()).id ?? '',
+              ownerUserId: ownerUserId,
               workspaceType: listingMode.value,
-              createdAtMs: DateTime.now().millisecondsSinceEpoch,
+              createdAtMs: nowMs,
               rentAmount: rentAmountController.text.trim(),
               rentFrequency: rentFrequency.value,
               minRentalDuration: minRentalDuration.value,
@@ -612,6 +628,23 @@ class AddListingController extends BaseController {
               floorCount: floorCount.value,
               coverPhotoPath: coverPath,
             ),
+          );
+          // Sync property creation to backend in the background.
+          _syncPropertyCreate(
+            propertyRef: propertyRef,
+            location: location,
+            name: propertyNameController.text.trim(),
+            type: _effectivePropertyType,
+            units: _listedUnitCount(),
+            ownerUserId: ownerUserId,
+            workspaceType: listingMode.value,
+            createdAtMs: nowMs,
+            rentAmount: rentAmountController.text.trim(),
+            rentFrequency: rentFrequency.value,
+            minRentalDuration: minRentalDuration.value,
+            unitsJson: unitsJson,
+            floorCount: floorCount.value,
+            coverPhotoPath: coverPath,
           );
           await syncPropertyUnitsForListingSave(
             unitLocal: _unitLocal,
@@ -632,6 +665,108 @@ class AddListingController extends BaseController {
       } catch (e, st) {
         logger.e('saveProperty $e $st');
         Get.snackbar('Error', 'Could not save property');
+      }
+    });
+  }
+
+  /// Fire-and-forget: attempt backend creation; fall back to offline queue.
+  void _syncPropertyCreate({
+    required String propertyRef,
+    required String location,
+    required String name,
+    required String type,
+    required int units,
+    required String ownerUserId,
+    required String workspaceType,
+    required int createdAtMs,
+    required String rentAmount,
+    required String rentFrequency,
+    required String minRentalDuration,
+    required String unitsJson,
+    required int floorCount,
+    required String coverPhotoPath,
+  }) {
+    final payload = {
+      'property_ref': propertyRef,
+      'location': location,
+      'name': name,
+      'type': type,
+      'tenants': 0,
+      'units': units,
+      'workspace_type': workspaceType,
+      'created_at_ms': createdAtMs,
+      'rent_amount': rentAmount,
+      'rent_frequency': rentFrequency,
+      'min_rental_duration': minRentalDuration,
+      'units_json': unitsJson,
+      'floor_count': floorCount,
+      'cover_photo_path': coverPhotoPath,
+    };
+    Future.microtask(() async {
+      try {
+        final res = await _repository.createProperty(payload);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'createProperty failed');
+      } catch (e) {
+        try {
+          await _syncQueue.enqueue(
+            entityType: 'property',
+            operation: 'create',
+            payloadJson: jsonEncode(payload),
+            dedupeKey: 'property:create:$propertyRef',
+          );
+          await _syncWorker.runNow(maxItems: 5);
+        } catch (_) {}
+      }
+    });
+  }
+
+  /// Fire-and-forget: attempt backend update by propertyRef; fall back to offline queue.
+  void _syncPropertyUpdate({
+    required String propertyRef,
+    required String location,
+    required String name,
+    required String type,
+    required int units,
+    required String workspaceType,
+    required String rentAmount,
+    required String rentFrequency,
+    required String minRentalDuration,
+    required String unitsJson,
+    required int floorCount,
+  }) {
+    final payload = {
+      'property_ref': propertyRef,
+      'location': location,
+      'name': name,
+      'type': type,
+      'units': units,
+      'workspace_type': workspaceType,
+      'rent_amount': rentAmount,
+      'rent_frequency': rentFrequency,
+      'min_rental_duration': minRentalDuration,
+      'units_json': unitsJson,
+      'floor_count': floorCount,
+    };
+    Future.microtask(() async {
+      try {
+        final res = await _repository.updatePropertyByRef(propertyRef, payload);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'updatePropertyByRef failed');
+      } catch (e) {
+        try {
+          await _syncQueue.enqueue(
+            entityType: 'property',
+            operation: 'update',
+            payloadJson: jsonEncode(payload),
+            dedupeKey: 'property:update:$propertyRef',
+          );
+          await _syncWorker.runNow(maxItems: 5);
+        } catch (_) {}
       }
     });
   }

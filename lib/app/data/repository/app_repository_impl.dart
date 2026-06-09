@@ -1,4 +1,7 @@
 import 'package:get/get.dart';
+import 'package:host_bora/app/data/model/record_client_event_request.dart';
+import 'package:host_bora/app/data/model/schedule_payment_reminder_request.dart';
+import 'package:host_bora/app/data/model/submit_tenant_rating_request.dart';
 
 import '../model/add_listing_request.dart';
 import '../model/add_task_request.dart';
@@ -240,8 +243,23 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> deletePayment(String paymentId) {
+    return _remoteSource.deletePayment(paymentId);
+  }
+
+  @override
   Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]) {
     return _remoteSource.addExpense(request, receiptFilePath);
+  }
+
+  @override
+  Future<GeneralResponse> updateExpense(String expenseId, AddExpenseRequest request) {
+    return _remoteSource.updateExpense(expenseId, request);
+  }
+
+  @override
+  Future<GeneralResponse> deleteExpense(String expenseId) {
+    return _remoteSource.deleteExpense(expenseId);
   }
 
   @override
@@ -282,6 +300,11 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> updateTask(String taskId, AddTaskRequest request) {
     return _remoteSource.updateTask(taskId, request);
+  }
+
+  @override
+  Future<GeneralResponse> deleteTask(String taskId) {
+    return _remoteSource.deleteTask(taskId);
   }
 
   @override
@@ -332,6 +355,11 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body) {
     return _remoteSource.updateTenant(id, body);
+  }
+
+  @override
+  Future<GeneralResponse> deleteTenant(String id) {
+    return _remoteSource.deleteTenant(id);
   }
 
   @override
@@ -419,5 +447,50 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> changePinOnServer(Map<String, dynamic> body) {
     return _remoteSource.changePinOnServer(body);
+  }
+
+  @override
+  Future<GeneralResponse> createProperty(Map<String, dynamic> body) {
+    return _remoteSource.createProperty(body);
+  }
+
+  @override
+  Future<GeneralResponse> updateProperty(int id, Map<String, dynamic> body) {
+    return _remoteSource.updateProperty(id, body);
+  }
+
+  @override
+  Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body) {
+    return _remoteSource.updatePropertyByRef(propertyRef, body);
+  }
+
+  @override
+  Future<GeneralResponse> contributeTenantScore(String phoneNumber, String tenantName) {
+    // TODO: implement contributeTenantScore
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<GeneralResponse> recordClientEvent(RecordClientEventRequest request) {
+    // TODO: implement recordClientEvent
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<GeneralResponse> schedulePaymentReminder(SchedulePaymentReminderRequest request) {
+    // TODO: implement schedulePaymentReminder
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<GeneralResponse> searchTenantScore(String phoneNumber) {
+    // TODO: implement searchTenantScore
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<GeneralResponse> submitTenantRating(SubmitTenantRatingRequest request) {
+    // TODO: implement submitTenantRating
+    throw UnimplementedError();
   }
 }

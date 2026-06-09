@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
-import 'package:host_bora/app/core/widget/custom_app_bar.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/widget/custom_app_bar.dart';
 import '../controllers/rent_share_renewed_lease_controller.dart';
 
 /// Design: dark teal accent (~#005F59), cream bg #F9F8F4, serif headlines.

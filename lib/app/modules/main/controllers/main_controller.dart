@@ -1,5 +1,4 @@
-import 'dart:ui';
-
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../routes/app_pages.dart';
@@ -10,7 +9,8 @@ import '/app/modules/home/controllers/home_controller.dart';
 import '/app/modules/main/controllers/bottom_nav_controller.dart';
 import '/app/modules/main/model/menu_code.dart';
 import '/app/modules/maintenance_tasks/controllers/maintenance_tasks_controller.dart';
-class MainController extends BaseController {
+
+class MainController extends BaseController with WidgetsBindingObserver {
   final _selectedMenuCodeController = MenuCode.HOME.obs;
 
   MenuCode get selectedMenuCode => _selectedMenuCodeController.value;
@@ -22,11 +22,35 @@ class MainController extends BaseController {
   @override
   void onInit() async {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     final args = Get.arguments as Map<String, dynamic>?;
     if (args?['initialMenu'] == 'home') {
       _selectedMenuCodeController(MenuCode.HOME);
       try {
         Get.find<BottomNavController>().updateSelectedIndex(0);
+      } catch (_) {}
+    }
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.onClose();
+  }
+
+  /// Re-notify the current page selection when the app returns to foreground
+  /// so that any Obx subscribers that missed updates while paused are refreshed.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Re-assign the same value to force all Obx listeners to rebuild.
+      final current = _selectedMenuCodeController.value;
+      _selectedMenuCodeController.value = current;
+      // Also nudge BottomNavController so the nav bar visual state is fresh.
+      try {
+        final nav = Get.find<BottomNavController>();
+        final idx = nav.selectedIndex;
+        nav.updateSelectedIndex(idx);
       } catch (_) {}
     }
   }
@@ -80,6 +104,13 @@ class MainController extends BaseController {
     final result = await Get.toNamed(Routes.ADD_TASK);
     if (result == true && Get.isRegistered<MaintenanceTasksController>()) {
       Get.find<MaintenanceTasksController>().loadTasks();
+    }
+  }
+
+  Future<void> addProperty() async {
+    final result = await Get.toNamed(Routes.ADD_LISTING);
+    if (result == true && Get.isRegistered<MyPropertiesController>()) {
+      Get.find<MyPropertiesController>().loadProperties();
     }
   }
 }

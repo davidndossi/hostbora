@@ -110,7 +110,7 @@ class FinancialOverviewController extends BaseController {
   Future<void> loadOverview({bool quiet = false}) async {
     if (!quiet) isLoading.value = true;
     try {
-      final ws = 'bnb';
+      final ws = 'both';
       final fx = Get.find<CurrencyService>();
       final incomes =
           await _incomeLocal.getAllNewestFirst(workspaceType: ws);
@@ -498,6 +498,7 @@ class FinancialOverviewController extends BaseController {
                     start: initialStart,
                     end: initialEnd,
                   ),
+                  locale: const Locale('en', 'GB'),
                   helpText: isSw ? 'Chagua kipindi' : 'Select period',
                   saveText: isSw ? 'Tumia' : 'Apply',
                   cancelText: isSw ? 'Funga' : 'Close',

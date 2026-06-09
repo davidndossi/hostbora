@@ -86,7 +86,9 @@ class AiPricingOptimizerController extends BaseController {
       initialDate: simulationDate.value,
       firstDate: DateTime(2023),
       lastDate: DateTime(2030),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked != null) {
       simulationDate.value = picked;
     }

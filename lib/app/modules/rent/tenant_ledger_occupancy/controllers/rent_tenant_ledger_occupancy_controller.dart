@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/end_tenancy_sheet.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -1138,6 +1139,44 @@ Reference: $contractName
         _isSw ? 'Imeshindwa kutengeneza mkataba' : 'Failed to generate contract',
       );
     }
+  }
+
+  void onEndTenancy(BuildContext context) {
+    final record = tenantRecord.value;
+    if (record == null) return;
+    final balanceTsh = remainingBalanceTsh;
+    EndTenancySheet.show(
+      tenant: record,
+      outstandingBalanceTsh: balanceTsh,
+      workspace: _sourceWorkspace,
+      onCompleted: (result) async {
+        showSuccessMessage(
+          result.shareConsent
+              ? 'Tenancy ended. Rating will be published in 30 days.'
+              : 'Tenancy ended successfully.',
+        );
+        await _loadTenantAndCheckPeriod();
+      },
+    );
+  }
+
+  void onViewStory() {
+    final record = tenantRecord.value;
+    if (record == null) return;
+    Get.toNamed(
+      Routes.CLIENT_STORY,
+      parameters: {
+        'tenantId': record.id.toString(),
+        'name': record.tenantName,
+        'phone': record.phoneNumber,
+      },
+      arguments: {
+        'tenantId': record.id,
+        'name': record.tenantName,
+        'phone': record.phoneNumber,
+        'workspace': _sourceWorkspace,
+      },
+    );
   }
 
   @override

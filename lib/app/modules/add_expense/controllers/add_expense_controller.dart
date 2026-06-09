@@ -15,6 +15,7 @@ import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/model/add_expense_request.dart';
+import '../../../data/repository/app_repository.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
 
 class AddExpenseController extends BaseController {
@@ -24,6 +25,7 @@ class AddExpenseController extends BaseController {
       _tenantLocal = Get.find<TenantLocalDataSource>(),
       _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
       _syncWorker = Get.find<OfflineSyncWorkerService>(),
+      _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
       _preferenceManager = Get.find<PreferenceManager>(
         tag: (PreferenceManager).toString(),
       );
@@ -33,6 +35,7 @@ class AddExpenseController extends BaseController {
   final TenantLocalDataSource _tenantLocal;
   final OfflineSyncQueueLocalDataSource _syncQueue;
   final OfflineSyncWorkerService _syncWorker;
+  final AppRepository _repository;
   final PreferenceManager _preferenceManager;
 
   final tenantController = TextEditingController();
@@ -221,9 +224,12 @@ class AddExpenseController extends BaseController {
 
   Future<void> _loadProperties() async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
+    final propertyMode = _normalizeWorkspace(
+      selectedPropertyRecord?.workspaceType,
+    );
     final rows = await _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
-      workspaceType: 'bnb',
+      workspaceType: propertyMode,
     );
     _propertyRows = rows;
     final options = rows
@@ -349,71 +355,116 @@ class AddExpenseController extends BaseController {
         baseNotes.write(" ");
         baseNotes.writeln(extra);
       }
+      final notesStr = baseNotes.toString().trim();
+      final isoDate = DateFormat('yyyy-MM-dd').format(paidDate);
+      final vendor = tenantController.text.trim().isNotEmpty
+          ? tenantController.text.trim()
+          : property;
+
+      final request = AddExpenseRequest(
+        amount: parsed.baseAmount,
+        category: selectedExpense,
+        expenseDate: isoDate,
+        vendor: vendor,
+        taxDeductible: true,
+        description: notesStr,
+      );
+
       final editId = editExpenseId.value;
       if (editId != null) {
+        // ── Edit mode: update locally first ──────────────────────────────
         await _expenseLocal.update(
           id: editId,
           tenantName: tenantController.text.trim(),
           amountValue: parsed.baseAmount,
-          datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
+          datePaidIso: isoDate,
           category: selectedExpense,
           workspaceType: workspaceType,
-          notes: baseNotes.toString().trim(),
+          notes: notesStr,
           apartment: property,
           apartmentUnit: unitName,
           currencyCode: parsed.currency,
           inputAmountValue: parsed.inputAmount,
         );
+
+        // Try to update on backend if we have the backend UUID
+        final backendId = await _expenseLocal.getBackendExpenseId(editId);
+        if (backendId != null) {
+          try {
+            await _repository.updateExpense(backendId, request);
+          } catch (_) {
+            // Queue for later retry
+            await _syncQueue.enqueue(
+              entityType: 'expense',
+              operation: 'update',
+              payloadJson: jsonEncode({
+                ...request.toJson(),
+                'backendExpenseId': backendId,
+              }),
+              dedupeKey: 'expense:update:$backendId',
+            );
+            Future.microtask(() => _syncWorker.runNow(maxItems: 5));
+          }
+        }
+
         showSuccessMessage('Expense updated.');
         Get.back(result: true);
         return;
       }
 
+      // ── Create mode: save locally ─────────────────────────────────────
       final localExpenseId = await _expenseLocal.insert(
         tenantName: tenantController.text.trim(),
         amountValue: parsed.baseAmount,
-        datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
+        datePaidIso: isoDate,
         category: selectedExpense,
         workspaceType: workspaceType,
-        notes: baseNotes.toString().trim(),
+        notes: notesStr,
         apartment: property,
         apartmentUnit: unitName,
         currencyCode: parsed.currency,
         inputAmountValue: parsed.inputAmount,
       );
 
-      final request = AddExpenseRequest(
-        amount: parsed.baseAmount,
-        category: selectedExpense,
-        expenseDate: DateFormat('yyyy-MM-dd').format(paidDate),
-        vendor: tenantController.text.trim().isNotEmpty
-            ? tenantController.text.trim()
-            : property,
-        taxDeductible: true,
-        description: baseNotes.toString().trim(),
-      );
-      final payload = <String, dynamic>{
-        ...request.toJson(),
-        'localExpenseId': localExpenseId,
-      };
+      // Try to save to backend directly; queue as fallback
+      try {
+        final res = await _repository.addExpense(request);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (ok) {
+          // Persist backend UUID for future edits
+          final backendId = (res.data is Map)
+              ? (res.data as Map)['expenseId']?.toString() ?? ''
+              : '';
+          if (backendId.isNotEmpty) {
+            await _expenseLocal.saveBackendExpenseId(
+              localId: localExpenseId,
+              backendId: backendId,
+            );
+          }
+          showSuccessMessage('Expense saved and synced.');
+          Get.back(result: true);
+          return;
+        }
+      } catch (_) {
+        // Fall through to offline queue
+      }
+
+      // Backend unreachable – queue for later
       await _syncQueue.enqueue(
         entityType: 'expense',
         operation: 'create',
-        payloadJson: jsonEncode(payload),
+        payloadJson: jsonEncode({
+          ...request.toJson(),
+          'localExpenseId': localExpenseId,
+        }),
         dedupeKey: 'expense:create:$localExpenseId',
       );
-      await _syncWorker.runNow(maxItems: 20);
-      final pending = await _syncQueue.pendingCountByEntity(
-        entityType: 'expense',
-        operation: 'create',
+      Future.microtask(() => _syncWorker.runNow(maxItems: 20));
+      showSuccessMessage(
+        'Expense saved. Will sync when internet is available.',
       );
-      if (pending > 0) {
-        showSuccessMessage(
-          'Expense saved offline. Will sync when internet is available.',
-        );
-      } else {
-        showSuccessMessage('Expense saved and synced.');
-      }
       Get.back(result: true);
     });
   }

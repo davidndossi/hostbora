@@ -192,8 +192,8 @@ void requestUserPermission() async {
 void main() async {
   EnvConfig devConfig = EnvConfig(
     appName: 'Host Bora',
-    baseUrl: 'http://167.86.89.92:8082',
-    // baseUrl: 'http://www.hostbora.co.tz:8082',
+    baseUrl: 'http://172.20.10.4:8081',
+    // baseUrl: 'http://192.168.100.4:8081',
     shouldCollectCrashLog: true,
     // Optional: enable Push to Pay (AzamPay) in Add Booking. Get credentials from https://developerdocs.azampay.co.tz
     azamPayAppName: 'AHADI',

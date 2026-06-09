@@ -64,7 +64,9 @@ Future<bool> showBnbGuestWhatsappScheduleSheet({
                       initialDate: date,
                       firstDate: DateTime.now(),
                       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                      locale: const Locale('en', 'GB'),
                     );
+                    
                     if (picked != null) setState(() => date = picked);
                   },
                 ),

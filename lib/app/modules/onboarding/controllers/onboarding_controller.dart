@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:host_bora/app/modules/onboarding/views/explanation_view.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../routes/app_pages.dart';
+import '../views/explanation_view.dart';
 
 class OnboardingController extends BaseController {
   final PreferenceManager _preferenceManager =

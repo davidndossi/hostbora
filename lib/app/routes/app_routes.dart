@@ -75,7 +75,6 @@ abstract class Routes {
   static const DESIGN_MOODBOARDS = _Paths.DESIGN_MOODBOARDS;
   static const PRICE_ANALYSIS = _Paths.PRICE_ANALYSIS;
   static const AI_PRICING_OPTIMIZER = _Paths.AI_PRICING_OPTIMIZER;
-  static const RENT_HUB = _Paths.RENT_HUB;
   static const RENT_HOST_DASHBOARD_PAYMENT_ALERTS = _Paths.RENT_HOST_DASHBOARD_PAYMENT_ALERTS;
   static const RENT_PROFIT_ANALYSIS_DASHBOARD = _Paths.RENT_PROFIT_ANALYSIS_DASHBOARD;
   static const RENT_LISTING_ANALYTICS_DASHBOARD = _Paths.RENT_LISTING_ANALYTICS_DASHBOARD;
@@ -108,6 +107,8 @@ abstract class Routes {
   static const RENT_LISTING_ACTIVITY_LOG = _Paths.RENT_LISTING_ACTIVITY_LOG;
   static const RENT_PROPERTY_ROI_ESTIMATE_FORM = _Paths.RENT_PROPERTY_ROI_ESTIMATE_FORM;
   static const RENT_WHATSAPP_TEMPLATE_BUILDER = _Paths.RENT_WHATSAPP_TEMPLATE_BUILDER;
+  static const ALL_TENANTS = _Paths.ALL_TENANTS;
+  static const CLIENT_STORY = _Paths.CLIENT_STORY;
 }
 
 abstract class _Paths {
@@ -182,7 +183,6 @@ abstract class _Paths {
   static const DESIGN_MOODBOARDS = '/design-moodboards';
   static const PRICE_ANALYSIS = '/price-analysis';
   static const AI_PRICING_OPTIMIZER = '/ai-pricing-optimizer';
-  static const RENT_HUB = '/rent';
   static const RENT_HOST_DASHBOARD_PAYMENT_ALERTS = '/rent/host-dashboard-payment-alerts';
   static const RENT_PROFIT_ANALYSIS_DASHBOARD = '/rent/profit-analysis-dashboard';
   static const RENT_LISTING_ANALYTICS_DASHBOARD = '/rent/listing-analytics-dashboard';
@@ -213,4 +213,6 @@ abstract class _Paths {
   static const RENT_LISTING_ACTIVITY_LOG = '/rent/listing-activity-log';
   static const RENT_PROPERTY_ROI_ESTIMATE_FORM = '/rent/property-roi-estimate-form';
   static const RENT_WHATSAPP_TEMPLATE_BUILDER = '/rent/whatsapp-template-builder';
+  static const ALL_TENANTS = '/all-tenants';
+  static const CLIENT_STORY = '/client-story';
 }

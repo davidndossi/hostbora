@@ -32,98 +32,32 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
   @override
   Widget body(BuildContext context) {
     return SafeArea(
-      child: Column(
-        children: [
-          _buildHeader(context),
-          Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const DefaultScreenSkeleton();
-              }
-              return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _portfolioKpiGrid(context),
-                    const SizedBox(height: 16),
-                    _hostDashboard(context),
-                    const SizedBox(height: 16),
-                    _buildSegmentedToggle(context),
-                    const SizedBox(height: 20),
-                    _buildPerformanceTrendsCard(context),
-                    const SizedBox(height: 16),
-                    _buildTotalRevenueCard(context),
-                    const SizedBox(height: 12),
-                    _buildMetricRow(context),
-                    const SizedBox(height: 20),
-                    _buildMonthlyGrowthSection(context),
-                  ],
-                ),
-              );
-            }),
+      child: Obx(() {
+        if (controller.isLoading.value) {
+          return const DefaultScreenSkeleton();
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _portfolioKpiGrid(context),
+              const SizedBox(height: 16),
+              // _hostDashboard(context),
+              // const SizedBox(height: 16),
+              _buildSegmentedToggle(context),
+              const SizedBox(height: 20),
+              _buildPerformanceTrendsCard(context),
+              const SizedBox(height: 16),
+              _buildTotalRevenueCard(context),
+              const SizedBox(height: 12),
+              _buildMetricRow(context),
+              const SizedBox(height: 20),
+              _buildMonthlyGrowthSection(context),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      child: Row(
-        children: [
-          _circleIconButton(
-            context: context,
-            onPressed: controller.goBack,
-            icon: Icons.chevron_left,
-          ),
-          const Spacer(),
-          TextButton(
-            onPressed: controller.recordPayment,
-            child: Text(
-              _t(context, 'Record Payment', 'Rekodi Malipo'),
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.colorPrimary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          _circleIconButton(
-            context: context,
-            onPressed: controller.openCalendar,
-            icon: Icons.calendar_today_outlined,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _circleIconButton({
-    required BuildContext context,
-    required VoidCallback onPressed,
-    required IconData icon,
-  }) {
-    final c = FormSurfaceColors.of(context);
-    return Material(
-      color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
-      shape: const CircleBorder(),
-      elevation: 1,
-      shadowColor: Colors.black.withValues(alpha: c.isDark ? 0.3 : 0.1),
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Icon(
-            icon,
-            size: 24,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ),
+        );
+      }),
     );
   }
 

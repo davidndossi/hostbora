@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
-import 'package:host_bora/app/modules/add_tenant_form/views/add_tenant_form_view.dart';
 
 import '../modules/add_tenant_form/bindings/add_tenant_form_binding.dart';
+import '../modules/add_tenant_form/views/add_tenant_form_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/auth_view.dart';
 import '../modules/change_password/bindings/change_password_binding.dart';
@@ -57,6 +57,8 @@ import '../modules/reset_password/bindings/reset_password_binding.dart';
 import '../modules/reset_password/views/reset_password_view.dart';
 import '../modules/change_pin/bindings/change_pin_binding.dart';
 import '../modules/change_pin/views/change_pin_view.dart';
+import '../modules/client_story/bindings/client_story_binding.dart';
+import '../modules/client_story/views/client_story_view.dart';
 import '../modules/password_updated/bindings/password_updated_binding.dart';
 import '../modules/password_updated/views/password_updated_view.dart';
 import '../modules/add_listing/bindings/add_listing_binding.dart';
@@ -216,6 +218,8 @@ import '../modules/rent/active_loyalty_programs/views/rent_active_loyalty_progra
     as split_active_loyalty_view;
 import '../modules/rent/whatsapp_template_builder/bindings/rent_whatsapp_template_builder_binding.dart';
 import '../modules/rent/whatsapp_template_builder/views/rent_whatsapp_template_builder_view.dart';
+import '../modules/all_tenants/bindings/all_tenants_binding.dart';
+import '../modules/all_tenants/views/all_tenants_view.dart';
 import '../modules/rent/manage_expenses/bindings/manage_expenses_binding.dart';
 import '../modules/rent/manage_expenses/views/manage_expenses_view.dart';
 import '../modules/rent/manage_payments/bindings/manage_payments_binding.dart';
@@ -704,6 +708,16 @@ class AppPages {
       name: _Paths.RENT_WHATSAPP_TEMPLATE_BUILDER,
       page: () => RentWhatsappTemplateBuilderView(),
       binding: RentWhatsappTemplateBuilderBinding(),
+    ),
+    GetPage(
+      name: _Paths.ALL_TENANTS,
+      page: () => const AllTenantsView(),
+      binding: AllTenantsBinding(),
+    ),
+    GetPage(
+      name: _Paths.CLIENT_STORY,
+      page: () => const ClientStoryView(),
+      binding: ClientStoryBinding(),
     ),
   ];
 }

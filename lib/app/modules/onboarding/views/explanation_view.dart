@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:host_bora/app/core/values/text_styles.dart';
 
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/text_styles.dart';
 import '../../../core/widget/base_currency_picker.dart';
 import '../../../core/widget/module_default_text_scope.dart';
 import '../../../data/local/service/workspace_context_service.dart';
-import '../controllers/onboarding_controller.dart';
 
 class ExplanationView extends StatelessWidget {
   const ExplanationView({super.key});

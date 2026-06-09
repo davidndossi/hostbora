@@ -1,9 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/theme/form_surface_colors.dart';
-
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 
@@ -11,6 +9,7 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_decorations.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/dashboard_controller.dart';
 

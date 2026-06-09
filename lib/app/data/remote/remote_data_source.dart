@@ -1,5 +1,8 @@
 import '../model/add_listing_request.dart';
 import '../model/add_task_request.dart';
+import '../model/record_client_event_request.dart';
+import '../model/schedule_payment_reminder_request.dart';
+import '../model/submit_tenant_rating_request.dart';
 import '../model/change_password_request.dart';
 import '../model/cancel_booking_request.dart';
 import '../model/checkout_booking_request.dart';
@@ -23,6 +26,7 @@ import '../model/update_request.dart';
 import '../model/create_calendar_subscription_request.dart';
 import '../model/update_calendar_subscription_request.dart';
 import '../model/calendar_sync_request.dart';
+import '../model/app_version_response.dart';
 import '../model/fx_response.dart';
 
 abstract class RemoteDataSource {
@@ -120,10 +124,13 @@ abstract class RemoteDataSource {
 
   /// Records a payment (amount, method, optional booking, date, status).
   Future<GeneralResponse> recordPayment(RecordPaymentRequest request);
+  Future<GeneralResponse> deletePayment(String paymentId);
 
   /// Adds an expense (amount, category, date, vendor, tax deductible).
   /// Optional [receiptFilePath] is uploaded as multipart when provided.
   Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]);
+  Future<GeneralResponse> updateExpense(String expenseId, AddExpenseRequest request);
+  Future<GeneralResponse> deleteExpense(String expenseId);
 
   /// Home overview: activeBookings, monthlyRevenue, bookingsChange, revenueChange.
   Future<GeneralResponse> getHomeOverview();
@@ -146,8 +153,16 @@ abstract class RemoteDataSource {
   /// Create a task (title, optional description, optional dueDate).
   Future<GeneralResponse> addTask(AddTaskRequest request);
 
+  /// Schedule a payment reminder (dedicated endpoint).
+  Future<GeneralResponse> schedulePaymentReminder(SchedulePaymentReminderRequest request);
+  Future<GeneralResponse> recordClientEvent(RecordClientEventRequest request);
+  Future<GeneralResponse> submitTenantRating(SubmitTenantRatingRequest request);
+  Future<GeneralResponse> searchTenantScore(String phoneNumber);
+  Future<GeneralResponse> contributeTenantScore(String phoneNumber, String tenantName);
+
   /// Update an existing task (same body shape as create).
   Future<GeneralResponse> updateTask(String taskId, AddTaskRequest request);
+  Future<GeneralResponse> deleteTask(String taskId);
 
   /// List documents in a vault directory (e.g. legal, tax, manuals).
   Future<GeneralResponse> getVaultDocuments(String directoryId);
@@ -176,6 +191,7 @@ abstract class RemoteDataSource {
 
   Future<GeneralResponse> createTenant(Map<String, dynamic> body);
   Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body);
+  Future<GeneralResponse> deleteTenant(String id);
   Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body);
   Future<GeneralResponse> createStaff(Map<String, dynamic> body);
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body);
@@ -192,4 +208,11 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> deleteWhatsAppTemplateDraft(String id);
   Future<GeneralResponse> updateUnit(String listingId, String unitId, Map<String, dynamic> body);
   Future<GeneralResponse> changePinOnServer(Map<String, dynamic> body);
+  Future<GeneralResponse> createProperty(Map<String, dynamic> body);
+  Future<GeneralResponse> updateProperty(int id, Map<String, dynamic> body);
+  Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body);
+
+  /// Check the latest available app version from the backend.
+  /// [platform] should be "android" or "ios".
+  Future<AppVersionResponse> checkAppVersion(String platform);
 }

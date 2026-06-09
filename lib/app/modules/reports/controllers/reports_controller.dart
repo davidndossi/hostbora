@@ -161,7 +161,9 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
       initialDate: initial,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (d != null) {
       customStart.value = _dateOnly(d);
       if (customEnd.value != null &&
@@ -181,7 +183,9 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
       initialDate: initial,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (d != null) {
       customEnd.value = _dateOnly(d);
       if (customStart.value != null &&

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import 'package:get/get.dart';
@@ -37,28 +37,22 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
     return Column(
       children: [
         _buildFilterTabs(context),
+        _buildWorkspaceModeFilter(context),
         Expanded(
           child: Obx(() {
             if (controller.loading.value) {
               return const DefaultScreenSkeleton();
             }
-            if (controller.properties.isEmpty) {
-              return Center(
-                child: Text(
-                  _t(context, en: 'No properties', sw: 'Hakuna mali'),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              );
+            final items = controller.displayProperties;
+            if (items.isEmpty) {
+              return _emptyState(theme, context);
             }
             return ListView.separated(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-              itemCount: controller.properties.length,
+              itemCount: items.length,
               separatorBuilder: (_, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
-                final p = controller.properties[index];
+                final p = items[index];
                 return _PropertyCard(
                   listing: p,
                   onFavorite: () => controller.toggleFavorite(p),
@@ -73,12 +67,62 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
     );
   }
 
-  @override
-  Widget? floatingActionButton() => FloatingActionButton(
-    onPressed: () => controller.addProperty(),
-    backgroundColor: AppColors.designAccent,
-    child: const Icon(Icons.add, size: 28),
-  );
+  Widget _buildWorkspaceModeFilter(BuildContext context) {
+    final theme = Theme.of(context);
+    final c = FormSurfaceColors.of(context);
+    final isSw = (Get.locale?.languageCode ?? '') == 'sw';
+
+    return Obx(() {
+      final selected = controller.workspaceModeFilter.value;
+
+      Widget chip(String label, String value, Color color) {
+        final isSelected = selected == value;
+        return GestureDetector(
+          onTap: () => controller.setWorkspaceFilter(value),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? color : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? color
+                    : (c.isDark
+                        ? theme.colorScheme.outlineVariant
+                        : const Color(0xFFDDE1E7)),
+              ),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected
+                    ? Colors.white
+                    : (c.isDark
+                        ? theme.colorScheme.onSurfaceVariant
+                        : const Color(0xFF64748B)),
+              ),
+            ),
+          ),
+        );
+      }
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+        child: Row(
+          children: [
+            chip(isSw ? 'Zote' : 'All Modes', '', AppColors.designAccent),
+            const SizedBox(width: 8),
+            chip('BnB', 'bnb', const Color(0xFF0D7377)),
+            const SizedBox(width: 8),
+            chip(isSw ? 'Kodi' : 'Rent', 'rent', const Color(0xFF4F46E5)),
+          ],
+        ),
+      );
+    });
+  }
 
   Widget _buildFilterTabs(BuildContext context) {
     final theme = Theme.of(context);
@@ -122,6 +166,47 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState(ThemeData theme, BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _t(context, en: 'No properties', sw: 'Hakuna mjengo'),
+              style: TextStyle(
+                fontSize: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            IconButton(
+              onPressed: controller.addProperty,
+              icon: const Icon(Icons.add_circle_outline, size: 72, color: Colors.grey),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 72, minHeight: 72),
+              alignment: Alignment.center,
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: controller.addProperty,
+              child: Text(
+                _t(context, en: 'Add property', sw: 'Ongeza mjengo'),
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

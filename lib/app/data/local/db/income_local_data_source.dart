@@ -18,6 +18,7 @@ class IncomeRecord {
     required this.currencyCode,
     required this.inputAmountValue,
     required this.createdAtMs,
+    this.backendPaymentId = '',
   });
 
   final int id;
@@ -43,6 +44,9 @@ class IncomeRecord {
   final double inputAmountValue;
   final int createdAtMs;
 
+  /// Remote backend UUID, populated after the record is synced online.
+  final String backendPaymentId;
+
   factory IncomeRecord.fromMap(Map<String, Object?> m) {
     return IncomeRecord(
       id: m['id']! as int,
@@ -59,6 +63,7 @@ class IncomeRecord {
       currencyCode: m['currency_code'] as String? ?? 'TZS',
       inputAmountValue: (m['input_amount_value'] as num?)?.toDouble() ?? 0,
       createdAtMs: m['created_at_ms'] as int? ?? 0,
+      backendPaymentId: m['backend_payment_id'] as String? ?? '',
     );
   }
 
@@ -222,5 +227,31 @@ class IncomeLocalDataSource {
       orderBy: 'created_at_ms DESC',
     );
     return maps.map(IncomeRecord.fromMap).toList();
+  }
+
+  Future<void> deleteById(int id) async {
+    final db = await database;
+    await db.delete(_table, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<IncomeRecord?> getById(int id) async {
+    final db = await database;
+    final rows = await db.query(_table, where: 'id = ?', whereArgs: [id], limit: 1);
+    if (rows.isEmpty) return null;
+    return IncomeRecord.fromMap(rows.first);
+  }
+
+  Future<void> saveBackendPaymentId({
+    required int localId,
+    required String backendId,
+  }) async {
+    if (backendId.isEmpty) return;
+    final db = await database;
+    await db.update(
+      _table,
+      {'backend_payment_id': backendId},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
   }
 }

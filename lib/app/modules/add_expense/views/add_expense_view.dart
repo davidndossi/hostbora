@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:host_bora/app/core/widget/custom_app_bar.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../core/widget/currency_dropdown_field.dart';
+import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
 import '../controllers/add_expense_controller.dart';
 
@@ -36,7 +36,9 @@ class AddExpenseView extends BaseView<AddExpenseController> {
       initialDate: initial,
       firstDate: DateTime(2000),
       lastDate: DateTime(now.year + 5),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked == null) return;
     final day = picked.day.toString().padLeft(2, '0');
     final month = picked.month.toString().padLeft(2, '0');

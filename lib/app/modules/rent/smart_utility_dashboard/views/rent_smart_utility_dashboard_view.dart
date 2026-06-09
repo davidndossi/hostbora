@@ -1,10 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
+import '../../../../core/widget/skeleton_presets.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 
@@ -735,6 +735,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
         ),
         child: child!,
       ),
+      locale: const Locale('en', 'GB'),
     );
     if (picked != null) setState(() => _date = picked);
   }

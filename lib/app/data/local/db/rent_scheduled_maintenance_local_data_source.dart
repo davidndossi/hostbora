@@ -3,6 +3,22 @@ import 'package:sqflite/sqflite.dart';
 import 'app_local_database.dart';
 
 class RentScheduledMaintenanceRecord {
+  final int id;
+  final String propertyLabel;
+  final String category;
+  final String description;
+  final String scheduledDateIso;
+  final String priority;
+  final int notificationId;
+  final String syncStatus;
+  final int createdAtMs;
+  final String propertyRef;
+  final String apartmentUnitId;
+  final String workspaceType;
+
+  /// Remote backend UUID, populated after the record is synced online.
+  final String backendTaskId;
+
   const RentScheduledMaintenanceRecord({
     required this.id,
     required this.propertyLabel,
@@ -16,20 +32,8 @@ class RentScheduledMaintenanceRecord {
     this.propertyRef = '',
     this.apartmentUnitId = '',
     this.workspaceType = 'rent',
+    this.backendTaskId = '',
   });
-
-  final int id;
-  final String propertyLabel;
-  final String category;
-  final String description;
-  final String scheduledDateIso;
-  final String priority;
-  final int notificationId;
-  final String syncStatus;
-  final int createdAtMs;
-  final String propertyRef;
-  final String apartmentUnitId;
-  final String workspaceType;
 
   factory RentScheduledMaintenanceRecord.fromMap(Map<String, Object?> m) {
     return RentScheduledMaintenanceRecord(
@@ -45,6 +49,7 @@ class RentScheduledMaintenanceRecord {
       propertyRef: m['property_ref'] as String? ?? '',
       apartmentUnitId: m['apartment_unit_id'] as String? ?? '',
       workspaceType: m['workspace_type'] as String? ?? 'rent',
+      backendTaskId: m['backend_task_id'] as String? ?? '',
     );
   }
 }
@@ -104,5 +109,31 @@ class RentScheduledMaintenanceLocalDataSource {
     final db = await database;
     final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
     return maps.map(RentScheduledMaintenanceRecord.fromMap).toList();
+  }
+
+  Future<void> deleteById(int id) async {
+    final db = await database;
+    await db.delete(_table, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<RentScheduledMaintenanceRecord?> getById(int id) async {
+    final db = await database;
+    final rows = await db.query(_table, where: 'id = ?', whereArgs: [id], limit: 1);
+    if (rows.isEmpty) return null;
+    return RentScheduledMaintenanceRecord.fromMap(rows.first);
+  }
+
+  Future<void> saveBackendTaskId({
+    required int localId,
+    required String backendId,
+  }) async {
+    if (backendId.isEmpty) return;
+    final db = await database;
+    await db.update(
+      _table,
+      {'backend_task_id': backendId},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
   }
 }

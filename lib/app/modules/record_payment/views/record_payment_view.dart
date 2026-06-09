@@ -605,7 +605,9 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
       initialDate: initial,
       firstDate: DateTime(2000),
       lastDate: DateTime(now.year + 5),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked == null) return;
     final month = picked.month.toString().padLeft(2, '0');
     final day = picked.day.toString().padLeft(2, '0');

@@ -53,7 +53,7 @@ class WorkspaceContextService extends GetxService {
     if (currentWorkspace.value == 'bnb') {
       Get.offAllNamed(Routes.MAIN, arguments: arguments);
     } else {
-      Get.offAllNamed(Routes.RENT_HUB, arguments: arguments);
+      // Get.offAllNamed(Routes.RENT_HUB, arguments: arguments);
     }
   }
 

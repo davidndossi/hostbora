@@ -3,26 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import 'app_local_database.dart';
 
 class TenantRecord {
-  const TenantRecord({
-    required this.id,
-    required this.propertyLabel,
-    required this.propertyRef,
-    required this.apartmentUnitId,
-    required this.unitLabel,
-    required this.tenantName,
-    required this.gender,
-    required this.rentAmountValue,
-    required this.rentFrequency,
-    required this.phoneNumber,
-    required this.email,
-    required this.isWhatsapp,
-    required this.leaseStartIso,
-    required this.leaseEndIso,
-    required this.contractFilePath,
-    required this.contractFileName,
-    required this.createdAtMs,
-  });
-
   final int id;
   final String propertyLabel;
   /// Same hub id as [PropertyRecord.propertyRef] or `legacy_<id>`.
@@ -42,6 +22,30 @@ class TenantRecord {
   final String contractFilePath;
   final String contractFileName;
   final int createdAtMs;
+
+  /// Remote backend UUID, populated after the record is synced online.
+  final String backendTenantId;
+
+  const TenantRecord({
+    required this.id,
+    required this.propertyLabel,
+    required this.propertyRef,
+    required this.apartmentUnitId,
+    required this.unitLabel,
+    required this.tenantName,
+    required this.gender,
+    required this.rentAmountValue,
+    required this.rentFrequency,
+    required this.phoneNumber,
+    required this.email,
+    required this.isWhatsapp,
+    required this.leaseStartIso,
+    required this.leaseEndIso,
+    required this.contractFilePath,
+    required this.contractFileName,
+    required this.createdAtMs,
+    this.backendTenantId = '',
+  });
 
   factory TenantRecord.fromMap(Map<String, Object?> m) {
     return TenantRecord(
@@ -63,6 +67,7 @@ class TenantRecord {
       contractFilePath: m['contract_file_path'] as String? ?? '',
       contractFileName: m['contract_file_name'] as String? ?? '',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
+      backendTenantId: m['backend_tenant_id'] as String? ?? '',
     );
   }
 }
@@ -267,5 +272,52 @@ class TenantLocalDataSource {
     if (r.isEmpty) return 0;
     final db = await database;
     return db.delete(_table, where: 'property_ref = ?', whereArgs: [r]);
+  }
+
+  Future<void> deleteById(int id) async {
+    final db = await database;
+    await db.delete(_table, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> saveBackendTenantId({
+    required int localId,
+    required String backendId,
+  }) async {
+    if (backendId.isEmpty) return;
+    final db = await database;
+    await db.update(
+      _table,
+      {'backend_tenant_id': backendId},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
+  }
+
+  Future<void> endTenancy({
+    required int id,
+    required String endedAtIso,
+    required int endedAtMs,
+  }) async {
+    final db = await database;
+    await db.update(
+      _table,
+      {
+        'tenancy_status': 'ended',
+        'ended_at_ms': endedAtMs,
+        'lease_end_iso': endedAtIso,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<List<TenantRecord>> getActiveTenants() async {
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      where: "tenancy_status = 'active' OR tenancy_status IS NULL OR tenancy_status = ''",
+      orderBy: 'created_at_ms DESC',
+    );
+    return maps.map(TenantRecord.fromMap).toList();
   }
 }

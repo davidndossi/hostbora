@@ -390,6 +390,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
               firstDate: DateTime(now.year - 2),
               lastDate: DateTime(now.year + 10, 12, 31),
               initialDateRange: initial,
+              locale: const Locale('en', 'GB'),
             );
             if (picked != null) {
               controller.setLeaseDateRange(picked);

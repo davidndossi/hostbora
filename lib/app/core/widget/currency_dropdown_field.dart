@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
-import '../theme/app_theme_tokens.dart';
 import '../../data/local/service/currency_service.dart';
 
 /// Currency picker bound to [CurrencyService]; defaults to base currency.
+///
+/// When [showRateHint] is true (default) and the selected currency differs from
+/// the base currency, a compact rate hint (e.g. "1 USD ≈ TZS 2,650") is shown
+/// below the dropdown so users know the conversion at a glance.
 class CurrencyDropdownField extends StatelessWidget {
   const CurrencyDropdownField({
     super.key,
@@ -12,6 +16,7 @@ class CurrencyDropdownField extends StatelessWidget {
     this.onChanged,
     this.label,
     this.compact = false,
+    this.showRateHint = true,
   });
 
   final RxString selectedCurrency;
@@ -19,17 +24,22 @@ class CurrencyDropdownField extends StatelessWidget {
   final String? label;
   final bool compact;
 
+  /// Show the "1 X ≈ BASE rate" hint below when selected ≠ base currency.
+  final bool showRateHint;
+
+  static final _rateFmt = NumberFormat('#,###', 'en_US');
+
   @override
   Widget build(BuildContext context) {
-  final currencyService = Get.find<CurrencyService>();
+    final currencyService = Get.find<CurrencyService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final labelColor = context.tokens.textMuted;
 
     return Obx(() {
       final codes = currencyService.currencyCodes;
+      final base = currencyService.baseCurrency.value;
       final value = codes.contains(selectedCurrency.value)
           ? selectedCurrency.value
-          : currencyService.baseCurrency.value;
+          : base;
 
       final dropdown = DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -51,40 +61,59 @@ class CurrencyDropdownField extends StatelessWidget {
         ),
       );
 
+      final dropdownBox = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: dropdown,
+      );
+
       if (compact) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: dropdown,
-        );
+        return dropdownBox;
+      }
+
+      // Build the rate hint when selected currency ≠ base currency.
+      Widget? rateHint;
+      if (showRateHint && value != base) {
+        final rate = currencyService.sellingRateFor(value);
+        if (rate != null && rate > 0) {
+          final rateLabel = rate >= 1
+              ? _rateFmt.format(rate.round())
+              : rate.toStringAsFixed(4);
+          final hintColor = isDark
+              ? const Color(0xFF80CBC4)
+              : const Color(0xFF0E6666);
+          rateHint = Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Row(
+              children: [
+                Icon(Icons.swap_horiz_rounded, size: 12, color: hintColor),
+                const SizedBox(width: 3),
+                Expanded(
+                  child: Text(
+                    '1 $value ≈ $base $rateLabel',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: hintColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
       }
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // if (label != null) ...[
-          //   Text(
-          //     label!,
-          //     style: TextStyle(
-          //       fontSize: 10,
-          //       letterSpacing: 1.1,
-          //       fontWeight: FontWeight.w700,
-          //       color: labelColor,
-          //     ),
-          //   ),
-            const SizedBox(height: 3),
-          // ],
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).dividerColor),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: dropdown,
-          ),
+          const SizedBox(height: 3),
+          dropdownBox,
+          ?rateHint,
         ],
       );
     });

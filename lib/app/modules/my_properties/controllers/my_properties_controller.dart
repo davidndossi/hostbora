@@ -12,6 +12,9 @@ class MyPropertiesController extends BaseController {
   final selectedFilterIndex = 0.obs;
   final filterLabels = ['All Listings', 'Active', 'Drafts', 'Archive'];
 
+  /// Workspace mode filter: '' = all, 'bnb' = BnB + both, 'rent' = Rent + both
+  final workspaceModeFilter = ''.obs;
+
   MyPropertiesController()
       : _repository =
             Get.find<AppRepository>(tag: (AppRepository).toString()),
@@ -32,10 +35,31 @@ class MyPropertiesController extends BaseController {
   final properties = <PropertyListing>[].obs;
   final loading = false.obs;
 
+  /// Properties after applying workspaceModeFilter on top of the status filter.
+  List<PropertyListing> get displayProperties {
+    final ws = workspaceModeFilter.value;
+    if (ws.isEmpty) return properties;
+    return properties
+        .where((p) => p.mode == ws || p.mode == 'both')
+        .toList();
+  }
+
   @override
   void onReady() {
     super.onReady();
+    // Accept an initial workspace filter from navigation arguments.
+    final args = Get.arguments;
+    if (args is Map) {
+      final ws = (args['workspaceFilter'] as String? ?? '').toLowerCase();
+      if (ws == 'bnb' || ws == 'rent') {
+        workspaceModeFilter.value = ws;
+      }
+    }
     loadProperties();
+  }
+
+  void setWorkspaceFilter(String ws) {
+    workspaceModeFilter.value = ws.toLowerCase();
   }
 
   /// Fetches properties from service by current filter (All / Active / Drafts / Archive).

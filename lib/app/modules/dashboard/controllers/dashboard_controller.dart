@@ -267,16 +267,11 @@ class DashboardController extends BaseController {
   Future<void> loadDashboard({bool quiet = false}) async {
     if (!quiet) isLoading.value = true;
     try {
-      // if (isBnbWorkspace.value) {
-        await _loadBnbOverviewStats();
-      // } else {
-      //   weeklyRevenue.assignAll(List<double>.filled(7, 0));
-      //   weeklyOccupancyPercent.assignAll(List<double>.filled(7, 0));
-      // }
-      final incomes =
-          await _incomeLocal.getAllNewestFirst();
-      final expenses =
-          await _expenseLocal.getAllNewestFirst();
+      await _loadBnbOverviewStats();
+
+      // Fetch ALL income and expenses across every workspace
+      final incomes = await _incomeLocal.getAllNewestFirst();
+      final expenses = await _expenseLocal.getAllNewestFirst();
 
       logger.d(
         'Dashboard loadDashboard '
@@ -419,6 +414,36 @@ class DashboardController extends BaseController {
       monthlyLabels.assignAll(labels);
       monthlyValuesA.assignAll(monthlyA);
       monthlyValuesB.assignAll(monthlyB);
+
+      // ── All-time totals (all workspaces) ────────────────────────────────
+      _incomeTotal.value =
+          incomes.fold<double>(0, (a, r) => a + r.amountValue);
+      _expenseTotal.value =
+          expenses.fold<double>(0, (a, r) => a + r.amountValue);
+
+      final thisMonthInc = sumIncomeBetween(thisMonthStart, nextMonthStart);
+      final lastMonthInc = sumIncomeBetween(lastMonthStart, thisMonthStart);
+      final trend = lastMonthInc.abs() < 0.01
+          ? (thisMonthInc == 0 ? 0.0 : 100.0)
+          : ((thisMonthInc - lastMonthInc) / lastMonthInc.abs()) * 100.0;
+      _profitTrendPercent.value = trend;
+
+      // ── Portfolio metrics (all workspaces: rent + BnB + both) ───────────
+      try {
+        final userId = (await _preferenceManager.getUser()).id ?? '';
+        final propertyRows = await _propertyLocal.fetchAll(userId: userId);
+        final tenants = await _tenantLocal.getAllNewestFirst();
+        final portfolio = await RentPortfolioMetricsCalculator.compute(
+          properties: propertyRows,
+          tenants: tenants,
+          incomeRows: incomes,
+          now: now,
+        );
+        _monthlyIncome.value = portfolio.monthlyIncome;
+        _occupancyPercent.value = portfolio.occupancyPercent;
+        _activeLeases.value = portfolio.activeLeases;
+        _totalArrears.value = portfolio.totalArrears;
+      } catch (_) {}
     } catch (_) {
       // keep default/placeholder values
     } finally {

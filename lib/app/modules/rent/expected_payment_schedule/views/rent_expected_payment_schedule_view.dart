@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
+import '../../../../core/widget/skeleton_presets.dart';
 
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 import '../../../../core/base/rent_base_view.dart';

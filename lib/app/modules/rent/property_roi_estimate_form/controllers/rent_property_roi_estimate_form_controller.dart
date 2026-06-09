@@ -240,6 +240,7 @@ class RentPropertyRoiEstimateFormController extends BaseController {
       context: context,
       firstDate: DateTime(2010),
       lastDate: DateTime(2100),
+      locale: const Locale('en', 'GB'),
       initialDateRange: (filterStartDate.value != null && filterEndDate.value != null)
           ? DateTimeRange(start: filterStartDate.value!, end: filterEndDate.value!)
           : DateTimeRange(start: now.subtract(const Duration(days: 30)), end: now),

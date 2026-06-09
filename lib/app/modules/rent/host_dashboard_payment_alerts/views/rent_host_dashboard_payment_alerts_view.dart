@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
+import '../../../../core/widget/skeleton_presets.dart';
 import '../../../../core/theme/form_surface_colors.dart';
 
 import 'package:get/get.dart';
-import 'package:host_bora/app/modules/rent/widgets/rent_ui.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../widgets/rent_ui.dart';
 import '../controllers/rent_host_dashboard_payment_alerts_controller.dart';
 
 class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardPaymentAlertsController> {

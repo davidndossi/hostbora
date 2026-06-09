@@ -1,308 +1,333 @@
-import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
-import '../../../core/theme/form_surface_colors.dart';
+import 'dart:math' as math;
 
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../core/values/app_values.dart';
-import '../../../core/values/text_styles.dart';
-import '../../../data/local/service/workspace_context_service.dart';
 import '../controllers/onboarding_controller.dart';
 
 class OnboardingView extends BaseView<OnboardingController> {
   OnboardingView({super.key});
 
-  
+  @override
+  PreferredSizeWidget? appBar(BuildContext context) => null;
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) {
-    return null;
-  }
+  Color pageBackgroundColor(BuildContext context) => const Color(0xFF0A1628);
 
   @override
   Widget body(BuildContext context) {
-    final c = FormSurfaceColors.of(context);
-    final currentLang = Get.locale?.languageCode == 'sw' ? 'sw' : 'en';
-    final titleColor = c.headline;
-    final workspaceLabelColor = c.isDark
-        ? Colors.white
-        : AppColors.textColorPrimary;
-    final bodyColor = c.secondary;
-    final cardBg = c.isDark
-        ? context.tokens.cardBackground
-        : Colors.white.withValues(alpha: 0.9);
-    return SafeArea(
-      child: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppValues.largePadding,
-                vertical: AppValues.largePadding,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Center(
-                      child: Image.asset(
-                        'images/host_bora_logo.png',
-                        width: 100,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.home_work_rounded,
-                          size: 80,
-                          color: AppColors.colorPrimary,
+    final isSw = Get.locale?.languageCode == 'sw';
+    final size = MediaQuery.sizeOf(context);
+
+    return Stack(
+      children: [
+        // ── decorative background blobs ──────────────────────────────────
+        Positioned(
+          top: -60,
+          right: -60,
+          child: _Blob(size: 260, color: AppColors.colorPrimary.withValues(alpha: 0.18)),
+        ),
+        Positioned(
+          top: size.height * 0.28,
+          left: -80,
+          child: _Blob(size: 200, color: const Color(0xFF1E88E5).withValues(alpha: 0.12)),
+        ),
+        Positioned(
+          bottom: 160,
+          right: -40,
+          child: _Blob(size: 180, color: AppColors.colorPrimary.withValues(alpha: 0.10)),
+        ),
+
+        // ── main content ─────────────────────────────────────────────────
+        SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 40),
+
+                      // ── logo badge ──────────────────────────────────
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.08),
+                          border: Border.all(
+                            color: AppColors.colorPrimary.withValues(alpha: 0.5),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.colorPrimary.withValues(alpha: 0.35),
+                              blurRadius: 32,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'images/host_bora_logo.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.home_work_rounded,
+                              size: 48,
+                              color: AppColors.colorPrimary,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Text(
-                        (currentLang == 'sw' ? 'Karibu HostBora' : 'Welcome to HostBora'),
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: titleColor,
-                          height: 1.3,
+
+                      const SizedBox(height: 28),
+
+                      // ── headline ────────────────────────────────────
+                      Text(
+                        isSw ? 'Karibu HostBora' : 'Welcome to HostBora',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                          height: 1.2,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
+
+                      const SizedBox(height: 12),
+
+                      // ── sub-headline ────────────────────────────────
+                      Text(
+                        isSw
+                            ? 'Simamia BnB na upangishaji wa muda mrefu kutoka mahali pamoja'
+                            : 'Manage BnB stays & long-term rentals\nfrom one powerful app',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
-                          color: titleColor,
-                          height: 1.5,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white.withValues(alpha: 0.7),
+                          height: 1.55,
                         ),
-                        children: [
-                          const TextSpan(
-                            text: 'HostBora',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          TextSpan(
-                            text: (currentLang == 'sw'
-                                ? ' ni programu ya kusimamia upangishaji wa muda mfupi na wa muda mrefu. '
-                                : ' is an app for managing both short-term stays and long-term rentals. '),
-                          ),
-                          TextSpan(
-                            text: (currentLang == 'sw'
-                                ? 'Fuatilia malipo'
-                                : 'Track payments'),
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          TextSpan(text: (currentLang == 'sw'
-                              ? ', fuatilia '
-                              : ', monitor ')),
-                          TextSpan(
-                            text: (currentLang == 'sw'
-                                ? 'faida na hasara'
-                                : 'profits or losses'),
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          TextSpan(text: (currentLang == 'sw'
-                              ? ', na kuona michango ya wapangaji. '
-                              : ', and view tenant contributions. ')),
-                          TextSpan(
-                            text: (currentLang == 'sw'
-                                ? 'Tuma ukumbusho wa kulipa kodi'
-                                : 'Send rent reminders'),
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          TextSpan(
-                            text: (currentLang == 'sw'
-                                ? ' kupitia WhatsApp au SMS, simamia ratiba, na hifadhi data kwa usalama bila mtandao kwenye simu yako.'
-                                : ' via WhatsApp or SMS, manage schedules, and securely store data offline on your phone.'),
-                          ),
-                        ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      (currentLang == 'sw'
-                          ? 'Hii ni programu ya mwenye nyumba au mpangishaji yenye sehemu mbili '
-                          '— uhifadhi wa taarifa za wageni wa BnB shughuli za upangishaji '
-                          'na umiliki, ikiwa na uhifadhi imara wa data nje ya mtandao.'
-                          : 'This is a dual-purpose property app that combines BnB booking '
-                          'and guest management with rental and landlord operations, '
-                          'backed by strong offline data storage'
+
+                      const SizedBox(height: 40),
+
+                      // ── feature cards ───────────────────────────────
+                      _FeatureRow(
+                        icon: Icons.payments_rounded,
+                        color: const Color(0xFF4CAF50),
+                        title: isSw ? 'Fuatilia Malipo' : 'Track Payments',
+                        subtitle: isSw
+                            ? 'Malipo ya kodi, bili na michango'
+                            : 'Rent, bills & tenant contributions',
                       ),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        height: 1.5,
+                      const SizedBox(height: 12),
+                      _FeatureRow(
+                        icon: Icons.hotel_rounded,
+                        color: const Color(0xFF42A5F5),
+                        title: isSw ? 'BnB & Upangishaji' : 'BnB & Rentals',
+                        subtitle: isSw
+                            ? 'Wageni wa muda mfupi na mpangaji wa muda mrefu'
+                            : 'Short-term guests & long-term tenants',
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        (currentLang == 'sw'
-                            ? 'Chagua upande upi utatumia zaidi.'
-                            : 'Choose your preferred workspace.'),
-                        style: TextStyle(
-                          fontSize: 18,
+                      const SizedBox(height: 12),
+                      _FeatureRow(
+                        icon: Icons.message_rounded,
+                        color: const Color(0xFF26C6DA),
+                        title: isSw ? 'WhatsApp & SMS' : 'WhatsApp & SMS',
+                        subtitle: isSw
+                            ? 'Tuma ukumbusho wa kodi kiotomatiki'
+                            : 'Auto-send rent reminders to tenants',
+                      ),
+                      const SizedBox(height: 12),
+                      _FeatureRow(
+                        icon: Icons.cloud_off_rounded,
+                        color: const Color(0xFFFFA726),
+                        title: isSw ? 'Hifadhi Nje ya Mtandao' : 'Offline Storage',
+                        subtitle: isSw
+                            ? 'Data salama hata bila intaneti'
+                            : 'Secure data even without internet',
+                      ),
+
+                      const SizedBox(height: 48),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── sticky bottom CTA ─────────────────────────────────────
+              _BottomCta(isSw: isSw),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Feature row ──────────────────────────────────────────────────────────────
+
+class _FeatureRow extends StatelessWidget {
+  const _FeatureRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.55),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Bottom CTA panel ─────────────────────────────────────────────────────────
+
+class _BottomCta extends StatelessWidget {
+  const _BottomCta({required this.isSw});
+
+  final bool isSw;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        border: Border(
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Primary CTA
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0EA5A4), Color(0xFF0D8F8E)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.colorPrimary.withValues(alpha: 0.5),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () =>
+                      Get.find<OnboardingController>().completeOnboarding(),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        isSw ? 'Anza Sasa' : 'Get Started',
+                        style: const TextStyle(
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: titleColor,
+                          color: Colors.white,
+                          letterSpacing: 0.3,
                         ),
                       ),
-                    ),
-                    Center(
-                      child: Text(
-                        (currentLang == 'sw'
-                            ? 'Utaweza kubadilisha muda wowote ukiwa ndani ya programu.'
-                            : 'You can change any time once inside the app.'),
-                        style: subTitleTextStyle
+                      const SizedBox(width: 10),
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: Get.width - 200,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              Get.find<WorkspaceContextService>().switchWorkspace(
-                                'rent',
-                              );
-                              controller.completeOnboarding();
-                            },
-                            child: Column(
-                              children: [
-                                Container(
-                                  width: 120,
-                                  height: 120,
-                                  decoration: BoxDecoration(
-                                    color: c.isDark
-                                        ? AppColors.colorPrimary.withValues(alpha: 0.25)
-                                        : AppColors.colorPrimaryLight,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.colorPrimary.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                        blurRadius: 16,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: SvgPicture.asset(
-                                      'images/ic_rent_house.svg',
-                                      height: 64,
-                                      width: 64,
-                                      colorFilter: const ColorFilter.mode(
-                                        AppColors.colorPrimary,
-                                        BlendMode.srcIn,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'RENT',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: workspaceLabelColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              Get.find<WorkspaceContextService>().switchWorkspace(
-                                'bnb',
-                              );
-                              controller.completeOnboarding();
-                            },
-                            child: Column(
-                              children: [
-                                Container(
-                                  width: 120,
-                                  height: 120,
-                                  decoration: BoxDecoration(
-                                    color: c.isDark
-                                        ? AppColors.colorPrimary.withValues(alpha: 0.25)
-                                        : AppColors.colorPrimaryLight,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.colorPrimary.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                        blurRadius: 16,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Image.asset(
-                                    'images/bed-and-breakfast.png',
-                                    height: 64,
-                                    width: 64,
-                                    color: AppColors.colorPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'BnB',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: workspaceLabelColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: c.isDark
-                      ? context.tokens.elevatedSurface
-                      : AppColors.designInputBorder,
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    currentLang == 'sw' ? 'Anza Sasa' : 'Get Started',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: titleColor,
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    currentLang == 'sw'
-                        ? 'Uko tayari kuanza kutumia programu.'
-                        : 'Ready to explore the app experience.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: bodyColor),
-                  ),
-                ],
+
+          const SizedBox(height: 14),
+
+          // Already have account link
+          GestureDetector(
+            onTap: () => Get.find<OnboardingController>().completeOnboarding(),
+            child: Text(
+              isSw ? 'Nina akaunti tayari' : 'Already have an account?',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.white.withValues(alpha: 0.5),
+                decoration: TextDecoration.underline,
+                decorationColor: Colors.white.withValues(alpha: 0.3),
               ),
             ),
           ),
@@ -310,4 +335,55 @@ class OnboardingView extends BaseView<OnboardingController> {
       ),
     );
   }
+}
+
+// ── Decorative blob ──────────────────────────────────────────────────────────
+
+class _Blob extends StatelessWidget {
+  const _Blob({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size(size, size),
+      painter: _BlobPainter(color: color),
+    );
+  }
+}
+
+class _BlobPainter extends CustomPainter {
+  const _BlobPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final r = size.width / 2;
+    final path = Path();
+    final pts = <Offset>[];
+    const n = 8;
+    for (var i = 0; i < n; i++) {
+      final angle = (i / n) * 2 * math.pi;
+      final rand = 0.75 + 0.25 * math.sin(i * 2.3);
+      pts.add(Offset(
+        r + r * rand * math.cos(angle),
+        r + r * rand * math.sin(angle),
+      ));
+    }
+    path.moveTo(pts[0].dx, pts[0].dy);
+    for (var i = 0; i < n; i++) {
+      final next = pts[(i + 1) % n];
+      final ctrl = pts[i];
+      path.quadraticBezierTo(ctrl.dx, ctrl.dy, next.dx, next.dy);
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_BlobPainter old) => old.color != color;
 }

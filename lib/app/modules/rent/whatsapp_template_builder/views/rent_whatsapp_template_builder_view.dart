@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
-
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
-
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/base/base_view.dart';
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/widget/skeleton_presets.dart';
 import '../../../../core/widget/undo_snackbar.dart';
 import '../../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '../../rent_theme.dart';
@@ -45,7 +42,7 @@ class RentWhatsappTemplateBuilderView
     return Obx(() {
       if (controller.loading.value) {
         return const Center(
-            child: const DefaultScreenSkeleton());
+            child: DefaultScreenSkeleton());
       }
       return RefreshIndicator(
         color: RentTheme.teal,

@@ -1,13 +1,12 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
-
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/widget/custom_app_bar.dart';
+import '../../../../core/widget/skeleton_presets.dart';
 import '../controllers/rent_utility_usage_graph_controller.dart';
 
 class _GraphUi {
@@ -49,7 +48,7 @@ class RentUtilityUsageGraphView extends RentBaseView<RentUtilityUsageGraphContro
     return Obx(() {
       if (controller.loading.value) {
         return const Center(
-          child: const DefaultScreenSkeleton(),
+          child: DefaultScreenSkeleton(),
         );
       }
       return RefreshIndicator(

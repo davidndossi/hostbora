@@ -339,7 +339,9 @@ class GuestAccessCodesController extends BaseController {
               initialDate: initial,
               firstDate: DateTime.now().subtract(const Duration(days: 1)),
               lastDate: DateTime.now().add(const Duration(days: 730)),
+              locale: const Locale('en', 'GB'),
             );
+            
             if (picked == null) return;
             setState(() {
               if (isCheckIn) {

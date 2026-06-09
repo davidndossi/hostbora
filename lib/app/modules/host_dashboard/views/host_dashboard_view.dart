@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/widget/skeleton_presets.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
+import '../../../core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../../../data/model/check_in_item.dart';
 import '../controllers/host_dashboard_controller.dart';
 
@@ -153,7 +153,7 @@ class HostDashboardView extends BaseView<HostDashboardController> {
                 controller.checkIns.isEmpty) {
               return const SizedBox(
                 height: 200,
-                child: const DefaultScreenSkeleton(),
+                child: DefaultScreenSkeleton(),
               );
             }
             return SizedBox(

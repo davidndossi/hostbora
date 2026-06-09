@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
 
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_lease_renewal_form_controller.dart';
@@ -440,6 +440,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
               context: context,
               firstDate: DateTime(now.year - 1),
               lastDate: DateTime(now.year + 10, 12, 31),
+              locale: const Locale('en', 'GB'),
               initialDateRange: initial,
               builder: (ctx, child) {
                 return Theme(

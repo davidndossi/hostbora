@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -694,6 +694,61 @@ class RentTenantLedgerOccupancyView
               ),
             ),
           ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: controller.onViewStory,
+                icon: const Icon(Icons.timeline_outlined, size: 18),
+                label: Text(
+                  _isSw ? 'Historia' : 'View Story',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: u.dark
+                      ? const Color(0xFF80CBC4)
+                      : _LedgerUi.teal,
+                  side: BorderSide(color: u.border),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => controller.onEndTenancy(u.context),
+                icon: const Icon(
+                  Icons.exit_to_app_outlined,
+                  size: 18,
+                  color: Colors.red,
+                ),
+                label: Text(
+                  _isSw ? 'Maliza Upangaji' : 'End Tenancy',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.red,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: BorderSide(color: Colors.red.shade300),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         Obx(

@@ -122,7 +122,9 @@ class ManageExpensesController extends BaseController {
       initialDate: initial,
       firstDate: DateTime(2018),
       lastDate: DateTime(2100),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked != null) {
       filterStart.value = DateTime(picked.year, picked.month, picked.day);
       refreshRows();
@@ -138,7 +140,9 @@ class ManageExpensesController extends BaseController {
       initialDate: initial,
       firstDate: DateTime(2018),
       lastDate: DateTime(2100),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked != null) {
       filterEnd.value = DateTime(picked.year, picked.month, picked.day);
       refreshRows();

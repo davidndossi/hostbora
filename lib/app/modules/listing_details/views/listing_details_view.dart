@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -171,21 +173,37 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         const SizedBox(height: 6),
         _hero(u),
         const SizedBox(height: 12),
-        _kpiMinimal(
-          u,
-          label: _isSw ? 'Ukaaji wa sasa' : 'Current occupancy',
-          value: '${controller.occupancyPercent.value.clamp(0, 100)}',
-          suffix: '%',
-          progress: controller.occupancyPercent.value.clamp(0, 100) / 100,
-          onTap: controller.onOpenUnitOccupancy,
-        ),
-        const SizedBox(height: 10),
-        _kpiMinimal(
-          u,
-          label: _isSw ? 'Mapato ya mwezi' : 'Monthly revenue',
-          value: controller.monthlyRevenueLabel.value,
-          prefix: currencyCode,
-          progress: controller.monthlyRevenueProgress.value,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _kpiOccupancy(
+                u,
+                percent: controller.occupancyPercent.value.clamp(0, 100).toDouble(),
+                onTap: controller.onOpenUnitOccupancy,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                children: [
+                  _kpiMinimal(
+                    u,
+                    label: _isSw ? 'Jumla ya Mapato' : 'Total income',
+                    value: controller.totalIncomeLabel.value,
+                    prefix: currencyCode,
+                    onTap: controller.onShowIncomeBreakdown,
+                  ),
+                  _kpiMinimal(
+                    u,
+                    label: _isSw ? 'Mapato Niliotegemea' : 'Expected income',
+                    value: controller.expectedIncomeLabel.value,
+                    prefix: currencyCode,
+                  ),
+                ],
+              ),
+            )
+          ],
         ),
         const SizedBox(height: 10),
         Row(
@@ -193,8 +211,8 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             Expanded(
               child: _kpiMinimal(
                 u,
-                label: _isSw ? 'Matumizi ya mwezi' : 'This month expenses',
-                value: controller.monthlyExpensesLabel.value,
+                label: _isSw ? 'Jumla ya Matumizi' : 'Total expenses',
+                value: controller.totalExpensesLabel.value,
                 prefix: currencyCode,
               ),
             ),
@@ -897,6 +915,101 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Occupancy KPI card with a circular ring instead of a progress bar.
+  Widget _kpiOccupancy(
+    _ListingUi u, {
+    required double percent,
+    VoidCallback? onTap,
+  }) {
+    final label = _isSw ? 'Ukaaji wa sasa' : 'Current occupancy';
+    final ringColor = percent >= 75
+        ? const Color(0xFF16A34A)
+        : percent >= 40
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFFEF4444);
+
+    final inner = Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: u.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: u.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: u.muted,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+              if (onTap != null)
+                Icon(Icons.chevron_right_rounded, size: 16, color: u.muted),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Center(
+            child: SizedBox(
+              width: 90,
+              height: 90,
+              child: CustomPaint(
+                painter: _OccupancyRingPainter(
+                  progress: (percent / 100).clamp(0.0, 1.0),
+                  ringColor: ringColor,
+                  trackColor: u.line,
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${percent.round()}',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: u.text,
+                          height: 1,
+                        ),
+                      ),
+                      Text(
+                        '%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: u.muted,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+        ],
+      ),
+    );
+
+    if (onTap == null) return inner;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: inner,
       ),
     );
   }
@@ -1620,26 +1733,60 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                activity.isExpense
-                    ? (_isSw
-                          ? 'Hariri • ${activity.timeLabel}'
-                          : 'Edit • ${activity.timeLabel}')
-                    : activity.timeLabel,
-                style: TextStyle(fontSize: 12, color: u.muted),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (activity.canEdit)
+                    Builder(builder: (ctx) {
+                      return Text(
+                        _isSw ? 'Hariri' : 'Edit',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(ctx).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    }),
+                  if (activity.canEdit && activity.canDelete)
+                    Text(
+                      ' • ',
+                      style: TextStyle(fontSize: 12, color: u.muted),
+                    ),
+                  if (activity.canDelete)
+                    Text(
+                      _isSw ? 'Futa' : 'Delete',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFEF4444),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  if (activity.canEdit || activity.canDelete)
+                    Text(
+                      ' • ',
+                      style: TextStyle(fontSize: 12, color: u.muted),
+                    ),
+                  Text(
+                    activity.timeLabel,
+                    style: TextStyle(fontSize: 12, color: u.muted),
+                  ),
+                ],
               ),
             ],
           ),
         ],
       ),
     );
-    if (!activity.isExpense) return tile;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () => controller.onEditExpenseActivity(activity),
-        onLongPress: () => controller.onDeleteExpenseActivity(activity),
+        onTap: activity.canEdit
+            ? () => controller.onEditActivity(activity)
+            : null,
+        onLongPress: activity.canDelete
+            ? () => controller.onDeleteActivity(activity)
+            : null,
         child: tile,
       ),
     );
@@ -1666,4 +1813,59 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
       ),
     );
   }
+}
+
+/// ─── Ring painter for the occupancy KPI card ─────────────────────────────────
+
+class _OccupancyRingPainter extends CustomPainter {
+  const _OccupancyRingPainter({
+    required this.progress,
+    required this.ringColor,
+    required this.trackColor,
+  });
+
+  final double progress;
+  final Color ringColor;
+  final Color trackColor;
+
+  static const double _strokeWidth = 9.0;
+  static const double _startAngle = -math.pi / 2; // 12 o'clock
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide - _strokeWidth) / 2;
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final arcPaint = Paint()
+      ..color = ringColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    // Full track.
+    canvas.drawCircle(center, radius, trackPaint);
+
+    // Progress arc.
+    if (progress > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        _startAngle,
+        2 * math.pi * progress,
+        false,
+        arcPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_OccupancyRingPainter old) =>
+      old.progress != progress ||
+      old.ringColor != ringColor ||
+      old.trackColor != trackColor;
 }

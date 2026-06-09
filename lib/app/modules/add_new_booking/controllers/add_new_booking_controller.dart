@@ -250,7 +250,9 @@ class AddNewBookingController extends BaseController {
       initialDate: checkInDate.value ?? now,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365 * 2)),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked != null) {
       checkInDate.value = picked;
       checkInDateController.text = DateFormat(_dateFormat).format(picked);
@@ -270,7 +272,9 @@ class AddNewBookingController extends BaseController {
       initialDate: checkOutDate.value ?? from.add(const Duration(days: 1)),
       firstDate: from,
       lastDate: from.add(const Duration(days: 365 * 2)),
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked != null) {
       checkOutDate.value = picked;
       checkOutDateController.text = DateFormat(_dateFormat).format(picked);

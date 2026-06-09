@@ -16,6 +16,7 @@ class ExpenseRecord {
     required this.currencyCode,
     required this.inputAmountValue,
     required this.createdAtMs,
+    this.backendExpenseId = '',
   });
 
   final int id;
@@ -35,6 +36,9 @@ class ExpenseRecord {
   final double inputAmountValue;
   final int createdAtMs;
 
+  /// UUID returned by the backend after a successful sync; empty if not yet synced.
+  final String backendExpenseId;
+
   factory ExpenseRecord.fromMap(Map<String, Object?> m) {
     return ExpenseRecord(
       id: m['id']! as int,
@@ -49,6 +53,7 @@ class ExpenseRecord {
       currencyCode: m['currency_code'] as String? ?? 'TZS',
       inputAmountValue: (m['input_amount_value'] as num?)?.toDouble() ?? 0,
       createdAtMs: m['created_at_ms'] as int? ?? 0,
+      backendExpenseId: m['backend_expense_id'] as String? ?? '',
     );
   }
 
@@ -176,6 +181,33 @@ class ExpenseLocalDataSource {
   Future<void> deleteById(int id) async {
     final db = await database;
     await db.delete(_table, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> saveBackendExpenseId({
+    required int localId,
+    required String backendId,
+  }) async {
+    final db = await database;
+    await db.update(
+      _table,
+      {'backend_expense_id': backendId},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
+  }
+
+  Future<String?> getBackendExpenseId(int localId) async {
+    final db = await database;
+    final rows = await db.query(
+      _table,
+      columns: ['backend_expense_id'],
+      where: 'id = ?',
+      whereArgs: [localId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    final val = rows.first['backend_expense_id'] as String? ?? '';
+    return val.isEmpty ? null : val;
   }
 
   /// See [RentIncomeLocalDataSource.getAllNewestFirst].

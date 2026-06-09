@@ -257,13 +257,13 @@ class HomeView extends BaseView<HomeController> {
           childAspectRatio: 1.3,
           children: [
             _QuickActionTile(
-              icon: 'ic_properties.svg',
-              label: _t(context, 'Properties', 'Mali'),
-              onTap: controller.properties,
+              materialIcon: Icons.calendar_today_outlined,
+              label: _t(context, 'Calendar', 'Kalenda'),
+              onTap: controller.calendar,
             ),
             _QuickActionTile(
               icon: 'ic_group.svg',
-              label: _t(context, 'Guests', 'Wageni'),
+              label: _t(context, 'Tenants / Guests', 'Wapangaji / Wageni'),
               onTap: controller.tenants,
             ),
             _QuickActionTile(
@@ -355,7 +355,7 @@ class HomeView extends BaseView<HomeController> {
             children: [
               Expanded(
                 child: _BnbOverviewCard(
-                  title: isSw ? 'Jumla ya Vyumbo' : 'Total Units',
+                  title: isSw ? 'Jumla ya Vyumba' : 'Total Units',
                   value: '${controller.totalUnitsCount.value}',
                   subtitle: isSw ? 'BnB + Rent' : 'BnB + Rent',
                   onTap: controller.openProperties,
@@ -367,7 +367,7 @@ class HomeView extends BaseView<HomeController> {
                   title: isSw ? 'Ukaaji wa BnB' : 'BnB Occupancy',
                   value: '${controller.bnbOccupancyRate.value}%',
                   subtitle: isSw ? 'Wiki hii' : 'This week',
-                  onTap: controller.openProperties,
+                  onTap: controller.openBnbProperties,
                 ),
               ),
             ],
@@ -381,7 +381,7 @@ class HomeView extends BaseView<HomeController> {
                   title: isSw ? 'Ukaaji wa Rent' : 'Rent Occupancy',
                   value: '${controller.rentOccupancyRate.value}%',
                   subtitle: isSw ? 'Vyumbo vilivyokaliwa' : 'Units occupied',
-                  onTap: controller.openProperties,
+                  onTap: controller.openRentProperties,
                 ),
               ),
               const SizedBox(width: 12),
@@ -390,7 +390,7 @@ class HomeView extends BaseView<HomeController> {
                   title: isSw ? 'Wapangaji' : 'Tenants',
                   value: '${controller.rentTenantsCount.value}',
                   subtitle: isSw ? 'Wanaokaa sasa' : 'Active now',
-                  onTap: controller.openProperties,
+                  onTap: controller.openAllTenants,
                 ),
               ),
             ],

@@ -100,7 +100,7 @@ class ExpenseAnalysisController extends BaseController {
   }
 
   Future<void> selectPropertyFilter() async {
-    final rows = await _expenseLocal.getAllNewestFirst(workspaceType: 'bnb');
+    final rows = await _expenseLocal.getAllNewestFirst(workspaceType: '');
     final keys = <String>{};
     for (final r in rows) {
       final k = _apartmentLine(r).trim();
@@ -262,6 +262,7 @@ class ExpenseAnalysisController extends BaseController {
       firstDate: DateTime(2018),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       initialDateRange: initial,
+      locale: const Locale('en', 'GB'),
     );
     if (picked != null) {
       _setRange(picked.start, picked.end);
@@ -271,7 +272,7 @@ class ExpenseAnalysisController extends BaseController {
   void viewAllExpenses() {
     Get.toNamed(
       Routes.RENT_MANAGE_EXPENSES,
-      arguments: {'ws': 'bnb'},
+      arguments: {'ws': ''},
     )?.then((_) => loadRealExpenseData());
   }
 
@@ -382,7 +383,7 @@ class ExpenseAnalysisController extends BaseController {
     loading.value = true;
     try {
       _syncFilterLabels();
-      final rows = await _expenseLocal.getAllNewestFirst(workspaceType: 'bnb');
+      final rows = await _expenseLocal.getAllNewestFirst(workspaceType: '');
       final key = selectedPropertyKey.value.trim();
       final rowsForProperty = key.isEmpty
           ? rows

@@ -169,6 +169,7 @@ class BookingDetailsController extends BaseController {
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 2, 12),
       initialDatePickerMode: DatePickerMode.year,
+      locale: const Locale('en', 'GB'),
     );
     if (picked != null) {
       selectedMonth.value = DateTime(picked.year, picked.month);
@@ -190,7 +191,9 @@ class BookingDetailsController extends BaseController {
       initialDate: initialDate,
       firstDate: firstDate,
       lastDate: monthEnd,
+      locale: const Locale('en', 'GB'),
     );
+    
     if (picked != null) {
       selectedDate.value = picked;
     }

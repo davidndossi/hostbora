@@ -53,22 +53,58 @@ class RentPortfolioMetricsCalculator {
       var activeOnProperty = 0;
       for (final t in propertyTenants) {
         final start = _parseDate(t.leaseStartIso);
-        final end = _parseDate(t.leaseEndIso);
+        final end = _parseDate(t.leaseEndIso); // null = open-ended
         if (!_isLeaseActiveOnDay(start, end, today)) continue;
         activeOnProperty++;
         activeLeases++;
 
-        final totalMonths = _monthsBetween(
-          start ?? today,
-          end ?? today.add(const Duration(days: 30)),
-        ).clamp(1, 240);
-        final spentMonths = _monthsBetween(start ?? today, today).clamp(0, totalMonths);
-        final totalAmount = t.rentAmountValue * totalMonths;
         final paid = _sumIncomeForTenant(t, incomeRows);
-        final expectedToDate =
-            (t.rentAmountValue * spentMonths).clamp(0, totalAmount.toDouble());
-        final paidClamped = paid.clamp(0, totalAmount.toDouble());
-        final arrears = (expectedToDate - paidClamped).clamp(0, double.infinity);
+        final freq = t.rentFrequency.trim().toLowerCase();
+        final isPerNight =
+            freq.contains('night') || freq.contains('bnb') || freq.contains('per night');
+        final isWeekly = freq.contains('week');
+        final isYearly = freq.contains('year') || freq.contains('annual');
+
+        double expectedToDate;
+        double totalAmount;
+
+        if (isPerNight) {
+          // BnB: expected = nights elapsed × per-night rate
+          final leaseStart = start ?? today;
+          final elapsed = today.difference(leaseStart).inDays.clamp(0, 3650);
+          expectedToDate = t.rentAmountValue * elapsed;
+          final leaseEnd = end ?? today;
+          final totalNights = leaseEnd.difference(leaseStart).inDays.clamp(1, 3650);
+          totalAmount = t.rentAmountValue * totalNights;
+        } else if (isWeekly) {
+          final leaseStart = start ?? today;
+          final elapsed = today.difference(leaseStart).inDays.clamp(0, 3650);
+          expectedToDate = (t.rentAmountValue / 7) * elapsed;
+          final leaseEnd = end ?? today.add(const Duration(days: 30));
+          totalAmount = (t.rentAmountValue / 7) *
+              leaseEnd.difference(leaseStart).inDays.clamp(1, 3650);
+        } else if (isYearly) {
+          final leaseStart = start ?? today;
+          final elapsed = today.difference(leaseStart).inDays.clamp(0, 3650);
+          expectedToDate = (t.rentAmountValue / 365) * elapsed;
+          final leaseEnd = end ?? today.add(const Duration(days: 365));
+          totalAmount = (t.rentAmountValue / 365) *
+              leaseEnd.difference(leaseStart).inDays.clamp(1, 3650);
+        } else {
+          // Monthly (default)
+          final leaseEnd = end ?? today.add(const Duration(days: 30));
+          final totalMonths =
+              _monthsBetween(start ?? today, leaseEnd).clamp(1, 240);
+          final spentMonths =
+              _monthsBetween(start ?? today, today).clamp(0, totalMonths);
+          totalAmount = t.rentAmountValue * totalMonths;
+          expectedToDate =
+              (t.rentAmountValue * spentMonths).clamp(0, totalAmount);
+        }
+
+        final paidClamped = paid.clamp(0, totalAmount);
+        final arrears =
+            (expectedToDate - paidClamped).clamp(0, double.infinity);
         totalArrears += arrears;
       }
       if (unitCount > 0) {
@@ -122,10 +158,14 @@ class RentPortfolioMetricsCalculator {
     DateTime? end,
     DateTime day,
   ) {
-    if (start == null || end == null) return false;
+    // No start date → skip (tenant has no recorded lease start)
+    if (start == null) return false;
     final s = DateTime(start.year, start.month, start.day);
+    if (day.isBefore(s)) return false;
+    // Null end = open-ended lease; treat as still active
+    if (end == null) return true;
     final e = DateTime(end.year, end.month, end.day);
-    return !day.isBefore(s) && !day.isAfter(e);
+    return !day.isAfter(e);
   }
 
   static double _sumIncomeForTenant(

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:host_bora/app/core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
-import 'package:host_bora/app/modules/rent/widgets/rent_ui.dart';
 
-import '../../../../core/base/base_view.dart';
 import '../../../../core/base/rent_base_view.dart';
 import '../../rent_theme.dart';
+import '../../widgets/rent_ui.dart';
 import '../controllers/rent_schedule_payment_reminder_controller.dart';
 
 /// Set Payment Reminder — cream canvas, `#005B5C` teal, editorial app bar, cards, bottom nav.

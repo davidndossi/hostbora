@@ -1,11 +1,14 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/bnb_stay_billing.dart';
 import '../../../core/utils/haptic_feedback_util.dart';
+import '../../../data/local/db/client_event_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
@@ -35,6 +38,7 @@ class AddTenantFormController extends BaseController {
   final AppRepository _repository;
   final OfflineSyncQueueLocalDataSource _syncQueue;
   final OfflineSyncWorkerService _syncWorker;
+  final _clientEventLocal = Get.find<ClientEventLocalDataSource>();
 
   final propertyContextLabel = ''.obs;
   final propertyRef = ''.obs;
@@ -454,7 +458,7 @@ class AddTenantFormController extends BaseController {
     final unitLabel = draft?.unitName.trim() ?? '';
     final apartmentUnitId = draft?.unitId.trim() ?? '';
 
-    await _tenantLocal.insert(
+    final bnbTenantId = await _tenantLocal.insert(
       propertyLabel: propertyContextLabel.value.trim(),
       propertyRef: propertyRef.value.trim(),
       apartmentUnitId: apartmentUnitId,
@@ -469,6 +473,21 @@ class AddTenantFormController extends BaseController {
       leaseStartIso: DateFormat('yyyy-MM-dd').format(leaseStart.value!),
       leaseEndIso: DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
     );
+    unawaited(_clientEventLocal.insert(
+      tenantLocalId: bnbTenantId,
+      phoneNumber: phoneController.text.trim(),
+      clientName: tenantNameController.text.trim(),
+      propertyRef: propertyRef.value.trim(),
+      propertyLabel: propertyContextLabel.value.trim(),
+      unitLabel: unitLabel,
+      workspace: 'bnb',
+      eventType: ClientEventType.bookingCreated,
+      metadata: {
+        'leaseStart': DateFormat('yyyy-MM-dd').format(leaseStart.value!),
+        'leaseEnd': DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
+        'stayTotal': stayTotal,
+      },
+    ));
 
     final payload = {
       'name': tenantNameController.text.trim(),
@@ -482,6 +501,7 @@ class AddTenantFormController extends BaseController {
       'rentAmount': stayTotal,
       'rentFrequency': 'Per Stay',
       'operationMode': 'bnb',
+      'localTenantId': bnbTenantId,
     };
     try {
       final res = await _repository.createTenant(payload);
@@ -489,6 +509,14 @@ class AddTenantFormController extends BaseController {
           res.responseCode == '200' ||
           res.responseCode == '201';
       if (!ok) throw Exception(res.message ?? 'API error');
+      final backendId =
+          (res.data is Map) ? (res.data as Map)['id']?.toString() ?? '' : '';
+      if (backendId.isNotEmpty) {
+        unawaited(_tenantLocal.saveBackendTenantId(
+          localId: bnbTenantId,
+          backendId: backendId,
+        ));
+      }
     } catch (_) {
       await _syncQueue.enqueue(
         entityType: 'tenant',
@@ -530,7 +558,7 @@ class AddTenantFormController extends BaseController {
       tenantName: tenantNameController.text.trim(),
     );
 
-    await _tenantLocal.insert(
+    final rentTenantId = await _tenantLocal.insert(
       propertyLabel: propertyContextLabel.value.trim(),
       propertyRef: propertyRef.value.trim(),
       apartmentUnitId: apartmentUnitId,
@@ -547,6 +575,22 @@ class AddTenantFormController extends BaseController {
       contractFilePath: '',
       contractFileName: '',
     );
+    unawaited(_clientEventLocal.insert(
+      tenantLocalId: rentTenantId,
+      phoneNumber: phoneController.text.trim(),
+      clientName: tenantNameController.text.trim(),
+      propertyRef: propertyRef.value.trim(),
+      propertyLabel: propertyContextLabel.value.trim(),
+      unitLabel: unitLabel,
+      workspace: 'rent',
+      eventType: ClientEventType.tenantAdded,
+      metadata: {
+        'leaseStart': DateFormat('yyyy-MM-dd').format(leaseStart.value!),
+        'leaseEnd': DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
+        'rentAmount': amount,
+        'rentFrequency': rentFrequency.value,
+      },
+    ));
 
     final rentPayload = {
       'name': tenantNameController.text.trim(),
@@ -560,6 +604,7 @@ class AddTenantFormController extends BaseController {
       'rentAmount': amount,
       'rentFrequency': rentFrequency.value,
       'operationMode': 'rent',
+      'localTenantId': rentTenantId,
     };
     try {
       final res = await _repository.createTenant(rentPayload);
@@ -567,6 +612,14 @@ class AddTenantFormController extends BaseController {
           res.responseCode == '200' ||
           res.responseCode == '201';
       if (!ok) throw Exception(res.message ?? 'API error');
+      final backendId =
+          (res.data is Map) ? (res.data as Map)['id']?.toString() ?? '' : '';
+      if (backendId.isNotEmpty) {
+        unawaited(_tenantLocal.saveBackendTenantId(
+          localId: rentTenantId,
+          backendId: backendId,
+        ));
+      }
     } catch (_) {
       await _syncQueue.enqueue(
         entityType: 'tenant',
