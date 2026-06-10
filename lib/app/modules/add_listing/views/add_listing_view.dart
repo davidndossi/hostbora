@@ -8,6 +8,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/property_unit_floor.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/theme/form_surface_colors.dart';
+import '../../../core/widget/currency_dropdown_field.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
 import '../../../core/widget/skeleton_presets.dart';
@@ -600,7 +601,7 @@ class AddListingView extends BaseView<AddListingController> {
               ),
             ),
             const SizedBox(height: 8),
-            Row(
+            Obx(() => Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
@@ -642,8 +643,16 @@ class AddListingView extends BaseView<AddListingController> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 110,
+                  child: CurrencyDropdownField(
+                    selectedCurrency: controller.selectedCurrency,
+                    label: 'Currency',
+                  ),
+                ),
               ],
-            ),
+            )),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.only(bottom: 8),

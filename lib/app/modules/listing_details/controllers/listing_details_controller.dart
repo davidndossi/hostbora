@@ -608,16 +608,43 @@ class ListingDetailsController extends BaseController
   /// - "per year" → monthly ÷ 12
   /// - "per quarter" → monthly ÷ 3
   /// - everything else → treat as monthly rent
+  /// Formats [amount] in base currency, converting if [currency] != base.
+  /// Appends "≈" prefix when conversion is applied.
+  String _formatRentInBase(double amount, String currency) {
+    final cs = Get.find<CurrencyService>();
+    final base = cs.baseCurrency.value.trim().toUpperCase();
+    final cur = currency.trim().toUpperCase();
+    if (cur.isNotEmpty && cur != base) {
+      final rate = cs.sellingRateFor(cur) ?? 0;
+      if (rate > 0) {
+        return '≈ ${cs.formatBase((amount * rate).round())}';
+      }
+    }
+    return cs.formatBase(amount.round());
+  }
+
+  /// Returns the expected monthly income in base currency.
+  /// If a tenant's [rentCurrency] differs from the base currency the amount is
+  /// converted live using the latest selling rate.
   Future<double> _expectedIncomeFromTenants(Set<String> scopeRefs) async {
     try {
       final tenants = await _tenantLocal.getAllNewestFirst();
       final mode = propertyWorkspaceMode.value;
+      final currencyService = Get.find<CurrencyService>();
       double total = 0;
 
       for (final t in tenants) {
         if (!_tenantMatchesListingForActivity(t, scopeRefs)) continue;
-        final amount = t.rentAmountValue;
+        var amount = t.rentAmountValue;
         if (amount <= 0) continue;
+
+        // Convert contract amount to base currency if needed.
+        final tenantCurrency = t.rentCurrency.trim().toUpperCase();
+        final baseCurrency = currencyService.baseCurrency.value.trim().toUpperCase();
+        if (tenantCurrency != baseCurrency && tenantCurrency.isNotEmpty) {
+          final rate = currencyService.sellingRateFor(tenantCurrency) ?? 0;
+          if (rate > 0) amount = amount * rate;
+        }
 
         final freq = t.rentFrequency.trim().toLowerCase();
         final isBnb = freq.contains('day') ||
@@ -863,7 +890,7 @@ class ListingDetailsController extends BaseController
             title: _isSw ? 'Unit imeongezwa' : 'Property unit added',
             subtitle: name.isEmpty ? (_isSw ? 'Unit mpya' : 'New unit') : name,
             trailing: u.rentAmount > 0
-                ? Get.find<CurrencyService>().formatBase(u.rentAmount.round())
+                ? _formatRentInBase(u.rentAmount, u.rentCurrency)
                 : '',
             timeLabel: _relativeDateFromMs(u.createdAtMs),
             accentColor: const Color(0xFF2563EB),
@@ -915,9 +942,7 @@ class ListingDetailsController extends BaseController
             title: _isSw ? 'Mpangaji ameongezwa' : 'Tenant added',
             subtitle: unit.isEmpty ? t.tenantName : '${t.tenantName} · $unit',
             trailing: t.rentAmountValue > 0
-                ? Get.find<CurrencyService>().formatBase(
-                    t.rentAmountValue.round(),
-                  )
+                ? _formatRentInBase(t.rentAmountValue, t.rentCurrency)
                 : '',
             timeLabel: _relativeDateFromMs(t.createdAtMs),
             accentColor: const Color(0xFF16A34A),

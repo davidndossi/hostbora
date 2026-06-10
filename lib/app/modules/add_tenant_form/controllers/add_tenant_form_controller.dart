@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/bnb_stay_billing.dart';
 import '../../../core/utils/haptic_feedback_util.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/db/client_event_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
@@ -50,6 +51,8 @@ class AddTenantFormController extends BaseController {
   final rentAmountController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
+
+  final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
 
   final gender = 'Female'.obs;
   final rentFrequency = 'Per Day'.obs;
@@ -106,6 +109,7 @@ class AddTenantFormController extends BaseController {
   @override
   void onInit() {
     super.onInit();
+    selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
     final ws = Get.parameters['workspaceType']?.trim().toLowerCase();
     _routePrefersRent = ws == 'rent' ||
         Get.currentRoute.contains(Routes.ADD_NEW_TENANT);
@@ -472,6 +476,7 @@ class AddTenantFormController extends BaseController {
       isWhatsapp: isWhatsapp.value,
       leaseStartIso: DateFormat('yyyy-MM-dd').format(leaseStart.value!),
       leaseEndIso: DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
+      rentCurrency: selectedCurrency.value,
     );
     unawaited(_clientEventLocal.insert(
       tenantLocalId: bnbTenantId,
@@ -501,6 +506,7 @@ class AddTenantFormController extends BaseController {
       'rentAmount': stayTotal,
       'rentFrequency': 'Per Stay',
       'operationMode': 'bnb',
+      'rentCurrency': selectedCurrency.value,
       'localTenantId': bnbTenantId,
     };
     try {
@@ -574,6 +580,7 @@ class AddTenantFormController extends BaseController {
       leaseEndIso: DateFormat('yyyy-MM-dd').format(leaseEnd.value!),
       contractFilePath: '',
       contractFileName: '',
+      rentCurrency: selectedCurrency.value,
     );
     unawaited(_clientEventLocal.insert(
       tenantLocalId: rentTenantId,
@@ -604,6 +611,7 @@ class AddTenantFormController extends BaseController {
       'rentAmount': amount,
       'rentFrequency': rentFrequency.value,
       'operationMode': 'rent',
+      'rentCurrency': selectedCurrency.value,
       'localTenantId': rentTenantId,
     };
     try {

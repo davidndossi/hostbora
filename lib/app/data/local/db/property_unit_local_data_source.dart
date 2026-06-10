@@ -18,6 +18,7 @@ class PropertyUnitRecord {
     required this.operationMode,
     required this.notes,
     required this.createdAtMs,
+    this.rentCurrency = 'TZS',
   });
 
   final int id;
@@ -34,6 +35,10 @@ class PropertyUnitRecord {
   final String operationMode;
   final String notes;
   final int createdAtMs;
+
+  /// ISO 4217 currency code for [rentAmount]. Defaults to base currency (TZS).
+  /// Always store the original contract currency; convert at display time.
+  final String rentCurrency;
 
   factory PropertyUnitRecord.fromMap(Map<String, Object?> m) {
     return PropertyUnitRecord(
@@ -53,6 +58,7 @@ class PropertyUnitRecord {
       ),
       notes: m['notes'] as String? ?? '',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
+      rentCurrency: _normCurrency(m['rent_currency'] as String?),
     );
   }
 
@@ -70,7 +76,13 @@ class PropertyUnitRecord {
     'operation_mode': _normalizeOperationMode(operationMode),
     'notes': notes,
     'created_at_ms': createdAtMs,
+    'rent_currency': rentCurrency.trim().toUpperCase().isEmpty ? 'TZS' : rentCurrency.trim().toUpperCase(),
   };
+
+  static String _normCurrency(String? raw) {
+    final v = raw?.trim().toUpperCase() ?? '';
+    return v.isEmpty ? 'TZS' : v;
+  }
 
   static String _normalizeOperationMode(String raw) {
     final value = raw.trim().toLowerCase();

@@ -11,6 +11,7 @@ class ApartmentUnitDraft {
     this.unitFloor = PropertyUnitFloor.defaultIndex,
     this.operationMode = 'bnb',
     required this.unitDescription,
+    this.unitRentCurrency = 'TZS',
   });
 
   /// Persistent id (saved on the parent property). Empty for legacy rows until re-saved.
@@ -30,6 +31,9 @@ class ApartmentUnitDraft {
   /// Optional; may be empty.
   final String unitDescription;
 
+  /// ISO 4217 currency code for [unitRent]. Always the contract currency; convert at display time.
+  final String unitRentCurrency;
+
   /// Key for dropdowns when [unitId] is missing (legacy JSON).
   String get selectionKey =>
       unitId.trim().isNotEmpty ? unitId.trim() : '__n:${unitName.trim()}';
@@ -42,6 +46,7 @@ class ApartmentUnitDraft {
     'unitFloor': unitFloor,
     'operationMode': operationMode,
     'unitDescription': unitDescription,
+    'unitRentCurrency': unitRentCurrency,
   };
 
   factory ApartmentUnitDraft.fromJson(Map<String, dynamic> m) {
@@ -53,6 +58,7 @@ class ApartmentUnitDraft {
         .toString()
         .trim()
         .toLowerCase();
+    final currency = m['unitRentCurrency']?.toString().trim().toUpperCase() ?? '';
     return ApartmentUnitDraft(
       unitId: m['unitId']?.toString() ?? '',
       unitName: m['unitName']?.toString() ?? '',
@@ -61,6 +67,7 @@ class ApartmentUnitDraft {
       unitFloor: PropertyUnitFloor.parse(m['unitFloor']),
       operationMode: mode == 'rent' ? 'rent' : 'bnb',
       unitDescription: m['unitDescription']?.toString() ?? '',
+      unitRentCurrency: currency.isEmpty ? 'TZS' : currency,
     );
   }
 }

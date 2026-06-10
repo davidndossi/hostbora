@@ -417,13 +417,22 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       // calendar month, accounting for per-night (BnB) vs monthly (rent) rates.
       var expectedIncome = 0.0;
       final monthDays = nextMonthStart.difference(monthStart).inDays;
+      final cs = Get.find<CurrencyService>();
+      final baseCurrency = cs.baseCurrency.value.trim().toUpperCase();
       for (final t in activeTenants) {
-        expectedIncome += _expectedMonthlyAmount(
+        var tenantMonthly = _expectedMonthlyAmount(
           t,
           monthStart: monthStart,
           nextMonthStart: nextMonthStart,
           monthDays: monthDays,
         );
+        // Convert contract currency to base if different.
+        final tenantCurrency = t.rentCurrency.trim().toUpperCase();
+        if (tenantCurrency.isNotEmpty && tenantCurrency != baseCurrency) {
+          final rate = cs.sellingRateFor(tenantCurrency) ?? 0;
+          if (rate > 0) tenantMonthly *= rate;
+        }
+        expectedIncome += tenantMonthly;
       }
 
       // Collected = income recorded this calendar month

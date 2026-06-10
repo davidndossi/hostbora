@@ -6,6 +6,7 @@ import '../../../core/base/base_view.dart';
 import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/utils/tenant_rent_billing.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/widget/currency_dropdown_field.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
 import '../controllers/add_tenant_form_controller.dart';
@@ -151,13 +152,12 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
+              Obx(() => Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     flex: 2,
-                    child: Obx(
-                      () => TextFormField(
+                    child: TextFormField(
                       controller: controller.rentAmountController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       textInputAction: TextInputAction.next,
@@ -179,9 +179,9 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                         prefixIcon: Padding(
                           padding: const EdgeInsets.only(left: 12, right: 4),
                           child: Text(
-                            'Tshs.',
+                            '${controller.selectedCurrency.value} ',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: c.secondary,
                             ),
@@ -195,23 +195,28 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 100,
+                    child: CurrencyDropdownField(
+                      selectedCurrency: controller.selectedCurrency,
+                      label: _isSw ? 'Sarafu' : 'Currency',
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     flex: 3,
-                    child: Obx(
-                      () => _whiteDropdown<String>(
+                    child: _whiteDropdown<String>(
                         colors: c,
                         value: controller.rentFrequency.value,
                         options: controller.rentFrequencyOptions,
                         onChanged: controller.setRentFrequency,
                         compact: true,
                       ),
-                    ),
                   ),
                 ],
-              ),
+              )),
               const SizedBox(height: 16),
               Text('LEASE PERIOD', style: _labelStyle(c)),
               const SizedBox(height: 8),

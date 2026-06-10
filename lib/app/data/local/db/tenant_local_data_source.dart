@@ -26,6 +26,9 @@ class TenantRecord {
   /// Remote backend UUID, populated after the record is synced online.
   final String backendTenantId;
 
+  /// ISO 4217 currency code for [rentAmountValue]. Always the contract currency; convert at display time.
+  final String rentCurrency;
+
   const TenantRecord({
     required this.id,
     required this.propertyLabel,
@@ -45,6 +48,7 @@ class TenantRecord {
     required this.contractFileName,
     required this.createdAtMs,
     this.backendTenantId = '',
+    this.rentCurrency = 'TZS',
   });
 
   factory TenantRecord.fromMap(Map<String, Object?> m) {
@@ -68,7 +72,13 @@ class TenantRecord {
       contractFileName: m['contract_file_name'] as String? ?? '',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
       backendTenantId: m['backend_tenant_id'] as String? ?? '',
+      rentCurrency: _normCurrency(m['rent_currency'] as String?),
     );
+  }
+
+  static String _normCurrency(String? raw) {
+    final v = raw?.trim().toUpperCase() ?? '';
+    return v.isEmpty ? 'TZS' : v;
   }
 }
 
@@ -102,6 +112,7 @@ class TenantLocalDataSource {
     required String leaseEndIso,
     String contractFilePath = '',
     String contractFileName = '',
+    String rentCurrency = 'TZS',
   }) async {
     final db = await database;
     return db.insert(_table, {
@@ -120,6 +131,7 @@ class TenantLocalDataSource {
       'lease_end_iso': leaseEndIso,
       'contract_file_path': contractFilePath,
       'contract_file_name': contractFileName,
+      'rent_currency': rentCurrency.trim().toUpperCase().isEmpty ? 'TZS' : rentCurrency.trim().toUpperCase(),
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
     });
   }

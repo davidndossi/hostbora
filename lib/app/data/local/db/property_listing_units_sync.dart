@@ -14,6 +14,7 @@ Future<void> syncPropertyUnitsForListingSave({
   required int rooms,
   required int maxGuests,
   String listingMode = 'bnb',
+  String listingRentCurrency = 'TZS',
 }) async {
   final ref = propertyRef.trim();
   if (ref.isEmpty) return;
@@ -43,6 +44,8 @@ Future<void> syncPropertyUnitsForListingSave({
         m['operationMode'],
         fallback: listingMode,
       );
+      final currencyRaw = (m['unitRentCurrency'] ?? '').toString().trim().toUpperCase();
+      final currency = currencyRaw.isEmpty ? listingRentCurrency : currencyRaw;
 
       await unitLocal.insert(
         PropertyUnitRecord(
@@ -60,6 +63,7 @@ Future<void> syncPropertyUnitsForListingSave({
           operationMode: operationMode,
           notes: notes,
           createdAtMs: now,
+          rentCurrency: currency,
         ),
       );
     }
@@ -87,6 +91,7 @@ Future<void> syncPropertyUnitsForListingSave({
       operationMode: _normalizeUnitOperationMode(listingMode),
       notes: '',
       createdAtMs: now,
+      rentCurrency: listingRentCurrency,
     ),
   );
 }

@@ -168,11 +168,10 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
     final currencyCode = Get.find<CurrencyService>().baseCurrency.value;
     return ListView(
       controller: controller.listingScrollController,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
-        const SizedBox(height: 6),
         _hero(u),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -183,7 +182,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 onTap: controller.onOpenUnitOccupancy,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 children: [
@@ -194,6 +193,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                     prefix: currencyCode,
                     onTap: controller.onShowIncomeBreakdown,
                   ),
+                  const SizedBox(height: 12),
                   _kpiMinimal(
                     u,
                     label: _isSw ? 'Mapato Niliotegemea' : 'Expected income',
@@ -205,7 +205,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             )
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -216,7 +216,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 prefix: currencyCode,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: _kpiMinimal(
                 u,
@@ -227,17 +227,17 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
         _estimationCostsLink(u),
-        const SizedBox(height: 14),
+        const SizedBox(height: 20),
         _quickManagement(u),
-        const SizedBox(height: 10),
+        const SizedBox(height: 16),
         _calendarSyncEntry(context, u),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         _paymentFollowUpBanner(u),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         _activity(u),
-        const SizedBox(height: 14),
+        const SizedBox(height: 20),
         _removeButton(),
       ],
     );
@@ -744,7 +744,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                       style: const TextStyle(
                         fontFamily: 'serif',
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: 22,
                         fontWeight: FontWeight.w700,
                         height: 1.05,
                         shadows: [
@@ -877,7 +877,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                           ? 'Makadirio ya gharama'
                           : 'Property Estimation Costs',
                       style: TextStyle(
-                        fontSize: 14.5,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w800,
                         color: u.text,
                       ),
@@ -933,7 +933,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
             : const Color(0xFFEF4444);
 
     final inner = Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
       decoration: BoxDecoration(
         color: u.card,
         borderRadius: BorderRadius.circular(16),
@@ -959,7 +959,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 Icon(Icons.chevron_right_rounded, size: 16, color: u.muted),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Center(
             child: SizedBox(
               width: 90,
@@ -977,7 +977,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                       Text(
                         '${percent.round()}',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: u.text,
                           height: 1,
@@ -986,7 +986,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                       Text(
                         '%',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: u.muted,
                           height: 1.2,
@@ -1027,7 +1027,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         ? const Color(0xFFF2F2F7)
         : AppColors.colorPrimary;
     final inner = Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: u.card,
         borderRadius: BorderRadius.circular(16),
@@ -1057,7 +1057,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: FittedBox(
@@ -1070,7 +1070,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                       TextSpan(
                         text: '$prefix ',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: u.muted,
                           height: 1,
@@ -1080,7 +1080,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                       text: value,
                       style: TextStyle(
                         fontFamily: 'serif',
-                        fontSize: 36,
+                        fontSize: 26,
                         fontWeight: FontWeight.w700,
                         height: 1,
                         color: valueColor,
@@ -1091,7 +1091,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                         text: suffix,
                         style: TextStyle(
                           fontFamily: 'serif',
-                          fontSize: 20,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           height: 1,
                           color: u.text,
@@ -1223,7 +1223,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           _isSw ? 'Usimamizi wa Haraka' : 'Quick Management',
           style: TextStyle(
             fontFamily: 'serif',
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
             color: u.text,
@@ -1237,8 +1237,8 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             childAspectRatio: 1.0,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
           ),
           itemBuilder: (context, i) {
             final item = items[i];
@@ -1274,7 +1274,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                         item.$2,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 11,
                           height: 1.2,
                           fontWeight: FontWeight.w700,
                           letterSpacing: .25,
@@ -1306,7 +1306,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                     : (_isSw ? 'Uniti za Kodi' : 'Rent Units'),
                 style: TextStyle(
                   fontFamily: 'serif',
-                  fontSize: 22,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: u.text,
                 ),
@@ -1515,7 +1515,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 _isSw ? 'Shughuli za Karibuni' : 'Recent Activity',
                 style: TextStyle(
                   fontFamily: 'serif',
-                  fontSize: 22,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: u.text,
                 ),
@@ -1535,7 +1535,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           if (rows.isEmpty) {
             return Text(
               'No recent activity',
-              style: TextStyle(fontSize: 14, color: u.muted),
+              style: TextStyle(fontSize: 13, color: u.muted),
             );
           }
           return Column(

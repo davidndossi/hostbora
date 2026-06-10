@@ -597,6 +597,7 @@ class AddListingController extends BaseController {
             rooms: int.tryParse(numberOfBedroomsController.text.trim()) ?? 0,
             maxGuests: int.tryParse(maxGuestsController.text.trim()) ?? 0,
             listingMode: listingMode.value,
+            listingRentCurrency: selectedCurrency.value,
           );
           Get.back(result: true);
           showSuccessWithHaptic('Property updated on this device');
@@ -658,6 +659,7 @@ class AddListingController extends BaseController {
             rooms: int.tryParse(numberOfBedroomsController.text.trim()) ?? 0,
             maxGuests: int.tryParse(maxGuestsController.text.trim()) ?? 0,
             listingMode: listingMode.value,
+            listingRentCurrency: selectedCurrency.value,
           );
           Get.back(result: true);
           showSuccessWithHaptic('Property saved on this device');
@@ -818,6 +820,7 @@ class AddListingController extends BaseController {
             ? _normalizeUnitMode(draftUnitMode.value)
             : _normalizeListingMode(listingMode.value),
         unitDescription: draftUnitDescriptionController.text.trim(),
+        unitRentCurrency: selectedCurrency.value,
       ),
     );
     draftUnitNameController.clear();
