@@ -12,10 +12,8 @@ import '/app/routes/app_pages.dart';
 import '/flavors/build_config.dart';
 import '/flavors/env_config.dart';
 import 'core/base/app_lifecycle_manager.dart';
-import 'core/service/app_update_service.dart';
 import 'data/local/preference/preference_manager.dart';
 import 'data/local/preference/preference_manager_impl.dart';
-import 'data/remote/remote_data_source.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -121,8 +119,8 @@ class _MainAppState extends State<MainApp> {
         _loading = false;
       });
 
-      // Fire version check in background — never blocks startup.
-      _checkForUpdate();
+      // Version check is triggered from MainController.onInit() once
+      // all bindings (including RemoteDataSource) are registered.
     } catch (e, stack) {
       if (BuildConfig.instance.config.shouldCollectCrashLog) {
         BuildConfig.instance.config.logger.e(
@@ -141,17 +139,6 @@ class _MainAppState extends State<MainApp> {
         _shouldShowWelcomeBack = false;
         _loading = false;
       });
-    }
-  }
-
-  void _checkForUpdate() {
-    try {
-      final remote = Get.find<RemoteDataSource>(
-        tag: (RemoteDataSource).toString(),
-      );
-      AppUpdateService(remote).checkAndNotify();
-    } catch (_) {
-      // RemoteDataSource may not be registered yet on very first run — safe to ignore.
     }
   }
 

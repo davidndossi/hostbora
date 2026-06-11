@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import '../../../core/service/app_update_service.dart';
+import '../../../data/remote/remote_data_source.dart';
 import '../../../routes/app_pages.dart';
 import '../../my_properties/controllers/my_properties_controller.dart';
 import '/app/core/base/base_controller.dart';
@@ -29,6 +31,20 @@ class MainController extends BaseController with WidgetsBindingObserver {
       try {
         Get.find<BottomNavController>().updateSelectedIndex(0);
       } catch (_) {}
+    }
+    // All bindings are registered by the time MainController initialises,
+    // so RemoteDataSource is available. Delay slightly so the UI paints first.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+  }
+
+  void _checkForUpdate() {
+    try {
+      final remote = Get.find<RemoteDataSource>(
+        tag: (RemoteDataSource).toString(),
+      );
+      AppUpdateService(remote).checkAndNotify();
+    } catch (_) {
+      // Best-effort — never crash the app over a version check.
     }
   }
 
