@@ -10,6 +10,7 @@ import '../../../core/utils/thousand_separator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/currency_dropdown_field.dart';
 import '../controllers/edit_unit_controller.dart';
 
 class EditUnitView extends BaseView<EditUnitController> {
@@ -63,6 +64,10 @@ class EditUnitView extends BaseView<EditUnitController> {
               },
             ),
             const SizedBox(height: 14),
+            _label(dark, _isSw ? 'AINA YA UNITI' : 'UNIT MODE'),
+            const SizedBox(height: 8),
+            _modeToggle(dark),
+            const SizedBox(height: 14),
             _label(dark, l10n.unitFloorLabel.toUpperCase()),
             const SizedBox(height: 8),
             Obx(
@@ -88,19 +93,35 @@ class EditUnitView extends BaseView<EditUnitController> {
             const SizedBox(height: 14),
             _label(dark, _isSw ? 'KODI YA UNITI' : 'UNIT RENT'),
             const SizedBox(height: 8),
-            TextFormField(
-              controller: controller.unitRentController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [ThousandsSeparatorInputFormatter()],
-              decoration: _input(dark, '0.00').copyWith(prefixText: 'Tshs '),
-              validator: (v) {
-                final raw = (v ?? '').trim().replaceAll(',', '');
-                final n = double.tryParse(raw);
-                if (raw.isEmpty || n == null || n <= 0) {
-                  return _isSw ? 'Weka kodi sahihi' : 'Enter a valid rent amount';
-                }
-                return null;
-              },
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: controller.unitRentController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [ThousandsSeparatorInputFormatter()],
+                    decoration: _input(dark, '0.00'),
+                    validator: (v) {
+                      final raw = (v ?? '').trim().replaceAll(',', '');
+                      final n = double.tryParse(raw);
+                      if (raw.isEmpty || n == null || n <= 0) {
+                        return _isSw ? 'Weka kodi sahihi' : 'Enter a valid rent amount';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 110,
+                  child: CurrencyDropdownField(
+                    selectedCurrency: controller.selectedCurrency,
+                    compact: false,
+                    showRateHint: true,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 14),
             _label(dark, _isSw ? 'MZUNGUKO WA KODI' : 'RENT FREQUENCY'),
@@ -147,6 +168,56 @@ class EditUnitView extends BaseView<EditUnitController> {
             ),
           ],
         ),
+      );
+    });
+  }
+
+  Widget _modeToggle(bool dark) {
+    const options = [
+      ('bnb', 'BnB'),
+      ('rent', 'Rent'),
+    ];
+    return Obx(() {
+      final current = controller.operationMode.value;
+      return Row(
+        children: options.map((opt) {
+          final isSelected = current == opt.$1;
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: opt.$1 == 'bnb' ? 6 : 0),
+              child: GestureDetector(
+                onTap: () => controller.updateOperationMode(opt.$1),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.colorPrimary
+                        : (dark ? const Color(0xFF1F1F1F) : Colors.white),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.colorPrimary
+                          : (dark ? Colors.white24 : AppColors.designInputBorder),
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      opt.$2,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected
+                            ? Colors.white
+                            : (dark ? Colors.white70 : AppColors.textColorSecondary),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       );
     });
   }

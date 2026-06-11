@@ -11,6 +11,7 @@ import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_utility_topup_local_data_source.dart';
 import '../../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../../data/repository/app_repository.dart';
+import '../../../add_listing/models/apartment_unit_draft.dart';
 import '../utils/luku_sms_ocr_parser.dart';
 
 enum UtilityActivityType { lukuTopUp, waterBill, other }
@@ -71,6 +72,13 @@ class RentSmartUtilityDashboardController extends BaseController {
 
   final activities = <UtilityActivityItem>[].obs;
 
+  /// Apartment units for the current property (empty for standalone houses).
+  final availableUnits = <ApartmentUnitDraft>[].obs;
+
+  /// Empty string means "all units / whole property".
+  final selectedUnitId = ''.obs;
+  final selectedUnitName = ''.obs;
+
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   static const _avgDailyKwh = 12.0;
@@ -101,9 +109,16 @@ class RentSmartUtilityDashboardController extends BaseController {
           unitLabel.value = 'UNIT · ${suite.toUpperCase()}';
           propertyLabel.value = suite.isEmpty ? propertyLabel.value : suite;
         }
+        _loadPropertyUnits(p.unitsJson);
       }
 
-      final topUps = await _topUpLocal.getAllNewestFirst();
+      final allTopUps = await _topUpLocal.getAllNewestFirst();
+      // Filter to selected unit when one is chosen.
+      final uid = selectedUnitId.value.trim();
+      final topUps = uid.isEmpty
+          ? allTopUps
+          : allTopUps.where((t) => t.unitId == uid).toList();
+
       final lukuTotal = topUps
           .where((t) => t.kind == RentUtilityKind.luku)
           .fold<double>(0, (a, b) => a + b.unitsAdded);
@@ -320,36 +335,83 @@ class RentSmartUtilityDashboardController extends BaseController {
       ? 0
       : (waterLiters.value / waterCapacity.value).clamp(0, 1);
 
+  // ── Unit helpers ────────────────────────────────────────────────────────────
+
+  void _loadPropertyUnits(String unitsJson) {
+    if (unitsJson.trim().isEmpty) {
+      availableUnits.clear();
+      return;
+    }
+    try {
+      final decoded = jsonDecode(unitsJson);
+      if (decoded is! List) {
+        availableUnits.clear();
+        return;
+      }
+      final units = decoded
+          .whereType<Map>()
+          .map((m) => ApartmentUnitDraft.fromJson(Map<String, dynamic>.from(m)))
+          .where((u) => u.unitName.trim().isNotEmpty)
+          .toList();
+      availableUnits.assignAll(units);
+      // If the previously selected unit no longer exists, reset.
+      if (selectedUnitId.value.isNotEmpty &&
+          !units.any((u) => u.unitId == selectedUnitId.value)) {
+        selectedUnitId.value = '';
+        selectedUnitName.value = '';
+      }
+    } catch (_) {
+      availableUnits.clear();
+    }
+  }
+
+  /// Switch the active unit filter. Pass empty string to show all units.
+  Future<void> selectUnit(String unitId) async {
+    final unit = availableUnits.firstWhereOrNull((u) => u.unitId == unitId);
+    selectedUnitId.value = unitId;
+    selectedUnitName.value = unit?.unitName.trim() ?? '';
+    await loadAll();
+  }
+
+  // ── Top-up persistence ───────────────────────────────────────────────────────
+
   /// Persist a LUKU electricity top-up and reload derived metrics.
   Future<void> addLukuTopUp({
     required double kwh,
     required double amountTsh,
     String provider = '',
+    String meterNumber = '',
     String notes = '',
     DateTime? date,
   }) async {
     final when = date ?? DateTime.now();
+    final uid = selectedUnitId.value.trim();
+    final uName = selectedUnitName.value.trim();
     final localId = await _topUpLocal.insert(
       kind: RentUtilityKind.luku,
       unitsAdded: kwh,
       amountTsh: amountTsh,
       provider: provider,
+      meterNumber: meterNumber,
+      unitId: uid,
+      unitName: uName,
       notes: notes,
       propertyLabel: propertyLabel.value,
       propertyRef: propertyRef.value,
       dateIso: when.toIso8601String(),
     );
 
-    final payload = <String, dynamic>{
-      'kind': RentUtilityKind.luku,
-      'unitsAdded': kwh,
-      'amountTsh': amountTsh,
-      'provider': provider,
-      'notes': notes,
-      'propertyLabel': propertyLabel.value,
-      'propertyRef': propertyRef.value,
-      'dateIso': when.toIso8601String(),
-    };
+    final payload = _buildPayload(
+      kind: RentUtilityKind.luku,
+      units: kwh,
+      amount: amountTsh,
+      provider: provider,
+      meterNumber: meterNumber,
+      unitId: uid,
+      unitName: uName,
+      notes: notes,
+      purchaseDate: when.toIso8601String(),
+    );
     try {
       final res = await _repository.addUtilityTopUp(payload);
       final ok = res.responseCode == '0' ||
@@ -376,17 +438,48 @@ class RentSmartUtilityDashboardController extends BaseController {
 
   Future<void> addLukuTopUpsFromSms(List<LukuSmsTopUpDraft> drafts) async {
     if (drafts.isEmpty) return;
+    final uid = selectedUnitId.value.trim();
+    final uName = selectedUnitName.value.trim();
     for (final draft in drafts) {
-      await _topUpLocal.insert(
+      final localId = await _topUpLocal.insert(
         kind: RentUtilityKind.luku,
         unitsAdded: draft.unitsKwh,
         amountTsh: draft.amountTsh,
         provider: 'SMS OCR',
+        meterNumber: draft.meterNumber,
+        unitId: uid,
+        unitName: uName,
         notes: draft.notes,
         propertyLabel: propertyLabel.value,
         propertyRef: propertyRef.value,
         dateIso: draft.date.toIso8601String(),
       );
+      final payload = _buildPayload(
+        kind: RentUtilityKind.luku,
+        units: draft.unitsKwh,
+        amount: draft.amountTsh,
+        provider: 'SMS OCR',
+        meterNumber: draft.meterNumber,
+        unitId: uid,
+        unitName: uName,
+        notes: draft.notes,
+        purchaseDate: draft.date.toIso8601String(),
+      );
+      try {
+        final res = await _repository.addUtilityTopUp(payload);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'API error');
+      } catch (_) {
+        await _syncQueue.enqueue(
+          entityType: 'utility',
+          operation: 'create',
+          payloadJson: jsonEncode(payload),
+          dedupeKey: 'utility:create:luku:$localId',
+        );
+        _syncWorker.runNow();
+      }
     }
     await loadAll();
     final count = drafts.length;
@@ -402,31 +495,38 @@ class RentSmartUtilityDashboardController extends BaseController {
     required double liters,
     required double amountTsh,
     String provider = '',
+    String meterNumber = '',
     String notes = '',
     DateTime? date,
   }) async {
     final when = date ?? DateTime.now();
+    final uid = selectedUnitId.value.trim();
+    final uName = selectedUnitName.value.trim();
     final localId = await _topUpLocal.insert(
       kind: RentUtilityKind.water,
       unitsAdded: liters,
       amountTsh: amountTsh,
       provider: provider,
+      meterNumber: meterNumber,
+      unitId: uid,
+      unitName: uName,
       notes: notes,
       propertyLabel: propertyLabel.value,
       propertyRef: propertyRef.value,
       dateIso: when.toIso8601String(),
     );
 
-    final payload = <String, dynamic>{
-      'kind': RentUtilityKind.water,
-      'unitsAdded': liters,
-      'amountTsh': amountTsh,
-      'provider': provider,
-      'notes': notes,
-      'propertyLabel': propertyLabel.value,
-      'propertyRef': propertyRef.value,
-      'dateIso': when.toIso8601String(),
-    };
+    final payload = _buildPayload(
+      kind: RentUtilityKind.water,
+      units: liters,
+      amount: amountTsh,
+      provider: provider,
+      meterNumber: meterNumber,
+      unitId: uid,
+      unitName: uName,
+      notes: notes,
+      purchaseDate: when.toIso8601String(),
+    );
     try {
       final res = await _repository.addUtilityTopUp(payload);
       final ok = res.responseCode == '0' ||
@@ -449,6 +549,33 @@ class RentSmartUtilityDashboardController extends BaseController {
           ? 'Umeongeza ${liters.toStringAsFixed(0)} lita za maji'
           : 'Added ${liters.toStringAsFixed(0)} L of water',
     );
+  }
+
+  Map<String, dynamic> _buildPayload({
+    required String kind,
+    required double units,
+    required double amount,
+    required String purchaseDate,
+    String provider = '',
+    String meterNumber = '',
+    String unitId = '',
+    String unitName = '',
+    String notes = '',
+  }) {
+    return {
+      'kind': kind,
+      'units': units,
+      'amount': amount,
+      'purchaseDate': purchaseDate,
+      'propertyRef': propertyRef.value,
+      if (provider.isNotEmpty) 'notes': notes.isNotEmpty
+          ? '$notes • via $provider'
+          : 'via $provider'
+      else if (notes.isNotEmpty) 'notes': notes,
+      if (meterNumber.isNotEmpty) 'meterNumber': meterNumber,
+      if (unitId.isNotEmpty) 'unitId': unitId,
+      if (unitName.isNotEmpty) 'unitName': unitName,
+    };
   }
 
   void onViewAllActivity() {

@@ -15,6 +15,9 @@ class RentUtilityTopUpRecord {
     required this.unitsAdded,
     required this.amountTsh,
     required this.provider,
+    required this.meterNumber,
+    required this.unitId,
+    required this.unitName,
     required this.notes,
     required this.propertyLabel,
     required this.propertyRef,
@@ -31,6 +34,13 @@ class RentUtilityTopUpRecord {
   final double unitsAdded;
   final double amountTsh;
   final String provider;
+
+  /// LUKU/water meter number (may be empty for manual entries).
+  final String meterNumber;
+
+  /// Property unit this top-up belongs to (empty = whole property / unspecified).
+  final String unitId;
+  final String unitName;
   final String notes;
   final String propertyLabel;
   final String propertyRef;
@@ -44,6 +54,9 @@ class RentUtilityTopUpRecord {
       unitsAdded: (m['units_added'] as num?)?.toDouble() ?? 0,
       amountTsh: (m['amount_tsh'] as num?)?.toDouble() ?? 0,
       provider: m['provider'] as String? ?? '',
+      meterNumber: m['meter_number'] as String? ?? '',
+      unitId: m['unit_id'] as String? ?? '',
+      unitName: m['unit_name'] as String? ?? '',
       notes: m['notes'] as String? ?? '',
       propertyLabel: m['property_label'] as String? ?? '',
       propertyRef: m['property_ref'] as String? ?? '',
@@ -69,6 +82,9 @@ class RentUtilityTopUpLocalDataSource {
     required double unitsAdded,
     required double amountTsh,
     String provider = '',
+    String meterNumber = '',
+    String unitId = '',
+    String unitName = '',
     String notes = '',
     String propertyLabel = '',
     String propertyRef = '',
@@ -80,6 +96,9 @@ class RentUtilityTopUpLocalDataSource {
       'units_added': unitsAdded,
       'amount_tsh': amountTsh,
       'provider': provider,
+      'meter_number': meterNumber.trim(),
+      'unit_id': unitId.trim(),
+      'unit_name': unitName.trim(),
       'notes': notes,
       'property_label': propertyLabel,
       'property_ref': propertyRef.trim(),
@@ -105,12 +124,43 @@ class RentUtilityTopUpLocalDataSource {
     return maps.map(RentUtilityTopUpRecord.fromMap).toList();
   }
 
+  /// Records for a specific property unit. Pass [unitId] == '' to get records
+  /// that have no unit assigned (i.e. recorded at property level).
+  Future<List<RentUtilityTopUpRecord>> getByUnit({
+    required String kind,
+    required String unitId,
+  }) async {
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      where: 'kind = ? AND unit_id = ?',
+      whereArgs: [kind, unitId.trim()],
+      orderBy: 'created_at_ms DESC',
+    );
+    return maps.map(RentUtilityTopUpRecord.fromMap).toList();
+  }
+
   /// Total `units_added` for a given kind (kWh for LUKU, liters for water).
   Future<double> sumUnits(String kind) async {
     final db = await database;
     final rows = await db.rawQuery(
       'SELECT COALESCE(SUM(units_added), 0) AS total FROM $_table WHERE kind = ?',
       [kind],
+    );
+    final total = rows.first['total'];
+    return (total is num) ? total.toDouble() : 0;
+  }
+
+  /// Total `units_added` for a specific unit.
+  Future<double> sumUnitsByUnit({
+    required String kind,
+    required String unitId,
+  }) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT COALESCE(SUM(units_added), 0) AS total FROM $_table '
+      'WHERE kind = ? AND unit_id = ?',
+      [kind, unitId.trim()],
     );
     final total = rows.first['total'];
     return (total is num) ? total.toDouble() : 0;

@@ -587,14 +587,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportIntro =>
-      'Answers about Host Bora—BnB and Rent workspaces, bookings, payments, calendar sync, security, and more. For anything not covered here, contact us below.';
+      'Answers about Host Bora — BnB and Rent workspaces, multi-currency support, scheduled maintenance, tenant and guest reliability scoring, per-unit LUKU tracking, AI portfolio insights, and more. For anything not covered here, contact us below.';
 
   @override
   String get supportTipsHeading => 'Quick tips';
 
   @override
   String get supportTipsBody =>
-      '• Switch BnB and Rent from the home screen; pull down on listings to refresh occupancy and revenue.\n• Record payments against the correct property and unit; check dates fall in the current month for dashboards.\n• Link external calendars per listing to reduce double bookings.\n• Use Settings → Clear offline data only if you intend to remove local rent records from this phone.';
+      '• Switch between BnB and Rent from the home screen; pull down on a listing to refresh occupancy and revenue.\n• When entering an amount in a currency different from your base currency, the live exchange rate appears below the field — the original amount and currency are always stored.\n• LUKU electricity is tracked per unit — select a unit chip in the Utilities dashboard before logging a top-up or scanning an SMS.\n• Schedule maintenance from the Rent workspace; a push reminder fires the day before and the task appears in your host calendar.\n• Rate tenants and guests when they leave — scores are published after a cooling-off period and visible to other landlords.\n• Use Settings → Clear offline data only if you intend to remove all local records from this device.';
 
   @override
   String get supportFaqHeading => 'Common questions';
@@ -605,14 +605,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportFaq1A =>
-      'Host Bora has two workspaces. BnB is for short-stay: listings, bookings, host calendar, calendar sync, and guest payments. Rent is for long-term: tenants, leases, rent payments, reminders, staff, and smart utilities. Switch from the home screen any time—properties, expenses, and Property Vault are shared.';
+      'Host Bora has two workspaces. BnB is for short stays: listings, bookings, host calendar, calendar sync, and guest payments. Rent is for long-term tenancies: tenants, leases, rent payments, reminders, staff, scheduled maintenance, and smart utilities. Switch from the home screen any time — properties, expenses, financial overview, AI Manager, and Property Vault are shared across both.';
 
   @override
   String get supportFaq2Q => 'How do I record guest or tenant payments?';
 
   @override
   String get supportFaq2A =>
-      'In BnB, open a booking or use Record payment from the host hub. In Rent, use Manage payments on a tenant or listing. Enter amount, date, and method; payments attach to the property (and unit). Pull to refresh on a listing if monthly totals look stale.';
+      'In BnB, open a booking or use Record payment from the host hub. In Rent, use Manage payments on a tenant or listing. Enter the amount, date, and method — if the currency differs from your base currency, select it from the dropdown and the exchange rate is captured automatically. Payments attach to the property and unit. Pull to refresh on a listing if monthly totals look stale.';
 
   @override
   String get supportFaq3Q => 'How do I manage BnB bookings?';
@@ -640,7 +640,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportFaq6A =>
-      'Yes. Properties, rent records, bookings you have opened, vault documents, and income or expenses you save stay on your device and sync when you reconnect. Avoid Settings → Clear offline data unless you intend to remove local rent data from this phone.';
+      'Yes. Properties, rent records, bookings, vault documents, utility top-ups, and scheduled maintenance records save locally and sync to the server when you reconnect. Currency exchange rates are cached so amounts display correctly offline. Avoid Settings → Clear offline data unless you intend to remove all local records from this device.';
 
   @override
   String get supportFaq7Q => 'How do I send SMS or WhatsApp messages?';
@@ -676,6 +676,42 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get supportFaq11A =>
       'Use Email support or Chat on WhatsApp on this screen. Include your device model, app version, and what you were doing when the issue happened. For privacy requests email privacy@hostbora.co.tz. We aim to reply within one business day.';
+
+  @override
+  String get supportFaq12Q => 'How does multi-currency work?';
+
+  @override
+  String get supportFaq12A =>
+      'Select a currency from the dropdown on any amount field. If it differs from your base currency, the live exchange rate appears below the field and is stored with the record. Historical amounts are always preserved in the original currency and converted for display using the rate at the time of entry. Your base currency can be changed from Settings.';
+
+  @override
+  String get supportFaq13Q => 'How do I track LUKU electricity per unit?';
+
+  @override
+  String get supportFaq13A =>
+      'In the Utilities dashboard, a row of unit chips appears above the LUKU card when your property has more than one unit. Tap a unit to filter the kWh balance, weekly chart, and activity log to that unit. Any top-up you log — manual or via SMS scan — is tagged to the selected unit. Tap \'All units\' to return to the full property view.';
+
+  @override
+  String get supportFaq14Q =>
+      'How does the tenant or guest reliability score work?';
+
+  @override
+  String get supportFaq14A =>
+      'After a tenancy or stay ends, you can leave a rating. The system considers on-time payments, partial payments, and your rating to produce a score. A cooling-off period applies before the score becomes visible to other landlords. You can request an anonymous reference check for any phone number from the Tenant search screen.';
+
+  @override
+  String get supportFaq15Q => 'How do I schedule maintenance?';
+
+  @override
+  String get supportFaq15A =>
+      'In the Rent workspace, open Scheduled Maintenance and tap the + button. Choose the property, category (Plumbing, Electrical, General, etc.), scheduled date, and priority. The task saves locally and syncs to the server when online. A push notification fires the day before as a reminder, and the task also appears in your host calendar.';
+
+  @override
+  String get supportFaq16Q => 'What does the AI Manager do?';
+
+  @override
+  String get supportFaq16A =>
+      'The AI Manager analyses your portfolio and surfaces insights — occupancy trends, revenue patterns, anomalies, and recommendations. Ask it questions about your properties using natural language. Results are generated from your local data and, when online, enhanced with server-side analysis. Open AI Manager from the floating button on the home screen or via the main menu.';
 
   @override
   String get supportContactHeading => 'Contact us';

@@ -1592,7 +1592,7 @@ class ListingDetailsController extends BaseController
     await loadListingDetail();
   }
 
-  Future<void> onAddNewUnit() async {
+  Future<void> onAddNewUnit(String workspace) async {
     final propertyHubId = _propertyId.trim();
 
     if (propertyHubId.isEmpty) {
@@ -1607,7 +1607,10 @@ class ListingDetailsController extends BaseController
 
     await Get.toNamed(
       Routes.EDIT_LISTING,
-      arguments: {'property_ref': propertyHubId},
+      arguments: {
+        'property_ref': propertyHubId,
+        'default_unit_mode': workspace == 'rent' ? 'rent' : 'bnb',
+      },
     );
     await loadListingDetail();
   }

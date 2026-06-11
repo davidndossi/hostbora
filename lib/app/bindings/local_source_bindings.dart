@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../data/local/db/property_local_data_source.dart';
 import '../data/local/db/property_unit_local_data_source.dart';
 import '/app/data/model/add_task_request.dart';
+import '/app/data/model/scheduled_maintenance_request.dart';
 import '/app/data/model/schedule_payment_reminder_request.dart';
 import '/app/data/model/add_expense_request.dart';
 import '/app/data/model/add_listing_request.dart';
@@ -255,23 +256,32 @@ class LocalSourceBindings implements Bindings {
         final repository = Get.find<AppRepository>(
           tag: (AppRepository).toString(),
         );
-        final res = await repository.addTask(
-          AddTaskRequest(
-            title: map['title'] as String? ?? 'Maintenance',
-            description: map['description'] as String?,
-            dueDate: map['dueDate'] as String?,
+        final res = await repository.addScheduledMaintenance(
+          ScheduledMaintenanceRequest(
             propertyLabel: map['propertyLabel'] as String?,
             propertyRef: map['propertyRef'] as String?,
+            apartmentUnitId: map['apartmentUnitId'] as String?,
+            category: map['category'] as String? ?? 'General',
+            description: map['description'] as String?,
+            scheduledDateIso: map['scheduledDateIso'] as String?,
+            priority: map['priority'] as String? ?? 'medium',
             workspaceType: map['workspaceType'] as String?,
           ),
         );
+        final saved = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!saved) throw Exception(res.message ?? 'sync failed');
         final localId = map['localId'] as int?;
         if (localId != null) {
           final maintenanceLocal =
               Get.find<RentScheduledMaintenanceLocalDataSource>();
           await maintenanceLocal.updateSyncStatus(localId, 'synced');
           final backendId = (res.data is Map)
-              ? (res.data as Map)['taskId']?.toString() ?? ''
+              ? ((res.data as Map)['maintenanceId'] ??
+                      (res.data as Map)['id'])
+                  ?.toString() ??
+                  ''
               : '';
           if (backendId.isNotEmpty) {
             await maintenanceLocal.saveBackendTaskId(

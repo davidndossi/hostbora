@@ -31,6 +31,8 @@ class EditUnitController extends BaseController {
   final unitDescriptionController = TextEditingController();
   final unitRentFrequency = 'Per Month'.obs;
   final unitFloor = PropertyUnitFloor.defaultIndex.obs;
+  final selectedCurrency = 'TZS'.obs;
+  final operationMode = 'bnb'.obs;
 
   static const rentFrequencyOptions = [
     'Per Day',
@@ -114,8 +116,16 @@ class EditUnitController extends BaseController {
       unitNameController.text = unit.unitName;
       unitRentController.text = unit.unitRent;
       unitDescriptionController.text = unit.unitDescription;
-      unitRentFrequency.value = _coerceFrequency(unit.unitRentFrequency, row.rentFrequency);
+      // Resolve mode first so _coerceFrequency can use it as the tiebreaker.
+      final resolvedMode =
+          unit.operationMode.trim().toLowerCase() == 'rent' ? 'rent' : 'bnb';
+      operationMode.value = resolvedMode;
+      unitRentFrequency.value =
+          _coerceFrequency(unit.unitRentFrequency, row.rentFrequency, resolvedMode);
       unitFloor.value = unit.unitFloor;
+      selectedCurrency.value = unit.unitRentCurrency.trim().isNotEmpty
+          ? unit.unitRentCurrency.trim().toUpperCase()
+          : 'TZS';
     } catch (e, st) {
       logger.e('EditUnit load $e $st');
       loadError.value = _isSw ? 'Imeshindwa kupakia unit.' : 'Could not load unit details.';
@@ -124,12 +134,13 @@ class EditUnitController extends BaseController {
     }
   }
 
-  String _coerceFrequency(String value, String fallback) {
+  String _coerceFrequency(String value, String fallback, String mode) {
     final v = value.trim();
     if (rentFrequencyOptions.contains(v)) return v;
     final fb = fallback.trim();
     if (rentFrequencyOptions.contains(fb)) return fb;
-    return rentFrequencyOptions.first;
+    // Fall back to mode-appropriate default: rent → Per Month, bnb → Per Day.
+    return mode == 'rent' ? 'Per Month' : 'Per Day';
   }
 
   void updateRentFrequency(String? value) {
@@ -141,6 +152,16 @@ class EditUnitController extends BaseController {
   void updateUnitFloor(int? value) {
     if (value != null && PropertyUnitFloor.indices.contains(value)) {
       unitFloor.value = value;
+    }
+  }
+
+  void updateOperationMode(String mode) {
+    if (mode == operationMode.value) return;
+    operationMode.value = mode;
+    if (mode == 'rent' && unitRentFrequency.value == 'Per Day') {
+      unitRentFrequency.value = 'Per Month';
+    } else if (mode == 'bnb' && unitRentFrequency.value == 'Per Month') {
+      unitRentFrequency.value = 'Per Day';
     }
   }
 
@@ -162,6 +183,8 @@ class EditUnitController extends BaseController {
       unitRentFrequency: unitRentFrequency.value,
       unitFloor: unitFloor.value,
       unitDescription: updatedDesc,
+      unitRentCurrency: selectedCurrency.value,
+      operationMode: operationMode.value,
     );
 
     _units = List<ApartmentUnitDraft>.from(_units)..[_targetIndex] = updated;
@@ -190,25 +213,18 @@ class EditUnitController extends BaseController {
         ),
       );
 
-      final refs = <String>{
-        if (property.propertyRef.trim().isNotEmpty) property.propertyRef.trim(),
-        'local_${property.id}',
-        'legacy_${property.id}',
-      };
-      for (final r in refs) {
-        await syncPropertyUnitsForListingSave(
-          unitLocal: _unitLocal,
-          propertyRef: r,
-          isApartment: true,
-          apartmentUnitMaps: _units.map((u) => u.toJson()).toList(),
-          minRentalDuration: property.minRentalDuration,
-          listingRentFrequency: property.rentFrequency,
-          listingRentRaw: property.rentAmount,
-          singleUnitName: property.propertyName,
-          rooms: 0,
-          maxGuests: 0,
-        );
-      }
+      await syncPropertyUnitsForListingSave(
+        unitLocal: _unitLocal,
+        propertyRef: property.propertyRef,
+        isApartment: true,
+        apartmentUnitMaps: _units.map((u) => u.toJson()).toList(),
+        minRentalDuration: property.minRentalDuration,
+        listingRentFrequency: property.rentFrequency,
+        listingRentRaw: property.rentAmount,
+        singleUnitName: property.propertyName,
+        rooms: 0,
+        maxGuests: 0,
+      );
 
       final listingId = property.propertyRef.trim().isNotEmpty
           ? property.propertyRef.trim()

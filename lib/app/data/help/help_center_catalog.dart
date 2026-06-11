@@ -10,10 +10,10 @@ class HelpCenterCatalog {
   static const guides = <HelpGuide>[
     HelpGuide(
       id: 'getting_started_bnb',
-      titleEn: 'Get started with BnB',
-      titleSw: 'Anza na BnB',
-      summaryEn: 'Set up properties, take bookings, and track revenue.',
-      summarySw: 'Sanidi mali, pokea uhifadhi, na fuatilia mapato.',
+      titleEn: 'Get started with short-stay hosting',
+      titleSw: 'Anza na upangishaji wa muda mfupi',
+      summaryEn: 'Set up properties, manage bookings, and track nightly revenue.',
+      summarySw: 'Sanidi mali, simamia uhifadhi, na fuatilia mapato ya kila usiku.',
       workspace: HelpWorkspace.bnb,
       categoryEn: 'Getting started',
       categorySw: 'Mwanzo',
@@ -21,47 +21,47 @@ class HelpCenterCatalog {
       estimatedMinutes: 5,
       steps: [
         HelpGuideStep(
-          titleEn: 'Open your dashboard',
-          titleSw: 'Fungua dashibodi yako',
+          titleEn: 'View your Home dashboard',
+          titleSw: 'Angalia dashibodi ya Nyumbani',
           bodyEn:
-              'From the bottom bar, open Dashboard to see bookings, guests, revenue, and occupancy for the week.',
+              'The Home tab shows active bookings, monthly revenue, today\'s check-ins and check-outs, and upcoming arrivals.',
           bodySw:
-              'Kutoka kwenye menyu ya chini, fungua Dashibodi kuona uhifadhi, wageni, mapato, na ukaaji wa wiki.',
-          route: Routes.MAIN,
+              'Kichupo cha Nyumbani kinaonyesha uhifadhi hai, mapato ya mwezi, kuwasili na kuondoka leo, na wageni wanaokuja.',
+          route: Routes.HOME,
         ),
         HelpGuideStep(
           titleEn: 'Add a property',
           titleSw: 'Ongeza mali',
           bodyEn:
-              'Tap the + button on Home, choose Property, and complete the listing wizard with photos, units, and pricing.',
+              'Open the Properties tab and tap the + FAB. Complete the listing wizard with photos, units, and pricing.',
           bodySw:
-              'Gusa kitufe cha + kwenye Nyumbani, chagua Mali, na kamilisha hatua za kuongeza picha, vyumba, na bei.',
+              'Fungua kichupo cha Mali na ugonge FAB ya +. Kamilisha hatua za kuongeza picha, vyumba, na bei.',
           route: Routes.ADD_LISTING,
         ),
         HelpGuideStep(
           titleEn: 'Record a guest payment',
           titleSw: 'Rekodi malipo ya mgeni',
           bodyEn:
-              'Use Record payment from the FAB or booking flow. Amounts feed your financial overview and reports.',
+              'Use Record payment from the FAB on Home or from a booking. Amounts feed your financial overview and reports.',
           bodySw:
-              'Tumia Rekodi malipo kutoka FAB au mtiririko wa uhifadhi. Kiasi huonekana kwenye muhtasari wa fedha.',
+              'Tumia Rekodi malipo kutoka FAB kwenye Nyumbani au kutoka uhifadhi. Kiasi huonekana kwenye muhtasari wa fedha.',
           route: Routes.RECORD_PAYMENT,
         ),
         HelpGuideStep(
           titleEn: 'View calendar & bookings',
           titleSw: 'Angalia kalenda na uhifadhi',
           bodyEn:
-              'Host Calendar shows arrivals and departures. All Bookings lists every reservation in one place.',
+              'Go to More → Host Calendar for arrivals and departures. More → Reports shows all bookings in one place.',
           bodySw:
-              'Kalenda ya Mwenyeji inaonyesha kuwasili na kuondoka. Uhifadhi Wote unaorodhesha kila uhifadhi.',
+              'Nenda Zaidi → Kalenda kwa kuwasili na kuondoka. Zaidi → Ripoti inaonyesha uhifadhi wote.',
           route: Routes.HOST_CALENDAR,
         ),
       ],
     ),
     HelpGuide(
       id: 'getting_started_rent',
-      titleEn: 'Get started with Rent',
-      titleSw: 'Anza na Kodi',
+      titleEn: 'Get started with long-term rentals',
+      titleSw: 'Anza na upangishaji wa muda mrefu',
       summaryEn: 'Manage leases, collect rent, and monitor portfolio health.',
       summarySw: 'Simamia mikataba, kusanya kodi, na fuatilia afya ya mali zako.',
       workspace: HelpWorkspace.rent,
@@ -71,45 +71,48 @@ class HelpCenterCatalog {
       estimatedMinutes: 6,
       steps: [
         HelpGuideStep(
-          titleEn: 'Open Rent hub',
-          titleSw: 'Fungua kitovu cha Kodi',
-          bodyEn:
-              'Switch to the Rent workspace from the hub header. Review monthly income, occupancy, active leases, and arrears cards.',
-          bodySw:
-              'Badilisha kwenye nafasi ya Kodi kutoka kichwa cha ukurasa. Angalia mapato, ukaaji, mikataba hai, na deni.',
-          route: Routes.HOME,
-        ),
-        HelpGuideStep(
           titleEn: 'Add a rental property',
           titleSw: 'Ongeza mali ya kukodisha',
-          bodyEn: 'Create a listing with units, expected rent, and location details.',
-          bodySw: 'Unda tangazo lenye vyumba, kodi inayotarajiwa, na maelezo ya eneo.',
+          bodyEn:
+              'Open the Properties tab and tap the + FAB. Create a listing with units, expected rent, and location details.',
+          bodySw:
+              'Fungua kichupo cha Mali na ugonge FAB ya +. Unda tangazo lenye vyumba, kodi inayotarajiwa, na maelezo ya eneo.',
           route: Routes.ADD_LISTING,
         ),
         HelpGuideStep(
           titleEn: 'Onboard a tenant',
           titleSw: 'Sajili mpangaji',
           bodyEn:
-              'Add tenant name, lease dates, rent amount, and frequency. This powers payment tracking and reminders.',
+              'Open a property, tap Add tenant. Enter name, lease dates, rent amount, frequency, and currency. The unit\'s operation mode pre-fills a sensible frequency default.',
           bodySw:
-              'Ongeza jina, tarehe za mkataba, kodi, na mzunguko wa malipo. Hii inaendesha ufuatiliaji na vikumbusho.',
+              'Fungua mali, gonga Ongeza mpangaji. Weka jina, tarehe za mkataba, kodi, mzunguko, na sarafu. Hali ya chumba hujaza mzunguko wa kawaida.',
           route: Routes.ADD_NEW_TENANT,
         ),
         HelpGuideStep(
           titleEn: 'Record rent income',
           titleSw: 'Rekodi mapato ya kodi',
-          bodyEn: 'Log each payment received. Income updates hub KPIs and tenant ledgers automatically.',
+          bodyEn:
+              'Log each payment received from the Home FAB or from a tenant record. Income updates the Finances tab KPIs and tenant ledgers automatically.',
           bodySw:
-              'Andika kila malipo yaliyopokelewa. Mapato yanasasisha kadi za kitovu na daftari la mpangaji.',
+              'Andika kila malipo kutoka FAB ya Nyumbani au rekodi ya mpangaji. Mapato yanasasisha kadi za Fedha na daftari la mpangaji.',
           route: Routes.RECORD_PAYMENT,
+        ),
+        HelpGuideStep(
+          titleEn: 'Check Finances & arrears',
+          titleSw: 'Angalia Fedha na deni',
+          bodyEn:
+              'The Finances tab shows income vs expense, net income, and total arrears across all properties.',
+          bodySw:
+              'Kichupo cha Fedha kinaonyesha mapato dhidi ya matumizi, mapato halisi, na jumla ya deni kwa mali zote.',
+          route: Routes.FINANCIAL_OVERVIEW,
         ),
         HelpGuideStep(
           titleEn: 'Open Tenancy Insights',
           titleSw: 'Fungua Maarifa ya Upangaji',
           bodyEn:
-              'See all tenants, payment status, exports, and comparison charts in one portfolio view.',
+              'Open a property → Tenancy Insights to see all tenants, payment status, exports, and comparison charts.',
           bodySw:
-              'Ona wapangaji wote, hali ya malipo, pakua Excel, na chati za kulinganisha.',
+              'Fungua mali → Maarifa ya Upangaji kuona wapangaji wote, hali ya malipo, pakua Excel, na chati.',
           route: Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,
         ),
       ],
@@ -126,10 +129,12 @@ class HelpCenterCatalog {
       icon: Icons.payments_outlined,
       steps: [
         HelpGuideStep(
-          titleEn: 'Choose tenant & amount',
-          titleSw: 'Chagua mpangaji na kiasi',
-          bodyEn: 'Open Add income, select the tenant and property, enter amount and payment date.',
-          bodySw: 'Fungua Ongeza mapato, chagua mpangaji na mali, weka kiasi na tarehe.',
+          titleEn: 'Choose tenant, amount & currency',
+          titleSw: 'Chagua mpangaji, kiasi, na sarafu',
+          bodyEn:
+              'Open Add income, select the tenant and property, enter the amount and payment date. If the rent was paid in a different currency, choose it from the dropdown — the live exchange rate is captured automatically.',
+          bodySw:
+              'Fungua Ongeza mapato, chagua mpangaji na mali, weka kiasi na tarehe. Ikiwa kodi ilelipwa kwa sarafu tofauti, ichague kutoka menyu — kiwango cha ubadilishaji kinahifadhiwa moja kwa moja.',
           route: Routes.RECORD_PAYMENT,
         ),
         HelpGuideStep(
@@ -167,10 +172,12 @@ class HelpCenterCatalog {
           route: Routes.ADD_NEW_TENANT,
         ),
         HelpGuideStep(
-          titleEn: 'Set lease & rent',
-          titleSw: 'Weka mkataba na kodi',
-          bodyEn: 'Enter lease start/end, monthly rent, and frequency (per month, week, etc.).',
-          bodySw: 'Weka mwanzo/mwisho wa mkataba, kodi, na mzunguko (kwa mwezi, wiki, n.k.).',
+          titleEn: 'Set lease, rent & currency',
+          titleSw: 'Weka mkataba, kodi, na sarafu',
+          bodyEn:
+              'Enter lease start/end, monthly rent, frequency (monthly, weekly, nightly, etc.), and currency. Selecting the unit operation mode (BnB/Rent) pre-fills the most appropriate frequency. The exchange rate is stored at the time of each payment.',
+          bodySw:
+              'Weka mwanzo/mwisho wa mkataba, kodi, mzunguko (kwa mwezi, wiki, usiku, n.k.), na sarafu. Kuchagua hali ya chumba (BnB/Kodi) hujaza mzunguko wa kawaida. Kiwango cha ubadilishaji kinahifadhiwa wakati wa kila malipo.',
         ),
         HelpGuideStep(
           titleEn: 'Upload contract (optional)',
@@ -270,8 +277,8 @@ class HelpCenterCatalog {
         HelpGuideStep(
           titleEn: 'Open year schedule',
           titleSw: 'Fungua ratiba ya mwaka',
-          bodyEn: 'More → Expected Payments shows a month-by-month grid per property.',
-          bodySw: 'Zaidi → Malipo Yanayotarajiwa inaonyesha jedwali la miezi kwa kila mali.',
+          bodyEn: 'Open a property → Expected Payments to see a month-by-month grid of due rent.',
+          bodySw: 'Fungua mali → Malipo Yanayotarajiwa kuona jedwali la miezi la kodi inayolipwa.',
           route: Routes.RENT_EXPECTED_PAYMENT_SCHEDULE,
         ),
         HelpGuideStep(
@@ -296,8 +303,10 @@ class HelpCenterCatalog {
         HelpGuideStep(
           titleEn: 'Create maintenance task',
           titleSw: 'Unda kazi ya matengenezo',
-          bodyEn: 'More → Schedule Maintenance. Pick property, category, and date.',
-          bodySw: 'Zaidi → Panga Matengenezo. Chagua mali, aina, na tarehe.',
+          bodyEn:
+              'In the Maintenance tab, tap the + FAB. Pick property, category (Plumbing, Electrical, General, etc.), scheduled date, and priority. The task saves locally and syncs to the server when online. A push notification fires the day before as a reminder.',
+          bodySw:
+              'Katika kichupo cha Matengenezo, gonga FAB ya +. Chagua mali, aina (Mabomba, Umeme, Jumla, n.k.), tarehe, na kipaumbele. Kazi inahifadhiwa ndani na kusawazishwa na seva ukiwa mtandaoni. Arifa inatumwa siku moja kabla.',
           route: Routes.RENT_SCHEDULE_MAINTENANCE_FORM,
         ),
         HelpGuideStep(
@@ -330,41 +339,193 @@ class HelpCenterCatalog {
         HelpGuideStep(
           titleEn: 'Open AI Manager',
           titleSw: 'Fungua Msimamizi wa AI',
-          bodyEn: 'Available from Rent → More or BnB shortcuts. Ask about income, tenants, or occupancy.',
-          bodySw: 'Inapatikana kutoka Zaidi. Uliza kuhusu mapato, wapangaji, au ukaaji.',
+          bodyEn:
+              'Tap the floating AI button on the home screen, or navigate from the main menu. Ask about income, tenants, occupancy, arrears, or maintenance in plain language.',
+          bodySw:
+              'Gonga kitufe cha AI kinachoelea kwenye skrini ya nyumbani, au nenda kupitia menyu kuu. Uliza kuhusu mapato, wapangaji, ukaaji, deni, au matengenezo kwa lugha rahisi.',
           route: Routes.AI_MANAGER,
         ),
         HelpGuideStep(
           titleEn: 'Try suggested prompts',
           titleSw: 'Jaribu maswali yaliyopendekezwa',
-          bodyEn: 'Tap a starter question or type your own. Answers use your local portfolio data.',
-          bodySw: 'Gusa swali la mwanzo au andika lako. Majibu hutumia data yako ya ndani.',
+          bodyEn:
+              'Tap a starter question or type your own. Answers use your local portfolio data and, when online, server-side analysis for deeper insights.',
+          bodySw:
+              'Gusa swali la mwanzo au andika lako. Majibu hutumia data yako ya ndani na, ukiwa mtandaoni, uchambuzi wa seva kwa undani zaidi.',
         ),
       ],
     ),
     HelpGuide(
-      id: 'workspace_switch',
-      titleEn: 'Switch BnB ↔ Rent',
-      titleSw: 'Badilisha BnB ↔ Kodi',
-      summaryEn: 'Use one app for short-stay bookings and long-term rentals.',
-      summarySw: 'Tumia programu moja kwa uhifadhi na kodi za muda mrefu.',
+      id: 'multi_currency',
+      titleEn: 'Multi-currency payments',
+      titleSw: 'Malipo ya sarafu nyingi',
+      summaryEn: 'Record income and expenses in any currency with live rate capture.',
+      summarySw: 'Rekodi mapato na gharama katika sarafu yoyote na kiwango cha sasa.',
+      workspace: HelpWorkspace.both,
+      categoryEn: 'Finances',
+      categorySw: 'Fedha',
+      icon: Icons.currency_exchange_outlined,
+      estimatedMinutes: 3,
+      steps: [
+        HelpGuideStep(
+          titleEn: 'Select a currency',
+          titleSw: 'Chagua sarafu',
+          bodyEn:
+              'On any income, expense, or tenant form, tap the currency dropdown next to the amount field and choose from the list of supported currencies.',
+          bodySw:
+              'Katika fomu yoyote ya mapato, gharama, au mpangaji, gonga menyu ya sarafu karibu na sehemu ya kiasi na uchague kutoka kwenye orodha.',
+        ),
+        HelpGuideStep(
+          titleEn: 'Live exchange rate',
+          titleSw: 'Kiwango cha ubadilishaji cha sasa',
+          bodyEn:
+              'When the selected currency differs from your base currency, the current exchange rate appears below the field. Long-press the hint to see the full rate detail without truncation. The rate is saved with every record.',
+          bodySw:
+              'Kiwango cha ubadilishaji kinaonekana chini ya sehemu. Bonyeza kwa muda mrefu kidokezo kuona maelezo kamili. Kiwango kinahifadhiwa pamoja na rekodi kila wakati.',
+        ),
+        HelpGuideStep(
+          titleEn: 'Change base currency',
+          titleSw: 'Badilisha sarafu ya msingi',
+          bodyEn:
+              'Go to Settings → Currency to set your base currency. All dashboard totals convert to this currency for comparison while original amounts are always preserved.',
+          bodySw:
+              'Nenda Mipangilio → Sarafu ili kuweka sarafu yako ya msingi. Jumla zote kwenye dashibodi zinabadilishwa ingawa kiasi cha asili kinahifadhiwa.',
+          route: Routes.SETTINGS,
+        ),
+      ],
+    ),
+    HelpGuide(
+      id: 'luku_per_unit',
+      titleEn: 'Track LUKU per unit',
+      titleSw: 'Fuatilia LUKU kwa chumba',
+      summaryEn: 'Filter electricity usage and top-ups by individual unit.',
+      summarySw: 'Chuja matumizi ya umeme na malipo kwa chumba kimoja kimoja.',
+      workspace: HelpWorkspace.rent,
+      categoryEn: 'Operations',
+      categorySw: 'Uendeshaji',
+      icon: Icons.bolt_outlined,
+      estimatedMinutes: 3,
+      steps: [
+        HelpGuideStep(
+          titleEn: 'Open Utilities dashboard',
+          titleSw: 'Fungua dashibodi ya Matumizi',
+          bodyEn:
+              'In the Rent workspace, navigate to a property and open the Smart Utility Dashboard.',
+          bodySw:
+              'Katika nafasi ya Rent, nenda kwenye mali na ufungue Dashibodi ya Matumizi Mahiri.',
+          route: Routes.RENT_SMART_UTILITY_DASHBOARD,
+        ),
+        HelpGuideStep(
+          titleEn: 'Select a unit chip',
+          titleSw: 'Chagua kichupo cha chumba',
+          bodyEn:
+              'If the property has multiple units, a row of unit chips appears above the LUKU card. Tap a chip to filter all stats — balance, weekly chart, and activity log — to that unit only.',
+          bodySw:
+              'Ikiwa mali ina vyumba zaidi ya kimoja, safu ya vichwa vya chumba inaonekana juu ya kadi ya LUKU. Gonga kichupo kuchuja takwimu zote kwa chumba hicho peke yake.',
+        ),
+        HelpGuideStep(
+          titleEn: 'Log a top-up for a unit',
+          titleSw: 'Rekodi malipo ya umeme kwa chumba',
+          bodyEn:
+              'With a unit selected, tap Add LUKU top-up (or scan an SMS receipt). The top-up is tagged to that unit and counted separately from other units.',
+          bodySw:
+              'Ukiwa na chumba kilichochaguliwa, gonga Ongeza LUKU (au scan SMS). Malipo yanashikamana na chumba hicho na kuhesabiwa tofauti na vyumba vingine.',
+        ),
+      ],
+    ),
+    HelpGuide(
+      id: 'tenant_guest_scoring',
+      titleEn: 'Tenant & guest reliability scores',
+      titleSw: 'Alama za uaminifu wa wapangaji na wageni',
+      summaryEn: 'Rate tenants after a stay; check scores before onboarding new clients.',
+      summarySw: 'Piga kura wapangaji baada ya kukaa; angalia alama kabla ya kusajili.',
+      workspace: HelpWorkspace.both,
+      categoryEn: 'Operations',
+      categorySw: 'Uendeshaji',
+      icon: Icons.verified_user_outlined,
+      estimatedMinutes: 3,
+      steps: [
+        HelpGuideStep(
+          titleEn: 'Rate a departing tenant',
+          titleSw: 'Piga kura mpangaji anayeondoka',
+          bodyEn:
+              'After a lease ends, open the tenant profile and submit a reliability rating. The system considers payment history, partial payments, and your personal score.',
+          bodySw:
+              'Mkataba ukimalizika, fungua wasifu wa mpangaji na toa tathmini. Mfumo unazingatia historia ya malipo na alama yako ya kibinafsi.',
+        ),
+        HelpGuideStep(
+          titleEn: 'Cooling-off period',
+          titleSw: 'Muda wa kusubiri',
+          bodyEn:
+              'Scores are not published immediately. A cooling-off period applies before they become visible to other landlords, giving both parties time to resolve any disputes.',
+          bodySw:
+              'Alama hazichapishwi mara moja. Muda wa kusubiri unatumika kabla ya alama kuonekana kwa wamiliki wengine, ukiwapa pande zote muda wa kutatua mizozo.',
+        ),
+        HelpGuideStep(
+          titleEn: 'Request a reference check',
+          titleSw: 'Omba ukaguzi wa marejeo',
+          bodyEn:
+              'From the Tenant search screen, enter a phone number to request an anonymous cross-landlord reference. The result shows a reliability summary without revealing who submitted the rating.',
+          bodySw:
+              'Kutoka skrini ya Utafutaji wa Wapangaji, weka nambari ya simu kuomba marejeo ya siri kati ya wamiliki. Matokeo yanaonyesha muhtasari bila kufunua aliyetoa tathmini.',
+        ),
+      ],
+    ),
+    HelpGuide(
+      id: 'navigate_the_app',
+      titleEn: 'Navigate the app',
+      titleSw: 'Elekea kwenye programu',
+      summaryEn: 'Learn the five main tabs and where to find every feature.',
+      summarySw: 'Jifunze vichupo vikuu vitano na mahali pa kila kipengele.',
       workspace: HelpWorkspace.both,
       categoryEn: 'Getting started',
       categorySw: 'Mwanzo',
-      icon: Icons.swap_horiz_rounded,
+      icon: Icons.grid_view_rounded,
+      estimatedMinutes: 3,
       steps: [
         HelpGuideStep(
-          titleEn: 'BnB workspace',
-          titleSw: 'Nafasi ya BnB',
-          bodyEn: 'Optimized for nightly bookings, guest calendar, and daily revenue.',
-          bodySw: 'Imeboreshwa kwa uhifadhi wa kila usiku, kalenda ya wageni, na mapato ya kila siku.',
-          route: Routes.MAIN,
+          titleEn: 'Home tab',
+          titleSw: 'Kichupo cha Nyumbani',
+          bodyEn:
+              'Your main dashboard — Property Overview (active bookings, monthly revenue), today\'s check-ins and check-outs, and quick-action shortcuts.',
+          bodySw:
+              'Dashibodi yako kuu — Muhtasari wa Mali (uhifadhi hai, mapato ya mwezi), kuwasili na kuondoka leo, na njia za haraka.',
+          route: Routes.HOME,
         ),
         HelpGuideStep(
-          titleEn: 'Rent workspace',
-          titleSw: 'Nafasi ya Kodi',
-          bodyEn: 'Tap RENT in the hub header (or switch from BnB link) for leases and tenants.',
-          bodySw: 'Gusa KODI kwenye kichwa (au kiungo cha BnB) kwa mikataba na wapangaji.',
+          titleEn: 'Properties tab',
+          titleSw: 'Kichupo cha Mali',
+          bodyEn:
+              'Browse and manage all your properties. Tap the + FAB to add a new property. Open any card to see units, income, and activity.',
+          bodySw:
+              'Vinjari na simamia mali zako zote. Gonga FAB ya + kuongeza mali mpya. Fungua kadi yoyote kuona vyumba, mapato, na historia.',
+          route: Routes.MY_PROPERTIES,
+        ),
+        HelpGuideStep(
+          titleEn: 'Finances tab',
+          titleSw: 'Kichupo cha Fedha',
+          bodyEn:
+              'Income vs expense charts, net income, arrears, and financial overview across all properties.',
+          bodySw:
+              'Chati za mapato dhidi ya matumizi, mapato halisi, deni, na muhtasari wa fedha kwa mali zote.',
+          route: Routes.FINANCIAL_OVERVIEW,
+        ),
+        HelpGuideStep(
+          titleEn: 'Maintenance tab',
+          titleSw: 'Kichupo cha Matengenezo',
+          bodyEn:
+              'View and manage maintenance tasks. Tap the + FAB to add a new task. Tasks sync online and appear in the host calendar.',
+          bodySw:
+              'Angalia na simamia kazi za matengenezo. Gonga FAB ya + kuongeza kazi mpya. Kazi zinasawazishwa na zinaonekana kwenye kalenda.',
+          route: Routes.MAINTENANCE_TASKS,
+        ),
+        HelpGuideStep(
+          titleEn: 'More tab',
+          titleSw: 'Kichupo cha Zaidi',
+          bodyEn:
+              'A shortcut grid for secondary features: Host Calendar, Reports, Contract hub, Guest access, Send SMS/WhatsApp, Documents, Guest history, Design studio, and Settings.',
+          bodySw:
+              'Gridi ya njia za haraka kwa vipengele vya sekondari: Kalenda, Ripoti, Kitovu cha Mikataba, Ufikiaji, SMS/WhatsApp, Nyaraka, Historia ya Wageni, Studio, na Mipangilio.',
           route: Routes.MAIN,
         ),
       ],
@@ -374,24 +535,25 @@ class HelpCenterCatalog {
   static const features = <HelpFeature>[
     HelpFeature(
       id: 'f_dashboard',
-      titleEn: 'Dashboard',
-      titleSw: 'Dashibodi',
-      descriptionEn: 'Overview of bookings, revenue, occupancy, and weekly trends (BnB).',
-      descriptionSw: 'Muhtasari wa uhifadhi, mapato, ukaaji, na mwenendo wa wiki (BnB).',
-      workspace: HelpWorkspace.bnb,
+      titleEn: 'Finances tab',
+      titleSw: 'Kichupo cha Fedha',
+      descriptionEn: 'Income vs expense charts, net income, arrears, and monthly growth across all properties.',
+      descriptionSw: 'Chati za mapato dhidi ya matumizi, mapato halisi, deni, na ukuaji wa kila mwezi kwa mali zote.',
+      workspace: HelpWorkspace.both,
       icon: Icons.dashboard_outlined,
-      route: Routes.MAIN,
-      relatedGuideId: 'getting_started_bnb',
+      route: Routes.FINANCIAL_OVERVIEW,
+      relatedGuideId: 'getting_started_rent',
     ),
     HelpFeature(
       id: 'f_home',
-      titleEn: 'Home & properties',
-      titleSw: 'Nyumbani na mali',
-      descriptionEn: 'Browse and manage all your listings.',
-      descriptionSw: 'Vinjari na simamia tangazo zako zote.',
-      workspace: HelpWorkspace.bnb,
+      titleEn: 'Home tab',
+      titleSw: 'Kichupo cha Nyumbani',
+      descriptionEn: 'Active bookings, monthly revenue, today\'s check-ins/check-outs, and quick actions.',
+      descriptionSw: 'Uhifadhi hai, mapato ya mwezi, kuwasili/kuondoka leo, na njia za haraka.',
+      workspace: HelpWorkspace.both,
       icon: Icons.home_outlined,
       route: Routes.HOME,
+      relatedGuideId: 'navigate_the_app',
     ),
     HelpFeature(
       id: 'f_calendar',
@@ -427,21 +589,21 @@ class HelpCenterCatalog {
       id: 'f_financial_overview',
       titleEn: 'Financial overview',
       titleSw: 'Muhtasari wa fedha',
-      descriptionEn: 'Income vs expense trends and monthly growth charts.',
-      descriptionSw: 'Mwenendo wa mapato dhidi ya matumizi na chati za ukuaji.',
+      descriptionEn: 'Income vs expense trends, arrears calculation, net income, and monthly growth charts.',
+      descriptionSw: 'Mwenendo wa mapato dhidi ya matumizi, hesabu ya deni, mapato halisi, na chati za ukuaji.',
       workspace: HelpWorkspace.bnb,
       icon: Icons.insights_outlined,
       route: Routes.FINANCIAL_OVERVIEW,
     ),
     HelpFeature(
       id: 'f_rent_hub',
-      titleEn: 'Rent hub',
-      titleSw: 'Kitovu cha Kodi',
-      descriptionEn: 'Portfolio KPIs, net profit, and weekly income vs expense chart.',
-      descriptionSw: 'Vipimo vya mali, faida halisi, na chati ya mapato dhidi ya matumizi.',
+      titleEn: 'Rental overview',
+      titleSw: 'Muhtasari wa upangishaji',
+      descriptionEn: 'Portfolio KPIs, net income, arrears, and weekly income vs expense — visible in the Finances tab.',
+      descriptionSw: 'Vipimo vya mali, mapato halisi, deni, na chati ya mapato dhidi ya matumizi — kwenye kichupo cha Fedha.',
       workspace: HelpWorkspace.rent,
       icon: Icons.apartment,
-      route: Routes.MAIN,
+      route: Routes.FINANCIAL_OVERVIEW,
       relatedGuideId: 'getting_started_rent',
     ),
     HelpFeature(
@@ -511,8 +673,8 @@ class HelpCenterCatalog {
       id: 'f_ai_manager',
       titleEn: 'AI Manager',
       titleSw: 'Msimamizi wa AI',
-      descriptionEn: 'Chat assistant for portfolio questions.',
-      descriptionSw: 'Msaidizi wa mazungumzo kwa maswali ya mali.',
+      descriptionEn: 'Natural-language portfolio assistant — ask about income, arrears, occupancy, or maintenance.',
+      descriptionSw: 'Msaidizi wa lugha ya kawaida — uliza kuhusu mapato, deni, ukaaji, au matengenezo.',
       workspace: HelpWorkspace.both,
       icon: Icons.auto_awesome,
       route: Routes.AI_MANAGER,
@@ -527,6 +689,79 @@ class HelpCenterCatalog {
       workspace: HelpWorkspace.both,
       icon: Icons.folder_copy_outlined,
       route: Routes.DOCUMENTS,
+    ),
+    HelpFeature(
+      id: 'f_scheduled_maintenance',
+      titleEn: 'Scheduled maintenance',
+      titleSw: 'Matengenezo yaliyopangwa',
+      descriptionEn: 'Plan upkeep tasks, set priority, and get a day-before push reminder.',
+      descriptionSw: 'Panga kazi za matengenezo, weka kipaumbele, na pata ukumbusho siku moja kabla.',
+      workspace: HelpWorkspace.rent,
+      icon: Icons.build_circle_outlined,
+      route: Routes.RENT_SCHEDULE_MAINTENANCE_FORM,
+      relatedGuideId: 'schedule_maintenance',
+    ),
+    HelpFeature(
+      id: 'f_smart_utility',
+      titleEn: 'Smart utility dashboard',
+      titleSw: 'Dashibodi ya matumizi mahiri',
+      descriptionEn: 'Track LUKU electricity top-ups per unit; scan SMS receipts automatically.',
+      descriptionSw: 'Fuatilia malipo ya LUKU kwa kila chumba; scan risiti za SMS moja kwa moja.',
+      workspace: HelpWorkspace.rent,
+      icon: Icons.bolt_outlined,
+      route: Routes.RENT_SMART_UTILITY_DASHBOARD,
+      relatedGuideId: 'luku_per_unit',
+    ),
+    HelpFeature(
+      id: 'f_my_properties',
+      titleEn: 'My properties',
+      titleSw: 'Mali zangu',
+      descriptionEn: 'Browse all properties, mark favourites, and navigate to details.',
+      descriptionSw: 'Vinjari mali zako zote, pendeza, na nenda kwenye maelezo.',
+      workspace: HelpWorkspace.both,
+      icon: Icons.domain_outlined,
+      route: Routes.MY_PROPERTIES,
+    ),
+    HelpFeature(
+      id: 'f_listing_details',
+      titleEn: 'Listing details',
+      titleSw: 'Maelezo ya orodha',
+      descriptionEn: 'Units, net income, BnB/Rent tabs, expected income, and activity log per property.',
+      descriptionSw: 'Vyumba, mapato halisi, vichupo vya BnB/Kodi, mapato yanayotarajiwa, na historia.',
+      workspace: HelpWorkspace.both,
+      icon: Icons.info_outline,
+      route: Routes.LISTING_DETAILS,
+    ),
+    HelpFeature(
+      id: 'f_guest_history',
+      titleEn: 'Guest history',
+      titleSw: 'Historia ya wageni',
+      descriptionEn: 'Past and upcoming guests, stay durations, and payment history.',
+      descriptionSw: 'Wageni wa zamani na wa sasa, muda wa kukaa, na historia ya malipo.',
+      workspace: HelpWorkspace.bnb,
+      icon: Icons.history_rounded,
+      route: Routes.GUEST_HISTORY,
+    ),
+    HelpFeature(
+      id: 'f_tenant_ledger',
+      titleEn: 'Tenant ledger',
+      titleSw: 'Daftari la mpangaji',
+      descriptionEn: 'Per-tenant payment history, running balance, and occupancy timeline.',
+      descriptionSw: 'Historia ya malipo ya kila mpangaji, salio la mwenendo, na mstari wa muda.',
+      workspace: HelpWorkspace.rent,
+      icon: Icons.account_balance_wallet_outlined,
+      route: Routes.RENT_TENANT_LEDGER_OCCUPANCY,
+    ),
+    HelpFeature(
+      id: 'f_tenant_scoring',
+      titleEn: 'Tenant reliability scoring',
+      titleSw: 'Alama za uaminifu wa mpangaji',
+      descriptionEn: 'Rate tenants after a lease; request anonymous cross-landlord reference checks.',
+      descriptionSw: 'Piga kura wapangaji baada ya mkataba; omba ukaguzi wa siri kati ya wamiliki.',
+      workspace: HelpWorkspace.both,
+      icon: Icons.verified_user_outlined,
+      route: Routes.MAIN,
+      relatedGuideId: 'tenant_guest_scoring',
     ),
     HelpFeature(
       id: 'f_settings',

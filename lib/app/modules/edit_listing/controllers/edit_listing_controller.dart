@@ -36,6 +36,9 @@ class EditListingController extends BaseController {
   final draftUnitRentController = TextEditingController();
   final draftUnitDescriptionController = TextEditingController();
   final draftUnitFloor = PropertyUnitFloor.defaultIndex.obs;
+  final draftUnitMode = 'bnb'.obs;
+
+  static const _rentFrequencyOptions = ['Per Day', 'Per Week', 'Per Month', 'Per Year'];
 
   bool get showUnitsEditor => isApartmentProperty;
 
@@ -90,6 +93,12 @@ class EditListingController extends BaseController {
       _snapUnitsCanon = isApartmentProperty && apartmentUnits.isNotEmpty
           ? _canonicalUnitsJsonFromDrafts(apartmentUnits)
           : '';
+
+      // Pre-set unit draft mode + frequency from caller context.
+      final rawMode = (args?['default_unit_mode'] ?? '').toString().trim().toLowerCase();
+      if (rawMode == 'rent' || rawMode == 'bnb') {
+        draftUnitMode.value = rawMode;
+      }
     } catch (e, st) {
       logger.e('EditListing load $e $st');
       loadError.value = 'Could not load property.';
@@ -171,6 +180,11 @@ class EditListingController extends BaseController {
     }
   }
 
+  void updateDraftUnitMode(String mode) {
+    if (mode == draftUnitMode.value) return;
+    draftUnitMode.value = mode;
+  }
+
   String? validateDraftUnitRent(String? value) {
     if (apartmentUnits.isNotEmpty) return null;
     final raw = (value ?? '').trim().replaceAll(',', '');
@@ -187,15 +201,18 @@ class EditListingController extends BaseController {
       Get.snackbar('Error', 'Unit name and rent are required');
       return;
     }
+    final mode = draftUnitMode.value;
+    final defaultFreq = mode == 'rent' ? 'Per Month' : 'Per Day';
+    final listingFreq = _original?.rentFrequency.trim() ?? '';
+    final frequency = _rentFrequencyOptions.contains(listingFreq) ? listingFreq : defaultFreq;
     apartmentUnits.add(
       ApartmentUnitDraft(
         unitId: _newApartmentUnitId(),
         unitName: name,
         unitRent: rent,
-        unitRentFrequency: _original?.rentFrequency.trim().isNotEmpty == true
-            ? _original!.rentFrequency
-            : 'Per Month',
+        unitRentFrequency: frequency,
         unitFloor: draftUnitFloor.value,
+        operationMode: mode,
         unitDescription: draftUnitDescriptionController.text.trim(),
       ),
     );

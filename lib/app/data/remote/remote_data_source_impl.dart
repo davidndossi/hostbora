@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../model/add_listing_request.dart';
+import '../model/scheduled_maintenance_request.dart';
 import '../model/add_task_request.dart';
 import '../model/record_client_event_request.dart';
 import '../model/schedule_payment_reminder_request.dart';
@@ -458,6 +459,31 @@ class RemoteDataSourceImpl extends BaseRemoteSource
     final endpoint = '${DioProvider.baseUrl}/api/listings';
     final queryParams = status != null && status.isNotEmpty ? {'status': status} : null;
     final dioCall = dioClient.get(endpoint, queryParameters: queryParams);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getMyProperties() {
+    final endpoint = '${DioProvider.baseUrl}/api/properties';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> addScheduledMaintenance(
+      ScheduledMaintenanceRequest request) {
+    final endpoint = '${DioProvider.baseUrl}/api/scheduled-maintenance';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));

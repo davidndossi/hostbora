@@ -4,6 +4,7 @@ import 'package:host_bora/app/data/model/schedule_payment_reminder_request.dart'
 import 'package:host_bora/app/data/model/submit_tenant_rating_request.dart';
 
 import '../model/add_listing_request.dart';
+import '../model/scheduled_maintenance_request.dart';
 import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
 import '../model/cancel_booking_request.dart';
@@ -195,6 +196,17 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> getMyListings({String? status}) {
     return _remoteSource.getMyListings(status: status);
+  }
+
+  @override
+  Future<GeneralResponse> getMyProperties() {
+    return _remoteSource.getMyProperties();
+  }
+
+  @override
+  Future<GeneralResponse> addScheduledMaintenance(
+      ScheduledMaintenanceRequest request) {
+    return _remoteSource.addScheduledMaintenance(request);
   }
 
   @override

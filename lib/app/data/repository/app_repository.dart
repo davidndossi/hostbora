@@ -1,4 +1,5 @@
 import '../model/add_listing_request.dart';
+import '../model/scheduled_maintenance_request.dart';
 import '../model/add_task_request.dart';
 import '../model/record_client_event_request.dart';
 import '../model/schedule_payment_reminder_request.dart';
@@ -95,6 +96,9 @@ abstract class AppRepository {
   });
 
   Future<GeneralResponse> getMyListings({String? status});
+  Future<GeneralResponse> getMyProperties();
+  Future<GeneralResponse> addScheduledMaintenance(
+      ScheduledMaintenanceRequest request);
 
   Future<GeneralResponse> getListing(String listingId);
 

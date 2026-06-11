@@ -1,4 +1,5 @@
 import '../model/add_listing_request.dart';
+import '../model/scheduled_maintenance_request.dart';
 import '../model/add_task_request.dart';
 import '../model/record_client_event_request.dart';
 import '../model/schedule_payment_reminder_request.dart';
@@ -98,6 +99,13 @@ abstract class RemoteDataSource {
 
   /// Fetches current user's listings. Optional [status] to filter: ACTIVE, DRAFT, ARCHIVED.
   Future<GeneralResponse> getMyListings({String? status});
+
+  /// Fetches current user's properties from the property-management table (/api/properties).
+  Future<GeneralResponse> getMyProperties();
+
+  /// Saves a scheduled maintenance record to the remote database.
+  Future<GeneralResponse> addScheduledMaintenance(
+      ScheduledMaintenanceRequest request);
 
   /// Fetches a single listing by id (for edit).
   Future<GeneralResponse> getListing(String listingId);

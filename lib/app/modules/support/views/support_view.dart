@@ -12,7 +12,7 @@ import '../controllers/support_controller.dart';
 class SupportView extends BaseView<SupportController> {
   SupportView({super.key});
 
-  static const int faqCount = 11;
+  static const int faqCount = 16;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
@@ -258,6 +258,16 @@ class SupportView extends BaseView<SupportController> {
         return l10n.supportFaq10Q;
       case 11:
         return l10n.supportFaq11Q;
+      case 12:
+        return l10n.supportFaq12Q;
+      case 13:
+        return l10n.supportFaq13Q;
+      case 14:
+        return l10n.supportFaq14Q;
+      case 15:
+        return l10n.supportFaq15Q;
+      case 16:
+        return l10n.supportFaq16Q;
       default:
         return '';
     }
@@ -287,6 +297,16 @@ class SupportView extends BaseView<SupportController> {
         return l10n.supportFaq10A;
       case 11:
         return l10n.supportFaq11A;
+      case 12:
+        return l10n.supportFaq12A;
+      case 13:
+        return l10n.supportFaq13A;
+      case 14:
+        return l10n.supportFaq14A;
+      case 15:
+        return l10n.supportFaq15A;
+      case 16:
+        return l10n.supportFaq16A;
       default:
         return '';
     }

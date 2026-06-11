@@ -339,6 +339,9 @@ class AppLocalDatabase {
         units_added REAL NOT NULL,
         amount_tsh REAL NOT NULL DEFAULT 0,
         provider TEXT NOT NULL DEFAULT '',
+        meter_number TEXT NOT NULL DEFAULT '',
+        unit_id TEXT NOT NULL DEFAULT '',
+        unit_name TEXT NOT NULL DEFAULT '',
         notes TEXT NOT NULL DEFAULT '',
         property_label TEXT NOT NULL DEFAULT '',
         property_ref TEXT NOT NULL DEFAULT '',
@@ -748,6 +751,24 @@ class AppLocalDatabase {
       tenantTable,
       'ended_at_ms',
       'INTEGER NOT NULL DEFAULT 0',
+    );
+    await _addColumnIfMissing(
+      db,
+      rentUtilityTopupTable,
+      'meter_number',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+    await _addColumnIfMissing(
+      db,
+      rentUtilityTopupTable,
+      'unit_id',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+    await _addColumnIfMissing(
+      db,
+      rentUtilityTopupTable,
+      'unit_name',
+      "TEXT NOT NULL DEFAULT ''",
     );
   }
 

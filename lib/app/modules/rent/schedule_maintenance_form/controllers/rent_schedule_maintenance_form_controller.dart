@@ -9,7 +9,7 @@ import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
-import '../../../../data/model/add_task_request.dart';
+import '../../../../data/model/scheduled_maintenance_request.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../add_listing/models/apartment_unit_draft.dart';
 import '../../../host_calendar/controllers/host_calendar_controller.dart';
@@ -290,13 +290,13 @@ class RentScheduleMaintenanceFormController extends BaseController {
 
   Future<List<String>> _loadRemotePropertyNames() async {
     try {
-      final res = await _repository.getMyListings(status: null);
+      final res = await _repository.getMyProperties();
       if (res.responseCode != '0' || res.data == null) return const [];
-      final list = _extractListingsFromResponse(res.data);
+      final list = _extractPropertiesFromResponse(res.data);
       return list
           .map(
             (m) =>
-                (m['propertyName'] ?? m['title'] ?? m['name'])
+                (m['propertyName'] ?? m['name'] ?? m['title'])
                     ?.toString()
                     .trim() ??
                 '',
@@ -308,15 +308,16 @@ class RentScheduleMaintenanceFormController extends BaseController {
     }
   }
 
-  static List<Map<String, dynamic>> _extractListingsFromResponse(dynamic data) {
+  static List<Map<String, dynamic>> _extractPropertiesFromResponse(
+      dynamic data) {
     if (data is List) return data.whereType<Map<String, dynamic>>().toList();
-    if (data is Map && data['content'] is List) {
-      return (data['content'] as List)
+    if (data is Map && data['properties'] is List) {
+      return (data['properties'] as List)
           .whereType<Map<String, dynamic>>()
           .toList();
     }
-    if (data is Map && data['listings'] is List) {
-      return (data['listings'] as List)
+    if (data is Map && data['content'] is List) {
+      return (data['content'] as List)
           .whereType<Map<String, dynamic>>()
           .toList();
     }
@@ -425,19 +426,37 @@ class RentScheduleMaintenanceFormController extends BaseController {
         payload: 'maintenance:$localId',
       );
 
-      final taskRequest = AddTaskRequest(
-        title: 'Maintenance: ${selectedCategory.value}',
-        description: '$propertyLabel - $fullDescription',
-        dueDate: DateFormat('yyyy-MM-dd').format(scheduledAt),
+      final maintenanceRequest = ScheduledMaintenanceRequest(
         propertyLabel: propertyLabel,
-        propertyRef: propertyRef,
+        propertyRef: propertyRef.isNotEmpty ? propertyRef : null,
+        apartmentUnitId: apartmentUnitId.isNotEmpty ? apartmentUnitId : null,
+        category: selectedCategory.value,
+        description: fullDescription,
+        scheduledDateIso: scheduledAt.toIso8601String(),
+        priority: priority.value,
         workspaceType: workspaceType,
       );
 
       late final String successMsg;
       try {
-        await _repository.addTask(taskRequest);
+        final res = await _repository.addScheduledMaintenance(maintenanceRequest);
+        final saved = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!saved) throw Exception(res.message ?? 'addScheduledMaintenance failed');
         await _maintenanceLocal.updateSyncStatus(localId, 'synced');
+        final backendId = (res.data is Map)
+            ? ((res.data as Map)['maintenanceId'] ??
+                    (res.data as Map)['id'])
+                ?.toString() ??
+                ''
+            : '';
+        if (backendId.isNotEmpty) {
+          await _maintenanceLocal.saveBackendTaskId(
+            localId: localId,
+            backendId: backendId,
+          );
+        }
         successMsg = 'Saved offline and online. Reminder scheduled.';
       } catch (_) {
         await _syncQueue.enqueue(
@@ -445,13 +464,14 @@ class RentScheduleMaintenanceFormController extends BaseController {
           operation: 'create',
           payloadJson: jsonEncode({
             'localId': localId,
-            'title': taskRequest.title,
-            'description': taskRequest.description,
-            'dueDate': taskRequest.dueDate,
-            'propertyLabel': taskRequest.propertyLabel,
-            'propertyRef': taskRequest.propertyRef,
-            'workspaceType': taskRequest.workspaceType,
-            'apartmentUnitId': apartmentUnitId,
+            'propertyLabel': maintenanceRequest.propertyLabel,
+            'propertyRef': maintenanceRequest.propertyRef,
+            'apartmentUnitId': maintenanceRequest.apartmentUnitId,
+            'category': maintenanceRequest.category,
+            'description': maintenanceRequest.description,
+            'scheduledDateIso': maintenanceRequest.scheduledDateIso,
+            'priority': maintenanceRequest.priority,
+            'workspaceType': maintenanceRequest.workspaceType,
           }),
         );
         successMsg = 'Saved offline. Will sync when internet is available.';

@@ -43,12 +43,15 @@ class GuidedTourService extends GetxService {
     if (step.route != null && step.route!.isNotEmpty) {
       final params = step.routeParameters ?? {};
       final args = step.routeArguments;
+      // Do NOT await — Get.toNamed's Future completes on pop, not on push.
+      // Fire-and-forget so we can show the overlay after the transition settles.
       if (args != null) {
-        await Get.toNamed(step.route!, parameters: params, arguments: args);
+        Get.toNamed(step.route!, parameters: params, arguments: args);
       } else {
-        await Get.toNamed(step.route!, parameters: params);
+        Get.toNamed(step.route!, parameters: params);
       }
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      // Wait for the push animation to finish before attaching the overlay.
+      await Future<void>.delayed(const Duration(milliseconds: 500));
     }
 
     final ctx = Get.overlayContext ?? Get.context;

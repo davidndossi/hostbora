@@ -257,17 +257,9 @@ class _PropertyCard extends StatelessWidget {
               Positioned(
                 top: 12,
                 left: 12,
-                child: IconButton(
-                  onPressed: onFavorite,
-                  icon: Icon(
-                    listing.isFavorite ? Icons.favorite : Icons.favorite_border,
-                    // color: Colors.white,
-                    size: 26,
-                  ),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black26,
-                    padding: const EdgeInsets.all(8),
-                  ),
+                child: _FavoriteButton(
+                  isFavorite: listing.isFavorite,
+                  onTap: onFavorite,
                 ),
               ),
               Positioned(
@@ -451,6 +443,44 @@ class _ModeBadge extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: style.fg,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Favourite button ──────────────────────────────────────────────────────────
+
+/// A heart button that stays readable on any image background.
+///
+/// Technique: a slightly larger black icon is drawn beneath the white foreground
+/// icon, acting as a natural outline/shadow. No packages, no async work.
+class _FavoriteButton extends StatelessWidget {
+  const _FavoriteButton({
+    required this.isFavorite,
+    required this.onTap,
+  });
+
+  final bool isFavorite;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = isFavorite ? Icons.favorite : Icons.favorite_border;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Shadow layer — slightly larger, semi-transparent black outline.
+          Icon(icon, size: 30, color: Colors.black.withValues(alpha: 0.55)),
+          // Foreground layer — white when not favorited, red when favorited.
+          Icon(
+            icon,
+            size: 24,
+            color: isFavorite ? Colors.redAccent : Colors.white,
           ),
         ],
       ),

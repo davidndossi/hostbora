@@ -1313,7 +1313,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
               ),
             ),
             TextButton(
-              onPressed: controller.onAddNewUnit,
+              onPressed: () => controller.onAddNewUnit(workspace),
               child: Text(
                 _isSw ? 'Ongeza unit mpya' : 'Add new unit',
                 style: const TextStyle(

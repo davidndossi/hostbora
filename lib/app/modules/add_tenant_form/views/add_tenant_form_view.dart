@@ -152,68 +152,71 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                 ),
               ),
               const SizedBox(height: 8),
-              Obx(() => Row(
+              Obx(() => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: controller.rentAmountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      textInputAction: TextInputAction.next,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      onChanged: controller.isRentFlow.value
-                          ? null
-                          : controller.onRentAmountChanged,
-                      validator: controller.validateRentAmount,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: c.headline,
-                      ),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: c.inputFill,
-                        hintText: '0.00',
-                        hintStyle: TextStyle(color: c.hint),
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.only(left: 12, right: 4),
-                          child: Text(
-                            '${controller.selectedCurrency.value} ',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: c.secondary,
-                            ),
+                  // ── Amount field — full width so numbers are never clipped ──
+                  TextFormField(
+                    controller: controller.rentAmountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    textInputAction: TextInputAction.next,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    onChanged: controller.isRentFlow.value
+                        ? null
+                        : controller.onRentAmountChanged,
+                    validator: controller.validateRentAmount,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: c.headline,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: c.inputFill,
+                      hintText: '0.00',
+                      hintStyle: TextStyle(color: c.hint),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.only(left: 12, right: 4),
+                        child: Text(
+                          '${controller.selectedCurrency.value} ',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: c.secondary,
                           ),
                         ),
-                        prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 0),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                      ),
+                      prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // ── Currency + Frequency on their own row ──────────────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 120,
+                        child: CurrencyDropdownField(
+                          selectedCurrency: controller.selectedCurrency,
+                          label: _isSw ? 'Sarafu' : 'Currency',
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 100,
-                    child: CurrencyDropdownField(
-                      selectedCurrency: controller.selectedCurrency,
-                      label: _isSw ? 'Sarafu' : 'Currency',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 3,
-                    child: _whiteDropdown<String>(
-                        colors: c,
-                        value: controller.rentFrequency.value,
-                        options: controller.rentFrequencyOptions,
-                        onChanged: controller.setRentFrequency,
-                        compact: true,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _whiteDropdown<String>(
+                          colors: c,
+                          value: controller.rentFrequency.value,
+                          options: controller.rentFrequencyOptions,
+                          onChanged: controller.setRentFrequency,
+                          compact: true,
+                        ),
                       ),
+                    ],
                   ),
                 ],
               )),

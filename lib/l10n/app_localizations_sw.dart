@@ -586,14 +586,14 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportIntro =>
-      'Majibu kuhusu Host Bora—BnB na Rent, uhifadhi, malipo, usawazishaji wa kalenda, usalama na zaidi. Kwa mengine, wasiliana nasi hapa chini.';
+      'Majibu kuhusu Host Bora — BnB na Rent, sarafu nyingi, matengenezo yaliyopangwa, alama za uaminifu wa wapangaji na wageni, ufuatiliaji wa LUKU kwa chumba, maarifa ya AI, na zaidi. Kwa mengine, wasiliana nasi hapa chini.';
 
   @override
   String get supportTipsHeading => 'Vidokezo muhimu';
 
   @override
   String get supportTipsBody =>
-      '• Badilisha BnB na Rent kutoka skrini ya nyumbani; buruta chini kwenye mali kusasisha idadi na mapato.\n• Rekodi malipo kwa mali na chumba sahihi; hakikisha tarehe ziko katika mwezi huu kwa dashibodi.\n• Unganisha kalenda za nje kwa kila mali kupunguza uhifadhi mara mbili.\n• Tumia Mipangilio → Futa data ya nje ya mtandao tu ukiwa na nia ya kuondoa rekodi za kodi kwenye simu hii.';
+      '• Badilisha BnB na Rent kutoka skrini ya nyumbani; buruta chini kwenye mali kusasisha idadi na mapato.\n• Ukiingiza kiasi katika sarafu tofauti na sarafu yako ya msingi, kiwango cha ubadilishaji kinaonekana chini ya sehemu ya kiasi — sarafu na kiasi cha asili vinahifadhiwa daima.\n• LUKU inafuatiliwa kwa kila chumba — chagua kichupo cha chumba katika dashibodi ya matumizi kabla ya kurekodi malipo au kuscan ujumbe wa SMS.\n• Panga matengenezo kutoka sehemu ya Rent; ukumbusho unatumwa siku moja kabla na kazi inaonekana katika kalenda yako.\n• Piga kura wapangaji na wageni wanapoondoka — alama zinachapishwa baada ya muda wa kusubiri.\n• Tumia Mipangilio → Futa data ya nje ya mtandao tu ukiwa na nia ya kuondoa rekodi zote kwenye kifaa hiki.';
 
   @override
   String get supportFaqHeading => 'Maswali ya kawaida';
@@ -603,14 +603,14 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportFaq1A =>
-      'Host Bora ina nafasi mbili za kazi. BnB ni kwa makao mafupi: orodha, uhifadhi, kalenda ya mwenyeji, usawazishaji wa kalenda, na malipo ya wageni. Rent ni kwa muda mrefu: wapangaji, mikataba, malipo ya kodi, vikumbusho, wafanyakazi, na matumizi mahiri. Badilisha kutoka skrini ya nyumbani—mali, gharama, na Property Vault vinashirikiwa.';
+      'Host Bora ina nafasi mbili za kazi. BnB ni kwa makao mafupi: orodha, uhifadhi, kalenda ya mwenyeji, usawazishaji wa kalenda, na malipo ya wageni. Rent ni kwa muda mrefu: wapangaji, mikataba, malipo ya kodi, vikumbusho, wafanyakazi, matengenezo yaliyopangwa, na matumizi mahiri. Badilisha kutoka skrini ya nyumbani wakati wowote — mali, gharama, muhtasari wa fedha, Msimamizi wa AI, na Property Vault vinashirikiwa.';
 
   @override
   String get supportFaq2Q => 'Ninawezaje kurekodi malipo ya mgeni au mpangaji?';
 
   @override
   String get supportFaq2A =>
-      'Katika BnB, fungua uhifadhi au tumia Rekodi malipo kutoka kitovu cha mwenyeji. Katika Rent, tumia Simamia malipo kwa mpangaji au mali. Weka kiasi, tarehe, na njia; malipo huunganishwa na mali (na chumba). Buruta kusasisha kwenye mali ikiwa jumla ya mwezi haionekani sahihi.';
+      'Katika BnB, fungua uhifadhi au tumia Rekodi malipo kutoka kitovu cha mwenyeji. Katika Rent, tumia Simamia malipo kwa mpangaji au mali. Weka kiasi, tarehe, na njia — ikiwa sarafu inatofautiana na sarafu yako ya msingi, ichague kwenye menyu ya chaguo na kiwango cha ubadilishaji kinahifadhiwa moja kwa moja. Malipo huunganishwa na mali na chumba. Buruta kusasisha ikiwa jumla haionekani sahihi.';
 
   @override
   String get supportFaq3Q => 'Ninawezaje kusimamia uhifadhi wa BnB?';
@@ -638,7 +638,7 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportFaq6A =>
-      'Ndiyo. Mali, rekodi za kodi, uhifadhi uliofungua, hati za vault, na mapato au gharama unazohifadhi zinabaki kwenye simu na husawazishwa unaporudi mtandaoni. Epuka Mipangilio → Futa data ya nje ya mtandao isipokuwa una nia ya kuondoa rekodi za kodi za ndani.';
+      'Ndiyo. Mali, rekodi za kodi, uhifadhi, hati za vault, malipo ya matumizi, na matengenezo yaliyopangwa yanahifadhiwa ndani na kusawazishwa na seva unaporudi mtandaoni. Viwango vya ubadilishaji wa sarafu vinahifadhiwa kwa kutumia bila mtandao. Epuka Mipangilio → Futa data ya nje ya mtandao isipokuwa una nia ya kuondoa rekodi zote kwenye kifaa hiki.';
 
   @override
   String get supportFaq7Q => 'Ninawezaje kutuma SMS au WhatsApp?';
@@ -674,6 +674,42 @@ class AppLocalizationsSw extends AppLocalizations {
   @override
   String get supportFaq11A =>
       'Tumia Tuma barua pepe kwa msaada au Piga gumzo WhatsApp kwenye skrini hii. Jumuisha aina ya simu, toleo la aplikesheni, na ulichokuwa ukifanya. Kwa faragha tuma barua pepe privacy@hostbora.co.tz. Tunakusudia kujibu ndani ya siku moja ya kazi.';
+
+  @override
+  String get supportFaq12Q => 'Sarafu nyingi inafanya kazije?';
+
+  @override
+  String get supportFaq12A =>
+      'Chagua sarafu kutoka kwenye menyu ya chaguo katika sehemu yoyote ya kiasi. Ikiwa sarafu inatofautiana na sarafu yako ya msingi, kiwango cha ubadilishaji cha sasa kinaonekana chini na kinahifadhiwa pamoja na rekodi. Kiasi cha awali daima kinahifadhiwa katika sarafu yake ya asili. Sarafu yako ya msingi inaweza kubadilishwa kutoka Mipangilio.';
+
+  @override
+  String get supportFaq13Q => 'Ninawezajefuatilia LUKU kwa kila chumba?';
+
+  @override
+  String get supportFaq13A =>
+      'Katika dashibodi ya Matumizi, safu ya vichwa vya chumba inaonekana juu ya kadi ya LUKU mali yako ikiwa na vyumba zaidi ya kimoja. Gonga chumba kuchuja salio la kWh, chati ya wiki, na historia ya malipo kwa chumba hicho. Malipo yoyote unayorekodi — ya moja kwa moja au kwa kuscan SMS — yanashikamana na chumba kilichochaguliwa. Gonga \'Vyumba vyote\' kurudi kwenye muhtasari wa mali nzima.';
+
+  @override
+  String get supportFaq14Q =>
+      'Alama ya uaminifu wa mpangaji au mgeni inafanya kazije?';
+
+  @override
+  String get supportFaq14A =>
+      'Baada ya upangaji au kukaa kumalizika, unaweza kutoa tathmini. Mfumo unazingatia malipo ya wakati, malipo ya sehemu, na tathmini yako ili kuzalisha alama. Muda wa kusubiri unatumika kabla ya alama kuonekana kwa wamiliki wengine. Unaweza kuomba ukaguzi wa siri kwa nambari yoyote ya simu kutoka skrini ya Utafutaji wa Wapangaji.';
+
+  @override
+  String get supportFaq15Q => 'Ninawezaje kupanga matengenezo?';
+
+  @override
+  String get supportFaq15A =>
+      'Katika sehemu ya Rent, fungua Matengenezo Yaliyopangwa na ugonge kitufe cha +. Chagua mali, aina (Mabomba, Umeme, Jumla, n.k.), tarehe, na kipaumbele. Kazi inahifadhiwa ndani ya simu na kusawazishwa na seva ukiwa mtandaoni. Arifa ya ukumbusho inatumwa siku moja kabla, na kazi pia inaonekana katika kalenda yako.';
+
+  @override
+  String get supportFaq16Q => 'Msimamizi wa AI anafanya nini?';
+
+  @override
+  String get supportFaq16A =>
+      'Msimamizi wa AI anachunguza mkoba wako wa mali na kutoa maarifa — mwenendo wa utumiaji, mifumo ya mapato, hitilafu, na mapendekezo. Muulize maswali kuhusu mali zako kwa lugha ya kawaida. Matokeo yanazalishwa kutoka data yako ya ndani na, ukiwa mtandaoni, yanaboreshwa na uchambuzi wa seva. Fungua Msimamizi wa AI kutoka kwa kitufe kinachoelea kwenye skrini ya nyumbani au kupitia menyu kuu.';
 
   @override
   String get supportContactHeading => 'Wasiliana nasi';

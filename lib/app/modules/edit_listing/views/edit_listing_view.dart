@@ -195,6 +195,18 @@ class EditListingView extends BaseView<EditListingController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
+                _t(context, en: 'UNIT MODE', sw: 'AINA YA UNITI'),
+                style: TextStyle(
+                  fontSize: 10,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w700,
+                  color: c.hint,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _unitModeToggle(context),
+              const SizedBox(height: 12),
+              Text(
                 _t(context, en: 'UNIT NAME', sw: 'JINA LA UNITI'),
                 style: TextStyle(
                   fontSize: 10,
@@ -423,6 +435,54 @@ class EditListingView extends BaseView<EditListingController> {
         ],
       ),
     );
+  }
+
+  Widget _unitModeToggle(BuildContext context) {
+    final cs = FormSurfaceColors.of(context);
+    const opts = [('bnb', 'BnB'), ('rent', 'Rent')];
+    return Obx(() {
+      final current = controller.draftUnitMode.value;
+      return Row(
+        children: opts.map((opt) {
+          final selected = current == opt.$1;
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: opt.$1 == 'bnb' ? 6 : 0),
+              child: GestureDetector(
+                onTap: () => controller.updateDraftUnitMode(opt.$1),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Theme.of(context).colorScheme.primary
+                        : cs.fill,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: selected
+                          ? Theme.of(context).colorScheme.primary
+                          : cs.border,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      opt.$2,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: selected
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : cs.secondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    });
   }
 
   Widget _plainInput({

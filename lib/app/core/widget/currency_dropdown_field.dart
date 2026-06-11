@@ -85,24 +85,28 @@ class CurrencyDropdownField extends StatelessWidget {
           final hintColor = isDark
               ? const Color(0xFF80CBC4)
               : const Color(0xFF0E6666);
+          final fullLabel = '1 $value ≈ $base $rateLabel';
           rateHint = Padding(
             padding: const EdgeInsets.only(top: 5),
-            child: Row(
-              children: [
-                Icon(Icons.swap_horiz_rounded, size: 12, color: hintColor),
-                const SizedBox(width: 3),
-                Expanded(
-                  child: Text(
-                    '1 $value ≈ $base $rateLabel',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: hintColor,
-                      fontWeight: FontWeight.w500,
+            child: GestureDetector(
+              onLongPress: () => _showRatePopup(context, fullLabel, hintColor, isDark),
+              child: Row(
+                children: [
+                  Icon(Icons.swap_horiz_rounded, size: 12, color: hintColor),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: Text(
+                      fullLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: hintColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }
@@ -111,11 +115,92 @@ class CurrencyDropdownField extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 3),
           dropdownBox,
           ?rateHint,
         ],
       );
+    });
+  }
+
+  static void _showRatePopup(
+    BuildContext context,
+    String label,
+    Color hintColor,
+    bool isDark,
+  ) {
+    final overlay = Overlay.of(context);
+    // Find the vertical position of this widget on screen so the popup
+    // appears close to it, but anchor horizontally to the screen edges so
+    // it is never clipped by a narrow parent.
+    final renderBox = context.findRenderObject() as RenderBox?;
+    final origin = renderBox?.localToGlobal(Offset.zero) ?? Offset.zero;
+    final widgetHeight = renderBox?.size.height ?? 0;
+    final screenSize = MediaQuery.of(context).size;
+
+    // Clamp vertical position so the popup never goes off the bottom.
+    const popupHeight = 44.0;
+    const margin = 16.0;
+    double top = origin.dy + widgetHeight + 6;
+    if (top + popupHeight > screenSize.height - margin) {
+      // Not enough space below — show above the widget instead.
+      top = origin.dy - popupHeight - 6;
+    }
+
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => entry.remove(),
+        child: Stack(
+          children: [
+            Positioned(
+              // Full-width popup anchored to screen edges, independent of parent.
+              left: margin,
+              right: margin,
+              top: top,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E3A3A) : const Color(0xFFE0F4F4),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: hintColor.withValues(alpha: 0.45)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.14),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.swap_horiz_rounded, size: 16, color: hintColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: hintColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    overlay.insert(entry);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (entry.mounted) entry.remove();
     });
   }
 }

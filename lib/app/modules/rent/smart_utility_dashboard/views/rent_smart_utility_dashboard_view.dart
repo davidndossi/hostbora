@@ -68,6 +68,10 @@ class RentSmartUtilityDashboardView
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
               _globalStatusRow(u),
+              if (controller.availableUnits.length > 1) ...[
+                const SizedBox(height: 12),
+                _unitSelector(u),
+              ],
               const SizedBox(height: 16),
               _lukuCard(u),
               const SizedBox(height: 12),
@@ -85,6 +89,83 @@ class RentSmartUtilityDashboardView
           ),
         );
       }),
+    );
+  }
+
+  Widget _unitSelector(_UtilUi u) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _isSw ? 'Chagua Unit' : 'Filter by unit',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: u.muted,
+            letterSpacing: 0.4,
+          ),
+        ),
+        const SizedBox(height: 6),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Obx(() {
+            final selected = controller.selectedUnitId.value;
+            return Row(
+              children: [
+                _unitChip(
+                  u: u,
+                  label: _isSw ? 'Zote' : 'All units',
+                  selected: selected.isEmpty,
+                  onTap: () => controller.selectUnit(''),
+                ),
+                ...controller.availableUnits.map(
+                  (unit) => _unitChip(
+                    u: u,
+                    label: unit.unitName.trim(),
+                    selected: selected == unit.unitId,
+                    onTap: () => controller.selectUnit(unit.unitId),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _unitChip({
+    required _UtilUi u,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: selected
+                ? _UtilUi.forest
+                : u.softSurface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? _UtilUi.forest : u.muted.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : u.onSurface,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -168,26 +249,32 @@ class RentSmartUtilityDashboardView
 
   Widget _lukuCard(_UtilUi u) {
     return Builder(
-      builder: (ctx) => _utilityCard(
-        u: u,
-        iconBg: _UtilUi.forest,
-        icon: Icons.bolt_rounded,
-        title: 'LUKU Units',
-        actionLabel: _isSw ? 'JAZA' : 'TOP UP',
-        onAction: () => _openTopUpSheet(ctx, isLuku: true),
-        value: controller.lukuUnits.value.toStringAsFixed(1),
-        unit: _isSw ? 'kWh Zilizobaki' : 'kWh Left',
-        progress: controller.lukuProgress,
-        footer: _isSw
-            ? 'Makadirio ya siku: ${controller.lukuCoverageDays.value}'
-            : 'Estimated coverage: ${controller.lukuCoverageDays.value} days',
-        onUsageGraph: controller.openLukuUsageGraph,
-        usageGraphLabel: AppLocalizations.of(
-          ctx,
-        )!.rentUtilityLukuUsageGraphLink,
-        watermarkIcon: Icons.bolt_rounded,
-        watermarkAngle: 0.14,
-      ),
+      builder: (ctx) => Obx(() {
+        final unitName = controller.selectedUnitName.value.trim();
+        final title = unitName.isEmpty
+            ? 'LUKU Units'
+            : 'LUKU · $unitName';
+        return _utilityCard(
+          u: u,
+          iconBg: _UtilUi.forest,
+          icon: Icons.bolt_rounded,
+          title: title,
+          actionLabel: _isSw ? 'JAZA' : 'TOP UP',
+          onAction: () => _openTopUpSheet(ctx, isLuku: true),
+          value: controller.lukuUnits.value.toStringAsFixed(1),
+          unit: _isSw ? 'kWh Zilizobaki' : 'kWh Left',
+          progress: controller.lukuProgress,
+          footer: _isSw
+              ? 'Makadirio ya siku: ${controller.lukuCoverageDays.value}'
+              : 'Estimated coverage: ${controller.lukuCoverageDays.value} days',
+          onUsageGraph: controller.openLukuUsageGraph,
+          usageGraphLabel: AppLocalizations.of(
+            ctx,
+          )!.rentUtilityLukuUsageGraphLink,
+          watermarkIcon: Icons.bolt_rounded,
+          watermarkAngle: 0.14,
+        );
+      }),
     );
   }
 
