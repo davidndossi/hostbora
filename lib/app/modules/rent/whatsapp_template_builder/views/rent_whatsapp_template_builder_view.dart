@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/widget/skeleton_presets.dart';
 import '../../../../core/widget/undo_snackbar.dart';
 import '../../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
+import '../../../../routes/app_pages.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_whatsapp_template_builder_controller.dart';
@@ -559,6 +560,22 @@ class RentWhatsappTemplateBuilderView
               ),
             ),
             const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.send_rounded, color: RentTheme.conciergeTeal),
+              title: Text(_isSw ? 'Tumia kutuma' : 'Use for sending'),
+              subtitle: Text(
+                _isSw ? 'Fungua skrini ya Tuma SMS/WhatsApp na kiolezo hiki kimechaguliwa'
+                       : 'Open Send SMS / WhatsApp with this template pre-selected',
+                style: const TextStyle(fontSize: 12),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Get.toNamed(
+                  Routes.SEND_SMS,
+                  arguments: {'templateId': t.id.toString()},
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.edit_rounded, color: RentTheme.teal),
               title: Text(_isSw ? 'Hariri' : 'Edit'),

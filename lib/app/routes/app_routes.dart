@@ -109,6 +109,8 @@ abstract class Routes {
   static const RENT_WHATSAPP_TEMPLATE_BUILDER = _Paths.RENT_WHATSAPP_TEMPLATE_BUILDER;
   static const ALL_TENANTS = _Paths.ALL_TENANTS;
   static const CLIENT_STORY = _Paths.CLIENT_STORY;
+  static const INVENTORY_TRACKING = _Paths.INVENTORY_TRACKING;
+  static const INVENTORY_ITEM_FORM = _Paths.INVENTORY_ITEM_FORM;
 }
 
 abstract class _Paths {
@@ -215,4 +217,6 @@ abstract class _Paths {
   static const RENT_WHATSAPP_TEMPLATE_BUILDER = '/rent/whatsapp-template-builder';
   static const ALL_TENANTS = '/all-tenants';
   static const CLIENT_STORY = '/client-story';
+  static const INVENTORY_TRACKING = '/inventory-tracking';
+  static const INVENTORY_ITEM_FORM = '/inventory-item-form';
 }

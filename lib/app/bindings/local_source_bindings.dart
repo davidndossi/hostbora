@@ -5,6 +5,7 @@ import '../data/local/db/property_local_data_source.dart';
 import '../data/local/db/property_unit_local_data_source.dart';
 import '/app/data/model/add_task_request.dart';
 import '/app/data/model/scheduled_maintenance_request.dart';
+import '/app/data/model/inventory_item_request.dart';
 import '/app/data/model/schedule_payment_reminder_request.dart';
 import '/app/data/model/add_expense_request.dart';
 import '/app/data/model/add_listing_request.dart';
@@ -26,6 +27,8 @@ import '/app/data/local/db/rent_loyalty_offer_local_data_source.dart';
 import '/app/data/local/db/rent_notification_log_local_data_source.dart';
 import '/app/data/local/db/rent_property_estimate_local_data_source.dart';
 import '/app/data/local/db/rent_scheduled_maintenance_local_data_source.dart';
+import '/app/data/local/db/inventory_item_local_data_source.dart';
+import '/app/data/local/db/inventory_movement_local_data_source.dart';
 import '/app/data/local/db/rent_staff_local_data_source.dart';
 import '/app/data/local/db/rent_tenant_charge_local_data_source.dart';
 import '/app/data/local/db/client_event_local_data_source.dart';
@@ -129,6 +132,14 @@ class LocalSourceBindings implements Bindings {
     );
     Get.lazyPut<RentScheduledMaintenanceLocalDataSource>(
       () => RentScheduledMaintenanceLocalDataSource(),
+      fenix: true,
+    );
+    Get.lazyPut<InventoryItemLocalDataSource>(
+      () => InventoryItemLocalDataSource(),
+      fenix: true,
+    );
+    Get.lazyPut<InventoryMovementLocalDataSource>(
+      () => InventoryMovementLocalDataSource(),
       fenix: true,
     );
     Get.lazyPut<RentPaymentReminderLocalDataSource>(
@@ -286,6 +297,145 @@ class LocalSourceBindings implements Bindings {
           if (backendId.isNotEmpty) {
             await maintenanceLocal.saveBackendTaskId(
               localId: localId,
+              backendId: backendId,
+            );
+          }
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'inventory_item',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.createInventoryItem(
+          InventoryItemRequest(
+            clientItemId: map['clientItemId'] as String?,
+            propertyRef: map['propertyRef'] as String?,
+            propertyLabel: map['propertyLabel'] as String?,
+            apartmentUnitId: map['apartmentUnitId'] as String?,
+            apartmentUnitName: map['apartmentUnitName'] as String?,
+            name: map['name'] as String? ?? '',
+            category: map['category'] as String? ?? 'Other',
+            quantity: (map['quantity'] as num?)?.toInt() ?? 0,
+            reorderLevel: (map['reorderLevel'] as num?)?.toInt() ?? 0,
+            condition: map['condition'] as String? ?? 'Good',
+            locationNote: map['locationNote'] as String?,
+            purchaseValue: (map['purchaseValue'] as num?)?.toDouble(),
+            currency: map['currency'] as String?,
+          ),
+        );
+        final saved = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!saved) throw Exception(res.message ?? 'sync failed');
+        final localId = map['localId'] as int?;
+        if (localId != null) {
+          final itemLocal = Get.find<InventoryItemLocalDataSource>();
+          await itemLocal.updateSyncStatus(localId, 'synced');
+          final backendId = (res.data is Map)
+              ? ((res.data as Map)['itemId'] ?? (res.data as Map)['id'])
+                  ?.toString() ??
+                  ''
+              : '';
+          if (backendId.isNotEmpty) {
+            await itemLocal.saveBackendItemId(
+              localId: localId,
+              backendId: backendId,
+            );
+          }
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'inventory_item',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final backendId = (map['backendItemId'] as String? ?? '').trim();
+        if (backendId.isEmpty) {
+          throw Exception('inventory item backend id missing');
+        }
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.updateInventoryItem(
+          backendId,
+          InventoryItemRequest(
+            clientItemId: map['clientItemId'] as String?,
+            propertyRef: map['propertyRef'] as String?,
+            propertyLabel: map['propertyLabel'] as String?,
+            apartmentUnitId: map['apartmentUnitId'] as String?,
+            apartmentUnitName: map['apartmentUnitName'] as String?,
+            name: map['name'] as String? ?? '',
+            category: map['category'] as String? ?? 'Other',
+            quantity: (map['quantity'] as num?)?.toInt() ?? 0,
+            reorderLevel: (map['reorderLevel'] as num?)?.toInt() ?? 0,
+            condition: map['condition'] as String? ?? 'Good',
+            locationNote: map['locationNote'] as String?,
+            purchaseValue: (map['purchaseValue'] as num?)?.toDouble(),
+            currency: map['currency'] as String?,
+          ),
+        );
+        final saved = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!saved) throw Exception(res.message ?? 'sync failed');
+        final localId = map['localId'] as int?;
+        if (localId != null) {
+          await Get.find<InventoryItemLocalDataSource>()
+              .updateSyncStatus(localId, 'synced');
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'inventory_movement',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final itemLocal = Get.find<InventoryItemLocalDataSource>();
+        var backendItemId = (map['backendItemId'] as String? ?? '').trim();
+        if (backendItemId.isEmpty) {
+          final itemLocalId = map['itemLocalId'] as int?;
+          if (itemLocalId != null) {
+            final row = await itemLocal.getById(itemLocalId);
+            backendItemId = row?.backendItemId.trim() ?? '';
+          }
+        }
+        if (backendItemId.isEmpty) {
+          throw Exception('inventory item not synced yet');
+        }
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.createInventoryMovement(
+          backendItemId,
+          InventoryMovementRequest(
+            clientMovementId: map['clientMovementId'] as String?,
+            movementType: map['movementType'] as String? ?? 'adjust',
+            quantityDelta: (map['quantityDelta'] as num?)?.toInt() ?? 0,
+            notes: map['notes'] as String?,
+          ),
+        );
+        final saved = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!saved) throw Exception(res.message ?? 'sync failed');
+        final localMovementId = map['localMovementId'] as int?;
+        if (localMovementId != null) {
+          final movementLocal = Get.find<InventoryMovementLocalDataSource>();
+          await movementLocal.updateSyncStatus(localMovementId, 'synced');
+          final backendId = (res.data is Map)
+              ? ((res.data as Map)['movementId'] ?? (res.data as Map)['id'])
+                  ?.toString() ??
+                  ''
+              : '';
+          if (backendId.isNotEmpty) {
+            await movementLocal.saveBackendMovementId(
+              localId: localMovementId,
               backendId: backendId,
             );
           }

@@ -25,6 +25,7 @@ class AuthController extends BaseController {
   final otp = ''.obs;
   final isLoading = false.obs;
   final hasPinEnabled = false.obs;
+  final isPinStatusLoading = true.obs;
   String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
   final authFormKey = GlobalKey<FormState>();
 
@@ -72,6 +73,7 @@ class AuthController extends BaseController {
       PreferenceManager.keyPinEnabled,
       defaultValue: false,
     );
+    isPinStatusLoading.value = false;
   }
 
   void login() async {

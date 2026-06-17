@@ -57,6 +57,10 @@ import '../modules/reset_password/bindings/reset_password_binding.dart';
 import '../modules/reset_password/views/reset_password_view.dart';
 import '../modules/change_pin/bindings/change_pin_binding.dart';
 import '../modules/change_pin/views/change_pin_view.dart';
+import '../modules/inventory_tracking/bindings/inventory_tracking_binding.dart';
+import '../modules/inventory_tracking/views/inventory_tracking_view.dart';
+import '../modules/inventory_tracking/bindings/inventory_item_form_binding.dart';
+import '../modules/inventory_tracking/views/inventory_item_form_view.dart';
 import '../modules/client_story/bindings/client_story_binding.dart';
 import '../modules/client_story/views/client_story_view.dart';
 import '../modules/password_updated/bindings/password_updated_binding.dart';
@@ -718,6 +722,16 @@ class AppPages {
       name: _Paths.CLIENT_STORY,
       page: () => const ClientStoryView(),
       binding: ClientStoryBinding(),
+    ),
+    GetPage(
+      name: _Paths.INVENTORY_TRACKING,
+      page: () => InventoryTrackingView(),
+      binding: InventoryTrackingBinding(),
+    ),
+    GetPage(
+      name: _Paths.INVENTORY_ITEM_FORM,
+      page: () => InventoryItemFormView(),
+      binding: InventoryItemFormBinding(),
     ),
   ];
 }

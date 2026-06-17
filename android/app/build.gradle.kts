@@ -17,6 +17,16 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Map each Android flavor to its Dart entry point.
+val flutterTarget = run {
+    val tasks = gradle.startParameter.taskNames.joinToString(" ").lowercase()
+    when {
+        tasks.contains("prod") -> "lib/main_prod.dart"
+        tasks.contains("dev") -> "lib/main_dev.dart"
+        else -> "lib/main.dart"
+    }
+}
+
 dependencies {
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
@@ -69,6 +79,18 @@ android {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a")
         }
     }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            resValue("string", "app_name", "Host Bora Dev")
+        }
+        create("prod") {
+            dimension = "environment"
+            resValue("string", "app_name", "Host Bora")
+        }
+    }
     packaging {
         jniLibs {
             pickFirsts += "lib/*/libc++_shared.so"
@@ -95,4 +117,5 @@ android {
 
 flutter {
     source = "../.."
+    target = flutterTarget
 }

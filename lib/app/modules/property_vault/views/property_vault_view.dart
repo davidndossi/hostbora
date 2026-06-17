@@ -20,8 +20,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
-      appBarTitleText: appLocalization.propertyVault,
-      isBackButtonEnabled: false,
+      appBarTitleText: appLocalization.propertyVault
     );
   }
 

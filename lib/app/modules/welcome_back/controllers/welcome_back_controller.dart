@@ -36,6 +36,7 @@ class WelcomeBackController extends BaseController {
   final msisdn = ''.obs;
   final password = ''.obs;
   String _storedPin = '';
+  bool _pinLoaded = false;
   final faceIdEnabledPref = false.obs;
 
   late String firebaseToken;
@@ -90,6 +91,7 @@ class WelcomeBackController extends BaseController {
       PreferenceManager.keyPinCode,
       defaultValue: '',
     );
+    _pinLoaded = true;
   }
 
   Future<void> getFirebaseToken() async {
@@ -197,6 +199,10 @@ class WelcomeBackController extends BaseController {
   }
 
   void _validateAndNavigate() {
+    // Guard against the race where the user enters digits before _loadPin()
+    // has completed.  Simply ignore the tap and wait for the next digit.
+    if (!_pinLoaded) return;
+
     if (_storedPin.isEmpty) {
       showErrorMessage(_t('PIN is not set yet. Sign in first.', 'PIN bado haijawekwa. Ingia kwanza.'));
       Get.offAllNamed(Routes.AUTH);

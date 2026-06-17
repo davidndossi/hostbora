@@ -69,8 +69,8 @@ Future<void> setupFlutterNotifications() async {
 
 void showFlutterNotification(RemoteMessage message) {
   RemoteNotification? notification = message.notification;
-  AndroidNotification? android = message.notification?.android;
-  if (notification != null && android != null) {
+  // AndroidNotification? android = message.notification?.android;
+  if (notification != null) {
     flutterLocalNotificationsPlugin.show(
       notification.hashCode,
       notification.title,

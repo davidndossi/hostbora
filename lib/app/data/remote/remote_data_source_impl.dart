@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../model/add_listing_request.dart';
 import '../model/scheduled_maintenance_request.dart';
+import '../model/inventory_item_request.dart';
 import '../model/add_task_request.dart';
 import '../model/record_client_event_request.dart';
 import '../model/schedule_payment_reminder_request.dart';
@@ -483,6 +484,71 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   Future<GeneralResponse> addScheduledMaintenance(
       ScheduledMaintenanceRequest request) {
     final endpoint = '${DioProvider.baseUrl}/api/scheduled-maintenance';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getInventoryItems({
+    String? propertyRef,
+    String? apartmentUnitId,
+  }) {
+    final query = <String, dynamic>{};
+    if (propertyRef != null && propertyRef.trim().isNotEmpty) {
+      query['propertyRef'] = propertyRef.trim();
+    }
+    if (apartmentUnitId != null && apartmentUnitId.trim().isNotEmpty) {
+      query['apartmentUnitId'] = apartmentUnitId.trim();
+    }
+    final endpoint = '${DioProvider.baseUrl}/api/inventory/items';
+    final dioCall = dioClient.get(endpoint, queryParameters: query);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> createInventoryItem(InventoryItemRequest request) {
+    final endpoint = '${DioProvider.baseUrl}/api/inventory/items';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateInventoryItem(
+    String itemId,
+    InventoryItemRequest request,
+  ) {
+    final endpoint = '${DioProvider.baseUrl}/api/inventory/items/$itemId';
+    final dioCall = dioClient.put(endpoint, data: request.toJson());
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> createInventoryMovement(
+    String itemId,
+    InventoryMovementRequest request,
+  ) {
+    final endpoint =
+        '${DioProvider.baseUrl}/api/inventory/items/$itemId/movements';
     final dioCall = dioClient.post(endpoint, data: request.toJson());
     try {
       return callApiWithErrorParser(dioCall)

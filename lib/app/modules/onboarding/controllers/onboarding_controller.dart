@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -31,7 +33,7 @@ class OnboardingController extends BaseController {
   }
 
   Future<void> completeOnboarding() async {
-    await Get.find<CurrencyService>().refreshRatesFromRemote();
+    unawaited(Get.find<CurrencyService>().refreshRatesFromRemote());
     await _preferenceManager.setBool('seen_onboarding', true);
     Get.offAllNamed(Routes.CREATE_HOST_ACCOUNT);
   }

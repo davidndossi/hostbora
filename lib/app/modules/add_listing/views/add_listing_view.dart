@@ -449,7 +449,7 @@ class AddListingView extends BaseView<AddListingController> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${PropertyUnitFloor.label(l10n, u.unitFloor)} · ${controller.selectedCurrency.value} ${u.unitRent} · ${u.unitRentFrequency}${controller.listingMode.value == 'both' ? ' · ${_unitModeLabel(context, u.operationMode)}' : ''}',
+                  '${PropertyUnitFloor.label(l10n, u.unitFloor)} · ${u.unitRentCurrency} ${u.unitRent} · ${u.unitRentFrequency}${controller.listingMode.value == 'both' ? ' · ${_unitModeLabel(context, u.operationMode)}' : ''}',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

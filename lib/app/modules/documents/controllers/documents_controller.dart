@@ -6,7 +6,6 @@ import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_controller.dart';
-import '../../../core/base/feedback_extensions.dart';
 import '../../../core/utils/haptic_feedback_util.dart';
 import '../../../core/widget/undo_snackbar.dart';
 import '../../../data/local/vault_documents_store.dart';

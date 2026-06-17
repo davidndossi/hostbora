@@ -229,6 +229,8 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         ),
         const SizedBox(height: 14),
         _estimationCostsLink(u),
+        const SizedBox(height: 12),
+        _inventoryTrackingLink(u),
         const SizedBox(height: 20),
         _quickManagement(u),
         const SizedBox(height: 16),
@@ -835,6 +837,84 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
   //     ),
   //   );
   // }
+  Widget _inventoryTrackingLink(_ListingUi u) {
+    return Material(
+      color: u.card,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: controller.onOpenInventoryTracking,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.colorPrimary.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.colorPrimary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.inventory_2_outlined,
+                  color: AppColors.colorPrimary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isSw ? 'Ufuatiliaji wa vifaa' : 'Inventory tracking',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: u.text,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _isSw
+                          ? 'Fuatilia vifaa, hisa na mabadiliko kwa kila unit'
+                          : 'Track items, stock levels and changes per unit',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: u.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: u.line.withValues(alpha: 0.45),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.colorPrimary,
+                  size: 22,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _estimationCostsLink(_ListingUi u) {
     return Material(
       color: u.card,

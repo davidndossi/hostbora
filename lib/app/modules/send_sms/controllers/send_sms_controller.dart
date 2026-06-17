@@ -80,6 +80,10 @@ class SendSmsController extends BaseController
   final savedMessageTemplates = <RentWhatsappTemplateRecord>[].obs;
   final selectedTemplateId = Rxn<int>();
 
+  /// Set by route args when launched from the template builder ("Use for sending").
+  /// Applied once after [loadSavedMessageTemplates] completes.
+  int? _pendingTemplateId;
+
   /// True after access check; false if user is not admin/leader.
   final isAccessAllowed = false.obs;
   final isCheckingAccess = true.obs;
@@ -117,6 +121,13 @@ class SendSmsController extends BaseController
     recipientContextLabel.value = (map['contextLabel'] ?? '').toString().trim();
     prefilledTenantIds.assignAll(_extractTenantIds(map['tenantIds']));
     pickerSelectedTenantIds.assignAll(prefilledTenantIds);
+
+    // If launched from "Use for sending" in the template builder, store the
+    // requested template ID and apply it after templates have loaded.
+    final rawId = (map['templateId'] ?? '').toString().trim();
+    if (rawId.isNotEmpty) {
+      _pendingTemplateId = int.tryParse(rawId);
+    }
   }
 
   List<int> _extractTenantIds(dynamic raw) {
@@ -256,9 +267,17 @@ class SendSmsController extends BaseController
       final list = await _whatsappTemplateLocal.getAllNewestFirst();
       savedMessageTemplates.assignAll(list);
       final sel = selectedTemplateId.value;
-      if (sel != null &&
-          !savedMessageTemplates.any((t) => t.id == sel)) {
+      if (sel != null && !savedMessageTemplates.any((t) => t.id == sel)) {
         selectedTemplateId.value = null;
+      }
+
+      // Apply a pending template selection that arrived via route arguments
+      // (e.g. "Use for sending" tapped on a template card).
+      final pending = _pendingTemplateId;
+      if (pending != null && savedMessageTemplates.any((t) => t.id == pending)) {
+        _pendingTemplateId = null;
+        isFirstView.value = false; // switch to WhatsApp tab
+        onMessageTemplateSelected(pending);
       }
     } catch (_) {
       savedMessageTemplates.clear();

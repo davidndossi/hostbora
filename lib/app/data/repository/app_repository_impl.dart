@@ -5,6 +5,7 @@ import 'package:host_bora/app/data/model/submit_tenant_rating_request.dart';
 
 import '../model/add_listing_request.dart';
 import '../model/scheduled_maintenance_request.dart';
+import '../model/inventory_item_request.dart';
 import '../model/add_task_request.dart';
 import '../model/change_password_request.dart';
 import '../model/cancel_booking_request.dart';
@@ -207,6 +208,38 @@ class AppRepositoryImpl implements AppRepository {
   Future<GeneralResponse> addScheduledMaintenance(
       ScheduledMaintenanceRequest request) {
     return _remoteSource.addScheduledMaintenance(request);
+  }
+
+  @override
+  Future<GeneralResponse> getInventoryItems({
+    String? propertyRef,
+    String? apartmentUnitId,
+  }) {
+    return _remoteSource.getInventoryItems(
+      propertyRef: propertyRef,
+      apartmentUnitId: apartmentUnitId,
+    );
+  }
+
+  @override
+  Future<GeneralResponse> createInventoryItem(InventoryItemRequest request) {
+    return _remoteSource.createInventoryItem(request);
+  }
+
+  @override
+  Future<GeneralResponse> updateInventoryItem(
+    String itemId,
+    InventoryItemRequest request,
+  ) {
+    return _remoteSource.updateInventoryItem(itemId, request);
+  }
+
+  @override
+  Future<GeneralResponse> createInventoryMovement(
+    String itemId,
+    InventoryMovementRequest request,
+  ) {
+    return _remoteSource.createInventoryMovement(itemId, request);
   }
 
   @override

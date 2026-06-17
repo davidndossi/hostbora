@@ -245,8 +245,33 @@ class AuthView extends BaseView<AuthController> {
   }
 
   Widget _buildUsePinButton(BuildContext context) {
-    return Obx(
-      () => OutlinedButton.icon(
+    return Obx(() {
+      // While pin-status is still loading from SharedPreferences, show a
+      // skeleton-height placeholder so the button doesn't flicker
+      // enabled → disabled between frames.
+      if (controller.isPinStatusLoading.value) {
+        return SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton(
+            onPressed: null,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              side: BorderSide(color: AppColors.colorPrimary.withValues(alpha: 0.3)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppValues.radius_6),
+              ),
+            ),
+            child: const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        );
+      }
+
+      return OutlinedButton.icon(
         onPressed: controller.hasPinEnabled.value
             ? () => Get.toNamed(Routes.WELCOME_BACK)
             : null,
@@ -272,8 +297,8 @@ class AuthView extends BaseView<AuthController> {
             borderRadius: BorderRadius.circular(AppValues.radius_6),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildFooterLinks(BuildContext context) {

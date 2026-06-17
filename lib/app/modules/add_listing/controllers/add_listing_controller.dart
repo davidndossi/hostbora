@@ -121,7 +121,16 @@ class AddListingController extends BaseController {
   bool _propertyTypeLockedFromLocal = false;
   bool _unitsLockedFromLocal = false;
 
-  static const _rentFrequencyChoices = ['Per Day'];
+  static const _rentFrequencyChoices = ['Per Day', 'Per Month'];
+
+  String _defaultRentFrequencyForMode(String mode) =>
+      _normalizeUnitMode(mode) == 'rent' ? 'Per Month' : 'Per Day';
+
+  void _syncDraftRentFrequencyFromMode(String mode) {
+    final freq = _defaultRentFrequencyForMode(mode);
+    draftUnitRentFrequency.value = freq;
+    rentFrequency.value = freq;
+  }
 
   final selectedPropertyType = Rx<String?>(null);
 
@@ -156,6 +165,7 @@ class AddListingController extends BaseController {
     listingMode.value = mode;
     if (mode != 'both') {
       draftUnitMode.value = mode;
+      _syncDraftRentFrequencyFromMode(mode);
     }
   }
 
@@ -788,7 +798,7 @@ class AddListingController extends BaseController {
             unitId: _newApartmentUnitId(),
             unitName: u.unitName,
             unitRent: u.unitRent,
-            unitRentFrequency: rentFrequency.value,
+            unitRentFrequency: u.unitRentFrequency,
             unitFloor: u.unitFloor,
             operationMode: _unitModeForSave(u),
             unitDescription: u.unitDescription,
@@ -814,7 +824,7 @@ class AddListingController extends BaseController {
         unitId: _newApartmentUnitId(),
         unitName: name,
         unitRent: rent,
-        unitRentFrequency: rentFrequency.value,
+        unitRentFrequency: draftUnitRentFrequency.value,
         unitFloor: draftUnitFloor.value,
         operationMode: listingMode.value == 'both'
             ? _normalizeUnitMode(draftUnitMode.value)
@@ -826,9 +836,9 @@ class AddListingController extends BaseController {
     draftUnitNameController.clear();
     draftUnitRentController.clear();
     draftUnitDescriptionController.clear();
-    draftUnitRentFrequency.value = rentFrequency.value;
     draftUnitFloor.value = PropertyUnitFloor.defaultIndex;
     draftUnitMode.value = listingMode.value == 'rent' ? 'rent' : 'bnb';
+    _syncDraftRentFrequencyFromMode(draftUnitMode.value);
   }
 
   void updateDraftUnitFloor(int? value) {
@@ -838,7 +848,9 @@ class AddListingController extends BaseController {
   }
 
   void updateDraftUnitMode(String? value) {
-    draftUnitMode.value = _normalizeUnitMode(value ?? '');
+    final mode = _normalizeUnitMode(value ?? '');
+    draftUnitMode.value = mode;
+    _syncDraftRentFrequencyFromMode(mode);
   }
 
   void removeApartmentUnit(int index) {

@@ -55,17 +55,11 @@ class MoreView extends BaseView<MoreController> {
         Icons.help_outline_rounded,
         Routes.HELP_CENTER,
       ),
-      // _MoreLink(
-      //   _t('AI Manager', 'Msimamizi wa AI'),
-      //   Icons.auto_awesome_outlined,
-      //   Routes.AI_MANAGER,
-      // ),
       _MoreLink(
         _t('Reports', 'Ripoti'),
         Icons.assessment_outlined,
         Routes.REPORTS_HUB,
       ),
-      // _OthersLink(_isSw ? 'Kikasha' : 'Inbox', Icons.inbox_outlined, Routes.RENT_CONCIERGE_INBOX),
       _MoreLink(
         _t('Contract hub', 'Kitovu cha Mikataba'),
         Icons.article_outlined,
@@ -101,6 +95,16 @@ class MoreView extends BaseView<MoreController> {
         _t('Design studio', 'Studio ya ubunifu'),
         Icons.palette_outlined,
         Routes.INTERIOR_DESIGN_STUDIO,
+      ),
+      _MoreLink(
+        appLocalization.sendFeedback,
+        Icons.feedback_outlined,
+        Routes.FEEDBACK,
+      ),
+      _MoreLink(
+        appLocalization.support,
+        Icons.help_outline,
+        Routes.SUPPORT,
       ),
       _MoreLink(
         _t('Settings', 'Mipangilio'),

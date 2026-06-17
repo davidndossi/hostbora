@@ -11,6 +11,7 @@ import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
 import '../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
+import '../../../routes/app_pages.dart';
 import '../controllers/send_sms_controller.dart';
 
 class SendSmsView extends BaseView<SendSmsController> {
@@ -20,67 +21,134 @@ class SendSmsView extends BaseView<SendSmsController> {
     return Localizations.localeOf(context).languageCode == 'sw' ? sw : en;
   }
 
+  /// Returns a small coloured dot representing [status].
+  Widget _statusDot(String status) {
+    final Color color;
+    switch (status) {
+      case WaTemplateStatus.approved:
+        color = const Color(0xFF16A34A);
+        break;
+      case WaTemplateStatus.submitted:
+        color = const Color(0xFFD97706);
+        break;
+      case WaTemplateStatus.rejected:
+        color = const Color(0xFFDC2626);
+        break;
+      default:
+        color = const Color(0xFF9CA3AF);
+    }
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+
   Widget _buildSavedTemplatesPicker(BuildContext context) {
     final theme = Theme.of(context);
     return Obx(() {
       if (controller.savedMessageTemplates.isEmpty) {
-        final isBnb = controller.isBnbWorkspace;
         return Padding(
           padding: const EdgeInsets.only(bottom: AppValues.spacing_20),
-          child: Text(
-            _t(
-              context,
-              isBnb
-                  ? 'No saved templates yet. Create templates under BnB home → WhatsApp templates or Rent hub → More.'
-                  : 'No saved templates yet. Create templates under Rent hub → More → WhatsApp templates.',
-              isBnb
-                  ? 'Bado hakuna miolezo. Tengeneza chini ya BnB → Violezo vya WhatsApp au Rent → Zaidi.'
-                  : 'Bado hakuna miolezo. Tengeneza chini ya Rent → Zaidi → Miolezo ya WhatsApp.',
-            ),
-            style: TextStyle(
-              fontSize: 13,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _t(
+                  context,
+                  'No saved templates yet.',
+                  'Bado hakuna miolezo.',
+                ),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 4),
+              TextButton.icon(
+                onPressed: () => Get.toNamed(Routes.RENT_WHATSAPP_TEMPLATE_BUILDER),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(
+                  _t(context, 'Create a WhatsApp template', 'Tengeneza kiolezo cha WhatsApp'),
+                  style: const TextStyle(fontSize: 13),
+                ),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
           ),
         );
       }
+
+      // Approved templates first, then others — makes picking for Meta sends easier.
+      final sorted = [...controller.savedMessageTemplates]..sort((a, b) {
+          int rank(String s) {
+            if (s == WaTemplateStatus.approved) return 0;
+            if (s == WaTemplateStatus.submitted) return 1;
+            if (s == WaTemplateStatus.draft) return 2;
+            return 3;
+          }
+          return rank(a.status).compareTo(rank(b.status));
+        });
+
       return Padding(
         padding: const EdgeInsets.only(bottom: AppValues.spacing_20),
         child: InputDecorator(
           decoration: InputDecoration(
-            labelText: _t(
-              context,
-              'Saved template',
-              'Kiolezo kilichohifadhiwa',
-            ),
+            labelText: _t(context, 'WhatsApp template', 'Kiolezo cha WhatsApp'),
             helperText: _t(
               context,
-              'Replaces {{1}}, {{2}}, … with values saved for each template.',
-              'Hubadilisha {{1}}, {{2}}, … kwa maadili yaliyohifadhiwa kwa kila kiolezo.',
+              'Approved templates can be sent via Meta API. {{1}}, {{2}}, … are replaced with your values.',
+              'Violezo vilivyoidhinishwa vinatumwa kupitia Meta API. {{1}}, {{2}}, … hubadilishwa na maadili yako.',
             ),
             border: const OutlineInputBorder(),
+            suffixIcon: Tooltip(
+              message: _t(context, 'Manage templates', 'Simamia violezo'),
+              child: IconButton(
+                icon: const Icon(Icons.open_in_new, size: 18),
+                onPressed: () async {
+                  await Get.toNamed(Routes.RENT_WHATSAPP_TEMPLATE_BUILDER);
+                  controller.loadSavedMessageTemplates();
+                },
+              ),
+            ),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int?>(
               value: controller.selectedTemplateId.value,
               isExpanded: true,
               isDense: true,
-              hint: Text(
-                _t(context, 'Choose a template', 'Chagua kiolezo'),
-              ),
+              hint: Text(_t(context, 'Choose a template', 'Chagua kiolezo')),
               items: [
                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text(
-                    _t(context, 'Custom message only', 'Ujumbe wa kawaida tu'),
-                  ),
+                  child: Text(_t(context, 'None — custom message', 'Hakuna — ujumbe wa kawaida')),
                 ),
-                ...controller.savedMessageTemplates.map(
+                ...sorted.map(
                   (t) => DropdownMenuItem<int?>(
                     value: t.id,
-                    child: Text(
-                      t.name.trim().isEmpty ? 'Template #${t.id}' : t.name,
-                      overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        _statusDot(t.status),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            t.name.trim().isEmpty ? 'Template #${t.id}' : t.name,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          WaTemplateCategory.label(t.category).substring(0, 1).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

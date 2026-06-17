@@ -128,6 +128,18 @@ void showAlert(RemoteMessage message) {
 /// Initialize the [FlutterLocalNotificationsPlugin] package.
 late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
+Future<String?> _waitForApnsToken({
+  int maxAttempts = 8,
+  Duration delay = const Duration(milliseconds: 500),
+}) async {
+  for (var i = 0; i < maxAttempts; i++) {
+    final token = await FirebaseMessaging.instance.getAPNSToken();
+    if (token != null && token.isNotEmpty) return token;
+    await Future.delayed(delay);
+  }
+  return null;
+}
+
 void requestUserPermission() async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   NotificationSettings settings = await messaging.requestPermission(
@@ -146,14 +158,28 @@ void requestUserPermission() async {
     if (kDebugMode) {
       print('Authorization status:${authStatus.name}');
     }
-    // Ensure the APNS token is available
-    await FirebaseMessaging.instance.getAPNSToken();
-    messaging.getToken().then((token) {
+    try {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final apns = await _waitForApnsToken();
+        if (kDebugMode) {
+          print('APNS Token ready: ${apns != null && apns.isNotEmpty}');
+        }
+        // APNS may still be unavailable right after app start. Avoid crashing,
+        // onTokenRefresh below will pick up token updates later.
+        if (apns == null || apns.isEmpty) {
+          return;
+        }
+      }
+
+      final token = await messaging.getToken();
       if (kDebugMode) {
         print('FCM Token: $token');
       }
-      return token;
-    });
+    } catch (e) {
+      if (kDebugMode) {
+        print('FCM token fetch failed: $e');
+      }
+    }
   }
   messaging.onTokenRefresh.listen((newToken) {
     if (kDebugMode) {
@@ -180,6 +206,14 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown
   ]);
+
+  SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,        // or any color you want
+        statusBarIconBrightness: Brightness.dark,  // Android: dark icons
+        statusBarBrightness: Brightness.light,     // iOS: dark icons
+      )
+  );
 
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform

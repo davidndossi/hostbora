@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,6 +10,8 @@ import '../../../core/base/base_controller.dart';
 import '../../../core/utils/money_input_helper.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
+import '../../../data/local/db/inventory_item_local_data_source.dart';
+import '../../../data/local/db/inventory_movement_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
@@ -46,12 +49,18 @@ class AddExpenseController extends BaseController {
 
   /// Expense category options (single selection).
   final expenses = const [
+    'Supplies',
     'Maintenance',
     'Utilities',
     'Salary',
     'Yearly tax',
     'Other',
   ];
+
+  /// Categories that likely involve physical items that should be restocked.
+  static const _restockCategories = {'Supplies', 'Maintenance'};
+  bool get isRestockCategory =>
+      _restockCategories.contains(selectedExpense);
 
   final selectedExpenseIndex = 0.obs;
   final propertyOptions = <String>[].obs;
@@ -444,6 +453,7 @@ class AddExpenseController extends BaseController {
             );
           }
           showSuccessMessage('Expense saved and synced.');
+          _maybePromptRestock(propertyRef: _propertyRefForExpense());
           Get.back(result: true);
           return;
         }
@@ -465,6 +475,7 @@ class AddExpenseController extends BaseController {
       showSuccessMessage(
         'Expense saved. Will sync when internet is available.',
       );
+      _maybePromptRestock(propertyRef: _propertyRefForExpense());
       Get.back(result: true);
     });
   }
@@ -537,5 +548,156 @@ class AddExpenseController extends BaseController {
     datePaidController.dispose();
     notesController.dispose();
     super.onClose();
+  }
+
+  // ── Expense → restock linkage ────────────────────────────────────────────
+
+  String _propertyRefForExpense() {
+    final rec = selectedPropertyRecord;
+    if (rec == null) return '';
+    final ref = rec.propertyRef.trim();
+    return ref.isNotEmpty ? ref : 'local_${rec.id}';
+  }
+
+  void _maybePromptRestock({required String propertyRef}) {
+    if (!isRestockCategory) return;
+    if (propertyRef.isEmpty) return;
+
+    final isSw = Get.locale?.languageCode == 'sw';
+    Get.dialog(
+      AlertDialog(
+        title: Text(
+          isSw ? 'Ongeza hisa tena?' : 'Record a restock?',
+        ),
+        content: Text(
+          isSw
+              ? 'Gharama ya "${selectedExpense}" imehifadhiwa. Je, ungependa kurekodi '
+                  'ongezeko la hisa kwa mali hii?'
+              : 'The "${selectedExpense}" expense was saved. Would you like to record '
+                  'a restock movement for an inventory item on this property?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(isSw ? 'Hapana' : 'Skip'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              _openRestockPicker(propertyRef: propertyRef);
+            },
+            child: Text(
+              isSw ? 'Ndio' : 'Yes',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openRestockPicker({required String propertyRef}) async {
+    final isSw = Get.locale?.languageCode == 'sw';
+    final itemSrc = Get.find<InventoryItemLocalDataSource>();
+    final movementSrc = Get.find<InventoryMovementLocalDataSource>();
+
+    final items = await itemSrc.listAllForProperty(propertyRef);
+    if (items.isEmpty) {
+      showErrorMessage(
+        isSw
+            ? 'Hakuna vifaa vilivyorekodiwa kwa mali hii.'
+            : 'No inventory items found for this property.',
+      );
+      return;
+    }
+
+    // Simple selection dialog
+    InventoryItemRecord? picked;
+    await Get.dialog<void>(
+      AlertDialog(
+        title: Text(isSw ? 'Chagua kifaa' : 'Select item'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: items.length,
+            itemBuilder: (_, i) {
+              final it = items[i];
+              return ListTile(
+                title: Text(it.name),
+                subtitle: Text('${it.category} · qty ${it.quantity}'),
+                onTap: () {
+                  picked = it;
+                  Get.back();
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: Get.back,
+            child: Text(isSw ? 'Ghairi' : 'Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (picked == null) return;
+
+    final qty = await _askRestockQty(isSw: isSw);
+    if (qty == null || qty <= 0) return;
+
+    final clientMovementId =
+        'restock_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(99999)}';
+    await movementSrc.insert(
+      itemLocalId: picked!.id,
+      clientMovementId: clientMovementId,
+      movementType: 'restock',
+      quantityDelta: qty,
+      notes: isSw
+          ? 'Kutoka gharama ya $selectedExpense'
+          : 'From $selectedExpense expense',
+    );
+    final newQty = picked!.quantity + qty;
+    await itemSrc.updateQuantity(picked!.id, newQty);
+
+    final pickedName = picked!.name;
+    showSuccessMessage(isSw
+        ? 'Hisa ya "$pickedName" imesasishwa (+$qty).'
+        : '"$pickedName" restocked (+$qty).');
+  }
+
+  Future<int?> _askRestockQty({required bool isSw}) async {
+    final ctrl = TextEditingController(text: '1');
+    int? result;
+    await Get.dialog<void>(
+      AlertDialog(
+        title: Text(isSw ? 'Idadi ya ziada' : 'Restock quantity'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: isSw ? 'Idadi' : 'Quantity',
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: Get.back, child: Text(isSw ? 'Ghairi' : 'Cancel')),
+          TextButton(
+            onPressed: () {
+              result = int.tryParse(ctrl.text.trim());
+              Get.back();
+            },
+            child: Text(isSw ? 'Hifadhi' : 'Save',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    return result;
   }
 }

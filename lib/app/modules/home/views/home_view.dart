@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/form_surface_colors.dart';
+import '../../inventory_tracking/views/inventory_low_stock_banner.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -57,7 +58,9 @@ class HomeView extends BaseView<HomeController> {
                 _buildPropertyOverview(context),
                 const SizedBox(height: 12),
                 const HubInsightBanner(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
+                const InventoryLowStockBanner(),
+                const SizedBox(height: 12),
                 // const SizedBox(height: 12),
                 // const Center(child: _PulsingDownArrow()),
                 // const SizedBox(height: 20),
@@ -271,22 +274,22 @@ class HomeView extends BaseView<HomeController> {
               label: _t(context, 'Send SMS / WhatsApp', 'Tuma SMS / WhatsApp'),
               onTap: controller.sendSmsWhatsapp,
             ),
-            _QuickActionTile(
-              materialIcon: Icons.chat_outlined,
-              label: _t(context, 'WhatsApp templates', 'Violezo vya WhatsApp'),
-              onTap: controller.whatsappTemplates,
-            ),
+            // _QuickActionTile(
+            //   materialIcon: Icons.chat_outlined,
+            //   label: _t(context, 'WhatsApp templates', 'Violezo vya WhatsApp'),
+            //   onTap: controller.whatsappTemplates,
+            // ),
             _QuickActionTile(
               icon: 'ic_calendar.svg',
               label: _t(context, 'Add Booking', 'Ongeza Uhifadhi'),
               onTap: controller.addNewBooking,
             ),
             // _QuickActionTile(icon: 'ic_smart_key.svg', label: 'Smart Access', onTap: controller.smartAccess),
-            _QuickActionTile(
-              icon: 'ic_completion.svg',
-              label: _t(context, 'Maintenance & Tasks', 'Matengenezo na Kazi'),
-              onTap: controller.tasks,
-            ),
+            // _QuickActionTile(
+            //   icon: 'ic_completion.svg',
+            //   label: _t(context, 'Maintenance & Tasks', 'Matengenezo na Kazi'),
+            //   onTap: controller.tasks,
+            // ),
             _QuickActionTile(
               icon: 'ic_design_studio.svg',
               label: _t(context, 'Design', 'Ubunifu'),

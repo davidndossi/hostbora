@@ -1549,6 +1549,42 @@ class ListingDetailsController extends BaseController
     return _propertyName.isNotEmpty ? _propertyName : 'Property';
   }
 
+  Future<void> onOpenInventoryTracking() async {
+    var ref = _propertyId;
+    if (ref.isEmpty) {
+      final row = await _findLocalPropertyRowForListing();
+      if (row != null) {
+        ref = row.propertyRef.trim().isNotEmpty
+            ? row.propertyRef.trim()
+            : 'local_${row.id}';
+      }
+    }
+    if (ref.isEmpty) {
+      showErrorMessage(
+        _isSw
+            ? 'Hakuna kitambulisho cha mali kwa ufuatiliaji wa vifaa.'
+            : 'No property reference is available for inventory tracking.',
+      );
+      return;
+    }
+    final units = unitRows
+        .map(
+          (u) => {
+            'unitId': u.unitId,
+            'unitName': u.name,
+          },
+        )
+        .toList();
+    await Get.toNamed(
+      Routes.INVENTORY_TRACKING,
+      parameters: {
+        'propertyRef': ref,
+        'propertyName': _propertyLabelForEstimate(),
+      },
+      arguments: {'units': units},
+    );
+  }
+
   Future<void> onAddPropertyEstimationCosts() async {
     var ref = _propertyId;
     if (ref.isEmpty) {

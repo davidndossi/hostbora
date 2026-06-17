@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import '../../../core/widget/skeleton_presets.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
@@ -179,33 +180,22 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
+            SvgPicture.asset(
+              'images/ic_building.svg',
+              width: 80,
+              height: 80,
+              colorFilter: ColorFilter.mode(Colors.grey.shade300, BlendMode.srcIn),
+            ),
+            const SizedBox(height: 16),
             Text(
               _t(context, en: 'No properties', sw: 'Hakuna mjengo'),
               style: TextStyle(
-                fontSize: 16,
-                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 17,
+                color: Colors.grey,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 12),
-            IconButton(
-              onPressed: controller.addProperty,
-              icon: const Icon(Icons.add_circle_outline, size: 72, color: Colors.grey),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 72, minHeight: 72),
-              alignment: Alignment.center,
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: controller.addProperty,
-              child: Text(
-                _t(context, en: 'Add property', sw: 'Ongeza mjengo'),
-                style: TextStyle(
-                  fontSize: 17,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),

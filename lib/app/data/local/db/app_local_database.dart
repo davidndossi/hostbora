@@ -45,6 +45,8 @@ class AppLocalDatabase {
   static const scheduledWhatsappTable = 'scheduled_whatsapp';
   static const clientEventTable = 'client_event';
   static const tenantRatingTable = 'tenant_rating';
+  static const inventoryItemTable = 'inventory_item';
+  static const inventoryMovementTable = 'inventory_movement';
 
   static Database? _db;
 
@@ -84,6 +86,8 @@ class AppLocalDatabase {
         await _ensureMaintenanceBackendTaskIdColumn(db);
         await _ensurePropertyUnitRentCurrencyColumn(db);
         await _ensureTenantRentCurrencyColumn(db);
+        await _ensureInventoryItemTable(db);
+        await _ensureInventoryMovementTable(db);
       },
     );
     return _db!;
@@ -234,6 +238,49 @@ class AppLocalDatabase {
         created_at_ms INTEGER NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE $inventoryItemTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_item_id TEXT NOT NULL,
+        backend_item_id TEXT NOT NULL DEFAULT '',
+        property_ref TEXT NOT NULL DEFAULT '',
+        property_label TEXT NOT NULL DEFAULT '',
+        apartment_unit_id TEXT NOT NULL DEFAULT '',
+        apartment_unit_name TEXT NOT NULL DEFAULT '',
+        name TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'Other',
+        quantity INTEGER NOT NULL DEFAULT 0,
+        reorder_level INTEGER NOT NULL DEFAULT 0,
+        condition TEXT NOT NULL DEFAULT 'Good',
+        location_note TEXT NOT NULL DEFAULT '',
+        purchase_value REAL NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'TZS',
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        created_at_ms INTEGER NOT NULL,
+        updated_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_${inventoryItemTable}_property ON $inventoryItemTable(property_ref, apartment_unit_id)',
+    );
+
+    await db.execute('''
+      CREATE TABLE $inventoryMovementTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_local_id INTEGER NOT NULL,
+        client_movement_id TEXT NOT NULL,
+        backend_movement_id TEXT NOT NULL DEFAULT '',
+        movement_type TEXT NOT NULL,
+        quantity_delta INTEGER NOT NULL,
+        notes TEXT NOT NULL DEFAULT '',
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_${inventoryMovementTable}_item ON $inventoryMovementTable(item_local_id)',
+    );
 
     await db.execute('''
       CREATE TABLE $rentStaffTable (
@@ -649,6 +696,55 @@ class AppLocalDatabase {
     );
   }
 
+  static Future<void> _ensureInventoryItemTable(Database db) async {
+    if (await _tableExists(db, inventoryItemTable)) return;
+    await db.execute('''
+      CREATE TABLE $inventoryItemTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_item_id TEXT NOT NULL,
+        backend_item_id TEXT NOT NULL DEFAULT '',
+        property_ref TEXT NOT NULL DEFAULT '',
+        property_label TEXT NOT NULL DEFAULT '',
+        apartment_unit_id TEXT NOT NULL DEFAULT '',
+        apartment_unit_name TEXT NOT NULL DEFAULT '',
+        name TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'Other',
+        quantity INTEGER NOT NULL DEFAULT 0,
+        reorder_level INTEGER NOT NULL DEFAULT 0,
+        condition TEXT NOT NULL DEFAULT 'Good',
+        location_note TEXT NOT NULL DEFAULT '',
+        purchase_value REAL NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'TZS',
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        created_at_ms INTEGER NOT NULL,
+        updated_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_${inventoryItemTable}_property ON $inventoryItemTable(property_ref, apartment_unit_id)',
+    );
+  }
+
+  static Future<void> _ensureInventoryMovementTable(Database db) async {
+    if (await _tableExists(db, inventoryMovementTable)) return;
+    await db.execute('''
+      CREATE TABLE $inventoryMovementTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_local_id INTEGER NOT NULL,
+        client_movement_id TEXT NOT NULL,
+        backend_movement_id TEXT NOT NULL DEFAULT '',
+        movement_type TEXT NOT NULL,
+        quantity_delta INTEGER NOT NULL,
+        notes TEXT NOT NULL DEFAULT '',
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_${inventoryMovementTable}_item ON $inventoryMovementTable(item_local_id)',
+    );
+  }
+
   static Future<void> _ensureTenantRentCurrencyColumn(Database db) async {
     await _addColumnIfMissing(
       db,
@@ -817,6 +913,8 @@ class AppLocalDatabase {
   }
 
   static const List<String> _allDataTables = [
+    inventoryMovementTable,
+    inventoryItemTable,
     offlineSyncQueueTable,
     propertyMembersTable,
     rentWhatsappTemplateTable,
@@ -870,6 +968,8 @@ class AppLocalDatabase {
       await txn.delete(rentLoyaltyOfferTable);
       await txn.delete(rentTenantChargeTable);
       await txn.delete(scheduledMaintenanceTable);
+      await txn.delete(inventoryMovementTable);
+      await txn.delete(inventoryItemTable);
       await txn.delete(rentPaymentReminderTable);
       await txn.delete(rentNotificationLogTable);
       await txn.delete(rentPropertyEstimateTable);

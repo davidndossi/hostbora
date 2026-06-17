@@ -1,5 +1,6 @@
 import '../model/add_listing_request.dart';
 import '../model/scheduled_maintenance_request.dart';
+import '../model/inventory_item_request.dart';
 import '../model/add_task_request.dart';
 import '../model/record_client_event_request.dart';
 import '../model/schedule_payment_reminder_request.dart';
@@ -99,6 +100,23 @@ abstract class AppRepository {
   Future<GeneralResponse> getMyProperties();
   Future<GeneralResponse> addScheduledMaintenance(
       ScheduledMaintenanceRequest request);
+
+  Future<GeneralResponse> getInventoryItems({
+    String? propertyRef,
+    String? apartmentUnitId,
+  });
+
+  Future<GeneralResponse> createInventoryItem(InventoryItemRequest request);
+
+  Future<GeneralResponse> updateInventoryItem(
+    String itemId,
+    InventoryItemRequest request,
+  );
+
+  Future<GeneralResponse> createInventoryMovement(
+    String itemId,
+    InventoryMovementRequest request,
+  );
 
   Future<GeneralResponse> getListing(String listingId);
 
