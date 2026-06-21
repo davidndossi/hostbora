@@ -15,28 +15,34 @@
       content="Manage BnB stays and long-term rentals in one app. Payments, tenants, staff, reports, smart access, and document vault."
     />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://hostbora.co.tz/assets/feature_graphic.png">
+    <meta property="og:url" content="./assets/feature_graphic.png">
+    <meta name="robots" content="index, follow" />
 
-    <title>HostBora — Property management for East Africa</title>
+    <title data-i18n="meta.title">HostBora — Property management for East Africa</title>
 
+    <link rel="canonical" href="https://hostbora.co.tz/">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      media="print"
       rel="stylesheet"
     />
 
     <link rel="icon" href="./assets/logo.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="apple-touch-icon" href="./assets/host_bora_logo.webp">
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content</a>
+    <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
 
     <header class="header" id="top">
       <div class="container header__inner">
-        <a class="brand" href="#top" aria-label="HostBora home">
+        <a class="brand" href="#top" data-i18n-aria-label="brand.home" aria-label="HostBora home">
           <img
             class="brand__logo"
-            src="./assets/host_bora_logo.png"
+            src="./assets/host_bora_logo.webp"
             width="34"
             height="34"
             alt=""
@@ -46,10 +52,19 @@
           <span class="brand__name">HostBora</span>
         </a>
 
+        <div class="lang-switcher">
+          <label for="langSelect" class="lang-switcher__label" data-i18n="lang.label">Language</label>
+          <select id="langSelect" class="lang-switcher__select" data-i18n-aria-label="lang.label">
+            <option value="en">English</option>
+            <option value="sw">Kiswahili</option>
+          </select>
+        </div>
+
         <button
           class="icon-btn header__menu"
           id="menuBtn"
           type="button"
+          data-i18n-aria-label="menu.open"
           aria-label="Open menu"
           aria-expanded="false"
           aria-controls="nav"
@@ -59,13 +74,14 @@
           <span class="icon-btn__bar"></span>
         </button>
 
-        <nav class="nav" id="nav" aria-label="Primary">
-          <a href="#features">Features</a>
-          <a href="#workspaces">Workspaces</a>
-          <a href="#audience">Who it's for</a>
-          <a href="#trust">Trust</a>
-          <a href="./privacy-policy.html">Privacy</a>
-          <a class="btn btn--sm" href="#contact">Get started</a>
+        <nav class="nav" id="nav" data-i18n-aria-label="nav.label" aria-label="Primary">
+          <a href="#features" data-i18n="nav.features">Features</a>
+          <a href="#workspaces" data-i18n="nav.workspaces">Workspaces</a>
+          <a href="#audience" data-i18n="nav.audience">Who uses it</a>
+          <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+          <a href="#trust" data-i18n="nav.trust">Trust</a>
+          <a href="./privacy-policy.html" data-i18n="nav.privacy">Privacy</a>
+          <a class="btn btn--sm" href="#contact" data-i18n="nav.getStarted">Get started</a>
         </nav>
       </div>
     </header>
@@ -74,6 +90,7 @@
       <section class="hero" aria-labelledby="hero-title">
         <div class="container hero__grid">
           <div class="hero__copy">
+            <p class="hero__badge" data-i18n="hero.badge">Early access — join 200+ landlords already using HostBora</p>
             <p class="eyebrow">
               <img
                 src="./assets/logo.svg"
@@ -84,24 +101,40 @@
                 class="eyebrow__mark"
                 decoding="async"
               />
-              <span>Built for Tanzania &amp; East Africa</span>
+              <span data-i18n="hero.eyebrow">Built for landlords &amp; property managers</span>
             </p>
-            <h1 id="hero-title">Property management that stays clear — from guest nights to monthly rent.</h1>
-            <p class="hero__sw">Simamia mali zako kwa urahisi — BnB na kodi za muda mrefu.</p>
-            <p class="lead">
+            <h1 id="hero-title" data-i18n="hero.title">Property management that stays clear — from guest nights to monthly rent.</h1>
+            <p class="hero__sw" data-i18n="hero.tagline">Manage your properties with ease — short-stay BnB and long-term rent.</p>
+            <p class="lead" data-i18n="hero.lead">
               HostBora brings short-stay hosting and long-term rentals into one trustworthy app. Track bookings and
               tenants, record payments in TZS, manage staff and expenses, and see how each property performs.
             </p>
 
             <div class="cta">
-              <a class="btn" href="#contact">Download app</a>
-              <a class="btn btn--ghost" href="#features">Explore features</a>
+              <a href="https://play.google.com/store/apps/details?id=tz.co.artbel.paa_yangu"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                <img src="assets/GetItOnGooglePlay_Badge_Web_color_English.svg"
+                     alt="Google Play"
+                     height="60">
+              </a>
+              <a href="https://apps.apple.com/app/idYOUR_APP_ID"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                <img src="assets/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg"
+                     alt="Download on the App Store"
+                     height="60">
+              </a>
             </div>
+            <p class="app-update" data-i18n="app.version">App v1.2.3 · Updated <time datetime="2026-06">June 2026</time></p>
+<!--            <div>-->
+<!--              <a class="btn btn&#45;&#45;ghost" href="#features" data-i18n="cta.explore">Explore features ↓ </a>-->
+<!--            </div>-->
 
-            <ul class="hero__stats" aria-label="Highlights">
-              <li><strong>BnB + Rent</strong><span>Two workspaces</span></li>
-              <li><strong>TZS-ready</strong><span>Local currency</span></li>
-              <li><strong>Offline-friendly</strong><span>Works on the go</span></li>
+            <ul class="hero__stats" data-i18n-aria-label="hero.stats.label" aria-label="Highlights">
+              <li><strong data-i18n="hero.stats.bnb">BnB + Rent</strong><span data-i18n="hero.stats.bnbSub">Two workspaces</span></li>
+              <li><strong data-i18n="hero.stats.tzs">TZS-ready</strong><span data-i18n="hero.stats.tzsSub">Local currency</span></li>
+              <li><strong data-i18n="hero.stats.offline">Offline-friendly</strong><span data-i18n="hero.stats.offlineSub">Works on the go</span></li>
             </ul>
           </div>
 
@@ -109,7 +142,7 @@
             <div class="hero-phones">
               <figure class="hero-phone hero-phone--left">
                 <img
-                  src="./assets/bnb_properties.PNG"
+                  src="./assets/ai.webp"
                   width="430"
                   height="932"
                   alt=""
@@ -119,7 +152,7 @@
               </figure>
               <figure class="hero-phone hero-phone--center">
                 <img
-                  src="./assets/bnb_home.PNG"
+                  src="./assets/home.webp"
                   width="430"
                   height="932"
                   alt=""
@@ -129,7 +162,7 @@
               </figure>
               <figure class="hero-phone hero-phone--right">
                 <img
-                  src="./assets/bnb_property_view.PNG"
+                  src="./assets/design.webp"
                   width="430"
                   height="932"
                   alt=""
@@ -146,8 +179,12 @@
       <section class="section" id="features">
         <div class="container">
           <div class="section__head section__head--center">
-            <h2>Everything landlords and managers need daily</h2>
-            <p class="muted">
+            <p class="pain-statement" data-i18n="features.pain">
+              Most landlords in Dar manage rent via M-Pesa screenshots, WhatsApp threads, and handwritten notebooks.
+              HostBora replaces that chaos.
+            </p>
+            <h2 data-i18n="features.title">Everything landlords and managers need daily</h2>
+            <p class="muted" data-i18n="features.sub">
               One calm toolkit for income, operations, people, and records — whether you host nights or collect monthly
               rent.
             </p>
@@ -161,8 +198,8 @@
                   <path d="M9 20v-6h6v6" />
                 </svg>
               </div>
-              <h3>Rentals &amp; tenants</h3>
-              <p>List units, track leases, and keep tenant details organized across your portfolio.</p>
+              <h3 data-i18n="feat.rentals.title">Rentals &amp; tenants</h3>
+              <p data-i18n="feat.rentals.desc">List units, track leases, and keep tenant details organized across your portfolio.</p>
             </article>
 
             <article class="card">
@@ -172,8 +209,8 @@
                   <path d="M7 10h4M7 14h10" />
                 </svg>
               </div>
-              <h3>Payments &amp; expenses</h3>
-              <p>Record rent and guest payments, log expenses, and see cash flow without spreadsheet chaos.</p>
+              <h3 data-i18n="feat.payments.title">Payments &amp; expenses</h3>
+              <p data-i18n="feat.payments.desc">Track M-Pesa and mobile money payments — Tigo Pesa, Airtel Money, and more. Record rent and guest income, log expenses, and see cash flow without spreadsheet chaos.</p>
             </article>
 
             <article class="card">
@@ -184,8 +221,8 @@
                   <path d="M3 20c1.5-3 4-4.5 6-4.5s4.5 1.5 6 4.5" />
                 </svg>
               </div>
-              <h3>Staff &amp; tasks</h3>
-              <p>Assign cleaners, guards, or maintenance — with due dates and status so nothing is missed.</p>
+              <h3 data-i18n="feat.staff.title">Staff &amp; tasks</h3>
+              <p data-i18n="feat.staff.desc">Assign cleaners, guards, or maintenance — with due dates and status so nothing is missed.</p>
             </article>
 
             <article class="card">
@@ -195,8 +232,8 @@
                   <circle cx="12" cy="12" r="4" />
                 </svg>
               </div>
-              <h3>Reminders</h3>
-              <p>Stay ahead of renewals, check-ins, payment follow-ups, and recurring property chores.</p>
+              <h3 data-i18n="feat.reminders.title">Reminders</h3>
+              <p data-i18n="feat.reminders.desc">Stay ahead of renewals, check-ins, payment follow-ups, and recurring property chores.</p>
             </article>
 
             <article class="card">
@@ -205,20 +242,16 @@
                   <path d="M4 12h6l2-4 4 8 2-4h2" />
                 </svg>
               </div>
-              <h3>BnB &amp; long-term rent</h3>
-              <p>Run short-stay bookings and monthly leases from the same portfolio — switch when you need to.</p>
+              <h3 data-i18n="feat.bnb.title">BnB &amp; long-term rent</h3>
+              <p data-i18n="feat.bnb.desc">Run short-stay bookings and monthly leases from the same portfolio — switch when you need to.</p>
             </article>
 
             <article class="card">
               <div class="card__icon" aria-hidden="true">
-<!--                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">-->
-<!--                  <path d="M4 18V8l8-5 8 5v10" />-->
-<!--                  <path d="M8 18v-4h8v4" />-->
-<!--                </svg>-->
                 <img src="./assets/ic_reports.svg" alt="" width="22" height="22" />
               </div>
-              <h3>Reports &amp; profitability</h3>
-              <p>Understand income vs spend per property with summaries that support real decisions.</p>
+              <h3 data-i18n="feat.reports.title">Reports &amp; profitability</h3>
+              <p data-i18n="feat.reports.desc">Understand income vs spend per property with summaries that support real decisions.</p>
             </article>
 
             <article class="card">
@@ -228,16 +261,16 @@
                   <path d="M8 11V8a4 4 0 018 0v3" />
                 </svg>
               </div>
-              <h3>Smart access</h3>
-              <p>Coordinate digital locks and guest access where supported — fewer handoffs at check-in.</p>
+              <h3 data-i18n="feat.access.title">Smart access</h3>
+              <p data-i18n="feat.access.desc">Coordinate digital locks and guest access where supported — fewer handoffs at check-in.</p>
             </article>
 
             <article class="card">
               <div class="card__icon" aria-hidden="true">
                 <img src="./assets/ic_vault.svg" alt="" width="22" height="22" />
               </div>
-              <h3>Document vault</h3>
-              <p>Store leases, IDs, manuals, and tax records in clear folders — ready when you need them.</p>
+              <h3 data-i18n="feat.vault.title">Document vault</h3>
+              <p data-i18n="feat.vault.desc">Store leases, IDs, manuals, and tax records in clear folders — ready when you need them.</p>
             </article>
 
             <article class="card">
@@ -247,8 +280,8 @@
                   <path d="M8 3v4M16 3v4M4 11h16" />
                 </svg>
               </div>
-              <h3>Calendar sync</h3>
-              <p>Link external calendars to reduce double bookings and keep blocked dates aligned.</p>
+              <h3 data-i18n="feat.calendar.title">Calendar sync</h3>
+              <p data-i18n="feat.calendar.desc">Link external calendars to reduce double bookings and keep blocked dates aligned.</p>
             </article>
           </div>
         </div>
@@ -257,36 +290,36 @@
       <section class="section section--alt" id="workspaces">
         <div class="container">
           <div class="section__head">
-            <h2>Two workspaces, one app</h2>
-            <p class="muted">Switch between BnB and Rent anytime — same properties, tailored flows.</p>
+            <h2 data-i18n="workspaces.title">Two workspaces, one app</h2>
+            <p class="muted" data-i18n="workspaces.sub">Switch between BnB and Rent anytime — same properties, tailored flows.</p>
           </div>
 
           <div class="workspace-grid">
             <article class="workspace">
-              <div class="workspace__badge">BnB</div>
-              <h3>Short-stay hosting</h3>
-              <p>
+              <div class="workspace__badge" data-i18n="workspaces.bnb.badge">BnB</div>
+              <h3 data-i18n="workspaces.bnb.title">Short-stay hosting</h3>
+              <p data-i18n="workspaces.bnb.desc">
                 Manage nightly bookings, guest turnover, cleaning schedules, and hospitality-style income. Ideal for
                 furnished apartments, guest houses, and holiday lets.
               </p>
               <ul>
-                <li>Booking calendar &amp; check-in/out</li>
-                <li>Guest payments &amp; stay expenses</li>
-                <li>Operations tuned for turnover</li>
+                <li data-i18n="workspaces.bnb.li1">Booking calendar &amp; check-in/out</li>
+                <li data-i18n="workspaces.bnb.li2">Guest payments &amp; stay expenses</li>
+                <li data-i18n="workspaces.bnb.li3">Operations tuned for turnover</li>
               </ul>
             </article>
 
             <article class="workspace workspace--rent">
-              <div class="workspace__badge workspace__badge--rent">Rent</div>
-              <h3>Long-term rentals</h3>
-              <p>
+              <div class="workspace__badge workspace__badge--rent" data-i18n="workspaces.rent.badge">Rent</div>
+              <h3 data-i18n="workspaces.rent.title">Long-term rentals</h3>
+              <p data-i18n="workspaces.rent.desc">
                 Run monthly leases, tenant records, rent collection, and building-level expenses. Built for landlords and
                 managers with recurring income.
               </p>
               <ul>
-                <li>Tenants, units &amp; lease tracking</li>
-                <li>Rent payments &amp; arrears visibility</li>
-                <li>Staff, utilities &amp; building costs</li>
+                <li data-i18n="workspaces.rent.li1">Tenants, units &amp; lease tracking</li>
+                <li data-i18n="workspaces.rent.li2">Rent payments &amp; arrears visibility</li>
+                <li data-i18n="workspaces.rent.li3">Staff, utilities &amp; building costs</li>
               </ul>
             </article>
           </div>
@@ -296,47 +329,145 @@
       <section class="section" id="audience">
         <div class="container">
           <div class="section__head section__head--center">
-            <h2>Made for people who run properties</h2>
-            <p class="muted">Whether you own one unit or manage a growing portfolio across Dar, Arusha, or beyond.</p>
+            <h2 data-i18n="audience.title">Made for people who run properties</h2>
+            <p class="muted" data-i18n="audience.sub">Whether you own one unit or manage a growing portfolio across Dar, Arusha, or beyond.</p>
           </div>
 
           <div class="grid3">
             <article class="audience-card">
-              <h3>Landlords</h3>
-              <p>Own apartments, houses, or blocks? See rent collected, vacancies, and costs per unit without juggling notebooks.</p>
+              <div class="card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="12" cy="8" r="3.5" />
+                  <path d="M5 21c0-3.5 3.5-6 7-6s7 2.5 7 6" />
+                </svg>
+              </div>
+              <h3 data-i18n="audience.landlords.title">Landlords</h3>
+              <p data-i18n="audience.landlords.desc">Own apartments, houses, or blocks? See rent collected, vacancies, and costs per unit without juggling notebooks.</p>
             </article>
             <article class="audience-card">
-              <h3>Property managers</h3>
-              <p>Oversee multiple owners or buildings with staff workflows, expenses, and reports your clients can trust.</p>
+              <div class="card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M4 21V8l8-5 8 5v13" />
+                  <path d="M9 21v-5h6v5" />
+                  <path d="M9 10h2M13 10h2M9 14h2M13 14h2" />
+                </svg>
+              </div>
+              <h3 data-i18n="audience.managers.title">Property managers</h3>
+              <p data-i18n="audience.managers.desc">Oversee multiple owners or buildings with staff workflows, expenses, and reports your clients can trust.</p>
             </article>
             <article class="audience-card">
-              <h3>Hosts &amp; operators</h3>
-              <p>Run BnB or mixed portfolios — from boutique stays to serviced apartments — with bookings and ops in sync.</p>
+              <div class="card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="8" cy="15" r="4" />
+                  <path d="M12 15h8M16 15v3M19 15v2" />
+                </svg>
+              </div>
+              <h3 data-i18n="audience.hosts.title">Hosts &amp; operators</h3>
+              <p data-i18n="audience.hosts.desc">Run BnB or mixed portfolios — from boutique stays to serviced apartments — with bookings and ops in sync.</p>
             </article>
           </div>
+        </div>
+      </section>
+
+      <section class="section" id="pricing" aria-labelledby="pricing-title">
+        <div class="container">
+          <div class="section__head section__head--center">
+            <h2 id="pricing-title" data-i18n="pricing.title">Simple, transparent pricing</h2>
+            <p class="muted" data-i18n="pricing.sub">No surprises — start free today, then pick a plan that fits your portfolio when billing begins.</p>
+          </div>
+
+          <div class="pricing-promo">
+            <p class="pricing-promo__badge" data-i18n="pricing.badge">Launch offer</p>
+            <h3 class="pricing-promo__title" data-i18n="pricing.freeTitle">Free for a limited time</h3>
+            <p class="pricing-promo__lead" data-i18n="pricing.freeLead">
+              Full access to HostBora while we're in early access — every feature, no credit card, no commitment.
+            </p>
+            <a class="btn" href="https://play.google.com/store/apps/details?id=tz.co.artbel.paa_yangu" target="_blank" rel="noopener" data-i18n="pricing.download">
+              Download free on Android
+            </a>
+            <p class="pricing-promo__note muted" data-i18n="pricing.freeNote">We'll notify you before any paid plan takes effect.</p>
+          </div>
+
+          <p class="pricing-intro muted" data-i18n="pricing.intro">After the free period, choose the tier that matches how you manage properties:</p>
+
+          <div class="pricing-grid">
+            <article class="pricing-card">
+              <h3 class="pricing-card__name" data-i18n="pricing.starter.name">Starter</h3>
+              <p class="pricing-card__price">
+                <span class="pricing-card__amount">19,000</span>
+                <span class="pricing-card__period" data-i18n="pricing.starter.period">TZS / month</span>
+              </p>
+              <p class="pricing-card__summary" data-i18n="pricing.starter.summary">For solo hosts getting organised.</p>
+              <ul class="pricing-card__features">
+                <li data-i18n="pricing.starter.li1">Up to 3 properties</li>
+                <li data-i18n="pricing.starter.li2">BnB or Rent workspace</li>
+                <li data-i18n="pricing.starter.li3">Payments, expenses &amp; reminders</li>
+                <li data-i18n="pricing.starter.li4">Basic reports</li>
+              </ul>
+            </article>
+
+            <article class="pricing-card pricing-card--featured">
+              <p class="pricing-card__badge" data-i18n="pricing.pro.badge">Most popular</p>
+              <h3 class="pricing-card__name" data-i18n="pricing.pro.name">Pro</h3>
+              <p class="pricing-card__price">
+                <span class="pricing-card__amount">49,000</span>
+                <span class="pricing-card__period" data-i18n="pricing.pro.period">TZS / month</span>
+              </p>
+              <p class="pricing-card__summary" data-i18n="pricing.pro.summary">For growing portfolios and small teams.</p>
+              <ul class="pricing-card__features">
+                <li data-i18n="pricing.pro.li1">Up to 10 properties</li>
+                <li data-i18n="pricing.pro.li2">Staff, tasks &amp; calendar sync</li>
+                <li data-i18n="pricing.pro.li3">Document vault &amp; advanced reports</li>
+                <li data-i18n="pricing.pro.li4">SMS / WhatsApp add-on available</li>
+              </ul>
+            </article>
+
+            <article class="pricing-card">
+              <h3 class="pricing-card__name" data-i18n="pricing.ultra.name">Ultra</h3>
+              <p class="pricing-card__price">
+                <span class="pricing-card__amount">99,000</span>
+                <span class="pricing-card__period" data-i18n="pricing.ultra.period">TZS / month</span>
+              </p>
+              <p class="pricing-card__summary" data-i18n="pricing.ultra.summary">For operators and property managers at scale.</p>
+              <ul class="pricing-card__features">
+                <li data-i18n="pricing.ultra.li1">Unlimited properties</li>
+                <li data-i18n="pricing.ultra.li2">Smart locks &amp; entry logs</li>
+                <li data-i18n="pricing.ultra.li3">AI Manager &amp; design tools</li>
+                <li data-i18n="pricing.ultra.li4">Priority support</li>
+              </ul>
+            </article>
+          </div>
+
+          <p class="pricing-footnote muted" data-i18n="pricing.footnote" data-i18n-html>
+            Planned rates shown in Tanzanian shillings. M-Pesa and mobile money supported when billing starts.
+            <a href="#contact">Questions?</a> Chat with us on WhatsApp or email.
+          </p>
         </div>
       </section>
 
       <section class="section section--alt" id="trust">
         <div class="container">
           <div class="section__head section__head--center">
-            <h2>Built for how you work in East Africa</h2>
-            <p class="muted">Professional, dependable, and respectful of local realities — not a generic import.</p>
+            <h2 data-i18n="trust.title">Built for how you work in East Africa</h2>
+            <p class="muted" data-i18n="trust.sub">Professional, dependable, and respectful of local realities — not a generic import.</p>
           </div>
 
           <div class="trust-grid">
             <article class="trust-card">
-              <h3>Works offline</h3>
-              <p>Keep recording payments, notes, and tasks when connectivity dips — sync when you're back online.</p>
+              <h3 data-i18n="trust.offline.title">Works offline</h3>
+              <p data-i18n="trust.offline.desc">Keep recording payments, notes, and tasks when connectivity dips — sync when you're back online.</p>
             </article>
             <article class="trust-card">
-              <h3>TZS-friendly</h3>
-              <p>Think in Tanzanian shillings and local payment habits — no forced foreign-currency mindset.</p>
+              <h3 data-i18n="trust.tzs.title">TZS-friendly</h3>
+              <p data-i18n="trust.tzs.desc">Think in Tanzanian shillings and the mobile money you already use — M-Pesa, Tigo Pesa, and Airtel Money — not a foreign-currency mindset.</p>
             </article>
             <article class="trust-card">
-              <h3>Security &amp; privacy</h3>
-              <p>Your property and tenant data stay yours. We collect only what's needed to run the service — see our
-                <a href="./privacy-policy.html">Privacy Policy</a>.</p>
+              <h3 data-i18n="trust.security.title">Security &amp; privacy</h3>
+              <p data-i18n="trust.security.desc" data-i18n-html>
+                Your property and tenant data stay yours. Data encrypted in transit and at rest. Hosted on servers
+                meeting international security standards. We collect only what's needed to run the service — see our
+                <a href="./privacy-policy.html">Privacy Policy</a>.
+              </p>
             </article>
           </div>
         </div>
@@ -346,43 +477,79 @@
         <div class="container">
           <div class="contact">
             <div>
-              <h2>Get started with HostBora</h2>
-              <p class="muted">
+              <h2 data-i18n="contact.title">Get started with HostBora</h2>
+              <p class="muted" data-i18n="contact.sub">
                 Available on mobile for hosts, landlords, and managers in Tanzania and the wider East Africa region.
                 Reach out for early access, partnerships, or support.
               </p>
 
+              <p class="contact__about" data-i18n="contact.about" data-i18n-html>
+                Built by <strong>Artbel Technologies</strong> in Dar es Salaam — a Tanzanian team behind HostBora.
+                <a href="./about.html">About us</a>
+              </p>
+
               <div class="contact__channels">
-                <a class="btn" href="mailto:support@hostbora.co.tz?subject=HostBora%20%E2%80%94%20Get%20started">Email us</a>
-                <a class="btn btn--ghost" href="https://hostbora.co.tz" rel="noopener noreferrer">hostbora.co.tz</a>
+                <a
+                  class="btn btn--whatsapp"
+                  href="https://wa.me/255789287509?text=Hi%2C%20I%27m%20interested%20in%20HostBora"
+                >
+                  <svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path
+                      fill="currentColor"
+                      d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+                    />
+                  </svg>
+                  <span data-i18n="contact.whatsapp">Chat on WhatsApp</span>
+                </a>
+                <a
+                  class="btn btn--ghost"
+                  id="emailBtn"
+                  href="mailto:support@hostbora.co.tz?subject=HostBora%20%E2%80%94%20Get%20started"
+                  data-i18n="contact.email"
+                >Email us</a>
               </div>
 
               <p class="contact__region">
                 <span class="dot" aria-hidden="true"></span>
-                Dar es Salaam · Tanzania · East Africa
+                <span data-i18n="contact.region">Dar es Salaam · Tanzania · East Africa</span>
               </p>
             </div>
 
-            <form class="form" id="contactForm" aria-label="Contact form">
-              <label>
-                <span>Name</span>
-                <input type="text" name="name" placeholder="Your name" autocomplete="name" />
+            <form class="form" id="contactForm" data-i18n-aria-label="contact.form.label" aria-label="Contact form" novalidate>
+              <label class="form__hp" aria-hidden="true">
+                <span>Website</span>
+                <input type="text" name="website" tabindex="-1" autocomplete="off" />
               </label>
               <label>
-                <span>Email</span>
-                <input type="email" name="email" placeholder="you@example.com" autocomplete="email" />
+                <span data-i18n="contact.name">Name</span>
+                <input type="text" name="name" data-i18n-placeholder="contact.namePh" placeholder="Your name" autocomplete="name" required />
               </label>
               <label>
-                <span>Message</span>
+                <span data-i18n="contact.emailLabel">Email</span>
+                <input type="email" name="email" data-i18n-placeholder="contact.emailPh" placeholder="you@example.com" autocomplete="email" required />
+              </label>
+              <label>
+                <span data-i18n="contact.message">Message</span>
                 <textarea
                   name="message"
                   rows="4"
+                  data-i18n-placeholder="contact.messagePh"
                   placeholder="Tell us about your properties (BnB, rent, or both)…"
+                  required
+                  minlength="10"
                 ></textarea>
               </label>
-              <button class="btn" id="contactBtn" type="submit">Send via email</button>
-              <p class="hint">Opens your mail app with a pre-filled message, or copies text to your clipboard.</p>
+              <button class="btn" id="contactBtn" type="submit" data-i18n="contact.submit">Send message</button>
+              <p class="hint" data-i18n="contact.hint">WhatsApp is fastest — or use the form and we’ll reply by email.</p>
             </form>
+
+            <div
+              id="contactFeedback"
+              class="contact__feedback"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            ></div>
           </div>
         </div>
       </section>
@@ -394,7 +561,7 @@
           <div class="brand brand--foot">
             <img
               class="brand__logo"
-              src="./assets/host_bora_logo.png"
+              src="./assets/host_bora_logo.webp"
               width="28"
               height="28"
               alt=""
@@ -403,21 +570,41 @@
             />
             <span class="brand__name">HostBora</span>
           </div>
-          <p class="muted">Property management for landlords, managers, and hosts.</p>
-          <p class="footer__copy">&copy; 2026 HostBora. All rights reserved.</p>
+          <p class="muted" data-i18n="footer.tagline">Property management for landlords, managers, and hosts.</p>
+          <p class="footer__credit" data-i18n="footer.credit" data-i18n-html>Built by <a href="./about.html">Artbel</a>, Dar es Salaam</p>
+          <p class="footer__copy" data-i18n="footer.copy">&copy; 2026 HostBora. All rights reserved.</p>
+          <p class="footer__app-meta" data-i18n="footer.appMeta">App v1.2.3 · Updated <time datetime="2026-06">June 2026</time></p>
         </div>
         <div class="footer__links">
-          <a href="#features">Features</a>
-          <a href="#workspaces">Workspaces</a>
-          <a href="#trust">Trust</a>
-          <a href="#contact">Contact</a>
-          <a href="./privacy-policy.html">Privacy</a>
-          <a href="#" aria-disabled="true" tabindex="-1">Terms (soon)</a>
-          <a href="#" aria-disabled="true" tabindex="-1">Blog (soon)</a>
+          <a href="#features" data-i18n="nav.features">Features</a>
+          <a href="#workspaces" data-i18n="nav.workspaces">Workspaces</a>
+          <a href="#audience" data-i18n="nav.audience">Who uses it</a>
+          <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+          <a href="#trust" data-i18n="nav.trust">Trust</a>
+          <a href="#contact" data-i18n="nav.contact">Contact</a>
+          <a href="./about.html" data-i18n="nav.about">About</a>
+          <a href="https://wa.me/255789287509?text=Hi%2C%20I%27m%20interested%20in%20HostBora" data-i18n="nav.whatsapp">WhatsApp</a>
+          <a href="./privacy-policy.html" data-i18n="nav.privacy">Privacy</a>
+          <a href="./terms-of-service.html" data-i18n="nav.terms">Terms</a>
         </div>
       </div>
     </footer>
 
+    <a
+      class="wa-fab"
+      href="https://wa.me/255789287509?text=Hi%2C%20I%27m%20interested%20in%20HostBora"
+      data-i18n-aria-label="wa.fab"
+      aria-label="Chat with HostBora on WhatsApp"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path
+          fill="currentColor"
+          d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+        />
+      </svg>
+    </a>
+
+    <script src="./i18n.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

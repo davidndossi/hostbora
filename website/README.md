@@ -21,7 +21,21 @@ You can also open `index.html` directly in a browser; use a local server if you 
 |------|---------|
 | `index.html` | Landing page (hero, features, workspaces, audience, trust, contact) |
 | `styles.css` | Responsive layout and brand styles |
-| `app.js` | Mobile nav + contact form mailto |
+| `app.js` | Mobile nav + contact form → Spring Boot API |
+
+### Contact form
+
+The form POSTs JSON to the Spring Boot API at **`POST /api/website/contact`** (public, no auth). The backend sends email to `support@hostbora.co.tz` via the configured SMTP mail settings.
+
+Production URL: `https://hostbora.co.tz:8444/api/website/contact`
+
+Local dev (with Spring Boot on port 8080): `http://localhost:8080/api/website/contact`
+
+Configure the recipient in `application.properties`:
+
+```properties
+website.contact.mail-to=support@hostbora.co.tz
+```
 | `privacy-policy.html` | Privacy policy |
 | `assets/logo.svg` | Logo / favicon |
 | `.nojekyll` | GitHub Pages (skip Jekyll) |

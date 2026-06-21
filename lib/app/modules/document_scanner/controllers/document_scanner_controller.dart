@@ -101,15 +101,6 @@ class DocumentScannerController extends BaseController {
 
   Future<void> importFromGallery() async {
     try {
-      var status = await Permission.photos.status;
-      if (status.isDenied) {
-        status = await Permission.photos.request();
-      }
-      if (!status.isGranted && !status.isLimited) {
-        showErrorMessage('Photo library access is needed to import images.');
-        return;
-      }
-
       final picked = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 92,
