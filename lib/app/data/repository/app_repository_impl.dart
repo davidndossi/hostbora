@@ -418,6 +418,11 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> getStaffList() {
+    return _remoteSource.getStaffList();
+  }
+
+  @override
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body) {
     return _remoteSource.updateStaff(id, body);
   }
@@ -538,4 +543,16 @@ class AppRepositoryImpl implements AppRepository {
     // TODO: implement submitTenantRating
     throw UnimplementedError();
   }
+
+  // ── Subscription ──────────────────────────────────────────────────────────
+
+  @override
+  Future<GeneralResponse> getSubscription() => _remoteSource.getSubscription();
+
+  @override
+  Future<GeneralResponse> activateTrial() => _remoteSource.activateTrial();
+
+  @override
+  Future<GeneralResponse> createSubscriptionCheckout(String plan) =>
+      _remoteSource.createSubscriptionCheckout(plan);
 }

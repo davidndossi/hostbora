@@ -5,186 +5,149 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
-import '../../../data/service/azampay_service.dart';
 import '../../../data/service/subscription_service.dart';
 import '../controllers/subscription_controller.dart';
 
 class SubscriptionView extends BaseView<SubscriptionController> {
   SubscriptionView({super.key});
 
-  String _t(BuildContext context, {required String en, required String sw}) {
-    final code =
-        Get.locale?.languageCode ??
-        Localizations.localeOf(context).languageCode;
-    return code == 'sw' ? sw : en;
-  }
+  @override
+  PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
+        appBarTitleText: 'HostBora Plans',
+        isCentered: true,
+        actions: [
+          Obx(() {
+            final busy = controller.startingCheckout.value ||
+                controller.activatingTrial.value;
+            return busy
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.refresh_rounded),
+                    tooltip: 'Refresh',
+                    onPressed: controller.refresh,
+                  );
+          }),
+        ],
+      );
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) {
-    return CustomAppBar(
-      appBarTitleText: _t(
-        context,
-        en: 'SMS / WhatsApp Subscription',
-        sw: 'Usajili wa SMS / WhatsApp',
-      ),
-      isCentered: true,
-    );
-  }
-
-  void _showPaymentSheet(BuildContext context) {
+  Widget body(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : null,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: AppValues.largePadding,
-          right: AppValues.largePadding,
-          top: AppValues.largePadding,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + AppValues.largePadding,
+
+    return Obx(() {
+      final sub = controller.currentStatus;
+
+      return ListView(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppValues.padding,
+          vertical: AppValues.largePadding,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              _t(context, en: 'Pay with AzamPay', sw: 'Lipa kwa AzamPay'),
-              style: Theme.of(
-                ctx,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        children: [
+          // ── Status banner ──────────────────────────────────────
+          if (sub.isActive) _StatusBanner(sub: sub),
+          if (sub.isActive) const SizedBox(height: AppValues.spacing_20),
+
+          // ── Header ────────────────────────────────────────────
+          Text(
+            sub.isActive ? 'Your Plan' : 'Choose a Plan',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textColorPrimary,
             ),
-            const SizedBox(height: 8),
-            Text(
-              _t(
-                context,
-                en: 'Enter your mobile number and select your mobile money provider. You will receive a payment request on your phone.',
-                sw: 'Weka namba yako ya simu na chagua mtoa huduma wa fedha za simu. Utapokea ombi la malipo kwenye simu yako.',
-              ),
+          ),
+          const SizedBox(height: AppValues.halfPadding),
+          Text(
+            sub.isActive
+                ? 'Upgrade or manage your subscription below.'
+                : 'Start with a free 30-day trial. No credit card required.',
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textColorSecondary,
+            ),
+          ),
+          const SizedBox(height: AppValues.spacing_20),
+
+          // ── Plan cards ────────────────────────────────────────
+          ...hostBoraPlanInfos.map((plan) => _PlanCard(
+                info: plan,
+                isCurrentPlan: sub.isActive && sub.plan == plan.key,
+                onSubscribe: controller.startingCheckout.value
+                    ? null
+                    : () => controller.subscribe(plan.key),
+              )),
+
+          const SizedBox(height: AppValues.spacing_20),
+
+          // ── Trial CTA ─────────────────────────────────────────
+          if (!sub.isActive) ...[
+            _TrialCard(
+              loading: controller.activatingTrial.value,
+              onActivate: controller.requestTrial,
+            ),
+            const SizedBox(height: AppValues.spacing_20),
+          ],
+
+          // ── Footer note ───────────────────────────────────────
+          Text(
+            'Payments processed securely via Snippe. Subscriptions auto-renew monthly.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(height: AppValues.largePadding),
+        ],
+      );
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.sub});
+  final dynamic sub; // SubscriptionStatus
+
+  @override
+  Widget build(BuildContext context) {
+    final isTrial = sub.isTrial as bool;
+    final color = isTrial ? AppColors.colorYellow : AppColors.colorSuccessGreen;
+    final icon  = isTrial ? Icons.timer_outlined : Icons.check_circle_outline;
+    final label = isTrial
+        ? 'Free trial · ${sub.daysLeft} days left'
+        : '${sub.plan.toString().toUpperCase()} active · ${sub.daysLeft} days left';
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppValues.padding,
+        vertical: AppValues.smallPadding,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppValues.smallRadius),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
               style: TextStyle(
                 fontSize: 14,
-                color: isDark
-                    ? theme.colorScheme.onSurfaceVariant
-                    : AppColors.textColorSecondary,
-              ),
-            ),
-            const SizedBox(height: AppValues.spacing_20),
-            TextField(
-              controller: controller.phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: _t(context, en: 'Phone number', sw: 'Namba ya simu'),
-                hintText: _t(
-                  context,
-                  en: '0712345678',
-                  sw: '0712345678',
-                ),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: AppValues.padding),
-            Obx(
-              () => DropdownButtonFormField<String>(
-                initialValue: controller.selectedProvider.value,
-                decoration: InputDecoration(
-                  labelText: _t(
-                    context,
-                    en: 'Mobile money provider',
-                    sw: 'Mtoa huduma wa fedha za simu',
-                  ),
-                  border: OutlineInputBorder(),
-                ),
-                items: azamPayProviders
-                    .map(
-                      (String p) =>
-                          DropdownMenuItem<String>(value: p, child: Text(p)),
-                    )
-                    .toList(),
-                onChanged: controller.setProvider,
-              ),
-            ),
-            const SizedBox(height: AppValues.spacing_20),
-            Obx(
-              () => SizedBox(
-                height: AppValues.formButtonHeight,
-                child: ElevatedButton(
-                  onPressed: controller.sendingPaymentRequest.value
-                      ? null
-                      : () async {
-                          final ok = await controller.requestPayment();
-                          if (ok && ctx.mounted) {
-                            Navigator.of(ctx).pop();
-                            _showCompletedPaymentDialog(ctx);
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.colorPrimary,
-                  ),
-                  child: controller.sendingPaymentRequest.value
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          _t(
-                            context,
-                            en: 'Send payment request',
-                            sw: 'Tuma ombi la malipo',
-                          ),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCompletedPaymentDialog(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : null,
-        title: Text(
-          _t(context, en: 'Complete payment', sw: 'Kamilisha malipo'),
-        ),
-        content: Text(
-          _t(
-            context,
-            en: 'A payment request was sent to your phone. Complete the payment in your mobile money app, then tap below to activate your subscription.',
-            sw: 'Ombi la malipo limetumwa kwenye simu yako. Kamilisha malipo kwenye app ya fedha za simu, kisha gusa hapa chini kuanzisha usajili wako.',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(_t(context, en: 'Cancel', sw: 'Ghairi')),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              controller.activateAfterPayment();
-            },
-            child: Text(
-              _t(
-                context,
-                en: "I've completed payment",
-                sw: 'Nimekamilisha malipo',
+                fontWeight: FontWeight.w600,
+                color: color,
               ),
             ),
           ),
@@ -192,207 +155,253 @@ class SubscriptionView extends BaseView<SubscriptionController> {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PlanCard extends StatelessWidget {
+  const _PlanCard({
+    required this.info,
+    required this.isCurrentPlan,
+    required this.onSubscribe,
+  });
+
+  final PlanInfo info;
+  final bool isCurrentPlan;
+  final VoidCallback? onSubscribe;
 
   @override
-  Widget body(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget build(BuildContext context) {
+    final theme  = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final priceStr =
-        '${subscriptionMonthlyPriceTzs.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} TZS';
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppValues.largePadding,
-          vertical: AppValues.extraLargePadding,
+    final accent = isCurrentPlan ? AppColors.colorPrimary : AppColors.textColorSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppValues.padding),
+      child: Card(
+        elevation: isCurrentPlan || info.isPopular ? 4 : 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppValues.radius),
+          side: isCurrentPlan
+              ? const BorderSide(color: AppColors.colorPrimary, width: 2)
+              : info.isPopular
+                  ? const BorderSide(color: AppColors.colorSecondary, width: 1.5)
+                  : BorderSide.none,
         ),
-        child: Obx(() {
-          final isSubscribed = controller.isSubscribed;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Padding(
+          padding: const EdgeInsets.all(AppValues.padding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: AppValues.spacing_20),
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppValues.radius),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppValues.largePadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              // Name + badge row
+              Row(
+                children: [
+                  Text(
+                    info.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? theme.colorScheme.onSurface : AppColors.textColorPrimary,
+                    ),
+                  ),
+                  if (info.isPopular) ...[
+                    const SizedBox(width: 8),
+                    _Badge(label: 'Most Popular', color: AppColors.colorSecondary),
+                  ],
+                  if (isCurrentPlan) ...[
+                    const SizedBox(width: 8),
+                    _Badge(label: 'Your Plan', color: AppColors.colorPrimary),
+                  ],
+                  const Spacer(),
+                  // Price
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Icon(
-                        Icons.sms_outlined,
-                        size: 48,
-                        color: AppColors.colorPrimary,
-                      ),
-                      const SizedBox(height: AppValues.spacing_20),
                       Text(
-                        _t(
-                          context,
-                          en: 'Send SMS & WhatsApp',
-                          sw: 'Tuma SMS na WhatsApp',
-                        ),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? theme.colorScheme.onSurface
-                              : AppColors.textColorPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: AppValues.smallPadding),
-                      Text(
-                        _t(
-                          context,
-                          en: 'Subscribe to send SMS and use WhatsApp features from the app. Access includes SMS sending and WhatsApp chat/group tools.',
-                          sw: 'Jisajili kutuma SMS na kutumia huduma za WhatsApp kupitia app. Ufikiaji unajumuisha kutuma SMS na zana za mazungumzo/vikundi vya WhatsApp.',
-                        ),
+                        'TZS ${_fmt(info.price)}',
                         style: TextStyle(
-                          fontSize: 15,
-                          color: isDark
-                              ? theme.colorScheme.onSurfaceVariant
-                              : AppColors.textColorSecondary,
-                          height: 1.4,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: isDark ? theme.colorScheme.onSurface : AppColors.textColorPrimary,
                         ),
                       ),
-                      const SizedBox(height: AppValues.spacing_20),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppValues.padding,
-                          vertical: AppValues.halfPadding,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.colorPrimaryLight.withValues(
-                            alpha: 0.6,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            AppValues.smallRadius,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              priceStr,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.colorPrimaryDark,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _t(context, en: 'per month', sw: 'kwa mwezi'),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: AppColors.textColorSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
+                      const Text(
+                        'per month',
+                        style: TextStyle(fontSize: 12, color: AppColors.textColorSecondary),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                info.tagline,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textColorSecondary,
+                ),
+              ),
+              const Divider(height: AppValues.spacing_20),
+
+              // Features
+              ...info.features.map(
+                (f) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check, size: 16, color: AppColors.colorPrimary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(f, style: const TextStyle(fontSize: 13)),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: AppValues.spacing_30),
-              if (isSubscribed) ...[
-                Container(
-                  padding: const EdgeInsets.all(AppValues.padding),
-                  decoration: BoxDecoration(
-                    color: AppColors.colorSuccessGreen.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(AppValues.smallRadius),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.check_circle,
-                        color: AppColors.colorSuccessGreen,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
+
+              const SizedBox(height: AppValues.padding),
+
+              // Action button
+              SizedBox(
+                width: double.infinity,
+                height: AppValues.formButtonHeight,
+                child: isCurrentPlan
+                    ? OutlinedButton(
+                        onPressed: null,
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.colorPrimary),
+                          foregroundColor: AppColors.colorPrimary,
+                        ),
+                        child: const Text('Current Plan'),
+                      )
+                    : ElevatedButton(
+                        onPressed: onSubscribe,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.colorPrimary,
+                          foregroundColor: Colors.white,
+                        ),
                         child: Text(
-                          '${_t(context, en: 'You are subscribed until', sw: 'Usajili wako unaisha')} ${controller.expiryDisplay}',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? theme.colorScheme.onSurface : null,
+                          'Subscribe — TZS ${_fmt(info.price)}/mo',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppValues.spacing_20),
-                SizedBox(
-                  height: AppValues.formButtonHeight,
-                  child: ElevatedButton(
-                    onPressed: controller.goToSendSms,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.colorPrimary,
-                    ),
-                    child: Text(
-                      _t(
-                        context,
-                        en: 'Go to Send SMS / WhatsApp',
-                        sw: 'Nenda Kutuma SMS / WhatsApp',
-                      ),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ] else ...[
-                SizedBox(
-                  height: AppValues.formButtonHeight,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      if (controller.isAzamPayEnabled) {
-                        _showPaymentSheet(context);
-                      } else {
-                        controller.subscribe();
-                      }
-                    },
-                    icon: const Icon(Icons.payment, size: 22),
-                    label: Text(
-                      '${_t(context, en: 'Subscribe', sw: 'Jisajili')} — $priceStr / ${_t(context, en: 'month', sw: 'mwezi')}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.colorPrimary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppValues.halfPadding),
-                Text(
-                  controller.isAzamPayEnabled
-                      ? _t(
-                          context,
-                          en: 'Payment via AzamPay (mobile money). Subscription is valid for 30 days.',
-                          sw: 'Malipo kupitia AzamPay (fedha za simu). Usajili ni halali kwa siku 30.',
-                        )
-                      : _t(
-                          context,
-                          en: 'Payment will be processed as per your operator. Subscription is valid for 30 days.',
-                          sw: 'Malipo yatachakatwa kulingana na mtoa huduma wako. Usajili ni halali kwa siku 30.',
-                        ),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark
-                        ? theme.colorScheme.onSurfaceVariant
-                        : AppColors.textColorSecondary,
-                  ),
-                ),
-              ],
+              ),
             ],
-          );
-        }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _fmt(int n) {
+    final s = n.toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+      buf.write(s[i]);
+    }
+    return buf.toString();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TrialCard extends StatelessWidget {
+  const _TrialCard({required this.loading, required this.onActivate});
+  final bool loading;
+  final VoidCallback? onActivate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppValues.padding),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.colorPrimary, AppColors.colorPrimaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppValues.radius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.card_giftcard, color: Colors.white, size: 28),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Try HostBora free for 30 days',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Get full Starter access with no payment details required. '
+            'Upgrade any time before or after the trial ends.',
+            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          ),
+          const SizedBox(height: AppValues.padding),
+          SizedBox(
+            height: AppValues.formButtonHeight,
+            child: ElevatedButton(
+              onPressed: loading ? null : onActivate,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.colorPrimary,
+              ),
+              child: loading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: AppColors.colorPrimary,
+                      ),
+                    )
+                  : const Text(
+                      'Start Free Trial',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _Badge extends StatelessWidget {
+  const _Badge({required this.label, required this.color});
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppValues.smallRadius),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }

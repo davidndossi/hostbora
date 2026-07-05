@@ -160,6 +160,17 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               decoration: _fieldDeco(u, hint: 'e.g. Zainab Hussein'),
             ),
             const SizedBox(height: 14),
+            _capsLabel(u, 'Phone'),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: controller.phoneController,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              style: TextStyle(color: u.onSurface, fontWeight: FontWeight.w500),
+              cursorColor: u.brandTeal,
+              decoration: _fieldDeco(u, hint: 'e.g. +255 712 345 678'),
+            ),
+            const SizedBox(height: 14),
             _capsLabel(u, 'Pay type'),
             const SizedBox(height: 8),
             Obx(
@@ -262,6 +273,22 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                   onChanged: controller.updatePrimaryRole,
                 );
               },
+            ),
+            const SizedBox(height: 14),
+            _capsLabel(u, 'Notes'),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: controller.notesController,
+              maxLines: 3,
+              textInputAction: TextInputAction.done,
+              style: TextStyle(color: u.onSurface, fontWeight: FontWeight.w500),
+              cursorColor: u.brandTeal,
+              decoration: _fieldDeco(
+                u,
+                hint: _isSw
+                    ? 'Maelezo ya ziada (hiari)'
+                    : 'Additional notes (optional)',
+              ),
             ),
             const SizedBox(height: 18),
             SizedBox(

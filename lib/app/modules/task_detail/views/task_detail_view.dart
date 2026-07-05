@@ -23,9 +23,17 @@ class TaskDetailView extends BaseView<TaskDetailController> {
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
     return CustomAppBar(
       appBarTitleText: _t(context, en: 'Task detail', sw: 'Maelezo ya kazi'),
       isCentered: true,
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back,
+          color: c.isDark ? Colors.white : AppColors.appBarIconColor,
+        ),
+        onPressed: controller.goBack,
+      ),
       actions: [
         IconButton(
           icon: const Icon(Icons.edit_outlined),
@@ -40,7 +48,12 @@ class TaskDetailView extends BaseView<TaskDetailController> {
 
   @override
   Widget body(BuildContext context) {
-    return Obx(() {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) controller.goBack();
+      },
+      child: Obx(() {
       final err = controller.loadError.value;
       final task = controller.task.value;
 
@@ -233,7 +246,8 @@ class TaskDetailView extends BaseView<TaskDetailController> {
             ),
         ],
       );
-    });
+    }),
+    );
   }
 
   bool _isUnassigned(String assignee) {

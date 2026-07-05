@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -7,17 +9,41 @@ import 'package:intl/intl.dart';
 
 
 class Util {
-  Future<String> checkConnectivity() async {
-    final List<ConnectivityResult> connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.contains(ConnectivityResult.mobile)) {
-      return 'Mobile';
-    } else if (connectivityResult.contains(ConnectivityResult.wifi)) {
-      return 'Wifi';
-    } else if (connectivityResult.contains(ConnectivityResult.none)) {
-      return 'None';
-    } else {
-      return '';
+  /// True when the device has any route (wifi, cellular, ethernet on simulator, etc.).
+  static bool hasNetworkConnectivity(List<ConnectivityResult> results) {
+    return results.isNotEmpty &&
+        results.any((r) => r != ConnectivityResult.none);
+  }
+
+  static const _reachabilityHost = 'hostbora.co.tz';
+
+  /// connectivity_plus can false-report offline on iPad/iOS despite active Wi‑Fi.
+  static Future<bool> _verifyInternetReachability() async {
+    try {
+      final result = await InternetAddress.lookup(_reachabilityHost)
+          .timeout(const Duration(seconds: 3));
+      return result.isNotEmpty && result.first.rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
     }
+  }
+
+  static Future<bool> isOnline() async {
+    final results = await Connectivity().checkConnectivity();
+    if (hasNetworkConnectivity(results)) return true;
+    return _verifyInternetReachability();
+  }
+
+  Future<String> checkConnectivity() async {
+    final results = await Connectivity().checkConnectivity();
+    if (!hasNetworkConnectivity(results)) {
+      return 'None';
+    }
+    if (results.contains(ConnectivityResult.mobile)) {
+      return 'Mobile';
+    }
+    // wifi, ethernet (common on iOS simulator), vpn, other, bluetooth
+    return 'Wifi';
   }
 
   String generateReference() {

@@ -189,6 +189,7 @@ abstract class AppRepository {
   Future<GeneralResponse> deleteTenant(String id);
   Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body);
   Future<GeneralResponse> createStaff(Map<String, dynamic> body);
+  Future<GeneralResponse> getStaffList();
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body);
   Future<GeneralResponse> deleteStaff(String id);
   Future<GeneralResponse> submitFeedback(Map<String, dynamic> body);
@@ -212,4 +213,16 @@ abstract class AppRepository {
 
   /// PUT /api/properties/ref/{propertyRef}
   Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body);
+
+  // ── Subscription ──────────────────────────────────────────────────────────
+
+  /// GET /api/subscription → current plan + status (null data = no subscription yet).
+  Future<GeneralResponse> getSubscription();
+
+  /// POST /api/subscription/trial → activate 30-day trial (one-time, server-enforced).
+  Future<GeneralResponse> activateTrial();
+
+  /// POST /api/subscription/checkout → create Snippe session for the given plan.
+  /// Returns { paymentLinkUrl, checkoutUrl, reference, plan, amountTzs }.
+  Future<GeneralResponse> createSubscriptionCheckout(String plan);
 }

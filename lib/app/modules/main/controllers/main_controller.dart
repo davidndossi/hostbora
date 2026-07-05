@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../core/service/app_update_service.dart';
+import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/remote/remote_data_source.dart';
 import '../../../routes/app_pages.dart';
 import '../../my_properties/controllers/my_properties_controller.dart';
@@ -34,7 +35,10 @@ class MainController extends BaseController with WidgetsBindingObserver {
     }
     // All bindings are registered by the time MainController initialises,
     // so RemoteDataSource is available. Delay slightly so the UI paints first.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdate();
+      triggerRemoteAccountSync();
+    });
   }
 
   void _checkForUpdate() {

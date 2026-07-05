@@ -88,6 +88,13 @@
 	<string>We need access to the photo library for device setup</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
     <false/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>We use Face ID or Touch ID to sign you in quickly and securely when you return to the app.</string>
 	<key>UIBackgroundModes</key>

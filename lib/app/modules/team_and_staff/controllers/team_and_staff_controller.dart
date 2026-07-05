@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
+import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
@@ -43,6 +44,9 @@ class TeamAndStaffController extends BaseController {
   Future<void> loadStaff() async {
     loadingStaff.value = true;
     try {
+      if (Get.isRegistered<RemoteAccountSyncService>()) {
+        await Get.find<RemoteAccountSyncService>().syncStaffFromRemote();
+      }
       final rows = await _staffLocal.getAllNewestFirst();
       final tasksDueToday = await _tasksDueTodayCountsByAssigneeLower();
       final members = rows.map((r) {

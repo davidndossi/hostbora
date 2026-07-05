@@ -1,3 +1,5 @@
+import '../../../data/model/add_task_request.dart';
+
 enum TaskPriority { high, medium, low }
 
 enum TaskStatus { pending, inProgress, completed }
@@ -46,6 +48,27 @@ class MaintenanceTask {
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: completedAt ?? this.completedAt,
+    );
+  }
+
+  /// Builds a PUT body that preserves current task fields (avoids clearing assignee/due date).
+  AddTaskRequest toUpdateRequest({String? assigneeOverride, String? dueDateOverride}) {
+    String? dueIso = dueDateOverride;
+    if (dueIso == null && dueDate != null) {
+      final d = dueDate!;
+      dueIso =
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    }
+    final rawAssignee = assigneeOverride ?? assignee;
+    final trimmed = rawAssignee.trim();
+    final assigneeValue = trimmed.isEmpty || trimmed.toLowerCase() == 'unassigned'
+        ? null
+        : trimmed;
+    return AddTaskRequest(
+      title: title,
+      description: description.trim().isEmpty ? null : description.trim(),
+      dueDate: dueIso,
+      assignee: assigneeValue,
     );
   }
 

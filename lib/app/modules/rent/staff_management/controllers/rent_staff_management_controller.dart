@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import '../../../../core/base/base_controller.dart';
 import '../../../../core/base/feedback_extensions.dart';
 import '../../../../core/utils/haptic_feedback_util.dart';
+import '../../../../data/local/service/remote_account_sync_service.dart';
+import '../../../../data/model/staff_request.dart';
 import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../../data/local/service/offline_sync_worker_service.dart';
@@ -51,12 +53,17 @@ class RentStaffManagementController extends BaseController {
   final initialLoad = true.obs;
 
   final fullNameController = TextEditingController();
+  final phoneController = TextEditingController();
+  final notesController = TextEditingController();
   final amountController = TextEditingController();
   final payDateController = TextEditingController();
 
   final paymentType = RentStaffPayFormat.monthly.obs;
   final selectedPrimaryRole = ''.obs;
   final editingStaffId = Rxn<int>();
+
+  String _propertyRef = '';
+  String _propertyName = '';
 
   static const primaryRoleOptions = [
     'Estate Manager',
@@ -107,9 +114,23 @@ class RentStaffManagementController extends BaseController {
   void onInit() {
     super.onInit();
     final args = Get.arguments;
-    if (args is Map && args['staffId'] != null) {
-      final id = int.tryParse('${args['staffId']}');
-      if (id != null) editingStaffId.value = id;
+    if (args is Map) {
+      if (args['staffId'] != null) {
+        final id = int.tryParse('${args['staffId']}');
+        if (id != null) editingStaffId.value = id;
+      }
+      _propertyRef = (args['property_ref'] ??
+              args['propertyRef'] ??
+              args['property_id'] ??
+              '')
+          .toString()
+          .trim();
+      _propertyName = (args['property_name'] ??
+              args['propertyName'] ??
+              args['property'] ??
+              '')
+          .toString()
+          .trim();
     }
   }
 
@@ -121,6 +142,9 @@ class RentStaffManagementController extends BaseController {
 
   Future<void> loadStaff() async {
     try {
+      if (Get.isRegistered<RemoteAccountSyncService>()) {
+        await Get.find<RemoteAccountSyncService>().syncStaffFromRemote();
+      }
       final rows = await _local.getAllNewestFirst();
       staff.assignAll(
         rows.map(
@@ -204,6 +228,45 @@ class RentStaffManagementController extends BaseController {
     }
   }
 
+  Future<String> _apiStaffId(int localId) async {
+    return await _local.backendIdForLocal(localId) ?? '$localId';
+  }
+
+  String? _backendIdFromResponse(dynamic data) {
+    if (data is Map) {
+      final nested = data['data'];
+      if (nested is Map) {
+        return (nested['id'] ?? nested['staffId'])?.toString();
+      }
+      return (data['id'] ?? data['staffId'])?.toString();
+    }
+    return null;
+  }
+
+  StaffRequest _buildStaffRequest({
+    required String name,
+    required String role,
+    required double amount,
+    required String payDay,
+    String? id,
+    String? startDate,
+  }) {
+    return StaffRequest(
+      id: id,
+      name: name,
+      role: role,
+      salary: amount,
+      salaryFrequency: paymentType.value,
+      phone: phoneController.text.trim(),
+      notes: notesController.text.trim(),
+      propertyName: _propertyName,
+      propertyRef: _propertyRef,
+      startDate: startDate,
+      status: 'active',
+      payDayLabel: payDay,
+    );
+  }
+
   Future<void> registerStaff() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
     final name = fullNameController.text.trim();
@@ -229,26 +292,25 @@ class RentStaffManagementController extends BaseController {
             paymentType: paymentType.value,
             amountValue: amount,
           );
-          final updatePayload = <String, dynamic>{
-            'id': '$editId',
-            'name': name,
-            'jobTitle': role,
-            'payDayLabel': payDay,
-            'paymentType': paymentType.value,
-            'amountValue': amount,
-          };
+          final request = _buildStaffRequest(
+            name: name,
+            role: role,
+            amount: amount,
+            payDay: payDay,
+            id: '$editId',
+          );
+          final apiStaffId = await _apiStaffId(editId);
           try {
-            final res = await _repository.updateStaff('$editId', updatePayload);
-            final ok = res.responseCode == '0' ||
-                res.responseCode == '200' ||
-                res.responseCode == '201';
-            if (!ok) throw Exception(res.message ?? 'API error');
+            final res =
+                await _repository.updateStaff(apiStaffId, request.toApiJson());
+            if (!res.isSuccess) throw Exception(res.message ?? 'API error');
           } catch (_) {
+            final payload = request.toApiJson()..['id'] = apiStaffId;
             await _syncQueue.enqueue(
               entityType: 'staff',
               operation: 'update',
-              payloadJson: jsonEncode(updatePayload),
-              dedupeKey: 'staff:update:$editId',
+              payloadJson: jsonEncode(payload),
+              dedupeKey: 'staff:update:$apiStaffId',
             );
             _syncWorker.runNow();
           }
@@ -264,30 +326,36 @@ class RentStaffManagementController extends BaseController {
           paymentType: paymentType.value,
           amountValue: amount,
         );
-        final createPayload = <String, dynamic>{
-          'name': name,
-          'jobTitle': role,
-          'payDayLabel': payDay,
-          'paymentType': paymentType.value,
-          'amountValue': amount,
-        };
+        final today = DateTime.now();
+        final startDate =
+            '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+        final request = _buildStaffRequest(
+          name: name,
+          role: role,
+          amount: amount,
+          payDay: payDay,
+          startDate: startDate,
+        );
         try {
-          final res = await _repository.createStaff(createPayload);
-          final ok = res.responseCode == '0' ||
-              res.responseCode == '200' ||
-              res.responseCode == '201';
-          if (!ok) throw Exception(res.message ?? 'API error');
+          final res = await _repository.createStaff(request.toApiJson());
+          if (!res.isSuccess) throw Exception(res.message ?? 'API error');
+          final backendId = _backendIdFromResponse(res.data);
+          if (backendId != null) {
+            await _local.saveBackendId(localId, backendId);
+          }
         } catch (_) {
           await _syncQueue.enqueue(
             entityType: 'staff',
             operation: 'create',
-            payloadJson: jsonEncode(createPayload),
+            payloadJson: jsonEncode(request.toApiJson()),
             dedupeKey: 'staff:create:$localId',
           );
           _syncWorker.runNow();
         }
         formKey.currentState?.reset();
         fullNameController.clear();
+        phoneController.clear();
+        notesController.clear();
         amountController.clear();
         payDateController.clear();
         selectedPrimaryRole.value = '';
@@ -344,6 +412,8 @@ class RentStaffManagementController extends BaseController {
   @override
   void onClose() {
     fullNameController.dispose();
+    phoneController.dispose();
+    notesController.dispose();
     amountController.dispose();
     payDateController.dispose();
     super.onClose();

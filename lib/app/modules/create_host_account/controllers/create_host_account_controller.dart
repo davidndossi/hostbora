@@ -70,12 +70,11 @@ class CreateHostAccountController extends BaseController {
     email(emailStr);
     String password = passwordController.text;
 
-    Util().checkConnectivity().then((value) async {
-      if (value != 'Mobile' && value != 'Wifi') {
-        showErrorMessage(appLocalization.noInternet);
-        return;
-      }
-      RegRequest regRequest = RegRequest(
+    if (!await Util.isOnline()) {
+      showErrorMessage(appLocalization.noInternet);
+      return;
+    }
+    RegRequest regRequest = RegRequest(
         firstName: firstName,
         middleName: middleName.isEmpty ? null : middleName,
         surname: lastName.isEmpty ? null : lastName,
@@ -91,7 +90,6 @@ class CreateHostAccountController extends BaseController {
         onError: _handleRegistrationResponseError,
         onSuccess: _handleRegistrationResponseSuccess,
       );
-    });
   }
 
   Future<void> getFirebaseToken() async {

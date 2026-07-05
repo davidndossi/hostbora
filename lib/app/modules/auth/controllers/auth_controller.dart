@@ -9,6 +9,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../core/utils/util.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/login_request.dart';
 import '../../../data/model/login_response.dart';
@@ -82,33 +83,23 @@ class AuthController extends BaseController {
     password(passwordController.text);
     msisdn(msisdnController.text.trim());
 
-    final connectivity = await Util().checkConnectivity();
-    if (connectivity != 'Mobile' && connectivity != 'Wifi') {
-      final pinEnabled = await _preferenceManager.getBool(
-        PreferenceManager.keyPinEnabled,
-        defaultValue: false,
-      );
-      final pinCode = await _preferenceManager.getString(
-        PreferenceManager.keyPinCode,
-        defaultValue: '',
-      );
-      final isFirstLogin = await _preferenceManager.getBool(
-        PreferenceManager.keyFirstLogin,
-        defaultValue: true,
-      );
-      final hasValidPin = pinEnabled && pinCode.length == 4;
+    final pinEnabled = await _preferenceManager.getBool(
+      PreferenceManager.keyPinEnabled,
+      defaultValue: false,
+    );
+    final pinCode = await _preferenceManager.getString(
+      PreferenceManager.keyPinCode,
+      defaultValue: '',
+    );
+    final isFirstLogin = await _preferenceManager.getBool(
+      PreferenceManager.keyFirstLogin,
+      defaultValue: true,
+    );
+    final hasValidPin = pinEnabled && pinCode.length == 4;
+    final online = await Util.isOnline();
 
-      // First login must happen online. Offline is allowed only after PIN is configured.
-      if (isFirstLogin || !hasValidPin) {
-        showErrorMessage(
-          _t(
-            'First login requires internet. Please connect and sign in.',
-            'Kuingia kwa mara ya kwanza kunahitaji intaneti. Tafadhali unganisha na uingie.',
-          ),
-        );
-        return;
-      }
-
+    // Returning users with PIN may skip server sign-in when offline.
+    if (!online && !isFirstLogin && hasValidPin) {
       await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace();
       Get.snackbar(
         _t('Offline', 'Nje ya mtandao'),
@@ -117,6 +108,9 @@ class AuthController extends BaseController {
       );
       return;
     }
+
+    // First login (or no PIN): always attempt server sign-in. connectivity_plus
+    // can false-report offline on iPad despite active internet.
     final loginRequest = LoginRequest(
       username: msisdnController.text.trim(),
       password: passwordController.text,
@@ -271,8 +265,9 @@ class AuthController extends BaseController {
         if (res.message == 'verify_code') {
           debugPrint('Go to otp page');
           Get.offAndToNamed(Routes.OTP);
-        } else if (!hasValidPin) {
+        } else         if (!hasValidPin) {
           debugPrint('PIN not configured yet: go to change pin setup');
+          triggerRemoteAccountSync();
           Get.offAllNamed(
             Routes.CHANGE_PIN,
             arguments: {
@@ -281,6 +276,7 @@ class AuthController extends BaseController {
           );
         } else {
           debugPrint('PIN exists: continue to app');
+          triggerRemoteAccountSync();
           await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
             arguments: {
               'from_password_login': true,

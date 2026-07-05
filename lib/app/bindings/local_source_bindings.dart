@@ -14,6 +14,7 @@ import '/app/data/model/checkout_booking_request.dart';
 import '/app/data/model/create_booking_request.dart';
 import '/app/data/model/update_booking_request.dart';
 import '/app/data/model/record_payment_request.dart';
+import '/app/data/model/staff_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/data/local/db/rent_payment_reminder_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
@@ -43,6 +44,7 @@ import '/app/data/local/service/portfolio_ai_hybrid_service.dart';
 import '/app/data/local/service/rent_real_data_snapshot_service.dart';
 import '/app/data/local/service/property_break_even_notification_service.dart';
 import '/app/data/local/service/rent_notification_rules_service.dart';
+import '/app/data/local/service/remote_account_sync_service.dart';
 import '/app/data/local/service/bnb_messaging_contacts_service.dart';
 import '/app/data/local/service/scheduled_whatsapp_dispatch_service.dart';
 import '/app/data/local/service/tenant_lease_reminder_service.dart';
@@ -255,6 +257,18 @@ class LocalSourceBindings implements Bindings {
     final syncWorker = Get.put<OfflineSyncWorkerService>(
       OfflineSyncWorkerService(
         queue: Get.find<OfflineSyncQueueLocalDataSource>(),
+      ),
+      permanent: true,
+    );
+    Get.put<RemoteAccountSyncService>(
+      RemoteAccountSyncService(
+        repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
+        propertyLocal: Get.find<PropertyLocalDataSource>(),
+        staffLocal: Get.find<RentStaffLocalDataSource>(),
+        preferenceManager: Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+        syncWorker: syncWorker,
       ),
       permanent: true,
     );
@@ -695,6 +709,32 @@ class LocalSourceBindings implements Bindings {
       },
     );
     syncWorker.registerHandler(
+      entityType: 'task',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final taskId = (map['taskId'] as String?) ?? '';
+        if (taskId.isEmpty) return;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final req = AddTaskRequest(
+          title: map['title'] as String? ?? '',
+          description: map['description'] as String?,
+          dueDate: map['dueDate'] as String?,
+          propertyLabel: map['propertyLabel'] as String?,
+          propertyRef: map['propertyRef'] as String?,
+          workspaceType: map['workspaceType'] as String?,
+          assignee: map['assignee'] as String?,
+        );
+        final res = await repository.updateTask(taskId, req);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Task update sync failed');
+      },
+    );
+    syncWorker.registerHandler(
       entityType: 'listing',
       operation: 'update',
       handler: (item) async {
@@ -833,7 +873,8 @@ class LocalSourceBindings implements Bindings {
         final repository = Get.find<AppRepository>(
           tag: (AppRepository).toString(),
         );
-        final res = await repository.createStaff(map);
+        final req = StaffRequest.fromSyncMap(map);
+        final res = await repository.createStaff(req.toApiJson());
         final ok = res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
@@ -848,9 +889,10 @@ class LocalSourceBindings implements Bindings {
         final repository = Get.find<AppRepository>(
           tag: (AppRepository).toString(),
         );
-        final id = (map['id'] as String?) ?? '';
+        final req = StaffRequest.fromSyncMap(map);
+        final id = req.id ?? (map['id'] as String?) ?? '';
         if (id.isEmpty) throw Exception('Missing id in staff:update payload');
-        final res = await repository.updateStaff(id, map);
+        final res = await repository.updateStaff(id, req.toApiJson());
         final ok = res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';

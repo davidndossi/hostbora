@@ -333,4 +333,69 @@ class PropertyLocalDataSource {
     final db = await database;
     await db.delete(_table, where: 'id = ?', whereArgs: [id]);
   }
+
+  Future<PropertyRecord> upsertFromRemote(PropertyRecord row) async {
+    final ref = row.propertyRef.trim();
+    PropertyRecord? existing;
+    if (ref.isNotEmpty) {
+      existing = await getByPropertyRef(ref);
+    }
+    if (existing != null) {
+      final merged = PropertyRecord(
+        id: existing.id,
+        propertyName: row.propertyName.isNotEmpty
+            ? row.propertyName
+            : existing.propertyName,
+        propertyType:
+            row.propertyType.isNotEmpty ? row.propertyType : existing.propertyType,
+        propertyLocation: row.propertyLocation.isNotEmpty
+            ? row.propertyLocation
+            : existing.propertyLocation,
+        propertyRef: ref.isNotEmpty ? ref : existing.propertyRef,
+        tenants: row.tenants > 0 ? row.tenants : existing.tenants,
+        units: row.units > 0 ? row.units : existing.units,
+        ownerUserId: row.ownerUserId.isNotEmpty
+            ? row.ownerUserId
+            : existing.ownerUserId,
+        workspaceType: row.workspaceType.isNotEmpty
+            ? row.workspaceType
+            : existing.workspaceType,
+        createdAtMs: row.createdAtMs > 0 ? row.createdAtMs : existing.createdAtMs,
+        rentAmount:
+            row.rentAmount.isNotEmpty ? row.rentAmount : existing.rentAmount,
+        rentFrequency: row.rentFrequency.isNotEmpty
+            ? row.rentFrequency
+            : existing.rentFrequency,
+        minRentalDuration: row.minRentalDuration.isNotEmpty
+            ? row.minRentalDuration
+            : existing.minRentalDuration,
+        unitsJson: row.unitsJson.isNotEmpty ? row.unitsJson : existing.unitsJson,
+        floorCount: row.floorCount > 0 ? row.floorCount : existing.floorCount,
+        coverPhotoPath: row.coverPhotoPath.isNotEmpty
+            ? row.coverPhotoPath
+            : existing.coverPhotoPath,
+      );
+      await update(merged);
+      return merged;
+    }
+    final newId = await insert(row);
+    return PropertyRecord(
+      id: newId,
+      propertyName: row.propertyName,
+      propertyType: row.propertyType,
+      propertyLocation: row.propertyLocation,
+      propertyRef: row.propertyRef,
+      tenants: row.tenants,
+      units: row.units,
+      ownerUserId: row.ownerUserId,
+      workspaceType: row.workspaceType,
+      createdAtMs: row.createdAtMs,
+      rentAmount: row.rentAmount,
+      rentFrequency: row.rentFrequency,
+      minRentalDuration: row.minRentalDuration,
+      unitsJson: row.unitsJson,
+      floorCount: row.floorCount,
+      coverPhotoPath: row.coverPhotoPath,
+    );
+  }
 }

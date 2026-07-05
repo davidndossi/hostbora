@@ -6,6 +6,7 @@ import 'package:local_auth/error_codes.dart' as auth_error;
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/login_request.dart';
 import '../../../data/model/login_response.dart';
@@ -159,6 +160,7 @@ class WelcomeBackController extends BaseController {
 
       await _preferenceManager.setUser('user', loginResponse.user);
       if (res.token != null) {
+        triggerRemoteAccountSync();
         await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
           arguments: {
             'initialMenu': 'home',
@@ -330,6 +332,7 @@ class WelcomeBackController extends BaseController {
   void close() => Get.back();
 
   Future<void> continueToApp() async {
+    triggerRemoteAccountSync();
     await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
       arguments: {
         'initialMenu': 'home',

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get/get.dart';
 
+import '../../../core/utils/util.dart';
 import '../db/offline_sync_queue_local_data_source.dart';
 
 typedef OfflineSyncHandler = Future<void> Function(OfflineSyncQueueItem item);
@@ -123,9 +124,7 @@ class OfflineSyncWorkerService extends GetxService {
   String _key(String entityType, String operation) => '$entityType:$operation';
 
   bool _hasConnectivity(List<ConnectivityResult> results) {
-    return results.any(
-      (r) => r == ConnectivityResult.wifi || r == ConnectivityResult.mobile,
-    );
+    return Util.hasNetworkConnectivity(results);
   }
 
   Future<bool> _isOnline() async {

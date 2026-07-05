@@ -88,6 +88,7 @@ class AppLocalDatabase {
         await _ensureTenantRentCurrencyColumn(db);
         await _ensureInventoryItemTable(db);
         await _ensureInventoryMovementTable(db);
+        await _ensureRentStaffBackendIdColumn(db);
       },
     );
     return _db!;
@@ -683,6 +684,15 @@ class AppLocalDatabase {
       db,
       expenseTable,
       'backend_expense_id',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
+  static Future<void> _ensureRentStaffBackendIdColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      rentStaffTable,
+      'backend_staff_id',
       "TEXT NOT NULL DEFAULT ''",
     );
   }

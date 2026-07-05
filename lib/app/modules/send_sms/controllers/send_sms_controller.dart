@@ -21,8 +21,8 @@ import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/model/send_sms_request.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../core/utils/plan_gate.dart';
 import '../../../routes/app_pages.dart';
-import '../../subscription/controllers/subscription_controller.dart';
 import '../../../data/model/send_whatsapp_bulk_request.dart';
 import '../../../data/model/send_whatsapp_template_request.dart';
 import '../models/device_contact_entry.dart';
@@ -503,27 +503,22 @@ class SendSmsController extends BaseController
     );
   }
 
-  /// Allow access for admins, leaders, or users with an active SMS subscription.
-  /// If not allowed, redirect to subscription page (15,000 TZS/month).
+  /// Allow access when the user has a Pro or higher active subscription.
+  /// SMS/WhatsApp requires at least the Pro plan.
   Future<void> _checkAccess() async {
-    final expiryMs = await _preferenceManager.getInt(
-      keySmsSubscriptionExpiry,
-      defaultValue: 0,
-    );
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final hasActiveSubscription = expiryMs > 0 && now < expiryMs;
-
-    print('Expiry ms $expiryMs');
-
-    print('Has active subscription $hasActiveSubscription');
-
     isCheckingAccess(false);
-    if (hasActiveSubscription) {
+    if (PlanGate.check(RequiredPlan.pro)) {
       isAccessAllowed(true);
       unawaited(refreshWhatsAppStatus());
     } else {
       isAccessAllowed(false);
-      Get.offNamed(Routes.SUBSCRIPTION);
+      PlanGate.showUpgradeSheet(
+        RequiredPlan.pro,
+        featureName: 'SMS / WhatsApp',
+        subtitle:
+            'Sending SMS and WhatsApp messages requires the Pro plan or above. '
+            'Upgrade from TZS 49,000/mo.',
+      );
     }
   }
 

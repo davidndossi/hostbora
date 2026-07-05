@@ -33,7 +33,9 @@ Exception handleDioError(DioException dioError) {
     case DioExceptionType.badCertificate:
       return AppException(message: 'Invalid certificate in request');
     case DioExceptionType.connectionError:
-      return NetworkException('There is no internet connection');
+      return NetworkException(
+        'Unable to reach the server. Please check your connection and try again.',
+      );
     case DioExceptionType.badResponse:
       return _parseDioErrorResponse(dioError);
   }

@@ -15,6 +15,11 @@ project 'Runner', {
   'Release' => :release,
 }
 
+# Set TUYA_NATIVE=1 before `pod install` to link the full Tuya SDK (required for
+# physical devices and smart-lock/camera features). Default is simulator-safe
+# arm64 builds without Tuya native XCFrameworks (iPad/iPhone simulators on Apple Silicon).
+$tuya_native = ENV['TUYA_NATIVE'] == '1'
+
 def flutter_root
   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
   unless File.exist?(generated_xcode_build_settings_path)
@@ -32,16 +37,87 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_ios_podfile_setup
 
+def apply_tuya_simulator_stub!
+  apply_plugin_simulator_stub!(
+    plugin_name: 'tuya_home_sdk_flutter',
+    stub_root: File.expand_path('tuya_simulator_stub', __dir__)
+  )
+end
+
+def apply_mlkit_simulator_stubs!
+  apply_plugin_simulator_stub!(
+    plugin_name: 'google_mlkit_commons',
+    stub_root: File.expand_path('simulator_native_stubs/google_mlkit_commons', __dir__)
+  )
+  apply_plugin_simulator_stub!(
+    plugin_name: 'google_mlkit_text_recognition',
+    stub_root: File.expand_path('simulator_native_stubs/google_mlkit_text_recognition', __dir__),
+    extra_podspec: <<~RUBY
+      s.dependency 'google_mlkit_commons'
+    RUBY
+  )
+end
+
+def apply_plugin_simulator_stub!(plugin_name:, stub_root:, extra_podspec: '')
+  plugin_ios = File.expand_path(".symlinks/plugins/#{plugin_name}/ios", __dir__)
+  return unless File.directory?(plugin_ios)
+
+  classes_dir = File.join(plugin_ios, 'Classes')
+  FileUtils.rm_rf(classes_dir)
+  FileUtils.mkdir_p(classes_dir)
+  FileUtils.cp_r(File.join(stub_root, 'Classes/.'), classes_dir)
+
+  podspec_path = File.join(plugin_ios, "#{plugin_name}.podspec")
+  File.write(podspec_path, <<~SPEC)
+    Pod::Spec.new do |s|
+      s.name             = '#{plugin_name}'
+      s.version          = '0.0.1'
+      s.summary          = '#{plugin_name} (simulator stub)'
+      s.description      = 'Simulator-safe stub without device-only native SDKs.'
+      s.homepage         = 'https://hostbora.com'
+      s.license          = { :type => 'MIT' }
+      s.author           = { 'Host Bora' => 'dev@hostbora.com' }
+      s.source           = { :path => '.' }
+      s.source_files     = 'Classes/**/*'
+      s.public_header_files = 'Classes/**/*.h'
+      s.dependency       'Flutter'
+      #{extra_podspec}
+      s.static_framework = true
+      s.platform         = :ios, '15.5'
+      s.swift_version    = '5.0'
+      s.pod_target_xcconfig = {
+        'DEFINES_MODULE' => 'YES',
+      }
+    end
+  SPEC
+end
+
+def patch_pods_runner_for_arm64_simulator!
+  Dir.glob(File.expand_path('Pods/Target Support Files/Pods-Runner/Pods-Runner.*.xcconfig', __dir__)).each do |path|
+    contents = File.read(path)
+    contents = contents.gsub("EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64\n", '')
+    File.write(path, contents)
+  end
+end
+
+unless $tuya_native
+  apply_tuya_simulator_stub!
+  apply_mlkit_simulator_stubs!
+end
+
 target 'Runner' do
-  use_frameworks!
+  # Static linkage avoids Clang explicit-module scanning failures with Tuya XCFrameworks.
+  use_frameworks! :linkage => :static
   # Do not use use_modular_headers! — it breaks Tuya/Thing SDK (ThingSmartUtil.h not found when building dependent modules).
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
-  pod 'ThingSmartLockKit','~> 6.7.0'
-  pod 'ThingSmartHomeKit','~> 6.7.0'
-  pod 'ThingSmartCameraKit','~> 6.7.0'
-  pod 'ThingSmartCryption', :path => './ios_core_sdk'
+  if $tuya_native
+    pod 'ThingSmartLockKit', '~> 6.7.0'
+    pod 'ThingSmartHomeKit', '~> 6.7.0'
+    pod 'ThingSmartCameraKit', '~> 6.7.0'
+    pod 'ThingSmartCryption', :path => './ios_core_sdk'
+  end
 
   target 'RunnerTests' do
     inherit! :search_paths
@@ -52,27 +128,48 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
-      config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "15.5"
-      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "i386"
-      config.build_settings["DEVELOPMENT_TEAM"] = "your teamid"
-      config.build_settings["CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES"] = "YES"
-      # Ensure Swift sees iOS 13+ for APIs like builtInUltraWideCamera
-      config.build_settings["SWIFT_VERSION"] = "5.0"
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
+      if $tuya_native
+        # Tuya XCFrameworks (e.g. ThingSmartUtil) ship x86_64 simulator only.
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      else
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+      end
+      config.build_settings['DEVELOPMENT_TEAM'] = 'your teamid'
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      # Xcode 16+ explicit module scanning cannot resolve Tuya prebuilt XCFramework deps (ThingSmartUtil.h).
+      config.build_settings['CLANG_ENABLE_EXPLICIT_MODULES'] = 'NO'
+      config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
+      config.build_settings['SWIFT_VERSION'] = '5.0'
 
-      # Add preprocessor definitions for permission_handler
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
         '$(inherited)',
-        ## dart: PermissionGroup.camera
         'PERMISSION_CAMERA=1',
-        ## dart: [PermissionGroup.location, PermissionGroup.locationAlways, PermissionGroup.locationWhenInUse]
-        #'PERMISSION_LOCATION=1',
-        ## dart: PermissionGroup.contacts
         'PERMISSION_CONTACTS=1',
       ]
     end
   end
-  # Force deployment target on the Pods project itself
+
   installer.pods_project.build_configurations.each do |config|
-    config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "15.5"
+    config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
+    config.build_settings['CLANG_ENABLE_EXPLICIT_MODULES'] = 'NO'
+    config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
   end
+
+  installer.aggregate_targets.each do |aggregate_target|
+    aggregate_target.user_project.native_targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_ENABLE_EXPLICIT_MODULES'] = 'NO'
+        config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
+        if $tuya_native
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+        else
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+        end
+      end
+    end
+    aggregate_target.user_project.save
+  end
+
+  patch_pods_runner_for_arm64_simulator! unless $tuya_native
 end

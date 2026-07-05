@@ -3,6 +3,32 @@ import 'package:sqflite/sqflite.dart';
 import '/app/modules/rent/staff_management/utils/rent_staff_pay_format.dart';
 import 'app_local_database.dart';
 
+class StaffRemoteUpsert {
+  const StaffRemoteUpsert({
+    required this.backendId,
+    required this.name,
+    required this.jobTitle,
+    required this.payDayLabel,
+    required this.paymentType,
+    required this.amountValue,
+    this.phone = '',
+    this.notes = '',
+    this.propertyRef = '',
+    this.status = 'active',
+  });
+
+  final String backendId;
+  final String name;
+  final String jobTitle;
+  final String payDayLabel;
+  final String paymentType;
+  final double amountValue;
+  final String phone;
+  final String notes;
+  final String propertyRef;
+  final String status;
+}
+
 class RentStaffRecord {
   const RentStaffRecord({
     required this.id,
@@ -124,5 +150,89 @@ class RentStaffLocalDataSource {
   Future<void> deleteById(int id) async {
     final db = await database;
     await db.delete(_table, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<RentStaffRecord?> getByBackendId(String backendId) async {
+    final id = backendId.trim();
+    if (id.isEmpty) return null;
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      where: 'backend_staff_id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return RentStaffRecord.fromMap(maps.first);
+  }
+
+  Future<void> saveBackendId(int localId, String backendId) async {
+    final id = backendId.trim();
+    if (id.isEmpty) return;
+    final db = await database;
+    await db.update(
+      _table,
+      {'backend_staff_id': id},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
+  }
+
+  Future<String?> backendIdForLocal(int localId) async {
+    final row = await getById(localId);
+    if (row == null) return null;
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      columns: ['backend_staff_id'],
+      where: 'id = ?',
+      whereArgs: [localId],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    final value = maps.first['backend_staff_id']?.toString().trim() ?? '';
+    return value.isEmpty ? null : value;
+  }
+
+  Future<void> upsertFromRemote(StaffRemoteUpsert remote) async {
+    if (remote.name.trim().isEmpty) return;
+    RentStaffRecord? existing;
+    if (remote.backendId.isNotEmpty) {
+      existing = await getByBackendId(remote.backendId);
+    }
+    if (existing == null) {
+      final rows = await getAllNewestFirst();
+      final lower = remote.name.trim().toLowerCase();
+      for (final row in rows) {
+        if (row.name.trim().toLowerCase() == lower) {
+          existing = row;
+          break;
+        }
+      }
+    }
+    if (existing != null) {
+      await updateById(
+        id: existing.id,
+        name: remote.name,
+        jobTitle: remote.jobTitle,
+        payDayLabel: remote.payDayLabel,
+        paymentType: remote.paymentType,
+        amountValue: remote.amountValue,
+      );
+      if (remote.backendId.isNotEmpty) {
+        await saveBackendId(existing.id, remote.backendId);
+      }
+      return;
+    }
+    final localId = await insert(
+      name: remote.name,
+      jobTitle: remote.jobTitle,
+      payDayLabel: remote.payDayLabel,
+      paymentType: remote.paymentType,
+      amountValue: remote.amountValue,
+    );
+    if (remote.backendId.isNotEmpty) {
+      await saveBackendId(localId, remote.backendId);
+    }
   }
 }

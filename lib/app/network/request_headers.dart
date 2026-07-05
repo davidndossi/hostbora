@@ -14,27 +14,54 @@ import '../routes/app_pages.dart';
 class RequestHeaderInterceptor extends InterceptorsWrapper {
   final PreferenceManager _preferenceManager = g.Get.find(tag: (PreferenceManager)
       .toString());
+
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    getCustomHeaders().then((customHeaders) async {
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    try {
+      final customHeaders = await getCustomHeaders();
       options.headers.addAll(customHeaders);
-      try {
-        if (!isNullEmptyOrFalse(options.data)) {
-          String request = jsonEncode(options.data);
-          String secret = generateSecret();
-          String pub = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2O88unHPsxwcQYB8+ax815DDNiRrSscfex0nohZ8Sb3HvmX1H6Ehiu8HPcPPDWHKVPkyZs63zKmQlh1tNqXyitj2Ql8fd8w/SKQL9UmAu6Lv4GcSdOWBqaJRPcrFmNKA8RCNpvMNGkzJMTJtoFV40p6LyXZtl1o3RMqLiVu7eRIOsGDjEK0efssQSpLt56Pd9Y30Wz7cI9j6vCcQGdbuzn4TmFpFZptG0s5i+PDn60iIKG5/5rTfhFI1zA80DgVgqW6OGNeNXY8mWB0Q1DmECsTUS0Ox/PHry94H5SvM20CAxu3RjCdXPH99uEr+8+nYpyN9sqzuR0dfscLXu34qnQIDAQAB';
-          String encryptedSecret = encryptSecret(pub, secret);
-          String payload = encryptPayload(request, secret);
-          var bodyRequest = BodyRequest(transactionDate: encryptedSecret, data: payload);
-          options.data = bodyRequest.toJson();
-        }
-      } catch (error) {
-        if (kDebugMode) {
-          print(error);
-        }
+
+      if (!isNullEmptyOrFalse(options.data)) {
+        final encoded = _encodeRequestBody(options.data);
+        final secret = generateSecret();
+        const pub =
+            'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2O88unHPsxwcQYB8+ax815DDNiRrSscfex0nohZ8Sb3HvmX1H6Ehiu8HPcPPDWHKVPkyZs63zKmQlh1tNqXyitj2Ql8fd8w/SKQL9UmAu6Lv4GcSdOWBqaJRPcrFmNKA8RCNpvMNGkzJMTJtoFV40p6LyXZtl1o3RMqLiVu7eRIOsGDjEK0efssQSpLt56Pd9Y30Wz7cI9j6vCcQGdbuzn4TmFpFZptG0s5i+PDn60iIKG5/5rTfhFI1zA80DgVgqW6OGNeNXY8mWB0Q1DmECsTUS0Ox/PHry94H5SvM20CAxu3RjCdXPH99uEr+8+nYpyN9sqzuR0dfscLXu34qnQIDAQAB';
+        final encryptedSecret = encryptSecret(pub, secret);
+        final payload = encryptPayload(encoded, secret);
+        options.data = BodyRequest(
+          transactionDate: encryptedSecret,
+          data: payload,
+        ).toJson();
       }
-      super.onRequest(options, handler);
-    });
+
+      handler.next(options);
+    } catch (error, stack) {
+      if (kDebugMode) {
+        print('Request encryption failed: $error\n$stack');
+      }
+      handler.reject(
+        DioException(
+          requestOptions: options,
+          message: 'Failed to encrypt request payload',
+          type: DioExceptionType.unknown,
+        ),
+      );
+    }
+  }
+
+  /// Normalizes Dio body data to JSON text before AES/RSA encryption.
+  String _encodeRequestBody(dynamic data) {
+    if (data is String) return data;
+    if (data is Map || data is List) return jsonEncode(data);
+    try {
+      return jsonEncode(data);
+    } catch (_) {
+      final dynamic encoded = (data as dynamic).toJson();
+      return jsonEncode(encoded);
+    }
   }
 
   @override

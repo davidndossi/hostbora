@@ -47,6 +47,9 @@
       'features.title': 'Everything landlords and managers need daily',
       'features.sub':
         'One calm toolkit for income, operations, people, and records — whether you host nights or collect monthly rent.',
+      'demo.title': 'See HostBora in 60 seconds',
+      'demo.sub': 'A quick walkthrough of the app — properties, payments, staff, and more.',
+      'demo.iframeTitle': 'HostBora app walkthrough video',
       'feat.rentals.title': 'Rentals & tenants',
       'feat.rentals.desc':
         'List units, track leases, and keep tenant details organized across your portfolio.',
@@ -171,9 +174,12 @@
       'contact.copied': 'Copied — open email',
       'contact.openingEmail': 'Opening email…',
       'footer.tagline': 'Property management for landlords, managers, and hosts.',
+      'footer.social.label': 'HostBora on social media',
+      'footer.social.instagram': 'Instagram',
+      'footer.social.facebook': 'Facebook',
       'footer.credit': 'Built by <a href="./about.html">Artbel</a>, Dar es Salaam',
       'footer.copy': '© 2026 HostBora. All rights reserved.',
-      'footer.appMeta': 'App v1.2.3 · Updated <time datetime="2026-06">June 2026</time>',
+      'footer.appMeta': 'App v1.2.3 · Updated',
       'wa.fab': 'Chat with HostBora on WhatsApp',
     },
     sw: {
@@ -221,6 +227,9 @@
       'features.title': 'Kila kitu wamiliki na wasimamizi wanahitaji kila siku',
       'features.sub':
         'Zana moja tulivu kwa mapato, uendeshaji, watu, na rekodi — ukiwa unapokea wageni au ukusanya kodi ya kila mwezi.',
+      'demo.title': 'Tazama HostBora kwa sekunde 60',
+      'demo.sub': 'Muhtasari wa haraka wa programu — mali, malipo, wafanyakazi, na zaidi.',
+      'demo.iframeTitle': 'Video ya muhtasari wa programu ya HostBora',
       'feat.rentals.title': 'Upangaji na wapangaji',
       'feat.rentals.desc':
         'Orodhesha vyumba, fuatilia mikataba, na weka maelezo ya wapangaji kwa mpangilio katika mali zako.',
@@ -345,9 +354,12 @@
       'contact.copied': 'Imenakiliwa — fungua barua pepe',
       'contact.openingEmail': 'Inafungua barua pepe…',
       'footer.tagline': 'Usimamizi wa mali kwa wamiliki, wasimamizi, na wenyeji.',
+      'footer.social.label': 'HostBora kwenye mitandao ya kijamii',
+      'footer.social.instagram': 'Instagram',
+      'footer.social.facebook': 'Facebook',
       'footer.credit': 'Imeundwa na <a href="./about.html">Artbel</a>, Dar es Salaam',
       'footer.copy': '© 2026 HostBora. Haki zote zimehifadhiwa.',
-      'footer.appMeta': 'Programu v1.2.3 · Imesasishwa <time datetime="2026-06">Juni 2026</time>',
+      'footer.appMeta': 'Programu v1.2.3 · Imesasishwa',
       'wa.fab': 'Piga gumzo na HostBora kwenye WhatsApp',
     },
   };
@@ -389,6 +401,12 @@
       const key = el.getAttribute('data-i18n-aria-label');
       const val = t(key, lang);
       if (val) el.setAttribute('aria-label', val);
+    });
+
+    document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-title');
+      const val = t(key, lang);
+      if (val) el.setAttribute('title', val);
     });
 
     const metaDesc = document.querySelector('meta[name="description"]');

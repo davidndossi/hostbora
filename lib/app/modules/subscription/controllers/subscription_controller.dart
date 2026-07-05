@@ -2,124 +2,69 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
-import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/model/subscription_status.dart';
 import '../../../data/service/subscription_service.dart';
-import '../../../routes/app_pages.dart';
-
-/// Subscription expiry key: milliseconds since epoch when subscription ends.
-const String keySmsSubscriptionExpiry = 'sms_subscription_expiry';
-
-/// Duration of one subscription period (30 days in milliseconds).
-const int subscriptionPeriodMs = 30 * 24 * 60 * 60 * 1000;
 
 class SubscriptionController extends BaseController {
   SubscriptionController()
-      : _preferenceManager =
-            Get.find(tag: (PreferenceManager).toString()),
-        _subscriptionService = Get.find<SubscriptionService>();
+      : _subscriptionService = Get.find<SubscriptionService>();
 
-  final PreferenceManager _preferenceManager;
   final SubscriptionService _subscriptionService;
 
-  final phoneController = TextEditingController();
-  final selectedProvider = 'Mpesa'.obs;
-  final sendingPaymentRequest = false.obs;
+  SubscriptionStatus get currentStatus => _subscriptionService.status.value;
 
-  /// Expiry timestamp in ms; 0 means not subscribed.
-  final subscriptionExpiryMs = 0.obs;
+  final activatingTrial    = false.obs;
+  final startingCheckout   = false.obs;
+  final selectedPlan       = 'pro'.obs;
 
-  bool get isAzamPayEnabled => _subscriptionService.isAzamPayConfigured;
-
-  @override
-  void onInit() {
-    super.onInit();
-    _loadExpiry();
-  }
-
-  @override
-  void onClose() {
-    phoneController.dispose();
-    super.onClose();
-  }
-
-  Future<void> _loadExpiry() async {
-    final expiry = await _preferenceManager.getInt(
-      keySmsSubscriptionExpiry,
-      defaultValue: 0,
-    );
-    subscriptionExpiryMs(expiry);
-  }
-
-  /// True if subscription is currently active.
-  bool get isSubscribed {
-    final expiry = subscriptionExpiryMs.value;
-    return expiry > 0 && DateTime.now().millisecondsSinceEpoch < expiry;
-  }
-
-  /// Subscribe: if AzamPay is configured, the view should collect phone + provider
-  /// and call [requestPayment] then [activateAfterPayment]. If not, activate directly (demo).
-  Future<void> subscribe() async {
-    if (isAzamPayEnabled) {
-      // View shows payment sheet; no direct activation.
-      return;
-    }
-    await activateAfterPayment();
-  }
-
-  /// Sends AzamPay push-to-pay for subscription (15,000 TZS). Call after user enters phone + provider.
-  Future<bool> requestPayment() async {
-    final phone = phoneController.text.trim();
-    if (phone.isEmpty) {
-      showErrorMessage('Enter your phone number');
-      return false;
-    }
-    sendingPaymentRequest.value = true;
+  /// Activate the 30-day free trial (first-time users only).
+  Future<void> requestTrial() async {
+    activatingTrial.value = true;
     try {
-      final result = await _subscriptionService.requestSubscriptionPayment(
-        userPhone: phone,
-        provider: selectedProvider.value,
-      );
-      if (result.success) {
-        showSuccessMessage(
-          'Payment request sent to your phone. Complete the payment, then tap "I\'ve completed payment".',
-        );
-        return true;
+      final ok = await _subscriptionService.activateTrial();
+      if (ok) {
+        showSuccessMessage('30-day free trial activated! Enjoy HostBora Starter.');
       } else {
-        showErrorMessage(result.message);
-        return false;
+        showErrorMessage('Trial is no longer available for this account.');
       }
     } finally {
-      sendingPaymentRequest.value = false;
+      activatingTrial.value = false;
     }
   }
 
-  /// Navigates to Send SMS after this frame so [Obx] on the subscription screen
-  /// can finish unsubscribing before the route (and controller) are disposed.
-  void goToSendSms() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Get.offNamed(Routes.SEND_SMS);
-    });
+  /// Opens the Snippe hosted checkout page for [plan].
+  Future<void> subscribe(String plan) async {
+    startingCheckout.value = true;
+    try {
+      final checkout = await _subscriptionService.startCheckout(plan);
+      if (checkout == null) {
+        showErrorMessage('Could not start payment. Please try again.');
+      } else {
+        showSuccessMessage(
+          'Payment page opened. Complete payment in the browser, then return here.',
+        );
+        // Poll server after a short delay so the UI updates once the webhook fires.
+        await Future.delayed(const Duration(seconds: 5));
+        await _subscriptionService.refresh();
+      }
+    } finally {
+      startingCheckout.value = false;
+    }
   }
 
-  /// Activates subscription (30 days). Call after user has completed AzamPay payment.
-  Future<void> activateAfterPayment() async {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final newExpiry = now + subscriptionPeriodMs;
-    await _preferenceManager.setInt(keySmsSubscriptionExpiry, newExpiry);
-    subscriptionExpiryMs(newExpiry);
-    showSuccessMessage('Subscription active. You can now use Send SMS/WhatsApp.');
-    goToSendSms();
+  /// Manually refresh subscription state from the server.
+  Future<void> refresh() => _subscriptionService.refresh();
+
+  String planName(String key) {
+    switch (key) {
+      case 'starter': return 'Starter';
+      case 'pro':     return 'Pro';
+      case 'ultra':   return 'Ultra';
+      default:        return key;
+    }
   }
 
-  void setProvider(String? value) {
-    if (value != null) selectedProvider.value = value;
-  }
-
-  /// Format expiry for display.
-  String get expiryDisplay {
-    final expiry = subscriptionExpiryMs.value;
-    if (expiry <= 0) return '';
-    final dt = DateTime.fromMillisecondsSinceEpoch(expiry);
-    return '${dt.day}/${dt.month}/${dt.year}';
-  }
+  PlanInfo planInfo(String key) =>
+      hostBoraPlanInfos.firstWhere((p) => p.key == key,
+          orElse: () => hostBoraPlanInfos.first);
 }

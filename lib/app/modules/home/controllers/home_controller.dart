@@ -17,6 +17,7 @@ import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../data/service/subscription_service.dart';
 import '../../../routes/app_pages.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../host_calendar/controllers/host_calendar_controller.dart';
@@ -106,7 +107,22 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void onInit() {
     super.onInit();
     loadHomeData();
+    _maybeShowTrialPrompt();
   }
+
+  /// Nudges first-time users to start a trial after the home screen settles.
+  Future<void> _maybeShowTrialPrompt() async {
+    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final subscriptionSvc = Get.find<SubscriptionService>();
+      if (subscriptionSvc.hasNoSubscription) {
+        Get.toNamed(Routes.SUBSCRIPTION);
+      }
+    } catch (_) {
+      // SubscriptionService not yet available — skip silently.
+    }
+  }
+
 
   Future<void> loadHomeData({bool refresh = false}) async {
     if (refresh) {

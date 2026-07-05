@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/base/feedback_extensions.dart';
+import '../../../core/utils/util.dart';
 import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -705,6 +706,8 @@ class AddListingController extends BaseController {
       'type': type,
       'tenants': 0,
       'units': units,
+      'owner_user_id': ownerUserId,
+      'ownerUserId': ownerUserId,
       'workspace_type': workspaceType,
       'created_at_ms': createdAtMs,
       'rent_amount': rentAmount,
@@ -1343,9 +1346,7 @@ class AddListingController extends BaseController {
 
   Future<bool> _isOnline() async {
     final results = await Connectivity().checkConnectivity();
-    return results.any(
-      (r) => r == ConnectivityResult.wifi || r == ConnectivityResult.mobile,
-    );
+    return Util.hasNetworkConnectivity(results);
   }
 
   Future<void> publishListing() async {

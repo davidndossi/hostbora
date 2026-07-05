@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
+import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/model/add_task_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
@@ -10,10 +14,14 @@ import '../../maintenance_tasks/model/maintenance_task.dart';
 class TaskDetailController extends BaseController {
   TaskDetailController()
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
-        _staffLocal = Get.find<RentStaffLocalDataSource>();
+        _staffLocal = Get.find<RentStaffLocalDataSource>(),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final AppRepository _repository;
   final RentStaffLocalDataSource _staffLocal;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
 
   final task = Rxn<MaintenanceTask>();
   final loading = false.obs;
@@ -52,30 +60,40 @@ class TaskDetailController extends BaseController {
     final t = task.value;
     if (t == null || name.trim().isEmpty) return;
     assigningStaff.value = true;
+    final trimmed = name.trim();
+    final request = t.toUpdateRequest(assigneeOverride: trimmed);
     try {
-      final request = AddTaskRequest(
-        title: t.title,
-        description: t.description.trim().isEmpty ? null : t.description.trim(),
-        assignee: name.trim(),
-      );
       final res = await _repository.updateTask(t.id, request);
-      if (res.responseCode == '0' ||
-          res.responseCode == '200' ||
-          res.responseCode == '201') {
-        task.value = t.copyWith(assignee: name.trim());
-        showSuccessMessage('Assigned to $name');
+      if (res.isSuccess) {
+        task.value = t.copyWith(assignee: trimmed);
+        showSuccessMessage('Assigned to $trimmed');
       } else {
-        // Optimistic local update even if API fails
-        task.value = t.copyWith(assignee: name.trim());
-        showSuccessMessage('Assigned locally');
+        await _queueTaskUpdate(t.id, request);
+        task.value = t.copyWith(assignee: trimmed);
+        showSuccessMessage('Assigned locally — will sync when online');
       }
     } catch (_) {
-      final t2 = task.value;
-      if (t2 != null) task.value = t2.copyWith(assignee: name.trim());
-      showSuccessMessage('Assigned locally');
+      await _queueTaskUpdate(t.id, request);
+      task.value = t.copyWith(assignee: trimmed);
+      showSuccessMessage('Assigned locally — will sync when online');
     } finally {
       assigningStaff.value = false;
     }
+  }
+
+  Future<void> _queueTaskUpdate(String taskId, AddTaskRequest request) async {
+    try {
+      await _syncQueue.enqueue(
+        entityType: 'task',
+        operation: 'update',
+        payloadJson: jsonEncode({
+          'taskId': taskId,
+          ...request.toJson(),
+        }),
+        dedupeKey: 'task:update:$taskId',
+      );
+      _syncWorker.runNow();
+    } catch (_) {}
   }
 
   @override
@@ -85,7 +103,8 @@ class TaskDetailController extends BaseController {
   }
 
   Future<void> loadTask() async {
-    final id = task.value?.id;
+    final cached = task.value;
+    final id = cached?.id;
     if (id == null || id.isEmpty) {
       loadError.value = 'Missing task id';
       return;
@@ -94,21 +113,40 @@ class TaskDetailController extends BaseController {
     loadError.value = null;
     try {
       final res = await _repository.getTask(id);
-      if (res.responseCode == '0' && res.data != null) {
+      if (res.isSuccess && res.data != null) {
         final map = _unwrapTaskMap(res.data);
         if (map != null) {
-          task.value = MaintenanceTask.fromApiMap(map);
-        } else {
-          loadError.value = 'Unexpected response';
+          final remote = MaintenanceTask.fromApiMap(map);
+          task.value = _mergeWithCached(cached, remote);
+          return;
         }
-      } else {
-        loadError.value = res.message ?? 'Could not load task';
       }
-    } catch (e) {
-      loadError.value = e.toString();
+      if (cached != null && cached.id.isNotEmpty) {
+        // Keep showing the task passed from the list; detail fetch is optional.
+        return;
+      }
+      loadError.value = res.message ?? 'Could not load task';
+    } catch (_) {
+      if (cached != null && cached.id.isNotEmpty) {
+        return;
+      }
+      loadError.value = 'Could not load task details';
     } finally {
       loading.value = false;
     }
+  }
+
+  MaintenanceTask _mergeWithCached(MaintenanceTask? cached, MaintenanceTask remote) {
+    if (cached == null) return remote;
+    final assignee = _isUnassigned(remote.assignee) && !_isUnassigned(cached.assignee)
+        ? cached.assignee
+        : remote.assignee;
+    return remote.copyWith(assignee: assignee);
+  }
+
+  static bool _isUnassigned(String value) {
+    final s = value.trim().toLowerCase();
+    return s.isEmpty || s == 'unassigned' || s == '—' || s == '-';
   }
 
   Map<String, dynamic>? _unwrapTaskMap(dynamic data) {
@@ -129,7 +167,14 @@ class TaskDetailController extends BaseController {
     return null;
   }
 
-  void goBack() => Get.back();
+  void goBack() {
+    final t = task.value;
+    if (t != null) {
+      Get.back(result: t.toArguments());
+    } else {
+      Get.back();
+    }
+  }
 
   void openEdit() {
     final t = task.value;

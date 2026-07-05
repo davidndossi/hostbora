@@ -2152,7 +2152,13 @@ class ListingDetailsController extends BaseController
   }
 
   Future<void> onAddStaff() async {
-    await Get.toNamed(Routes.RENT_STAFF_MANAGEMENT);
+    await Get.toNamed(
+      Routes.RENT_STAFF_MANAGEMENT,
+      arguments: {
+        'property_ref': _propertyId,
+        'property_name': _propertyName,
+      },
+    );
     await _loadAssigneeStaffOptions();
     await loadListingDetail();
   }

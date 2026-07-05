@@ -44,7 +44,7 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   @override
   Future<LoginResponse> signIn(LoginRequest request) {
     var endpoint = '${DioProvider.baseUrl}/api/auth/login';
-    var dioCall = dioClient.post(endpoint, data: request);
+    var dioCall = dioClient.post(endpoint, data: request.toJson());
 
     try {
       return callApiWithErrorParser(dioCall)
@@ -1102,6 +1102,18 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
+  Future<GeneralResponse> getStaffList() {
+    final endpoint = '${DioProvider.baseUrl}/api/staff';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body) {
     final endpoint = '${DioProvider.baseUrl}/api/staff/$id';
     final dioCall = dioClient.put(endpoint, data: body);
@@ -1322,5 +1334,43 @@ class RemoteDataSourceImpl extends BaseRemoteSource
         '${DioProvider.baseUrl}/api/app/version?platform=${Uri.encodeComponent(platform)}';
     final response = await callApiWithErrorParser(dioClient.get(endpoint));
     return AppVersionResponse.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  // ── Subscription ──────────────────────────────────────────────────────────
+
+  @override
+  Future<GeneralResponse> getSubscription() {
+    final endpoint = '${DioProvider.baseUrl}/api/subscription';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((r) => GeneralResponse.fromJson(r.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> activateTrial() {
+    final endpoint = '${DioProvider.baseUrl}/api/subscription/trial';
+    final dioCall = dioClient.post(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((r) => GeneralResponse.fromJson(r.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> createSubscriptionCheckout(String plan) {
+    final endpoint = '${DioProvider.baseUrl}/api/subscription/checkout';
+    final dioCall = dioClient.post(endpoint, data: {'plan': plan});
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((r) => GeneralResponse.fromJson(r.data));
+    } catch (e) {
+      rethrow;
+    }
   }
 }

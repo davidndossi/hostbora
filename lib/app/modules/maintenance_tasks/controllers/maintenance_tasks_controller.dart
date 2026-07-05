@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/haptic_feedback_util.dart';
-import '../../../data/model/add_task_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../model/maintenance_task.dart';
@@ -33,7 +32,7 @@ class MaintenanceTasksController extends BaseController {
     try {
       final status = _taskFilterStatuses[selectedFilter.value.index];
       final res = await _repository.getTasks(status: status);
-      if (res.responseCode != '0' || res.data == null) {
+      if (!res.isSuccess || res.data == null) {
         tasks.clear();
         return;
       }
@@ -112,17 +111,10 @@ class MaintenanceTasksController extends BaseController {
     final newDue = DateTime(base.year, base.month, base.day)
         .add(Duration(days: days));
     final dueIso = DateFormat('yyyy-MM-dd').format(newDue);
-    final request = AddTaskRequest(
-      title: task.title,
-      description:
-          task.description.trim().isEmpty ? null : task.description.trim(),
-      dueDate: dueIso,
-    );
+    final request = task.toUpdateRequest(dueDateOverride: dueIso);
     try {
       final res = await _repository.updateTask(task.id, request);
-      if (res.responseCode == '0' ||
-          res.responseCode == '200' ||
-          res.responseCode == '201') {
+      if (res.isSuccess) {
         final idx = tasks.indexWhere((t) => t.id == task.id);
         if (idx != -1) {
           tasks[idx] = task.copyWith(dueDate: newDue);
@@ -150,6 +142,45 @@ class MaintenanceTasksController extends BaseController {
 
   void openTaskDetail(MaintenanceTask task) {
     Get.toNamed(Routes.TASK_DETAIL, arguments: task.toArguments())
-        ?.then((_) => loadTasks());
+        ?.then((result) async {
+      MaintenanceTask? localUpdate;
+      if (result is Map) {
+        localUpdate = MaintenanceTask.fromArguments(
+          Map<String, dynamic>.from(result),
+        );
+        _mergeTaskIntoList(localUpdate);
+      }
+      await loadTasks();
+      if (localUpdate != null) {
+        _mergeTaskIntoList(localUpdate);
+      }
+    });
+  }
+
+  void _mergeTaskIntoList(MaintenanceTask updated) {
+    if (updated.id.isEmpty) return;
+    final idx = tasks.indexWhere((t) => t.id == updated.id);
+    if (idx == -1) return;
+    final current = tasks[idx];
+    final assignee = _isUnassigned(current.assignee) &&
+            !_isUnassigned(updated.assignee)
+        ? updated.assignee
+        : current.assignee;
+    tasks[idx] = current.copyWith(
+      assignee: assignee,
+      title: updated.title.isNotEmpty ? updated.title : current.title,
+      description: updated.description.isNotEmpty
+          ? updated.description
+          : current.description,
+      dueDate: updated.dueDate ?? current.dueDate,
+      status: updated.status,
+      isCompleted: updated.isCompleted,
+      completedAt: updated.completedAt ?? current.completedAt,
+    );
+  }
+
+  static bool _isUnassigned(String value) {
+    final s = value.trim().toLowerCase();
+    return s.isEmpty || s == 'unassigned' || s == '—' || s == '-';
   }
 }

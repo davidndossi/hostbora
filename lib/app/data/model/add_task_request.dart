@@ -34,7 +34,10 @@ class AddTaskRequest {
         'propertyRef': propertyRef,
       if (workspaceType != null && workspaceType!.isNotEmpty)
         'workspaceType': workspaceType,
-      if (assignee != null && assignee!.isNotEmpty) 'assignee': assignee,
+      if (assignee != null && assignee!.isNotEmpty) ...{
+        'assignee': assignee,
+        'assignedTo': assignee,
+      },
     };
   }
 }

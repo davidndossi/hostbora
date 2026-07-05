@@ -5,6 +5,7 @@ import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
@@ -67,6 +68,9 @@ class MyPropertiesController extends BaseController {
     loading.value = true;
     final status = _filterStatuses[selectedFilterIndex.value];
     try {
+      if (Get.isRegistered<RemoteAccountSyncService>()) {
+        await Get.find<RemoteAccountSyncService>().syncPropertiesFromRemote();
+      }
       final localList = await _loadLocalListings(status: status);
       final res = await _repository.getMyListings(status: status);
       final data = res.data;

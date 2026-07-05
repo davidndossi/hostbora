@@ -216,6 +216,7 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> deleteTenant(String id);
   Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body);
   Future<GeneralResponse> createStaff(Map<String, dynamic> body);
+  Future<GeneralResponse> getStaffList();
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body);
   Future<GeneralResponse> deleteStaff(String id);
   Future<GeneralResponse> submitFeedback(Map<String, dynamic> body);
@@ -237,4 +238,10 @@ abstract class RemoteDataSource {
   /// Check the latest available app version from the backend.
   /// [platform] should be "android" or "ios".
   Future<AppVersionResponse> checkAppVersion(String platform);
+
+  // ── Subscription ──────────────────────────────────────────────────────────
+
+  Future<GeneralResponse> getSubscription();
+  Future<GeneralResponse> activateTrial();
+  Future<GeneralResponse> createSubscriptionCheckout(String plan);
 }

@@ -31,8 +31,8 @@ class ResetPasswordController extends BaseController {
   void sendCode() {
     if (!(formKey.currentState?.validate() ?? false)) return;
     final msisdn = msisdnController.text.trim();
-    Util().checkConnectivity().then((value) {
-      if (value != 'Mobile' && value != 'Wifi') {
+    Util.isOnline().then((online) {
+      if (!online) {
         showErrorMessage(appLocalization.noInternet);
         return;
       }
