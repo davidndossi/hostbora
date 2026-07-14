@@ -28,6 +28,12 @@ import '../modules/rent/utility_usage_graph/bindings/rent_utility_usage_graph_bi
 import '../modules/rent/utility_usage_graph/views/rent_utility_usage_graph_view.dart';
 import '../modules/admin_whatsapp_credentials/bindings/admin_whatsapp_credentials_binding.dart';
 import '../modules/admin_whatsapp_credentials/views/admin_whatsapp_credentials_view.dart';
+import '../modules/admin_sales_agents/bindings/admin_sales_agent_detail_binding.dart';
+import '../modules/admin_sales_agents/bindings/admin_sales_agents_binding.dart';
+import '../modules/admin_sales_agents/views/admin_sales_agent_detail_view.dart';
+import '../modules/admin_sales_agents/views/admin_sales_agents_view.dart';
+import '../modules/sales_agent_dashboard/bindings/sales_agent_dashboard_binding.dart';
+import '../modules/sales_agent_dashboard/views/sales_agent_dashboard_view.dart';
 import '../modules/send_sms/bindings/send_sms_binding.dart';
 import '../modules/send_sms/views/send_sms_view.dart';
 import '../modules/subscription/bindings/subscription_binding.dart';
@@ -309,6 +315,21 @@ class AppPages {
       name: _Paths.ADMIN_WHATSAPP_CREDENTIALS,
       page: () => AdminWhatsappCredentialsView(),
       binding: AdminWhatsappCredentialsBinding(),
+    ),
+    GetPage(
+      name: _Paths.ADMIN_SALES_AGENTS,
+      page: () => AdminSalesAgentsView(),
+      binding: AdminSalesAgentsBinding(),
+    ),
+    GetPage(
+      name: _Paths.ADMIN_SALES_AGENT_DETAIL,
+      page: () => AdminSalesAgentDetailView(),
+      binding: AdminSalesAgentDetailBinding(),
+    ),
+    GetPage(
+      name: _Paths.SALES_AGENT_DASHBOARD,
+      page: () => SalesAgentDashboardView(),
+      binding: SalesAgentDashboardBinding(),
     ),
     GetPage(
       name: _Paths.SUBSCRIPTION,

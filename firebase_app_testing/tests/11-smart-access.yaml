@@ -1,0 +1,24 @@
+tests:
+  - displayName: Open smart access dashboard
+    id: smart-access-dashboard
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Smart Access screen
+        hint: More menu or Home shortcuts find Smart Access or Smart Locks.
+        finalScreenAssertion: Smart access device list or connect lock prompt is visible
+
+  - displayName: View entry logs
+    id: smart-entry-logs
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Entry Logs from smart access section
+        hint: Smart Access screen link to Entry Logs or door history.
+        finalScreenAssertion: Entry logs list with timestamps is visible or empty logs state shown
+
+  - displayName: Open guest access codes from smart access
+    id: smart-guest-codes-link
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From Smart Access navigate to guest access codes management
+        hint: Link or button Guest Access Codes on smart access screen.
+        finalScreenAssertion: Guest access codes screen is visible

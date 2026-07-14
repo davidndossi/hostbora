@@ -21,7 +21,9 @@ class ChangePinView extends BaseView<ChangePinController> {
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
-      appBarTitleText: _t(context, en: 'Setup New PIN', sw: 'Weka PIN Mpya'),
+      appBarTitleText: controller.remoteConfirmMode.value
+          ? _t(context, en: 'Confirm Your PIN', sw: 'Thibitisha PIN Yako')
+          : _t(context, en: 'Setup New PIN', sw: 'Weka PIN Mpya'),
     );
   }
 
@@ -80,15 +82,22 @@ class ChangePinView extends BaseView<ChangePinController> {
           padding: const EdgeInsets.symmetric(horizontal: 35.0, vertical: 15.0),
           child: Obx(
             () => Text(
-              controller.pinStatus.value == PINStatus.verifyCurrent
-                  ? appLocalization.enterCurrentPin
-                  : controller.pinStatus.value == PINStatus.enterFirst
-                      ? _t(context, en: 'Create PIN', sw: 'Tengeneza PIN')
-                      : _t(
-                          context,
-                          en: 'Re-enter your PIN',
-                          sw: 'Weka PIN yako tena',
-                        ),
+              controller.pinStatus.value == PINStatus.confirmRemote
+                  ? _t(
+                      context,
+                      en: 'Enter your PIN to continue',
+                      sw: 'Weka PIN yako ili kuendelea',
+                    )
+                  : controller.pinStatus.value == PINStatus.verifyCurrent
+                      ? appLocalization.enterCurrentPin
+                      : controller.pinStatus.value == PINStatus.enterFirst
+                          ? _t(context, en: 'Create PIN', sw: 'Tengeneza PIN')
+                          : _t(
+                              context,
+                              en: 'Re-enter your PIN',
+                              sw: 'Weka PIN yako tena',
+                            ),
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w400,
@@ -99,6 +108,31 @@ class ChangePinView extends BaseView<ChangePinController> {
             ),
           ),
         ),
+        Obx(() {
+          if (!controller.remoteConfirmMode.value) return const SizedBox.shrink();
+          if (controller.isVerifyingRemotePin.value) {
+            return const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            );
+          }
+          final error = controller.remoteConfirmError.value;
+          if (error != null && error.isNotEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 35.0),
+              child: Text(
+                error,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red, fontSize: 13),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
         SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 64.0),
@@ -247,6 +281,23 @@ class ChangePinView extends BaseView<ChangePinController> {
               ),
             ],
           ),
+        ),
+        Obx(
+          () => controller.remoteConfirmMode.value
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 12),
+                  child: TextButton(
+                    onPressed: controller.forgotRemotePin,
+                    child: Text(
+                      _t(
+                        context,
+                        en: 'Forgot PIN? Set a new one',
+                        sw: 'Umesahau PIN? Weka mpya',
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
       ],
     );

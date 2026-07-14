@@ -47,6 +47,20 @@ class HomeView extends BaseView<HomeController> {
         if (controller.homeInitialLoading.value) {
           return const HomeScreenSkeleton();
         }
+        if (!controller.hasAnyProperty.value) {
+          return RefreshIndicator(
+            onRefresh: () => controller.loadHomeData(refresh: true),
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: _buildEmptyHomeState(context),
+                ),
+              ),
+            ),
+          );
+        }
         return RefreshIndicator(
           onRefresh: () => controller.loadHomeData(refresh: true),
           child: SingleChildScrollView(
@@ -93,6 +107,94 @@ class HomeView extends BaseView<HomeController> {
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildEmptyHomeState(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: AppColors.colorPrimaryLight,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.add_home_work_rounded,
+                size: 44,
+                color: AppColors.colorPrimary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _t(
+                context,
+                "Let's add your first property",
+                'Tuongeze mali yako ya kwanza',
+              ),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: context.tokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _t(
+                context,
+                'Add a property to start tracking bookings, tenants, income and expenses — everything else on this screen fills in automatically.',
+                'Ongeza mali ili kuanza kufuatilia uhifadhi, wapangaji, mapato na matumizi — vitu vingine kwenye skrini hii vitajaa kiotomatiki.',
+              ),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.45,
+                color: context.tokens.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: controller.addListing,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.colorPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: Text(
+                  _t(context, 'Add Property', 'Ongeza Mali'),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _t(
+                context,
+                'Takes less than a minute',
+                'Inachukua chini ya dakika moja',
+              ),
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

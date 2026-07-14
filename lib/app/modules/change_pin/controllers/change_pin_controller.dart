@@ -9,7 +9,7 @@ import '../../../data/model/general_response.dart';
 import '../../../data/repository/app_repository.dart';
 import '/app/core/base/base_controller.dart';
 
-enum PINStatus { verifyCurrent, enterFirst, enterSecond, equals, unequals }
+enum PINStatus { verifyCurrent, confirmRemote, enterFirst, enterSecond, equals, unequals }
 
 class ChangePinController extends BaseController {
   final pinStatus = PINStatus.enterFirst.obs;
@@ -17,12 +17,24 @@ class ChangePinController extends BaseController {
   final secondPIN = ''.obs;
   final changePinMode = false.obs;
 
+  /// True when confirming an existing PIN already saved on the backend
+  /// (returning user, new device) instead of creating a brand-new one.
+  final remoteConfirmMode = false.obs;
+  final isVerifyingRemotePin = false.obs;
+  final remoteConfirmError = Rxn<String>();
+
+  /// True once the user taps "Forgot PIN? Set a new one" from remote-confirm
+  /// mode. The subsequent save is allowed to bypass the old-PIN check since a
+  /// fresh password sign-in already proved identity.
+  bool _viaPasswordReauth = false;
+
   final PreferenceManager _preferenceManager =
       Get.find(tag: (PreferenceManager).toString());
 
   AppRepository? _repository;
 
   String _storedPin = '';
+  Map? _redirectArgs;
 
   @override
   void onInit() {
@@ -32,10 +44,16 @@ class ChangePinController extends BaseController {
           Get.find<AppRepository>(tag: (AppRepository).toString());
     } catch (_) {}
     final args = Get.arguments;
-    if (args is Map && args['change_pin'] == true) {
-      changePinMode.value = true;
-      pinStatus(PINStatus.verifyCurrent);
-      _loadStoredPin();
+    if (args is Map) {
+      _redirectArgs = args;
+      if (args['change_pin'] == true) {
+        changePinMode.value = true;
+        pinStatus(PINStatus.verifyCurrent);
+        _loadStoredPin();
+      } else if (args['confirm_remote_pin'] == true) {
+        remoteConfirmMode.value = true;
+        pinStatus(PINStatus.confirmRemote);
+      }
     }
   }
 
@@ -56,7 +74,8 @@ class ChangePinController extends BaseController {
       Get.locale?.languageCode == 'sw' ? sw : en;
 
   int getCountsOfPIN() {
-    if (pinStatus.value == PINStatus.verifyCurrent) {
+    if (pinStatus.value == PINStatus.verifyCurrent ||
+        pinStatus.value == PINStatus.confirmRemote) {
       return firstPIN.value.length;
     }
     return firstPIN.value.length < 4
@@ -65,6 +84,19 @@ class ChangePinController extends BaseController {
   }
 
   void setPIN(int pinNum) {
+    if (pinStatus.value == PINStatus.confirmRemote) {
+      if (isVerifyingRemotePin.value) return;
+      if (firstPIN.value.length < 4) {
+        remoteConfirmError.value = null;
+        firstPIN('${firstPIN.value}$pinNum');
+        if (firstPIN.value.length == 4) {
+          _verifyRemotePin();
+        }
+      }
+      update();
+      return;
+    }
+
     if (pinStatus.value == PINStatus.verifyCurrent) {
       if (firstPIN.value.length < 4) {
         firstPIN('${firstPIN.value}$pinNum');
@@ -114,8 +146,71 @@ class ChangePinController extends BaseController {
     update();
   }
 
+  Map<String, dynamic>? get _redirectWorkspaceArgs {
+    final redirect = _redirectArgs?[
+            WorkspaceContextService.rentHubRedirectListingsIfEmptyKey] ==
+        true;
+    return redirect
+        ? {WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true}
+        : null;
+  }
+
+  /// Verifies the entered PIN against the account's remote hash (new device,
+  /// returning user). On success, the PIN is cached locally so future app-lock
+  /// unlocks work offline too, and the user proceeds straight into the app.
+  Future<void> _verifyRemotePin() async {
+    final pin = firstPIN.value;
+    isVerifyingRemotePin.value = true;
+    try {
+      final res = await _repository?.verifyPinOnServer(pin);
+      final data = res?.data;
+      final isValid = data is Map && data['valid'] == true;
+      if (isValid) {
+        await _preferenceManager.setString(PreferenceManager.keyPinCode, pin);
+        await _preferenceManager.setBool(PreferenceManager.keyPinEnabled, true);
+        await _preferenceManager.setBool(PreferenceManager.keyFirstLogin, false);
+        await _preferenceManager.setInt(PreferenceManager.keyPinFailedAttempts, 0);
+        await _preferenceManager.setInt(PreferenceManager.keyPinLockedUntilMs, 0);
+        showSuccessMessage(_t('Welcome back!', 'Karibu tena!'));
+        await Get.find<WorkspaceContextService>()
+            .offAllToPreferredWorkspace(arguments: _redirectWorkspaceArgs);
+        return;
+      }
+
+      final remaining = (data is Map ? data['remainingAttempts'] : null) as int?;
+      remoteConfirmError.value = remaining != null
+          ? _t(
+              'Incorrect PIN. $remaining attempt(s) left.',
+              'PIN si sahihi. Umebakiwa na jaribio $remaining.',
+            )
+          : _t('Incorrect PIN', 'PIN si sahihi');
+      firstPIN('');
+    } catch (e) {
+      remoteConfirmError.value = e
+          .toString()
+          .replaceFirst('Exception: ', '');
+      firstPIN('');
+    } finally {
+      isVerifyingRemotePin.value = false;
+      update();
+    }
+  }
+
+  /// Switches from "confirm your existing PIN" into first-time-setup mode so
+  /// the user can create a brand-new PIN. Allowed to bypass the old-PIN check
+  /// server-side since the user is already fully authenticated via password.
+  void forgotRemotePin() {
+    _viaPasswordReauth = true;
+    remoteConfirmMode.value = false;
+    remoteConfirmError.value = null;
+    firstPIN('');
+    secondPIN('');
+    pinStatus(PINStatus.enterFirst);
+  }
+
   void erase() {
-    if (pinStatus.value == PINStatus.verifyCurrent) {
+    if (pinStatus.value == PINStatus.verifyCurrent ||
+        pinStatus.value == PINStatus.confirmRemote) {
       if (firstPIN.value.isNotEmpty) {
         firstPIN(firstPIN.value.substring(0, firstPIN.value.length - 1));
       }
@@ -226,6 +321,7 @@ class ChangePinController extends BaseController {
       await _repository?.changePinOnServer({
         'currentPin': oldPin,
         'newPin': newPin,
+        'viaPasswordReauth': _viaPasswordReauth,
       });
     } catch (e) {
       logger.w('changePinOnServer failed (non-blocking): $e');

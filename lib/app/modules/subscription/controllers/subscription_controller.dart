@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
@@ -32,10 +31,20 @@ class SubscriptionController extends BaseController {
     }
   }
 
-  /// Opens the Snippe hosted checkout page for [plan].
+  /// Subscribe via App Store (iOS) or Snippe checkout (Android).
   Future<void> subscribe(String plan) async {
     startingCheckout.value = true;
     try {
+      if (_subscriptionService.usesAppleIap) {
+        final ok = await _subscriptionService.startApplePurchase(plan);
+        if (ok) {
+          showSuccessMessage('Subscription activated. Thank you!');
+        } else {
+          showErrorMessage('Purchase was not completed. Please try again.');
+        }
+        return;
+      }
+
       final checkout = await _subscriptionService.startCheckout(plan);
       if (checkout == null) {
         showErrorMessage('Could not start payment. Please try again.');
@@ -53,7 +62,28 @@ class SubscriptionController extends BaseController {
   }
 
   /// Manually refresh subscription state from the server.
+  @override
   Future<void> refresh() => _subscriptionService.refresh();
+
+  Future<void> restorePurchases() async {
+    if (!_subscriptionService.usesAppleIap) return;
+    startingCheckout.value = true;
+    try {
+      await _subscriptionService.restoreApplePurchases();
+      showSuccessMessage('Purchases restored.');
+    } finally {
+      startingCheckout.value = false;
+    }
+  }
+
+  String? priceLabel(String planKey) {
+    if (_subscriptionService.usesAppleIap) {
+      return _subscriptionService.applePriceForPlan(planKey);
+    }
+    return null;
+  }
+
+  bool get usesAppleIap => _subscriptionService.usesAppleIap;
 
   String planName(String key) {
     switch (key) {

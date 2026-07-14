@@ -51,6 +51,7 @@ import '/app/data/local/service/tenant_lease_reminder_service.dart';
 import '/app/data/local/service/workspace_context_service.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/data/local/preference/preference_manager_impl.dart';
+import '/app/data/service/app_review_service.dart';
 
 class LocalSourceBindings implements Bindings {
   @override
@@ -68,6 +69,14 @@ class LocalSourceBindings implements Bindings {
       ),
       permanent: true,
     ).init();
+    Get.put<AppReviewService>(
+      AppReviewService(
+        preferenceManager: Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+      ),
+      permanent: true,
+    );
     Get.lazyPut<ExchangeRateLocalDataSource>(
       () => ExchangeRateLocalDataSource(),
       fenix: true,

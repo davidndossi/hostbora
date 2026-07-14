@@ -310,6 +310,40 @@ class SettingsView extends BaseView<SettingsController> {
               trailing: const Icon(Icons.chevron_right_outlined),
             ),
             SettingsTile.navigation(
+              onPressed: (context) => controller.openAdminSalesAgents(),
+              leading: const Icon(Icons.groups_outlined),
+              title: _tileTitle(
+                context,
+                _t(context, 'Sales agents (admin)', 'Wakala wa mauzo (msimamizi)'),
+              ),
+              description: _tileDescription(
+                context,
+                _t(
+                  context,
+                  'Create agents, track recruits and commissions',
+                  'Unda wakala, fuatilia wateja na kamisheni',
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_outlined),
+            ),
+            SettingsTile.navigation(
+              onPressed: (context) => controller.openSalesAgentDashboard(),
+              leading: const Icon(Icons.insights_outlined),
+              title: _tileTitle(
+                context,
+                _t(context, 'My sales dashboard', 'Dashibodi yangu ya mauzo'),
+              ),
+              description: _tileDescription(
+                context,
+                _t(
+                  context,
+                  'Recruits, active subscribers and commission',
+                  'Waliowajiliwa, wanaofanya kazi na kamisheni',
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_outlined),
+            ),
+            SettingsTile.navigation(
               onPressed: (context) => controller.openPinSettings(),
               leading: const Icon(Icons.pin_outlined),
               title: _tileTitle(context, appLocalization.changePinTitle),

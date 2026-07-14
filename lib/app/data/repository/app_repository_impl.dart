@@ -24,6 +24,7 @@ import '../model/reg_request.dart';
 import '../model/update_preference_request.dart';
 import '../model/user_profile_request.dart';
 import '../model/send_sms_request.dart';
+import '../model/send_payment_link_request.dart';
 import '../model/send_whatsapp_bulk_request.dart';
 import '../model/send_whatsapp_template_request.dart';
 import '../model/update_request.dart';
@@ -500,6 +501,16 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> getPinStatus() {
+    return _remoteSource.getPinStatus();
+  }
+
+  @override
+  Future<GeneralResponse> verifyPinOnServer(String pin) {
+    return _remoteSource.verifyPinOnServer(pin);
+  }
+
+  @override
   Future<GeneralResponse> createProperty(Map<String, dynamic> body) {
     return _remoteSource.createProperty(body);
   }
@@ -528,8 +539,7 @@ class AppRepositoryImpl implements AppRepository {
 
   @override
   Future<GeneralResponse> schedulePaymentReminder(SchedulePaymentReminderRequest request) {
-    // TODO: implement schedulePaymentReminder
-    throw UnimplementedError();
+    return _remoteSource.schedulePaymentReminder(request);
   }
 
   @override
@@ -555,4 +565,45 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> createSubscriptionCheckout(String plan) =>
       _remoteSource.createSubscriptionCheckout(plan);
+
+  @override
+  Future<GeneralResponse> verifyAppleSubscription({
+    required String productId,
+    required String transactionId,
+    required String signedTransactionInfo,
+  }) =>
+      _remoteSource.verifyAppleSubscription(
+        productId: productId,
+        transactionId: transactionId,
+        signedTransactionInfo: signedTransactionInfo,
+      );
+
+  @override
+  Future<GeneralResponse> sendSnippePaymentLinkViaWhatsApp(
+    SendPaymentLinkRequest request,
+  ) =>
+      _remoteSource.sendSnippePaymentLinkViaWhatsApp(request);
+
+  @override
+  Future<GeneralResponse> validateReferralCode(String code) =>
+      _remoteSource.validateReferralCode(code);
+
+  @override
+  Future<GeneralResponse> getSalesAgentDashboard(String userId) =>
+      _remoteSource.getSalesAgentDashboard(userId);
+
+  @override
+  Future<GeneralResponse> listSalesAgents() => _remoteSource.listSalesAgents();
+
+  @override
+  Future<GeneralResponse> createSalesAgent(Map<String, dynamic> body) =>
+      _remoteSource.createSalesAgent(body);
+
+  @override
+  Future<GeneralResponse> getAdminSalesAgentDashboard(int agentId) =>
+      _remoteSource.getAdminSalesAgentDashboard(agentId);
+
+  @override
+  Future<GeneralResponse> updateSalesAgentStatus(int agentId, String status) =>
+      _remoteSource.updateSalesAgentStatus(agentId, status);
 }

@@ -1,0 +1,48 @@
+tests:
+  - displayName: View finances dashboard
+    id: finance-dashboard
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Finances tab from bottom navigation
+        hint: Third tab in main shell is Finances or Portfolio.
+        finalScreenAssertion: Financial dashboard with income expense or profit summary is visible
+
+  - displayName: Open financial overview
+    id: finance-overview
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Financial Overview from Finances or More
+        hint: Look for Financial Overview link on finance screens.
+        finalScreenAssertion: Financial overview with trends or KPI cards is visible
+
+  - displayName: Open record payment screen
+    id: finance-record-payment
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Record Payment
+        hint: Home quick action Record Payment or Finances menu.
+        finalScreenAssertion: Record payment form with amount and method fields is visible
+
+  - displayName: Open add expense screen
+    id: finance-add-expense
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Add Expense
+        hint: From Finances tab or Home use Add Expense action.
+        finalScreenAssertion: Add expense form is visible
+
+  - displayName: Open reports hub
+    id: finance-reports-hub
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Reports hub
+        hint: More tab or Finances section find Reports.
+        finalScreenAssertion: Reports hub with Occupancy Financial or Expenses tabs is visible
+
+  - displayName: Switch reports hub tabs
+    id: finance-reports-tabs
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Reports hub and switch between report tabs
+        hint: Tap Financial tab then Expenses tab if available.
+        finalScreenAssertion: Report content updates and a chart or table is visible

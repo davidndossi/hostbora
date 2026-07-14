@@ -1,0 +1,75 @@
+tests:
+  - displayName: View maintenance tasks tab
+    id: maintenance-tasks-list
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Maintenance tab from bottom navigation
+        hint: Fourth bottom nav tab is Maintenance or Tasks.
+        finalScreenAssertion: Maintenance tasks list or empty tasks state is visible
+
+  - displayName: Open add task form
+    id: maintenance-add-task
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Tap add task FAB or Add Task on Maintenance tab
+        hint: Floating action button on maintenance screen.
+        finalScreenAssertion: Add task form with title and property fields is visible
+
+  - displayName: Open task detail
+    id: maintenance-task-detail
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From tasks list open the first task detail
+        hint: Tap first task if list not empty. Otherwise assert empty state.
+        finalScreenAssertion: Task detail screen is visible or no tasks message shown
+
+  - displayName: Open edit task screen
+    id: maintenance-edit-task
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From a task detail open Edit Task
+        hint: Task detail overflow menu or Edit button.
+        finalScreenAssertion: Edit task form is visible
+
+  - displayName: View team and staff roster
+    id: staff-team-roster
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open My Properties, choose a property, then view the staff roster in its Staff tab
+        hint: From the bottom navigation open Properties (My Properties), tap on a property to open its listing details, then tap the "Staff" tab in the tab bar. The roster of assigned staff should be visible there.
+        finalScreenAssertion: Staff roster list is visible on the property's Staff tab
+
+  - displayName: Register a new staff member
+    id: staff-add-member
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Team and Staff (or Staff Registry) and register a new staff member
+        hint: From More menu or a listing's Staff tab find Team and Staff, then tap the add staff button — this opens the Staff Registry form. Fill in full name like "QA Test Staff", phone like 0712345678, leave pay type at its default, enter an amount like 200000, leave payment date at its default, and choose any primary role from the dropdown.
+        finalScreenAssertion: Staff form fields are filled in and the "Register staff member" button is visible
+      - goal: Submit the new staff member form
+        hint: Tap the "Register staff member" button at the bottom of the form.
+        finalScreenAssertion: The new staff member now appears in the active team list, or a success confirmation is shown
+
+  - displayName: Open staff member detail
+    id: staff-detail
+    prerequisiteTestCaseId: staff-add-member
+    steps:
+      - goal: From the staff list, click a staff row to open that member's detail profile
+        hint: Navigate to Team and Staff (More menu or a listing's Staff tab), then tap the row for the staff member that was just added to open their detail profile.
+        finalScreenAssertion: Staff detail profile is visible
+
+  - displayName: View inventory tracking
+    id: inventory-tracking
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Inventory Tracking
+        hint: More menu or listing find Inventory.
+        finalScreenAssertion: Inventory items list or stock levels screen is visible
+
+  - displayName: Open add inventory item form
+    id: inventory-add-item
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From inventory open Add Item form
+        hint: Plus button or Add inventory item.
+        finalScreenAssertion: Inventory item form is visible

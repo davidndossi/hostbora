@@ -1,0 +1,30 @@
+tests:
+  - displayName: Complete onboarding and choose BnB workspace
+    id: onboarding-bnb-workspace
+    steps:
+      - goal: Complete first-run onboarding and select BnB workspace
+        hint: Swipe through intro slides if shown. Choose BnB or short-stays workspace and continue.
+        finalScreenAssertion: Create Host Account or Login screen is visible
+
+  - displayName: Register new host account
+    id: host-register-account
+    steps:
+      - goal: Open Create Host Account from Login and fill registration form
+        hint: Tap Create Host Account. Enter full name, valid email, Tanzanian phone 0[678] plus 8 digits, password at least 8 characters. Submit sign up.
+        finalScreenAssertion: OTP verification screen asking for a 4-digit code is visible
+
+  - displayName: Verify registration OTP
+    id: host-verify-registration-otp
+    prerequisiteTestCaseId: host-register-account
+    steps:
+      - goal: Enter the 4-digit OTP and verify registration
+        hint: On stage server use placeholder OTP 0000 if email SMS unavailable. Enter four digits and submit or wait for auto-verify.
+        finalScreenAssertion: Login screen is visible with registration success message or prompt to sign in
+
+  - displayName: Resend registration OTP
+    id: host-resend-registration-otp
+    prerequisiteTestCaseId: host-register-account
+    steps:
+      - goal: Tap Resend OTP on the verification screen
+        hint: Look for Resend OTP text button below the PIN fields.
+        finalScreenAssertion: A success toast or message about OTP resent is visible

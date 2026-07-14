@@ -8,6 +8,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/local/service/workspace_context_service.dart';
+import '../../../data/service/app_review_service.dart';
 import '../../../data/model/login_request.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/repository/app_repository.dart';
@@ -157,8 +158,17 @@ class WelcomeBackController extends BaseController {
       await _preferenceManager.setString(
           PreferenceManager.keyExpiryTime, expiryTime);
       await _preferenceManager.setBool('isAdmin', loginResponse.user?.isAdmin ?? false);
+      if (loginResponse.user?.roles != null) {
+        await _preferenceManager.setStringList(
+          PreferenceManager.keyRoles,
+          loginResponse.user!.roles!,
+        );
+      }
 
       await _preferenceManager.setUser('user', loginResponse.user);
+      try {
+        await Get.find<AppReviewService>().onSuccessfulLogin();
+      } catch (_) {}
       if (res.token != null) {
         triggerRemoteAccountSync();
         await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
@@ -367,6 +377,14 @@ class WelcomeBackController extends BaseController {
     isBiometricAuthInProgress.value = true;
     try {
       final auth = LocalAuthentication();
+      final canCheck = await auth.canCheckBiometrics;
+      if (!canCheck) {
+        showErrorMessage(_t(
+          'Set up fingerprint in your phone Settings, then try again.',
+          'Weka alama ya kidole kwenye Mipangilio ya simu, kisha jaribu tena.',
+        ));
+        return;
+      }
       final didAuthenticate = await auth.authenticate(
         localizedReason: _t(
           'Sign in with fingerprint to continue',
@@ -382,11 +400,24 @@ class WelcomeBackController extends BaseController {
           faceIdEnabledPref.value = true;
           await _preferenceManager.setBool(PreferenceManager.keyFaceIdEnabled, true);
         }
+        final savedPassword = await _preferenceManager.getString('userApp');
+        if (savedPassword.isEmpty) {
+          showErrorMessage(_t(
+            'Saved login expired. Sign in with phone and password once, then use biometrics.',
+            'Kuingia kilichohifadhiwa kimeisha. Ingia kwa simu na nenosiri mara moja, kisha tumia biometria.',
+          ));
+          return;
+        }
         loadCredentials();
       }
     } on PlatformException catch (e) {
-      if (e.code == auth_error.notAvailable) {
-        showErrorMessage(_t('Biometrics not available', 'Biometria haipatikani'));
+      if (e.code == auth_error.notAvailable ||
+          e.code == 'NotAvailable' ||
+          (e.message ?? '').contains('security features not enabled')) {
+        showErrorMessage(_t(
+          'Enable a screen lock (PIN/pattern) and fingerprint in phone Settings.',
+          'Weka PIN/mchoro wa skrini na alama ya kidole kwenye Mipangilio ya simu.',
+        ));
       } else if (e.code == auth_error.notEnrolled) {
         showErrorMessage(_t(
           'No fingerprint or face enrolled. Use PIN.',
@@ -398,9 +429,16 @@ class WelcomeBackController extends BaseController {
           'Too many attempts. Use PIN or try again later.',
           'Majaribio ni mengi sana. Tumia PIN au jaribu tena baadaye.',
         ));
-      } else if (e.code != auth_error.passcodeNotSet &&
-          e.code != 'UserCanceled' &&
-          e.code != 'Canceled') {
+      } else if (e.code == auth_error.passcodeNotSet) {
+        showErrorMessage(_t(
+          'Set a screen lock PIN on your phone first (Settings → Security).',
+          'Weka PIN ya skrini kwanza kwenye simu (Mipangilio → Usalama).',
+        ));
+      } else if (e.code == 'UserCanceled' ||
+          e.code == 'Canceled' ||
+          e.code == 'auth_in_progress') {
+        // User dismissed the system dialog — no error toast.
+      } else {
         showErrorMessage(_t('Biometric sign in failed. Use PIN.', 'Kuingia kwa biometria kumeshindikana. Tumia PIN.'));
       }
     } catch (e) {

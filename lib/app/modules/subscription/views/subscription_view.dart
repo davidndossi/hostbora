@@ -81,6 +81,8 @@ class SubscriptionView extends BaseView<SubscriptionController> {
           ...hostBoraPlanInfos.map((plan) => _PlanCard(
                 info: plan,
                 isCurrentPlan: sub.isActive && sub.plan == plan.key,
+                priceOverride: controller.priceLabel(plan.key),
+                usesAppleIap: controller.usesAppleIap,
                 onSubscribe: controller.startingCheckout.value
                     ? null
                     : () => controller.subscribe(plan.key),
@@ -97,9 +99,23 @@ class SubscriptionView extends BaseView<SubscriptionController> {
             const SizedBox(height: AppValues.spacing_20),
           ],
 
+          // ── Restore purchases (iOS) ───────────────────────────
+          if (controller.usesAppleIap) ...[
+            TextButton(
+              onPressed: controller.startingCheckout.value
+                  ? null
+                  : controller.restorePurchases,
+              child: const Text('Restore Purchases'),
+            ),
+            const SizedBox(height: AppValues.spacing_20),
+          ],
+
           // ── Footer note ───────────────────────────────────────
           Text(
-            'Payments processed securely via Snippe. Subscriptions auto-renew monthly.',
+            controller.usesAppleIap
+                ? 'Subscriptions are billed through your Apple ID and auto-renew monthly. '
+                    'Manage or cancel in Settings → Apple ID → Subscriptions.'
+                : 'Payments processed securely via Snippe. Subscriptions auto-renew monthly.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
@@ -164,11 +180,15 @@ class _PlanCard extends StatelessWidget {
     required this.info,
     required this.isCurrentPlan,
     required this.onSubscribe,
+    this.priceOverride,
+    this.usesAppleIap = false,
   });
 
   final PlanInfo info;
   final bool isCurrentPlan;
   final VoidCallback? onSubscribe;
+  final String? priceOverride;
+  final bool usesAppleIap;
 
   @override
   Widget build(BuildContext context) {
@@ -217,16 +237,16 @@ class _PlanCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        'TZS ${_fmt(info.price)}',
+                        priceOverride ?? 'TZS ${_fmt(info.price)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                           color: isDark ? theme.colorScheme.onSurface : AppColors.textColorPrimary,
                         ),
                       ),
-                      const Text(
-                        'per month',
-                        style: TextStyle(fontSize: 12, color: AppColors.textColorSecondary),
+                      Text(
+                        usesAppleIap ? 'per month (App Store)' : 'per month',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textColorSecondary),
                       ),
                     ],
                   ),
@@ -280,7 +300,9 @@ class _PlanCard extends StatelessWidget {
                           foregroundColor: Colors.white,
                         ),
                         child: Text(
-                          'Subscribe — TZS ${_fmt(info.price)}/mo',
+                          usesAppleIap
+                              ? 'Subscribe — ${priceOverride ?? 'App Store'}'
+                              : 'Subscribe — TZS ${_fmt(info.price)}/mo',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,

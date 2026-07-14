@@ -1,0 +1,32 @@
+tests:
+  - displayName: Open subscription plans screen
+    id: subscription-plans
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Reach the HostBora subscription plans screen
+        hint: There is no direct Subscription entry in Settings. The reliable way to reach it is via the Pro-plan paywall — open the More tab and tap "Send SMS / WhatsApp". This feature requires the Pro plan, so a "requires Pro" bottom sheet should appear; tap its "Upgrade to Pro" button to land on the subscription screen. (An automatic redirect on Home only happens for brand-new accounts with zero properties, so do not rely on it here.)
+        finalScreenAssertion: HostBora Plans screen with Starter, Pro, and Ultra tiers is visible
+
+  - displayName: View free trial option
+    id: subscription-trial
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: On subscription screen locate Start Free Trial card
+        hint: Scroll to trial section if not on active subscription.
+        finalScreenAssertion: Start Free Trial button or 30-day trial text is visible
+
+  - displayName: Export report from reports hub
+    id: reports-export
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Reports hub and tap export or share on a report tab
+        hint: Open Reports choose Financial tab find Export or Share icon. Cancel share sheet if it opens.
+        finalScreenAssertion: Export share sheet or export success message is visible
+
+  - displayName: View notifications inbox
+    id: notifications-inbox
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: After a successful login, open Notifications inbox from Home bell icon or Settings
+        hint: Ensure you are logged in and on the Home screen first. Then tap the bell icon on Home, or open Settings and find Notifications.
+        finalScreenAssertion: Notifications list or empty notifications state is visible

@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/subscription_payment_config.dart';
 import '../model/subscription_status.dart';
 import '../repository/app_repository.dart';
+import 'apple_iap_service.dart';
 
 /// Plan metadata shown in the UI.
 class PlanInfo {
@@ -89,6 +91,13 @@ class SubscriptionService extends GetxService {
   bool get isUltra         => isActive && status.value.isUltra;
   bool get hasNoSubscription => status.value.plan == 'none' && status.value.status != 'loading';
 
+  bool get usesAppleIap => SubscriptionPaymentConfig.usesAppleIap;
+
+  AppleIapService? get _appleIap =>
+      usesAppleIap && Get.isRegistered<AppleIapService>()
+          ? Get.find<AppleIapService>()
+          : null;
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   @override
@@ -137,8 +146,28 @@ class SubscriptionService extends GetxService {
 
   // ── Checkout ──────────────────────────────────────────────────────────────
 
-  /// Creates a Snippe hosted-checkout session and opens [paymentLinkUrl] in
-  /// the system browser. Returns the [SubscriptionCheckout] on success.
+  /// iOS: starts an App Store in-app purchase for [plan].
+  Future<bool> startApplePurchase(String plan) async {
+    final iap = _appleIap;
+    if (iap == null) return false;
+    final ok = await iap.purchasePlan(plan);
+    if (ok) await refresh();
+    return ok;
+  }
+
+  /// Restores previous App Store purchases (iOS).
+  Future<void> restoreApplePurchases() async {
+    final iap = _appleIap;
+    if (iap == null) return;
+    await iap.restorePurchases();
+    await Future.delayed(const Duration(seconds: 3));
+    await refresh();
+  }
+
+  /// App Store localized price label for [plan], if loaded.
+  String? applePriceForPlan(String plan) => _appleIap?.storePriceForPlan(plan);
+
+  /// Android / web: Snippe hosted checkout in the system browser.
   Future<SubscriptionCheckout?> startCheckout(String plan) async {
     try {
       final resp = await _repository.createSubscriptionCheckout(plan);

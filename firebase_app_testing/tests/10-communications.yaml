@@ -1,0 +1,32 @@
+tests:
+  - displayName: Open Send SMS screen
+    id: comm-send-sms
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Send SMS from More menu or booking details
+        hint: More tab find "Send SMS / WhatsApp". This feature requires the Pro plan — if a bottom sheet appears saying the feature "requires Pro", tap its "Upgrade to Pro" button to proceed.
+        finalScreenAssertion: Send SMS compose screen with phone and message fields is visible, or (if the account has no Pro plan) the HostBora subscription plans screen is visible after choosing "Upgrade to Pro"
+
+  - displayName: Compose SMS message without sending
+    id: comm-compose-sms
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: On Send SMS enter a test phone number and message body
+        hint: Navigate to Send SMS from the More tab. If a "requires Pro" bottom sheet appears, tap "Upgrade to Pro" to proceed — this is expected on a non-Pro account. If instead the Send SMS compose screen opens directly, enter 0712345678 and a short test message. Do not send if it would charge SMS credits.
+        finalScreenAssertion: Message text is visible in the compose field, or (if the account has no Pro plan) the HostBora subscription plans screen is visible after choosing "Upgrade to Pro"
+
+  - displayName: Open WhatsApp template builder
+    id: comm-whatsapp-templates
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Go to More, then choose "Send SMS / WhatsApp", then open the WhatsApp Template action
+        hint: Open the More tab and tap "Send SMS / WhatsApp". This feature requires the Pro plan — if a "requires Pro" bottom sheet appears, tap "Upgrade to Pro" to proceed (expected on a non-Pro account). If the Send SMS screen opens directly, look for a WhatsApp Template button/icon in it and tap it.
+        finalScreenAssertion: WhatsApp template editor with message body field is visible, or (if the account has no Pro plan) the HostBora subscription plans screen is visible after choosing "Upgrade to Pro"
+
+  - displayName: Send SMS from booking details
+    id: comm-booking-sms
+    prerequisiteTestCaseId: rent-add-tenant-submit
+    steps:
+      - goal: Open a booking detail and find SMS or message guest action
+        hint: Open any booking from list then look for Send SMS or Message guest. This navigates to the same Send SMS screen used elsewhere, which requires the Pro plan — if a "requires Pro" bottom sheet appears, tap "Upgrade to Pro" to proceed.
+        finalScreenAssertion: SMS compose or guest contact action sheet is visible, or booking details with guest phone shown, or (if the account has no Pro plan) the HostBora subscription plans screen is visible after choosing "Upgrade to Pro"

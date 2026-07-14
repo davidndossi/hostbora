@@ -20,6 +20,7 @@ import '../model/otp_response.dart';
 import '../model/page_request.dart';
 import '../model/reg_request.dart';
 import '../model/send_sms_request.dart';
+import '../model/send_payment_link_request.dart';
 import '../model/send_whatsapp_bulk_request.dart';
 import '../model/send_whatsapp_template_request.dart';
 import '../model/update_preference_request.dart';
@@ -231,6 +232,14 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> deleteWhatsAppTemplateDraft(String id);
   Future<GeneralResponse> updateUnit(String listingId, String unitId, Map<String, dynamic> body);
   Future<GeneralResponse> changePinOnServer(Map<String, dynamic> body);
+
+  /// Whether the current account already has a PIN saved remotely (used on a
+  /// new device after password login, before deciding to prompt for a new PIN
+  /// vs. letting the user confirm/reuse their existing one).
+  Future<GeneralResponse> getPinStatus();
+
+  /// Verifies a candidate PIN against the account's saved remote hash.
+  Future<GeneralResponse> verifyPinOnServer(String pin);
   Future<GeneralResponse> createProperty(Map<String, dynamic> body);
   Future<GeneralResponse> updateProperty(int id, Map<String, dynamic> body);
   Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body);
@@ -244,4 +253,22 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> getSubscription();
   Future<GeneralResponse> activateTrial();
   Future<GeneralResponse> createSubscriptionCheckout(String plan);
+  Future<GeneralResponse> verifyAppleSubscription({
+    required String productId,
+    required String transactionId,
+    required String signedTransactionInfo,
+  });
+
+  Future<GeneralResponse> sendSnippePaymentLinkViaWhatsApp(
+    SendPaymentLinkRequest request,
+  );
+
+  // ── Sales agents & referrals ──────────────────────────────────────────────
+
+  Future<GeneralResponse> validateReferralCode(String code);
+  Future<GeneralResponse> getSalesAgentDashboard(String userId);
+  Future<GeneralResponse> listSalesAgents();
+  Future<GeneralResponse> createSalesAgent(Map<String, dynamic> body);
+  Future<GeneralResponse> getAdminSalesAgentDashboard(int agentId);
+  Future<GeneralResponse> updateSalesAgentStatus(int agentId, String status);
 }

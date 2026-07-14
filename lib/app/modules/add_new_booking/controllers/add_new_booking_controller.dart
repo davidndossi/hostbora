@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../flavors/build_config.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/haptic_feedback_util.dart';
 import '../../../data/local/db/property_local_data_source.dart';
@@ -13,8 +12,9 @@ import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/model/create_booking_request.dart';
+import '../../../data/model/send_payment_link_request.dart';
 import '../../../data/repository/app_repository.dart';
-import '../../../data/service/azampay_service.dart';
+import '../../../data/service/snippe_payment_link_service.dart';
 import '../../../routes/app_pages.dart';
 import '../../all_bookings/controllers/all_bookings_controller.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
@@ -42,14 +42,14 @@ class AddNewBookingController extends BaseController {
       : _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _propertyUnitLocal = Get.find<PropertyUnitLocalDataSource>(),
-        _azamPay = AzamPayService(),
+        _paymentLinks = SnippePaymentLinkService(),
         _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
         _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final AppRepository _repository;
   final PropertyLocalDataSource _propertyLocal;
   final PropertyUnitLocalDataSource _propertyUnitLocal;
-  final AzamPayService _azamPay;
+  final SnippePaymentLinkService _paymentLinks;
   final OfflineSyncQueueLocalDataSource _syncQueue;
   final OfflineSyncWorkerService _syncWorker;
 
@@ -70,13 +70,12 @@ class AddNewBookingController extends BaseController {
   final checkInDate = Rx<DateTime?>(null);
   final checkOutDate = Rx<DateTime?>(null);
   final saving = false.obs;
-  final sendPushToPay = false.obs;
-  final selectedProvider = 'Mpesa'.obs;
-  final sendingPushToPay = false.obs;
+  final sendPaymentLink = false.obs;
+  final sendingPaymentLink = false.obs;
   final pendingCount = 0.obs;
   final syncing = false.obs;
 
-  bool get isAzamPayEnabled => BuildConfig.instance.config.isAzamPayConfigured;
+  static const _minSnippeAmountTzs = 500;
 
   static const _dateFormat = 'MMM d, yyyy';
   static const _isoDateFormat = 'yyyy-MM-dd';
@@ -309,15 +308,26 @@ class AddNewBookingController extends BaseController {
       Get.snackbar('Invalid', 'Check-out must be after check-in');
       return;
     }
-    if (sendPushToPay.value && isAzamPayEnabled) {
+    if (sendPaymentLink.value) {
       final phone = guestPhoneController.text.trim();
       final amount = pushToPayAmountController.text.trim();
       if (phone.isEmpty) {
-        Get.snackbar('Push to Pay', 'Enter guest phone number to send payment request.');
+        Get.snackbar(
+          'Payment link',
+          'Enter guest phone number to send the Snippe payment link.',
+        );
         return;
       }
       if (amount.isEmpty) {
-        Get.snackbar('Push to Pay', 'Enter amount (TZS) to request from guest.');
+        Get.snackbar('Payment link', 'Enter amount (TZS) for the payment link.');
+        return;
+      }
+      final amountTzs = int.tryParse(amount.replaceAll(',', '')) ?? 0;
+      if (amountTzs < _minSnippeAmountTzs) {
+        Get.snackbar(
+          'Payment link',
+          'Minimum amount is $_minSnippeAmountTzs TZS.',
+        );
         return;
       }
     }
@@ -341,24 +351,44 @@ class AddNewBookingController extends BaseController {
 
     saving.value = true;
     try {
-      await _syncQueue.enqueue(
-        entityType: 'booking',
-        operation: 'create',
-        payloadJson: jsonEncode(request.toJson()),
-      );
-      await _syncWorker.runNow(maxItems: 20);
+      String? serverBookingId;
+      if (sendPaymentLink.value) {
+        final createRes = await _repository.createBooking(request);
+        final ok = createRes.responseCode == null ||
+            createRes.responseCode == '0' ||
+            createRes.responseCode == '200' ||
+            createRes.responseCode == '201';
+        if (!ok) {
+          throw Exception(createRes.message ?? 'Booking creation failed');
+        }
+        final data = createRes.data;
+        if (data is Map<String, dynamic>) {
+          serverBookingId = data['bookingId']?.toString();
+        }
+        if (serverBookingId == null || serverBookingId.isEmpty) {
+          throw Exception('Booking created but no booking ID returned');
+        }
+      } else {
+        await _syncQueue.enqueue(
+          entityType: 'booking',
+          operation: 'create',
+          payloadJson: jsonEncode(request.toJson()),
+        );
+        await _syncWorker.runNow(maxItems: 20);
+      }
       _updatePendingCount();
       await HomeController.refreshIfRegistered();
       await AllBookingsController.refreshIfRegistered();
-      final bookingId = DateTime.now().millisecondsSinceEpoch.toString();
-      if (sendPushToPay.value &&
+      if (sendPaymentLink.value &&
           guestPhone.isNotEmpty &&
-          isAzamPayEnabled &&
-          pushToPayAmountController.text.trim().isNotEmpty) {
-        await _sendPushToPay(
+          serverBookingId != null) {
+        await _sendSnippePaymentLink(
+          bookingId: serverBookingId,
           customerPhone: guestPhone,
-          amount: pushToPayAmountController.text.trim(),
-          externalId: bookingId,
+          customerName: guestNameController.text.trim(),
+          amountTzs: int.parse(
+            pushToPayAmountController.text.trim().replaceAll(',', ''),
+          ),
         );
       }
       await HostCalendarController.refreshIfRegistered();
@@ -366,14 +396,18 @@ class AddNewBookingController extends BaseController {
       await GuestAccessCodesController.refreshIfRegistered();
       hapticPrimaryConfirm();
       Get.back(result: true);
-      final pending = pendingCount.value;
-      if (pending > 0) {
-        Get.snackbar(
-          'Saved offline',
-          'Booking saved on this device. Will sync when internet is available.',
-        );
+      if (sendPaymentLink.value) {
+        Get.snackbar('Saved', 'Booking created and payment link sent via WhatsApp.');
       } else {
-        Get.snackbar('Saved', 'Booking synced successfully.');
+        final pending = pendingCount.value;
+        if (pending > 0) {
+          Get.snackbar(
+            'Saved offline',
+            'Booking saved on this device. Will sync when internet is available.',
+          );
+        } else {
+          Get.snackbar('Saved', 'Booking synced successfully.');
+        }
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to save booking: $e');
@@ -382,37 +416,41 @@ class AddNewBookingController extends BaseController {
     }
   }
 
-  Future<void> _sendPushToPay({
+  Future<void> _sendSnippePaymentLink({
+    required String bookingId,
     required String customerPhone,
-    required String amount,
-    required String externalId,
+    required String customerName,
+    required int amountTzs,
   }) async {
-    sendingPushToPay.value = true;
+    sendingPaymentLink.value = true;
     try {
-      final result = await _azamPay.sendPushToPay(
-        customerPhone: customerPhone,
-        amount: amount,
-        provider: selectedProvider.value,
-        externalId: externalId,
+      final property = listings
+          .firstWhereOrNull((l) => l.id == selectedListingId.value)
+          ?.propertyName;
+      final result = await _paymentLinks.sendViaWhatsApp(
+        SendPaymentLinkRequest(
+          amount: amountTzs,
+          customerName: customerName.isEmpty ? 'Guest' : customerName,
+          customerPhone: customerPhone,
+          bookingId: bookingId,
+          description: property != null && property.isNotEmpty
+              ? 'BnB booking — $property'
+              : 'BnB booking',
+        ),
       );
-      if (result.success) {
+      if (!result.whatsappSuccess) {
         Get.snackbar(
-          'Push to Pay',
-          'Payment request sent to guest\'s phone.',
+          'WhatsApp',
+          result.whatsappError ??
+              'Payment link created but WhatsApp could not be sent.',
         );
-      } else {
-        Get.snackbar('Push to Pay', result.message);
       }
     } finally {
-      sendingPushToPay.value = false;
+      sendingPaymentLink.value = false;
     }
   }
 
-  void setSendPushToPay(bool value) => sendPushToPay.value = value;
-
-  void selectProvider(String? value) {
-    if (value != null) selectedProvider.value = value;
-  }
+  void setSendPaymentLink(bool value) => sendPaymentLink.value = value;
 
   void onNavTap(int index) {
     switch (index) {

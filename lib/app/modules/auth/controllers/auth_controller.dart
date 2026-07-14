@@ -11,6 +11,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/local/service/workspace_context_service.dart';
+import '../../../data/service/app_review_service.dart';
 import '../../../data/model/login_request.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/model/otp_request.dart';
@@ -247,10 +248,21 @@ class AuthController extends BaseController {
       await _preferenceManager.setString(PreferenceManager.keyFullName,
           loginResponse.user?.fullName ?? '');
       await _preferenceManager.setBool('isAdmin', loginResponse.user?.isAdmin ?? false);
+      if (loginResponse.user?.roles != null) {
+        await _preferenceManager.setStringList(
+          PreferenceManager.keyRoles,
+          loginResponse.user!.roles!,
+        );
+      }
 
       await _preferenceManager.setUser('user', loginResponse.user);
       // TODO(security): replace plaintext userApp storage with a secure token/credential API.
       await _preferenceManager.setString('userApp', password.value);
+      if (res.message == 'auth_success') {
+        try {
+          await Get.find<AppReviewService>().onSuccessfulLogin();
+        } catch (_) {}
+      }
       if (res.token != null) {
         final hasPinEnabled = await _preferenceManager.getBool(
           PreferenceManager.keyPinEnabled,
@@ -266,12 +278,19 @@ class AuthController extends BaseController {
           debugPrint('Go to otp page');
           Get.offAndToNamed(Routes.OTP);
         } else         if (!hasValidPin) {
-          debugPrint('PIN not configured yet: go to change pin setup');
           triggerRemoteAccountSync();
+          // Returning user on a new device: if this account already has a PIN
+          // saved remotely, let them confirm/reuse it instead of forcing a
+          // brand-new one.
+          final hasRemotePin = await _hasRemotePinSet();
+          debugPrint(
+            'PIN not configured locally. hasRemotePin=$hasRemotePin',
+          );
           Get.offAllNamed(
             Routes.CHANGE_PIN,
             arguments: {
               WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,
+              if (hasRemotePin) 'confirm_remote_pin': true,
             },
           );
         } else {
@@ -291,6 +310,20 @@ class AuthController extends BaseController {
       showErrorMessage(appLocalization.incorrectPassword);
     } else {
       showErrorMessage(appLocalization.loginFailed);
+    }
+  }
+
+  /// Best-effort check of whether the server already has a PIN saved for this
+  /// account. Defaults to false (first-time setup) on any error, so a flaky
+  /// network call never blocks login.
+  Future<bool> _hasRemotePinSet() async {
+    try {
+      final res = await _repository.getPinStatus();
+      final data = res.data;
+      return data is Map && data['hasPinSet'] == true;
+    } catch (e) {
+      logger.w('getPinStatus failed (non-blocking): $e');
+      return false;
     }
   }
 

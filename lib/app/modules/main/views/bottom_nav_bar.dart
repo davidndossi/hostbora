@@ -55,6 +55,9 @@ class BottomNavBar extends StatelessWidget {
                 final isSelected = navController.selectedIndex == index;
                 return Expanded(
                   child: _NavBarTile(
+                    key: item.menuCode == MenuCode.PROPERTIES
+                        ? navController.propertiesTabKey
+                        : null,
                     item: item,
                     isSelected: isSelected,
                     selectedColor: selectedItemColor,
@@ -117,6 +120,7 @@ class _NavBarTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _NavBarTile({
+    super.key,
     required this.item,
     required this.isSelected,
     required this.selectedColor,

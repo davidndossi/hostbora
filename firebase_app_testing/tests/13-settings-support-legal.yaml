@@ -1,0 +1,96 @@
+tests:
+  - displayName: Open settings screen
+    id: settings-open
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Settings from bottom More tab or profile area
+        hint: More tab last section or gear icon.
+        finalScreenAssertion: Settings screen with language currency and theme options is visible
+
+  - displayName: Change app language
+    id: settings-language
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: In Settings open Language and switch between English and Swahili
+        hint: Tap Language row select Swahili then switch back to English.
+        finalScreenAssertion: Settings labels update to reflect selected language
+
+  - displayName: Open security settings
+    id: settings-security
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From Settings open Security section
+        hint: Security row in settings list.
+        finalScreenAssertion: Security options for PIN and password are visible
+
+  - displayName: Open help center
+    id: help-center
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Help Center from Settings or More
+        hint: Help Center or Guides in More menu.
+        finalScreenAssertion: Help center with BnB Rent and All tabs is visible
+
+  - displayName: Open help guide detail
+    id: help-guide-detail
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From Help Center open any guide article
+        hint: Tap first guide card in the list.
+        finalScreenAssertion: Help guide detail content is visible
+
+  - displayName: Open support contact
+    id: support-contact
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Support or Contact Support
+        hint: Settings or Help section find Support.
+        finalScreenAssertion: Support contact form or contact options are visible
+
+  - displayName: Open feedback form
+    id: feedback-form
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Send Feedback
+        hint: Settings or Support find Feedback.
+        finalScreenAssertion: Feedback form with message field is visible
+
+  - displayName: View about screen
+    id: about-screen
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open About Host Bora from Settings
+        hint: About row at bottom of Settings.
+        finalScreenAssertion: About screen with app version and Artbel info is visible
+
+  - displayName: View terms of service
+    id: legal-terms
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Terms of Service from Settings or registration links
+        hint: Terms link in Settings About or Legal section.
+        finalScreenAssertion: Terms of service document text is visible
+
+  - displayName: View privacy policy
+    id: legal-privacy
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Privacy Policy from Settings
+        hint: Privacy link in Settings Legal section.
+        finalScreenAssertion: Privacy policy document text is visible
+
+  - displayName: Open client story tenant timeline
+    id: rent-client-story
+    prerequisiteTestCaseId: rent-add-tenant-submit
+    steps:
+      - goal: Navigate to Client Story or tenant timeline for the tenant that was just added
+        hint: Open All Tenants or the tenant's ledger/detail screen and find a Client Story link or tab, then open it. Tenant detail or rent menu find Client Story.
+        finalScreenAssertion: Client story timeline for a tenant is visible
+
+  - displayName: View listing activity log
+    id: rent-activity-log
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Listing Activity Log for a property
+        hint: Listing details find Activity log or View all activity.
+        finalScreenAssertion: Activity log events list is visible

@@ -20,6 +20,9 @@ abstract class Routes {
   static const FEEDBACK = _Paths.FEEDBACK;
   static const SEND_SMS = _Paths.SEND_SMS;
   static const ADMIN_WHATSAPP_CREDENTIALS = _Paths.ADMIN_WHATSAPP_CREDENTIALS;
+  static const ADMIN_SALES_AGENTS = _Paths.ADMIN_SALES_AGENTS;
+  static const ADMIN_SALES_AGENT_DETAIL = _Paths.ADMIN_SALES_AGENT_DETAIL;
+  static const SALES_AGENT_DASHBOARD = _Paths.SALES_AGENT_DASHBOARD;
   static const SUBSCRIPTION = _Paths.SUBSCRIPTION;
   static const SPLASH = _Paths.SPLASH;
   static const ONBOARDING = _Paths.ONBOARDING;
@@ -130,6 +133,9 @@ abstract class _Paths {
   static const FEEDBACK = '/feedback';
   static const SEND_SMS = '/send-sms';
   static const ADMIN_WHATSAPP_CREDENTIALS = '/admin/whatsapp-credentials';
+  static const ADMIN_SALES_AGENTS = '/admin/sales-agents';
+  static const ADMIN_SALES_AGENT_DETAIL = '/admin/sales-agents/detail';
+  static const SALES_AGENT_DASHBOARD = '/sales-agent/dashboard';
   static const SUBSCRIPTION = '/subscription';
   static const SPLASH = '/splash';
   static const ONBOARDING = '/onboarding';

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -12,6 +13,7 @@ import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/model/check_in_item.dart';
@@ -21,6 +23,8 @@ import '../../../data/service/subscription_service.dart';
 import '../../../routes/app_pages.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../host_calendar/controllers/host_calendar_controller.dart';
+import '../../main/widgets/nav_tab_spotlight_overlay.dart';
+import '../widgets/quick_actions_dialog.dart';
 import '/app/core/base/base_controller.dart';
 
 class HomeController extends BaseController with GetTickerProviderStateMixin {
@@ -34,6 +38,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final TenantLocalDataSource _bnbTenantLocal =
       Get.find<TenantLocalDataSource>();
   final IncomeLocalDataSource _incomeLocal = Get.find<IncomeLocalDataSource>();
+  final PreferenceManager _preferenceManager = Get.find(
+    tag: (PreferenceManager).toString(),
+  );
   final PendingBookingsStore _pendingBookingsStore = PendingBookingsStore();
   late final BnbBookingPendingLoader _pendingBookingLoader =
       BnbBookingPendingLoader(
@@ -69,6 +76,11 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final homeRefreshing = false.obs;
 
   final homeHasLoaded = false.obs;
+
+  /// True once we know the account has at least one property. Defaults to
+  /// true so returning users never see an empty-state flash while this
+  /// resolves; only flips to false after a real zero-property check.
+  final hasAnyProperty = true.obs;
 
   /// Mon–Sun of the current calendar week (same as [RentSmartUtilityDashboardController]).
   static const weeklyDayLabels = [
@@ -111,8 +123,15 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   }
 
   /// Nudges first-time users to start a trial after the home screen settles.
+  ///
+  /// Skipped once the host has added at least one property — those users get
+  /// the "What would you like to do?" quick-actions dialog instead
+  /// ([_maybeShowQuickActionsDialog]), so this timer doesn't race it and steal
+  /// the screen with a subscription redirect before the dialog gets a chance
+  /// to show.
   Future<void> _maybeShowTrialPrompt() async {
     await Future.delayed(const Duration(seconds: 2));
+    if (hasAnyProperty.value) return;
     try {
       final subscriptionSvc = Get.find<SubscriptionService>();
       if (subscriptionSvc.hasNoSubscription) {
@@ -136,6 +155,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         _loadBookingLists(),
         _loadBnbOverviewStats(),
         _loadRentOverviewStats(),
+        _loadPropertyPresence(),
       ]);
     } catch (e) {
       if (e is Exception) {
@@ -145,6 +165,107 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       homeInitialLoading.value = false;
       homeRefreshing.value = false;
       homeHasLoaded.value = true;
+      if (!refresh) {
+        unawaited(_maybeShowPropertiesTabSpotlight());
+        unawaited(_maybeShowQuickActionsDialog());
+      }
+    }
+  }
+
+  /// True once this session's "What would you like to do?" quick-actions
+  /// dialog has been offered (shown or skipped), so it never appears more
+  /// than once per login/Home lifetime.
+  bool _hasOfferedQuickActionsDialog = false;
+
+  /// Polls until Home is idle (on the MAIN route, no dialog/bottom-sheet
+  /// already showing) or [maxWait] elapses, whichever comes first.
+  ///
+  /// Startup-time overlays — the app-update sheet, the trial prompt, an
+  /// error snackbar, etc. — can appear at almost the same moment as our own
+  /// nudges. A single point-in-time check for "is the screen free?" is
+  /// fragile: if it loses that race even briefly, the nudge silently never
+  /// shows for the rest of the session. Polling gives those transient
+  /// overlays a chance to clear first.
+  Future<bool> _waitUntilHomeIsIdle({
+    required Duration maxWait,
+    Duration pollEvery = const Duration(milliseconds: 500),
+  }) async {
+    final deadline = DateTime.now().add(maxWait);
+    while (true) {
+      final isFree = Get.currentRoute == Routes.MAIN &&
+          !(Get.isDialogOpen ?? false) &&
+          !(Get.isBottomSheetOpen ?? false);
+      if (isFree) return true;
+      if (DateTime.now().isAfter(deadline)) return false;
+      await Future.delayed(pollEvery);
+    }
+  }
+
+  /// Nudges returning users (who already have at least one property) with a
+  /// dismissible dialog of common next actions shortly after Home settles.
+  Future<void> _maybeShowQuickActionsDialog() async {
+    if (_hasOfferedQuickActionsDialog) return;
+    if (!hasAnyProperty.value) return;
+
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (_hasOfferedQuickActionsDialog) return;
+    if (!hasAnyProperty.value) return;
+
+    // Give any startup overlay (app-update sheet, trial prompt, ...) up to
+    // 8 more seconds to clear before giving up on this session entirely.
+    final isIdle = await _waitUntilHomeIsIdle(
+      maxWait: const Duration(seconds: 8),
+    );
+    if (!isIdle) return;
+    if (_hasOfferedQuickActionsDialog) return;
+    if (!hasAnyProperty.value) return;
+
+    _hasOfferedQuickActionsDialog = true;
+    try {
+      await showQuickActionsDialog(
+        onDataChanged: () => loadHomeData(refresh: true),
+      );
+    } catch (_) {
+      // Best-effort guidance only — never let this break Home.
+    }
+  }
+
+  Future<void> _loadPropertyPresence() async {
+    hasAnyProperty.value = await _hasAtLeastOneProperty();
+  }
+
+  /// One-time nudge for brand-new (zero-property) accounts: dims the screen
+  /// and spotlights the "Properties" bottom-nav tab so first-time users know
+  /// exactly where to go to add their first listing.
+  Future<void> _maybeShowPropertiesTabSpotlight() async {
+    if (hasAnyProperty.value) return;
+    bool alreadySeen;
+    try {
+      alreadySeen = await _preferenceManager.getBool(
+        PreferenceManager.keyHasSeenPropertiesTabSpotlight,
+      );
+    } catch (_) {
+      return;
+    }
+    if (alreadySeen) return;
+
+    await Future.delayed(const Duration(milliseconds: 3200));
+    if (hasAnyProperty.value) return; // re-check: property may have been added meanwhile
+
+    final isIdle = await _waitUntilHomeIsIdle(
+      maxWait: const Duration(seconds: 8),
+    );
+    if (!isIdle) return;
+    if (hasAnyProperty.value) return;
+
+    try {
+      await _preferenceManager.setBool(
+        PreferenceManager.keyHasSeenPropertiesTabSpotlight,
+        true,
+      );
+      await showPropertiesTabSpotlight(isSw: Get.locale?.languageCode == 'sw');
+    } catch (_) {
+      // Best-effort guidance only — never let this break Home.
     }
   }
 
@@ -700,7 +821,12 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void seeAllCheckIns() => Get.toNamed(Routes.ALL_BOOKINGS);
 
-  void addListing() => Get.toNamed(Routes.ADD_LISTING);
+  Future<void> addListing() async {
+    final saved = await Get.toNamed(Routes.ADD_LISTING);
+    if (saved == true) {
+      await loadHomeData(refresh: true);
+    }
+  }
 
   void properties() => Get.toNamed(Routes.MY_PROPERTIES);
 
@@ -893,31 +1019,108 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     }
   }
 
+  /// Remote is the source of truth here: a freshly installed app (or one
+  /// that just logged in on a new device) has an empty local property cache
+  /// even when the account genuinely has properties on the server. We only
+  /// fall back to the local cache when a remote call itself fails
+  /// (offline, timeout, error response) — never merely because the remote
+  /// payload didn't match one of the known shapes with data in it.
+  ///
+  /// IMPORTANT: the app has two independent property data models on the
+  /// backend — `/api/listings` (Listing entity) and `/api/properties`
+  /// (Property entity, written by AddListingController.saveProperty(), which
+  /// is what the Add Property form and quick-add wizard actually call). Both
+  /// must be checked or accounts whose properties only exist in one table
+  /// would incorrectly see the "Add first property" empty state.
   Future<bool> _hasAtLeastOneProperty() async {
+    bool? listingsEmpty;
+    bool? propertiesEmpty;
+
     try {
       final res = await _repository.getMyListings();
-      if (res.responseCode == '0' && res.data != null) {
-        final data = res.data;
-        if (data is List && data.isNotEmpty) return true;
-        if (data is Map && data['content'] is List) {
-          if ((data['content'] as List).isNotEmpty) return true;
-        }
-        if (data is Map && data['listings'] is List) {
-          if ((data['listings'] as List).isNotEmpty) return true;
-        }
+      final remoteHasListings = _extractHasListings(res.data);
+      if (kDebugMode) {
+        debugPrint(
+          '[HasAnyProperty] /api/listings responseCode=${res.responseCode} '
+          'dataType=${res.data.runtimeType} '
+          'dataPreview=${_previewData(res.data)} '
+          'remoteHasListings=$remoteHasListings',
+        );
       }
-      final localRows = await _propertyLocal.getAllVisibleNewestFirst(
-        userId: '',
-        workspaceType: '',
-      );
-      return localRows.isNotEmpty;
-    } catch (_) {
-      final localRows = await _propertyLocal.getAllVisibleNewestFirst(
-        userId: '',
-        workspaceType: '',
-      );
-      return localRows.isNotEmpty;
+      if (remoteHasListings) return true;
+      listingsEmpty = true;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[HasAnyProperty] /api/listings call threw: $e');
+      }
+      // Network/parse failure — inconclusive, may fall back to local below.
     }
+
+    try {
+      final res = await _repository.getMyProperties();
+      final remoteHasProperties = _extractHasProperties(res.data);
+      if (kDebugMode) {
+        debugPrint(
+          '[HasAnyProperty] /api/properties responseCode=${res.responseCode} '
+          'dataType=${res.data.runtimeType} '
+          'dataPreview=${_previewData(res.data)} '
+          'remoteHasProperties=$remoteHasProperties',
+        );
+      }
+      if (remoteHasProperties) return true;
+      propertiesEmpty = true;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[HasAnyProperty] /api/properties call threw: $e');
+      }
+    }
+
+    if (listingsEmpty == true && propertiesEmpty == true) {
+      // Both remote sources answered successfully and explicitly report
+      // zero properties — trust them rather than a possibly-stale local cache.
+      return false;
+    }
+
+    // At least one remote source was inconclusive (threw) — fall back to
+    // the local cache rather than risk a false "no properties" empty state.
+    final localRows = await _propertyLocal.getAllVisibleNewestFirst(
+      userId: '',
+      workspaceType: '',
+    );
+    if (kDebugMode) {
+      debugPrint(
+        '[HasAnyProperty] falling back to local cache: '
+        '${localRows.length} row(s)',
+      );
+    }
+    return localRows.isNotEmpty;
+  }
+
+  String _previewData(dynamic data) {
+    final s = data.toString();
+    return s.length > 300 ? '${s.substring(0, 300)}…' : s;
+  }
+
+  bool _extractHasListings(dynamic data) {
+    if (data is List) return data.isNotEmpty;
+    if (data is Map) {
+      final content = data['content'];
+      if (content is List && content.isNotEmpty) return true;
+      final listings = data['listings'];
+      if (listings is List && listings.isNotEmpty) return true;
+    }
+    return false;
+  }
+
+  bool _extractHasProperties(dynamic data) {
+    if (data is List) return data.isNotEmpty;
+    if (data is Map) {
+      final properties = data['properties'];
+      if (properties is List && properties.isNotEmpty) return true;
+      final content = data['content'];
+      if (content is List && content.isNotEmpty) return true;
+    }
+    return false;
   }
 
   Future<bool?> _showAddPropertyRequiredDialog() {

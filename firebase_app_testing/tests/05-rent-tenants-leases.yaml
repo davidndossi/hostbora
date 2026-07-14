@@ -1,0 +1,99 @@
+tests:
+  - displayName: View all tenants list
+    id: rent-all-tenants
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to All Tenants screen
+        hint: More tab or Rent section find All Tenants or Tenants.
+        finalScreenAssertion: Tenant list or empty tenants state is visible
+
+  - displayName: Open add new tenant form
+    id: rent-add-tenant
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Add New Tenant form
+        hint: From listing Rent tab or All Tenants use Add Tenant button.
+        finalScreenAssertion: Add tenant and lease form is visible
+
+  - displayName: Add and save a new tenant
+    id: rent-add-tenant-submit
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Add New Tenant form and fill in the required fields
+        hint: From listing Rent tab or All Tenants use Add Tenant button. If an apartment unit dropdown appears, pick any unit. Enter a tenant name like "QA Test Tenant" and leave gender at its default.
+        finalScreenAssertion: Tenant name field is filled and the rent amount, lease period, and phone number sections are visible
+      - goal: Fill in rent amount, lease period, and phone number, then save the tenant
+        hint: Enter a rent amount like 500000. Tap the lease period field and pick a start and end date from the date range picker. Enter a phone number like 0712345678. Tap the "SAVE TENANT" button at the bottom.
+        finalScreenAssertion: A success message about the tenant being saved is shown, or the tenant now appears in a tenant/property list screen
+
+  - displayName: Open rent manage payments
+    id: rent-manage-payments
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Rent Manage Payments
+        hint: Listing details Rent tab or Finances rent section.
+        finalScreenAssertion: Rent payments management screen is visible
+
+  - displayName: View expected payment schedule
+    id: rent-payment-schedule
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Expected Payment Schedule for rent
+        hint: From rent finance menu find payment schedule.
+        finalScreenAssertion: Expected rent payment schedule list or calendar is visible
+
+  - displayName: Open lease contract hub
+    id: rent-contract-hub
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Contract Hub for leases
+        hint: Rent section in listing or More menu find Contract Hub.
+        finalScreenAssertion: Contract hub with lease documents is visible
+
+  - displayName: Open lease renewal form
+    id: rent-lease-renewal
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Lease Renewal form from contract hub or rent menu
+        hint: Contract hub may have Renew lease action.
+        finalScreenAssertion: Lease renewal form with tenant and dates is visible
+
+  - displayName: Open tenant ledger and occupancy
+    id: rent-tenant-ledger
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open a tenant ledger and occupancy detail screen
+        hint: From tenant list tap a tenant or open Tenant Ledger from rent menu.
+        finalScreenAssertion: Tenant ledger with payment history or occupancy info is visible
+
+  - displayName: Schedule rent payment reminder
+    id: rent-schedule-reminder
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Schedule Payment Reminder for rent
+        hint: Rent payments or tenant screen find Schedule Reminder.
+        finalScreenAssertion: Payment reminder scheduling form with date and channel is visible
+
+  - displayName: View rent payment alerts dashboard
+    id: rent-payment-alerts
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Rent Host Dashboard Payment Alerts
+        hint: Rent finance section or More menu.
+        finalScreenAssertion: Overdue or upcoming payment alerts dashboard is visible
+
+  - displayName: View rent profit analysis
+    id: rent-profit-analysis
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Rent Profit Analysis dashboard
+        hint: Finances rent section or listing analytics.
+        finalScreenAssertion: Rent profit analysis charts or summary is visible
+
+  - displayName: Open monthly P and L summary
+    id: rent-monthly-pl
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Monthly P and L Summary for rent
+        hint: Rent finance reports section.
+        finalScreenAssertion: Monthly profit and loss summary is visible

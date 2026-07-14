@@ -6,6 +6,7 @@ import '../../../core/utils/util.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/model/reg_request.dart';
+import '../../../data/model/sales_agent_models.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../network/exceptions/api_exception.dart';
 import '../../../routes/app_pages.dart';
@@ -16,8 +17,12 @@ class CreateHostAccountController extends BaseController {
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
+  final referralCodeController = TextEditingController();
   final obscurePassword = true.obs;
   final isLoading = false.obs;
+  final referralValid = Rxn<bool>();
+  final referralAgentName = RxnString();
+  final isCheckingReferral = false.obs;
   final msisdn = ''.obs;
   final email = ''.obs;
 
@@ -42,6 +47,30 @@ class CreateHostAccountController extends BaseController {
   void goToTerms() => Get.toNamed(Routes.TERMS);
 
   void goToPrivacy() => Get.toNamed(Routes.PRIVACY);
+
+  Future<void> validateReferralCode() async {
+    final code = referralCodeController.text.trim();
+    referralValid.value = null;
+    referralAgentName.value = null;
+    if (code.isEmpty) return;
+
+    isCheckingReferral(true);
+    try {
+      final res = await _repository.validateReferralCode(code);
+      final data = res.data;
+      if (data is Map<String, dynamic>) {
+        final validation = ReferralValidation.fromJson(data);
+        referralValid.value = validation.valid;
+        referralAgentName.value = validation.agentName;
+      } else {
+        referralValid.value = false;
+      }
+    } catch (_) {
+      referralValid.value = false;
+    } finally {
+      isCheckingReferral(false);
+    }
+  }
 
   void signUp() async {
     if (!formKey.currentState!.validate()) return;
@@ -81,6 +110,9 @@ class CreateHostAccountController extends BaseController {
         mobileNumber: msisdnValue,
         email: emailStr.isEmpty ? null : emailStr,
         password: password,
+        referralCode: referralCodeController.text.trim().isEmpty
+            ? null
+            : referralCodeController.text.trim(),
       );
       _preferenceManager.setString(PreferenceManager.keyUsername, msisdnValue);
       callDataService<GeneralResponse>(

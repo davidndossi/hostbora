@@ -16,6 +16,7 @@ import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_resi
 import '../../../data/local/service/tenant_lease_reminder_service.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
+import '../../../data/repository/app_repository.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../core/widget/base_currency_picker.dart';
 import '../../../core/theme/theme_controller.dart';
@@ -30,6 +31,7 @@ class SettingsController extends BaseController {
   final PreferenceManager _preferenceManager = Get.find(
     tag: (PreferenceManager).toString(),
   );
+  final AppRepository _repository = Get.find(tag: (AppRepository).toString());
 
   final token = ''.obs;
   final account = ''.obs;
@@ -37,6 +39,7 @@ class SettingsController extends BaseController {
   final deviceId = ''.obs;
   final userId = ''.obs;
   final isAdmin = false.obs;
+  final isSalesAgent = false.obs;
   final deviceName = ''.obs;
   final language = 'en'.obs;
   final isFL = false.obs;
@@ -92,6 +95,9 @@ class SettingsController extends BaseController {
     User user = await _preferenceManager.getUser();
     userId(user.id);
     isAdmin(user.isAdmin);
+    isSalesAgent(
+      roles.any((r) => r.toLowerCase() == 'sales_agent'),
+    );
     loadSettings();
   }
 
@@ -105,6 +111,30 @@ class SettingsController extends BaseController {
       return;
     }
     Get.toNamed(Routes.ADMIN_WHATSAPP_CREDENTIALS);
+  }
+
+  void openAdminSalesAgents() {
+    if (!isAdmin.value) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Ruhusa ya msimamizi inahitajika'
+            : 'Admin access required',
+      );
+      return;
+    }
+    Get.toNamed(Routes.ADMIN_SALES_AGENTS);
+  }
+
+  void openSalesAgentDashboard() {
+    if (!isSalesAgent.value && !isAdmin.value) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Akaunti ya wakala wa mauzo inahitajika'
+            : 'Sales agent account required',
+      );
+      return;
+    }
+    Get.toNamed(Routes.SALES_AGENT_DASHBOARD);
   }
 
   void setDefaultLocale() {
@@ -151,9 +181,22 @@ class SettingsController extends BaseController {
       defaultValue: '',
     );
     final hasPin = pinOn && pinCode.length == 4;
+    var confirmRemotePin = false;
+    if (!hasPin) {
+      try {
+        final res = await _repository.getPinStatus();
+        confirmRemotePin = res.data is Map && res.data['hasPinSet'] == true;
+      } catch (e) {
+        logger.w('getPinStatus failed (non-blocking): $e');
+      }
+    }
     Get.toNamed(
       Routes.CHANGE_PIN,
-      arguments: {'setup_pin': !hasPin, 'change_pin': hasPin},
+      arguments: {
+        'setup_pin': !hasPin,
+        'change_pin': hasPin,
+        if (confirmRemotePin) 'confirm_remote_pin': true,
+      },
     );
   }
 

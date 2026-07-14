@@ -3,6 +3,7 @@ import 'package:local_auth/local_auth.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
 class SecurityController extends BaseController {
@@ -11,6 +12,7 @@ class SecurityController extends BaseController {
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
 
   final PreferenceManager _preferenceManager;
+  final AppRepository _repository = Get.find(tag: (AppRepository).toString());
   final faceIdEnabled = false.obs;
   final pinEnabled = false.obs;
 
@@ -35,12 +37,25 @@ class SecurityController extends BaseController {
 
   void changePassword() => Get.toNamed(Routes.CHANGE_PASSWORD);
 
-  void openPinCode() {
+  Future<void> openPinCode() async {
+    // Enabling PIN lock for the first time on this device: if the account
+    // already has a PIN saved remotely (set on another device), let the user
+    // confirm/reuse it instead of creating one that would fail to sync.
+    var confirmRemotePin = false;
+    if (!pinEnabled.value) {
+      try {
+        final res = await _repository.getPinStatus();
+        confirmRemotePin = res.data is Map && res.data['hasPinSet'] == true;
+      } catch (e) {
+        logger.w('getPinStatus failed (non-blocking): $e');
+      }
+    }
     Get.toNamed(
       Routes.CHANGE_PIN,
       arguments: {
         'setup_pin': true,
         'change_pin': pinEnabled.value,
+        if (confirmRemotePin) 'confirm_remote_pin': true,
       },
     )?.then((_) => _loadSecurityPrefs());
   }

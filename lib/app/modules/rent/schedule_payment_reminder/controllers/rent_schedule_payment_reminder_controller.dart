@@ -15,6 +15,9 @@ import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
 import '../../../../data/local/db/client_event_local_data_source.dart';
 import '../../../../data/model/schedule_payment_reminder_request.dart';
+import '../../../../data/model/send_payment_link_request.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
+import '../../../../data/service/snippe_payment_link_service.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../host_calendar/controllers/host_calendar_controller.dart';
 
@@ -64,8 +67,12 @@ class RentSchedulePaymentReminderController extends BaseController {
   final _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>();
   final _notificationScheduler = Get.find<LocalNotificationSchedulerService>();
   final _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+  final _paymentLinks = SnippePaymentLinkService();
+  final _tenantLocal = Get.find<TenantLocalDataSource>();
 
   String _recipientPhone = '';
+  String _backendTenantId = '';
+  final sendingPaymentLink = false.obs;
 
   static final NumberFormat _currency = NumberFormat.currency(
     symbol: 'Tsh ',
@@ -79,6 +86,7 @@ class RentSchedulePaymentReminderController extends BaseController {
     tenantName.value = Get.parameters['name'] ?? '';
     propertyLine.value = Get.parameters['property'] ?? '';
     _recipientPhone = Get.parameters['phone']?.trim() ?? '';
+    _backendTenantId = Get.parameters['tenantBackendId']?.trim() ?? '';
     final b = Get.parameters['balance'];
     if (b != null && b.isNotEmpty) {
       final parsed = int.tryParse(b);
@@ -89,6 +97,70 @@ class RentSchedulePaymentReminderController extends BaseController {
       _queueDraftAutosave();
     });
     _loadSavedTemplates();
+    if (_backendTenantId.isEmpty) {
+      unawaited(_resolveBackendTenantId());
+    }
+  }
+
+  Future<void> _resolveBackendTenantId() async {
+    try {
+      final tenant = await _tenantLocal.findByNameAndProperty(
+        tenantName: displayTenantName,
+        propertyLabel: calendarPropertyFilterLabel,
+      );
+      _backendTenantId = tenant?.backendTenantId.trim() ?? '';
+    } catch (_) {}
+  }
+
+  Future<void> sendPaymentLinkNow() async {
+    if (sendingPaymentLink.value) return;
+    if (_recipientPhone.isEmpty) {
+      showErrorMessage('Tenant phone number not available');
+      return;
+    }
+    if (_backendTenantId.isEmpty) {
+      await _resolveBackendTenantId();
+    }
+    if (_backendTenantId.isEmpty) {
+      showErrorMessage(
+        'Tenant must be synced to the server before sending a payment link',
+      );
+      return;
+    }
+    final amount = balanceTsh.value;
+    if (amount < 500) {
+      showErrorMessage('Minimum payment amount is TZS 500');
+      return;
+    }
+
+    sendingPaymentLink.value = true;
+    try {
+      final msg = messageController.text.trim().isEmpty
+          ? resolveTemplate(defaultReminderTemplate)
+          : resolveTemplate(messageController.text.trim());
+      final result = await _paymentLinks.sendViaWhatsApp(
+        SendPaymentLinkRequest(
+          amount: amount,
+          customerName: displayTenantName,
+          customerPhone: _recipientPhone,
+          tenantId: _backendTenantId,
+          description: 'Rent — $calendarPropertyFilterLabel',
+          message: msg,
+        ),
+      );
+      if (result.whatsappSuccess) {
+        hapticPrimaryConfirm();
+        showSuccessMessage('Payment link sent via WhatsApp');
+      } else {
+        showErrorMessage(
+          result.whatsappError ?? 'Payment link created but WhatsApp failed',
+        );
+      }
+    } catch (e) {
+      showErrorMessage('$e');
+    } finally {
+      sendingPaymentLink.value = false;
+    }
   }
 
   @override

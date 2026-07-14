@@ -16,6 +16,8 @@ import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/model/check_in_item.dart';
+import '../../../data/model/send_payment_link_request.dart';
+import '../../../data/service/snippe_payment_link_service.dart';
 import '../../../routes/app_pages.dart';
 import '../../all_bookings/controllers/all_bookings_controller.dart';
 import '../../home/controllers/home_controller.dart';
@@ -34,13 +36,15 @@ class BookingDetailsController extends BaseController {
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
-        );
+        ),
+        _paymentLinks = SnippePaymentLinkService();
 
   final BnbBookingActions _actions;
   final IncomeLocalDataSource _incomeLocal;
   final OfflineSyncQueueLocalDataSource _syncQueue;
   final PropertyLocalDataSource _propertyLocal;
   final PreferenceManager _preferenceManager;
+  final SnippePaymentLinkService _paymentLinks;
 
   static final _money = NumberFormat('#,###', 'en_US');
 
@@ -75,6 +79,7 @@ class BookingDetailsController extends BaseController {
   final isCheckedOut = false.obs;
   final isCancelled = false.obs;
   final processing = false.obs;
+  final sendingPaymentLink = false.obs;
 
   DateTime? _checkOutDateTime;
 
@@ -376,6 +381,107 @@ class BookingDetailsController extends BaseController {
             ? 'WhatsApp imeratibiwa kwa mgeni'
             : 'WhatsApp scheduled for guest',
       );
+    }
+  }
+
+  Future<void> sendPaymentLinkViaWhatsApp() async {
+    if (isListingMode || _isInactive || sendingPaymentLink.value) return;
+    final phone = guestPhone.value.trim();
+    if (phone.isEmpty) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Namba ya mgeni haipatikani'
+            : 'Guest phone not available',
+      );
+      return;
+    }
+    if (_item.isLocalPending) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Subiri booking isync kwanza'
+            : 'Wait for the booking to sync before sending a payment link',
+      );
+      return;
+    }
+    final bookingId = (_item.bookingId ?? '').trim();
+    if (bookingId.isEmpty || bookingId.contains('_')) {
+      showErrorMessage('Booking ID not available for online payment');
+      return;
+    }
+
+    final amountController = TextEditingController();
+    final isSw = Get.locale?.languageCode == 'sw';
+    final amount = await Get.dialog<int>(
+      AlertDialog(
+        title: Text(isSw ? 'Kiasi cha malipo' : 'Payment amount'),
+        content: TextField(
+          controller: amountController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: isSw ? 'Kiasi (TZS)' : 'Amount (TZS)',
+            hintText: '50000',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(isSw ? 'Ghairi' : 'Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final parsed =
+                  int.tryParse(amountController.text.trim().replaceAll(',', ''));
+              if (parsed == null || parsed < 500) {
+                Get.snackbar(
+                  isSw ? 'Kiasi' : 'Amount',
+                  isSw ? 'Kiwango cha chini ni TZS 500' : 'Minimum is TZS 500',
+                );
+                return;
+              }
+              Get.back(result: parsed);
+            },
+            child: Text(isSw ? 'Tuma' : 'Send'),
+          ),
+        ],
+      ),
+    );
+    amountController.dispose();
+    if (amount == null) return;
+
+    sendingPaymentLink.value = true;
+    try {
+      final property = _propertyLabel.isNotEmpty
+          ? _propertyLabel
+          : propertyTitle.value.trim();
+      final result = await _paymentLinks.sendViaWhatsApp(
+        SendPaymentLinkRequest(
+          amount: amount,
+          customerName: guestName.value.trim().isEmpty
+              ? 'Guest'
+              : guestName.value.trim(),
+          customerPhone: phone,
+          bookingId: bookingId,
+          description: property.isNotEmpty ? 'BnB booking — $property' : 'BnB booking',
+        ),
+      );
+      if (result.whatsappSuccess) {
+        showSuccessMessage(
+          isSw
+              ? 'Kiungo cha malipo kimetumwa kwa mgeni kupitia WhatsApp'
+              : 'Payment link sent to guest via WhatsApp',
+        );
+      } else {
+        showErrorMessage(
+          result.whatsappError ??
+              (isSw
+                  ? 'Kiungo kilitengenezwa lakini WhatsApp haikufanikiwa'
+                  : 'Link created but WhatsApp send failed'),
+        );
+      }
+    } catch (e) {
+      showErrorMessage('$e');
+    } finally {
+      sendingPaymentLink.value = false;
     }
   }
 

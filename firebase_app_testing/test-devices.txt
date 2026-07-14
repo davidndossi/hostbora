@@ -1,0 +1,1 @@
+model=MediumPhone.arm,version=36,locale=en,orientation=portrait

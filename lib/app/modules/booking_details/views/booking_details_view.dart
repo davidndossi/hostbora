@@ -822,6 +822,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
       if (controller.isCheckedOut.value || controller.isCancelled.value) {
         return const SizedBox.shrink();
       }
+      final sending = controller.sendingPaymentLink.value;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -841,6 +842,32 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                   borderRadius: BorderRadius.circular(AppValues.radius_6),
                 ),
                 elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: sending ? null : controller.sendPaymentLinkViaWhatsApp,
+              icon: Icon(
+                Icons.link,
+                color: AppColors.colorPrimary,
+              ),
+              label: Text(
+                _t(
+                  context,
+                  en: 'Send payment link (WhatsApp)',
+                  sw: 'Tuma kiungo cha malipo (WhatsApp)',
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.colorPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: BorderSide(color: AppColors.colorPrimary),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppValues.radius_6),
+                ),
               ),
             ),
           ),

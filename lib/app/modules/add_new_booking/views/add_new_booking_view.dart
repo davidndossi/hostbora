@@ -9,7 +9,6 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
-import '../../../data/service/azampay_service.dart';
 import '../controllers/add_new_booking_controller.dart';
 
 const _bookingNavTeal = Color(0xFF1E8877);
@@ -210,117 +209,76 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   ),
             ),
             const SizedBox(height: 20),
-            controller.isAzamPayEnabled
-                ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          value: controller.sendPushToPay.value,
-                          onChanged: (v) =>
-                              controller.setSendPushToPay(v ?? false),
-                          activeColor: _bookingNavTeal,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: Checkbox(
+                        value: controller.sendPaymentLink.value,
+                        onChanged: (v) =>
+                            controller.setSendPaymentLink(v ?? false),
+                        activeColor: _bookingNavTeal,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => controller.setSendPushToPay(
-                            !controller.sendPushToPay.value,
-                          ),
-                          child: _buildLabel(
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => controller.setSendPaymentLink(
+                          !controller.sendPaymentLink.value,
+                        ),
+                        child: _buildLabel(
+                          context,
+                          _t(
                             context,
-                            _t(
-                              context,
-                              en: 'Send Push to Pay to guest (AzamPay)',
-                              sw: 'Tuma ombi la Push to Pay kwa mgeni (AzamPay)',
-                            ),
+                            en: 'Send Snippe payment link via WhatsApp',
+                            sw: 'Tuma kiungo cha malipo cha Snippe kupitia WhatsApp',
                           ),
                         ),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                if (controller.sendPaymentLink.value) ...[
+                  const SizedBox(height: 12),
+                  _buildLabel(
+                    context,
+                    _t(context, en: 'Amount (TZS)', sw: 'Kiasi (TZS)'),
                   ),
-                  if (controller.sendPushToPay.value) ...[
-                    const SizedBox(height: 12),
-                    _buildLabel(
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: controller.pushToPayAmountController,
+                    keyboardType: TextInputType.number,
+                    decoration: _inputDecoration(
                       context,
-                      _t(context, en: 'Amount (TZS)', sw: 'Kiasi (TZS)'),
+                      hint: _t(context, en: 'e.g. 50000', sw: 'mf. 50000'),
                     ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: controller.pushToPayAmountController,
-                      keyboardType: TextInputType.number,
-                      decoration: _inputDecoration(
-                        context,
-                        hint: _t(context, en: 'e.g. 50000', sw: 'mf. 50000'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildLabel(
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _t(
                       context,
-                      _t(
-                        context,
-                        en: 'Mobile provider',
-                        sw: 'Mtoa huduma wa simu',
-                      ),
+                      en: 'Requires internet. Guest receives a WhatsApp message with a secure payment link.',
+                      sw: 'Inahitaji mtandao. Mgeni atapokea ujumbe wa WhatsApp wenye kiungo cha malipo.',
                     ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      initialValue: controller.selectedProvider.value,
-                      decoration:
-                          _inputDecoration(
-                            context,
-                            hint: _t(
-                              context,
-                              en: 'Provider',
-                              sw: 'Mtoa huduma',
-                            ),
-                          ).copyWith(
-                            suffixIcon: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: FormSurfaceColors.of(context).isDark
-                                  ? Colors.white70
-                                  : AppColors.designPlaceholder,
-                            ),
-                          ),
-                      isExpanded: true,
-                      items: azamPayProviders
-                          .map(
-                            (e) => DropdownMenuItem<String>(
-                              value: e,
-                              child: Text(e),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: controller.selectProvider,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: FormSurfaceColors.of(context).isDark
+                          ? Colors.white70
+                          : AppColors.designPlaceholder,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _t(
-                        context,
-                        en: 'A payment request will be sent to the guest\'s phone.',
-                        sw: 'Ombi la malipo litatumwa kwenye simu ya mgeni.',
-                      ),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: FormSurfaceColors.of(context).isDark
-                            ? Colors.white70
-                            : AppColors.designPlaceholder,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ] else
-                    const SizedBox(height: 20),
-                ],
-              )
-                : const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 20),
+                ] else
+                  const SizedBox(height: 20),
+              ],
+            ),
             _buildLabel(
               context,
               _t(context, en: 'Select Property', sw: 'Chagua Mali'),

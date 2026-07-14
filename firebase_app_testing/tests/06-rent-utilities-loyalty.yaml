@@ -1,0 +1,72 @@
+tests:
+  - displayName: Open smart utility dashboard
+    id: rent-utility-dashboard
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Smart Utility Dashboard
+        hint: Rent section find Utilities or Smart Utility Dashboard.
+        finalScreenAssertion: Utility billing dashboard is visible
+
+  - displayName: View utility usage graph
+    id: rent-utility-graph
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Utility Usage Graph from utility dashboard
+        hint: Tap usage graph or analytics link on utility screen.
+        finalScreenAssertion: Utility usage chart or graph is visible
+
+  - displayName: Open define tenant charges
+    id: rent-define-charges
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Define Tenant Charges
+        hint: Rent menu find Define Charges or Recurring charges.
+        finalScreenAssertion: Tenant charges definition form is visible
+
+  - displayName: Create loyalty offer
+    id: rent-loyalty-offer
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Define Loyalty Offers screen
+        hint: Rent loyalty section in More or listing Rent tab.
+        finalScreenAssertion: Loyalty offer creation form is visible
+
+  - displayName: View active loyalty programs
+    id: rent-loyalty-programs
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Active Loyalty Programs list
+        hint: From loyalty section tap View active programs.
+        finalScreenAssertion: List of active loyalty programs is visible
+
+  - displayName: Open concierge inbox
+    id: rent-concierge-inbox
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Concierge Inbox
+        hint: Rent or AI section find Concierge Inbox.
+        finalScreenAssertion: Concierge message inbox is visible
+
+  - displayName: Open rent staff management
+    id: rent-staff-management
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Rent Staff Management
+        hint: Listing Staff tab or Rent staff menu.
+        finalScreenAssertion: Staff roster for rent properties is visible
+
+  - displayName: Schedule maintenance for rent property
+    id: rent-schedule-maintenance
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Schedule Maintenance form from rent section
+        hint: Maintenance menu in listing or Rent hub.
+        finalScreenAssertion: Schedule maintenance form with property and date is visible
+
+  - displayName: View property ROI analysis
+    id: rent-roi-analysis
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Property ROI Analysis for a rent listing
+        hint: Listing finance or analytics section find ROI.
+        finalScreenAssertion: Property ROI analysis screen with metrics is visible

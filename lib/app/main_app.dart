@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -97,6 +98,15 @@ class _MainAppState extends State<MainApp> {
       ]);
       final loggedIn = results[0] as bool;
       final hasSeenOnboarding = results[1] as bool;
+      if (kDebugMode) {
+        // TEMP DEBUG LOGGING — remove once the "onboarding reappears" report
+        // is root-caused. Confirms whether the persisted flag itself reads
+        // back false (storage-layer issue) vs. some other startup branch
+        // routing to Routes.ONBOARDING despite a true flag.
+        debugPrint(
+          '[Bootstrap] seen_onboarding=$hasSeenOnboarding loggedIn=$loggedIn',
+        );
+      }
       final pinEnabled = results[2];
       final pinCode = results[3] as String;
       final hasValidPin = (pinEnabled as bool) && pinCode.length == 4;
@@ -122,6 +132,9 @@ class _MainAppState extends State<MainApp> {
       // Version check is triggered from MainController.onInit() once
       // all bindings (including RemoteDataSource) are registered.
     } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint('[Bootstrap] FAILED: $e');
+      }
       if (BuildConfig.instance.config.shouldCollectCrashLog) {
         BuildConfig.instance.config.logger.e(
           'Bootstrap failed',

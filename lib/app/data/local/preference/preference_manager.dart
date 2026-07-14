@@ -20,6 +20,8 @@ abstract class PreferenceManager {
   static const keyFaceIdEnabled = 'face_id_enabled';
   static const keyAppLockTimeoutSeconds = 'app_lock_timeout_seconds';
   static const keyAppBackgroundedAtMs = 'app_backgrounded_at_ms';
+  static const keyHasSeenPropertiesTabSpotlight =
+      'has_seen_properties_tab_spotlight';
 
   Future<String> getString(String key, {String defaultValue = ''});
 

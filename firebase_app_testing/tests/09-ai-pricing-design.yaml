@@ -1,0 +1,83 @@
+tests:
+  - displayName: Open AI Manager chat
+    id: ai-manager-open
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open AI Manager from Home FAB or More menu
+        hint: Teal floating action button on main tabs often opens AI Manager.
+        finalScreenAssertion: AI Manager chat interface with message input is visible
+
+  - displayName: Send message to AI Manager
+    id: ai-manager-chat
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open AI Manager and send a short question about occupancy
+        hint: Type a question like What is my occupancy today and send. Wait for response.
+        finalScreenAssertion: A user message and AI reply bubble are visible in the chat
+
+  - displayName: Open AI insights redirect
+    id: ai-insights
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to AI Insights entry point
+        hint: More menu or AI section tap AI Insights.
+        finalScreenAssertion: AI Manager or insights content is visible
+
+  - displayName: Open price analysis dashboard
+    id: pricing-analysis
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Price Analysis
+        hint: Listing BnB tab or More menu find Price Analysis.
+        finalScreenAssertion: Price analysis dashboard is visible
+
+  - displayName: Open AI pricing optimizer
+    id: ai-pricing-optimizer
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to AI Pricing Optimizer
+        hint: From price analysis or listing menu open AI Pricing Optimizer.
+        finalScreenAssertion: AI pricing recommendations screen is visible
+
+  - displayName: Open interior design studio
+    id: interior-design-studio
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Interior Design Studio
+        hint: More menu or listing amenities section find Design Studio.
+        finalScreenAssertion: Interior design studio upload or prompt screen is visible
+
+  - displayName: View design moodboards gallery
+    id: design-moodboards
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Design Moodboards gallery
+        hint: From design studio or More menu find Moodboards.
+        finalScreenAssertion: Moodboards gallery grid or empty state is visible
+
+  - displayName: Open listing analytics dashboard
+    id: rent-listing-analytics
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Rent Listing Analytics dashboard
+        hint: Listing analytics from rent or finances section.
+        finalScreenAssertion: Listing analytics metrics or charts are visible
+
+  - displayName: Add a maintenance expense
+    id: rent-add-maintenance-expense
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Add Expense and select a rent property and the Maintenance category
+        hint: Open the Add Expense screen (More menu or Finance section). Choose a property that is listed under Rent (not BnB). Tap the "Maintenance" category chip under Select Category.
+        finalScreenAssertion: Maintenance category chip is selected and amount/date fields are visible
+      - goal: Enter amount and date, then save the expense
+        hint: Enter an amount like 150000 with any currency, pick a transaction date using the date picker, optionally add a note, then tap "Record Transaction" to save.
+        finalScreenAssertion: A success message about the expense being recorded is shown, or the expense list now shows the new entry
+
+  - displayName: View maintenance cost analysis
+    id: rent-maintenance-cost
+    prerequisiteTestCaseId: rent-add-maintenance-expense
+    steps:
+      - goal: Navigate to Maintenance Cost Analysis
+        hint: Rent reports or maintenance section.
+        finalScreenAssertion: Maintenance cost breakdown screen is visible

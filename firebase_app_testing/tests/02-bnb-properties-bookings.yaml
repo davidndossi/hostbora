@@ -1,0 +1,48 @@
+tests:
+  - displayName: View properties list
+    id: bnb-view-properties
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open the Properties tab from bottom navigation
+        hint: Bottom nav second tab is usually Properties or My Properties.
+        finalScreenAssertion: A list of properties or empty state for properties is visible
+
+  - displayName: Open property listing details
+    id: bnb-listing-details
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open the Properties tab and tap the first property in the list
+        hint: Scroll the list if needed. Tap any property card or row.
+        finalScreenAssertion: Property or listing details screen with tabs such as Overview is visible
+
+  - displayName: Start add property wizard
+    id: bnb-add-listing-start
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Properties tab and tap add property FAB or Add Property button
+        hint: Floating action button on Properties tab or Add Property in toolbar.
+        finalScreenAssertion: Add listing or add property multi-step form first step is visible
+
+  - displayName: View all bookings
+    id: bnb-all-bookings
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to All Bookings from Home quick actions or More menu
+        hint: Home dashboard may show Bookings shortcut. Or open More tab and find Bookings.
+        finalScreenAssertion: Bookings list screen is visible showing bookings or empty state
+
+  - displayName: Open add new booking form
+    id: bnb-add-booking-form
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Add New Booking screen
+        hint: From Home or Bookings use Add Booking or plus button.
+        finalScreenAssertion: New booking form with guest and date fields is visible
+
+  - displayName: Open booking details
+    id: bnb-booking-details
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From bookings list open the first booking detail
+        hint: Tap first booking row if any exists. If list empty assert empty state text is visible.
+        finalScreenAssertion: Booking details screen with guest information is visible or empty bookings message shown

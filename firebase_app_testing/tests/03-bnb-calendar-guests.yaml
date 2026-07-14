@@ -1,0 +1,32 @@
+tests:
+  - displayName: Open host calendar
+    id: bnb-host-calendar
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Host Calendar from bottom navigation or Home
+        hint: Calendar tab or Calendar quick action on Home.
+        finalScreenAssertion: Calendar view with dates is visible
+
+  - displayName: Open calendar sync settings
+    id: bnb-calendar-sync
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From a listing open Calendar sync or external calendar integration
+        hint: Listing details may have Calendar sync menu item. Or find Calendar sync in listing settings.
+        finalScreenAssertion: Calendar sync screen with import or export options is visible
+
+  - displayName: View guest history
+    id: bnb-guest-history
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Guest History
+        hint: Find Guest History in More tab or Home shortcuts.
+        finalScreenAssertion: Guest history search list is visible
+
+  - displayName: Open guest access codes
+    id: bnb-guest-access-codes
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Guest Access Codes screen
+        hint: From More menu or Smart Access section find Guest Access Codes.
+        finalScreenAssertion: Guest access codes management screen is visible

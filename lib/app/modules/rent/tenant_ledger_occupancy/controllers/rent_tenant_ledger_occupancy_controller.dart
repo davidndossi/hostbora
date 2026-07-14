@@ -371,6 +371,8 @@ class RentTenantLedgerOccupancyController extends BaseController {
         'property': displayPropertyFull,
         'balance': '$remainingBalanceTsh',
         'phone': tenantRecord.value?.phoneNumber.trim() ?? '',
+        if ((tenantRecord.value?.backendTenantId ?? '').isNotEmpty)
+          'tenantBackendId': tenantRecord.value!.backendTenantId,
       },
     );
   }

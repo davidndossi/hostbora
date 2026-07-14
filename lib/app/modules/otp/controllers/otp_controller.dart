@@ -10,6 +10,7 @@ import '../../../data/model/general_response.dart';
 import '../../../data/model/otp_request.dart';
 import '../../../data/model/otp_response.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../network/exceptions/api_exception.dart';
 import '../../../routes/app_pages.dart';
 
 class OtpController extends BaseController {
@@ -123,11 +124,25 @@ class OtpController extends BaseController {
   }
 
   void _handleResendOtpResponseError(Exception e) {
+    final message = e is ApiException && e.message.isNotEmpty
+        ? e.message
+        : _t(
+            'Failed to resend OTP or code',
+            'Imeshindikana kutuma tena OTP au msimbo',
+          );
+    showErrorMessage(message);
+  }
+
+  void _handleResendOtpSuccess(GeneralResponse res) {
+    if (res.responseCode == '0' || res.responseCode == null) {
+      showSuccessMessage(
+        _t('OTP resent successfully', 'OTP imetumwa tena kwa mafanikio'),
+      );
+      return;
+    }
     showErrorMessage(
-      _t(
-        'Failed to resend OTP or code',
-        'Imeshindikana kutuma tena OTP au msimbo',
-      ),
+      res.message ??
+          _t('Failed to resend OTP or code', 'Imeshindikana kutuma tena OTP au msimbo'),
     );
   }
 
@@ -163,11 +178,15 @@ class OtpController extends BaseController {
 
   void resendOtp() {
     callDataService(
-      _repository.resendOtp(OtpRequest(msisdn: msisdn, otp: otp.value)),
-      onError: _handleResendOtpResponseError,
-      onSuccess: (_) => showSuccessMessage(
-        _t('OTP resent successfully', 'OTP imetumwa tena kwa mafanikio'),
+      _repository.resendOtp(
+        OtpRequest(
+          msisdn: msisdn,
+          email: email,
+          flow: flow.isEmpty ? 'registration' : flow,
+        ),
       ),
+      onError: _handleResendOtpResponseError,
+      onSuccess: _handleResendOtpSuccess,
     );
   }
 }

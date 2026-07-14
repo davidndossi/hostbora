@@ -1,0 +1,40 @@
+tests:
+  - displayName: Open property vault root
+    id: vault-root
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Property Vault from More menu or Home
+        hint: More tab grid find Property Vault or Document Vault.
+        finalScreenAssertion: Property vault with folders or recent documents is visible
+
+  - displayName: Browse documents in vault folder
+    id: vault-documents
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Property Vault and tap a folder to view documents
+        hint: Tap any folder card. If no folders assert empty vault message.
+        finalScreenAssertion: Documents list inside a vault folder is visible
+
+  - displayName: Open document scanner screen
+    id: vault-document-scanner
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From vault or documents open Document Scanner
+        hint: Tap Scan or camera icon. Grant camera permission if system dialog appears.
+        finalScreenAssertion: Document scanner camera view or permission prompt is visible
+
+  - displayName: Open add document upload
+    id: vault-add-document
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Add Document manual upload screen
+        hint: From documents list use Add Document or upload button.
+        finalScreenAssertion: Add document form with title and file picker is visible
+
+  - displayName: Open refine scan screen navigation
+    id: vault-refine-scan-nav
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Verify refine scan screen is reachable from scanner flow
+        hint: If camera unavailable skip capture and only verify scanner opened. Otherwise capture and reach refine step.
+        finalScreenAssertion: Refine scan screen with crop or filter options is visible or scanner screen confirms navigation path exists

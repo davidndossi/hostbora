@@ -1,0 +1,94 @@
+# Home "What would you like to do?" quick-actions dialog: auto-prompt,
+# direct-tap actions (Add Property / Income / Expense / Booking / Tenant),
+# and the AI-resolved "Other (Specify)" free-text flow.
+tests:
+  - displayName: Home quick actions dialog appears after login
+    id: home-quick-actions-dialog-shows
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Reach Home and wait a few seconds to see if the quick actions dialog appears
+        hint: If the host already has at least one property, a dismissible "What would you like to do?" dialog listing options such as Add Property, Add Income, Add Expense, Add Booking, Add Tenant, and Other (Specify) appears automatically a few seconds after Home finishes loading. If Home instead shows an empty state prompting to add your first property, that is expected when there are no properties yet — note this and stop.
+        finalScreenAssertion: Either the "What would you like to do?" quick actions dialog is visible, or the Home empty state prompting to add the first property is visible
+
+  - displayName: Dismiss home quick actions dialog
+    id: home-quick-actions-dismiss
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait for the quick actions dialog to appear on Home, then dismiss it without picking an option
+        hint: Tap the close (X) icon in the top right of the dialog, or tap the darkened area outside the dialog card.
+        finalScreenAssertion: The dialog is closed and the Home dashboard is visible underneath
+
+  - displayName: Quick action Add Property opens step wizard
+    id: home-quick-action-add-property
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait on Home for the automatic "What would you like to do?" dialog, then tap Add Property
+        hint: The dialog appears on its own a few seconds after Home finishes loading — do not tap any floating action button (the teal sparkle FAB opens a different AI Manager chat, not this dialog). Just stay on Home and wait for the "What would you like to do?" dialog, then tap the "Add Property" option.
+        finalScreenAssertion: A step-by-step Add Property wizard sheet is visible showing a property name field, a step indicator, and Next/Skip buttons
+
+  - displayName: Quick action Add Property wizard steps through to listing mode
+    id: home-quick-action-add-property-steps
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait on Home for the automatic dialog, tap Add Property, then advance through the name, location, and address steps
+        hint: Do not tap any floating action button — wait on Home a few seconds until the "What would you like to do?" dialog appears on its own, then tap "Add Property". Type a property name like "QA Test Villa" and tap Next. Type a location like "Dar es Salaam" and tap Next. On the physical address step tap Skip.
+        finalScreenAssertion: The wizard now shows a property type step asking to choose between Apartment, House, or other types
+      - goal: Choose a property type and advance to the listing mode step
+        hint: Tap a property type chip such as House, then tap Next.
+        finalScreenAssertion: The wizard shows a listing mode step asking to choose between BnB, Rent, or Both
+
+  - displayName: Quick action Add Income opens step wizard
+    id: home-quick-action-add-income
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait on Home for the automatic dialog, then tap Add Income
+        hint: Do not tap any floating action button (the teal sparkle FAB opens a different AI Manager chat). Just wait on Home a few seconds for the "What would you like to do?" dialog to appear on its own, then tap "Add Income".
+        finalScreenAssertion: An Add Income wizard sheet is visible with a property selection dropdown and a step indicator
+
+  - displayName: Quick action Add Expense opens step wizard
+    id: home-quick-action-add-expense
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait on Home for the automatic dialog, then tap Add Expense
+        hint: Do not tap any floating action button (the teal sparkle FAB opens a different AI Manager chat). Just wait on Home a few seconds for the "What would you like to do?" dialog to appear on its own, then tap "Add Expense".
+        finalScreenAssertion: An Add Expense wizard sheet is visible with a property selection dropdown and a step indicator
+
+  - displayName: Quick action Add Booking redirects to booking form
+    id: home-quick-action-add-booking
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait on Home for the automatic dialog, then tap Add Booking
+        hint: Do not tap any floating action button (the teal sparkle FAB opens a different AI Manager chat). Just wait on Home a few seconds for the "What would you like to do?" dialog to appear on its own, then tap "Add Booking". This should redirect straight to the add-booking screen, not a wizard sheet.
+        finalScreenAssertion: The new booking form with guest and date fields is visible
+
+  - displayName: Quick action Add Tenant redirects to tenant form
+    id: home-quick-action-add-tenant
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait on Home for the automatic dialog, then tap Add Tenant
+        hint: Do not tap any floating action button (the teal sparkle FAB opens a different AI Manager chat). Just wait on Home a few seconds for the "What would you like to do?" dialog to appear on its own, then tap "Add Tenant". This should redirect straight to the add-tenant screen, not a wizard sheet.
+        finalScreenAssertion: The add tenant and lease form is visible
+
+  - displayName: Quick action Other resolves free text to Add Tenant
+    id: home-quick-action-other-add-tenant
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait on Home for the automatic dialog, tap "Other (Specify)", type a request to add a tenant, and submit
+        hint: Do not tap any floating action button — the teal sparkle FAB opens a different AI Manager chat screen, which is NOT this dialog. Just stay on Home and wait a few seconds for the "What would you like to do?" dialog to appear on its own, then tap "Other (Specify)". A text box appears inside that dialog — type "I want to add a new tenant to my apartment" then tap the Submit button below the text box. Wait a few seconds for the AI to respond.
+        finalScreenAssertion: The add tenant and lease form is visible after the request is processed
+
+  - displayName: Quick action Other resolves free text to a settings screen
+    id: home-quick-action-other-settings
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait on Home for the automatic dialog, tap "Other (Specify)", type a request to open app settings, and submit
+        hint: Do not tap any floating action button — the teal sparkle FAB opens a different AI Manager chat screen, which is NOT this dialog. Just stay on Home and wait a few seconds for the "What would you like to do?" dialog to appear on its own, then tap "Other (Specify)". Type "open my app settings" into the text box that appears then tap Submit. Wait a few seconds for the AI to respond.
+        finalScreenAssertion: The app Settings screen is visible after the request is processed
+
+  - displayName: Quick action Other shows error for unrelated request
+    id: home-quick-action-other-unknown
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Wait on Home for the automatic dialog, tap "Other (Specify)", type an unrelated request, and submit
+        hint: Do not tap any floating action button — the teal sparkle FAB opens a different AI Manager chat screen, which is NOT this dialog. Just stay on Home and wait a few seconds for the "What would you like to do?" dialog to appear on its own, then tap "Other (Specify)". Type an unrelated request like "what is the weather in Dodoma today" into the text box then tap Submit. Wait a few seconds for the AI to respond.
+        finalScreenAssertion: An error message such as "Sorry, cannot help you with this request" is visible inside the dialog and no navigation occurred

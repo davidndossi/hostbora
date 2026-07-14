@@ -24,6 +24,7 @@ import '../model/user_profile_request.dart';
 import '../model/send_sms_request.dart';
 import '../model/send_whatsapp_bulk_request.dart';
 import '../model/send_whatsapp_template_request.dart';
+import '../model/send_payment_link_request.dart';
 import '../model/update_request.dart';
 import '../model/create_calendar_subscription_request.dart';
 import '../model/update_calendar_subscription_request.dart';
@@ -205,6 +206,12 @@ abstract class AppRepository {
   Future<GeneralResponse> updateUnit(String listingId, String unitId, Map<String, dynamic> body);
   Future<GeneralResponse> changePinOnServer(Map<String, dynamic> body);
 
+  /// GET /api/users/pin-status — whether this account already has a remote PIN.
+  Future<GeneralResponse> getPinStatus();
+
+  /// POST /api/users/verify-pin — verifies a candidate PIN against the saved hash.
+  Future<GeneralResponse> verifyPinOnServer(String pin);
+
   /// POST /api/properties
   Future<GeneralResponse> createProperty(Map<String, dynamic> body);
 
@@ -225,4 +232,25 @@ abstract class AppRepository {
   /// POST /api/subscription/checkout → create Snippe session for the given plan.
   /// Returns { paymentLinkUrl, checkoutUrl, reference, plan, amountTzs }.
   Future<GeneralResponse> createSubscriptionCheckout(String plan);
+
+  /// POST /api/subscription/apple/verify → verify App Store purchase (iOS).
+  Future<GeneralResponse> verifyAppleSubscription({
+    required String productId,
+    required String transactionId,
+    required String signedTransactionInfo,
+  });
+
+  /// POST /api/snippe/sessions/send-whatsapp → create link + WhatsApp to customer.
+  Future<GeneralResponse> sendSnippePaymentLinkViaWhatsApp(
+    SendPaymentLinkRequest request,
+  );
+
+  // ── Sales agents & referrals ──────────────────────────────────────────────
+
+  Future<GeneralResponse> validateReferralCode(String code);
+  Future<GeneralResponse> getSalesAgentDashboard(String userId);
+  Future<GeneralResponse> listSalesAgents();
+  Future<GeneralResponse> createSalesAgent(Map<String, dynamic> body);
+  Future<GeneralResponse> getAdminSalesAgentDashboard(int agentId);
+  Future<GeneralResponse> updateSalesAgentStatus(int agentId, String status);
 }

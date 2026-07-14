@@ -527,7 +527,10 @@ class AddListingController extends BaseController {
     return null;
   }
 
-  Future<void> saveProperty() async {
+  /// When [skipRentAmountRequirement] is true, the standalone rent-amount
+  /// requirement is bypassed (used by the condensed quick-add wizard, which
+  /// does not collect a rent amount at property-creation time).
+  Future<void> saveProperty({bool skipRentAmountRequirement = false}) async {
     if (!(formKey.currentState?.validate() ?? false)) return;
 
     final location = propertyLocationController.text.trim();
@@ -539,7 +542,7 @@ class AddListingController extends BaseController {
       Get.snackbar('Error', 'Add at least one apartment unit');
       return;
     }
-    if (!hideListingRentAmount) {
+    if (!hideListingRentAmount && !skipRentAmountRequirement) {
       final rentRaw = rentAmountController.text.trim().replaceAll(',', '');
       final rentValue = double.tryParse(rentRaw);
       if (rentValue == null || rentValue <= 0) {

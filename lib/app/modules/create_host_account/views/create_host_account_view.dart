@@ -122,6 +122,63 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                 ),
               ),
               const SizedBox(height: 20),
+              _buildLabel(
+                context,
+                _t(context, en: 'Referral code (optional)', sw: 'Msimbo wa mrejeleo (si lazima)'),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: controller.referralCodeController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: _inputDecoration(
+                  context,
+                  hint: _t(context, en: 'AGT-JOHN-001', sw: 'AGT-JOHN-001'),
+                ).copyWith(
+                  suffixIcon: Obx(() {
+                    if (controller.isCheckingReferral.value) {
+                      return const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+                    final valid = controller.referralValid.value;
+                    if (valid == true) {
+                      return const Icon(Icons.check_circle, color: Colors.green);
+                    }
+                    if (valid == false) {
+                      return const Icon(Icons.error_outline, color: Colors.red);
+                    }
+                    return const SizedBox.shrink();
+                  }),
+                ),
+                onChanged: (_) => controller.validateReferralCode(),
+                onFieldSubmitted: (_) => controller.validateReferralCode(),
+              ),
+              Obx(() {
+                final name = controller.referralAgentName.value;
+                if (name == null || name.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    _t(
+                      context,
+                      en: 'Referred by $name',
+                      sw: 'Umeletwa na $name',
+                    ),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: c.isDark
+                          ? theme.colorScheme.primary
+                          : AppColors.designAccent,
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 20),
               _buildLabel(context, _t(context, en: 'Password', sw: 'Nenosiri')),
               const SizedBox(height: 8),
               Obx(

@@ -1,0 +1,37 @@
+# Core auth flows — run first or use --test-username/--test-password with other suites
+tests:
+  - displayName: Login with phone and password
+    id: host-login
+    steps:
+      - goal: Open the app and reach the Login screen
+        hint: Dismiss onboarding if this is a fresh install by completing or skipping intro screens until Login appears. Do not register a new account.
+        finalScreenAssertion: The Login screen is visible with phone and password fields
+      - goal: Enter the test host phone number and password and tap Login
+        hint: Phone uses Tanzanian format starting with 0. Tap the primary Login button. If OTP verification appears skip to OTP test file.
+        finalScreenAssertion: Either the main Home dashboard, PIN setup screen, or OTP verification screen is visible
+      - goal: Complete first-time PIN setup if prompted
+        hint: If Change PIN or Set PIN screen appears enter 1234 twice to confirm. Skip this step if already on Home.
+        finalScreenAssertion: The main app Home dashboard with bottom navigation is visible
+
+  - displayName: Unlock app with PIN from welcome back screen
+    id: host-pin-unlock
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Send the app to background and reopen it to trigger app lock if enabled
+        hint: Press home then reopen Host Bora. If Welcome Back or PIN screen appears enter PIN 1234.
+        finalScreenAssertion: The Home dashboard or main shell is visible after unlock
+
+  - displayName: Forgot password request OTP
+    id: host-forgot-password-request
+    steps:
+      - goal: From Login tap Forgot Password and submit a registered phone number
+        hint: Use Forgot Password link below password field. Enter test phone number and submit.
+        finalScreenAssertion: OTP verification screen or success message about code sent is visible
+
+  - displayName: Change password while logged in
+    id: host-change-password
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open Settings then Security and open Change Password
+        hint: Use More tab or Settings from bottom navigation. Navigate Security then Change Password.
+        finalScreenAssertion: Change password form with current and new password fields is visible

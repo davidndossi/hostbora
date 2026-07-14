@@ -7,6 +7,7 @@ class RegRequest {
     String? mobileNumber,
     String? email,
     String? password,
+    String? referralCode,
   }){
     _firstName = firstName;
     _middleName = middleName;
@@ -15,6 +16,7 @@ class RegRequest {
     _mobileNumber = mobileNumber;
     _email = email;
     _password = password;
+    _referralCode = referralCode;
   }
 
   RegRequest.fromJson(dynamic json) {
@@ -25,6 +27,7 @@ class RegRequest {
     _mobileNumber = json['mobileNumber'];
     _email = json['email'];
     _password = json['password'];
+    _referralCode = json['referralCode'] ?? json['referral_code'];
   }
 
   String? _firstName;
@@ -34,6 +37,7 @@ class RegRequest {
   String? _mobileNumber;
   String? _email;
   String? _password;
+  String? _referralCode;
 
   String? get firstName => _firstName;
   String? get middleName => _middleName;
@@ -42,6 +46,7 @@ class RegRequest {
   String? get mobileNumber => _mobileNumber;
   String? get email => _email;
   String? get password => _password;
+  String? get referralCode => _referralCode;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -52,6 +57,9 @@ class RegRequest {
     map['mobileNumber'] = _mobileNumber;
     map['email'] = _email;
     map['password'] = _password;
+    if (_referralCode != null && _referralCode!.trim().isNotEmpty) {
+      map['referralCode'] = _referralCode!.trim().toUpperCase();
+    }
 
     return map;
   }
