@@ -15,6 +15,7 @@ import '/flavors/env_config.dart';
 import 'core/base/app_lifecycle_manager.dart';
 import 'data/local/preference/preference_manager.dart';
 import 'data/local/preference/preference_manager_impl.dart';
+import 'data/local/service/session_service.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -46,31 +47,11 @@ class _MainAppState extends State<MainApp> {
   }
 
   Future<bool> isSessionValid() async {
-    final accessToken = await _preferenceManager.getString(
-      'token',
-      defaultValue: '',
-    );
-    final expiryTime = await _preferenceManager.getString(
-      'expiry_time',
-      defaultValue: '',
-    );
-
-    if (accessToken == '' || expiryTime == '') return false;
-
-    int expiryTimeDt;
-    try {
-      expiryTimeDt = DateTime.parse(expiryTime).millisecondsSinceEpoch;
-    } on Exception catch (_, e) {
-      e.printError(info: 'Failed to parse date');
-      return false;
-    }
-
-    final now = DateTime.now().millisecondsSinceEpoch;
-    return now <= expiryTimeDt; // true if not expired
+    return SessionService.hasLocalSession(_preferenceManager);
   }
 
   static const _bootstrapTimeout = Duration(seconds: 10);
-  static const _defaultAppLockTimeoutSeconds = 60;
+  static const _defaultAppLockTimeoutSeconds = 300;
 
   Future<void> _bootstrap() async {
     try {

@@ -5,6 +5,7 @@ import '../../../data/local/db/client_event_local_data_source.dart';
 import '../../../data/local/db/tenant_rating_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/service/currency_service.dart';
 
 /// Represents one node in the story timeline.
 class StoryEventVm {
@@ -275,15 +276,8 @@ class ClientStoryController extends BaseController {
     }
   }
 
-  String _formatCurrency(int tsh) {
-    if (tsh >= 1000000) {
-      return 'Tsh ${(tsh / 1000000).toStringAsFixed(1)}M';
-    }
-    if (tsh >= 1000) {
-      return 'Tsh ${(tsh / 1000).toStringAsFixed(0)}K';
-    }
-    return 'Tsh $tsh';
-  }
+  String _formatCurrency(int tsh) =>
+      Get.find<CurrencyService>().formatBaseShort(tsh);
 
   Future<List<IncomeRecord>> _getIncomes(String propertyRef) async {
     if (propertyRef.isEmpty) return [];

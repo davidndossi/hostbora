@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/widget/base_currency_picker.dart';
 import '../controllers/onboarding_controller.dart';
 
 class OnboardingView extends BaseView<OnboardingController> {
@@ -154,7 +155,20 @@ class OnboardingView extends BaseView<OnboardingController> {
                             : 'Secure data even without internet',
                       ),
 
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 28),
+
+                      // ── base currency (static list, no network) ───────────
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: BaseCurrencyPicker(
+                          forDarkBackground: true,
+                          title: isSw
+                              ? 'Sarafu yako ya msingi'
+                              : 'Your base currency',
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),

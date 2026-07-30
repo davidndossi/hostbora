@@ -12,6 +12,7 @@ import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/widget/custom_app_bar.dart';
 import '../../../../../l10n/app_localizations.dart';
 import '../controllers/rent_smart_utility_dashboard_controller.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../utils/luku_sms_ocr_parser.dart';
 
 class _UtilUi {
@@ -1013,7 +1014,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         '$dateLabel • ${_formatNumber(draft.unitsKwh)} kWh • '
-        'TZS ${_formatNumber(draft.amountTsh)} • Meter ${draft.meterNumber}',
+        '${Get.find<CurrencyService>().formatBase(draft.amountTsh.round())} • Meter ${draft.meterNumber}',
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
       ),
     );
@@ -1168,7 +1169,11 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  _fieldLabel(_isSw ? 'Kiasi (TZS)' : 'Amount Paid (TZS)'),
+                  _fieldLabel(
+                    _isSw
+                        ? 'Kiasi (${Get.find<CurrencyService>().inputSuffix})'
+                        : 'Amount Paid (${Get.find<CurrencyService>().inputSuffix})',
+                  ),
                   TextFormField(
                     controller: _amountCtrl,
                     keyboardType: const TextInputType.numberWithOptions(

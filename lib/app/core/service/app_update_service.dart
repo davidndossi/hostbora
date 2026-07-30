@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/remote/remote_data_source.dart';
 import '../../data/model/app_version_response.dart';
+import 'launch_prompt_gate.dart';
 
 /// Checks the backend for a newer app version and shows a non-blocking
 /// bottom-sheet (or a forced dialog) when an update is available.
@@ -40,14 +41,21 @@ class AppUpdateService {
 
       if (!hasUpdate && !forceUpdate) return;
 
-      // Give the app 1.5 seconds to finish painting before showing the sheet.
-      await Future<void>.delayed(const Duration(milliseconds: 1500));
-
       if (forceUpdate) {
+        // Critical — always show, does not consume the soft-prompt slot.
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
         _showForceUpdateDialog(latest);
-      } else {
-        _showUpdateSheet(latest, current);
+        return;
       }
+
+      // Soft update yields to lease/review: wait until after their window, then
+      // only show if no other soft launch prompt claimed the slot.
+      await Future<void>.delayed(const Duration(milliseconds: 3500));
+      if (Get.isRegistered<LaunchPromptGate>() &&
+          !Get.find<LaunchPromptGate>().tryClaimSoftPrompt()) {
+        return;
+      }
+      _showUpdateSheet(latest, current);
     } catch (_) {
       // Version check is best-effort; never crash the app.
     }

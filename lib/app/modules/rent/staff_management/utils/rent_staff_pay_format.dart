@@ -1,4 +1,7 @@
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+
+import '../../../../data/local/service/currency_service.dart';
 
 /// Display helpers for staff compensation lines and payroll totals.
 abstract class RentStaffPayFormat {
@@ -12,16 +15,28 @@ abstract class RentStaffPayFormat {
     perWork: 'Per work done',
   };
 
+  static CurrencyService? get _currency =>
+      Get.isRegistered<CurrencyService>() ? Get.find<CurrencyService>() : null;
+
+  static String _formatNumber(double value) =>
+      _currency?.formatNumber(value) ??
+      NumberFormat('#,###', 'en_US').format(value.round());
+
+  static String _currencyLabel() =>
+      _currency?.inputSuffix ??
+      CurrencyService.defaultBaseCurrency;
+
   static String amountLine(double value, String paymentType) {
     if (value <= 0) return '—';
-    final n = NumberFormat('#,###', 'en_US').format(value.round());
+    final n = _formatNumber(value);
+    final code = _currencyLabel();
     switch (paymentType) {
       case hourly:
-        return '$n Tsh/hr';
+        return '$n $code/hr';
       case perWork:
-        return '$n Tsh/job';
+        return '$n $code/job';
       default:
-        return '$n Tsh/mo';
+        return '$n $code/mo';
     }
   }
 
@@ -32,8 +47,10 @@ abstract class RentStaffPayFormat {
   }
 
   static String formatPayrollTotal(double total) {
-    if (total <= 0) return '0 Tsh';
-    final n = NumberFormat('#,###', 'en_US').format(total.round());
-    return '$n Tsh';
+    if (total <= 0) {
+      return _currency?.formatBase(0) ?? '0';
+    }
+    return _currency?.formatBase(total.round()) ??
+        '${_formatNumber(total)} ${_currencyLabel()}';
   }
 }

@@ -11,6 +11,7 @@ import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/model/create_booking_request.dart';
 import '../../../data/model/send_payment_link_request.dart';
 import '../../../data/repository/app_repository.dart';
@@ -319,14 +320,18 @@ class AddNewBookingController extends BaseController {
         return;
       }
       if (amount.isEmpty) {
-        Get.snackbar('Payment link', 'Enter amount (TZS) for the payment link.');
+        final code = Get.find<CurrencyService>().inputSuffix;
+        Get.snackbar(
+          'Payment link',
+          'Enter amount ($code) for the payment link.',
+        );
         return;
       }
       final amountTzs = int.tryParse(amount.replaceAll(',', '')) ?? 0;
       if (amountTzs < _minSnippeAmountTzs) {
         Get.snackbar(
           'Payment link',
-          'Minimum amount is $_minSnippeAmountTzs TZS.',
+          'Minimum amount is ${Get.find<CurrencyService>().formatBase(_minSnippeAmountTzs)}.',
         );
         return;
       }

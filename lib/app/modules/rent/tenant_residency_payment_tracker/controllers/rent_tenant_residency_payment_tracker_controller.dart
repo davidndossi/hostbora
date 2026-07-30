@@ -16,6 +16,7 @@ import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/rent_property_estimate_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
 import '../../../../routes/app_pages.dart';
 
@@ -129,10 +130,8 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   static const _waScheduleTemplateKey = 'tenant_report_wa_schedule_template';
   static const _waScheduleNextMsKey = 'tenant_report_wa_schedule_next_ms';
 
-  static final NumberFormat _money = NumberFormat.currency(
-    symbol: r'TZS ',
-    decimalDigits: 0,
-  );
+  String _formatAmount(num amount) =>
+      Get.find<CurrencyService>().formatBase(amount.round());
   static final DateFormat _date = DateFormat('dd/MM/yyyy');
   final _tenantRecordsById = <String, TenantRecord>{};
   List<IncomeRecord> _incomeRowsCache = const [];
@@ -653,19 +652,19 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
           ? <Object?>[
               t.name,
               t.propertyLine,
-              _money.format(t.monthlyRent.round()),
+              _formatAmount(t.monthlyRent.round()),
               t.leasePeriodLabel,
               _date.format(t.leaseStart),
               _date.format(t.leaseEnd),
               _date.format(DateTime.now()),
-              _money.format(t.paidAmount.round()),
-              _money.format(t.arrearsAmount.round()),
+              _formatAmount(t.paidAmount.round()),
+              _formatAmount(t.arrearsAmount.round()),
               status,
             ]
           : <Object?>[
               t.name,
-              _money.format(t.totalAmount.round()),
-              _money.format(t.paidAmount.round()),
+              _formatAmount(t.totalAmount.round()),
+              _formatAmount(t.paidAmount.round()),
               status,
               '${_date.format(t.leaseStart)} - ${_date.format(t.leaseEnd)}',
               t.totalStayLabel,

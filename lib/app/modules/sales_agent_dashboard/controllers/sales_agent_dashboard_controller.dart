@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/sales_agent_models.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '/app/core/base/base_controller.dart';
 
@@ -45,13 +46,6 @@ class SalesAgentDashboardController extends BaseController {
     }
   }
 
-  String formatTzs(int amount) {
-    final s = amount.toString();
-    final buf = StringBuffer('TZS ');
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-      buf.write(s[i]);
-    }
-    return buf.toString();
-  }
+  String formatTzs(int amount) =>
+      Get.find<CurrencyService>().formatBase(amount);
 }

@@ -13,6 +13,7 @@ import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/db/rent_payment_reminder_local_data_source.dart';
 import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
@@ -702,7 +703,7 @@ class HostCalendarController extends BaseController {
   }
 
   Future<List<CalendarEvent>> _loadLocalPaymentReminderEvents() async {
-    final currency = NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0);
+    final currency = Get.find<CurrencyService>();
     final timeFmt = DateFormat('hh:mm a');
     final records = await _paymentReminderLocal.getAllNewestFirst();
     final out = <CalendarEvent>[];
@@ -722,7 +723,7 @@ class HostCalendarController extends BaseController {
           guestName: r.tenantName.isEmpty ? 'Tenant' : r.tenantName,
           time: timeFmt.format(dt),
           guests: 0,
-          subtitle: currency.format(r.balanceTsh),
+          subtitle: currency.formatBase(r.balanceTsh),
           subtitleHighlight: false,
           propertyName: r.propertyLabel,
           eventDate: day,

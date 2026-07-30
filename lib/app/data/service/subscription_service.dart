@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config/subscription_payment_config.dart';
+import '../local/service/currency_service.dart';
 import '../model/subscription_status.dart';
 import '../repository/app_repository.dart';
 import 'apple_iap_service.dart';
@@ -24,13 +25,17 @@ class PlanInfo {
   final bool isPopular;
 
   String get priceFormatted {
+    if (Get.isRegistered<CurrencyService>()) {
+      return '${Get.find<CurrencyService>().formatBase(price)}/mo';
+    }
+    final sym = CurrencyService.symbolFor(CurrencyService.defaultBaseCurrency);
     final s = price.toString();
     final buf = StringBuffer();
     for (var i = 0; i < s.length; i++) {
       if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
       buf.write(s[i]);
     }
-    return 'TZS ${buf.toString()}/mo';
+    return '$sym${buf.toString()}/mo';
   }
 }
 

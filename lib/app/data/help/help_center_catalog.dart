@@ -225,7 +225,7 @@ class HelpCenterCatalog {
           titleSw: 'Panga vikumbusho',
           bodyEn: 'Set payment reminders per tenant from their ledger screen.',
           bodySw: 'Weka vikumbusho vya malipo kwa kila mpangaji kutoka daftari lake.',
-          route: Routes.RENT_SCHEDULE_PAYMENT_REMINDER,
+          route: Routes.RENT_RECURRING_REMINDERS,
         ),
       ],
     ),

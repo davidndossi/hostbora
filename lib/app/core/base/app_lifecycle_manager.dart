@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../data/local/preference/preference_manager.dart';
+import '../../data/local/service/session_service.dart';
 import '../../routes/app_pages.dart';
 
 class AppLifecycleManager with WidgetsBindingObserver {
@@ -39,7 +40,7 @@ class AppLifecycleManager with WidgetsBindingObserver {
     } else if (state == AppLifecycleState.resumed) {
       _isPaused = false;
       _cancelTimer();
-      _checkTokenAndLogoutIfExpired();
+      _checkTokenAndRefreshIfNeeded();
       _startExpiryCheckTimer();
       _maybeShowAppLock();
     }
@@ -48,48 +49,39 @@ class AppLifecycleManager with WidgetsBindingObserver {
   void _startExpiryCheckTimer() {
     _expiryCheckTimer?.cancel();
     _expiryCheckTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      _checkTokenAndLogoutIfExpired();
+      _checkTokenAndRefreshIfNeeded();
     });
   }
 
-  Future<void> _checkTokenAndLogoutIfExpired() async {
+  Future<void> _checkTokenAndRefreshIfNeeded() async {
     try {
       final pref = Get.find<PreferenceManager>(
         tag: (PreferenceManager).toString(),
       );
-      final expiryTime = await pref.getString(
-        PreferenceManager.keyExpiryTime,
-        defaultValue: '',
-      );
-      final token = await pref.getString(
-        PreferenceManager.keyToken,
-        defaultValue: '',
-      );
-      if (token.isEmpty || expiryTime.isEmpty) return;
-      final expiryMs = DateTime.tryParse(expiryTime)?.millisecondsSinceEpoch;
-      if (expiryMs == null) return;
-      if (DateTime.now().millisecondsSinceEpoch > expiryMs) {
-        await pref.clearSession();
+      if (!await SessionService.hasLocalSession(pref)) {
         if (Get.currentRoute != Routes.AUTH) {
-          Get.offAllNamed(Routes.AUTH);
+          await _clearAndGoToAuth(pref);
         }
+        return;
+      }
+      if (!Get.isRegistered<SessionService>()) return;
+      final session = Get.find<SessionService>();
+      if (await session.isAccessTokenValid()) return;
+      final refreshed = await session.ensureValidSession();
+      if (!refreshed && Get.currentRoute != Routes.AUTH) {
+        await session.clearFullSession();
+        Get.offAllNamed(Routes.AUTH);
       }
     } catch (_) {}
   }
 
+  Future<void> _clearAndGoToAuth(PreferenceManager pref) async {
+    await pref.clearSession();
+    Get.offAllNamed(Routes.AUTH);
+  }
+
   Future<bool> _hasValidSession(PreferenceManager pref) async {
-    final token = await pref.getString(
-      PreferenceManager.keyToken,
-      defaultValue: '',
-    );
-    final expiryTime = await pref.getString(
-      PreferenceManager.keyExpiryTime,
-      defaultValue: '',
-    );
-    if (token.isEmpty || expiryTime.isEmpty) return false;
-    final expiryMs = DateTime.tryParse(expiryTime)?.millisecondsSinceEpoch;
-    if (expiryMs == null) return false;
-    return DateTime.now().millisecondsSinceEpoch <= expiryMs;
+    return SessionService.hasLocalSession(pref);
   }
 
   Future<void> _maybeShowAppLock() async {
@@ -133,7 +125,7 @@ class AppLifecycleManager with WidgetsBindingObserver {
 
   void startObserving() {
     WidgetsBinding.instance.addObserver(this);
-    _checkTokenAndLogoutIfExpired();
+    _checkTokenAndRefreshIfNeeded();
     _startExpiryCheckTimer();
   }
 
@@ -146,9 +138,9 @@ class AppLifecycleManager with WidgetsBindingObserver {
   Future<int> _appLockTimeoutSeconds(PreferenceManager pref) async {
     final seconds = await pref.getInt(
       PreferenceManager.keyAppLockTimeoutSeconds,
-      defaultValue: 15,
+      defaultValue: 300,
     );
-    return seconds > 0 ? seconds : 15;
+    return seconds > 0 ? seconds : 300;
   }
 
   Future<void> _saveBackgroundedAt(DateTime pausedAt) async {

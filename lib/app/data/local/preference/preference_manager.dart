@@ -4,6 +4,8 @@ import '../../model/login_response.dart';
 abstract class PreferenceManager {
   static const keyToken = 'token';
   static const keyExpiryTime = 'expiry_time';
+  static const keyRefreshToken = 'refresh_token';
+  static const keyRefreshExpiryTime = 'refresh_expiry_time';
   static const keyFirstLogin = 'first_login';
   static const keyUsername = 'username';
   static const keyFullName = 'full_name';
@@ -22,6 +24,16 @@ abstract class PreferenceManager {
   static const keyAppBackgroundedAtMs = 'app_backgrounded_at_ms';
   static const keyHasSeenPropertiesTabSpotlight =
       'has_seen_properties_tab_spotlight';
+
+  /// Home workspace chip: `all` | `bnb` | `rent`.
+  static const keyHomeWorkspaceFilter = 'home_workspace_filter';
+
+  /// First time this device saw at least one property (for Home first-week stage).
+  static const keyFirstPropertyAtMs = 'first_property_at_ms';
+
+  static const keyHasSeenPropertiesCoachMark = 'has_seen_properties_coach_mark';
+  static const keyHasSeenFinancesCoachMark = 'has_seen_finances_coach_mark';
+  static const keyHasDismissedHomeAiInsight = 'has_dismissed_home_ai_insight';
 
   Future<String> getString(String key, {String defaultValue = ''});
 

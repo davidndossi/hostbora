@@ -3,10 +3,9 @@ import '../../../../core/theme/app_theme_tokens.dart';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/base/rent_base_view.dart';
-import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../core/widget/skeleton_presets.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_tenant_residency_payment_tracker_controller.dart';
@@ -91,7 +90,7 @@ class RentTenantResidencyPaymentTrackerView
 
   @override
   Widget body(BuildContext context) {
-    final currency = NumberFormat.currency(symbol: r'TZS', decimalDigits: 0);
+    final currency = Get.find<CurrencyService>();
 
     return Obx(() {
       if (controller.tenantsInitialLoading.value && controller.tenants.isEmpty) {
@@ -275,7 +274,7 @@ class RentTenantResidencyPaymentTrackerView
   Widget _propertyPrincipalCard(
     BuildContext context,
     PropertyPrincipalSnapshot snap,
-    NumberFormat currency,
+    CurrencyService currency,
   ) {
     final tokens = context.tokens;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -375,7 +374,7 @@ class RentTenantResidencyPaymentTrackerView
                         _principalLegendLine(
                           labelMuted,
                           _isSw ? 'Mtaji' : 'Principal',
-                          currency.format(snap.principalCost),
+                          currency.formatBase(snap.principalCost),
                           _teal,
                         ),
                       if (snap.maintenanceCost > 0) ...[
@@ -383,7 +382,7 @@ class RentTenantResidencyPaymentTrackerView
                         _principalLegendLine(
                           labelMuted,
                           _isSw ? 'Matengenezo' : 'Maintenance',
-                          currency.format(snap.maintenanceCost),
+                          currency.formatBase(snap.maintenanceCost),
                           const Color(0xFF5D4037),
                         ),
                       ],
@@ -392,7 +391,7 @@ class RentTenantResidencyPaymentTrackerView
                         _principalLegendLine(
                           labelMuted,
                           _isSw ? 'Mapato' : 'Income',
-                          currency.format(snap.incomeGenerated),
+                          currency.formatBase(snap.incomeGenerated),
                           const Color(0xFF26A69A),
                         ),
                       ],
@@ -655,7 +654,7 @@ class RentTenantResidencyPaymentTrackerView
     );
   }
 
-  Widget _tenantCard(TenantInsight t, NumberFormat currency) {
+  Widget _tenantCard(TenantInsight t, CurrencyService currency) {
     final pct = (t.leaseProgress * 100).round();
     final ctx = Get.context!;
     final tokens = ctx.tokens;
@@ -759,14 +758,14 @@ class RentTenantResidencyPaymentTrackerView
                                   style: const TextStyle(fontSize: 13),
                                   children: [
                                     TextSpan(
-                                      text: currency.format(t.paidAmount),
+                                      text: currency.formatBase(t.paidAmount),
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w800,
                                         color: _teal,
                                       ),
                                     ),
                                     TextSpan(
-                                      text: ' / ${currency.format(t.totalAmount)}',
+                                      text: ' / ${currency.formatBase(t.totalAmount)}',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: tertiaryText,
@@ -930,7 +929,7 @@ class RentTenantResidencyPaymentTrackerView
 
   Widget _tenantIncomeExpensePie(
     TenantInsight t,
-    NumberFormat currency, {
+    CurrencyService currency, {
     required bool isDark,
   }) {
     final income = t.incomeForTenure.clamp(0, double.infinity).toDouble();
@@ -1000,13 +999,13 @@ class RentTenantResidencyPaymentTrackerView
                 _lineLegend(
                   color: incomeColor,
                   label: _isSw ? 'Mapato' : 'Income',
-                  value: currency.format(income.round()),
+                  value: currency.formatBase(income.round()),
                 ),
                 const SizedBox(height: 4),
                 _lineLegend(
                   color: expenseColor,
                   label: _isSw ? 'Matumizi' : 'Expenses',
-                  value: currency.format(expense.round()),
+                  value: currency.formatBase(expense.round()),
                 ),
               ],
             ),
@@ -1050,7 +1049,7 @@ class RentTenantResidencyPaymentTrackerView
       builder: (ctx) {
         return Obx(() {
           final selected = controller.comparedTenants;
-          final currency = NumberFormat.currency(symbol: r'TZS', decimalDigits: 0);
+          final currency = Get.find<CurrencyService>();
           final metrics = selected
               .map((t) => (tenant: t, metric: controller.compareMetricForTenant(t)))
               .toList(growable: false);
@@ -1146,7 +1145,7 @@ class RentTenantResidencyPaymentTrackerView
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${_isSw ? 'Mapato' : 'Income'}: ${currency.format(m.income.round())}',
+                              '${_isSw ? 'Mapato' : 'Income'}: ${currency.formatBase(m.income.round())}',
                               style: const TextStyle(fontSize: 12),
                             ),
                             LinearProgressIndicator(
@@ -1157,7 +1156,7 @@ class RentTenantResidencyPaymentTrackerView
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${_isSw ? 'Matumizi' : 'Expenses'}: ${currency.format(m.expense.round())}',
+                              '${_isSw ? 'Matumizi' : 'Expenses'}: ${currency.formatBase(m.expense.round())}',
                               style: const TextStyle(fontSize: 12),
                             ),
                             LinearProgressIndicator(

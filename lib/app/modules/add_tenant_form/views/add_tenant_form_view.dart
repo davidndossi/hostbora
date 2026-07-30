@@ -7,6 +7,7 @@ import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/utils/tenant_rent_billing.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/widget/currency_dropdown_field.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
 import '../controllers/add_tenant_form_controller.dart';
@@ -244,8 +245,8 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
                     _isSw
-                        ? 'Jumla ya kukaa ($units $unitLabel): TZS ${NumberFormat('#,###').format(total.round())}'
-                        : 'Total for stay ($units $unitLabel): TZS ${NumberFormat('#,###').format(total.round())}',
+                        ? 'Jumla ya kukaa ($units $unitLabel): ${Get.find<CurrencyService>().formatBase(total.round())}'
+                        : 'Total for stay ($units $unitLabel): ${Get.find<CurrencyService>().formatBase(total.round())}',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

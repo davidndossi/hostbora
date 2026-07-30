@@ -30,29 +30,30 @@ class MainView extends BaseView<MainController> {
   Widget? floatingActionButton() => Obx(() {
     final menu = controller.selectedMenuCode;
     final isMaintenanceTab = menu == MenuCode.MAINTENANCE;
-    final isPropertiesTab  = menu == MenuCode.PROPERTIES;
+    final isPropertiesTab = menu == MenuCode.PROPERTIES;
+    final isSw = controller.currentLocale.value == 'sw';
 
     if (isPropertiesTab) {
       return FloatingActionButton.extended(
         onPressed: controller.addProperty,
         backgroundColor: AppColors.designAccent,
         icon: const Icon(Icons.add_home_work_rounded, color: Colors.white, size: 22),
-        label: Obx(() {
-          final isSw = controller.currentLocale.value == 'sw';
-          return Text(
-            isSw ? 'Ongeza Mali' : 'Add Property',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          );
-        }),
+        label: Text(
+          isSw ? 'Ongeza Mali' : 'Add Property',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
       );
     }
 
+    // Home / Finances / More: AI FAB (Create lives on Home as an in-page CTA).
     return FloatingActionButton(
-      onPressed: isMaintenanceTab ? controller.addTask : controller.aiManager,
+      onPressed: isMaintenanceTab
+          ? controller.addTask
+          : controller.aiManager,
       backgroundColor: AppColors.designAccent,
       child: Icon(
         isMaintenanceTab ? Icons.add : Icons.auto_awesome,

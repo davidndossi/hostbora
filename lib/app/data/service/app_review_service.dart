@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:in_app_review/in_app_review.dart';
 
+import '../../core/service/launch_prompt_gate.dart';
 import '../../data/local/preference/preference_manager.dart';
 import '../../routes/app_pages.dart';
 
@@ -51,6 +52,11 @@ class AppReviewService extends GetxService {
     if (_promptVisible) return;
     if (Get.context == null) return;
     if (!await _isEligible()) return;
+    // At most one soft launch prompt per session.
+    if (Get.isRegistered<LaunchPromptGate>() &&
+        !Get.find<LaunchPromptGate>().tryClaimSoftPrompt()) {
+      return;
+    }
 
     _promptVisible = true;
     await _recordPromptShown();

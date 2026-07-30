@@ -9,7 +9,6 @@ import '../../../routes/app_pages.dart';
 import 'quick_add_expense_wizard.dart';
 import 'quick_add_income_wizard.dart';
 import 'quick_add_property_wizard.dart';
-import 'quick_send_reminder_wizard.dart';
 
 /// The five concrete actions the home quick-actions dialog can trigger,
 /// either by direct tap or resolved from free text via AI ("Other").
@@ -22,16 +21,17 @@ enum QuickHomeAction {
   sendReminder,
 }
 
-/// Shows the dismissible "What would you like to do?" dialog and runs
-/// whichever action the user picks (directly, or via the AI-resolved
-/// "Other (Specify)" free-text option). Calls [onDataChanged] afterwards
-/// when the chosen action completed successfully, so the caller (Home) can
-/// refresh its data.
-Future<void> showQuickActionsDialog({
+/// Shows the single Home **Create** menu and runs the chosen action
+/// (tile tap or AI-resolved "Other"). Calls [onDataChanged] when an action
+/// completes successfully.
+///
+/// [portfolioRole] filters options: `bnb` | `rent` | `both` (default).
+Future<void> showCreateMenu({
   required Future<void> Function() onDataChanged,
+  String portfolioRole = 'both',
 }) async {
   final outcome = await Get.dialog<_OtherActionOutcome>(
-    const QuickActionsDialog(),
+    QuickActionsDialog(portfolioRole: portfolioRole),
     barrierDismissible: true,
   );
   if (outcome == null) return;
@@ -50,6 +50,16 @@ Future<void> showQuickActionsDialog({
   }
 }
 
+/// @Deprecated — use [showCreateMenu].
+Future<void> showQuickActionsDialog({
+  required Future<void> Function() onDataChanged,
+  String portfolioRole = 'both',
+}) =>
+    showCreateMenu(
+      onDataChanged: onDataChanged,
+      portfolioRole: portfolioRole,
+    );
+
 Future<bool?> _runQuickAction(QuickHomeAction action) {
   switch (action) {
     case QuickHomeAction.addProperty:
@@ -65,7 +75,8 @@ Future<bool?> _runQuickAction(QuickHomeAction action) {
       return Get.toNamed(Routes.ADD_NEW_TENANT)?.then((r) => r == true) ??
           Future.value(false);
     case QuickHomeAction.sendReminder:
-      return showSendReminderWizard();
+      return Get.toNamed(Routes.RENT_RECURRING_REMINDERS)?.then((r) => r == true) ??
+          Future.value(false);
   }
 }
 
@@ -98,7 +109,10 @@ class _OtherActionOutcome {
 }
 
 class QuickActionsDialog extends StatefulWidget {
-  const QuickActionsDialog({super.key});
+  const QuickActionsDialog({super.key, this.portfolioRole = 'both'});
+
+  /// `bnb` | `rent` | `both` — hides create options that don't apply.
+  final String portfolioRole;
 
   @override
   State<QuickActionsDialog> createState() => _QuickActionsDialogState();
@@ -109,6 +123,19 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
   final _otherController = TextEditingController();
   bool _resolving = false;
   String? _error;
+
+  bool get _showBnbActions {
+    final r = widget.portfolioRole;
+    return r == 'bnb' || r == 'both' || r == 'all';
+  }
+
+  bool get _showRentActions {
+    final r = widget.portfolioRole;
+    return r == 'rent' || r == 'both' || r == 'all';
+  }
+
+  String _t(String en, String sw) =>
+      Get.locale?.languageCode == 'sw' ? sw : en;
 
   @override
   void dispose() {
@@ -139,7 +166,10 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
           : _actionFromIntent(resolution.wizardAction!);
       if (action == null) {
         setState(() {
-          _error = 'Sorry, cannot help you with this request.';
+          _error = _t(
+            'Sorry, cannot help you with this request.',
+            'Samahani, siwezi kukusaidia na ombi hili.',
+          );
         });
         return;
       }
@@ -288,7 +318,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Quick Add',
+                      _t('Create', 'Unda'),
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
@@ -297,7 +327,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
                       ),
                     ),
                     Text(
-                      'What would you like to do?',
+                      _t('Choose what to add', 'Chagua unachotaka kuongeza'),
                       style: TextStyle(
                         fontSize: 12,
                         color: c.hint,
@@ -328,7 +358,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
-            'PROPERTIES & PEOPLE',
+            _t('PROPERTIES & PEOPLE', 'MALI NA WATU'),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
@@ -341,35 +371,40 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
 
         _optionTile(context,
           icon: Icons.home_work_outlined,
-          label: 'Add Property',
-          subtitle: 'Register a new property',
+          label: _t('Add Property', 'Ongeza Mali'),
+          subtitle: _t('Register a new property', 'Sajili mali mpya'),
           iconColor: const Color(0xFF6C63FF),
           onTap: () => Get.back(
             result: const _OtherActionOutcome.wizard(QuickHomeAction.addProperty),
           ),
         ),
-        _optionTile(context,
-          icon: Icons.person_add_alt_outlined,
-          label: 'Add Tenant',
-          subtitle: 'Assign tenant to a unit',
-          iconColor: const Color(0xFF00BFA5),
-          onTap: () => Get.back(
-            result: const _OtherActionOutcome.wizard(QuickHomeAction.addTenant),
+        if (_showRentActions)
+          _optionTile(context,
+            icon: Icons.person_add_alt_outlined,
+            label: _t('Add Tenant', 'Ongeza Mpangaji'),
+            subtitle: _t('Assign tenant to a unit', 'Weka mpangaji kwenye chumba'),
+            iconColor: const Color(0xFF00BFA5),
+            onTap: () => Get.back(
+              result: const _OtherActionOutcome.wizard(QuickHomeAction.addTenant),
+            ),
           ),
-        ),
-        _optionTile(context,
-          icon: Icons.notifications_active_outlined,
-          label: 'Send Reminder',
-          subtitle: 'WhatsApp rent reminder to tenants',
-          iconColor: const Color(0xFF1565C0),
-          onTap: () => _handleSendReminderTap(context),
-        ),
+        if (_showRentActions)
+          _optionTile(context,
+            icon: Icons.notifications_active_outlined,
+            label: _t('Send Reminder', 'Tuma Kikumbusho'),
+            subtitle: _t(
+              'WhatsApp rent reminder to tenants',
+              'Kikumbusho cha kodi kwa WhatsApp',
+            ),
+            iconColor: const Color(0xFF1565C0),
+            onTap: () => _handleSendReminderTap(context),
+          ),
 
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
-            'FINANCES',
+            _t('FINANCES', 'FEDHA'),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
@@ -382,8 +417,8 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
 
         _optionTile(context,
           icon: Icons.payments_outlined,
-          label: 'Add Income',
-          subtitle: 'Record a payment received',
+          label: _t('Add Income', 'Ongeza Mapato'),
+          subtitle: _t('Record a payment received', 'Rekodi malipo yaliyopokelewa'),
           iconColor: const Color(0xFF2E7D32),
           onTap: () => Get.back(
             result: const _OtherActionOutcome.wizard(QuickHomeAction.addIncome),
@@ -391,22 +426,23 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
         ),
         _optionTile(context,
           icon: Icons.receipt_long_outlined,
-          label: 'Add Expense',
-          subtitle: 'Log a cost or bill',
+          label: _t('Add Expense', 'Ongeza Matumizi'),
+          subtitle: _t('Log a cost or bill', 'Rekodi gharama au bili'),
           iconColor: const Color(0xFFE53935),
           onTap: () => Get.back(
             result: const _OtherActionOutcome.wizard(QuickHomeAction.addExpense),
           ),
         ),
-        _optionTile(context,
-          icon: Icons.event_available_outlined,
-          label: 'Add Booking',
-          subtitle: 'Schedule a reservation',
-          iconColor: const Color(0xFFF57C00),
-          onTap: () => Get.back(
-            result: const _OtherActionOutcome.wizard(QuickHomeAction.addBooking),
+        if (_showBnbActions)
+          _optionTile(context,
+            icon: Icons.event_available_outlined,
+            label: _t('Add Booking', 'Ongeza Uhifadhi'),
+            subtitle: _t('Schedule a reservation', 'Panga uhifadhi'),
+            iconColor: const Color(0xFFF57C00),
+            onTap: () => Get.back(
+              result: const _OtherActionOutcome.wizard(QuickHomeAction.addBooking),
+            ),
           ),
-        ),
 
         const SizedBox(height: 12),
         Padding(
@@ -425,7 +461,10 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
                   Icon(Icons.chat_bubble_outline_rounded, size: 16, color: c.hint),
                   const SizedBox(width: 10),
                   Text(
-                    'Other — specify your request',
+                    _t(
+                      'Other — specify your request',
+                      'Nyingine — eleza unachotaka',
+                    ),
                     style: TextStyle(
                       fontSize: 13,
                       color: c.hint,
@@ -478,7 +517,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(isSw ? 'Ghairi' : 'Cancel'),
+            child: Text(isSw ? 'Ghairi' : 'Cancel', style: TextStyle(fontSize: 14)),
           ),
           FilledButton(
             onPressed: () {
@@ -487,7 +526,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
                 result: const _OtherActionOutcome.wizard(QuickHomeAction.addTenant),
               );
             },
-            child: Text(isSw ? 'Ongeza Mpangaji' : 'Add Tenant'),
+            child: Text(isSw ? 'Ongeza Mpangaji' : 'Add Tenant', style: TextStyle(fontSize: 14)),
           ),
         ],
       ),
@@ -681,7 +720,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
             ),
             Expanded(
               child: Text(
-                'Tell us what you want to do',
+                _t('Tell us what you want to do', 'Tuambie unachotaka kufanya'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -704,7 +743,10 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
           style: TextStyle(color: c.headline),
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
-            hintText: 'e.g. "Add a new tenant to my apartment"',
+            hintText: _t(
+              'e.g. "Add a new tenant to my apartment"',
+              'mf. "Ongeza mpangaji mpya kwenye apartment"',
+            ),
             hintStyle: TextStyle(color: c.hint),
             filled: true,
             fillColor: c.inputFill,
@@ -737,7 +779,10 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                : const Text('Submit', style: TextStyle(fontWeight: FontWeight.w700)),
+                : Text(
+                    _t('Submit', 'Wasilisha'),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
           ),
         ),
       ],

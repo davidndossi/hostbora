@@ -7,6 +7,7 @@ import '../db/client_event_local_data_source.dart';
 import '../db/offline_sync_queue_local_data_source.dart';
 import '../db/property_local_data_source.dart';
 import '../db/tenant_local_data_source.dart';
+import '../service/currency_service.dart';
 import '../service/offline_sync_worker_service.dart';
 import '../../../modules/add_listing/models/apartment_unit_draft.dart';
 
@@ -36,7 +37,9 @@ class AiTenantFlow {
   String _leaseEndIso = '';
   double _rentAmount = 0;
   final String _rentFrequency = 'Per Month';
-  final String _currency = 'TZS';
+  String get _currency => Get.isRegistered<CurrencyService>()
+      ? Get.find<CurrencyService>().baseCurrency.value
+      : CurrencyService.defaultBaseCurrency;
 
   // ── Remove-tenant fields ───────────────────────────────────────────────
   List<TenantRecord> _activeTenants = [];
@@ -341,14 +344,14 @@ class AiTenantFlow {
           '${unitLabel.isNotEmpty ? "• Unit: $unitLabel\n" : ""}'
           '• Jina: $_tenantName\n'
           '• Simu: $_phone\n'
-          '• Kodi: ${_fmt(_rentAmount)} $_currency / ${_freqSw(_rentFrequency)}\n'
+          '• Kodi: ${_formatRent(_rentAmount)} / ${_freqSw(_rentFrequency)}\n'
           '• Mkataba: $_leaseStartIso → $_leaseEndIso'
         : '✅ Tenant saved:\n'
           '• Property: $propLabel\n'
           '${unitLabel.isNotEmpty ? "• Unit: $unitLabel\n" : ""}'
           '• Name: $_tenantName\n'
           '• Phone: $_phone\n'
-          '• Rent: ${_fmt(_rentAmount)} $_currency / $_rentFrequency\n'
+          '• Rent: ${_formatRent(_rentAmount)} / $_rentFrequency\n'
           '• Lease: $_leaseStartIso → $_leaseEndIso';
   }
 
@@ -504,7 +507,7 @@ class AiTenantFlow {
           '$unitLine'
           '• Mpangaji: $_tenantName\n'
           '• Simu: $_phone\n'
-          '• Kodi: ${_fmt(_rentAmount)} $_currency / $_rentFrequency\n'
+          '• Kodi: ${_formatRent(_rentAmount)} / $_rentFrequency\n'
           '• Mkataba: $_leaseStartIso → $_leaseEndIso\n\n'
           'Andika **ndio** kuhifadhi au **hapana** kughairi.'
         : '📋 Confirm:\n'
@@ -512,7 +515,7 @@ class AiTenantFlow {
           '$unitLine'
           '• Tenant: $_tenantName\n'
           '• Phone: $_phone\n'
-          '• Rent: ${_fmt(_rentAmount)} $_currency / $_rentFrequency\n'
+          '• Rent: ${_formatRent(_rentAmount)} / $_rentFrequency\n'
           '• Lease: $_leaseStartIso → $_leaseEndIso\n\n'
           'Type **yes** to save or **no** to cancel.';
   }
@@ -523,7 +526,7 @@ class AiTenantFlow {
           '• Mpangaji: ${t.tenantName}\n'
           '• Mali: ${t.propertyLabel}\n'
           '${t.unitLabel.isNotEmpty ? "• Unit: ${t.unitLabel}\n" : ""}'
-          '• Kodi ya mkataba: ${_fmt(t.rentAmountValue)} ${t.rentCurrency}\n'
+          '• Kodi ya mkataba: ${_formatRentForCurrency(t.rentAmountValue, t.rentCurrency)}\n'
           '• Ilianza: ${t.leaseStartIso}\n\n'
           'Tarehe ya leo itawekwa kama tarehe ya kumaliza.\n'
           'Andika **ndio** kuthibitisha au **hapana** kughairi.'
@@ -531,7 +534,7 @@ class AiTenantFlow {
           '• Tenant: ${t.tenantName}\n'
           '• Property: ${t.propertyLabel}\n'
           '${t.unitLabel.isNotEmpty ? "• Unit: ${t.unitLabel}\n" : ""}'
-          '• Contract rent: ${_fmt(t.rentAmountValue)} ${t.rentCurrency}\n'
+          '• Contract rent: ${_formatRentForCurrency(t.rentAmountValue, t.rentCurrency)}\n'
           '• Started: ${t.leaseStartIso}\n\n'
           'Today\'s date will be set as the end date.\n'
           'Type **yes** to confirm or **no** to cancel.';
@@ -626,6 +629,20 @@ class AiTenantFlow {
     }
     final v = double.tryParse(clean);
     return (v != null && v > 0) ? v : null;
+  }
+
+  String _formatRent(double amount) {
+    if (Get.isRegistered<CurrencyService>()) {
+      return Get.find<CurrencyService>().formatBase(amount.round());
+    }
+    return '${_fmt(amount)} $_currency';
+  }
+
+  static String _formatRentForCurrency(double amount, String currencyCode) {
+    final code = currencyCode.trim().isEmpty
+        ? CurrencyService.defaultBaseCurrency
+        : currencyCode.trim().toUpperCase();
+    return '${CurrencyService.symbolFor(code)}${_fmt(amount)}';
   }
 
   static String _fmtDate(DateTime d) =>

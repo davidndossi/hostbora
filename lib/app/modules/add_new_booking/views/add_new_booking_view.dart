@@ -9,6 +9,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../controllers/add_new_booking_controller.dart';
 
 const _bookingNavTeal = Color(0xFF1E8877);
@@ -249,7 +250,11 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   const SizedBox(height: 12),
                   _buildLabel(
                     context,
-                    _t(context, en: 'Amount (TZS)', sw: 'Kiasi (TZS)'),
+                    _t(
+                      context,
+                      en: 'Amount (${Get.find<CurrencyService>().inputSuffix})',
+                      sw: 'Kiasi (${Get.find<CurrencyService>().inputSuffix})',
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(

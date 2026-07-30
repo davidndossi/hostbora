@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/utils/thousand_separator.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_define_tenant_charges_controller.dart';
 
@@ -163,7 +164,7 @@ class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesCo
             decoration: InputDecoration(
               filled: true,
               fillColor: u.fieldFill,
-              prefixText: 'Tsh ',
+              prefixText: Get.find<CurrencyService>().inputPrefix,
               prefixStyle: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 16,

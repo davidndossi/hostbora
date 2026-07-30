@@ -28,7 +28,8 @@ class PortfolioAiHybridService extends GetxService {
       final fx = _currencyOverride ?? Get.find<CurrencyService>();
       return fx.formatBase(amount);
     } catch (_) {
-      return 'Tsh ${NumberFormat('#,###', 'en_US').format(amount)}';
+      final sym = CurrencyService.symbolFor(CurrencyService.defaultBaseCurrency);
+      return '$sym${NumberFormat('#,###', 'en_US').format(amount.round())}';
     }
   }
 

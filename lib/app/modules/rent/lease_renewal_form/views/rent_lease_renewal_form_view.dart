@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_lease_renewal_form_controller.dart';
@@ -123,7 +124,12 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
                       const SizedBox(height: 8),
                       _leaseDateRangeField(context),
                       const SizedBox(height: 16),
-                      _fieldLabel(context, _isSw ? 'KIASI CHA KODI (TZS)' : 'RENT AMOUNT (TZS)'),
+                      _fieldLabel(
+                        context,
+                        _isSw
+                            ? 'KIASI CHA KODI (${Get.find<CurrencyService>().inputSuffix})'
+                            : 'RENT AMOUNT (${Get.find<CurrencyService>().inputSuffix})',
+                      ),
                       const SizedBox(height: 8),
                       _textField(
                         context,

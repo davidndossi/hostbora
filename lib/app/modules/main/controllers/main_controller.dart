@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../core/service/app_update_service.dart';
+import '../../../core/widget/tab_coach_mark.dart';
+import '../../../data/local/service/session_service.dart';
 import '../../../data/service/app_review_service.dart';
+import '../../../data/local/service/lease_expiry_reminder_prompt_service.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/remote/remote_data_source.dart';
 import '../../../routes/app_pages.dart';
@@ -36,11 +41,35 @@ class MainController extends BaseController with WidgetsBindingObserver {
     }
     // All bindings are registered by the time MainController initialises,
     // so RemoteDataSource is available. Delay slightly so the UI paints first.
+    // Soft prompts are sequenced so at most one appears (see LaunchPromptGate).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkForUpdate();
+      _refreshSessionIfNeeded();
       triggerRemoteAccountSync();
-      Future.delayed(const Duration(milliseconds: 800), _maybeShowReviewPrompt);
+      // Force-update can always show; soft update waits longer (see AppUpdateService)
+      // so actionable lease prompts get first claim on the soft-prompt slot.
+      _checkForUpdate();
+      Future.delayed(const Duration(seconds: 2), _runSoftLaunchPrompts);
     });
+  }
+
+  /// Lease decision first (actionable), then store review — only one may show.
+  Future<void> _runSoftLaunchPrompts() async {
+    _maybePromptLeaseExpiry();
+    // Give the lease dialog a moment to claim the gate before review evaluates.
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    _maybeShowReviewPrompt();
+  }
+
+  void _refreshSessionIfNeeded() {
+    try {
+      Get.find<SessionService>().ensureValidSession();
+    } catch (_) {}
+  }
+
+  void _maybePromptLeaseExpiry() {
+    try {
+      Get.find<LeaseExpiryReminderPromptService>().maybePrompt();
+    } catch (_) {}
   }
 
   void _maybeShowReviewPrompt() {
@@ -97,11 +126,24 @@ class MainController extends BaseController with WidgetsBindingObserver {
         if (Get.isRegistered<MyPropertiesController>()) {
           await Get.find<MyPropertiesController>().loadProperties();
         }
+        // One-time tip; never stacks with another coach mark in-session.
+        unawaited(
+          Future<void>.delayed(
+            const Duration(milliseconds: 600),
+            TabCoachMark.maybeShowProperties,
+          ),
+        );
         break;
       case MenuCode.FINANCES:
         if (Get.isRegistered<DashboardController>()) {
           await Get.find<DashboardController>().loadDashboard();
         }
+        unawaited(
+          Future<void>.delayed(
+            const Duration(milliseconds: 600),
+            TabCoachMark.maybeShowFinances,
+          ),
+        );
         break;
       case MenuCode.MAINTENANCE:
         if (Get.isRegistered<MaintenanceTasksController>()) {

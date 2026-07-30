@@ -9,6 +9,7 @@ import '../db/offline_sync_queue_local_data_source.dart';
 import '../db/property_local_data_source.dart';
 import '../../model/add_expense_request.dart';
 import '../../model/record_payment_request.dart';
+import '../service/currency_service.dart';
 import '../service/offline_sync_worker_service.dart';
 
 /// A stateful, multi-turn conversational flow for recording an expense or
@@ -489,10 +490,11 @@ class AiFinanceFlow {
   }
 
   String _promptConfirm() {
-    final fmt  = NumberFormat('#,##0.##');
     final prop = _property?.propertyName ?? '';
     final unit = _unitName != null ? ' · $_unitName' : '';
-    final amt  = '${_currency ?? "TZS"} ${fmt.format(_amount ?? 0)}';
+    final amt = Get.isRegistered<CurrencyService>()
+        ? Get.find<CurrencyService>().formatBase((_amount ?? 0).round())
+        : '${_currency ?? CurrencyService.defaultBaseCurrency} ${NumberFormat('#,##0.##').format(_amount ?? 0)}';
     final cat  = _category ?? '';
     final date = _isoDate(_date ?? DateTime.now());
     final who  = _payer?.isNotEmpty == true ? '\n• ${isExpense ? (isSw ? "Muuzaji" : "Vendor") : (isSw ? "Mlipaji" : "Payer")}: $_payer' : '';

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '/app/core/base/rent_base_view.dart';
 import '/app/core/utils/thousand_separator.dart';
 import '/app/core/widget/loading_button.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_property_roi_estimate_form_controller.dart';
 
@@ -74,7 +75,11 @@ class RentPropertyRoiEstimateFormView
     extends RentBaseView<RentPropertyRoiEstimateFormController> {
   RentPropertyRoiEstimateFormView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
-  static final _money = NumberFormat('#,###', 'en_US');
+
+  String _formatMoney(num amount) =>
+      Get.find<CurrencyService>().formatBase(amount.round());
+
+  String get _inputPrefix => Get.find<CurrencyService>().inputPrefix;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) =>
@@ -191,7 +196,7 @@ class RentPropertyRoiEstimateFormView
           _isSw ? 'Makadirio ya jumla ya gharama za mali' : 'Approximate estimate of whole property',
           controller.approximateTotalController,
           validator: controller.validateRequiredAmount,
-          prefixText: 'Tshs ',
+          prefixText: _inputPrefix,
         ),
         const SizedBox(height: 14),
         Obx(
@@ -359,7 +364,7 @@ class RentPropertyRoiEstimateFormView
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: u.fieldDeco(
                   label: _isSw ? 'Gharama kwa kipimo' : 'Unit cost',
-                  prefix: 'TZS ',
+                  prefix: _inputPrefix,
                 ),
               ),
               const SizedBox(height: 20),
@@ -394,7 +399,7 @@ class RentPropertyRoiEstimateFormView
                           ),
                         ),
                         Text(
-                          'TZS ${_money.format(total.round())}',
+                          _formatMoney(total),
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
@@ -708,7 +713,7 @@ class RentPropertyRoiEstimateFormView
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '${e.quantity} ${e.unit}  ×  TZS ${_money.format(e.unitCost.round())}',
+                          '${e.quantity} ${e.unit}  ×  ${_formatMoney(e.unitCost)}',
                           style: TextStyle(fontSize: 12.5, color: u.muted),
                         ),
                       ],
@@ -719,7 +724,7 @@ class RentPropertyRoiEstimateFormView
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        'TZS ${_money.format(e.totalCost.round())}',
+                        _formatMoney(e.totalCost),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
@@ -782,7 +787,7 @@ class RentPropertyRoiEstimateFormView
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'TZS ${_money.format(totalProject.round())}',
+                  _formatMoney(totalProject),
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
@@ -824,7 +829,7 @@ class RentPropertyRoiEstimateFormView
                         ),
                       ),
                       Text(
-                        'TZS ${_money.format(e.value.round())}',
+                        _formatMoney(e.value),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,

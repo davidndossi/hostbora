@@ -43,6 +43,8 @@ class AppLocalDatabase {
   static const offlineSyncQueueTable = 'offline_sync_queue';
   static const exchangeRatesTable = 'exchange_rates';
   static const scheduledWhatsappTable = 'scheduled_whatsapp';
+  static const scheduledSmsTable = 'scheduled_sms';
+  static const recurringReminderTable = 'recurring_reminder';
   static const clientEventTable = 'client_event';
   static const tenantRatingTable = 'tenant_rating';
   static const inventoryItemTable = 'inventory_item';
@@ -89,6 +91,8 @@ class AppLocalDatabase {
         await _ensureInventoryItemTable(db);
         await _ensureInventoryMovementTable(db);
         await _ensureRentStaffBackendIdColumn(db);
+        await _ensureRecurringReminderTable(db);
+        await _ensureScheduledSmsTable(db);
       },
     );
     return _db!;
@@ -348,6 +352,47 @@ class AppLocalDatabase {
         scheduled_at_iso TEXT NOT NULL,
         notification_id INTEGER NOT NULL DEFAULT 0,
         sent INTEGER NOT NULL DEFAULT 0,
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE $scheduledSmsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recipient_phone TEXT NOT NULL,
+        recipient_label TEXT NOT NULL DEFAULT '',
+        message_body TEXT NOT NULL DEFAULT '',
+        scheduled_at_iso TEXT NOT NULL,
+        notification_id INTEGER NOT NULL DEFAULT 0,
+        sent INTEGER NOT NULL DEFAULT 0,
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE $recurringReminderTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        backend_id TEXT NOT NULL DEFAULT '',
+        tenant_id INTEGER NOT NULL DEFAULT 0,
+        tenant_name TEXT NOT NULL DEFAULT '',
+        property_ref TEXT NOT NULL DEFAULT '',
+        property_label TEXT NOT NULL DEFAULT '',
+        recipient_phone TEXT NOT NULL DEFAULT '',
+        reminder_type TEXT NOT NULL DEFAULT 'pay_rent',
+        custom_type_label TEXT NOT NULL DEFAULT '',
+        amount_tsh INTEGER NOT NULL DEFAULT 0,
+        message_template TEXT NOT NULL DEFAULT '',
+        recurrence TEXT NOT NULL DEFAULT 'monthly_first',
+        time_of_day TEXT NOT NULL DEFAULT '09:00',
+        push_enabled INTEGER NOT NULL DEFAULT 1,
+        whatsapp_enabled INTEGER NOT NULL DEFAULT 1,
+        sms_enabled INTEGER NOT NULL DEFAULT 0,
+        active INTEGER NOT NULL DEFAULT 1,
+        continue_after_lease_expiry INTEGER,
+        lease_end_iso TEXT NOT NULL DEFAULT '',
+        next_run_at_iso TEXT NOT NULL DEFAULT '',
+        last_sent_at_iso TEXT NOT NULL DEFAULT '',
+        sync_status TEXT NOT NULL DEFAULT 'pending',
         created_at_ms INTEGER NOT NULL
       )
     ''');
@@ -652,6 +697,53 @@ class AppLocalDatabase {
         scheduled_at_iso TEXT NOT NULL,
         notification_id INTEGER NOT NULL DEFAULT 0,
         sent INTEGER NOT NULL DEFAULT 0,
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  static Future<void> _ensureScheduledSmsTable(Database db) async {
+    if (await _tableExists(db, scheduledSmsTable)) return;
+    await db.execute('''
+      CREATE TABLE $scheduledSmsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recipient_phone TEXT NOT NULL,
+        recipient_label TEXT NOT NULL DEFAULT '',
+        message_body TEXT NOT NULL DEFAULT '',
+        scheduled_at_iso TEXT NOT NULL,
+        notification_id INTEGER NOT NULL DEFAULT 0,
+        sent INTEGER NOT NULL DEFAULT 0,
+        created_at_ms INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  static Future<void> _ensureRecurringReminderTable(Database db) async {
+    if (await _tableExists(db, recurringReminderTable)) return;
+    await db.execute('''
+      CREATE TABLE $recurringReminderTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        backend_id TEXT NOT NULL DEFAULT '',
+        tenant_id INTEGER NOT NULL DEFAULT 0,
+        tenant_name TEXT NOT NULL DEFAULT '',
+        property_ref TEXT NOT NULL DEFAULT '',
+        property_label TEXT NOT NULL DEFAULT '',
+        recipient_phone TEXT NOT NULL DEFAULT '',
+        reminder_type TEXT NOT NULL DEFAULT 'pay_rent',
+        custom_type_label TEXT NOT NULL DEFAULT '',
+        amount_tsh INTEGER NOT NULL DEFAULT 0,
+        message_template TEXT NOT NULL DEFAULT '',
+        recurrence TEXT NOT NULL DEFAULT 'monthly_first',
+        time_of_day TEXT NOT NULL DEFAULT '09:00',
+        push_enabled INTEGER NOT NULL DEFAULT 1,
+        whatsapp_enabled INTEGER NOT NULL DEFAULT 1,
+        sms_enabled INTEGER NOT NULL DEFAULT 0,
+        active INTEGER NOT NULL DEFAULT 1,
+        continue_after_lease_expiry INTEGER,
+        lease_end_iso TEXT NOT NULL DEFAULT '',
+        next_run_at_iso TEXT NOT NULL DEFAULT '',
+        last_sent_at_iso TEXT NOT NULL DEFAULT '',
+        sync_status TEXT NOT NULL DEFAULT 'pending',
         created_at_ms INTEGER NOT NULL
       )
     ''');

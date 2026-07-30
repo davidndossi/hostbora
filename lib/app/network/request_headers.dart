@@ -8,6 +8,7 @@ import 'package:get/get.dart' as g;
 import 'package:pointycastle/export.dart';
 
 import '../data/local/preference/preference_manager.dart';
+import '../data/local/service/session_service.dart';
 import '../data/model/body_request.dart';
 import '../routes/app_pages.dart';
 
@@ -21,7 +22,9 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
     RequestInterceptorHandler handler,
   ) async {
     try {
-      final customHeaders = await getCustomHeaders();
+      final customHeaders = await getCustomHeaders(
+        requestPath: options.path,
+      );
       options.headers.addAll(customHeaders);
 
       if (!isNullEmptyOrFalse(options.data)) {
@@ -67,7 +70,18 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     final statusCode = err.response?.statusCode;
-    if (statusCode == 401 || statusCode == 403) {
+    final path = err.requestOptions.path;
+    final isRefreshCall = path.contains('/api/auth/refresh');
+
+    if ((statusCode == 401 || statusCode == 403) && !isRefreshCall) {
+      var recovered = false;
+      if (g.Get.isRegistered<SessionService>()) {
+        recovered = await g.Get.find<SessionService>().ensureValidSession();
+      }
+      if (recovered) {
+        handler.next(err);
+        return;
+      }
       await _preferenceManager.clearSession();
       if (g.Get.currentRoute != AppPages.auth) {
         g.Get.offAllNamed(AppPages.auth);
@@ -78,9 +92,15 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
     }
   }
 
-  Future<Map<String, String>> getCustomHeaders() async {
+  Future<Map<String, String>> getCustomHeaders({String? requestPath}) async {
+    if (requestPath != null && requestPath.contains('/api/auth/refresh')) {
+      return {'content-type': 'application/json'};
+    }
     var token = await _preferenceManager.getString(PreferenceManager.keyToken);
-    var customHeaders = {'content-type': 'application/json', 'Authorization': 'Bearer $token'};
+    var customHeaders = {
+      'content-type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
 
     return customHeaders;
   }

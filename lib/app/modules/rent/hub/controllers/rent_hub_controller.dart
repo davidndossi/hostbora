@@ -91,6 +91,14 @@ class RentHubController extends BaseController {
   String get totalArrearsLabel =>
       _currency.formatBase(_totalArrears.value.round());
 
+  String _formatStoredRentLabel(String raw) {
+    final parsed = double.tryParse(raw.trim().replaceAll(',', ''));
+    if (parsed != null) {
+      return _currency.formatBase(parsed.round());
+    }
+    return raw.trim();
+  }
+
   final selectedBottomNavIndex = 0.obs;
 
   @override
@@ -174,8 +182,8 @@ class RentHubController extends BaseController {
               ? p.propertyName
               : p.propertyLocation,
           monthlyRentLabel: p.rentAmount.trim().isEmpty
-              ? 'Tsh 0'
-              : 'Tsh ${p.rentAmount}',
+              ? CurrencyService.zeroLabel()
+              : _formatStoredRentLabel(p.rentAmount),
           occupied: true,
         );
       }),

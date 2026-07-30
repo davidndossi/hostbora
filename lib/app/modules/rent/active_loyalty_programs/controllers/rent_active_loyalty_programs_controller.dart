@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/base/base_controller.dart';
 import '../../../../core/base/feedback_extensions.dart';
 import '../../../../data/local/db/rent_loyalty_offer_local_data_source.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../routes/app_pages.dart';
 
 class ActiveLoyaltyProgramItem {
@@ -66,7 +67,8 @@ class RentActiveLoyaltyProgramsController extends BaseController {
             id: r.id,
             title: r.offerType.trim().isEmpty ? 'Loyalty Offer #${r.id}' : r.offerType.trim(),
             thresholdLabel: '${r.minStayMonths} month(s) stay',
-            rewardLabel: 'Tsh ${NumberFormat('#,###').format(r.revenueThresholdTsh)}',
+            rewardLabel: Get.find<CurrencyService>()
+                .formatBase(r.revenueThresholdTsh.round()),
             terms: r.terms.trim(),
             createdAtMs: r.createdAtMs,
             minStayMonths: r.minStayMonths,
@@ -156,8 +158,9 @@ class RentActiveLoyaltyProgramsController extends BaseController {
               TextField(
                 controller: revenueController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Revenue threshold (Tsh)',
+                decoration: InputDecoration(
+                  labelText:
+                      'Revenue threshold (${Get.find<CurrencyService>().inputSuffix})',
                   border: OutlineInputBorder(),
                 ),
               ),

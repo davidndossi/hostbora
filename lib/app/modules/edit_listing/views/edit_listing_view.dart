@@ -9,6 +9,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/property_unit_floor.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../controllers/edit_listing_controller.dart';
 
 class EditListingView extends BaseView<EditListingController> {
@@ -16,6 +17,14 @@ class EditListingView extends BaseView<EditListingController> {
 
   String _t(BuildContext context, {required String en, required String sw}) {
     return Get.locale?.languageCode == 'sw' ? sw : en;
+  }
+
+  String _formatUnitRent(String raw) {
+    final parsed = double.tryParse(raw.trim().replaceAll(',', ''));
+    if (parsed != null) {
+      return Get.find<CurrencyService>().formatBase(parsed.round());
+    }
+    return raw.trim();
   }
 
   @override
@@ -263,7 +272,7 @@ class EditListingView extends BaseView<EditListingController> {
                 ),
                 decoration: InputDecoration(
                   prefix: Text(
-                    'Tshs ',
+                    Get.find<CurrencyService>().inputPrefix,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -405,7 +414,7 @@ class EditListingView extends BaseView<EditListingController> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${PropertyUnitFloor.label(l10n, u.unitFloor)} · Tshs ${u.unitRent} · ${u.unitRentFrequency}',
+                  '${PropertyUnitFloor.label(l10n, u.unitFloor)} · ${_formatUnitRent(u.unitRent)} · ${u.unitRentFrequency}',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

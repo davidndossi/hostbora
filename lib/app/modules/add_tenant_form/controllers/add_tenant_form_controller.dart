@@ -92,7 +92,11 @@ class AddTenantFormController extends BaseController {
       if (u.selectionKey == selectionKey) {
         final rent = u.unitRent.trim();
         if (rent.isEmpty) return u.unitName;
-        return '${u.unitName} (Tshs $rent)';
+        final parsed = double.tryParse(rent.replaceAll(',', ''));
+        if (parsed != null) {
+          return '${u.unitName} (${Get.find<CurrencyService>().formatBase(parsed.round())})';
+        }
+        return '${u.unitName} ($rent)';
       }
     }
     return selectionKey;
@@ -539,7 +543,7 @@ class AddTenantFormController extends BaseController {
       final nightLabel = units == 1 ? 'night' : 'nights';
       showSuccessMessage(
         'Tenant saved. Total for stay ($units $nightLabel): '
-        'TZS ${NumberFormat('#,###').format(stayTotal.round())}',
+        '${Get.find<CurrencyService>().formatBase(stayTotal.round())}',
       );
     } else {
       showSuccessMessage('Tenant saved offline');

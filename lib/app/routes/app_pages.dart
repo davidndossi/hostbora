@@ -210,6 +210,8 @@ import '../modules/rent/schedule_payment_reminder/bindings/rent_schedule_payment
     as split_payment_reminder_binding;
 import '../modules/rent/schedule_payment_reminder/views/rent_schedule_payment_reminder_view.dart'
     as split_payment_reminder_view;
+import '../modules/rent/recurring_reminders/bindings/rent_recurring_reminders_binding.dart';
+import '../modules/rent/recurring_reminders/views/rent_recurring_reminders_view.dart';
 import '../modules/rent/host_dashboard_payment_alerts/bindings/rent_host_dashboard_payment_alerts_binding.dart'
     as split_host_alerts_binding;
 import '../modules/rent/host_dashboard_payment_alerts/views/rent_host_dashboard_payment_alerts_view.dart'
@@ -693,6 +695,11 @@ class AppPages {
       name: _Paths.RENT_SCHEDULE_PAYMENT_REMINDER,
       page: () => split_payment_reminder_view.RentSchedulePaymentReminderView(),
       binding: split_payment_reminder_binding.RentSchedulePaymentReminderBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_RECURRING_REMINDERS,
+      page: () => RentRecurringRemindersView(),
+      binding: RentRecurringRemindersBinding(),
     ),
     GetPage(
       name: _Paths.RENT_DEFINE_LOYALTY_OFFERS,

@@ -7,6 +7,7 @@ import '../../../../data/local/db/client_event_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/db/tenant_rating_local_data_source.dart';
+import '../../../../data/local/service/currency_service.dart';
 
 // ---------------------------------------------------------------------------
 // Result returned after sheet completes
@@ -175,7 +176,7 @@ class _EndTenancySheetState extends State<EndTenancySheet> {
   Color get _teal => const Color(0xFF0E6666);
 
   final _fmt = DateFormat('dd/MM/yyyy');
-  final _currency = NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0);
+  CurrencyService get _currency => Get.find<CurrencyService>();
 
   // ---- submit ----
   Future<void> _submit() async {
@@ -413,7 +414,7 @@ class _EndTenancySheetState extends State<EndTenancySheet> {
         return _StepBalance(
           state: _state,
           outstandingTsh: widget.outstandingBalanceTsh,
-          currency: _currency,
+          formatAmount: _currency.formatBase,
           onSurface: _onSurface,
           muted: _muted,
         );
@@ -605,14 +606,14 @@ class _StepBalance extends StatelessWidget {
   const _StepBalance({
     required this.state,
     required this.outstandingTsh,
-    required this.currency,
+    required this.formatAmount,
     required this.onSurface,
     required this.muted,
   });
 
   final _SheetState state;
   final int outstandingTsh;
-  final NumberFormat currency;
+  final String Function(num) formatAmount;
   final Color onSurface;
   final Color muted;
 
@@ -632,7 +633,7 @@ class _StepBalance extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           outstandingTsh > 0
-              ? 'Outstanding: ${currency.format(outstandingTsh)}'
+              ? 'Outstanding: ${formatAmount(outstandingTsh)}'
               : 'No outstanding balance',
           style: TextStyle(color: muted, fontSize: 13),
         ),
@@ -670,7 +671,8 @@ class _StepBalance extends StatelessWidget {
               controller: state.partialAmountCtrl,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Amount paid (Tsh)',
+                labelText:
+                    'Amount paid (${Get.find<CurrencyService>().inputPrefix.trim()})',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

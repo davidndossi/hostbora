@@ -20,7 +20,7 @@ class ExpenseAnalysisController extends BaseController {
   final dateRangeLabel = ''.obs;
   final loading = false.obs;
 
-  final totalAmountLabel = 'Tshs. 0'.obs;
+  final totalAmountLabel = RxString(CurrencyService.zeroLabel());
 
   final expenseCategories = <ExpenseCategory>[].obs;
   final topExpenses = <TopExpenseItem>[].obs;

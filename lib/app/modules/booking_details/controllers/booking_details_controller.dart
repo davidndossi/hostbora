@@ -15,6 +15,7 @@ import '../../../data/local/offline_payment_sync_lookup.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/model/send_payment_link_request.dart';
 import '../../../data/service/snippe_payment_link_service.dart';
@@ -45,8 +46,6 @@ class BookingDetailsController extends BaseController {
   final PropertyLocalDataSource _propertyLocal;
   final PreferenceManager _preferenceManager;
   final SnippePaymentLinkService _paymentLinks;
-
-  static final _money = NumberFormat('#,###', 'en_US');
 
   /// True when opened from My Properties (select listing) to check availability.
   late final bool isListingMode;
@@ -277,7 +276,7 @@ class BookingDetailsController extends BaseController {
       final total = rows.fold<double>(0, (sum, r) => sum + r.amountValue);
       isPaid.value = total > 0;
       totalPayout.value =
-          total > 0 ? 'TZS ${_money.format(total.round())}' : '—';
+          total > 0 ? Get.find<CurrencyService>().formatBase(total.round()) : '—';
       final lookup = await OfflinePaymentSyncLookup.load(_syncQueue);
       paymentSyncStatus.value = lookup.statusForBooking(_item.bookingKey);
     } finally {
@@ -418,7 +417,9 @@ class BookingDetailsController extends BaseController {
           controller: amountController,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            labelText: isSw ? 'Kiasi (TZS)' : 'Amount (TZS)',
+            labelText: isSw
+                ? 'Kiasi (${Get.find<CurrencyService>().inputSuffix})'
+                : 'Amount (${Get.find<CurrencyService>().inputSuffix})',
             hintText: '50000',
           ),
         ),
@@ -434,7 +435,9 @@ class BookingDetailsController extends BaseController {
               if (parsed == null || parsed < 500) {
                 Get.snackbar(
                   isSw ? 'Kiasi' : 'Amount',
-                  isSw ? 'Kiwango cha chini ni TZS 500' : 'Minimum is TZS 500',
+                  isSw
+                      ? 'Kiwango cha chini ni ${Get.find<CurrencyService>().formatBase(500)}'
+                      : 'Minimum is ${Get.find<CurrencyService>().formatBase(500)}',
                 );
                 return;
               }

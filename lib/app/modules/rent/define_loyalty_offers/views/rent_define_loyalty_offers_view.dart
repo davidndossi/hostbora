@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_define_loyalty_offers_controller.dart';
 
@@ -265,7 +266,7 @@ class RentDefineLoyaltyOffersView extends RentBaseView<RentDefineLoyaltyOffersCo
             u,
             controller: controller.revenueController,
             hint: '5,000,000',
-            suffix: _isSw ? 'Tsh' : 'Tsh',
+            suffix: Get.find<CurrencyService>().inputSuffix,
             validator: controller.validateRevenue,
           ),
         ],

@@ -9,6 +9,7 @@ import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_utility_topup_local_data_source.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../add_listing/models/apartment_unit_draft.dart';
@@ -80,6 +81,9 @@ class RentSmartUtilityDashboardController extends BaseController {
   final selectedUnitName = ''.obs;
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
+
+  String _formatAmount(num amount) =>
+      Get.find<CurrencyService>().formatBase(amount.round());
 
   static const _avgDailyKwh = 12.0;
 
@@ -170,7 +174,6 @@ class RentSmartUtilityDashboardController extends BaseController {
 
   void _buildActivityFeed(List<RentUtilityTopUpRecord> topUps) {
     final items = <UtilityActivityItem>[];
-    final money = NumberFormat('#,###', 'en_US');
 
     for (final t in topUps.take(10)) {
       final date = DateTime.tryParse(t.dateIso);
@@ -187,7 +190,7 @@ class RentSmartUtilityDashboardController extends BaseController {
                 ? 'Kupitia $provider${dateLabel.isEmpty ? '' : ' • $dateLabel'}'
                 : 'Via $provider${dateLabel.isEmpty ? '' : ' • $dateLabel'}',
             impactLabel: '+${t.unitsAdded.toStringAsFixed(1)} kWh',
-            amountLabel: 'TZS ${money.format(t.amountTsh.round())}',
+            amountLabel: _formatAmount(t.amountTsh.round()),
             isPositive: true,
           ),
         );
@@ -200,7 +203,7 @@ class RentSmartUtilityDashboardController extends BaseController {
                 ? 'Kupitia $provider${dateLabel.isEmpty ? '' : ' • $dateLabel'}'
                 : 'Via $provider${dateLabel.isEmpty ? '' : ' • $dateLabel'}',
             impactLabel: '+${t.unitsAdded.toStringAsFixed(0)} L',
-            amountLabel: 'TZS ${money.format(t.amountTsh.round())}',
+            amountLabel: _formatAmount(t.amountTsh.round()),
             isPositive: true,
           ),
         );
@@ -212,7 +215,6 @@ class RentSmartUtilityDashboardController extends BaseController {
 
   void _buildActivityFromExpenses(List<ExpenseRecord> utilityExpenses) {
     final items = <UtilityActivityItem>[];
-    final money = NumberFormat('#,###', 'en_US');
 
     for (final e in utilityExpenses.take(6)) {
       final date = DateTime.tryParse(e.datePaidIso);
@@ -228,7 +230,7 @@ class RentSmartUtilityDashboardController extends BaseController {
             title: _isSw ? 'Bili ya Maji' : 'Water Bill',
             subtitle: 'Auto-Debit${dateLabel.isEmpty ? '' : ' • $dateLabel'}',
             impactLabel: '${(e.amountValue / 10).round()} L',
-            amountLabel: 'TZS ${money.format(e.amountValue.round())}',
+            amountLabel: _formatAmount(e.amountValue.round()),
             isPositive: false,
           ),
         );
@@ -240,7 +242,7 @@ class RentSmartUtilityDashboardController extends BaseController {
             subtitle:
                 'Via Mobile Money${dateLabel.isEmpty ? '' : ' • $dateLabel'}',
             impactLabel: '+${(e.amountValue / 700).toStringAsFixed(1)} kWh',
-            amountLabel: 'TZS ${money.format(e.amountValue.round())}',
+            amountLabel: _formatAmount(e.amountValue.round()),
             isPositive: true,
           ),
         );

@@ -6,6 +6,8 @@ class LoginResponse {
     String? status,
     String? token,
     int? expiresIn,
+    String? refreshToken,
+    int? refreshExpiresIn,
     User? user,
     int? build,
     int? release
@@ -14,6 +16,8 @@ class LoginResponse {
     _status = status;
     _token = token;
     _expiresIn = expiresIn;
+    _refreshToken = refreshToken;
+    _refreshExpiresIn = refreshExpiresIn;
     _user = user;
     _build = build;
     _release = release;
@@ -24,6 +28,8 @@ class LoginResponse {
     _status = json['status'];
     _token = json['token'];
     _expiresIn = json['expires_in'];
+    _refreshToken = json['refresh_token'];
+    _refreshExpiresIn = json['refresh_expires_in'];
     _user = json['user'] != null ? User.fromJson(json['user']) : null;
     _build = json['build'];
     _release = json['release'];
@@ -33,6 +39,8 @@ class LoginResponse {
   String? _status;
   String? _token;
   int? _expiresIn;
+  String? _refreshToken;
+  int? _refreshExpiresIn;
   User? _user;
   int? _build;
   int? _release;
@@ -41,6 +49,8 @@ class LoginResponse {
   String? get status => _status;
   String? get token => _token;
   int? get expiresIn => _expiresIn;
+  String? get refreshToken => _refreshToken;
+  int? get refreshExpiresIn => _refreshExpiresIn;
   User? get user => _user;
   int? get build => _build;
   int? get release => _release;
@@ -51,6 +61,8 @@ class LoginResponse {
     map['status'] = _status;
     map['token'] = _token;
     map['expires_in'] = _expiresIn;
+    map['refresh_token'] = _refreshToken;
+    map['refresh_expires_in'] = _refreshExpiresIn;
     if (_user != null) {
       map['user'] = _user?.toJson();
     }

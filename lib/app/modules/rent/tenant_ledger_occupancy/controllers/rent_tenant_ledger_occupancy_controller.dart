@@ -364,17 +364,11 @@ class RentTenantLedgerOccupancyController extends BaseController {
   }
 
   void openPaymentReminder() {
-    Get.toNamed(
-      Routes.RENT_SCHEDULE_PAYMENT_REMINDER,
-      parameters: {
-        'name': displayTenantName,
-        'property': displayPropertyFull,
-        'balance': '$remainingBalanceTsh',
-        'phone': tenantRecord.value?.phoneNumber.trim() ?? '',
-        if ((tenantRecord.value?.backendTenantId ?? '').isNotEmpty)
-          'tenantBackendId': tenantRecord.value!.backendTenantId,
-      },
-    );
+    Get.toNamed(Routes.RENT_RECURRING_REMINDERS, parameters: {
+      'tenantId': '${tenantRecord.value?.id ?? tenantId.value}',
+      'name': displayTenantName,
+      'propertyRef': tenantRecord.value?.propertyRef ?? '',
+    });
   }
 
   void openSendSmsShortcut() {
@@ -780,7 +774,8 @@ class RentTenantLedgerOccupancyController extends BaseController {
   }) async {
     final phone = tenant.phoneNumber.trim();
     if (phone.isEmpty) return;
-    final amountLabel = tenant.rentAmountValue.round().toString();
+    final amountLabel =
+        Get.find<CurrencyService>().formatBase(tenant.rentAmountValue.round());
     final contractName = tenant.contractFileName.trim().isEmpty
         ? 'Updated lease terms'
         : tenant.contractFileName.trim();
@@ -789,7 +784,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
 UPDATED LEASE DOCUMENT
 Tenant: ${tenant.tenantName}
 Property: ${tenant.propertyLabel}
-Rent Amount: Tsh $amountLabel (${tenant.rentFrequency})
+Rent Amount: $amountLabel (${tenant.rentFrequency})
 Lease Start: $updatedStartIso
 Lease End: $updatedEndIso
 Reference: $contractName
@@ -863,7 +858,7 @@ Reference: $contractName
     }
     if (ledgerPaymentStatus == LedgerPaymentStatus.partialPaid) {
       return _isSw
-          ? 'Salio la Tsh $balance linabaki — tuma ankara au ukumbusho wa malipo.'
+          ? 'Salio la $currency linabaki — tuma ankara au ukumbusho wa malipo.'
           : 'Balance of $currency remains — send an invoice or payment reminder.';
     }
     return _isSw

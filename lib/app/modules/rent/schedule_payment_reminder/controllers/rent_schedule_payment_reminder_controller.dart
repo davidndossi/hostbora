@@ -14,6 +14,7 @@ import '../../../../data/local/db/rent_whatsapp_template_local_data_source.dart'
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
 import '../../../../data/local/db/client_event_local_data_source.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/model/schedule_payment_reminder_request.dart';
 import '../../../../data/model/send_payment_link_request.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
@@ -74,11 +75,9 @@ class RentSchedulePaymentReminderController extends BaseController {
   String _backendTenantId = '';
   final sendingPaymentLink = false.obs;
 
-  static final NumberFormat _currency = NumberFormat.currency(
-    symbol: 'Tsh ',
-    decimalDigits: 0,
-  );
   static final DateFormat _dateDisplay = DateFormat('dd/MM/yyyy');
+
+  CurrencyService get _currency => Get.find<CurrencyService>();
 
   @override
   void onInit() {
@@ -129,7 +128,9 @@ class RentSchedulePaymentReminderController extends BaseController {
     }
     final amount = balanceTsh.value;
     if (amount < 500) {
-      showErrorMessage('Minimum payment amount is TZS 500');
+      showErrorMessage(
+        'Minimum payment amount is ${_currency.formatBase(500)}',
+      );
       return;
     }
 
@@ -212,7 +213,7 @@ class RentSchedulePaymentReminderController extends BaseController {
         .join(' ');
   }
 
-  String get formattedBalance => _currency.format(balanceTsh.value);
+  String get formattedBalance => _currency.formatBase(balanceTsh.value);
 
   String get dateFieldLabel {
     final d = reminderDate.value;

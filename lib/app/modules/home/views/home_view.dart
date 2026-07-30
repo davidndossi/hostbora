@@ -10,13 +10,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 import '../../../core/values/app_colors.dart';
-import '../../../core/values/app_decorations.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/theme/app_theme_tokens.dart';
-import '../../../data/local/service/currency_service.dart';
-import '/app/core/base/base_view.dart';
 import '../../../core/widget/hub_insight_banner.dart';
+import '/app/core/base/base_view.dart';
 import '../../../core/widget/skeleton_presets.dart';
 import '../../../core/widget/sync_status_chip.dart';
 import '../../../core/models/item_sync_status.dart';
@@ -66,48 +64,520 @@ class HomeView extends BaseView<HomeController> {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildPropertyOverview(context),
-                const SizedBox(height: 12),
-                const HubInsightBanner(),
-                const SizedBox(height: 12),
-                const InventoryLowStockBanner(),
-                const SizedBox(height: 12),
-                // const SizedBox(height: 12),
-                // const Center(child: _PulsingDownArrow()),
-                // const SizedBox(height: 20),
-                _buildOverviewSection(context),
-                _buildBnbWeeklyReportsSection(context),
-                if (controller.checkInsToday.isNotEmpty) ...[
-                  _buildHorizontalGuestSection(
-                    context,
-                    title: appLocalization.homeCheckInGuestsToday,
-                    list: controller.checkInsToday,
-                  ),
-                  const SizedBox(height: 24),
+            child: Obx(() {
+              final firstWeek = controller.isFirstWeekHome;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  if (controller.showWorkspaceFilterChips) ...[
+                    _buildWorkspaceFilter(context),
+                    const SizedBox(height: 16),
+                  ],
+                  _buildTodayBlock(context),
+                  const SizedBox(height: 20),
+                  if (firstWeek) ...[
+                    _buildFirstWeekStarter(context),
+                    const SizedBox(height: 20),
+                    _buildCreateCta(context),
+                  ] else ...[
+                    _buildSnapshotBlock(context),
+                    const SizedBox(height: 12),
+                    const HubInsightBanner(compact: true, dismissible: true),
+                    const SizedBox(height: 8),
+                    _buildCreateCta(context),
+                    const SizedBox(height: 20),
+                    _buildGoToBlock(context),
+                  ],
+                  const SizedBox(height: 28),
                 ],
-                if (controller.checkOutsToday.isNotEmpty) ...[
-                  _buildHorizontalGuestSection(
-                    context,
-                    title: appLocalization.homeCheckOutGuestsToday,
-                    list: controller.checkOutsToday,
-                  ),
-                  const SizedBox(height: 24),
-                ],
-                if (controller.checkIns.isNotEmpty) ...[
-                  _buildUpcomingCheckIns(context),
-                  const SizedBox(height: 24),
-                ],
-                _buildQuickActions(context),
-                const SizedBox(height: 24),
-              ],
-            ),
+              );
+            }),
           ),
         );
       }),
     );
+  }
+
+  /// Prominent Create entry (AI stays on the FAB so they don't compete).
+  Widget _buildCreateCta(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: controller.openCreateMenu,
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.colorPrimary,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: Text(
+          _t(context, 'Create', 'Unda'),
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// First-week: three clear next steps only.
+  Widget _buildFirstWeekStarter(BuildContext context) {
+    final showBnb = controller.showBnbHomeContent;
+    final showRent = controller.showRentHomeContent;
+    final primaryLabel = showBnb && !showRent
+        ? _t(context, 'Add Booking', 'Ongeza Uhifadhi')
+        : showRent && !showBnb
+            ? _t(context, 'Add Tenant', 'Ongeza Mpangaji')
+            : _t(context, 'Add Booking or Tenant', 'Ongeza Uhifadhi au Mpangaji');
+    final primaryIcon = showBnb && !showRent
+        ? Icons.event_available_outlined
+        : Icons.person_add_alt_1_outlined;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(context, 'Get started', 'Anza'),
+        const SizedBox(height: 4),
+        Text(
+          _t(
+            context,
+            'Three steps to put Host Bora to work this week.',
+            'Hatua tatu kuanza kutumia Host Bora wiki hii.',
+          ),
+          style: TextStyle(fontSize: 12, color: context.tokens.textSecondary),
+        ),
+        const SizedBox(height: 12),
+        _QuickActionTile(
+          materialIcon: primaryIcon,
+          label: primaryLabel,
+          onTap: controller.openPrimaryCreateAction,
+        ),
+        const SizedBox(height: 12),
+        _QuickActionTile(
+          materialIcon: Icons.payments_outlined,
+          label: _t(context, 'Record Payment', 'Rekodi Malipo'),
+          onTap: controller.addPayment,
+        ),
+        const SizedBox(height: 12),
+        _QuickActionTile(
+          materialIcon: Icons.apartment_outlined,
+          label: _t(context, 'Open Properties', 'Fungua Mali'),
+          onTap: controller.openPropertiesTab,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWorkspaceFilter(BuildContext context) {
+    final theme = Theme.of(context);
+    final c = FormSurfaceColors.of(context);
+    final isSw = Localizations.localeOf(context).languageCode == 'sw';
+
+    return Obx(() {
+      final selected = controller.homeWorkspaceFilter.value;
+
+      Widget chip(String label, String value, Color color) {
+        final isSelected = selected == value;
+        return GestureDetector(
+          onTap: () => controller.setHomeWorkspaceFilter(value),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? color : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? color
+                    : (c.isDark
+                        ? theme.colorScheme.outlineVariant
+                        : const Color(0xFFDDE1E7)),
+              ),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected
+                    ? Colors.white
+                    : (c.isDark
+                        ? theme.colorScheme.onSurfaceVariant
+                        : const Color(0xFF64748B)),
+              ),
+            ),
+          ),
+        );
+      }
+
+      return Row(
+        children: [
+          chip(isSw ? 'Zote' : 'All', 'all', AppColors.designAccent),
+          const SizedBox(width: 8),
+          chip('BnB', 'bnb', const Color(0xFF0D7377)),
+          const SizedBox(width: 8),
+          chip(isSw ? 'Kodi' : 'Rent', 'rent', const Color(0xFF4F46E5)),
+        ],
+      );
+    });
+  }
+
+  Widget _sectionTitle(BuildContext context, String en, String sw) {
+    return Text(
+      _t(context, en, sw),
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: context.tokens.textPrimary,
+      ),
+    );
+  }
+
+  /// Block 1 — what needs attention today (compact alerts, expand on tap).
+  Widget _buildTodayBlock(BuildContext context) {
+    return Obx(() {
+      final showBnb = controller.showBnbHomeContent;
+      final showRent = controller.showRentHomeContent;
+      final checkIns = showBnb ? controller.checkInsToday.length : 0;
+      final checkOuts = showBnb ? controller.checkOutsToday.length : 0;
+      final upcoming = showBnb ? controller.checkIns.length : 0;
+      final collectionLow =
+          showRent && controller.collectionRate.value > 0 && controller.collectionRate.value < 70;
+      final hasAlerts =
+          checkIns > 0 || checkOuts > 0 || upcoming > 0 || collectionLow;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(context, 'Today', 'Leo'),
+          const SizedBox(height: 10),
+          if (!hasAlerts)
+            _TodayQuietCard(
+              label: _t(
+                context,
+                'Nothing urgent today — you\'re all clear.',
+                'Hakuna cha dharura leo — mambo yako sawa.',
+              ),
+            )
+          else ...[
+            if (checkOuts > 0)
+              _TodayAlertTile(
+                icon: Icons.logout_rounded,
+                title: _t(context, 'Check-outs today', 'Wanatoka leo'),
+                count: checkOuts,
+                expanded: controller.todayExpandedKey.value == 'checkout',
+                onTap: () => controller.toggleTodayDetail('checkout'),
+              ),
+            if (controller.todayExpandedKey.value == 'checkout' &&
+                controller.checkOutsToday.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _buildHorizontalGuestSection(
+                context,
+                title: '',
+                list: controller.checkOutsToday,
+              ),
+            ],
+            if (checkIns > 0) ...[
+              const SizedBox(height: 8),
+              _TodayAlertTile(
+                icon: Icons.login_rounded,
+                title: _t(context, 'Check-ins today', 'Wanaoingia leo'),
+                count: checkIns,
+                expanded: controller.todayExpandedKey.value == 'checkin',
+                onTap: () => controller.toggleTodayDetail('checkin'),
+              ),
+            ],
+            if (controller.todayExpandedKey.value == 'checkin' &&
+                controller.checkInsToday.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _buildHorizontalGuestSection(
+                context,
+                title: '',
+                list: controller.checkInsToday,
+              ),
+            ],
+            if (upcoming > 0) ...[
+              const SizedBox(height: 8),
+              _TodayAlertTile(
+                icon: Icons.event_available_rounded,
+                title: _t(context, 'Upcoming check-ins', 'Wanaoingia hivi karibuni'),
+                count: upcoming,
+                expanded: controller.todayExpandedKey.value == 'upcoming',
+                onTap: () => controller.toggleTodayDetail('upcoming'),
+              ),
+            ],
+            if (controller.todayExpandedKey.value == 'upcoming' &&
+                controller.checkIns.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _buildHorizontalGuestSection(
+                context,
+                title: '',
+                list: controller.checkIns,
+                onSeeAll: controller.seeAllCheckIns,
+                seeAllLabel: _t(context, 'See All', 'Ona Yote'),
+              ),
+            ],
+            if (collectionLow) ...[
+              const SizedBox(height: 8),
+              _TodayAlertTile(
+                icon: Icons.payments_outlined,
+                title: _t(
+                  context,
+                  'Collection at ${controller.collectionRate.value}%',
+                  'Ukusanyaji uko ${controller.collectionRate.value}%',
+                ),
+                count: null,
+                subtitle: _t(
+                  context,
+                  'Tap to manage rent payments',
+                  'Gusa kusimamia malipo ya kodi',
+                ),
+                expanded: false,
+                onTap: controller.openTodayRevenue,
+              ),
+            ],
+          ],
+          const SizedBox(height: 8),
+          const InventoryLowStockBanner(),
+        ],
+      );
+    });
+  }
+
+  /// Block 2 — 3–4 key numbers for the selected workspace.
+  Widget _buildSnapshotBlock(BuildContext context) {
+    final isSw = Localizations.localeOf(context).languageCode == 'sw';
+    return Obx(() {
+      final showBnb = controller.showBnbHomeContent;
+      final showRent = controller.showRentHomeContent;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: _sectionTitle(context, 'Snapshot', 'Muhtasari')),
+              TextButton(
+                onPressed: controller.viewTrends,
+                child: Text(
+                  _t(context, 'View trends', 'Angalia mwelekeo'),
+                  style: TextStyle(
+                    color: AppColors.colorPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (showBnb && showRent) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Jumla ya Vyumba' : 'Total Units',
+                    value: '${controller.totalUnitsCount.value}',
+                    subtitle: 'BnB + Rent',
+                    onTap: controller.openProperties,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Uhifadhi Hai' : 'Active Bookings',
+                    value: '${controller.activeBookings.value}',
+                    subtitle: controller.bookingsChange.value,
+                    onTap: controller.openBookings,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Wapangaji' : 'Tenants',
+                    value: '${controller.rentTenantsCount.value}',
+                    subtitle: isSw ? 'Wanaokaa sasa' : 'Active now',
+                    onTap: controller.openAllTenants,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Ukusanyaji' : 'Collection',
+                    value: '${controller.collectionRate.value}%',
+                    subtitle: isSw ? 'Mwezi huu' : 'This month',
+                    onTap: controller.openTodayRevenue,
+                  ),
+                ),
+              ],
+            ),
+          ] else if (showBnb) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Uhifadhi Hai' : 'Active Bookings',
+                    value: '${controller.activeBookings.value}',
+                    subtitle: controller.bookingsChange.value,
+                    onTap: controller.openBookings,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Mapato ya Mwezi' : 'Monthly Revenue',
+                    value: controller.monthlyRevenue.value,
+                    subtitle: controller.revenueChange.value,
+                    onTap: controller.viewTrends,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Ukaaji wa BnB' : 'BnB Occupancy',
+                    value: '${controller.bnbOccupancyRate.value}%',
+                    subtitle: isSw ? 'Wiki hii' : 'This week',
+                    onTap: controller.openBnbProperties,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Vyumba' : 'Units',
+                    value: '${controller.bnbUnitsCount.value}',
+                    subtitle: 'BnB',
+                    onTap: controller.openBnbProperties,
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Wapangaji' : 'Tenants',
+                    value: '${controller.rentTenantsCount.value}',
+                    subtitle: isSw ? 'Wanaokaa sasa' : 'Active now',
+                    onTap: controller.openAllTenants,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _BnbOverviewCard(
+                    title: isSw ? 'Ukaaji wa Rent' : 'Rent Occupancy',
+                    value: '${controller.rentOccupancyRate.value}%',
+                    subtitle: isSw ? 'Vyumbo vilivyokaliwa' : 'Units occupied',
+                    onTap: controller.openRentProperties,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _CollectionRateCard(
+              title: isSw ? 'Ukusanyaji wa Kodi' : 'Collection',
+              rate: controller.collectionRate.value,
+              tenantCount: controller.rentTenantsCount.value,
+              subtitle: isSw
+                  ? 'Kodi iliyokusanywa mwezi huu'
+                  : 'Rent collected this month',
+              onTap: controller.openTodayRevenue,
+            ),
+          ],
+        ],
+      );
+    });
+  }
+
+  /// Block 3 — navigate to tools (Create is the button above; AI is the FAB).
+  Widget _buildGoToBlock(BuildContext context) {
+    return Obx(() {
+      final showBnb = controller.showBnbHomeContent;
+      final showRent = controller.showRentHomeContent;
+      // One label → one destination ([HomeController.openPeople] → All Tenants).
+      final peopleLabel = showBnb && !showRent
+          ? _t(context, 'Guests', 'Wageni')
+          : showRent && !showBnb
+              ? _t(context, 'Tenants', 'Wapangaji')
+              : _t(context, 'Tenants & Guests', 'Wapangaji na Wageni');
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(context, 'Go to', 'Nenda'),
+          const SizedBox(height: 4),
+          Text(
+            _t(
+              context,
+              'Shortcuts — use Create above to add records',
+              'Njia za haraka — tumia Unda hapo juu kuongeza',
+            ),
+            style: TextStyle(
+              fontSize: 12,
+              color: context.tokens.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.55,
+            children: [
+              _QuickActionTile(
+                materialIcon: Icons.calendar_today_outlined,
+                label: _t(context, 'Calendar', 'Kalenda'),
+                onTap: controller.calendar,
+              ),
+              _QuickActionTile(
+                materialIcon: Icons.people_outline_rounded,
+                label: peopleLabel,
+                onTap: controller.openPeople,
+              ),
+              _QuickActionTile(
+                materialIcon: Icons.sms_outlined,
+                label: _t(context, 'SMS / WhatsApp', 'SMS / WhatsApp'),
+                onTap: controller.sendSmsWhatsapp,
+              ),
+              _QuickActionTile(
+                materialIcon: Icons.assessment_outlined,
+                label: _t(context, 'Reports', 'Ripoti'),
+                onTap: controller.reports,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: controller.viewTrends,
+              child: Text(
+                _t(
+                  context,
+                  'View finances & reports →',
+                  'Angalia fedha na ripoti →',
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildEmptyHomeState(BuildContext context) {
@@ -192,63 +662,23 @@ class HomeView extends BaseView<HomeController> {
               ),
               style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
             ),
+            const SizedBox(height: 20),
+            Text(
+              _t(
+                context,
+                'Tip: you can also add properties anytime from the Properties tab below.',
+                'Kidokezo: unaweza pia kuongeza mali wakati wowote kutoka kichupo cha Mali chini.',
+              ),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.4,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildPropertyOverview(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              _t(context, 'Property Overview', 'Muhtasari wa Mali'),
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: context.tokens.textPrimary,
-              ),
-            ),
-            TextButton(
-              onPressed: controller.viewTrends,
-              child: Text(
-                _t(context, 'View Trends', 'Angalia Mwelekeo'),
-                style: TextStyle(
-                  color: AppColors.colorPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Obx(
-          () => Row(
-            children: [
-              Expanded(
-                child: _MetricCard(
-                  title: _t(context, 'Active Bookings', 'Uhifadhi Hai'),
-                  value: '${controller.activeBookings.value}',
-                  subtitle: controller.bookingsChange.value,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MetricCard(
-                  title: _t(context, 'Monthly Revenue', 'Mapato ya Mwezi'),
-                  value: controller.monthlyRevenue.value,
-                  subtitle: controller.revenueChange.value,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -266,34 +696,39 @@ class HomeView extends BaseView<HomeController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: context.tokens.textPrimary,
-                ),
-              ),
-            ),
-            if (onSeeAll != null && seeAllLabel != null)
-              TextButton(
-                onPressed: onSeeAll,
-                child: Text(
-                  seeAllLabel,
-                  style: TextStyle(
-                    color: AppColors.colorPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+        if (title.isNotEmpty || (onSeeAll != null && seeAllLabel != null))
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (title.isNotEmpty)
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: context.tokens.textPrimary,
+                    ),
+                  ),
+                )
+              else
+                const Spacer(),
+              if (onSeeAll != null && seeAllLabel != null)
+                TextButton(
+                  onPressed: onSeeAll,
+                  child: Text(
+                    seeAllLabel,
+                    style: TextStyle(
+                      color: AppColors.colorPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
+            ],
+          ),
+        if (title.isNotEmpty || (onSeeAll != null && seeAllLabel != null))
+          const SizedBox(height: 12),
         Obx(() {
           if (list.isEmpty) {
             return const SizedBox.shrink();
@@ -325,527 +760,140 @@ class HomeView extends BaseView<HomeController> {
       ],
     );
   }
-
-  Widget _buildUpcomingCheckIns(BuildContext context) {
-    if (controller.checkIns.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return _buildHorizontalGuestSection(
-      context,
-      title: _t(context, 'Upcoming Check-ins', 'Wanaoingia Hivi Karibuni'),
-      list: controller.checkIns,
-      onSeeAll: controller.seeAllCheckIns,
-      seeAllLabel: _t(context, 'See All', 'Ona Yote'),
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _t(context, 'Quick Actions', 'Vitendo vya Haraka'),
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: context.tokens.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.3,
-          children: [
-            _QuickActionTile(
-              materialIcon: Icons.calendar_today_outlined,
-              label: _t(context, 'Calendar', 'Kalenda'),
-              onTap: controller.calendar,
-            ),
-            _QuickActionTile(
-              icon: 'ic_group.svg',
-              label: _t(context, 'Tenants / Guests', 'Wapangaji / Wageni'),
-              onTap: controller.tenants,
-            ),
-            _QuickActionTile(
-              materialIcon: Icons.sms_outlined,
-              label: _t(context, 'Send SMS / WhatsApp', 'Tuma SMS / WhatsApp'),
-              onTap: controller.sendSmsWhatsapp,
-            ),
-            // _QuickActionTile(
-            //   materialIcon: Icons.chat_outlined,
-            //   label: _t(context, 'WhatsApp templates', 'Violezo vya WhatsApp'),
-            //   onTap: controller.whatsappTemplates,
-            // ),
-            _QuickActionTile(
-              icon: 'ic_calendar.svg',
-              label: _t(context, 'Add Booking', 'Ongeza Uhifadhi'),
-              onTap: controller.addNewBooking,
-            ),
-            // _QuickActionTile(icon: 'ic_smart_key.svg', label: 'Smart Access', onTap: controller.smartAccess),
-            // _QuickActionTile(
-            //   icon: 'ic_completion.svg',
-            //   label: _t(context, 'Maintenance & Tasks', 'Matengenezo na Kazi'),
-            //   onTap: controller.tasks,
-            // ),
-            _QuickActionTile(
-              icon: 'ic_design_studio.svg',
-              label: _t(context, 'Design', 'Ubunifu'),
-              onTap: () => _showDesignQuickActions(context),
-            ),
-            _QuickActionTile(
-              icon: 'ic_reports.svg',
-              label: _t(context, 'Reports', 'Ripoti'),
-              onTap: controller.reports,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  void _showDesignQuickActions(BuildContext context) {
-    final isSw = Get.locale?.languageCode == 'sw';
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.palette_outlined),
-              title: Text(isSw ? 'Studio ya ubunifu' : 'Design studio'),
-              onTap: () {
-                Navigator.pop(ctx);
-                controller.designStudio();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.grid_view_rounded),
-              title: Text(isSw ? 'Moodboard' : 'Moodboards'),
-              onTap: () {
-                Navigator.pop(ctx);
-                controller.designMoodboards();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOverviewSection(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isSw = Localizations.localeOf(context).languageCode == 'sw';
-    return Obx(() {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _t(context, 'Overview', 'Muhtasari'),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: cs.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Row 1 – total units | BnB occupancy
-          Row(
-            children: [
-              Expanded(
-                child: _BnbOverviewCard(
-                  title: isSw ? 'Jumla ya Vyumba' : 'Total Units',
-                  value: '${controller.totalUnitsCount.value}',
-                  subtitle: isSw ? 'BnB + Rent' : 'BnB + Rent',
-                  onTap: controller.openProperties,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _BnbOverviewCard(
-                  title: isSw ? 'Ukaaji wa BnB' : 'BnB Occupancy',
-                  value: '${controller.bnbOccupancyRate.value}%',
-                  subtitle: isSw ? 'Wiki hii' : 'This week',
-                  onTap: controller.openBnbProperties,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Row 2 – rent occupancy | tenants
-          Row(
-            children: [
-              Expanded(
-                child: _BnbOverviewCard(
-                  title: isSw ? 'Ukaaji wa Rent' : 'Rent Occupancy',
-                  value: '${controller.rentOccupancyRate.value}%',
-                  subtitle: isSw ? 'Vyumbo vilivyokaliwa' : 'Units occupied',
-                  onTap: controller.openRentProperties,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _BnbOverviewCard(
-                  title: isSw ? 'Wapangaji' : 'Tenants',
-                  value: '${controller.rentTenantsCount.value}',
-                  subtitle: isSw ? 'Wanaokaa sasa' : 'Active now',
-                  onTap: controller.openAllTenants,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Row 3 – collection rate (full width with donut chart)
-          _CollectionRateCard(
-            title: isSw ? 'Ukusanyaji wa Kodi' : 'Collection',
-            rate: controller.collectionRate.value,
-            tenantCount: controller.rentTenantsCount.value,
-            subtitle: isSw
-                ? 'Kodi iliyokusanywa mwezi huu'
-                : 'Rent collected this month',
-            onTap: controller.openTodayRevenue,
-          ),
-          const SizedBox(height: 20),
-        ],
-      );
-    });
-  }
-
-  Widget _buildBnbWeeklyReportsSection(BuildContext context) {
-    return Obx(() {
-      // Observe list contents so charts update after quiet reloads.
-      final revenue = List<double>.from(controller.weeklyRevenue);
-      final occupancy = List<double>.from(controller.weeklyOccupancyPercent);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildWeeklyBarChartCard(
-            context,
-            title: appLocalization.dashboardWeeklyRevenue,
-            subtitle: appLocalization.dashboardWeekTrend,
-            values: revenue,
-            maxYCap: null,
-            formatTooltip: (v) =>
-                Get.find<CurrencyService>().formatBase(v.round()),
-          ),
-          const SizedBox(height: 16),
-          _buildWeeklyBarChartCard(
-            context,
-            title: appLocalization.dashboardWeeklyOccupancy,
-            subtitle: appLocalization.dashboardWeekTrend,
-            values: occupancy,
-            maxYCap: 100,
-            formatTooltip: (v) => '${v.round()}%',
-          ),
-          const SizedBox(height: 20),
-        ],
-      );
-    });
-  }
-
-  Widget _buildWeeklyBarChartCard(
-      BuildContext context, {
-        required String title,
-        required String subtitle,
-        required List<double> values,
-        required double? maxYCap,
-        required String Function(double) formatTooltip,
-      }) {
-    final data = values;
-    final maxVal = data.fold<double>(0, (a, b) => a > b ? a : b);
-    final chartMax = maxYCap ?? (maxVal <= 0 ? 1.0 : maxVal * 1.12);
-    final peakValue = maxVal;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppDecorations.card.copyWith(
-        color: FormSurfaceColors.of(context).isDark
-            ? const Color(0xFF1F1F1F)
-            : AppColors.colorWhite,
-        border: Border.all(
-          color: FormSurfaceColors.of(context).isDark
-              ? Colors.white.withValues(alpha: 0.18)
-              : Colors.transparent,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: FormSurfaceColors.of(context).isDark ? 0.28 : 0.06,
-            ),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                  color: context.tokens.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 180,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: chartMax,
-                barTouchData: BarTouchData(
-                  enabled: true,
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      return BarTooltipItem(
-                        formatTooltip(rod.toY),
-                        TextStyle(
-                          color: context.tokens.textPrimary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 28,
-                      getTitlesWidget: (value, meta) {
-                        final i = value.toInt();
-                        if (i < 0 ||
-                            i >= HomeController.weeklyDayLabels.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            HomeController.weeklyDayLabels[i],
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: context.tokens.textSecondary,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: (FormSurfaceColors.of(context).isDark
-                        ? Colors.white
-                        : AppColors.designInputBorder)
-                        .withValues(alpha: 0.5),
-                    strokeWidth: 1,
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                barGroups: List.generate(
-                  HomeController.weeklyDayLabels.length,
-                      (i) {
-                    final v = i < data.length ? data[i] : 0.0;
-                    final isPeak = peakValue > 0 && v == peakValue;
-                    return BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(
-                          fromY: 0,
-                          toY: v,
-                          width: 18,
-                          color: isPeak
-                              ? AppColors.designAccent
-                              : AppColors.designAccent.withValues(alpha: 0.55),
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(4),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              duration: const Duration(milliseconds: 150),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-class _PulsingDownArrow extends StatefulWidget {
-  const _PulsingDownArrow();
-
-  @override
-  State<_PulsingDownArrow> createState() => _PulsingDownArrowState();
-}
-
-class _PulsingDownArrowState extends State<_PulsingDownArrow>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _pulse;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-    _pulse = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'More content below',
-      child: AnimatedBuilder(
-        animation: _pulse,
-        builder: (context, child) {
-          final progress = _pulse.value;
-          return Opacity(
-            opacity: 0.55 + (progress * 0.45),
-            child: Transform.translate(
-              offset: Offset(0, progress * 6),
-              child: Transform.scale(
-                scale: 0.92 + (progress * 0.08),
-                child: child,
-              ),
-            ),
-          );
-        },
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.colorPrimary.withValues(alpha: 0.12),
-          ),
-          child: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: AppColors.colorPrimary,
-            size: 28,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String subtitle;
-
-  const _MetricCard({
-    required this.title,
-    required this.value,
-    required this.subtitle,
-  });
+class _TodayQuietCard extends StatelessWidget {
+  const _TodayQuietCard({required this.label});
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final c = FormSurfaceColors.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(AppValues.radius_12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: c.isDark ? Colors.white12 : const Color(0xFFE8ECF0),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: c.isDark
-                  ? AppColors.textColorSecondary
-                  : AppColors.textColorSecondary,
-              fontWeight: FontWeight.w500,
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 14,
+          height: 1.35,
+          color: c.isDark
+              ? AppColors.textColorSecondary
+              : const Color(0xFF64748B),
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayAlertTile extends StatelessWidget {
+  const _TodayAlertTile({
+    required this.icon,
+    required this.title,
+    required this.expanded,
+    required this.onTap,
+    this.count,
+    this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final int? count;
+  final String? subtitle;
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    return Material(
+      color: Theme.of(context).cardColor,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: c.isDark ? Colors.white12 : const Color(0xFFE8ECF0),
             ),
           ),
-          const SizedBox(height: 4),
-          SizedBox(
-            width: double.infinity,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: c.headline,
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.colorPrimary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 20, color: AppColors.colorPrimary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: c.headline,
+                      ),
+                    ),
+                    if (subtitle != null && subtitle!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: c.isDark
+                              ? AppColors.textColorSecondary
+                              : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ),
+              if (count != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.colorPrimary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.colorPrimary,
+                    ),
+                  ),
+                ),
+              if (count != null) const SizedBox(width: 4),
+              Icon(
+                expanded
+                    ? Icons.expand_less_rounded
+                    : Icons.chevron_right_rounded,
+                color: c.isDark
+                    ? AppColors.textColorSecondary
+                    : const Color(0xFF94A3B8),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: c.isDark
-                  ? AppColors.textColorSecondary
-                  : AppColors.textColorSecondary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1263,69 +1311,6 @@ class _QuickActionTile extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SegmentButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _SegmentButton({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = FormSurfaceColors.of(context);
-    return Material(
-      color: isSelected
-          ? AppColors.designAccent
-          : (c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
-      borderRadius: BorderRadius.circular(AppValues.radius_6),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppValues.radius_6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppValues.radius_6),
-            border: isSelected
-                ? null
-                : Border.all(
-              color: c.isDark
-                  ? Colors.white.withValues(alpha: 0.18)
-                  : AppColors.designInputBorder,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected ? Colors.white : AppColors.textColorSecondary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
           ),
         ),
       ),

@@ -5,6 +5,7 @@ import '../../../../core/theme/app_theme_tokens.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../core/base/rent_base_view.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../controllers/rent_maintenance_cost_analysis_controller.dart';
@@ -42,7 +43,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
-  static final NumberFormat _money = NumberFormat('#,###', 'en_US');
+  String _fmt(num value) => Get.find<CurrencyService>().formatBase(value.round());
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
@@ -202,7 +203,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
           ),
           const SizedBox(height: 10),
           Text(
-            'Tsh ${_money.format(total.round())}',
+            _fmt(total),
             style: const TextStyle(
               fontFamily: 'serif',
               fontSize: 32,
@@ -386,7 +387,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
         Expanded(
           flex: 2,
           child: Text(
-            'Tsh ${_money.format(line.estimated.round())}',
+            _fmt(line.estimated),
             textAlign: TextAlign.right,
             style: TextStyle(fontSize: 12, color: u.muted),
           ),
@@ -394,7 +395,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
         Expanded(
           flex: 2,
           child: Text(
-            'Tsh ${_money.format(line.actual.round())}',
+            _fmt(line.actual),
             textAlign: TextAlign.right,
             style: const TextStyle(
               fontSize: 12,
@@ -487,7 +488,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
           ),
           const SizedBox(height: 12),
           Text(
-            liq > 0 ? 'Tsh ${_money.format(liq.round())}' : '—',
+            liq > 0 ? _fmt(liq) : '—',
             style: const TextStyle(
               fontFamily: 'serif',
               color: Colors.white,
@@ -508,7 +509,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${_isSw ? 'LENGO' : 'GOAL'}: Tsh ${_money.format(goal.round())}',
+                '${_isSw ? 'LENGO' : 'GOAL'}: ${_fmt(goal)}',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 11,
@@ -603,7 +604,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
                     Text(
                       e == null
                           ? (_isSw ? 'Hakuna tarehe' : 'No date')
-                          : '${_isSw ? 'Imekamilika' : 'Completed'} $dateStr • Tsh ${_money.format(amt.round())}',
+                          : '${_isSw ? 'Imekamilika' : 'Completed'} $dateStr • ${_fmt(amt)}',
                       style: TextStyle(fontSize: 13, color: u.muted),
                     ),
                   ],

@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:host_bora/app/data/model/record_client_event_request.dart';
-import 'package:host_bora/app/data/model/schedule_payment_reminder_request.dart';
+import '../model/schedule_payment_reminder_request.dart';
+import '../model/recurring_reminder_request.dart';
 import 'package:host_bora/app/data/model/submit_tenant_rating_request.dart';
 
 import '../model/add_listing_request.dart';
@@ -41,6 +42,11 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<LoginResponse> signIn(LoginRequest request) {
     return _remoteSource.signIn(request);
+  }
+
+  @override
+  Future<LoginResponse> refreshSession(String refreshToken) {
+    return _remoteSource.refreshSession(refreshToken);
   }
 
   @override
@@ -540,6 +546,34 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> schedulePaymentReminder(SchedulePaymentReminderRequest request) {
     return _remoteSource.schedulePaymentReminder(request);
+  }
+
+  @override
+  Future<GeneralResponse> createRecurringReminder(RecurringReminderRequest request) {
+    return _remoteSource.createRecurringReminder(request);
+  }
+
+  @override
+  Future<GeneralResponse> createBulkRecurringReminders(
+    BulkRecurringReminderRequest request,
+  ) {
+    return _remoteSource.createBulkRecurringReminders(request);
+  }
+
+  @override
+  Future<GeneralResponse> listRecurringReminders() {
+    return _remoteSource.listRecurringReminders();
+  }
+
+  @override
+  Future<GeneralResponse> updateRecurringReminderLeaseDecision(
+    String id, {
+    required bool continueAfterLeaseExpiry,
+  }) {
+    return _remoteSource.updateRecurringReminderLeaseDecision(
+      id,
+      continueAfterLeaseExpiry: continueAfterLeaseExpiry,
+    );
   }
 
   @override

@@ -120,7 +120,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
           _overviewTile(
             context: context,
             label: _isSw ? 'Mapato ya Mwezi' : 'Monthly Revenue',
-            value: 'Tsh ${controller.formatMoney(controller.expectedRevenue)}',
+            value: controller.formatMoney(controller.expectedRevenue),
             trailing: Text(
               '+0.4%',
               style: TextStyle(
@@ -185,7 +185,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
           child: _metricChip(
             context: context,
             label: _isSw ? 'Mapato Yanayotarajiwa' : 'Expected Revenue',
-            value: 'Tsh ${controller.formatMoney(controller.expectedRevenue)}',
+            value: controller.formatMoney(controller.expectedRevenue),
           ),
         ),
       ],
@@ -309,14 +309,14 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
                 child: _smallStat(
                   context: context,
                   label: _isSw ? 'Malipo Hadi Sasa' : 'Paid To Date',
-                  value: 'Tsh ${controller.formatMoney(item.paidToDate)}',
+                  value: controller.formatMoney(item.paidToDate),
                 ),
               ),
               Expanded(
                 child: _smallStat(
                   context: context,
                   label: _isSw ? 'Baki' : 'Balance',
-                  value: 'Tsh ${controller.formatMoney(item.balance)}',
+                  value: controller.formatMoney(item.balance),
                 ),
               ),
               Expanded(
@@ -453,7 +453,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'Tsh ${controller.formatMoney(item.balance)}',
+                controller.formatMoney(item.balance),
                 style: TextStyle(fontWeight: FontWeight.w700, color: c.isDark ? Colors.white : null),
               ),
               Text(

@@ -7,6 +7,7 @@ import 'package:local_auth/error_codes.dart' as auth_error;
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
+import '../../../data/local/service/session_service.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/service/app_review_service.dart';
 import '../../../data/model/login_request.dart';
@@ -151,21 +152,7 @@ class WelcomeBackController extends BaseController {
     if (res.message == 'expired_version') {
       showErrorMessage(appLocalization.expiredVersion);
     } else if (res.message == 'auth_success') {
-      final expiresIn = res.expiresIn ?? 0;
-      final expiryTime = DateTime.now().add(Duration(minutes: expiresIn)).toIso8601String();
-      await _preferenceManager.setString(
-          PreferenceManager.keyToken, loginResponse.token!);
-      await _preferenceManager.setString(
-          PreferenceManager.keyExpiryTime, expiryTime);
-      await _preferenceManager.setBool('isAdmin', loginResponse.user?.isAdmin ?? false);
-      if (loginResponse.user?.roles != null) {
-        await _preferenceManager.setStringList(
-          PreferenceManager.keyRoles,
-          loginResponse.user!.roles!,
-        );
-      }
-
-      await _preferenceManager.setUser('user', loginResponse.user);
+      await Get.find<SessionService>().saveFromLogin(res);
       try {
         await Get.find<AppReviewService>().onSuccessfulLogin();
       } catch (_) {}
@@ -227,7 +214,31 @@ class WelcomeBackController extends BaseController {
     }
     _resetFailedAttempts();
     enteredPin.value = '';
-    loadCredentials();
+    _unlockAndContinue();
+  }
+
+  /// Local PIN check only — no password re-login. Refreshes JWT silently if needed.
+  Future<void> _unlockAndContinue() async {
+    final session = Get.find<SessionService>();
+    if (!await session.hasPersistedSession()) {
+      showErrorMessage(_t(
+        'Session expired. Sign in with phone and password once.',
+        'Kipindi kimeisha. Ingia kwa simu na nenosiri mara moja.',
+      ));
+      Get.offAllNamed(Routes.AUTH);
+      return;
+    }
+    final ok = await session.ensureValidSession();
+    if (!ok) {
+      await session.clearFullSession();
+      showErrorMessage(_t(
+        'Session expired. Sign in with phone and password once.',
+        'Kipindi kimeisha. Ingia kwa simu na nenosiri mara moja.',
+      ));
+      Get.offAllNamed(Routes.AUTH);
+      return;
+    }
+    await continueToApp();
   }
 
   Future<void> _handleFailedPinAttempt() async {
@@ -353,7 +364,7 @@ class WelcomeBackController extends BaseController {
 
   void help() => Get.toNamed(Routes.SUPPORT);
 
-  void forgotPin() {
+  void forgotPin() async {
     if (setupPinMode.value) {
       enteredPin.value = '';
       setupStep.value = 1;
@@ -362,10 +373,21 @@ class WelcomeBackController extends BaseController {
           : _t('Create a 4-digit PIN', 'Tengeneza PIN ya tarakimu 4');
       return;
     }
-    _preferenceManager.setBool(PreferenceManager.keyPinEnabled, false);
-    _preferenceManager.setString(PreferenceManager.keyPinCode, '');
-    _preferenceManager.setInt(PreferenceManager.keyPinFailedAttempts, 0);
-    _preferenceManager.setInt(PreferenceManager.keyPinLockedUntilMs, 0);
+    await _preferenceManager.setBool(PreferenceManager.keyPinEnabled, false);
+    await _preferenceManager.setString(PreferenceManager.keyPinCode, '');
+    await _preferenceManager.setInt(PreferenceManager.keyPinFailedAttempts, 0);
+    await _preferenceManager.setInt(PreferenceManager.keyPinLockedUntilMs, 0);
+    final session = Get.find<SessionService>();
+    if (await session.hasPersistedSession()) {
+      Get.offAllNamed(
+        Routes.CHANGE_PIN,
+        arguments: {
+          'setup_pin': true,
+          WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,
+        },
+      );
+      return;
+    }
     Get.offAllNamed(Routes.AUTH);
   }
 
@@ -400,15 +422,7 @@ class WelcomeBackController extends BaseController {
           faceIdEnabledPref.value = true;
           await _preferenceManager.setBool(PreferenceManager.keyFaceIdEnabled, true);
         }
-        final savedPassword = await _preferenceManager.getString('userApp');
-        if (savedPassword.isEmpty) {
-          showErrorMessage(_t(
-            'Saved login expired. Sign in with phone and password once, then use biometrics.',
-            'Kuingia kilichohifadhiwa kimeisha. Ingia kwa simu na nenosiri mara moja, kisha tumia biometria.',
-          ));
-          return;
-        }
-        loadCredentials();
+        await _unlockAndContinue();
       }
     } on PlatformException catch (e) {
       if (e.code == auth_error.notAvailable ||

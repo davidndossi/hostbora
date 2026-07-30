@@ -2,11 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_tenant_charge_local_data_source.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../../data/repository/app_repository.dart';
 
@@ -23,10 +23,8 @@ class TenantChargeEntry {
   final double amountTsh;
   final String description;
 
-  String get amountFormatted {
-    final n = NumberFormat('#,###', 'en_US').format(amountTsh.round());
-    return 'Tsh $n';
-  }
+  String get amountFormatted =>
+      Get.find<CurrencyService>().formatBase(amountTsh.round());
 
   String get subtitleLine {
     final t = description.trim();
@@ -54,6 +52,7 @@ class RentDefineTenantChargesController extends BaseController {
 
   static const chargeTypeOptions = [
     'Security Deposit',
+    'Service Charge',
     'Cleaning Fee',
     'Utility Deposit',
     'Admin Fee',
@@ -68,10 +67,8 @@ class RentDefineTenantChargesController extends BaseController {
   double get totalTsh =>
       charges.fold(0.0, (a, b) => a + b.amountTsh);
 
-  String get totalFormatted {
-    final n = NumberFormat('#,###', 'en_US').format(totalTsh.round());
-    return 'TSH $n';
-  }
+  String get totalFormatted =>
+      Get.find<CurrencyService>().formatBase(totalTsh.round());
 
   double? _parseAmount(String raw) {
     final cleaned = raw.replaceAll(RegExp(r'[^\d.]'), '');
@@ -160,6 +157,8 @@ class RentDefineTenantChargesController extends BaseController {
     switch (type) {
       case 'Security Deposit':
         return (const Color(0xFFE3F2FD), const Color(0xFF1565C0), Icons.shield_outlined);
+      case 'Service Charge':
+        return (const Color(0xFFE8F5E9), const Color(0xFF1B5E20), Icons.home_repair_service_outlined);
       case 'Cleaning Fee':
         return (const Color(0xFFFFE8DC), const Color(0xFFC05020), Icons.cleaning_services_outlined);
       case 'Utility Deposit':

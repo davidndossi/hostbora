@@ -108,7 +108,9 @@ class PreferenceManagerImpl implements PreferenceManager {
 
   @override
   Future<void> clearSession() async {
-    await storage.delete(key: 'token');
-    await storage.delete(key: 'expiry_time');
+    await storage.delete(key: PreferenceManager.keyToken);
+    await storage.delete(key: PreferenceManager.keyExpiryTime);
+    await storage.delete(key: PreferenceManager.keyRefreshToken);
+    await storage.delete(key: PreferenceManager.keyRefreshExpiryTime);
   }
 }

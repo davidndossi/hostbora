@@ -10,6 +10,7 @@ import '../../../core/utils/util.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
+import '../../../data/local/service/session_service.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/service/app_review_service.dart';
 import '../../../data/model/login_request.dart';
@@ -237,26 +238,13 @@ class AuthController extends BaseController {
     if (res.message == 'expired_version') {
       showErrorMessage(appLocalization.expiredVersion);
     } else if (res.message == 'auth_success' || res.message == 'verify_code') {
-      final expiresIn = res.expiresIn ?? 0;
-      final expiryTime = DateTime.now().add(Duration(minutes: expiresIn)).toIso8601String();
-      await _preferenceManager.setString(
-          PreferenceManager.keyToken, loginResponse.token!);
-      await _preferenceManager.setString(
-          PreferenceManager.keyExpiryTime, expiryTime);
+      await Get.find<SessionService>().saveFromLogin(res);
       await _preferenceManager.setString(
           PreferenceManager.keyUsername, loginResponse.user?.msisdn ?? '');
       await _preferenceManager.setString(PreferenceManager.keyFullName,
           loginResponse.user?.fullName ?? '');
-      await _preferenceManager.setBool('isAdmin', loginResponse.user?.isAdmin ?? false);
-      if (loginResponse.user?.roles != null) {
-        await _preferenceManager.setStringList(
-          PreferenceManager.keyRoles,
-          loginResponse.user!.roles!,
-        );
-      }
 
-      await _preferenceManager.setUser('user', loginResponse.user);
-      // TODO(security): replace plaintext userApp storage with a secure token/credential API.
+      // Kept for legacy offline unlock fallback.
       await _preferenceManager.setString('userApp', password.value);
       if (res.message == 'auth_success') {
         try {

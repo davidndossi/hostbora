@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme_tokens.dart';
 
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_tenant_ledger_occupancy_controller.dart';
 import '../utils/tenant_ledger_document_store.dart';
@@ -85,7 +85,7 @@ class RentTenantLedgerOccupancyView
   @override
   Widget body(BuildContext context) {
     final u = _LedgerUi(context);
-    final currency = NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0);
+    final currency = Get.find<CurrencyService>();
 
     return PopScope(
       canPop: false,
@@ -306,7 +306,7 @@ class RentTenantLedgerOccupancyView
     );
   }
 
-  Widget _financialBreakdownCard(_LedgerUi u, NumberFormat currency) {
+  Widget _financialBreakdownCard(_LedgerUi u, CurrencyService currency) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -345,7 +345,7 @@ class RentTenantLedgerOccupancyView
           ),
           const SizedBox(height: 6),
           Text(
-            currency.format(controller.remainingBalanceTsh),
+            currency.formatBase(controller.remainingBalanceTsh),
             style: const TextStyle(
               fontSize: 30,
               fontWeight: FontWeight.w700,
@@ -368,7 +368,7 @@ class RentTenantLedgerOccupancyView
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      currency.format(controller.totalDueTsh),
+                      currency.formatBase(controller.totalDueTsh),
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -391,7 +391,7 @@ class RentTenantLedgerOccupancyView
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      currency.format(controller.totalPaidTsh),
+                      currency.formatBase(controller.totalPaidTsh),
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -408,7 +408,7 @@ class RentTenantLedgerOccupancyView
     );
   }
 
-  Widget _paymentHistorySection(_LedgerUi u, NumberFormat currency) {
+  Widget _paymentHistorySection(_LedgerUi u, CurrencyService currency) {
     final rows = controller.paymentHistory;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,7 +445,7 @@ class RentTenantLedgerOccupancyView
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          currency.format(p.amountTsh),
+                          currency.formatBase(p.amountTsh),
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 15,

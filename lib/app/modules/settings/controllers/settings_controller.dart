@@ -18,7 +18,7 @@ import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/local/service/currency_service.dart';
-import '../../../core/widget/base_currency_picker.dart';
+import '../../../core/widget/base_currency_dialog.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
@@ -264,25 +264,7 @@ class SettingsController extends BaseController {
   }
 
   void showBaseCurrencyPicker(BuildContext context) {
-    final isSw = Get.locale?.languageCode == 'sw';
-    Get.dialog(
-      AlertDialog(
-        title: Text(isSw ? 'Sarafu ya msingi' : 'Base currency'),
-        content: SingleChildScrollView(
-          child: BaseCurrencyPicker(
-            title: isSw
-                ? 'Ripoti na chati zitaonyesha kiasi katika sarafu hii'
-                : 'Reports and charts will use this currency',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text(isSw ? 'Funga' : 'Close'),
-          ),
-        ],
-      ),
-    );
+    showBaseCurrencyDialog(context);
   }
 
   Future<void> loadSettings() async {

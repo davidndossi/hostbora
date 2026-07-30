@@ -54,7 +54,7 @@ class DashboardController extends BaseController {
   final isBnbWorkspace = true.obs;
   final bnbBookingsCount = 0.obs;
   final bnbGuestsCount = 0.obs;
-  final bnbTodayRevenue = 'TZS 0'.obs;
+  final bnbTodayRevenue = RxString(CurrencyService.zeroLabel());
   final bnbUnitsCount = 0.obs;
   /// Average daily occupancy % for the current week (0–100).
   final bnbOccupancyRate = 0.obs;
@@ -99,15 +99,15 @@ class DashboardController extends BaseController {
   final isIncomeSelected = true.obs;
 
   // Metric card data (Income view) – from local DB
-  final totalRevenue = 'TZS 0'.obs;
+  final totalRevenue = RxString(CurrencyService.zeroLabel());
   final totalRevenueChange = '+0%'.obs;
   final totalRevenueUp = true.obs;
 
-  final avgDailyRate = 'TZS 0'.obs;
+  final avgDailyRate = RxString(CurrencyService.zeroLabel());
   final avgDailyRateChange = '+0%'.obs;
   final avgDailyRateUp = true.obs;
 
-  final netProfit = 'TZS 0'.obs;
+  final netProfit = RxString(CurrencyService.zeroLabel());
   final netProfitChange = '+0%'.obs;
   final netProfitUp = true.obs;
 
@@ -124,10 +124,10 @@ class DashboardController extends BaseController {
   final monthlyValuesB = <double>[0, 0, 0, 0, 0].obs;
 
   // Expense metrics – from local DB
-  final totalExpenses = 'TZS 0'.obs;
+  final totalExpenses = RxString(CurrencyService.zeroLabel());
   final totalExpensesChange = '+0%'.obs;
   final totalExpensesUp = true.obs;
-  final avgDailyExpense = 'TZS 0'.obs;
+  final avgDailyExpense = RxString(CurrencyService.zeroLabel());
   final avgDailyExpenseChange = '+0%'.obs;
   final avgDailyExpenseUp = true.obs;
 

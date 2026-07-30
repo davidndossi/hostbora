@@ -159,6 +159,14 @@ class ListingDetailsController extends BaseController
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
+  String _formatRentLabel(String raw) {
+    final parsed = double.tryParse(raw.trim().replaceAll(',', ''));
+    if (parsed != null) {
+      return Get.find<CurrencyService>().formatBase(parsed.round());
+    }
+    return raw.trim();
+  }
+
   List<String> get financeWorkspaceTypes {
     final mode = propertyWorkspaceMode.value;
     if (mode == 'both') return const ['bnb', 'rent'];
@@ -1220,7 +1228,7 @@ class ListingDetailsController extends BaseController
             name: unitName,
             subtitle: rent.isEmpty
                 ? (_isSw ? 'Inasubiri mpangaji' : 'Awaiting tenant')
-                : 'Rent TZS $rent',
+                : 'Rent ${_formatRentLabel(rent)}',
             status: attachedTenant == null
                 ? ListingUnitStatus.short
                 : ListingUnitStatus.occupied,
@@ -1287,7 +1295,7 @@ class ListingDetailsController extends BaseController
         ListingUnitRowVm(
           name: name,
           subtitle: rent.isNotEmpty
-              ? 'Rent TZS $rent'
+              ? 'Rent ${_formatRentLabel(rent)}'
               : (_isSw ? 'Inasubiri mpangaji' : 'Awaiting tenant'),
           status: status,
           tenantName: tenantName,
@@ -1357,8 +1365,7 @@ class ListingDetailsController extends BaseController
         continue;
       }
       if (at.isAfter(now.add(const Duration(days: 14)))) continue;
-      final balance = NumberFormat.currency(symbol: 'Tsh ', decimalDigits: 0)
-          .format(r.balanceTsh);
+      final balance = Get.find<CurrencyService>().formatBase(r.balanceTsh);
       paymentFollowUp.value = PaymentFollowUpBannerVm(
         message: _isSw
             ? 'Malipo ya ${r.tenantName.trim().isEmpty ? 'mpangaji' : r.tenantName} ($balance) yanahitaji ufuatiliaji.'
@@ -2066,7 +2073,7 @@ class ListingDetailsController extends BaseController
   void onPaymentFollowUpTap() {
     final banner = paymentFollowUp.value;
     Get.toNamed(
-      Routes.RENT_SCHEDULE_PAYMENT_REMINDER,
+      Routes.RENT_RECURRING_REMINDERS,
       parameters: {
         if (_propertyName.isNotEmpty) 'property': _propertyName,
         if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,

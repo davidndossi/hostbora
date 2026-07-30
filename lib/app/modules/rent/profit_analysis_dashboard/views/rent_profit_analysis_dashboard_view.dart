@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme_tokens.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../core/base/rent_base_view.dart';
 import '../controllers/rent_profit_analysis_dashboard_controller.dart';
 
@@ -40,7 +41,8 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
   RentProfitAnalysisDashboardView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
-  static final NumberFormat _money = NumberFormat('#,###', 'en_US');
+
+  String _fmt(num value) => Get.find<CurrencyService>().formatBase(value.round());
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
@@ -184,7 +186,7 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
           ),
           const SizedBox(height: 10),
           Text(
-            'Tsh ${_money.format(value.abs().round())}',
+            _fmt(value.abs()),
             style: TextStyle(
               fontFamily: 'serif',
               fontSize: 36,
@@ -231,7 +233,7 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
           ),
           const SizedBox(height: 10),
           Text(
-            '${isNegative ? '-' : '+'} Tsh ${_money.format(deviation.abs().round())}',
+            '${isNegative ? '-' : '+'} ${_fmt(deviation.abs())}',
             style: const TextStyle(
               fontFamily: 'serif',
               fontSize: 34,
@@ -542,7 +544,7 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'Tsh ${_money.format(rec.amountValue.round())}',
+                  _fmt(rec.amountValue),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,

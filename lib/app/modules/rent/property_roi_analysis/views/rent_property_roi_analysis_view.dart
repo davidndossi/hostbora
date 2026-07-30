@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../core/base/rent_base_view.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/widget/skeleton_presets.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
@@ -45,7 +47,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
-  static final NumberFormat _money = NumberFormat('#,###', 'en_US');
+  String _fmt(num value) => Get.find<CurrencyService>().formatBase(value.round());
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => null;
@@ -103,7 +105,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  principal > 0 ? 'Tsh ${_money.format(principal.round())}' : '—',
+                  principal > 0 ? _fmt(principal) : '—',
                   style: TextStyle(
                     fontFamily: 'serif',
                     fontSize: 34,
@@ -321,7 +323,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
                           u,
                           _RoiUi.forest,
                           _isSw ? 'Mtaji (ununuzi + ukarabati)' : 'Principal (purchase + renovation)',
-                          'Tsh ${_money.format(principal.round())}',
+                          _fmt(principal),
                         ),
                       if (maintenance > 0) ...[
                         const SizedBox(height: 8),
@@ -329,7 +331,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
                           u,
                           const Color(0xFF5D4037),
                           _isSw ? 'Matengenezo (makadirio/halisi)' : 'Maintenance (estimate/actual)',
-                          'Tsh ${_money.format(maintenance.round())}',
+                          _fmt(maintenance),
                         ),
                       ],
                       if (incomeTotal > 0) ...[
@@ -338,7 +340,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
                           u,
                           _RoiUi.teal,
                           _isSw ? 'Mapato yaliyotengenezwa' : 'Income generated',
-                          'Tsh ${_money.format(incomeTotal.round())}',
+                          _fmt(incomeTotal),
                         ),
                       ],
                     ],
@@ -424,8 +426,8 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
                   const SizedBox(height: 6),
                   Text(
                     _isSw
-                        ? 'Mtaji halisi kwa mwezi: Tsh ${_money.format(controller.monthlyNetForBreakEven.round())}'
-                        : 'Net cash flow used: Tsh ${_money.format(controller.monthlyNetForBreakEven.round())} / month',
+                        ? 'Mtaji halisi kwa mwezi: ${_fmt(controller.monthlyNetForBreakEven)}'
+                        : 'Net cash flow used: ${_fmt(controller.monthlyNetForBreakEven)} / month',
                     style: TextStyle(fontSize: 11, color: u.muted),
                   ),
                 ],
@@ -460,7 +462,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
           ),
           const SizedBox(height: 8),
           Text(
-            'Tsh ${_money.format(incomeTotal.round())}',
+            _fmt(incomeTotal),
             style: TextStyle(
               fontFamily: 'serif',
               fontSize: 30,
@@ -615,7 +617,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
       icon: Icons.apartment_rounded,
       title: _isSw ? 'Gharama ya Ununuzi' : 'Acquisition Cost',
       subtitle: _isSw ? 'Bei ya Ununuzi wa Mali' : 'Asset Purchase Price',
-      amount: v > 0 ? 'Tsh ${_money.format(v.round())}' : '—',
+      amount: v > 0 ? _fmt(v) : '—',
       footer: Row(
         children: [
           Text(
@@ -652,7 +654,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
       icon: Icons.stairs_rounded,
       title: _isSw ? 'Ukarabati wa Makadirio' : 'Estimated Renovation',
       subtitle: _isSw ? 'Miradi ya uboreshaji' : 'Capital improvement projects',
-      amount: committed > 0 ? 'Tsh ${_money.format(committed.round())}' : '—',
+      amount: committed > 0 ? _fmt(committed) : '—',
       footer: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -664,7 +666,7 @@ class RentPropertyRoiAnalysisView extends RentBaseView<RentPropertyRoiAnalysisCo
               ),
               const Spacer(),
               Text(
-                'Tsh ${_money.format(utilized.round())} ${_isSw ? 'Imetumika' : 'Utilized'}',
+                '${_fmt(utilized)} ${_isSw ? 'Imetumika' : 'Utilized'}',
                 style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: u.muted),
               ),
             ],

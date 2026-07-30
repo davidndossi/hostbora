@@ -4,6 +4,7 @@ import '../model/inventory_item_request.dart';
 import '../model/add_task_request.dart';
 import '../model/record_client_event_request.dart';
 import '../model/schedule_payment_reminder_request.dart';
+import '../model/recurring_reminder_request.dart';
 import '../model/submit_tenant_rating_request.dart';
 import '../model/change_password_request.dart';
 import '../model/cancel_booking_request.dart';
@@ -35,6 +36,8 @@ import '../model/fx_response.dart';
 abstract class RemoteDataSource {
 
   Future<LoginResponse> signIn(LoginRequest request);
+
+  Future<LoginResponse> refreshSession(String refreshToken);
 
   Future<GeneralResponse> changePassword(ChangePasswordRequest request);
 
@@ -178,6 +181,14 @@ abstract class RemoteDataSource {
 
   /// Schedule a payment reminder (dedicated endpoint).
   Future<GeneralResponse> schedulePaymentReminder(SchedulePaymentReminderRequest request);
+
+  Future<GeneralResponse> createRecurringReminder(RecurringReminderRequest request);
+  Future<GeneralResponse> createBulkRecurringReminders(BulkRecurringReminderRequest request);
+  Future<GeneralResponse> listRecurringReminders();
+  Future<GeneralResponse> updateRecurringReminderLeaseDecision(
+    String id, {
+    required bool continueAfterLeaseExpiry,
+  });
   Future<GeneralResponse> recordClientEvent(RecordClientEventRequest request);
   Future<GeneralResponse> submitTenantRating(SubmitTenantRatingRequest request);
   Future<GeneralResponse> searchTenantScore(String phoneNumber);

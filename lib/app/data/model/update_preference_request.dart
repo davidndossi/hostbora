@@ -6,7 +6,8 @@ class UpdatePreferenceRequest {
       String? privacy, 
       bool? receiveCommunityUpdates, 
       bool? eventReminders, 
-      bool? deathAnnouncements
+      bool? deathAnnouncements,
+      String? baseCurrency,
   }){
     _theme = theme;
     _notifications = notifications;
@@ -15,6 +16,7 @@ class UpdatePreferenceRequest {
     _receiveCommunityUpdates = receiveCommunityUpdates;
     _eventReminders = eventReminders;
     _deathAnnouncements = deathAnnouncements;
+    _baseCurrency = baseCurrency;
   }
 
   UpdatePreferenceRequest.fromJson(dynamic json) {
@@ -25,6 +27,7 @@ class UpdatePreferenceRequest {
     _receiveCommunityUpdates = json['receiveCommunityUpdates'];
     _eventReminders = json['eventReminders'];
     _deathAnnouncements = json['deathAnnouncements'];
+    _baseCurrency = json['baseCurrency'] ?? json['base_currency'];
   }
 
   String? _theme;
@@ -34,6 +37,7 @@ class UpdatePreferenceRequest {
   bool? _receiveCommunityUpdates;
   bool? _eventReminders;
   bool? _deathAnnouncements;
+  String? _baseCurrency;
 
   UpdatePreferenceRequest copyWith({
     String? theme,
@@ -43,6 +47,7 @@ class UpdatePreferenceRequest {
     bool? receiveCommunityUpdates,
     bool? eventReminders,
     bool? deathAnnouncements,
+    String? baseCurrency,
   }) => UpdatePreferenceRequest(
     theme: theme ?? _theme,
     notifications: notifications ?? _notifications,
@@ -51,6 +56,7 @@ class UpdatePreferenceRequest {
     receiveCommunityUpdates: receiveCommunityUpdates ?? _receiveCommunityUpdates,
     eventReminders: eventReminders ?? _eventReminders,
     deathAnnouncements: deathAnnouncements ?? _deathAnnouncements,
+    baseCurrency: baseCurrency ?? _baseCurrency,
   );
 
   String? get theme => _theme;
@@ -60,6 +66,7 @@ class UpdatePreferenceRequest {
   bool? get receiveCommunityUpdates => _receiveCommunityUpdates;
   bool? get eventReminders => _eventReminders;
   bool? get deathAnnouncements => _deathAnnouncements;
+  String? get baseCurrency => _baseCurrency;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -70,6 +77,9 @@ class UpdatePreferenceRequest {
     map['receiveCommunityUpdates'] = _receiveCommunityUpdates;
     map['eventReminders'] = _eventReminders;
     map['deathAnnouncements'] = _deathAnnouncements;
+    if (_baseCurrency != null && _baseCurrency!.trim().isNotEmpty) {
+      map['baseCurrency'] = _baseCurrency!.trim().toUpperCase();
+    }
     return map;
   }
 

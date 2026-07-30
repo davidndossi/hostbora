@@ -237,7 +237,7 @@ class _PlanCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        priceOverride ?? 'TZS ${_fmt(info.price)}',
+                        priceOverride ?? info.priceFormatted,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -302,7 +302,7 @@ class _PlanCard extends StatelessWidget {
                         child: Text(
                           usesAppleIap
                               ? 'Subscribe — ${priceOverride ?? 'App Store'}'
-                              : 'Subscribe — TZS ${_fmt(info.price)}/mo',
+                              : 'Subscribe — ${info.priceFormatted}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -315,16 +315,6 @@ class _PlanCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  static String _fmt(int n) {
-    final s = n.toString();
-    final buf = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-      buf.write(s[i]);
-    }
-    return buf.toString();
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/service/launch_prompt_gate.dart';
 import '../../../core/utils/booking_api_response.dart';
 import '../../../core/values/text_styles.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
@@ -15,17 +16,23 @@ import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../data/repository/app_repository.dart';
-import '../../../data/service/subscription_service.dart';
 import '../../../routes/app_pages.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../host_calendar/controllers/host_calendar_controller.dart';
+import '../../main/controllers/bottom_nav_controller.dart';
+import '../../main/controllers/main_controller.dart';
+import '../../main/model/menu_code.dart';
 import '../../main/widgets/nav_tab_spotlight_overlay.dart';
 import '../widgets/quick_actions_dialog.dart';
 import '/app/core/base/base_controller.dart';
+
+/// Progressive disclosure stages for Home.
+enum HomeExperienceStage { noProperties, firstWeek, established }
 
 class HomeController extends BaseController with GetTickerProviderStateMixin {
   final unreadCount = 0.obs;
@@ -61,7 +68,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final showList = false.obs;
 
   final activeBookings = 0.obs;
-  final monthlyRevenue = 'TZS 0'.obs;
+  final monthlyRevenue = RxString(CurrencyService.zeroLabel());
   final bookingsChange = '+0% from last month'.obs;
   final revenueChange = '+0% from last month'.obs;
 
@@ -101,7 +108,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   final bnbBookingsCount = 0.obs;
   final bnbGuestsCount = 0.obs;
-  final bnbTodayRevenue = 'TZS 0'.obs;
+  final bnbTodayRevenue = RxString(CurrencyService.zeroLabel());
   final bnbUnitsCount = 0.obs;
   /// Average daily occupancy % for the current week (0–100).
   final bnbOccupancyRate = 0.obs;
@@ -115,33 +122,130 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   /// % of expected monthly rent that has been collected this month.
   final collectionRate = 0.obs;
 
+  /// Home workspace chip: `all` | `bnb` | `rent`.
+  final homeWorkspaceFilter = 'all'.obs;
+
+  /// Derived from the host's properties: `bnb` | `rent` | `both`.
+  /// Single-mode portfolios lock Home to that role (no mode chips).
+  final homePortfolioRole = 'bnb'.obs;
+
+  /// Which Today alert's guest list is expanded (`checkin` / `checkout` / `upcoming`).
+  final todayExpandedKey = RxnString();
+
+  /// Progressive Home stage: empty → first week → established.
+  final homeExperienceStage = HomeExperienceStage.noProperties.obs;
+
+  bool get isFirstWeekHome =>
+      homeExperienceStage.value == HomeExperienceStage.firstWeek;
+
+  bool get isEstablishedHome =>
+      homeExperienceStage.value == HomeExperienceStage.established;
+
   @override
   void onInit() {
     super.onInit();
+    unawaited(_initHomeWorkspaceFilter());
     loadHomeData();
-    _maybeShowTrialPrompt();
   }
 
-  /// Nudges first-time users to start a trial after the home screen settles.
-  ///
-  /// Skipped once the host has added at least one property — those users get
-  /// the "What would you like to do?" quick-actions dialog instead
-  /// ([_maybeShowQuickActionsDialog]), so this timer doesn't race it and steal
-  /// the screen with a subscription redirect before the dialog gets a chance
-  /// to show.
-  Future<void> _maybeShowTrialPrompt() async {
-    await Future.delayed(const Duration(seconds: 2));
-    if (hasAnyProperty.value) return;
+  Future<void> _initHomeWorkspaceFilter() async {
     try {
-      final subscriptionSvc = Get.find<SubscriptionService>();
-      if (subscriptionSvc.hasNoSubscription) {
-        Get.toNamed(Routes.SUBSCRIPTION);
+      final saved = await _preferenceManager.getString(
+        PreferenceManager.keyHomeWorkspaceFilter,
+        defaultValue: '',
+      );
+      if (saved == 'all' || saved == 'bnb' || saved == 'rent') {
+        homeWorkspaceFilter.value = saved;
+        return;
       }
+      // Default to the user's preferred workspace (not "all") to reduce noise.
+      if (Get.isRegistered<WorkspaceContextService>()) {
+        final ws = await Get.find<WorkspaceContextService>().getWorkspaceType();
+        homeWorkspaceFilter.value = ws == 'rent' ? 'rent' : 'bnb';
+      }
+    } catch (_) {}
+  }
+
+  Future<void> setHomeWorkspaceFilter(String value) async {
+    // Single-mode portfolios stay locked to their role.
+    final role = homePortfolioRole.value;
+    if (role == 'bnb' || role == 'rent') {
+      homeWorkspaceFilter.value = role;
+      return;
+    }
+    final next = value == 'bnb' || value == 'rent' ? value : 'all';
+    homeWorkspaceFilter.value = next;
+    todayExpandedKey.value = null;
+    try {
+      await _preferenceManager.setString(
+        PreferenceManager.keyHomeWorkspaceFilter,
+        next,
+      );
+    } catch (_) {}
+  }
+
+  bool get showWorkspaceFilterChips => homePortfolioRole.value == 'both';
+
+  bool get showBnbHomeContent {
+    final role = homePortfolioRole.value;
+    if (role == 'bnb') return true;
+    if (role == 'rent') return false;
+    final f = homeWorkspaceFilter.value;
+    return f == 'all' || f == 'bnb';
+  }
+
+  bool get showRentHomeContent {
+    final role = homePortfolioRole.value;
+    if (role == 'rent') return true;
+    if (role == 'bnb') return false;
+    final f = homeWorkspaceFilter.value;
+    return f == 'all' || f == 'rent';
+  }
+
+  /// Opens the single Create menu. Never auto-shown.
+  Future<void> openCreateMenu() async {
+    if (!hasAnyProperty.value) {
+      await addListing();
+      return;
+    }
+    try {
+      await showCreateMenu(
+        onDataChanged: () => loadHomeData(refresh: true),
+        portfolioRole: homePortfolioRole.value,
+      );
+    } catch (_) {}
+  }
+
+  /// People list — always [Routes.ALL_TENANTS] (BnB guests + rent tenants).
+  void openPeople() => Get.toNamed(Routes.ALL_TENANTS);
+
+  /// Switches main shell to the Properties tab (preferred over a stacked route).
+  void openPropertiesTab() {
+    try {
+      Get.find<MainController>().onMenuSelected(MenuCode.PROPERTIES);
+      Get.find<BottomNavController>().updateSelectedIndex(1);
     } catch (_) {
-      // SubscriptionService not yet available — skip silently.
+      Get.toNamed(Routes.MY_PROPERTIES);
     }
   }
 
+  /// Role-aware first action for first-week Home.
+  Future<void> openPrimaryCreateAction() async {
+    if (showBnbHomeContent && !showRentHomeContent) {
+      await addNewBooking();
+      return;
+    }
+    if (showRentHomeContent && !showBnbHomeContent) {
+      await Get.toNamed(Routes.ADD_NEW_TENANT);
+      return;
+    }
+    await openCreateMenu();
+  }
+
+  void toggleTodayDetail(String key) {
+    todayExpandedKey.value =
+        todayExpandedKey.value == key ? null : key;
+  }
 
   Future<void> loadHomeData({bool refresh = false}) async {
     if (refresh) {
@@ -156,7 +260,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         _loadBnbOverviewStats(),
         _loadRentOverviewStats(),
         _loadPropertyPresence(),
+        _loadPortfolioRole(),
       ]);
+      await _resolveExperienceStage();
     } catch (e) {
       if (e is Exception) {
         showErrorMessage(e.toString());
@@ -167,25 +273,76 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       homeHasLoaded.value = true;
       if (!refresh) {
         unawaited(_maybeShowPropertiesTabSpotlight());
-        unawaited(_maybeShowQuickActionsDialog());
       }
     }
   }
 
-  /// True once this session's "What would you like to do?" quick-actions
-  /// dialog has been offered (shown or skipped), so it never appears more
-  /// than once per login/Home lifetime.
-  bool _hasOfferedQuickActionsDialog = false;
+  Future<void> _resolveExperienceStage() async {
+    if (!hasAnyProperty.value) {
+      homeExperienceStage.value = HomeExperienceStage.noProperties;
+      return;
+    }
+    try {
+      var firstMs = await _preferenceManager.getInt(
+        PreferenceManager.keyFirstPropertyAtMs,
+        defaultValue: 0,
+      );
+      if (firstMs <= 0) {
+        firstMs = DateTime.now().millisecondsSinceEpoch;
+        await _preferenceManager.setInt(
+          PreferenceManager.keyFirstPropertyAtMs,
+          firstMs,
+        );
+      }
+      final days = DateTime.now()
+          .difference(DateTime.fromMillisecondsSinceEpoch(firstMs))
+          .inDays;
+      homeExperienceStage.value = days < 7
+          ? HomeExperienceStage.firstWeek
+          : HomeExperienceStage.established;
+    } catch (_) {
+      homeExperienceStage.value = HomeExperienceStage.established;
+    }
+  }
+
+  /// Infers whether this host runs BnB, Rent, or both from property modes.
+  Future<void> _loadPortfolioRole() async {
+    try {
+      final bnbRows = await _propertyLocal.getAllByWorkspace(
+        userId: '',
+        workspaceType: 'bnb',
+      );
+      final rentRows = await _propertyLocal.getAllByWorkspace(
+        userId: '',
+        workspaceType: 'rent',
+      );
+      var hasBnb = false;
+      var hasRent = false;
+      for (final r in [...bnbRows, ...rentRows]) {
+        final mode = r.workspaceType.trim().toLowerCase();
+        if (mode == 'bnb' || mode == 'both') hasBnb = true;
+        if (mode == 'rent' || mode == 'both') hasRent = true;
+      }
+      // A property tagged only as the queried workspace still counts.
+      if (bnbRows.isNotEmpty) hasBnb = true;
+      if (rentRows.isNotEmpty) hasRent = true;
+
+      final role = hasBnb && hasRent
+          ? 'both'
+          : hasRent && !hasBnb
+              ? 'rent'
+              : 'bnb';
+      homePortfolioRole.value = role;
+      if (role == 'bnb' || role == 'rent') {
+        homeWorkspaceFilter.value = role;
+      }
+    } catch (_) {
+      // Keep previous role on failure.
+    }
+  }
 
   /// Polls until Home is idle (on the MAIN route, no dialog/bottom-sheet
   /// already showing) or [maxWait] elapses, whichever comes first.
-  ///
-  /// Startup-time overlays — the app-update sheet, the trial prompt, an
-  /// error snackbar, etc. — can appear at almost the same moment as our own
-  /// nudges. A single point-in-time check for "is the screen free?" is
-  /// fragile: if it loses that race even briefly, the nudge silently never
-  /// shows for the rest of the session. Polling gives those transient
-  /// overlays a chance to clear first.
   Future<bool> _waitUntilHomeIsIdle({
     required Duration maxWait,
     Duration pollEvery = const Duration(milliseconds: 500),
@@ -198,35 +355,6 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       if (isFree) return true;
       if (DateTime.now().isAfter(deadline)) return false;
       await Future.delayed(pollEvery);
-    }
-  }
-
-  /// Nudges returning users (who already have at least one property) with a
-  /// dismissible dialog of common next actions shortly after Home settles.
-  Future<void> _maybeShowQuickActionsDialog() async {
-    if (_hasOfferedQuickActionsDialog) return;
-    if (!hasAnyProperty.value) return;
-
-    await Future.delayed(const Duration(milliseconds: 2500));
-    if (_hasOfferedQuickActionsDialog) return;
-    if (!hasAnyProperty.value) return;
-
-    // Give any startup overlay (app-update sheet, trial prompt, ...) up to
-    // 8 more seconds to clear before giving up on this session entirely.
-    final isIdle = await _waitUntilHomeIsIdle(
-      maxWait: const Duration(seconds: 8),
-    );
-    if (!isIdle) return;
-    if (_hasOfferedQuickActionsDialog) return;
-    if (!hasAnyProperty.value) return;
-
-    _hasOfferedQuickActionsDialog = true;
-    try {
-      await showQuickActionsDialog(
-        onDataChanged: () => loadHomeData(refresh: true),
-      );
-    } catch (_) {
-      // Best-effort guidance only — never let this break Home.
     }
   }
 
@@ -250,13 +378,17 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     if (alreadySeen) return;
 
     await Future.delayed(const Duration(milliseconds: 3200));
-    if (hasAnyProperty.value) return; // re-check: property may have been added meanwhile
+    if (hasAnyProperty.value) return;
 
     final isIdle = await _waitUntilHomeIsIdle(
       maxWait: const Duration(seconds: 8),
     );
     if (!isIdle) return;
     if (hasAnyProperty.value) return;
+    if (Get.isRegistered<LaunchPromptGate>() &&
+        !Get.find<LaunchPromptGate>().tryClaimSoftPrompt()) {
+      return;
+    }
 
     try {
       await _preferenceManager.setBool(
@@ -271,14 +403,15 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   Future<void> _loadOverview() async {
     var remoteActive = 0;
-    var remoteRevenueLabel = 'TZS 0';
+    var remoteRevenueLabel = CurrencyService.zeroLabel();
     String? remoteBookingsChange;
     try {
       final res = await _repository.getHomeOverview();
       if (res.responseCode == '0' && res.data != null) {
         final d = res.data! as Map<String, dynamic>;
         remoteActive = (d['activeBookings'] as num?)?.toInt() ?? 0;
-        remoteRevenueLabel = (d['monthlyRevenue'] as String?) ?? 'TZS 0';
+        remoteRevenueLabel = (d['monthlyRevenue'] as String?) ??
+            CurrencyService.zeroLabel();
         remoteBookingsChange = (d['bookingsChange'] as String?)?.trim();
       }
     } catch (_) {}
@@ -830,10 +963,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void properties() => Get.toNamed(Routes.MY_PROPERTIES);
 
-  void tenants() => Get.toNamed(
-    Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,
-    arguments: {'ws': ''},
-  );
+  /// Same destination as Snapshot "Tenants" / Shortcuts "Tenants".
+  void tenants() => openPeople();
 
   void sendSmsWhatsapp() =>
       Get.toNamed(Routes.SEND_SMS, arguments: const {'workspace': ''});
@@ -890,7 +1021,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         arguments: {'workspaceFilter': 'rent'},
       );
 
-  void openAllTenants() => Get.toNamed(Routes.ALL_TENANTS);
+  void openAllTenants() => openPeople();
 
   void aiInsights() =>
       Get.toNamed(Routes.AI_INSIGHTS, arguments: const {'source': 'insights'});

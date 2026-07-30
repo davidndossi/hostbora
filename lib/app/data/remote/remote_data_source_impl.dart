@@ -8,6 +8,7 @@ import '../model/inventory_item_request.dart';
 import '../model/add_task_request.dart';
 import '../model/record_client_event_request.dart';
 import '../model/schedule_payment_reminder_request.dart';
+import '../model/recurring_reminder_request.dart';
 import '../model/submit_tenant_rating_request.dart';
 import '../model/change_password_request.dart';
 import '../model/cancel_booking_request.dart';
@@ -46,6 +47,22 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   Future<LoginResponse> signIn(LoginRequest request) {
     var endpoint = '${DioProvider.baseUrl}/api/auth/login';
     var dioCall = dioClient.post(endpoint, data: request.toJson());
+
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => LoginResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<LoginResponse> refreshSession(String refreshToken) {
+    var endpoint = '${DioProvider.baseUrl}/api/auth/refresh';
+    var dioCall = dioClient.post(
+      endpoint,
+      data: {'refresh_token': refreshToken},
+    );
 
     try {
       return callApiWithErrorParser(dioCall)
@@ -159,7 +176,7 @@ class RemoteDataSourceImpl extends BaseRemoteSource
 
   @override
   Future<GeneralResponse> updateSettingsPreferences(UpdatePreferenceRequest request) {
-    var endpoint = '${DioProvider.baseUrl}/api/user/update/preference';
+    var endpoint = '${DioProvider.baseUrl}/api/users/update/preference';
     var dioCall = dioClient.post(endpoint, data: request);
 
     try {
@@ -866,6 +883,49 @@ class RemoteDataSourceImpl extends BaseRemoteSource
     } catch (e) {
       rethrow;
     }
+  }
+
+  @override
+  Future<GeneralResponse> createRecurringReminder(
+    RecurringReminderRequest request,
+  ) {
+    final endpoint = '${DioProvider.baseUrl}/api/recurring-reminders';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    return callApiWithErrorParser(dioCall)
+        .then((response) => GeneralResponse.fromJson(response.data));
+  }
+
+  @override
+  Future<GeneralResponse> createBulkRecurringReminders(
+    BulkRecurringReminderRequest request,
+  ) {
+    final endpoint = '${DioProvider.baseUrl}/api/recurring-reminders/bulk';
+    final dioCall = dioClient.post(endpoint, data: request.toJson());
+    return callApiWithErrorParser(dioCall)
+        .then((response) => GeneralResponse.fromJson(response.data));
+  }
+
+  @override
+  Future<GeneralResponse> listRecurringReminders() {
+    final endpoint = '${DioProvider.baseUrl}/api/recurring-reminders';
+    final dioCall = dioClient.get(endpoint);
+    return callApiWithErrorParser(dioCall)
+        .then((response) => GeneralResponse.fromJson(response.data));
+  }
+
+  @override
+  Future<GeneralResponse> updateRecurringReminderLeaseDecision(
+    String id, {
+    required bool continueAfterLeaseExpiry,
+  }) {
+    final endpoint =
+        '${DioProvider.baseUrl}/api/recurring-reminders/$id/lease-decision';
+    final dioCall = dioClient.patch(
+      endpoint,
+      data: {'continueAfterLeaseExpiry': continueAfterLeaseExpiry},
+    );
+    return callApiWithErrorParser(dioCall)
+        .then((response) => GeneralResponse.fromJson(response.data));
   }
 
   @override

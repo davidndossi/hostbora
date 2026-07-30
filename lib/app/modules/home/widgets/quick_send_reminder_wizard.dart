@@ -7,6 +7,7 @@ import '../../../core/utils/haptic_feedback_util.dart';
 import '../../../data/local/db/client_event_local_data_source.dart';
 import '../../../data/local/db/rent_whatsapp_template_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../data/model/send_sms_request.dart';
 import '../../../data/repository/app_repository.dart';
 import 'quick_wizard_shell.dart';
@@ -60,11 +61,10 @@ class _QuickSendReminderWizardBodyState
   final _whatsappTemplates = <_ReminderTemplateOption>[];
   String? _selectedWhatsappTemplateId;
 
-  static final NumberFormat _currency = NumberFormat.currency(
-    symbol: 'Tsh ',
-    decimalDigits: 0,
-  );
   static final DateFormat _dateDisplay = DateFormat('dd/MM/yyyy');
+
+  String _formatBalance(num amount) =>
+      Get.find<CurrencyService>().formatBase(amount.round());
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
@@ -209,7 +209,7 @@ class _QuickSendReminderWizardBodyState
         : tenant.tenantName.split(RegExp(r'\s+')).first;
     return template
         .replaceAll('{tenantName}', firstName)
-        .replaceAll('{balance}', _currency.format(tenant.rentAmountValue))
+        .replaceAll('{balance}', _formatBalance(tenant.rentAmountValue))
         .replaceAll('{property}', _propertyTitle(tenant))
         .replaceAll('{dueDate}', _defaultDueDate());
   }
@@ -218,7 +218,7 @@ class _QuickSendReminderWizardBodyState
     if (_selectedTenantIds.isEmpty) {
       return template
           .replaceAll('{tenantName}', _t('Tenant', 'Mpangaji'))
-          .replaceAll('{balance}', _currency.format(0))
+          .replaceAll('{balance}', _formatBalance(0))
           .replaceAll('{property}', _t('Property', 'Mali'))
           .replaceAll('{dueDate}', _defaultDueDate());
     }
@@ -337,7 +337,7 @@ class _QuickSendReminderWizardBodyState
         ? _t('Tenant', 'Mpangaji')
         : tenant.tenantName.split(RegExp(r'\s+')).first;
     out = out.replaceAll(firstName, '{tenantName}');
-    out = out.replaceAll(_currency.format(tenant.rentAmountValue), '{balance}');
+    out = out.replaceAll(_formatBalance(tenant.rentAmountValue), '{balance}');
     out = out.replaceAll(_propertyTitle(tenant), '{property}');
     out = out.replaceAll(_defaultDueDate(), '{dueDate}');
     return out;

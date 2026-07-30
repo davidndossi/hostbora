@@ -1,12 +1,14 @@
 import 'package:get/get.dart';
 import 'dart:convert';
 
+import '../core/service/launch_prompt_gate.dart';
 import '../data/local/db/property_local_data_source.dart';
 import '../data/local/db/property_unit_local_data_source.dart';
 import '/app/data/model/add_task_request.dart';
 import '/app/data/model/scheduled_maintenance_request.dart';
 import '/app/data/model/inventory_item_request.dart';
 import '/app/data/model/schedule_payment_reminder_request.dart';
+import '/app/data/model/recurring_reminder_request.dart';
 import '/app/data/model/add_expense_request.dart';
 import '/app/data/model/add_listing_request.dart';
 import '/app/data/model/cancel_booking_request.dart';
@@ -17,6 +19,9 @@ import '/app/data/model/record_payment_request.dart';
 import '/app/data/model/staff_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/data/local/db/rent_payment_reminder_local_data_source.dart';
+import '/app/data/local/db/recurring_reminder_local_data_source.dart';
+import '/app/data/local/db/scheduled_whatsapp_local_data_source.dart';
+import '/app/data/local/db/scheduled_sms_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
 import '/app/data/local/service/offline_sync_ui_refresh.dart';
 import '/app/data/local/db/property_members_local_data_source.dart';
@@ -44,11 +49,16 @@ import '/app/data/local/service/portfolio_ai_hybrid_service.dart';
 import '/app/data/local/service/rent_real_data_snapshot_service.dart';
 import '/app/data/local/service/property_break_even_notification_service.dart';
 import '/app/data/local/service/rent_notification_rules_service.dart';
+import '/app/data/local/service/reminder_types_service.dart';
+import '/app/data/local/service/recurring_reminder_dispatch_service.dart';
+import '/app/data/local/service/scheduled_sms_dispatch_service.dart';
+import '/app/data/local/service/lease_expiry_reminder_prompt_service.dart';
 import '/app/data/local/service/remote_account_sync_service.dart';
 import '/app/data/local/service/bnb_messaging_contacts_service.dart';
 import '/app/data/local/service/scheduled_whatsapp_dispatch_service.dart';
 import '/app/data/local/service/tenant_lease_reminder_service.dart';
 import '/app/data/local/service/workspace_context_service.dart';
+import '/app/data/local/service/session_service.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/data/local/preference/preference_manager_impl.dart';
 import '/app/data/service/app_review_service.dart';
@@ -61,6 +71,12 @@ class LocalSourceBindings implements Bindings {
       tag: (PreferenceManager).toString(),
       fenix: true,
     );
+    Get.put<SessionService>(
+      SessionService(
+        Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
+      ),
+      permanent: true,
+    );
     Get.put<WorkspaceContextService>(
       WorkspaceContextService(
         preferenceManager: Get.find<PreferenceManager>(
@@ -69,6 +85,7 @@ class LocalSourceBindings implements Bindings {
       ),
       permanent: true,
     ).init();
+    Get.put<LaunchPromptGate>(LaunchPromptGate(), permanent: true);
     Get.put<AppReviewService>(
       AppReviewService(
         preferenceManager: Get.find<PreferenceManager>(
@@ -157,6 +174,14 @@ class LocalSourceBindings implements Bindings {
       () => RentPaymentReminderLocalDataSource(),
       fenix: true,
     );
+    Get.lazyPut<RecurringReminderLocalDataSource>(
+      () => RecurringReminderLocalDataSource(),
+      fenix: true,
+    );
+    Get.lazyPut<ScheduledSmsLocalDataSource>(
+      () => ScheduledSmsLocalDataSource(),
+      fenix: true,
+    );
     Get.lazyPut<RentNotificationLogLocalDataSource>(
       () => RentNotificationLogLocalDataSource(),
       fenix: true,
@@ -226,12 +251,43 @@ class LocalSourceBindings implements Bindings {
       ),
       fenix: true,
     );
+    Get.put<ReminderTypesService>(
+      ReminderTypesService(
+        preferenceManager: Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+      ),
+      permanent: true,
+    );
     Get.put<ScheduledWhatsappDispatchService>(
       ScheduledWhatsappDispatchService(
         repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
       ),
       permanent: true,
     ).start();
+    Get.put<ScheduledSmsDispatchService>(
+      ScheduledSmsDispatchService(
+        repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
+      ),
+      permanent: true,
+    ).start();
+    Get.put<RecurringReminderDispatchService>(
+      RecurringReminderDispatchService(
+        recurringLocal: Get.find<RecurringReminderLocalDataSource>(),
+        whatsappLocal: ScheduledWhatsappLocalDataSource(),
+        smsLocal: Get.find<ScheduledSmsLocalDataSource>(),
+        notificationScheduler: Get.find<LocalNotificationSchedulerService>(),
+        repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
+      ),
+      permanent: true,
+    ).start();
+    Get.put<LeaseExpiryReminderPromptService>(
+      LeaseExpiryReminderPromptService(
+        recurringLocal: Get.find<RecurringReminderLocalDataSource>(),
+        repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
+      ),
+      permanent: true,
+    );
     Get.put<PropertyBreakEvenNotificationService>(
       PropertyBreakEvenNotificationService(
         estimateLocal: Get.find<RentPropertyEstimateLocalDataSource>(),
@@ -479,6 +535,43 @@ class LocalSourceBindings implements Bindings {
         final localId = map['localId'] as int?;
         if (localId != null) {
           await Get.find<RentPaymentReminderLocalDataSource>().updateSyncStatus(
+            localId,
+            'synced',
+          );
+        }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'recurring_reminder',
+      operation: 'create',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        await repository.createRecurringReminder(
+          RecurringReminderRequest(
+            tenantId: map['tenantId'] as String? ?? '',
+            tenantName: map['tenantName'] as String? ?? '',
+            propertyRef: map['propertyRef'] as String? ?? '',
+            propertyLabel: map['propertyLabel'] as String? ?? '',
+            recipientPhone: map['recipientPhone'] as String? ?? '',
+            reminderType: map['reminderType'] as String? ?? 'pay_rent',
+            customTypeLabel: map['customTypeLabel'] as String? ?? '',
+            amountTsh: (map['amountTsh'] as num?)?.toInt() ?? 0,
+            messageTemplate: map['messageTemplate'] as String? ?? '',
+            recurrence: map['recurrence'] as String? ?? 'monthly_first',
+            timeOfDay: map['timeOfDay'] as String? ?? '09:00',
+            pushEnabled: map['pushEnabled'] as bool? ?? true,
+            whatsappEnabled: map['whatsappEnabled'] as bool? ?? true,
+            smsEnabled: map['smsEnabled'] as bool? ?? false,
+            leaseEndIso: map['leaseEndIso'] as String? ?? '',
+            nextRunAtIso: map['nextRunAtIso'] as String? ?? '',
+          ),
+        );
+        final localId = map['localId'] as int?;
+        if (localId != null) {
+          await Get.find<RecurringReminderLocalDataSource>().updateSyncStatus(
             localId,
             'synced',
           );

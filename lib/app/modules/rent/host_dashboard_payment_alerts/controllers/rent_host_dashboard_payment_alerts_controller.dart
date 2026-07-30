@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
@@ -213,7 +214,8 @@ class RentHostDashboardPaymentAlertsController extends BaseController
     }
   }
 
-  String formatMoney(double amount) => NumberFormat('#,###', 'en_US').format(amount.round());
+  String formatMoney(double amount) =>
+      Get.find<CurrencyService>().formatBase(amount.round());
 
   String formatDueDate(DateTime date) => DateFormat('dd/MM').format(date);
 
@@ -257,9 +259,9 @@ class RentHostDashboardPaymentAlertsController extends BaseController
     final first = urgentAlerts.isNotEmpty ? urgentAlerts.first : null;
     final tenantName = first?.tenant ?? 'Tenant payment reminder';
     final property = first?.propertyLabel ?? '';
-    final balance = first != null ? formatMoney(first.balance) : '';
+    final balance = first != null ? first.balance.round().toString() : '';
     Get.toNamed(
-      Routes.RENT_SCHEDULE_PAYMENT_REMINDER,
+      Routes.RENT_RECURRING_REMINDERS,
       parameters: {
         'name': tenantName,
         'property': property,
@@ -282,11 +284,11 @@ class RentHostDashboardPaymentAlertsController extends BaseController
 
   void onSendLateNotice(HostPaymentAlertItem item) {
     Get.toNamed(
-      Routes.RENT_SCHEDULE_PAYMENT_REMINDER,
+      Routes.RENT_RECURRING_REMINDERS,
       parameters: {
         'name': item.tenant,
         'property': item.propertyLabel,
-        'balance': formatMoney(item.balance),
+        'balance': item.balance.round().toString(),
       },
     );
   }

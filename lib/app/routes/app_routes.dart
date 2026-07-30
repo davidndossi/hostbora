@@ -100,6 +100,7 @@ abstract class Routes {
   static const TENANTS = _Paths.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER;
   static const RENT_TENANT_LEDGER_OCCUPANCY = _Paths.RENT_TENANT_LEDGER_OCCUPANCY;
   static const RENT_SCHEDULE_PAYMENT_REMINDER = _Paths.RENT_SCHEDULE_PAYMENT_REMINDER;
+  static const RENT_RECURRING_REMINDERS = _Paths.RENT_RECURRING_REMINDERS;
   static const RENT_DEFINE_LOYALTY_OFFERS = _Paths.RENT_DEFINE_LOYALTY_OFFERS;
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = _Paths.RENT_ACTIVE_LOYALTY_PROGRAMS;
   static const RENT_SMART_UTILITY_DASHBOARD = _Paths.RENT_SMART_UTILITY_DASHBOARD;
@@ -211,6 +212,7 @@ abstract class _Paths {
   static const RENT_TENANT_RESIDENCY_PAYMENT_TRACKER = '/rent/tenant-residency-payment-tracker';
   static const RENT_TENANT_LEDGER_OCCUPANCY = '/rent/tenant-ledger-occupancy';
   static const RENT_SCHEDULE_PAYMENT_REMINDER = '/rent/schedule-payment-reminder';
+  static const RENT_RECURRING_REMINDERS = '/rent/recurring-reminders';
   static const RENT_DEFINE_LOYALTY_OFFERS = '/rent/define-loyalty-offers';
   static const RENT_ACTIVE_LOYALTY_PROGRAMS = '/rent/active-loyalty-programs';
   static const RENT_SMART_UTILITY_DASHBOARD = '/rent/smart-utility-dashboard';

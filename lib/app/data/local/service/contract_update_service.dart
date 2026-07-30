@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../db/tenant_local_data_source.dart';
+import 'currency_service.dart';
 
 /// Extracts probable date patterns from raw contract text.
 ///
@@ -82,7 +84,7 @@ class ContractUpdateService {
               _field('Expiry Date', endDisplay),
               _field(
                 'Rent Amount',
-                'TZS ${_fmtAmount(tenant.rentAmountValue)} (${tenant.rentFrequency})',
+                '${_formatRent(tenant.rentAmountValue)} (${tenant.rentFrequency})',
               ),
               pw.SizedBox(height: 24),
               pw.Divider(),
@@ -185,6 +187,13 @@ class ContractUpdateService {
         ),
       ],
     );
+  }
+
+  static String _formatRent(double amount) {
+    if (Get.isRegistered<CurrencyService>()) {
+      return Get.find<CurrencyService>().formatBase(amount.round());
+    }
+    return '${CurrencyService.symbolFor(CurrencyService.defaultBaseCurrency)}${_fmtAmount(amount)}';
   }
 
   static String _fmtAmount(double amount) {

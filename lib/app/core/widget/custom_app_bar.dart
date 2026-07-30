@@ -7,6 +7,7 @@ import '/app/core/theme/theme_controller.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/core/values/app_colors.dart';
 import '/app/core/widget/app_bar_title.dart';
+import '/app/core/widget/base_currency_dialog.dart';
 
 //Default appbar customized with the design of our app
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -84,9 +85,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           },
         ),
       IconButton(
-        tooltip: currentLang == 'sw' ? 'Kikasha' : 'Inbox',
-        icon: Icon(Icons.inbox_outlined, color: actionColor),
-        onPressed: () => Get.toNamed(Routes.RENT_CONCIERGE_INBOX),
+        tooltip: currentLang == 'sw' ? 'Zaidi' : 'More',
+        icon: Icon(Icons.more_vert, color: actionColor),
+        onPressed: () => _showAppBarMenu(context, currentLang),
       ),
     ];
 
@@ -106,6 +107,72 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       actionsIconTheme: IconThemeData(color: actionColor),
       title: AppBarTitle(text: appBarTitleText),
       bottom: bottom
+    );
+  }
+
+  void _showAppBarMenu(BuildContext context, String currentLang) {
+    final isSw = currentLang == 'sw';
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.currency_exchange_rounded),
+              title: Text(isSw ? 'Badilisha sarafu ya msingi' : 'Change base currency'),
+              subtitle: Text(
+                isSw
+                    ? 'Chagua sarafu ya ripoti na dashibodi'
+                    : 'Choose currency for reports and dashboards',
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                showBaseCurrencyDialog(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.inbox_outlined),
+              title: Text(isSw ? 'Kikasha' : 'Inbox'),
+              subtitle: Text(
+                isSw ? 'Taarifa na ujumbe' : 'Notifications and messages',
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                Get.toNamed(Routes.RENT_CONCIERGE_INBOX);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.help_outline_rounded),
+              title: Text(isSw ? 'Kituo cha msaada' : 'Help center'),
+              subtitle: Text(
+                isSw
+                    ? 'Maswali yanayoulizwa sana na mwongozo'
+                    : 'FAQs and how-to guides',
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                Get.toNamed(Routes.HELP_CENTER);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: Text(isSw ? 'Mipangilio' : 'Settings'),
+              subtitle: Text(
+                isSw
+                    ? 'Akaunti, PIN, na mapendeleo'
+                    : 'Account, PIN, and preferences',
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                Get.toNamed(Routes.SETTINGS);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
     );
   }
 }
