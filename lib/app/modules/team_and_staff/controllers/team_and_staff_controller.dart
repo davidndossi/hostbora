@@ -6,6 +6,7 @@ import '../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../rent/staff_management/controllers/rent_staff_management_controller.dart';
 
 class TeamAndStaffController extends BaseController {
   TeamAndStaffController()
@@ -167,12 +168,19 @@ class TeamAndStaffController extends BaseController {
     // TODO: open chat with staff
   }
 
-  void editStaff(StaffMember member) {
-    final f = Get.toNamed(
-      Routes.RENT_STAFF_MANAGEMENT,
-      arguments: {'staffId': member.id},
-    );
-    if (f != null) f.then((_) => loadStaff());
+  Future<void> editStaff(StaffMember member) async {
+    // Open the edit sheet immediately. Navigating to Staff Management with
+    // arguments often no-ops when RentStaffManagementController is already
+    // registered (fenix) from listing details.
+    if (!Get.isRegistered<RentStaffManagementController>()) {
+      Get.put(RentStaffManagementController());
+    }
+    final staffCtrl = Get.find<RentStaffManagementController>();
+    if (staffCtrl.staff.isEmpty) {
+      await staffCtrl.loadStaff();
+    }
+    await staffCtrl.editStaffById(member.id);
+    await loadStaff();
   }
 
   void openStaffDetail(StaffMember member) {

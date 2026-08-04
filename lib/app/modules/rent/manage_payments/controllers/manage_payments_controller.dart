@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/values/app_colors.dart';
 import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
@@ -127,8 +128,9 @@ class ManagePaymentsController extends BaseController {
       firstDate: DateTime(2018),
       lastDate: DateTime(2100),
       locale: const Locale('en', 'GB'),
+      builder: _datePickerBuilder,
     );
-    
+
     if (picked != null) {
       filterStart.value = DateTime(picked.year, picked.month, picked.day);
       refreshRows();
@@ -145,12 +147,31 @@ class ManagePaymentsController extends BaseController {
       firstDate: DateTime(2018),
       lastDate: DateTime(2100),
       locale: const Locale('en', 'GB'),
+      builder: _datePickerBuilder,
     );
-    
+
     if (picked != null) {
       filterEnd.value = DateTime(picked.year, picked.month, picked.day);
       refreshRows();
     }
+  }
+
+  /// Ensures selected-day contrast in dark theme (primary fill + white text).
+  static Widget _datePickerBuilder(BuildContext context, Widget? child) {
+    final base = Theme.of(context);
+    final isDark = base.brightness == Brightness.dark;
+    if (!isDark || child == null) return child ?? const SizedBox.shrink();
+    return Theme(
+      data: base.copyWith(
+        colorScheme: base.colorScheme.copyWith(
+          primary: AppColors.colorPrimary,
+          onPrimary: Colors.white,
+          surface: const Color(0xFF2C2C2E),
+          onSurface: Colors.white,
+        ),
+      ),
+      child: child,
+    );
   }
 
   void clearDateFilters() {

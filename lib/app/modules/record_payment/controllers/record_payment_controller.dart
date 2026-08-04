@@ -417,11 +417,16 @@ class RecordPaymentController extends BaseController {
 
   Future<void> _initForm() async {
     selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
-    String workspace;
-    if (Get.parameters['workspaceType'] != null) {
-      workspace = Get.parameters['workspaceType'].toString();
-    } else {
+    // Prefer an explicit route workspace; otherwise load every workspace so
+    // rent-only hosts are not stuck with an empty "bnb"-filtered dropdown.
+    final routeWorkspace = Get.parameters['workspaceType']?.toString().trim();
+    final String workspace;
+    if (routeWorkspace != null && routeWorkspace.isNotEmpty) {
+      workspace = _normalizeWorkspace(routeWorkspace);
+    } else if (selectedPropertyRecord != null) {
       workspace = _normalizeWorkspace(selectedPropertyRecord?.workspaceType);
+    } else {
+      workspace = 'all';
     }
     final presetBooking = _routeBookingId();
     if (presetBooking.isNotEmpty) {

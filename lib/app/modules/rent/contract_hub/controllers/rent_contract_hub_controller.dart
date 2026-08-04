@@ -132,6 +132,11 @@ class RentContractHubController extends BaseController {
 
   void setSearch(String v) => searchQuery.value = v;
 
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
+  }
+
   void setFilterExpiringSoon(bool v) => filterExpiringSoon.value = v;
 
   Future<void> onRefresh() => loadContracts();

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../../network/exceptions/base_exception.dart';
 import '../../../routes/app_pages.dart';
 import '../../model/general_response.dart';
 import '../../repository/app_repository.dart';
@@ -15,24 +16,45 @@ enum QuickActionIntent {
   unknown,
 }
 
+/// Why free-text "Other" resolution could not open a screen.
+enum QuickActionFailureKind {
+  /// User submitted blank text.
+  empty,
+
+  /// Network / AI service error (or unexpected exception).
+  serviceUnavailable,
+
+  /// AI (and local heuristics) could not match the request to a known action.
+  unrecognized,
+}
+
 /// Result of classifying a free-text "Other (Specify)" request: either one
 /// of the five wizard-backed [QuickActionIntent]s, a direct HostBora route to
-/// open, or unknown (could not confidently classify).
+/// open, or a typed failure the UI can explain.
 class QuickActionResolution {
   const QuickActionResolution.wizard(QuickActionIntent action)
       : wizardAction = action,
-        routeName = null;
+        routeName = null,
+        failureKind = null,
+        failureDetail = null;
 
-  const QuickActionResolution.route(this.routeName) : wizardAction = null;
-
-  const QuickActionResolution.unknown()
+  const QuickActionResolution.route(this.routeName)
       : wizardAction = null,
+        failureKind = null,
+        failureDetail = null;
+
+  const QuickActionResolution.failure(
+    this.failureKind, {
+    this.failureDetail,
+  })  : wizardAction = null,
         routeName = null;
 
   final QuickActionIntent? wizardAction;
   final String? routeName;
+  final QuickActionFailureKind? failureKind;
+  final String? failureDetail;
 
-  bool get isUnknown => wizardAction == null && routeName == null;
+  bool get isSuccess => wizardAction != null || routeName != null;
 }
 
 /// Describes one other HostBora screen the free-text request can be routed
@@ -46,13 +68,9 @@ class _RouteEntry {
 
 /// Uses the app's existing generic AI passthrough (`AppRepository.sendAiRequest`,
 /// backed by `POST /api/ai/request`) to classify a free-text request typed by
-/// the user (the "Other (Specify)" option). The prompt gives the model
-/// context on the full HostBora app — both BnB and Rent management, finance,
-/// staff, documents, smart access, communications, and AI tools — plus a
-/// catalog of the concrete screens it can open, so it can route the request
-/// far beyond just the five headline quick actions. No new backend endpoint
-/// is required: the model is instructed to reply with strict JSON, which is
-/// parsed on the client.
+/// the user (the "Other (Specify)" option). High-confidence local keyword
+/// matching runs first so common HostBora requests still work when AI is
+/// offline or returns an unexpected payload.
 class QuickActionIntentResolver {
   QuickActionIntentResolver({required AppRepository repository})
       : _repository = repository;
@@ -222,6 +240,10 @@ class QuickActionIntentResolver {
       Routes.RENT_WHATSAPP_TEMPLATE_BUILDER,
       'build WhatsApp message templates for tenants',
     ),
+    'RENT_RECURRING_REMINDERS': _RouteEntry(
+      Routes.RENT_RECURRING_REMINDERS,
+      'schedule rent payment reminders for tenants',
+    ),
     'TEAM_AND_STAFF': _RouteEntry(
       Routes.TEAM_AND_STAFF,
       'team and staff list',
@@ -285,22 +307,184 @@ class QuickActionIntentResolver {
     ),
   };
 
-  /// Returns the resolved intent — a wizard action, a direct route, or
-  /// unknown if the AI could not confidently classify the request or the
-  /// call failed.
+  /// Returns the resolved intent — a wizard action, a direct route, or a
+  /// failure the UI can explain with a clear message.
   Future<QuickActionResolution> resolve(String freeText) async {
     final text = freeText.trim();
-    if (text.isEmpty) return const QuickActionResolution.unknown();
+    if (text.isEmpty) {
+      return const QuickActionResolution.failure(QuickActionFailureKind.empty);
+    }
+
+    final local = _matchLocally(text);
+    if (local != null) return local;
 
     try {
       final res = await _repository.sendAiRequest({
         'prompt': _buildPrompt(text),
         'type': 'quick_action_intent',
       });
-      return _parseResolution(res);
-    } catch (_) {
-      return const QuickActionResolution.unknown();
+
+      if (!res.isSuccess) {
+        final detail = res.message?.trim();
+        return QuickActionResolution.failure(
+          QuickActionFailureKind.serviceUnavailable,
+          failureDetail: (detail != null && detail.isNotEmpty) ? detail : null,
+        );
+      }
+
+      final parsed = _parseResolution(res);
+      if (parsed.isSuccess) return parsed;
+
+      // AI replied but we could not map it — treat as unrecognized.
+      return const QuickActionResolution.failure(
+        QuickActionFailureKind.unrecognized,
+      );
+    } catch (e) {
+      return QuickActionResolution.failure(
+        QuickActionFailureKind.serviceUnavailable,
+        failureDetail: _friendlyExceptionMessage(e),
+      );
     }
+  }
+
+  /// Local EN/SW phrase matching so everyday requests succeed even when AI
+  /// is offline. Longer / more specific phrases are checked first.
+  QuickActionResolution? _matchLocally(String text) {
+    final n = text.toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+    bool hasAny(List<String> phrases) =>
+        phrases.any((p) => n.contains(p));
+
+    if (hasAny([
+      'add property',
+      'new property',
+      'create property',
+      'register property',
+      'add listing',
+      'new listing',
+      'ongeza mali',
+      'sajili mali',
+      'mali mpya',
+      'ongeza nyumba',
+    ])) {
+      return const QuickActionResolution.wizard(QuickActionIntent.addProperty);
+    }
+    if (hasAny([
+      'add tenant',
+      'new tenant',
+      'create tenant',
+      'ongeza mpangaji',
+      'mpangaji mpya',
+      'add lease',
+      'new lease',
+    ])) {
+      return const QuickActionResolution.wizard(QuickActionIntent.addTenant);
+    }
+    if (hasAny([
+      'add income',
+      'record income',
+      'record payment',
+      'log income',
+      'ongeza mapato',
+      'rekodi malipo',
+      'rekodi mapato',
+      'payment received',
+    ])) {
+      return const QuickActionResolution.wizard(QuickActionIntent.addIncome);
+    }
+    if (hasAny([
+      'add expense',
+      'record expense',
+      'log expense',
+      'ongeza matumizi',
+      'rekodi gharama',
+      'rekodi matumizi',
+      'log a cost',
+      'log a bill',
+    ])) {
+      return const QuickActionResolution.wizard(QuickActionIntent.addExpense);
+    }
+    if (hasAny([
+      'add booking',
+      'new booking',
+      'create booking',
+      'ongeza uhifadhi',
+      'uhifadhi mpya',
+      'new reservation',
+      'schedule a reservation',
+    ])) {
+      return const QuickActionResolution.wizard(QuickActionIntent.addBooking);
+    }
+    if (hasAny([
+      'send reminder',
+      'schedule reminder',
+      'rent reminder',
+      'tuma kikumbusho',
+      'panga kikumbusho',
+      'ukumbusho wa kodi',
+      'whatsapp reminder',
+    ])) {
+      return const QuickActionResolution.route(Routes.RENT_RECURRING_REMINDERS);
+    }
+    if (hasAny(['help center', 'kituo cha msaada', 'how to', 'msaada'])) {
+      return const QuickActionResolution.route(Routes.HELP_CENTER);
+    }
+    if (hasAny(['settings', 'preferences', 'mipangilio'])) {
+      return const QuickActionResolution.route(Routes.SETTINGS);
+    }
+    if (hasAny(['reports', 'analytics', 'ripoti'])) {
+      return const QuickActionResolution.route(Routes.REPORTS_HUB);
+    }
+    if (hasAny(['calendar sync', 'sync calendar', 'google calendar'])) {
+      return const QuickActionResolution.route(Routes.CALENDAR_SYNC);
+    }
+    if (hasAny(['host calendar', 'booking calendar', 'kalenda'])) {
+      return const QuickActionResolution.route(Routes.HOST_CALENDAR);
+    }
+    if (hasAny(['manage payments', 'rent payments', 'malipo ya kodi'])) {
+      return const QuickActionResolution.route(Routes.RENT_MANAGE_PAYMENTS);
+    }
+    if (hasAny([
+      'schedule maintenance',
+      'panga matengenezo',
+      'maintenance',
+      'matengenezo',
+    ])) {
+      return const QuickActionResolution.route(
+        Routes.RENT_SCHEDULE_MAINTENANCE_FORM,
+      );
+    }
+    if (hasAny(['staff', 'wafanyakazi', 'team'])) {
+      return const QuickActionResolution.route(Routes.TEAM_AND_STAFF);
+    }
+    if (hasAny(['send sms', 'tuma sms'])) {
+      return const QuickActionResolution.route(Routes.SEND_SMS);
+    }
+    if (hasAny(['document vault', 'documents', 'hati', 'vault'])) {
+      return const QuickActionResolution.route(Routes.DOCUMENTS);
+    }
+    if (hasAny(['ai assistant', 'ai manager', 'ask ai'])) {
+      return const QuickActionResolution.route(Routes.AI_MANAGER);
+    }
+    if (hasAny(['subscription', 'billing', 'usajili'])) {
+      return const QuickActionResolution.route(Routes.SUBSCRIPTION);
+    }
+    if (hasAny(['contact support', 'customer support', 'msaada wa wateja'])) {
+      return const QuickActionResolution.route(Routes.SUPPORT);
+    }
+    return null;
+  }
+
+  String? _friendlyExceptionMessage(Object e) {
+    if (e is BaseException) {
+      final msg = e.message.trim();
+      if (msg.isNotEmpty) return msg;
+    }
+    final raw = e.toString().trim();
+    if (raw.isEmpty || raw == 'Exception') return null;
+    // Avoid dumping long stack-like strings into the UI.
+    if (raw.length > 160) return null;
+    return raw.replaceFirst(RegExp(r'^Exception:\s*'), '');
   }
 
   String _buildPrompt(String text) {
@@ -356,29 +540,42 @@ User request: "$text"
 
   QuickActionResolution _parseResolution(GeneralResponse res) {
     final text = _extractReplyText(res);
-    if (text.isEmpty) return const QuickActionResolution.unknown();
+    if (text.isEmpty) {
+      return const QuickActionResolution.failure(
+        QuickActionFailureKind.unrecognized,
+      );
+    }
     final jsonText = _stripToJsonObject(text);
-    if (jsonText == null) return const QuickActionResolution.unknown();
+    if (jsonText == null) {
+      return const QuickActionResolution.failure(
+        QuickActionFailureKind.unrecognized,
+      );
+    }
 
     try {
       final decoded = jsonDecode(jsonText);
       if (decoded is Map) {
         final action = decoded['action']?.toString().trim().toUpperCase();
-        if (action == null || action.isEmpty) {
-          return const QuickActionResolution.unknown();
+        if (action == null || action.isEmpty || action == 'UNKNOWN') {
+          return const QuickActionResolution.failure(
+            QuickActionFailureKind.unrecognized,
+          );
         }
 
         final wizard = _wizardActionKeys[action];
         if (wizard != null) return QuickActionResolution.wizard(wizard);
 
         if (action == 'OPEN_ROUTE') {
-          final routeKey = decoded['route']?.toString().trim().toUpperCase() ?? '';
+          final routeKey =
+              decoded['route']?.toString().trim().toUpperCase() ?? '';
           final entry = _routeKeys[routeKey];
           if (entry != null) return QuickActionResolution.route(entry.route);
         }
       }
     } catch (_) {}
-    return const QuickActionResolution.unknown();
+    return const QuickActionResolution.failure(
+      QuickActionFailureKind.unrecognized,
+    );
   }
 
   /// Extracts the first `{...}` block from the model's reply, tolerating

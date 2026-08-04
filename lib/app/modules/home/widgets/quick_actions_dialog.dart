@@ -145,7 +145,15 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
 
   Future<void> _handleOtherSubmit() async {
     final text = _otherController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty) {
+      setState(() {
+        _error = _t(
+          'Please describe what you want to do, for example “Add a new tenant” or “Record an expense”.',
+          'Tafadhali eleza unachotaka kufanya, mfano “Ongeza mpangaji mpya” au “Rekodi matumizi”.',
+        );
+      });
+      return;
+    }
     setState(() {
       _resolving = true;
       _error = null;
@@ -161,21 +169,46 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
         return;
       }
 
-      final action = resolution.wizardAction == null
-          ? null
-          : _actionFromIntent(resolution.wizardAction!);
-      if (action == null) {
-        setState(() {
-          _error = _t(
-            'Sorry, cannot help you with this request.',
-            'Samahani, siwezi kukusaidia na ombi hili.',
-          );
-        });
-        return;
+      if (resolution.wizardAction != null) {
+        final action = _actionFromIntent(resolution.wizardAction!);
+        if (action != null) {
+          Get.back(result: _OtherActionOutcome.wizard(action));
+          return;
+        }
       }
-      Get.back(result: _OtherActionOutcome.wizard(action));
+
+      if (!mounted) return;
+      setState(() => _error = _messageForFailure(resolution));
     } finally {
       if (mounted) setState(() => _resolving = false);
+    }
+  }
+
+  String _messageForFailure(QuickActionResolution resolution) {
+    switch (resolution.failureKind) {
+      case QuickActionFailureKind.empty:
+        return _t(
+          'Please describe what you want to do, for example “Add a new tenant” or “Record an expense”.',
+          'Tafadhali eleza unachotaka kufanya, mfano “Ongeza mpangaji mpya” au “Rekodi matumizi”.',
+        );
+      case QuickActionFailureKind.serviceUnavailable:
+        final detail = resolution.failureDetail?.trim();
+        if (detail != null && detail.isNotEmpty) {
+          return _t(
+            'We couldn’t process that request right now: $detail Try again in a moment, or pick an option above such as Add Tenant or Add Expense.',
+            'Hatukuweza kuchakata ombi hilo sasa: $detail Jaribu tena baadaye, au chagua chaguo kama Ongeza Mpangaji au Ongeza Matumizi.',
+          );
+        }
+        return _t(
+          'We couldn’t reach the assistant right now. Check your internet connection and try again, or choose an option from the Create menu such as Add Tenant or Add Expense.',
+          'Hatukuweza kuunganishwa na msaidizi sasa. Angalia intaneti yako na ujaribu tena, au chagua chaguo kutoka menyu ya Unda kama Ongeza Mpangaji au Ongeza Matumizi.',
+        );
+      case QuickActionFailureKind.unrecognized:
+      case null:
+        return _t(
+          'We couldn’t match that to a HostBora action. Try a clearer phrase like “Add a tenant”, “Record income”, or “Open reports”, or go back and pick an option from the Create menu.',
+          'Hatukuweza kulinganisha ombi hilo na kitendo cha HostBora. Jaribu sentensi wazi kama “Ongeza mpangaji”, “Rekodi mapato”, au “Fungua ripoti”, au rudi nyuma uchague chaguo kutoka menyu ya Unda.',
+        );
     }
   }
 

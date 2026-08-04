@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/utils/password_policy.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
@@ -82,14 +83,12 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
               TextFormField(
                 controller: controller.fullNameController,
                 textCapitalization: TextCapitalization.words,
+                style: TextStyle(color: c.headline),
                 decoration: _inputDecoration(
                   context,
                   hint: _t(context, en: 'John Doe', sw: 'Juma Juma'),
                 ),
-                validator: (v) => controller.validateRequired(
-                  v,
-                  _t(context, en: 'Full name', sw: 'Jina kamili'),
-                ),
+                validator: controller.validateFullName,
               ),
               const SizedBox(height: 20),
               _buildLabel(
@@ -100,6 +99,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
               TextFormField(
                 controller: controller.emailController,
                 keyboardType: TextInputType.emailAddress,
+                style: TextStyle(color: c.headline),
                 decoration: _inputDecoration(context, hint: 'name@example.com'),
                 validator: controller.validateEmail,
               ),
@@ -112,14 +112,12 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
               TextFormField(
                 controller: controller.phoneController,
                 keyboardType: TextInputType.phone,
+                style: TextStyle(color: c.headline),
                 decoration: _inputDecoration(
                   context,
                   hint: '0601000000',
                 ),
-                validator: (v) => controller.validateRequired(
-                  v,
-                  _t(context, en: 'Phone number', sw: 'Namba ya simu'),
-                ),
+                validator: controller.validatePhone,
               ),
               const SizedBox(height: 20),
               _buildLabel(
@@ -130,6 +128,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
               TextFormField(
                 controller: controller.referralCodeController,
                 textCapitalization: TextCapitalization.characters,
+                style: TextStyle(color: c.headline),
                 decoration: _inputDecoration(
                   context,
                   hint: _t(context, en: 'AGT-JOHN-001', sw: 'AGT-JOHN-001'),
@@ -180,11 +179,20 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
               }),
               const SizedBox(height: 20),
               _buildLabel(context, _t(context, en: 'Password', sw: 'Nenosiri')),
+              const SizedBox(height: 4),
+              Text(
+                PasswordPolicy.requirementsHint(
+                  isSw: Localizations.localeOf(context).languageCode == 'sw',
+                ),
+                style: TextStyle(fontSize: 12, color: c.hint, height: 1.35),
+              ),
               const SizedBox(height: 8),
               Obx(
                 () => TextFormField(
                   controller: controller.passwordController,
                   obscureText: controller.obscurePassword.value,
+                  style: TextStyle(color: c.headline),
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: _inputDecoration(context, hint: '••••••••')
                       .copyWith(
                         suffixIcon: IconButton(
@@ -374,9 +382,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(
-        color: c.isDark
-            ? theme.colorScheme.onSurfaceVariant
-            : AppColors.designPlaceholder,
+        color: c.hint,
       ),
       filled: true,
       fillColor: c.isDark ? theme.colorScheme.surfaceContainerHigh : Colors.white,

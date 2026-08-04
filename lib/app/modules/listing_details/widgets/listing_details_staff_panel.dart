@@ -129,8 +129,9 @@ class ListingDetailsStaffPanel extends StatelessWidget {
             const SizedBox(height: 16),
           ],
 
-          // ── Add staff form card ──────────────────────────────────────
+          // ── Add / edit staff form card ────────────────────────────────
           Container(
+            key: c.formSectionKey,
             padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
             decoration: BoxDecoration(
               color: cardBg,
@@ -142,40 +143,67 @@ class ListingDetailsStaffPanel extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: AppColors.colorPrimary.withValues(alpha: 0.10),
-                          shape: BoxShape.circle,
+                  Obx(() {
+                    final editing = c.isEditMode;
+                    return Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: AppColors.colorPrimary.withValues(alpha: 0.10),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            editing
+                                ? Icons.edit_outlined
+                                : Icons.person_add_alt_1_outlined,
+                            size: 18,
+                            color: AppColors.colorPrimary,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.person_add_alt_1_outlined,
-                          size: 18,
-                          color: AppColors.colorPrimary,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            editing
+                                ? _t('Edit staff member', 'Hariri mfanyakazi')
+                                : _t('New staff member', 'Mfanyakazi mpya'),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: textColor,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        _t('New staff member', 'Mfanyakazi mpya'),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: textColor,
-                        ),
-                      ),
-                    ],
-                  ),
+                        if (editing)
+                          TextButton(
+                            onPressed: c.cancelEdit,
+                            child: Text(_t('Cancel', 'Ghairi')),
+                          ),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: c.fullNameController,
                     decoration: inputDeco(_t('Full name', 'Jina kamili')),
                     validator: c.validateFullName,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: c.phoneController,
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                    decoration: inputDeco(_t('Phone', 'Simu')),
+                    validator: c.validatePhone,
+                    autovalidateMode: AutovalidateMode.onUnfocus,
                   ),
                   const SizedBox(height: 20),
                   Obx(
                     () => DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        'pay-${c.editingStaffId.value}-${c.paymentType.value}',
+                      ),
                       initialValue:
                           RentStaffPayFormat.paymentTypeLabels.containsKey(
                                 c.paymentType.value,
@@ -229,6 +257,9 @@ class ListingDetailsStaffPanel extends StatelessWidget {
                   const SizedBox(height: 20),
                   Obx(
                     () => DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        'role-${c.editingStaffId.value}-${c.selectedPrimaryRole.value}',
+                      ),
                       initialValue: c.selectedPrimaryRole.value.isEmpty
                           ? null
                           : (RentStaffManagementController.primaryRoleOptions
@@ -247,27 +278,39 @@ class ListingDetailsStaffPanel extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 36),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: FilledButton.icon(
-                      onPressed: () async {
-                        await c.registerStaff();
-                        onStaffChanged?.call();
-                      },
-                      style: FilledButton.styleFrom(
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(14)),
+                  Obx(
+                    () => SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          await c.registerStaff();
+                          onStaffChanged?.call();
+                        },
+                        style: FilledButton.styleFrom(
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(14)),
+                          ),
+                          backgroundColor: AppColors.colorPrimary,
+                          foregroundColor: Colors.white,
                         ),
-                        backgroundColor: AppColors.colorPrimary,
-                        foregroundColor: Colors.white,
-                      ),
-                      icon: const Icon(Icons.check_rounded, size: 18),
-                      label: Text(
-                        _t('Register staff member', 'Sajili mfanyakazi'),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                        icon: Icon(
+                          c.isEditMode
+                              ? Icons.save_outlined
+                              : Icons.check_rounded,
+                          size: 18,
+                        ),
+                        label: Text(
+                          c.isEditMode
+                              ? _t('Update staff member', 'Sasisha mfanyakazi')
+                              : _t(
+                                  'Register staff member',
+                                  'Sajili mfanyakazi',
+                                ),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),

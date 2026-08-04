@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/getx_instance_probe.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -107,7 +108,7 @@ class AllBookingsController extends BaseController {
   }
 
   static Future<void> refreshIfRegistered() async {
-    if (Get.isRegistered<AllBookingsController>()) {
+    if (GetxInstanceProbe.isAlive<AllBookingsController>()) {
       await Get.find<AllBookingsController>().loadAllBookings(refresh: true);
     }
   }

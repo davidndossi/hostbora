@@ -84,17 +84,6 @@ class OtpController extends BaseController {
     selectedIndex(index);
   }
 
-  void _handleVerificationCodeResponseSuccess(Map<String, dynamic> res) async {
-    if (res.containsKey('message') && res['message'] != null) {
-      String message = res['message'];
-      if (message == 'verify_code_success') {
-        debugPrint('Go to home page');
-        Get.offAndToNamed(AppPages.initial);
-      }
-    }
-    showErrorMessage(_t('Invalid OTP or code', 'OTP au msimbo si sahihi'));
-  }
-
   void _handleVerificationResponseSuccess(OtpResponse res) async {
     if (res.respCode == '0') {
       if (flow == 'reset_password') {
@@ -110,17 +99,23 @@ class OtpController extends BaseController {
       } else {
         Get.until((route) => route.isFirst);
       }
-    } else {
-      callDataService(
-        _repository.verifyCode(OtpRequest(msisdn: msisdn, otp: otp.value)),
-        onError: _handleVerificationResponseError,
-        onSuccess: _handleVerificationCodeResponseSuccess,
-      );
+      return;
     }
+    // Do not fall back to /api/auth/verify — it previously skipped OTP checks.
+    showErrorMessage(
+      res.respMsg?.isNotEmpty == true
+          ? res.respMsg!
+          : _t('Invalid OTP', 'OTP si sahihi'),
+    );
+    errorController?.add(ErrorAnimationType.shake);
   }
 
   void _handleVerificationResponseError(Exception e) {
-    showErrorMessage(_t('Invalid OTP or code', 'OTP au msimbo si sahihi'));
+    final message = e is ApiException && e.message.isNotEmpty
+        ? e.message
+        : _t('Invalid OTP', 'OTP si sahihi');
+    showErrorMessage(message);
+    errorController?.add(ErrorAnimationType.shake);
   }
 
   void _handleResendOtpResponseError(Exception e) {

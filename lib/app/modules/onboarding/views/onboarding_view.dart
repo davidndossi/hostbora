@@ -42,142 +42,156 @@ class OnboardingView extends BaseView<OnboardingController> {
         ),
 
         // ── main content ─────────────────────────────────────────────────
-        SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
+        // Fill the viewport: content on top, CTA at the bottom when space
+        // allows. Scroll only on overflow — no empty band above the footer.
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(height: size.height < 700 ? 20 : 40),
 
-                      // ── logo badge ──────────────────────────────────
-                      Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.08),
-                          border: Border.all(
-                            color: AppColors.colorPrimary.withValues(alpha: 0.5),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.colorPrimary.withValues(alpha: 0.35),
-                              blurRadius: 32,
-                              spreadRadius: 0,
+                          // ── logo badge ────────────────────────────────
+                          Container(
+                            width: 96,
+                            height: 96,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.08),
+                              border: Border.all(
+                                color: AppColors.colorPrimary
+                                    .withValues(alpha: 0.5),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.colorPrimary
+                                      .withValues(alpha: 0.35),
+                                  blurRadius: 32,
+                                  spreadRadius: 0,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'images/host_bora_logo.png',
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => Icon(
-                              Icons.home_work_rounded,
-                              size: 48,
-                              color: AppColors.colorPrimary,
+                            child: ClipOval(
+                              child: Image.asset(
+                                'images/host_bora_logo.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.home_work_rounded,
+                                  size: 48,
+                                  color: AppColors.colorPrimary,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+
+                          const SizedBox(height: 28),
+
+                          // ── headline ──────────────────────────────────
+                          Text(
+                            isSw ? 'Karibu HostBora' : 'Welcome to HostBora',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                              height: 1.2,
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // ── sub-headline ──────────────────────────────
+                          Text(
+                            isSw
+                                ? 'Simamia BnB na upangishaji wa muda mrefu kutoka mahali pamoja'
+                                : 'Manage BnB stays & long-term rentals\nfrom one powerful app',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white.withValues(alpha: 0.7),
+                              height: 1.55,
+                            ),
+                          ),
+
+                          SizedBox(height: size.height < 700 ? 24 : 40),
+
+                          // ── feature cards ─────────────────────────────
+                          _FeatureRow(
+                            icon: Icons.payments_rounded,
+                            color: const Color(0xFF4CAF50),
+                            title: isSw ? 'Fuatilia Malipo' : 'Track Payments',
+                            subtitle: isSw
+                                ? 'Malipo ya kodi, bili na michango'
+                                : 'Rent, bills & tenant contributions',
+                          ),
+                          const SizedBox(height: 12),
+                          _FeatureRow(
+                            icon: Icons.hotel_rounded,
+                            color: const Color(0xFF42A5F5),
+                            title: isSw ? 'BnB & Upangishaji' : 'BnB & Rentals',
+                            subtitle: isSw
+                                ? 'Wageni wa muda mfupi na mpangaji wa muda mrefu'
+                                : 'Short-term guests & long-term tenants',
+                          ),
+                          const SizedBox(height: 12),
+                          _FeatureRow(
+                            icon: Icons.message_rounded,
+                            color: const Color(0xFF26C6DA),
+                            title: isSw ? 'WhatsApp & SMS' : 'WhatsApp & SMS',
+                            subtitle: isSw
+                                ? 'Tuma ukumbusho wa kodi kiotomatiki'
+                                : 'Auto-send rent reminders to tenants',
+                          ),
+                          const SizedBox(height: 12),
+                          _FeatureRow(
+                            icon: Icons.cloud_off_rounded,
+                            color: const Color(0xFFFFA726),
+                            title: isSw
+                                ? 'Hifadhi Nje ya Mtandao'
+                                : 'Offline Storage',
+                            subtitle: isSw
+                                ? 'Data salama hata bila intaneti'
+                                : 'Secure data even without internet',
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // ── base currency (static list, no network)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: BaseCurrencyPicker(
+                              forDarkBackground: true,
+                              title: isSw
+                                  ? 'Sarafu yako ya msingi'
+                                  : 'Your base currency',
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+                        ],
                       ),
+                    ),
 
-                      const SizedBox(height: 28),
-
-                      // ── headline ────────────────────────────────────
-                      Text(
-                        isSw ? 'Karibu HostBora' : 'Welcome to HostBora',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                          height: 1.2,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // ── sub-headline ────────────────────────────────
-                      Text(
-                        isSw
-                            ? 'Simamia BnB na upangishaji wa muda mrefu kutoka mahali pamoja'
-                            : 'Manage BnB stays & long-term rentals\nfrom one powerful app',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white.withValues(alpha: 0.7),
-                          height: 1.55,
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // ── feature cards ───────────────────────────────
-                      _FeatureRow(
-                        icon: Icons.payments_rounded,
-                        color: const Color(0xFF4CAF50),
-                        title: isSw ? 'Fuatilia Malipo' : 'Track Payments',
-                        subtitle: isSw
-                            ? 'Malipo ya kodi, bili na michango'
-                            : 'Rent, bills & tenant contributions',
-                      ),
-                      const SizedBox(height: 12),
-                      _FeatureRow(
-                        icon: Icons.hotel_rounded,
-                        color: const Color(0xFF42A5F5),
-                        title: isSw ? 'BnB & Upangishaji' : 'BnB & Rentals',
-                        subtitle: isSw
-                            ? 'Wageni wa muda mfupi na mpangaji wa muda mrefu'
-                            : 'Short-term guests & long-term tenants',
-                      ),
-                      const SizedBox(height: 12),
-                      _FeatureRow(
-                        icon: Icons.message_rounded,
-                        color: const Color(0xFF26C6DA),
-                        title: isSw ? 'WhatsApp & SMS' : 'WhatsApp & SMS',
-                        subtitle: isSw
-                            ? 'Tuma ukumbusho wa kodi kiotomatiki'
-                            : 'Auto-send rent reminders to tenants',
-                      ),
-                      const SizedBox(height: 12),
-                      _FeatureRow(
-                        icon: Icons.cloud_off_rounded,
-                        color: const Color(0xFFFFA726),
-                        title: isSw ? 'Hifadhi Nje ya Mtandao' : 'Offline Storage',
-                        subtitle: isSw
-                            ? 'Data salama hata bila intaneti'
-                            : 'Secure data even without internet',
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      // ── base currency (static list, no network) ───────────
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: BaseCurrencyPicker(
-                          forDarkBackground: true,
-                          title: isSw
-                              ? 'Sarafu yako ya msingi'
-                              : 'Your base currency',
-                        ),
-                      ),
-
-                      const SizedBox(height: 32),
-                    ],
-                  ),
+                    // ── bottom CTA (viewport-bottom when content fits)
+                    _BottomCta(isSw: isSw),
+                  ],
                 ),
               ),
-
-              // ── sticky bottom CTA ─────────────────────────────────────
-              _BottomCta(isSw: isSw),
-            ],
-          ),
+            );
+          },
         ),
       ],
     );
@@ -334,7 +348,7 @@ class _BottomCta extends StatelessWidget {
 
           // Already have account link
           GestureDetector(
-            onTap: () => Get.find<OnboardingController>().completeOnboarding(),
+            onTap: () => Get.find<OnboardingController>().goToLogin(),
             child: Text(
               isSw ? 'Nina akaunti tayari' : 'Already have an account?',
               style: TextStyle(

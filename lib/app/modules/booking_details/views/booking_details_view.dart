@@ -400,43 +400,15 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                 ),
               ),
             ),
-            DecoratedBox(
+            const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.3),
-                    Colors.black.withValues(alpha: 0.75),
-                  ],
-                ),
-              ),
-            ),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: EdgeInsets.only(top: topPadding > 0 ? 0 : 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _headerIconButton(
-                      onPressed: controller.goBack,
-                      icon: Icons.arrow_back,
-                    ),
-                    Row(
-                      children: [
-                        _headerIconButton(
-                          onPressed: controller.share,
-                          icon: Icons.share_outlined,
-                        ),
-                        const SizedBox(width: 12),
-                        _headerIconButton(
-                          onPressed: controller.moreOptions,
-                          icon: Icons.more_horiz,
-                        ),
-                      ],
-                    ),
+                    Color(0x4D000000),
+                    Color(0xBF000000),
                   ],
                 ),
               ),
@@ -476,6 +448,49 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                     ],
                   ),
                 ],
+              ),
+            ),
+            // Keep actions above the gradient / title so taps always register.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    12,
+                    topPadding > 0 ? 0 : 12,
+                    12,
+                    0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _headerIconButton(
+                        onPressed: controller.goBack,
+                        icon: Icons.arrow_back,
+                      ),
+                      Row(
+                        children: [
+                          Builder(
+                            builder: (btnCtx) => _headerIconButton(
+                              onPressed: () => controller.share(btnCtx),
+                              icon: Icons.share_outlined,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Builder(
+                            builder: (btnCtx) => _headerIconButton(
+                              onPressed: () => controller.moreOptions(btnCtx),
+                              icon: Icons.more_horiz,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -555,6 +570,45 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 6),
+                Obx(() {
+                  final cancelled = controller.isCancelled.value;
+                  final checkedOut = controller.isCheckedOut.value;
+                  final label = cancelled
+                      ? appLocalization.bookingCancelledLabel
+                      : checkedOut
+                          ? appLocalization.bookingCheckedOut
+                          : _t(context, en: 'Confirmed', sw: 'Imethibitishwa');
+                  final bg = cancelled
+                      ? Theme.of(context)
+                          .colorScheme
+                          .error
+                          .withValues(alpha: 0.12)
+                      : checkedOut
+                          ? AppColors.textColorSecondary.withValues(alpha: 0.15)
+                          : AppColors.colorPrimaryLight;
+                  final fg = cancelled
+                      ? Theme.of(context).colorScheme.error
+                      : checkedOut
+                          ? context.tokens.textSecondary
+                          : AppColors.colorPrimary;
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: bg,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: fg,
+                      ),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 4),
                 Row(
                   children: [

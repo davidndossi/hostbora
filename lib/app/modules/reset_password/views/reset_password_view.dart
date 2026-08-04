@@ -101,6 +101,11 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
                     TextFormField(
                       controller: controller.msisdnController,
                       keyboardType: TextInputType.phone,
+                      style: TextStyle(
+                        color: isDark
+                            ? theme.colorScheme.onSurface
+                            : AppColors.textColorPrimary,
+                      ),
                       decoration: _inputDecoration(
                         context,
                         hint: _t(context, 'e.g. 0712345678', 'mf. 0712345678'),
@@ -198,7 +203,7 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
       hintText: hint,
       hintStyle: TextStyle(
         color: isDark
-            ? theme.colorScheme.onSurfaceVariant
+            ? const Color(0xFF8E8E93)
             : AppColors.designPlaceholder,
       ),
       filled: true,

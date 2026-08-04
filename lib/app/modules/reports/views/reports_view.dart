@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../core/widget/skeleton_presets.dart';
@@ -6,7 +8,6 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../core/values/app_decorations.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/reports_controller.dart';
 
@@ -23,17 +24,39 @@ class ReportsView extends BaseView<ReportsController> {
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    // Dark teal on dark surface is hard to see — use a lighter selected accent.
+    final selectedTabColor =
+        isDark ? const Color(0xFF5ECFBF) : AppColors.colorPrimary;
+    final unselectedTabColor = isDark
+        ? Colors.white.withValues(alpha: 0.55)
+        : theme.colorScheme.onSurfaceVariant;
+
     return SafeArea(
       child: Column(
         children: [
         _periodBar(context),
         Material(
-          color: AppColors.colorWhite,
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHighest
+              : theme.colorScheme.surface,
           child: TabBar(
             controller: controller.tabController,
-            labelColor: AppColors.colorPrimary,
-            unselectedLabelColor: AppColors.colorDark,
-            indicatorColor: AppColors.colorPrimary,
+            labelColor: selectedTabColor,
+            unselectedLabelColor: unselectedTabColor,
+            indicatorColor: selectedTabColor,
+            indicatorWeight: 3,
+            indicatorSize: TabBarIndicatorSize.label,
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+            dividerColor: isDark ? const Color(0xFF3A3A3C) : null,
             tabs: [
               Tab(text: appLocalization.reportsTabOccupancy),
               Tab(text: appLocalization.reportsTabFinancial),
@@ -125,12 +148,34 @@ class ReportsView extends BaseView<ReportsController> {
 
   Widget _chip(BuildContext context, ReportsPeriodKind value, ReportsPeriodKind selected) {
     final selectedStyle = value == selected;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedBg =
+        isDark ? AppColors.colorPrimary : AppColors.colorPrimaryLight;
+    final selectedFg = isDark ? Colors.white : AppColors.colorPrimary;
+    final unselectedFg = isDark
+        ? Colors.white.withValues(alpha: 0.75)
+        : Theme.of(context).colorScheme.onSurface;
+
     return FilterChip(
-      label: Text(_periodLabel(value)),
+      label: Text(
+        _periodLabel(value),
+        style: TextStyle(
+          color: selectedStyle ? selectedFg : unselectedFg,
+          fontWeight: selectedStyle ? FontWeight.w700 : FontWeight.w500,
+        ),
+      ),
       selected: selectedStyle,
       onSelected: (_) => controller.setPeriod(value),
-      selectedColor: AppColors.colorPrimaryLight,
-      checkmarkColor: AppColors.colorPrimary,
+      selectedColor: selectedBg,
+      backgroundColor: isDark ? const Color(0xFF2C2C2E) : null,
+      checkmarkColor: selectedFg,
+      side: BorderSide(
+        color: selectedStyle
+            ? (isDark ? AppColors.colorPrimary : AppColors.colorPrimary)
+            : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFD0D0D0)),
+        width: selectedStyle ? 1.5 : 1,
+      ),
+      showCheckmark: true,
     );
   }
 
@@ -161,7 +206,7 @@ class ReportsView extends BaseView<ReportsController> {
             () => InputDecorator(
               decoration: InputDecoration(
                 filled: true,
-                fillColor: AppColors.colorWhite,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -196,7 +241,7 @@ class ReportsView extends BaseView<ReportsController> {
           Text(
             appLocalization.reportsOccupancyFormulaNote,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.colorDark,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
           const SizedBox(height: 12),
@@ -290,7 +335,7 @@ class ReportsView extends BaseView<ReportsController> {
               child: Text(
                 appLocalization.reportsRevenueOnlyHint,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.colorDark,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
             ),
@@ -422,96 +467,241 @@ class ReportsView extends BaseView<ReportsController> {
 
   Widget _expensesBody(BuildContext context) {
     return Obx(() {
-      final labels = controller.expenseCategoryLabels;
-      final amounts = controller.expenseCategoryAmounts;
+      final labels = controller.expenseCategoryLabels.toList();
+      final amounts = controller.expenseCategoryAmounts.toList();
+      final theme = Theme.of(context);
+      final maxY = amounts.isEmpty
+          ? 100.0
+          : amounts.reduce((a, b) => a > b ? a : b) * 1.2;
+      final yInterval = _axisInterval(maxY);
+      // Give each category enough horizontal room so labels never collide.
+      const barSlotWidth = 76.0;
+      final viewportWidth = MediaQuery.sizeOf(context).width - 48;
+      final chartWidth = math.max(
+        viewportWidth,
+        labels.length * barSlotWidth,
+      );
+      final rotateLabels = labels.length > 3;
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             appLocalization.reportsExpenseCategoryChart,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           _chartCard(
             context,
-            SizedBox(
-              height: 260,
-              child: labels.isEmpty
-                  ? Center(child: Text(appLocalization.reportsNoData))
-                  : BarChart(
-                      BarChartData(
-                        alignment: BarChartAlignment.spaceAround,
-                        maxY: amounts.isEmpty ? 100 : amounts.reduce((a, b) => a > b ? a : b) * 1.15,
-                        gridData: const FlGridData(show: true),
-                        titlesData: FlTitlesData(
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 40,
-                              getTitlesWidget: (v, m) {
-                                final i = v.toInt();
-                                if (i < 0 || i >= labels.length) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    labels[i],
-                                    style: const TextStyle(fontSize: 9),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+            labels.isEmpty
+                ? SizedBox(
+                    height: 220,
+                    child: Center(child: Text(appLocalization.reportsNoData)),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: rotateLabels ? 300 : 260,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: chartWidth,
+                            child: BarChart(
+                              BarChartData(
+                                alignment: BarChartAlignment.spaceAround,
+                                maxY: maxY,
+                                groupsSpace: 18,
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
+                                  horizontalInterval: yInterval,
+                                ),
+                                barTouchData: BarTouchData(
+                                  enabled: true,
+                                  touchTooltipData: BarTouchTooltipData(
+                                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                      final i = group.x;
+                                      if (i < 0 || i >= labels.length) {
+                                        return null;
+                                      }
+                                      return BarTooltipItem(
+                                        '${labels[i]}\n${controller.formatTzs(rod.toY)}',
+                                        TextStyle(
+                                          color: theme.colorScheme.onInverseSurface,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            ),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 40,
-                              getTitlesWidget: (v, m) => Text(
-                                _compactMoney(v),
-                                style: const TextStyle(fontSize: 9),
+                                ),
+                                titlesData: FlTitlesData(
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: rotateLabels ? 70 : 48,
+                                      getTitlesWidget: (v, meta) {
+                                        final i = v.toInt();
+                                        if (i < 0 || i >= labels.length) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return SideTitleWidget(
+                                          axisSide: meta.axisSide,
+                                          space: 8,
+                                          angle: rotateLabels ? -0.75 : 0,
+                                          child: SizedBox(
+                                            width: barSlotWidth - 12,
+                                            child: Text(
+                                              labels[i],
+                                              textAlign: TextAlign.center,
+                                              maxLines: rotateLabels ? 1 : 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              softWrap: true,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                height: 1.1,
+                                                color: theme
+                                                    .colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 44,
+                                      interval: yInterval,
+                                      getTitlesWidget: (v, meta) {
+                                        // Skip near-duplicate edge ticks that crowd the axis.
+                                        if (v < 0 || v > maxY + 0.01) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return SideTitleWidget(
+                                          axisSide: meta.axisSide,
+                                          space: 4,
+                                          child: Text(
+                                            _compactMoney(v),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: theme
+                                                  .colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                ),
+                                borderData: FlBorderData(show: false),
+                                barGroups: List.generate(labels.length, (i) {
+                                  return BarChartGroupData(
+                                    x: i,
+                                    barRods: [
+                                      BarChartRodData(
+                                        toY: amounts[i],
+                                        width: 18,
+                                        color: AppColors.paaYanguWarm,
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                          top: Radius.circular(4),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }),
                               ),
                             ),
                           ),
-                          topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
                         ),
-                        borderData: FlBorderData(show: false),
-                        barGroups: List.generate(labels.length, (i) {
-                          return BarChartGroupData(
-                            x: i,
-                            barRods: [
-                              BarChartRodData(
-                                toY: amounts[i],
-                                width: 14,
-                                color: AppColors.paaYanguWarm,
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(4),
+                      ),
+                      const SizedBox(height: 12),
+                      ...List.generate(labels.length, (i) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                margin: const EdgeInsets.only(top: 5, right: 8),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.paaYanguWarm,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  labels[i],
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                controller.formatTzs(amounts[i]),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
-                          );
-                        }),
-                      ),
-                    ),
-            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
           ),
         ],
       );
     });
   }
 
+  /// Evenly spaced Y-axis ticks so money labels do not stack on top of each other.
+  double _axisInterval(double maxY) {
+    if (maxY <= 0) return 25;
+    final rough = maxY / 4;
+    final magnitude = math.pow(10, (math.log(rough) / math.ln10).floor()).toDouble();
+    final residual = rough / magnitude;
+    final nice = residual <= 1
+        ? 1.0
+        : residual <= 2
+            ? 2.0
+            : residual <= 5
+                ? 5.0
+                : 10.0;
+    return nice * magnitude;
+  }
+
   Widget _chartCard(BuildContext context, Widget child) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
-      decoration: AppDecorations.card,
+      decoration: BoxDecoration(
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHigh
+            : AppColors.colorWhite,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
       child: child,
     );
   }
@@ -519,7 +709,7 @@ class ReportsView extends BaseView<ReportsController> {
   Widget _exportBar(BuildContext context) {
     return Material(
       elevation: 8,
-      color: AppColors.colorWhite,
+      color: Theme.of(context).colorScheme.surface,
       child: SafeArea(
         top: false,
         child: Padding(

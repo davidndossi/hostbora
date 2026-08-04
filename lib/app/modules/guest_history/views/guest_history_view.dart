@@ -61,30 +61,46 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
                 : AppColors.designInputBorder,
           ),
         ),
-        child: TextField(
-          onChanged: controller.onSearchChanged,
-          decoration: InputDecoration(
-            hintText: _t(
-              en: 'Search by guest, property…',
-              sw: 'Tafuta mgeni, mali…',
-            ),
-            hintStyle: TextStyle(
-              color: c.isDark
-                  ? theme.colorScheme.onSurfaceVariant
-                  : AppColors.designPlaceholder,
-              fontSize: 14,
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              size: 20,
-              color: c.isDark
-                  ? theme.colorScheme.onSurfaceVariant
-                  : AppColors.designPlaceholder,
-            ),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
+        child: Obx(
+          () => TextField(
+            controller: controller.searchController,
+            onChanged: controller.onSearchChanged,
+            decoration: InputDecoration(
+              hintText: _t(
+                en: 'Search by guest, property…',
+                sw: 'Tafuta mgeni, mali…',
+              ),
+              hintStyle: TextStyle(
+                color: c.isDark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.designPlaceholder,
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                size: 20,
+                color: c.isDark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : AppColors.designPlaceholder,
+              ),
+              suffixIcon: controller.searchQuery.value.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: _t(en: 'Clear', sw: 'Futa'),
+                      icon: Icon(
+                        Icons.clear,
+                        size: 20,
+                        color: c.isDark
+                            ? theme.colorScheme.onSurfaceVariant
+                            : AppColors.designPlaceholder,
+                      ),
+                      onPressed: controller.clearSearch,
+                    ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
             ),
           ),
         ),

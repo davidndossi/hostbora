@@ -86,6 +86,10 @@ class AddListingView extends BaseView<AddListingController> {
                           sw: 'Weka anwani kamili ya mtaa au eneo',
                         ),
                       ),
+                      validator: (v) => controller.validateRequired(
+                        v,
+                        _t(context, en: 'Location', sw: 'Mahali'),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     _buildLabel(

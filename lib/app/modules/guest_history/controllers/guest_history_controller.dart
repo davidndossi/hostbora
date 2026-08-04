@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -53,6 +54,7 @@ class GuestHistoryController extends BaseController {
   final allGuests = <GuestHistoryItem>[].obs;
   final filteredGuests = <GuestHistoryItem>[].obs;
   final searchQuery = ''.obs;
+  final searchController = TextEditingController();
   final isLoading = false.obs;
 
   final _dateFmt = DateFormat('dd/MM/yyyy');
@@ -125,6 +127,18 @@ class GuestHistoryController extends BaseController {
   void onSearchChanged(String value) {
     searchQuery.value = value.trim();
     _applyFilter();
+  }
+
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
+    _applyFilter();
+  }
+
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
   }
 
   void _applyFilter() {

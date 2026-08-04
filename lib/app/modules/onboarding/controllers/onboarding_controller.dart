@@ -33,12 +33,9 @@ class OnboardingController extends BaseController {
     }
   }
 
-  Future<void> completeOnboarding() async {
-    unawaited(Get.find<CurrencyService>().refreshRatesFromRemote());
+  Future<void> _markOnboardingSeen() async {
     final saved = await _preferenceManager.setBool('seen_onboarding', true);
     if (kDebugMode) {
-      // TEMP DEBUG LOGGING — see main_app.dart bootstrap log for the
-      // matching read-back on next launch.
       final readBack = await _preferenceManager.getBool(
         'seen_onboarding',
         defaultValue: false,
@@ -47,7 +44,18 @@ class OnboardingController extends BaseController {
         '[Onboarding] setBool(seen_onboarding, true) -> saved=$saved, readBack=$readBack',
       );
     }
+  }
+
+  Future<void> completeOnboarding() async {
+    unawaited(Get.find<CurrencyService>().refreshRatesFromRemote());
+    await _markOnboardingSeen();
     Get.offAllNamed(Routes.CREATE_HOST_ACCOUNT);
+  }
+
+  Future<void> goToLogin() async {
+    unawaited(Get.find<CurrencyService>().refreshRatesFromRemote());
+    await _markOnboardingSeen();
+    Get.offAllNamed(Routes.AUTH);
   }
 
   @override

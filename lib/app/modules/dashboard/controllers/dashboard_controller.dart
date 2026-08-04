@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/booking_api_response.dart';
+import '../../../core/utils/getx_instance_probe.dart';
 import '../../../core/utils/rent_portfolio_metrics.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
@@ -186,8 +187,9 @@ class DashboardController extends BaseController {
   }
 
   /// Reload metrics when bookings or income change elsewhere.
+  /// Only refreshes an already-constructed instance (never eager-creates).
   static Future<void> refreshIfRegistered({bool quiet = true}) async {
-    if (Get.isRegistered<DashboardController>()) {
+    if (GetxInstanceProbe.isAlive<DashboardController>()) {
       await Get.find<DashboardController>().loadDashboard(quiet: quiet);
     }
   }
@@ -272,33 +274,6 @@ class DashboardController extends BaseController {
       // Fetch ALL income and expenses across every workspace
       final incomes = await _incomeLocal.getAllNewestFirst();
       final expenses = await _expenseLocal.getAllNewestFirst();
-
-      logger.d(
-        'Dashboard loadDashboard '
-        'incomeRows=${incomes.length} expenseRows=${expenses.length}',
-      );
-      final incomeSumAll =
-          incomes.fold<double>(0, (a, r) => a + r.amountValue);
-      final expenseSumAll =
-          expenses.fold<double>(0, (a, r) => a + r.amountValue);
-      logger.d(
-        'Dashboard DB totals (all dates, workspace slice): '
-        'income=$incomeSumAll expenses=$expenseSumAll',
-      );
-      for (final r in incomes) {
-        logger.d(
-          'Dashboard income id=${r.id} amount=${r.amountValue} '
-          'datePaid=${r.datePaidIso} category=${r.category} '
-          'workspace=${r.workspaceType}',
-        );
-      }
-      for (final r in expenses) {
-        logger.d(
-          'Dashboard expense id=${r.id} amount=${r.amountValue} '
-          'datePaid=${r.datePaidIso} category=${r.category} '
-          'workspace=${r.workspaceType}',
-        );
-      }
 
       final now = DateTime.now();
       final thisMonthStart = DateTime(now.year, now.month, 1);

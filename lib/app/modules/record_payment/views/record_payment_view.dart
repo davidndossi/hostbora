@@ -63,6 +63,11 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   DropdownButtonFormField<String>(
+                    // Rebuild when options finish loading so the menu isn't stuck empty.
+                    key: ValueKey(
+                      'rp-property-${controller.propertyOptions.length}-'
+                      '${controller.selectedProperty.value}',
+                    ),
                     initialValue:
                         controller.propertyOptions.contains(
                           controller.selectedProperty.value,

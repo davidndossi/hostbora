@@ -80,7 +80,9 @@ class AddDocumentController extends BaseController {
       _isSw ? def.nameSw : def.nameEn;
 
   /// Opens the document scanner. The scanner will pass back through
-  /// [Routes.REFINE_SCAN] and ultimately save to the vault.
+  /// [Routes.REFINE_SCAN] and ultimately navigate to the vault on save.
+  /// Do not auto-[Get.back] when the scanner closes — save already pops
+  /// past this screen, and an extra back left a blank page.
   void goToScanner() {
     final dir = selectedDirectory.value;
     Get.toNamed(
@@ -89,7 +91,7 @@ class AddDocumentController extends BaseController {
         directoryId: dir?.id,
         directoryName: dir != null ? directoryDisplayName(dir) : null,
       ).toMap(),
-    )?.then((_) => Get.back(result: true));
+    );
   }
 
   /// Picks an image from the gallery and saves it as a local vault document.

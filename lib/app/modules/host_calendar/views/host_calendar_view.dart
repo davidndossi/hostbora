@@ -409,27 +409,60 @@ class HostCalendarView extends BaseView<HostCalendarController> {
             fontWeight: FontWeight.w600,
             color: AppColors.textColorSecondary,
           ),
-          selectedDecoration: BoxDecoration(
-            color: AppColors.colorPrimaryLight.withValues(alpha: 0.4),
-            borderRadius: const BorderRadius.all(Radius.circular(8)),
+          // Fallback if selectedBuilder is missing — solid primary, not pale tint.
+          selectedDecoration: const BoxDecoration(
+            color: AppColors.colorPrimary,
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          selectedTextStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
           ),
           todayDecoration: BoxDecoration(
-            color: AppColors.colorPrimaryLight.withValues(alpha: 0.3),
+            color: AppColors.colorPrimary.withValues(alpha: 0.18),
             borderRadius: const BorderRadius.all(Radius.circular(8)),
+            border: Border.all(color: AppColors.colorPrimary, width: 1.5),
+          ),
+          todayTextStyle: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: AppColors.colorPrimary,
           ),
           cellMargin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
           cellPadding: EdgeInsets.zero,
         ),
         calendarBuilders: CalendarBuilders(
+          // table_calendar renders selected/today via these builders — NOT defaultBuilder.
+          selectedBuilder: (context, day, focusedDay) => _dayCell(
+            context,
+            day,
+            isCurrentMonth: day.month == focusedDay.month,
+            price: controller.priceForDay(day),
+            isSelected: true,
+            dayType: controller.typeForDay(day),
+            bookingStatus: controller.bookingStatusForDay(day),
+            isBlocked: controller.isDateBlocked(day),
+            isDisabled: !controller.isDayEnabled(day),
+          ),
+          todayBuilder: (context, day, focusedDay) => _dayCell(
+            context,
+            day,
+            isCurrentMonth: day.month == focusedDay.month,
+            price: controller.priceForDay(day),
+            isSelected: false,
+            isToday: true,
+            dayType: controller.typeForDay(day),
+            bookingStatus: controller.bookingStatusForDay(day),
+            isBlocked: controller.isDateBlocked(day),
+            isDisabled: !controller.isDayEnabled(day),
+          ),
           defaultBuilder: (context, day, focusedDay) => _dayCell(
             context,
             day,
             isCurrentMonth: day.month == focusedDay.month,
             price: controller.priceForDay(day),
-            isSelected:
-                day.year == selected.year &&
-                day.month == selected.month &&
-                day.day == selected.day,
+            isSelected: false,
             dayType: controller.typeForDay(day),
             bookingStatus: controller.bookingStatusForDay(day),
             isBlocked: controller.isDateBlocked(day),
@@ -456,6 +489,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
     required bool isCurrentMonth,
     String? price,
     bool isSelected = false,
+    bool isToday = false,
     DayType dayType = DayType.standard,
     HostCalendarDayBookingStatus bookingStatus =
         HostCalendarDayBookingStatus.none,
@@ -464,7 +498,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   }) {
     final theme = Theme.of(context);
     Color? bg;
-    if (isCurrentMonth) {
+    if (isCurrentMonth && !isSelected) {
       if (isBlocked) {
         bg = FormSurfaceColors.of(context).isDark
             ? theme.colorScheme.surfaceContainerHighest
@@ -477,8 +511,22 @@ class HostCalendarView extends BaseView<HostCalendarController> {
         bg = AppColors.colorPrimaryLight.withValues(alpha: 0.6);
       } else if (dayType == DayType.manualRate) {
         bg = _hostCalendarManualRateBg.withValues(alpha: 0.5);
+      } else if (isToday) {
+        bg = AppColors.colorPrimary.withValues(alpha: 0.14);
       }
     }
+
+    final Color? fill = isSelected ? AppColors.colorPrimary : bg;
+    final dayColor = isSelected
+        ? Colors.white
+        : (isToday
+            ? AppColors.colorPrimary
+            : (isCurrentMonth
+                ? (isBlocked
+                    ? theme.colorScheme.onSurfaceVariant
+                    : theme.colorScheme.onSurface)
+                : theme.colorScheme.onSurfaceVariant));
+
     return GestureDetector(
       onTap: isDisabled
           ? null
@@ -492,11 +540,22 @@ class HostCalendarView extends BaseView<HostCalendarController> {
           width: 44,
           height: 52,
           decoration: BoxDecoration(
-            color: bg,
+            color: fill,
             shape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(8),
             border: isSelected
-                ? Border.all(color: AppColors.colorPrimary, width: 2)
+                ? Border.all(color: Colors.white, width: 2)
+                : (isToday
+                    ? Border.all(color: AppColors.colorPrimary, width: 1.5)
+                    : null),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.colorPrimary.withValues(alpha: 0.45),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
                 : null,
           ),
           child: Column(
@@ -506,12 +565,10 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                 '${d.day}',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: isCurrentMonth
-                      ? (isBlocked
-                            ? AppColors.textColorSecondary
-                            : AppColors.textColorPrimary)
-                      : AppColors.textColorSecondary,
+                  fontWeight: isSelected || isToday
+                      ? FontWeight.w800
+                      : FontWeight.w600,
+                  color: dayColor,
                   decoration: isBlocked ? TextDecoration.lineThrough : null,
                 ),
               ),
@@ -521,12 +578,16 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                   price,
                   style: TextStyle(
                     fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: isCurrentMonth
-                        ? (dayType == DayType.standard
-                              ? AppColors.colorPrimary
-                              : AppColors.textColorPrimary)
-                        : AppColors.textColorSecondary,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white.withValues(alpha: 0.95)
+                        : (isToday
+                            ? AppColors.colorPrimary
+                            : (isCurrentMonth
+                                ? (dayType == DayType.standard
+                                    ? AppColors.colorPrimary
+                                    : theme.colorScheme.onSurface)
+                                : theme.colorScheme.onSurfaceVariant)),
                   ),
                 ),
               ],
@@ -535,9 +596,12 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(
                     _t(context, en: 'Blocked', sw: 'Imefungwa'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 8,
                       fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? Colors.white
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),

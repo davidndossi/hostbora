@@ -6,6 +6,7 @@ import 'package:toggle_switch/toggle_switch.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
+import '../../../core/utils/plan_gate.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
@@ -782,9 +783,57 @@ class SendSmsView extends BaseView<SendSmsController> {
       }
       if (!controller.isAccessAllowed.value) {
         return Center(
-          child: Text(
-            _t(context, 'Access denied', 'Ufikiaji umekataliwa'),
-            style: TextStyle(color: theme.colorScheme.onSurface),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 48,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _t(
+                    context,
+                    'SMS / WhatsApp requires Pro',
+                    'SMS / WhatsApp inahitaji mpango wa Pro',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _t(
+                    context,
+                    'Upgrade to Pro or above to send messages from Host Bora.',
+                    'Boresha hadi Pro au zaidi ili kutuma ujumbe kutoka Host Bora.',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => PlanGate.showUpgradeSheet(
+                    RequiredPlan.pro,
+                    featureName: 'SMS / WhatsApp',
+                    subtitle:
+                        'Sending SMS and WhatsApp messages requires the Pro plan or above.',
+                  ),
+                  child: Text(
+                    _t(context, 'Upgrade plan', 'Boresha mpango'),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }

@@ -247,6 +247,28 @@ class AppPages {
   static const initial = Routes.MAIN;
   static const auth = Routes.AUTH;
 
+  /// Unauthenticated / pre-login flows. Missing or expired session must not
+  /// force-navigate these screens to Login (e.g. mid registration).
+  static const publicAuthRoutes = <String>{
+    Routes.AUTH,
+    Routes.ONBOARDING,
+    Routes.SPLASH,
+    Routes.CREATE_HOST_ACCOUNT,
+    Routes.OTP,
+    Routes.RESET_PASSWORD,
+    Routes.NEW_PASSWORD,
+    Routes.PASSWORD_UPDATED,
+    Routes.CHANGE_PIN,
+    Routes.WELCOME_BACK,
+    Routes.TERMS,
+    Routes.PRIVACY,
+  };
+
+  static bool isPublicAuthRoute([String? route]) {
+    final current = route ?? Get.currentRoute;
+    return publicAuthRoutes.contains(current);
+  }
+
   static final routes = [
     GetPage(
       name: _Paths.MAIN,

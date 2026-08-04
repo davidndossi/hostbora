@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/booking_api_response.dart';
+import '../../../core/utils/getx_instance_probe.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/income_local_data_source.dart';
@@ -552,7 +553,7 @@ class HostCalendarController extends BaseController {
   }
 
   static Future<void> refreshIfRegistered() async {
-    if (Get.isRegistered<HostCalendarController>()) {
+    if (GetxInstanceProbe.isAlive<HostCalendarController>()) {
       await Get.find<HostCalendarController>().loadCalendarData();
     }
   }

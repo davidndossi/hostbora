@@ -6,6 +6,7 @@ import '../../../core/utils/util.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/model/otp_request.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../network/exceptions/api_exception.dart';
 import '../../../routes/app_pages.dart';
 
 class ResetPasswordController extends BaseController {
@@ -28,31 +29,36 @@ class ResetPasswordController extends BaseController {
 
   void backToLogin() => Get.offAllNamed(Routes.AUTH);
 
-  void sendCode() {
+  Future<void> sendCode() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
     final msisdn = msisdnController.text.trim();
-    Util.isOnline().then((online) {
-      if (!online) {
-        showErrorMessage(appLocalization.noInternet);
-        return;
-      }
-      callDataService<GeneralResponse>(
-        _repository.getOtpForgotPassword(OtpRequest(msisdn: msisdn)),
-        onStart: () => isLoading(true),
-        onComplete: () => isLoading(false),
-        onError: (_) => isLoading(false),
-        onSuccess: (GeneralResponse res) {
-          if (res.responseCode == '0' || res.responseCode == null) {
-            Get.offAllNamed(Routes.OTP, arguments: {
-              'msisdn': msisdn,
-              'flow': 'reset_password',
-            });
-          } else {
-            showErrorMessage(res.message ?? 'Failed to send code');
-          }
-        },
-      );
-    });
+    if (!await Util.isOnline()) {
+      showErrorMessage(appLocalization.noInternet);
+      return;
+    }
+    isLoading(true);
+    callDataService<GeneralResponse>(
+      _repository.getOtpForgotPassword(OtpRequest(msisdn: msisdn)),
+      onStart: () => isLoading(true),
+      onComplete: () => isLoading(false),
+      onError: (e) {
+        isLoading(false);
+        final message = e is ApiException && e.message.isNotEmpty
+            ? e.message
+            : 'Failed to send code. Please try again.';
+        showErrorMessage(message);
+      },
+      onSuccess: (GeneralResponse res) {
+        if (res.responseCode == '0' || res.responseCode == null) {
+          Get.offAllNamed(Routes.OTP, arguments: {
+            'msisdn': msisdn,
+            'flow': 'reset_password',
+          });
+        } else {
+          showErrorMessage(res.message ?? 'Failed to send code');
+        }
+      },
+    );
   }
 
   @override

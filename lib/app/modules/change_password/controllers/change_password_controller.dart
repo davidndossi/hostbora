@@ -3,6 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/password_policy.dart';
 import '../../../core/values/text_styles.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/change_password_request.dart';
@@ -25,6 +26,18 @@ class ChangePasswordController extends BaseController {
 
   final msisdn = ''.obs;
   final isLoading = false.obs;
+  final obscureCurrentPassword = true.obs;
+  final obscureNewPassword = true.obs;
+  final obscureReenterPassword = true.obs;
+
+  void toggleCurrentPasswordVisibility() =>
+      obscureCurrentPassword.value = !obscureCurrentPassword.value;
+
+  void toggleNewPasswordVisibility() =>
+      obscureNewPassword.value = !obscureNewPassword.value;
+
+  void toggleReenterPasswordVisibility() =>
+      obscureReenterPassword.value = !obscureReenterPassword.value;
 
   @override
   void onInit() {
@@ -60,24 +73,29 @@ class ChangePasswordController extends BaseController {
     super.onClose();
   }
 
+  static const int minPasswordLength = PasswordPolicy.minLength;
+
   String? validateCurrentPassword(String? value) {
-    if (value != null && value.isEmpty) {
+    if (value == null || value.isEmpty) {
       return appLocalization.requiredField;
     }
     return null;
   }
 
   String? validateNewPassword(String? value) {
-    if (value != null && value.isEmpty) {
-      return appLocalization.requiredField;
-    }
-    return null;
+    return PasswordPolicy.validate(
+      value,
+      isSw: Get.locale?.languageCode == 'sw',
+    );
   }
 
   String? validateReenterNewPassword(String? value) {
-    if (value != null && value.isEmpty) {
-      return appLocalization.requiredField;
-    } else if (value != newPasswordController.text) {
+    final strengthError = PasswordPolicy.validate(
+      value,
+      isSw: Get.locale?.languageCode == 'sw',
+    );
+    if (strengthError != null) return strengthError;
+    if (value != newPasswordController.text) {
       return appLocalization.passwordNotMatch;
     }
     return null;

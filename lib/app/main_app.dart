@@ -323,14 +323,75 @@ class _MainAppState extends State<MainApp> {
   static ThemeData _darkTheme() {
     const darkBackground = Color(0xFF1C1C1E);
     const darkCard = Color(0xFF2C2C2E);
+    const darkScheme = ColorScheme.dark(
+      primary: AppColors.colorPrimary,
+      onPrimary: Colors.white,
+      secondary: AppColors.colorSecondary,
+      onSecondary: Colors.white,
+      surface: darkCard,
+      onSurface: Colors.white,
+      error: AppColors.errorColor,
+      onError: Colors.white,
+    );
     return ThemeData(
       primarySwatch: AppColors.colorPrimarySwatch,
+      colorScheme: darkScheme,
       visualDensity: VisualDensity.adaptivePlatformDensity,
       brightness: Brightness.dark,
       primaryColor: AppColors.colorPrimary,
       scaffoldBackgroundColor: darkBackground,
       cardColor: darkCard,
       useMaterial3: false,
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: darkCard,
+        headerBackgroundColor: AppColors.colorPrimary,
+        headerForegroundColor: Colors.white,
+        // Selected day: solid primary + white numeral (readable on dark dialogs).
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          if (states.contains(WidgetState.disabled)) {
+            return Colors.white.withValues(alpha: 0.28);
+          }
+          return Colors.white;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.colorPrimary;
+          }
+          return Colors.transparent;
+        }),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return AppColors.colorPrimary;
+        }),
+        todayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.colorPrimary;
+          }
+          return AppColors.colorPrimary.withValues(alpha: 0.18);
+        }),
+        todayBorder: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
+        yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return Colors.white;
+        }),
+        yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.colorPrimary;
+          }
+          return Colors.transparent;
+        }),
+        weekdayStyle: const TextStyle(
+          color: Color(0xFFAEAEB2),
+          fontWeight: FontWeight.w600,
+        ),
+        dayStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        rangeSelectionBackgroundColor:
+            AppColors.colorPrimary.withValues(alpha: 0.28),
+        rangeSelectionOverlayColor: WidgetStateProperty.all(
+          AppColors.colorPrimary.withValues(alpha: 0.12),
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.colorPrimary,

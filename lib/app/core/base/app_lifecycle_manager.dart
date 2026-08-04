@@ -17,14 +17,7 @@ class AppLifecycleManager with WidgetsBindingObserver {
 
   AppLifecycleManager(this.context);
 
-  static const _lockSkipRoutes = <String>{
-    Routes.WELCOME_BACK,
-    Routes.AUTH,
-    Routes.CHANGE_PIN,
-    Routes.ONBOARDING,
-    Routes.OTP,
-    Routes.CREATE_HOST_ACCOUNT,
-  };
+  static const _lockSkipRoutes = AppPages.publicAuthRoutes;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -55,20 +48,21 @@ class AppLifecycleManager with WidgetsBindingObserver {
 
   Future<void> _checkTokenAndRefreshIfNeeded() async {
     try {
+      // Registration / OTP / onboarding have no session — never kick to Login.
+      if (AppPages.isPublicAuthRoute()) return;
+
       final pref = Get.find<PreferenceManager>(
         tag: (PreferenceManager).toString(),
       );
       if (!await SessionService.hasLocalSession(pref)) {
-        if (Get.currentRoute != Routes.AUTH) {
-          await _clearAndGoToAuth(pref);
-        }
+        await _clearAndGoToAuth(pref);
         return;
       }
       if (!Get.isRegistered<SessionService>()) return;
       final session = Get.find<SessionService>();
       if (await session.isAccessTokenValid()) return;
       final refreshed = await session.ensureValidSession();
-      if (!refreshed && Get.currentRoute != Routes.AUTH) {
+      if (!refreshed && !AppPages.isPublicAuthRoute()) {
         await session.clearFullSession();
         Get.offAllNamed(Routes.AUTH);
       }

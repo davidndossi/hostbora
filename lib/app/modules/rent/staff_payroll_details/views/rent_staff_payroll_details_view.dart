@@ -14,7 +14,7 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  Color pageBackgroundColor(BuildContext context) => RentTheme.bg;
+  Color pageBackgroundColor(BuildContext context) => RentTheme.canvasBg(context);
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) =>
@@ -43,7 +43,7 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
                       fontSize: 10,
                       letterSpacing: 1.2,
                       fontWeight: FontWeight.w800,
-                      color: RentTheme.muted,
+                      color: RentTheme.mutedText(context),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -67,7 +67,7 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.35,
-                      color: RentTheme.muted,
+                      color: RentTheme.mutedText(context),
                     ),
                   ),
                 ],
@@ -77,7 +77,7 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
             rentSectionLabel(_isSw ? 'Kipindi cha malipo' : 'Pay period'),
             Text(
               controller.payPeriodLabel.value,
-              style: TextStyle(color: RentTheme.muted),
+              style: TextStyle(color: RentTheme.mutedText(context)),
             ),
             const SizedBox(height: 16),
             rentSectionLabel(_isSw ? 'Wafanyakazi' : 'Staff'),
@@ -93,7 +93,7 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
                             ? 'Bado hakuna wafanyakazi waliosajiliwa.'
                             : 'No staff registered yet.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: RentTheme.muted),
+                        style: TextStyle(color: RentTheme.mutedText(context)),
                       ),
                       const SizedBox(height: 12),
                       TextButton(
@@ -113,7 +113,7 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
                   children: [
                     for (var i = 0; i < controller.rows.length; i++) ...[
                       if (i > 0) const Divider(),
-                      _staffRow(controller.rows[i]),
+                      _staffRow(context, controller.rows[i]),
                     ],
                   ],
                 ),
@@ -125,7 +125,8 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
     });
   }
 
-  Widget _staffRow(RentStaffPayrollUiRow row) {
+  Widget _staffRow(BuildContext context, RentStaffPayrollUiRow row) {
+    final muted = RentTheme.mutedText(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -152,14 +153,14 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
                 ),
                 Text(
                   row.jobTitle,
-                  style: const TextStyle(color: RentTheme.muted, fontSize: 12),
+                  style: TextStyle(color: muted, fontSize: 12),
                 ),
                 if (row.payDayNote != null && row.payDayNote!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     row.payDayNote!,
                     style: TextStyle(
-                      color: RentTheme.muted.withValues(alpha: 0.9),
+                      color: muted.withValues(alpha: 0.9),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),

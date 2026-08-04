@@ -32,7 +32,7 @@ class TenantLeaseReminderService extends GetxService {
     _timer = Timer.periodic(const Duration(hours: 6), (_) {
       unawaited(runNow());
     });
-    unawaited(runNow());
+    Timer(const Duration(seconds: 40), () => unawaited(runNow()));
   }
 
   Future<void> runNow() async {

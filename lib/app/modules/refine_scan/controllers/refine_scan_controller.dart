@@ -11,6 +11,7 @@ import '../../../data/local/vault_recent_access_store.dart';
 import '../../../routes/app_pages.dart';
 import '../../documents/controllers/documents_controller.dart';
 import '../../documents/vault_route_args.dart';
+import '../../property_vault/controllers/property_vault_controller.dart';
 
 class RefineScanController extends BaseController {
   RefineScanController({
@@ -293,16 +294,47 @@ class RefineScanController extends BaseController {
     return dest.path;
   }
 
+  /// Lands on Vault (More → Documents) or an open Documents folder.
+  /// Never pops past the first route when those screens aren't in the stack —
+  /// that previously left a blank page after save.
   void _returnToDocumentsAndReload() {
     final args = _vaultArgs.toMap();
-    Get.until((route) => route.settings.name == Routes.DOCUMENTS);
-    if (Get.isRegistered<DocumentsController>()) {
+    var landedOn = '';
+
+    Get.until((route) {
+      final name = route.settings.name;
+      if (name == Routes.DOCUMENTS) {
+        landedOn = Routes.DOCUMENTS;
+        return true;
+      }
+      if (name == Routes.PROPERTY_VAULT) {
+        landedOn = Routes.PROPERTY_VAULT;
+        return true;
+      }
+      if (route.isFirst) {
+        landedOn = '';
+        return true;
+      }
+      return false;
+    });
+
+    if (landedOn == Routes.DOCUMENTS &&
+        Get.isRegistered<DocumentsController>()) {
       final docs = Get.find<DocumentsController>();
       docs.directoryId = _vaultArgs.directoryId;
       docs.directoryName = _vaultArgs.directoryName;
       docs.loadDocuments();
-    } else {
-      Get.offNamed(Routes.DOCUMENTS, arguments: args);
+      return;
     }
+
+    if (landedOn == Routes.PROPERTY_VAULT) {
+      if (Get.isRegistered<PropertyVaultController>()) {
+        Get.find<PropertyVaultController>().loadVault();
+      }
+      return;
+    }
+
+    // Entry was via Add Document → Scanner without Vault still on the stack.
+    Get.offNamed(Routes.PROPERTY_VAULT, arguments: args);
   }
 }

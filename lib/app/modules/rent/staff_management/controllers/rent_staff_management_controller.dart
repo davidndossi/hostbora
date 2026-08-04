@@ -12,8 +12,8 @@ import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../../data/repository/app_repository.dart';
-import '../../../../routes/app_pages.dart';
 import '../utils/rent_staff_pay_format.dart';
+import '../widgets/staff_edit_sheet.dart';
 
 /// One row in the rent staff list.
 class RentStaffListItem {
@@ -110,6 +110,11 @@ class RentStaffManagementController extends BaseController {
 
   bool get isEditMode => editingStaffId.value != null;
 
+  /// Used to scroll the registry form into view when Edit is tapped.
+  final formSectionKey = GlobalKey();
+
+  bool get _isSw => Get.locale?.languageCode == 'sw';
+
   @override
   void onInit() {
     super.onInit();
@@ -137,10 +142,18 @@ class RentStaffManagementController extends BaseController {
   @override
   void onReady() {
     super.onReady();
-    loadStaff().then((_) => _prefillIfEditing());
+    loadStaff().then((_) async {
+      final id = editingStaffId.value;
+      if (id != null) {
+        // Opened via arguments (e.g. Team & Staff → Edit).
+        await editStaffById('$id');
+      }
+    });
   }
 
   Future<void> loadStaff() async {
+    // Never flip initialLoad back to true — that would tear down the Add Staff
+    // form mid-edit when a background refresh runs.
     try {
       if (Get.isRegistered<RemoteAccountSyncService>()) {
         await Get.find<RemoteAccountSyncService>().syncStaffFromRemote();
@@ -165,7 +178,7 @@ class RentStaffManagementController extends BaseController {
       logger.e('loadStaff $e $st');
       Get.snackbar('Error', 'Could not load staff');
     } finally {
-      initialLoad.value = false;
+      if (initialLoad.value) initialLoad.value = false;
     }
   }
 
@@ -179,6 +192,20 @@ class RentStaffManagementController extends BaseController {
     final v = value?.trim() ?? '';
     if (v.isEmpty) return 'Please enter full name';
     if (v.length < 3) return 'Name is too short';
+    return null;
+  }
+
+  String? validatePhone(String? value) {
+    final phone = value?.trim() ?? '';
+    if (phone.isEmpty) return 'Phone number is required';
+    final normalized = phone
+        .replaceAll(RegExp(r'[\s\-]'), '')
+        .replaceFirst(RegExp(r'^\+255'), '0')
+        .replaceFirst(RegExp(r'^255'), '0');
+    final phonePattern = RegExp(r'^0[678]\d{8}$');
+    if (!phonePattern.hasMatch(normalized)) {
+      return 'Enter a valid phone number (e.g. 0712345678)';
+    }
     return null;
   }
 
@@ -210,22 +237,20 @@ class RentStaffManagementController extends BaseController {
     }
   }
 
-  Future<void> _prefillIfEditing() async {
-    final id = editingStaffId.value;
-    if (id == null) return;
-    final record = await _local.getById(id);
-    if (record == null) return;
-    fullNameController.text = record.name;
-    selectedPrimaryRole.value = record.jobTitle;
-    payDateController.text = record.payDayLabel;
-    paymentType.value = record.paymentType;
-    if (record.amountValue > 0) {
-      amountController.text = record.amountValue.toStringAsFixed(
-        record.amountValue.truncateToDouble() == record.amountValue ? 0 : 2,
-      );
-    } else if (record.payAmountLabel.isNotEmpty) {
-      amountController.text = record.payAmountLabel;
-    }
+  void _clearFormFields() {
+    formKey.currentState?.reset();
+    fullNameController.clear();
+    phoneController.clear();
+    notesController.clear();
+    amountController.clear();
+    payDateController.clear();
+    selectedPrimaryRole.value = '';
+    paymentType.value = RentStaffPayFormat.monthly;
+  }
+
+  void cancelEdit() {
+    editingStaffId.value = null;
+    _clearFormFields();
   }
 
   Future<String> _apiStaffId(int localId) async {
@@ -314,8 +339,12 @@ class RentStaffManagementController extends BaseController {
             );
             _syncWorker.runNow();
           }
-          showSuccessWithHaptic('Staff updated');
-          Get.back(result: true);
+          editingStaffId.value = null;
+          _clearFormFields();
+          await loadStaff();
+          showSuccessWithHaptic(
+            _isSw ? 'Mfanyakazi amesasishwa' : 'Staff updated',
+          );
           return;
         }
 
@@ -352,14 +381,7 @@ class RentStaffManagementController extends BaseController {
           );
           _syncWorker.runNow();
         }
-        formKey.currentState?.reset();
-        fullNameController.clear();
-        phoneController.clear();
-        notesController.clear();
-        amountController.clear();
-        payDateController.clear();
-        selectedPrimaryRole.value = '';
-        paymentType.value = RentStaffPayFormat.monthly;
+        _clearFormFields();
         await loadStaff();
         showSuccessWithHaptic('Staff was added successfully');
       } catch (e, st) {
@@ -370,11 +392,114 @@ class RentStaffManagementController extends BaseController {
     });
   }
 
-  void editStaff(RentStaffListItem member) {
-    Get.toNamed(
-      Routes.RENT_STAFF_MANAGEMENT,
-      arguments: {'staffId': member.id},
-    )?.then((_) => loadStaff());
+  Future<RentStaffRecord?> peekStaffRecord(int id) => _local.getById(id);
+
+  /// Persists edits from [showStaffEditSheet]. Returns false on validation/save error.
+  Future<bool> saveStaffEdits({
+    required String staffId,
+    required String name,
+    required String role,
+    required String paymentType,
+    required String amountRaw,
+    required String payDay,
+  }) async {
+    final editId = int.tryParse(staffId);
+    if (editId == null) return false;
+    final amount = _parseAmount(amountRaw);
+    if (amount == null || amount <= 0) return false;
+    if (name.trim().isEmpty || role.trim().isEmpty) return false;
+
+    try {
+      await _local.updateById(
+        id: editId,
+        name: name.trim(),
+        jobTitle: role.trim(),
+        payDayLabel: payDay.trim(),
+        paymentType: paymentType,
+        amountValue: amount,
+      );
+      final request = _buildStaffRequest(
+        name: name.trim(),
+        role: role.trim(),
+        amount: amount,
+        payDay: payDay.trim(),
+        id: '$editId',
+      );
+      // Align payment type used in request with the edited value.
+      this.paymentType.value = paymentType;
+      final apiStaffId = await _apiStaffId(editId);
+      try {
+        final res =
+            await _repository.updateStaff(apiStaffId, request.toApiJson());
+        if (!res.isSuccess) throw Exception(res.message ?? 'API error');
+      } catch (_) {
+        final payload = request.toApiJson()..['id'] = apiStaffId;
+        await _syncQueue.enqueue(
+          entityType: 'staff',
+          operation: 'update',
+          payloadJson: jsonEncode(payload),
+          dedupeKey: 'staff:update:$apiStaffId',
+        );
+        _syncWorker.runNow();
+      }
+      editingStaffId.value = null;
+      _clearFormFields();
+      await loadStaff();
+      showSuccessWithHaptic(
+        _isSw ? 'Mfanyakazi amesasishwa' : 'Staff updated',
+      );
+      return true;
+    } catch (e, st) {
+      logger.e('saveStaffEdits $e $st');
+      Get.snackbar(
+        'Error',
+        _isSw ? 'Haikuweza kusasisha' : 'Could not update staff',
+      );
+      return false;
+    }
+  }
+
+  /// Opens a dedicated edit bottom sheet (visible response to Edit).
+  Future<void> editStaff(RentStaffListItem member) async {
+    final id = int.tryParse(member.id);
+    if (id == null) {
+      Get.snackbar(
+        'Error',
+        _isSw ? 'Mfanyakazi si sahihi' : 'Invalid staff member',
+      );
+      return;
+    }
+    editingStaffId.value = id;
+    await showStaffEditSheet(controller: this, member: member);
+    // If user dismissed without saving, leave the page form clean.
+    if (editingStaffId.value != null) {
+      editingStaffId.value = null;
+    }
+  }
+
+  Future<void> editStaffById(String staffId) async {
+    final match = staff.firstWhereOrNull((s) => s.id == staffId);
+    if (match != null) {
+      await editStaff(match);
+      return;
+    }
+    final id = int.tryParse(staffId);
+    if (id == null) return;
+    final record = await _local.getById(id);
+    if (record == null) return;
+    await editStaff(
+      RentStaffListItem(
+        id: '${record.id}',
+        name: record.name,
+        jobTitle: record.jobTitle,
+        payAmountLabel: record.displayAmountLine,
+        payDayDisplay: record.payDayLabel.trim().isEmpty
+            ? ''
+            : RentStaffPayFormat.payDayLine(record.payDayLabel.trim()),
+        paymentType: record.paymentType,
+        amountValue: record.amountValue,
+      ),
+    );
   }
 
   Future<void> removeStaff(String id) async {
@@ -382,6 +507,7 @@ class RentStaffManagementController extends BaseController {
     if (parsed == null) return;
     final snapshot = await _local.getById(parsed);
     if (snapshot == null) return;
+    final apiStaffId = await _apiStaffId(parsed);
 
     final confirmed = await confirmDestructive(
       title: 'Remove staff member?',
@@ -392,9 +518,38 @@ class RentStaffManagementController extends BaseController {
 
     await runDestructiveWithUndo(
       message: 'Staff member removed',
+      duration: const Duration(seconds: 4),
       action: () async {
         await _local.deleteById(parsed);
-        await loadStaff();
+        try {
+          final res = await _repository.deleteStaff(apiStaffId);
+          if (!res.isSuccess) throw Exception(res.message ?? 'API error');
+        } catch (_) {
+          await _syncQueue.enqueue(
+            entityType: 'staff',
+            operation: 'delete',
+            payloadJson: jsonEncode({'id': apiStaffId}),
+            dedupeKey: 'staff:delete:$apiStaffId',
+          );
+          _syncWorker.runNow();
+        }
+        // Refresh from local only so a remote sync cannot rehydrate immediately.
+        final rows = await _local.getAllNewestFirst();
+        staff.assignAll(
+          rows.map(
+            (r) => RentStaffListItem(
+              id: '${r.id}',
+              name: r.name,
+              jobTitle: r.jobTitle,
+              payAmountLabel: r.displayAmountLine,
+              payDayDisplay: r.payDayLabel.trim().isEmpty
+                  ? ''
+                  : RentStaffPayFormat.payDayLine(r.payDayLabel.trim()),
+              paymentType: r.paymentType,
+              amountValue: r.amountValue,
+            ),
+          ),
+        );
       },
       onUndo: () async {
         await _local.insert(

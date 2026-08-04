@@ -10,6 +10,7 @@ import 'dart:io';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../core/constants/ui_preference_keys.dart';
+import '../../../../core/utils/getx_instance_probe.dart';
 import '../../../../core/utils/property_break_even_metrics.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
@@ -462,7 +463,8 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
   /// Reload tenant cards when income or tenant data changes elsewhere.
   static Future<void> refreshIfRegistered() async {
-    if (Get.isRegistered<RentTenantResidencyPaymentTrackerController>()) {
+    if (GetxInstanceProbe.isAlive<
+        RentTenantResidencyPaymentTrackerController>()) {
       await Get.find<RentTenantResidencyPaymentTrackerController>()
           .loadTenants();
     }

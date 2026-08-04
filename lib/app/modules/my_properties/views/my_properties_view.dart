@@ -127,7 +127,6 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
 
   Widget _buildFilterTabs(BuildContext context) {
     final theme = Theme.of(context);
-    final c = FormSurfaceColors.of(context);
     return Obx(
       () => SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -139,26 +138,32 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
               padding: const EdgeInsets.only(right: 10),
               child: Material(
                 color: index == controller.selectedFilterIndex.value
-                    ? (c.isDark
-                          ? theme.colorScheme.surfaceContainerHighest
-                          : AppColors.colorWhite)
+                    ? AppColors.colorPrimary
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
                 child: InkWell(
                   onTap: () => controller.selectFilter(index),
                   borderRadius: BorderRadius.circular(20),
-                  child: Padding(
+                  child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 10,
                     ),
+                    decoration: index == controller.selectedFilterIndex.value
+                        ? null
+                        : BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
+                            ),
+                          ),
                     child: Text(
                       controller.filterLabels[index],
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: index == controller.selectedFilterIndex.value
-                            ? theme.colorScheme.onSurface
+                            ? Colors.white
                             : theme.colorScheme.onSurfaceVariant,
                       ),
                     ),

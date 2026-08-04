@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/password_policy.dart';
 import '../../../core/utils/util.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/general_response.dart';
@@ -133,7 +134,25 @@ class CreateHostAccountController extends BaseController {
   void _handleRegistrationResponseError(Exception? e) {
     isLoading(false);
     if (e is ApiException && e.message.isNotEmpty) {
-      showErrorMessage(e.message);
+      final message = e.message;
+      final alreadyExists = message.toLowerCase().contains('already exists');
+      if (alreadyExists) {
+        Get.snackbar(
+          _isSw ? 'Akaunti ipo' : 'Account exists',
+          message,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 5),
+          mainButton: TextButton(
+            onPressed: goToLogin,
+            child: Text(
+              _isSw ? 'Ingia' : 'Sign in',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        );
+      } else {
+        showErrorMessage(message);
+      }
     }
   }
 
@@ -161,18 +180,51 @@ class CreateHostAccountController extends BaseController {
     return null;
   }
 
-  String? validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Email is required';
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value.trim())) return 'Enter a valid email';
+  bool get _isSw => Get.locale?.languageCode == 'sw';
+
+  String? validateFullName(String? value) {
+    final name = value?.trim() ?? '';
+    if (name.isEmpty) {
+      return _isSw ? 'Jina kamili linahitajika' : 'Full name is required';
+    }
+    // Letters (incl. accented), spaces, apostrophes, hyphens only
+    final nameRegex = RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ\s'\-]{1,118}$");
+    if (!nameRegex.hasMatch(name)) {
+      return _isSw
+          ? 'Jina linaweza kuwa na herufi, nafasi, (-) au (\') pekee'
+          : 'Name may only contain letters, spaces, hyphens, or apostrophes';
+    }
     return null;
   }
 
-  String? validatePassword(String? value) {
-    if (value == null || value.isEmpty) return 'Password is required';
-    if (value.length < 8) return 'Password must be at least 8 characters';
+  String? validatePhone(String? value) {
+    final phone = value?.trim() ?? '';
+    if (phone.isEmpty) {
+      return _isSw ? 'Namba ya simu inahitajika' : 'Phone number is required';
+    }
+    // Tanzanian mobile: 0 then 6/7/8, then 8 digits (e.g. 0712345678)
+    final phoneRegex = RegExp(r'^0[678]\d{8}$');
+    if (!phoneRegex.hasMatch(phone)) {
+      return _isSw
+          ? 'Weka namba sahihi ya simu (mf. 0712345678)'
+          : 'Enter a valid phone number (e.g. 0712345678)';
+    }
     return null;
   }
+
+  String? validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return _isSw ? 'Barua pepe inahitajika' : 'Email is required';
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return _isSw ? 'Weka barua pepe sahihi' : 'Enter a valid email';
+    }
+    return null;
+  }
+
+  String? validatePassword(String? value) =>
+      PasswordPolicy.validate(value, isSw: _isSw);
 
   @override
   void onClose() {

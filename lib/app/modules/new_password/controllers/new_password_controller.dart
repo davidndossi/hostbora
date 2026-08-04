@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/password_policy.dart';
 import '../../../data/model/change_password_request.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/repository/app_repository.dart';
@@ -28,35 +29,26 @@ class NewPasswordController extends BaseController {
   double get strength {
     _passwordTrigger.value;
     final p = newPasswordController.text;
-    if (p.isEmpty) {
-      return 0;
-    }
-    double s = 0;
-    if (p.length >= 8) {
-      s += 0.3;
-    }
-    if (p.length >= 12) {
-      s += 0.2;
-    }
-    if (RegExp(r'[0-9]').hasMatch(p)) {
-      s += 0.25;
-    }
-    if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(p) ||
-        RegExp(r'[A-Z]').hasMatch(p) && RegExp(r'[a-z]').hasMatch(p)) {
-      s += 0.25;
-    }
-    return s.clamp(0.0, 1.0);
+    if (p.isEmpty) return 0;
+    var met = 0;
+    if (PasswordPolicy.hasMinLength(p)) met++;
+    if (PasswordPolicy.hasUppercase(p)) met++;
+    if (PasswordPolicy.hasLowercase(p)) met++;
+    if (PasswordPolicy.hasDigit(p)) met++;
+    if (PasswordPolicy.hasSpecial(p)) met++;
+    if (p.length >= 12) met++;
+    return (met / 6).clamp(0.0, 1.0);
   }
 
   String get strengthLabel {
     _passwordTrigger.value;
-    if (strength >= 0.75) {
+    if (strength >= 0.85) {
       return _t('STRONG', 'IMARA');
     }
-    if (strength >= 0.5) {
+    if (strength >= 0.65) {
       return _t('GOOD', 'NZURI');
     }
-    if (strength >= 0.25) {
+    if (strength >= 0.35) {
       return _t('FAIR', 'WASTANI');
     }
     return _t('WEAK', 'DHAIFU');
@@ -64,15 +56,27 @@ class NewPasswordController extends BaseController {
 
   bool get hasMinLength {
     _passwordTrigger.value;
-    return newPasswordController.text.length >= 8;
+    return PasswordPolicy.hasMinLength(newPasswordController.text);
   }
 
-  bool get hasNumberOrSymbol {
+  bool get hasUppercase {
     _passwordTrigger.value;
-    return RegExp(r'[0-9]').hasMatch(newPasswordController.text) ||
-        RegExp(
-          r'''[!@#$%^&*(),.?":{}|<>_\-+=\[\];'\\]''',
-        ).hasMatch(newPasswordController.text);
+    return PasswordPolicy.hasUppercase(newPasswordController.text);
+  }
+
+  bool get hasLowercase {
+    _passwordTrigger.value;
+    return PasswordPolicy.hasLowercase(newPasswordController.text);
+  }
+
+  bool get hasDigit {
+    _passwordTrigger.value;
+    return PasswordPolicy.hasDigit(newPasswordController.text);
+  }
+
+  bool get hasSpecial {
+    _passwordTrigger.value;
+    return PasswordPolicy.hasSpecial(newPasswordController.text);
   }
 
   void goBack() => Get.back();
@@ -125,19 +129,8 @@ class NewPasswordController extends BaseController {
     );
   }
 
-  String? validateNewPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return _t('New password is required', 'Nenosiri jipya linahitajika');
-    }
-    if (value.length < 8) {
-      return _t('At least 8 characters', 'Angalau herufi 8');
-    }
-    if (!RegExp(r'[0-9]').hasMatch(value) &&
-        !RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
-      return _t('Include a number or symbol', 'Jumuisha namba au alama');
-    }
-    return null;
-  }
+  String? validateNewPassword(String? value) =>
+      PasswordPolicy.validate(value, isSw: Get.locale?.languageCode == 'sw');
 
   String? validateConfirm(String? value) {
     if (value == null || value.isEmpty) {

@@ -371,11 +371,38 @@ class NewPasswordView extends GetView<NewPasswordController> {
         ),
         const SizedBox(height: 4),
         _ValidationRow(
-          met: controller.hasNumberOrSymbol,
+          met: controller.hasUppercase,
           label: _t(
             context,
-            en: 'Contains a number or symbol',
-            sw: 'Ina namba au alama',
+            en: 'Uppercase letter (A–Z)',
+            sw: 'Herufi kubwa (A–Z)',
+          ),
+        ),
+        const SizedBox(height: 4),
+        _ValidationRow(
+          met: controller.hasLowercase,
+          label: _t(
+            context,
+            en: 'Lowercase letter (a–z)',
+            sw: 'Herufi ndogo (a–z)',
+          ),
+        ),
+        const SizedBox(height: 4),
+        _ValidationRow(
+          met: controller.hasDigit,
+          label: _t(
+            context,
+            en: 'A number (0–9)',
+            sw: 'Namba (0–9)',
+          ),
+        ),
+        const SizedBox(height: 4),
+        _ValidationRow(
+          met: controller.hasSpecial,
+          label: _t(
+            context,
+            en: 'A special character (e.g. ! @ #)',
+            sw: 'Alama maalum (mf. ! @ #)',
           ),
         ),
       ],

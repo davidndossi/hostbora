@@ -19,6 +19,7 @@ import '../../../core/widget/skeleton_presets.dart';
 import '../../../core/widget/sync_status_chip.dart';
 import '../../../core/models/item_sync_status.dart';
 import '../../../data/model/check_in_item.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../controllers/home_controller.dart';
 import 'home_guest_quick_actions_sheet.dart';
 
@@ -1018,7 +1019,30 @@ class _CheckInCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                         ],
-                        if (item.isConfirmed)
+                        if (item.isCancelled)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .error
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              AppLocalizations.of(context)!
+                                  .bookingCancelledLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          )
+                        else if (item.isConfirmed && !item.isInactive)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,

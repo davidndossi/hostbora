@@ -76,6 +76,9 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
   @override
   Widget body(BuildContext context) {
     final u = _StaffUi(context);
+    // Only gate the first load here. Do NOT read `staff` in this Obx — a
+    // background sync/list refresh must not rebuild the Add Staff form (that
+    // previously looked like the form "closing" while typing the phone number).
     return Obx(() {
       if (controller.initialLoad.value) {
         return const DefaultScreenSkeleton();
@@ -110,7 +113,11 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
             const SizedBox(height: 20),
             _activeTeamHeader(u),
             const SizedBox(height: 12),
-            if (controller.staff.isEmpty) _emptyTeamHint(u) else _staffList(u),
+            Obx(
+              () => controller.staff.isEmpty
+                  ? _emptyTeamHint(u)
+                  : _staffList(u),
+            ),
             const SizedBox(height: 22),
             _complianceCard(u),
             const SizedBox(height: 12),
@@ -123,6 +130,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
 
   Widget _newStaffMemberCard(_StaffUi u) {
     return Container(
+      key: controller.formSectionKey,
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -136,16 +144,38 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.person_add_alt_1_rounded, color: u.brandTeal.withValues(alpha: 0.95), size: 22),
-                const SizedBox(width: 8),
-                Text(
-                  _isSw ? 'Mfanyakazi Mpya' : 'New Staff Member',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: u.onSurface),
-                ),
-              ],
-            ),
+            Obx(() {
+              final editing = controller.isEditMode;
+              return Row(
+                children: [
+                  Icon(
+                    editing
+                        ? Icons.edit_outlined
+                        : Icons.person_add_alt_1_rounded,
+                    color: u.brandTeal.withValues(alpha: 0.95),
+                    size: 22,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      editing
+                          ? (_isSw ? 'Hariri Mfanyakazi' : 'Edit Staff Member')
+                          : (_isSw ? 'Mfanyakazi Mpya' : 'New Staff Member'),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                        color: u.onSurface,
+                      ),
+                    ),
+                  ),
+                  if (editing)
+                    TextButton(
+                      onPressed: controller.cancelEdit,
+                      child: Text(_isSw ? 'Ghairi' : 'Cancel'),
+                    ),
+                ],
+              );
+            }),
             const SizedBox(height: 16),
             _capsLabel(u, 'Full name'),
             const SizedBox(height: 8),
@@ -166,15 +196,22 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               controller: controller.phoneController,
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.next,
+              validator: controller.validatePhone,
+              // Validate on submit / leave-field — not on every keystroke, so
+              // error text doesn't resize the form while the user is typing.
+              autovalidateMode: AutovalidateMode.onUnfocus,
               style: TextStyle(color: u.onSurface, fontWeight: FontWeight.w500),
               cursorColor: u.brandTeal,
-              decoration: _fieldDeco(u, hint: 'e.g. +255 712 345 678'),
+              decoration: _fieldDeco(u, hint: 'e.g. 0712345678'),
             ),
             const SizedBox(height: 14),
             _capsLabel(u, 'Pay type'),
             const SizedBox(height: 8),
             Obx(
               () => DropdownButtonFormField<String>(
+                key: ValueKey(
+                  'pay-${controller.editingStaffId.value}-${controller.paymentType.value}',
+                ),
                 initialValue: RentStaffPayFormat.paymentTypeLabels.containsKey(controller.paymentType.value)
                     ? controller.paymentType.value
                     : RentStaffPayFormat.monthly,
@@ -253,6 +290,9 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                 final role = controller.selectedPrimaryRole.value;
                 final opts = RentStaffManagementController.primaryRoleOptions;
                 return DropdownButtonFormField<String>(
+                  key: ValueKey(
+                    'role-${controller.editingStaffId.value}-$role',
+                  ),
                   initialValue: role.isEmpty ? null : (opts.contains(role) ? role : null),
                   decoration: _dropdownDeco(u),
                   dropdownColor: u.card,
@@ -291,19 +331,31 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               ),
             ),
             const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: controller.registerStaff,
-                style: FilledButton.styleFrom(
-                  backgroundColor: _StaffUi.teal,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text(
-                  _isSw ? 'Sajili mtafanyakazi' : 'Register staff member',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.6),
+            Obx(
+              () => SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: controller.registerStaff,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _StaffUi.teal,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    controller.isEditMode
+                        ? (_isSw ? 'Sasisha mfanyakazi' : 'Update staff member')
+                        : (_isSw
+                            ? 'Sajili mtafanyakazi'
+                            : 'Register staff member'),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -328,7 +380,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: _StaffUi.teal,
+              color: u.brandTeal,
               borderRadius: BorderRadius.circular(16),
               boxShadow: u.dark
                   ? [

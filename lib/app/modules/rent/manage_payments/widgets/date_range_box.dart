@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/values/app_colors.dart';
 
 class DateRangeBox extends StatelessWidget {
@@ -16,11 +17,6 @@ class DateRangeBox extends StatelessWidget {
     required this.onEndTap,
   });
 
-  String formatDate(DateTime? date) {
-    if (date == null) return 'Select date';
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -33,9 +29,7 @@ class DateRangeBox extends StatelessWidget {
             onTap: onStartTap,
           ),
         ),
-
         const SizedBox(width: 12),
-
         Expanded(
           child: _DateTile(
             title: 'End Date',
@@ -64,8 +58,28 @@ class _DateTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = context.tokens;
+    final hasValue = value.trim().isNotEmpty;
+    final fill = isDark
+        ? (hasValue
+            ? AppColors.colorPrimary.withValues(alpha: 0.22)
+            : tokens.elevatedSurface)
+        : (hasValue
+            ? AppColors.colorPrimary.withValues(alpha: 0.08)
+            : Colors.grey.shade100);
+    final border = isDark
+        ? (hasValue
+            ? AppColors.colorPrimary
+            : tokens.border.withValues(alpha: 0.7))
+        : (hasValue ? AppColors.colorPrimary : Colors.grey.shade300);
+    final titleColor = isDark ? tokens.textMuted : Colors.grey.shade600;
+    final valueColor = isDark
+        ? (hasValue ? Colors.white : tokens.textMuted)
+        : (hasValue ? tokens.textPrimary : Colors.grey.shade700);
+
     return Material(
-      color: Colors.grey.shade100,
+      color: fill,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -74,7 +88,7 @@ class _DateTile extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: border, width: hasValue ? 1.5 : 1),
           ),
           child: Row(
             children: [
@@ -88,15 +102,16 @@ class _DateTile extends StatelessWidget {
                       title,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: titleColor,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      value,
-                      style: const TextStyle(
+                      hasValue ? value : 'Select date',
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
+                        color: valueColor,
                       ),
                     ),
                   ],

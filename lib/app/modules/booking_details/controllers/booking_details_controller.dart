@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/getx_instance_probe.dart';
 import '../../../core/widget/undo_snackbar.dart';
 import '../../../core/models/item_sync_status.dart';
 import '../../../data/local/bnb_booking_actions.dart';
@@ -287,7 +288,7 @@ class BookingDetailsController extends BaseController {
   bool get showPaymentSyncBadge => paymentSyncStatus.value.showSyncBadge;
 
   static Future<void> refreshIfRegistered() async {
-    if (Get.isRegistered<BookingDetailsController>()) {
+    if (GetxInstanceProbe.isAlive<BookingDetailsController>()) {
       await Get.find<BookingDetailsController>()._loadPaymentSummary();
     }
   }
@@ -316,20 +317,148 @@ class BookingDetailsController extends BaseController {
     }
   }
 
-  void share() {
+  Future<void> share([BuildContext? context]) async {
     final text = [
       '${_l10n.bookingDetails} – ${propertyTitle.value}',
       if (propertyLocation.value.isNotEmpty) propertyLocation.value,
-      'Check-in: ${checkInDate.value} $checkInTime',
-      'Check-out: ${checkOutDate.value} $checkOutTime',
-      '${_l10n.guestName}: ${guestName.value}',
-      if (totalPayout.value.isNotEmpty && totalPayout.value != '—')
-        '${_l10n.totalPayout}: ${totalPayout.value}',
+      if (!isListingMode) ...[
+        'Check-in: ${checkInDate.value} $checkInTime',
+        'Check-out: ${checkOutDate.value} $checkOutTime',
+        '${_l10n.guestName}: ${guestName.value}',
+        if (totalPayout.value.isNotEmpty && totalPayout.value != '—')
+          '${_l10n.totalPayout}: ${totalPayout.value}',
+      ],
     ].join('\n');
-    Share.share(text, subject: '${_l10n.bookingDetails} – ${propertyTitle.value}');
+    final subject = '${_l10n.bookingDetails} – ${propertyTitle.value}';
+    Rect? origin;
+    final ctx = context ?? Get.context;
+    if (ctx != null) {
+      final box = ctx.findRenderObject() as RenderBox?;
+      if (box != null && box.hasSize) {
+        origin = box.localToGlobal(Offset.zero) & box.size;
+      }
+    }
+    try {
+      await Share.share(
+        text,
+        subject: subject,
+        sharePositionOrigin: origin,
+      );
+    } catch (e, st) {
+      logger.e('share booking failed $e $st');
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Imeshindikana kushiriki. Jaribu tena.'
+            : 'Could not open share sheet. Please try again.',
+      );
+    }
   }
 
-  void moreOptions() {}
+  Future<void> moreOptions([BuildContext? context]) async {
+    final ctx = context ?? Get.context;
+    if (ctx == null) return;
+    final isSw = Get.locale?.languageCode == 'sw';
+
+    await showModalBottomSheet<void>(
+      context: ctx,
+      showDragHandle: true,
+      builder: (sheetCtx) {
+        Widget tile({
+          required IconData icon,
+          required String title,
+          Color? color,
+          required VoidCallback onTap,
+        }) {
+          return ListTile(
+            leading: Icon(icon, color: color),
+            title: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              onTap();
+            },
+          );
+        }
+
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      isSw ? 'Chaguzi' : 'Options',
+                      style: Theme.of(sheetCtx).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ),
+                ),
+                tile(
+                  icon: Icons.share_outlined,
+                  title: isSw ? 'Shiriki' : _l10n.share,
+                  onTap: () => share(ctx),
+                ),
+                if (!isListingMode) ...[
+                  tile(
+                    icon: Icons.sms_outlined,
+                    title: _l10n.messageGuest,
+                    onTap: messageGuest,
+                  ),
+                  tile(
+                    icon: Icons.schedule_send_outlined,
+                    title: isSw
+                        ? 'Panga WhatsApp'
+                        : 'Schedule WhatsApp',
+                    onTap: () => scheduleGuestWhatsApp(),
+                  ),
+                  if (!_isInactive) ...[
+                    tile(
+                      icon: Icons.link_outlined,
+                      title: isSw
+                          ? 'Tuma kiungo cha malipo'
+                          : 'Send payment link',
+                      onTap: () => sendPaymentLinkViaWhatsApp(),
+                    ),
+                    tile(
+                      icon: Icons.payments_outlined,
+                      title: _l10n.recordPayment,
+                      onTap: () => recordPayment(),
+                    ),
+                    tile(
+                      icon: Icons.calendar_today_outlined,
+                      title: _l10n.extendStayTitle,
+                      onTap: () => showExtendStayDialog(),
+                    ),
+                    tile(
+                      icon: Icons.logout_rounded,
+                      title: _l10n.checkOutGuest,
+                      onTap: () => confirmCheckOut(),
+                    ),
+                    tile(
+                      icon: Icons.cancel_outlined,
+                      title: _l10n.cancelBooking,
+                      color: Theme.of(sheetCtx).colorScheme.error,
+                      onTap: () => confirmCancelBooking(),
+                    ),
+                  ],
+                ],
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   void messageGuest() {
     if (isListingMode) return;
@@ -521,14 +650,18 @@ class BookingDetailsController extends BaseController {
     processing.value = true;
     try {
       final wasLocal = _item.isLocalPending;
+      final bookingKey = _item.bookingKey;
       final pendingSnapshot = wasLocal
-          ? await _actions.snapshotPendingBooking(_item.bookingKey)
+          ? await _actions.snapshotPendingBooking(bookingKey)
           : null;
       await _actions.cancelBooking(
-        bookingKey: _item.bookingKey,
+        bookingKey: bookingKey,
         isLocalPending: wasLocal,
       );
       isCancelled.value = true;
+      // Refresh lists before leaving so home/all-bookings never keep "Confirmed".
+      await HomeController.refreshIfRegistered();
+      await AllBookingsController.refreshIfRegistered();
       final undoCtx = Get.context;
       final undoMessage = _l10n.bookingCancelledSuccess;
       final undoLabel =
@@ -541,7 +674,7 @@ class BookingDetailsController extends BaseController {
           undoLabel: undoLabel,
           onUndo: () async {
             await _actions.undoCancelBooking(
-              bookingKey: _item.bookingKey,
+              bookingKey: bookingKey,
               wasLocalPending: wasLocal,
               pendingSnapshot: pendingSnapshot,
             );
@@ -589,6 +722,8 @@ class BookingDetailsController extends BaseController {
         isLocalPending: _item.isLocalPending,
       );
       isCheckedOut.value = true;
+      await HomeController.refreshIfRegistered();
+      await AllBookingsController.refreshIfRegistered();
       Get.snackbar(_l10n.checkOutGuest, _l10n.guestCheckedOut);
       Get.back(result: true);
     } catch (e) {

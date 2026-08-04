@@ -11,8 +11,7 @@ class HelpCenterView extends BaseView<HelpCenterController> {
 
   static const _teal = Color(0xFF005F5F);
 
-  String _t(String en, String sw) =>
-      controller.isSw ? sw : en;
+  String _t(String en, String sw) => controller.isSw ? sw : en;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
@@ -22,50 +21,82 @@ class HelpCenterView extends BaseView<HelpCenterController> {
 
   @override
   Widget body(BuildContext context) {
+    final theme = Theme.of(context);
+    final headerBg = theme.scaffoldBackgroundColor;
+
     return DefaultTabController(
       length: 3,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: TextField(
-              onChanged: controller.onSearchChanged,
-              decoration: InputDecoration(
-                hintText: _t('Search guides & features', 'Tafuta miongozo na vipengele'),
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+          // Opaque pinned header so list content never paints underneath.
+          Material(
+            color: headerBg,
+            elevation: 0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Obx(
+                    () => TextField(
+                      controller: controller.searchController,
+                      onChanged: controller.onSearchChanged,
+                      decoration: InputDecoration(
+                        hintText: _t(
+                          'Search guides & features',
+                          'Tafuta miongozo na vipengele',
+                        ),
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: controller.searchQuery.value.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: _t('Clear', 'Futa'),
+                                icon: const Icon(Icons.clear),
+                                onPressed: controller.clearSearch,
+                              ),
+                        filled: true,
+                        fillColor: theme.brightness == Brightness.dark
+                            ? theme.colorScheme.surfaceContainerHighest
+                            : theme.colorScheme.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Obx(() => _workspaceChips(context)),
+                ),
+                const SizedBox(height: 4),
+                TabBar(
+                  labelColor: _teal,
+                  unselectedLabelColor: theme.hintColor,
+                  indicatorColor: _teal,
+                  dividerColor: theme.dividerColor,
+                  tabs: [
+                    Tab(text: _t('Guides', 'Miongozo')),
+                    Tab(text: _t('Features', 'Vipengele')),
+                    Tab(text: _t('Tours', 'Ziara')),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Obx(() => _workspaceChips(context)),
-          ),
-          const SizedBox(height: 8),
-          TabBar(
-            labelColor: _teal,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: _teal,
-            tabs: [
-              Tab(text: _t('Guides', 'Miongozo')),
-              Tab(text: _t('Features', 'Vipengele')),
-              Tab(text: _t('Tours', 'Ziara')),
-            ],
-          ),
           Expanded(
-            child: Obx(
-              () => TabBarView(
-                children: [
-                  _guidesList(context),
-                  _featuresList(context),
-                  _toursList(context),
-                ],
-              ),
+            child: TabBarView(
+              // Keep TabBarView stable — rebuild lists inside Obx only.
+              // Recreating TabBarView on search caused content to draw under the header.
+              clipBehavior: Clip.hardEdge,
+              children: [
+                Obx(() => _guidesList(context)),
+                Obx(() => _featuresList(context)),
+                Obx(() => _toursList(context)),
+              ],
             ),
           ),
         ],
@@ -75,7 +106,8 @@ class HelpCenterView extends BaseView<HelpCenterController> {
 
   Widget _workspaceChips(BuildContext context) {
     Widget chip(String label, HelpWorkspace? ws) {
-      final selected = controller.workspaceFilter.value == (ws ?? HelpWorkspace.both);
+      final selected =
+          controller.workspaceFilter.value == (ws ?? HelpWorkspace.both);
       return Padding(
         padding: const EdgeInsets.only(right: 8),
         child: FilterChip(
@@ -106,9 +138,10 @@ class HelpCenterView extends BaseView<HelpCenterController> {
       return Center(child: Text(_t('No guides found', 'Hakuna miongozo')));
     }
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      clipBehavior: Clip.hardEdge,
       itemCount: guides.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
         final g = guides[i];
         return _GuideCard(
@@ -128,19 +161,26 @@ class HelpCenterView extends BaseView<HelpCenterController> {
     if (features.isEmpty) {
       return Center(child: Text(_t('No features found', 'Hakuna vipengele')));
     }
+    final border = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF3A3A3C)
+        : Colors.grey.shade300;
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      clipBehavior: Clip.hardEdge,
       itemCount: features.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         final f = features[i];
         return ListTile(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: border),
           ),
           leading: Icon(f.icon, color: _teal),
-          title: Text(f.title(controller.isSw), style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(
+            f.title(controller.isSw),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           subtitle: Text(f.description(controller.isSw)),
           trailing: const Icon(Icons.open_in_new, size: 18),
           onTap: () => controller.openFeature(f),
@@ -151,15 +191,17 @@ class HelpCenterView extends BaseView<HelpCenterController> {
 
   Widget _toursList(BuildContext context) {
     final tours = controller.tourGuides;
+    final muted = Theme.of(context).hintColor;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      clipBehavior: Clip.hardEdge,
       children: [
         Text(
           _t(
             'Interactive tours navigate to each screen and explain what to do.',
             'Ziara shirikishi zinaelekeza kwenye kila skrini na kuelezea hatua.',
           ),
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.4),
+          style: TextStyle(fontSize: 13, color: muted, height: 1.4),
         ),
         const SizedBox(height: 16),
         ...tours.map(
@@ -210,6 +252,7 @@ class _GuideCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final muted = Theme.of(context).hintColor;
     return Material(
       color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(14),
@@ -227,15 +270,27 @@ class _GuideCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 13, color: muted),
+                    ),
                     const SizedBox(height: 6),
-                    Text(meta, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                    Text(
+                      meta,
+                      style: TextStyle(fontSize: 11, color: muted),
+                    ),
                   ],
                 ),
               ),
-              if (trailing != null) trailing!,
+              ?trailing,
             ],
           ),
         ),

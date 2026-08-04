@@ -83,7 +83,8 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
         return;
       }
       await _preferenceManager.clearSession();
-      if (g.Get.currentRoute != AppPages.auth) {
+      // Do not interrupt registration / OTP / forgot-password with a Login redirect.
+      if (!AppPages.isPublicAuthRoute()) {
         g.Get.offAllNamed(AppPages.auth);
       }
       handler.reject(err);

@@ -13,6 +13,7 @@ import '../../../data/remote/remote_data_source.dart';
 import '../../../routes/app_pages.dart';
 import '../../my_properties/controllers/my_properties_controller.dart';
 import '/app/core/base/base_controller.dart';
+import '/app/core/utils/getx_instance_probe.dart';
 import '/app/modules/dashboard/controllers/dashboard_controller.dart';
 import '/app/modules/home/controllers/home_controller.dart';
 import '/app/modules/main/controllers/bottom_nav_controller.dart';
@@ -44,7 +45,8 @@ class MainController extends BaseController with WidgetsBindingObserver {
     // Soft prompts are sequenced so at most one appears (see LaunchPromptGate).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshSessionIfNeeded();
-      triggerRemoteAccountSync();
+      // Let Home paint before kicking remote sync (heavy UI refresh cascade).
+      Future.delayed(const Duration(seconds: 3), triggerRemoteAccountSync);
       // Force-update can always show; soft update waits longer (see AppUpdateService)
       // so actionable lease prompts get first claim on the soft-prompt slot.
       _checkForUpdate();
@@ -118,12 +120,13 @@ class MainController extends BaseController with WidgetsBindingObserver {
     _selectedMenuCodeController(menuCode);
     switch (menuCode) {
       case MenuCode.HOME:
-        if (Get.isRegistered<HomeController>()) {
-          await Get.find<HomeController>().loadHomeData();
+        // Refresh only if Home is already constructed (avoid lazyPut stampede).
+        if (GetxInstanceProbe.isAlive<HomeController>()) {
+          await Get.find<HomeController>().loadHomeData(refresh: true);
         }
         break;
       case MenuCode.PROPERTIES:
-        if (Get.isRegistered<MyPropertiesController>()) {
+        if (GetxInstanceProbe.isAlive<MyPropertiesController>()) {
           await Get.find<MyPropertiesController>().loadProperties();
         }
         // One-time tip; never stacks with another coach mark in-session.
@@ -135,6 +138,7 @@ class MainController extends BaseController with WidgetsBindingObserver {
         );
         break;
       case MenuCode.FINANCES:
+        // User opened Finances — create Dashboard if needed, then load.
         if (Get.isRegistered<DashboardController>()) {
           await Get.find<DashboardController>().loadDashboard();
         }
@@ -146,7 +150,7 @@ class MainController extends BaseController with WidgetsBindingObserver {
         );
         break;
       case MenuCode.MAINTENANCE:
-        if (Get.isRegistered<MaintenanceTasksController>()) {
+        if (GetxInstanceProbe.isAlive<MaintenanceTasksController>()) {
           await Get.find<MaintenanceTasksController>().loadTasks();
         }
         break;

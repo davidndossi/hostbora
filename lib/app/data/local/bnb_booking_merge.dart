@@ -21,19 +21,25 @@ class BnbBookingMerge {
     final checkIn = (m['checkIn'] ?? '').toString();
     final rawCheckOut = (m['checkOut'] ?? '').toString();
     final nights = (m['numberOfNights'] as num?)?.toInt() ?? 0;
-    final bookingId = (m['bookingId'] ?? '${m['guestName']}_$checkIn').toString();
-    final key = bookingId;
+    final guestName = (m['guestName'] ?? '').toString();
+    final key = resolveBookingKey(m, checkIn: checkIn, guestName: guestName);
     final checkOut = _overrides.effectiveCheckOut(key, rawCheckOut) ?? rawCheckOut;
-    final status = (m['status'] ?? '').toString();
+    final status = (m['status'] ?? '').toString().trim().toLowerCase();
     final checkedOut = _overrides.isCheckedOut(key) ||
-        status.toLowerCase() == 'checked_out' ||
-        status.toLowerCase() == 'completed';
+        status == 'checked_out' ||
+        status == 'completed';
     final cancelled = _overrides.isCancelled(key) ||
-        status.toLowerCase() == 'cancelled' ||
-        status.toLowerCase() == 'canceled';
+        status == 'cancelled' ||
+        status == 'canceled';
+    final confirmedFlag = m['isConfirmed'];
+    final confirmed = !cancelled &&
+        !checkedOut &&
+        (confirmedFlag is bool
+            ? confirmedFlag
+            : status.isEmpty || status == 'confirmed' || status == 'active');
 
     return CheckInItem(
-      bookingId: m['bookingId'] as String?,
+      bookingId: key,
       checkInIso: checkIn,
       checkOutIso: checkOut,
       listingId: (m['listingId'] ?? m['propertyId'] ?? '').toString(),
@@ -41,13 +47,26 @@ class BnbBookingMerge {
       isCheckedOut: checkedOut,
       isCancelled: cancelled,
       imageUrl: (m['imageUrl'] ?? '').toString(),
-      guestName: (m['guestName'] ?? '').toString(),
+      guestName: guestName,
       guestPhone: (m['guestPhoneNumber'] ?? m['guestPhone'] ?? '').toString(),
       guestAvatarUrl: (m['guestAvatarUrl'] ?? '').toString(),
       propertyType: (m['propertyType'] ?? m['propertyName'] ?? '').toString(),
       dates: formatDates(checkIn, checkOut, nights),
-      isConfirmed: (m['isConfirmed'] as bool?) ?? false,
+      isConfirmed: confirmed,
     );
+  }
+
+  /// Stable id used for overrides, cancel/checkout, and list merge.
+  static String resolveBookingKey(
+    Map<String, dynamic> m, {
+    required String checkIn,
+    required String guestName,
+  }) {
+    for (final field in ['bookingId', 'id', 'booking_id']) {
+      final raw = m[field]?.toString().trim() ?? '';
+      if (raw.isNotEmpty) return raw;
+    }
+    return '${guestName}_$checkIn';
   }
 
   CheckInItem fromPendingMap(
@@ -79,7 +98,7 @@ class BnbBookingMerge {
       guestAvatarUrl: '',
       propertyType: propertyLabel,
       dates: formatDates(checkIn, checkOut, 0),
-      isConfirmed: true,
+      isConfirmed: !cancelled && !checkedOut,
     );
   }
 

@@ -45,7 +45,8 @@ class RentNotificationRulesService extends GetxService {
     _timer = Timer.periodic(const Duration(hours: 12), (_) {
       unawaited(runNow());
     });
-    unawaited(runNow());
+    // Defer first pass so login/Home paint stay responsive.
+    Timer(const Duration(seconds: 45), () => unawaited(runNow()));
   }
 
   Future<void> runNow() async {

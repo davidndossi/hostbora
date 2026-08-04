@@ -60,8 +60,8 @@ class AddNewBookingController extends BaseController {
   final notesController = TextEditingController();
   final numberOfGuestsController = TextEditingController();
   final pushToPayAmountController = TextEditingController();
-  final checkInDateController = TextEditingController(text: 'Select date');
-  final checkOutDateController = TextEditingController(text: 'Select date');
+  final checkInDateController = TextEditingController();
+  final checkOutDateController = TextEditingController();
 
   final listings = <ListingItem>[].obs;
   final listingsLoading = false.obs;
@@ -260,8 +260,9 @@ class AddNewBookingController extends BaseController {
           (checkOutDate.value!.isBefore(picked) ||
               checkOutDate.value!.isAtSameMomentAs(picked))) {
         checkOutDate.value = null;
-        checkOutDateController.text = 'Select date';
+        checkOutDateController.clear();
       }
+      formKey.currentState?.validate();
     }
   }
 
@@ -274,68 +275,102 @@ class AddNewBookingController extends BaseController {
       lastDate: from.add(const Duration(days: 365 * 2)),
       locale: const Locale('en', 'GB'),
     );
-    
+
     if (picked != null) {
       checkOutDate.value = picked;
       checkOutDateController.text = DateFormat(_dateFormat).format(picked);
+      formKey.currentState?.validate();
     }
   }
 
+  String _t(String en, String sw) =>
+      Get.locale?.languageCode == 'sw' ? sw : en;
+
+  String? validateProperty(String? _) {
+    final id = selectedListingId.value;
+    if (id == null || id.isEmpty) {
+      return _t('Please select a property', 'Tafadhali chagua mali');
+    }
+    return null;
+  }
+
+  String? validateUnit(String? _) {
+    if (propertyUnits.length > 1 &&
+        (selectedUnitId.value == null || selectedUnitId.value!.isEmpty)) {
+      return _t(
+        'Please select a property unit',
+        'Tafadhali chagua unit ya jengo',
+      );
+    }
+    return null;
+  }
+
+  String? validateCheckIn(String? _) {
+    if (checkInDate.value == null) {
+      return _t('Please select check-in date', 'Tafadhali chagua tarehe ya kuingia');
+    }
+    return null;
+  }
+
+  String? validateCheckOut(String? _) {
+    if (checkOutDate.value == null) {
+      return _t(
+        'Please select check-out date',
+        'Tafadhali chagua tarehe ya kutoka',
+      );
+    }
+    final checkIn = checkInDate.value;
+    if (checkIn != null &&
+        (checkOutDate.value!.isBefore(checkIn) ||
+            checkOutDate.value!.isAtSameMomentAs(checkIn))) {
+      return _t(
+        'Check-out must be after check-in',
+        'Tarehe ya kutoka lazima iwe baada ya kuingia',
+      );
+    }
+    return null;
+  }
+
+  String? validateGuestPhone(String? value) {
+    if (!sendPaymentLink.value) return null;
+    if (value == null || value.trim().isEmpty) {
+      return _t(
+        'Enter guest phone number to send the payment link',
+        'Weka namba ya simu ya mgeni kutuma kiungo cha malipo',
+      );
+    }
+    return null;
+  }
+
+  String? validatePaymentLinkAmount(String? value) {
+    if (!sendPaymentLink.value) return null;
+    final amount = value?.trim() ?? '';
+    if (amount.isEmpty) {
+      final code = Get.find<CurrencyService>().inputSuffix;
+      return _t(
+        'Enter amount ($code) for the payment link',
+        'Weka kiasi ($code) kwa kiungo cha malipo',
+      );
+    }
+    final amountTzs = int.tryParse(amount.replaceAll(',', '')) ?? 0;
+    if (amountTzs < _minSnippeAmountTzs) {
+      return _t(
+        'Minimum amount is ${Get.find<CurrencyService>().formatBase(_minSnippeAmountTzs)}',
+        'Kiasi cha chini ni ${Get.find<CurrencyService>().formatBase(_minSnippeAmountTzs)}',
+      );
+    }
+    return null;
+  }
+
   Future<void> saveBooking() async {
+    // All required-field checks are inline Form validators — no snackbars.
     if (!(formKey.currentState?.validate() ?? false)) {
       hapticValidationError();
       return;
     }
     final listingId = selectedListingId.value;
-    if (listingId == null || listingId.isEmpty) {
-      Get.snackbar('Required', 'Please select a property');
-      return;
-    }
-    if (propertyUnits.length > 1 &&
-        (selectedUnitId.value == null || selectedUnitId.value!.isEmpty)) {
-      Get.snackbar('Required', 'Please select a property unit');
-      return;
-    }
-    if (checkInDate.value == null) {
-      Get.snackbar('Required', 'Please select check-in date');
-      return;
-    }
-    if (checkOutDate.value == null) {
-      Get.snackbar('Required', 'Please select check-out date');
-      return;
-    }
-    if (checkOutDate.value!.isBefore(checkInDate.value!) ||
-        checkOutDate.value!.isAtSameMomentAs(checkInDate.value!)) {
-      Get.snackbar('Invalid', 'Check-out must be after check-in');
-      return;
-    }
-    if (sendPaymentLink.value) {
-      final phone = guestPhoneController.text.trim();
-      final amount = pushToPayAmountController.text.trim();
-      if (phone.isEmpty) {
-        Get.snackbar(
-          'Payment link',
-          'Enter guest phone number to send the Snippe payment link.',
-        );
-        return;
-      }
-      if (amount.isEmpty) {
-        final code = Get.find<CurrencyService>().inputSuffix;
-        Get.snackbar(
-          'Payment link',
-          'Enter amount ($code) for the payment link.',
-        );
-        return;
-      }
-      final amountTzs = int.tryParse(amount.replaceAll(',', '')) ?? 0;
-      if (amountTzs < _minSnippeAmountTzs) {
-        Get.snackbar(
-          'Payment link',
-          'Minimum amount is ${Get.find<CurrencyService>().formatBase(_minSnippeAmountTzs)}.',
-        );
-        return;
-      }
-    }
+    if (listingId == null || listingId.isEmpty) return;
+    if (checkInDate.value == null || checkOutDate.value == null) return;
     if (saving.value) return;
 
     final guestPhone = guestPhoneController.text.trim();

@@ -258,18 +258,56 @@ class PropertyLocalDataSource {
     final db = await database;
     final safeLimit = limit <= 0 ? _defaultChunkSize : limit;
     final safeOffset = offset < 0 ? 0 : offset;
+    final ws = workspaceType.trim().toLowerCase();
+    // Empty / "all" means every workspace (bnb, rent, both, unset).
+    final allWorkspaces = ws.isEmpty || ws == 'all';
+
     if (userId.trim().isEmpty) {
-      final maps = await db.query(
-        _table,
-        where:
-            'workspace_type = ? OR workspace_type = ? OR workspace_type = ""',
-        whereArgs: [workspaceType, 'both'],
-        orderBy: 'created_at_ms DESC',
-        limit: safeLimit,
-        offset: safeOffset,
+      final maps = allWorkspaces
+          ? await db.query(
+              _table,
+              orderBy: 'created_at_ms DESC',
+              limit: safeLimit,
+              offset: safeOffset,
+            )
+          : await db.query(
+              _table,
+              where:
+                  'workspace_type = ? OR workspace_type = ? OR workspace_type = ""',
+              whereArgs: [ws, 'both'],
+              orderBy: 'created_at_ms DESC',
+              limit: safeLimit,
+              offset: safeOffset,
+            );
+      return maps.map(PropertyRecord.fromMap).toList();
+    }
+
+    if (allWorkspaces) {
+      final maps = await db.rawQuery(
+        '''
+        SELECT p.*
+        FROM $_table p
+        WHERE (
+          p.owner_user_id = ?
+          OR p.owner_user_id = ''
+          OR EXISTS (
+            SELECT 1
+            FROM ${AppLocalDatabase.propertyMembersTable} m
+            WHERE m.property_ref = CASE
+              WHEN p.property_ref IS NULL OR p.property_ref = '' THEN 'legacy_' || p.id
+              ELSE p.property_ref
+            END
+            AND m.user_id = ?
+          )
+        )
+        ORDER BY p.created_at_ms DESC
+        LIMIT ? OFFSET ?
+        ''',
+        [userId, userId, safeLimit, safeOffset],
       );
       return maps.map(PropertyRecord.fromMap).toList();
     }
+
     final maps = await db.rawQuery(
       '''
       SELECT p.*
@@ -293,11 +331,11 @@ class PropertyLocalDataSource {
       LIMIT ? OFFSET ?
       ''',
       [
-        workspaceType,
+        ws,
         'both',
         userId,
         userId,
-        workspaceType,
+        ws,
         'both',
         safeLimit,
         safeOffset,

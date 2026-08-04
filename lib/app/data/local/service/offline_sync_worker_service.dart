@@ -52,7 +52,8 @@ class OfflineSyncWorkerService extends GetxService {
       unawaited(_drainQueue());
     });
 
-    unawaited(_drainQueue());
+    // Brief delay so the first frame / Home paint is not competing with drain.
+    Timer(const Duration(seconds: 2), () => unawaited(_drainQueue()));
   }
 
   /// Register a handler for a queued operation.
@@ -84,9 +85,11 @@ class OfflineSyncWorkerService extends GetxService {
     _isRunning = true;
     try {
       await _queue.requeueFailed();
+      var processed = 0;
       for (var i = 0; i < maxItems; i++) {
         final item = await _queue.nextPending();
         if (item == null) break;
+        processed++;
 
         final handler = _handlers[_key(item.entityType, item.operation)];
         if (handler == null) {
@@ -107,7 +110,10 @@ class OfflineSyncWorkerService extends GetxService {
       }
 
       await _queue.deleteDone();
-      _notifyDrainListeners();
+      // Empty drains (login connectivity poll) must not stampede UI refreshes.
+      if (processed > 0) {
+        _notifyDrainListeners();
+      }
     } finally {
       _isRunning = false;
     }

@@ -95,6 +95,15 @@ class AuthView extends BaseView<AuthController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text(
+              _t(context, 'Phone number', 'Namba ya simu'),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: context.tokens.textMuted,
+              ),
+            ),
+            const SizedBox(height: 8),
             Obx(
               () => TextFormField(
                 controller: controller.msisdnController,
@@ -104,7 +113,6 @@ class AuthView extends BaseView<AuthController> {
                 ),
                 decoration: _inputDecoration(
                   context: context,
-                  label: appLocalization.msisdn,
                   hint: _t(context, 'e.g. 0712345678', 'mf. 0712345678'),
                   errorText: controller.errorText.value,
                 ),
@@ -112,19 +120,40 @@ class AuthView extends BaseView<AuthController> {
               ),
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: controller.passwordController,
-              keyboardType: TextInputType.visiblePassword,
-              obscureText: true,
+            Text(
+              _t(context, 'Password', 'Nenosiri'),
               style: TextStyle(
-                color: context.tokens.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: context.tokens.textMuted,
               ),
-              decoration: _inputDecoration(
-                context: context,
-                label: appLocalization.password,
-                hint: '••••••••',
+            ),
+            const SizedBox(height: 8),
+            Obx(
+              () => TextFormField(
+                controller: controller.passwordController,
+                keyboardType: TextInputType.visiblePassword,
+                obscureText: controller.obscurePassword.value,
+                style: TextStyle(
+                  color: context.tokens.textPrimary,
+                ),
+                decoration: _inputDecoration(
+                  context: context,
+                  hint: '••••••••',
+                ).copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      controller.obscurePassword.value
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: context.tokens.textMuted,
+                      size: 22,
+                    ),
+                    onPressed: controller.togglePasswordVisibility,
+                  ),
+                ),
+                validator: controller.passwordValidator,
               ),
-              validator: controller.passwordValidator,
             ),
             const SizedBox(height: 12),
             Align(
@@ -186,22 +215,17 @@ class AuthView extends BaseView<AuthController> {
 
   InputDecoration _inputDecoration({
     required BuildContext context,
-    required String label,
     String? hint,
     String? errorText,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
-      labelText: label,
       hintText: hint,
       errorText: errorText,
       filled: true,
       fillColor: isDark ? context.tokens.cardBackground : AppColors.colorWhite,
-      labelStyle: TextStyle(
-        color: isDark ? const Color(0xFFB0B3BA) : AppColors.designPlaceholder,
-      ),
       hintStyle: TextStyle(
-        color: isDark ? const Color(0xFF8E8E93) : AppColors.designPlaceholder,
+        color: isDark ? context.tokens.textMuted : AppColors.designPlaceholder,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(

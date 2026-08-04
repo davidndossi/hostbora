@@ -26,6 +26,7 @@ class AuthController extends BaseController {
   final errorText = Rxn<String>();
   final password = ''.obs;
   final otp = ''.obs;
+  final obscurePassword = true.obs;
   final isLoading = false.obs;
   final hasPinEnabled = false.obs;
   final isPinStatusLoading = true.obs;
@@ -348,13 +349,18 @@ class AuthController extends BaseController {
     );
   }
 
+  void togglePasswordVisibility() {
+    obscurePassword.value = !obscurePassword.value;
+  }
+
   String? validator(String? value) {
-    if (value != null && value.isEmpty) {
+    final phone = value?.trim() ?? '';
+    if (phone.isEmpty) {
       return appLocalization.requiredField;
     }
     // Tanzanian phone number validation: starts with 0, followed by 6, 7, or 8, then 8 digits
     final phonePattern = RegExp(r'^0[678]\d{8}$');
-    if (value != null && !phonePattern.hasMatch(value)) {
+    if (!phonePattern.hasMatch(phone)) {
       return _t(
         'Please enter a valid phone number (e.g., 0612345678)',
         'Tafadhali weka namba sahihi ya simu (mf. 0612345678)',
@@ -364,7 +370,10 @@ class AuthController extends BaseController {
   }
 
   String? passwordValidator(String? value) {
-    return (value ?? '').length >= 8
+    if (value == null || value.trim().isEmpty) {
+      return _t('Password is required', 'Nenosiri linahitajika');
+    }
+    return value.length >= 8
         ? null
         : _t('Password must be at least 8 characters', 'Nenosiri lazima liwe na angalau herufi 8');
   }

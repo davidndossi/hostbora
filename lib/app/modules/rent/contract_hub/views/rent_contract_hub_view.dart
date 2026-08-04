@@ -115,23 +115,33 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
   Widget _searchField(BuildContext context) {
     final u = _HubUi(context);
     final fill = u.dark ? context.tokens.elevatedSurface : const Color(0xFFEFEEE9);
-    return TextField(
-      controller: controller.searchController,
-      onChanged: controller.setSearch,
-      style: TextStyle(color: u.onSurface, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: _isSw
-            ? 'Tafuta wapangaji au mali…'
-            : 'Search tenants or properties…',
-        hintStyle: TextStyle(color: u.muted, fontSize: 15),
-        prefixIcon: Icon(Icons.search_rounded, color: u.muted),
-        filled: true,
-        fillColor: fill,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide.none,
+    return Obx(
+      () => TextField(
+        controller: controller.searchController,
+        onChanged: controller.setSearch,
+        style: TextStyle(color: u.onSurface, fontSize: 15),
+        decoration: InputDecoration(
+          hintText: _isSw
+              ? 'Tafuta wapangaji au mali…'
+              : 'Search tenants or properties…',
+          hintStyle: TextStyle(color: u.muted, fontSize: 15),
+          prefixIcon: Icon(Icons.search_rounded, color: u.muted),
+          suffixIcon: controller.searchQuery.value.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: _isSw ? 'Futa' : 'Clear',
+                  icon: Icon(Icons.clear_rounded, color: u.muted),
+                  onPressed: controller.clearSearch,
+                ),
+          filled: true,
+          fillColor: fill,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(28),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       ),
     );
   }

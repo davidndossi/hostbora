@@ -92,6 +92,16 @@ class EditListingView extends BaseView<EditListingController> {
                           sw: 'Weka anwani kamili ya mtaa au eneo',
                         ),
                       ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return _t(
+                            context,
+                            en: 'Location is required',
+                            sw: 'Mahali yanahitajika',
+                          );
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 20),
                     _buildLabel(

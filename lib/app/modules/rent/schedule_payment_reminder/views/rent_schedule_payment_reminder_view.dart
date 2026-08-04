@@ -279,6 +279,9 @@ class RentSchedulePaymentReminderView
                 key: ValueKey(controller.selectedWhatsappTemplateId.value),
                 initialValue: controller.selectedWhatsappTemplateId.value,
                 isExpanded: true,
+                style: TextStyle(color: c.primaryText, fontSize: 13),
+                dropdownColor: c.cardSurface,
+                iconEnabledColor: c.mutedText,
                 decoration: InputDecoration(
                   isDense: true,
                   filled: true,
@@ -317,6 +320,9 @@ class RentSchedulePaymentReminderView
                 key: ValueKey(controller.selectedSmsTemplateId.value),
                 initialValue: controller.selectedSmsTemplateId.value,
                 isExpanded: true,
+                style: TextStyle(color: c.primaryText, fontSize: 13),
+                dropdownColor: c.cardSurface,
+                iconEnabledColor: c.mutedText,
                 decoration: InputDecoration(
                   isDense: true,
                   filled: true,

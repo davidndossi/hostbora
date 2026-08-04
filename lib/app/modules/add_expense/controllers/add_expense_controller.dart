@@ -233,9 +233,11 @@ class AddExpenseController extends BaseController {
 
   Future<void> _loadProperties() async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
-    final propertyMode = _normalizeWorkspace(
-      selectedPropertyRecord?.workspaceType,
-    );
+    // Same as Record Payment: without a selected property, do not default to
+    // "bnb" or the dropdown stays empty for rent-only portfolios.
+    final propertyMode = selectedPropertyRecord != null
+        ? _normalizeWorkspace(selectedPropertyRecord?.workspaceType)
+        : 'all';
     final rows = await _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
       workspaceType: propertyMode,

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
@@ -8,6 +9,7 @@ import '../../../routes/app_pages.dart';
 
 class HelpCenterController extends BaseController {
   final searchQuery = ''.obs;
+  final searchController = TextEditingController();
   final workspaceFilter = HelpWorkspace.both.obs;
 
   bool get isSw => Get.locale?.languageCode == 'sw';
@@ -34,6 +36,17 @@ class HelpCenterController extends BaseController {
   }
 
   void onSearchChanged(String value) => searchQuery.value = value;
+
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
+  }
+
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
+  }
 
   void openGuide(String guideId) {
     Get.toNamed(

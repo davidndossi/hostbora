@@ -50,8 +50,10 @@ Exception _parseDioErrorResponse(DioException dioError) {
 
   try {
     final data = dioError.response?.data;
-    if (data is Map<String, dynamic>) {
-      serverMessage = data['message']?.toString();
+    if (data is Map) {
+      serverMessage = data['message']?.toString() ??
+          data['respMsg']?.toString() ??
+          data['error']?.toString();
     }
     if (serverMessage == null || serverMessage.isEmpty) {
       if (statusCode == -1 || statusCode == HttpStatus.ok) {

@@ -48,7 +48,7 @@ class RecurringReminderDispatchService extends GetxService {
     _timer = Timer.periodic(const Duration(minutes: 15), (_) {
       unawaited(runNow());
     });
-    unawaited(runNow());
+    Timer(const Duration(seconds: 35), () => unawaited(runNow()));
   }
 
   Future<void> runNow() async {

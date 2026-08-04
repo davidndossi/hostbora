@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../utils/haptic_feedback_util.dart';
+import '../values/app_colors.dart';
 import '../widget/undo_snackbar.dart';
 import 'base_controller.dart';
 
@@ -48,19 +49,59 @@ extension FeedbackExtensions on BaseController {
     required String message,
     required Future<void> Function() action,
     required Future<void> Function() onUndo,
-    Duration duration = const Duration(seconds: 5),
+    Duration duration = const Duration(seconds: 4),
   }) async {
     await action();
     hapticPrimaryConfirm();
+    if (Get.isSnackbarOpen) {
+      Get.closeAllSnackbars();
+    }
     final ctx = Get.context;
-    if (ctx == null || !ctx.mounted) return;
-    UndoSnackBar.show(
-      ctx,
-      message: message,
+    if (ctx != null && ctx.mounted) {
+      final messenger = ScaffoldMessenger.maybeOf(ctx);
+      if (messenger != null) {
+        UndoSnackBar.show(
+          ctx,
+          message: message,
+          duration: duration,
+          onUndo: () {
+            onUndo();
+          },
+        );
+        return;
+      }
+    }
+    // GetX pages often lack a ScaffoldMessenger ancestor for Get.context.
+    Get.rawSnackbar(
+      messageText: Text(
+        message,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          height: 1.3,
+          color: Colors.white,
+        ),
+      ),
+      mainButton: TextButton(
+        onPressed: () {
+          if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
+          onUndo();
+        },
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.colorPrimaryLight,
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            height: 1.3,
+          ),
+        ),
+        child: const Text('Undo'),
+      ),
       duration: duration,
-      onUndo: () {
-        onUndo();
-      },
+      snackPosition: SnackPosition.BOTTOM,
+      isDismissible: true,
+      margin: const EdgeInsets.all(12),
+      borderRadius: 10,
     );
   }
 

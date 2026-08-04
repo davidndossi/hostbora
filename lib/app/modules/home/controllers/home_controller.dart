@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 
 import '../../../core/service/launch_prompt_gate.dart';
 import '../../../core/utils/booking_api_response.dart';
+import '../../../core/utils/getx_instance_probe.dart';
 import '../../../core/values/text_styles.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
@@ -247,12 +248,40 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         todayExpandedKey.value == key ? null : key;
   }
 
+  Future<void>? _loadHomeInFlight;
+  DateTime? _lastHomeLoadAt;
+
   Future<void> loadHomeData({bool refresh = false}) async {
+    // Coalesce overlapping loads (sync drain + tab reselect + onInit).
+    if (_loadHomeInFlight != null) {
+      return _loadHomeInFlight!;
+    }
+    if (refresh &&
+        homeHasLoaded.value &&
+        _lastHomeLoadAt != null &&
+        DateTime.now().difference(_lastHomeLoadAt!) <
+            const Duration(seconds: 2)) {
+      return;
+    }
+
     if (refresh) {
       homeRefreshing.value = true;
     } else if (!homeHasLoaded.value) {
       homeInitialLoading.value = true;
     }
+
+    final future = _runLoadHomeData(refresh: refresh);
+    _loadHomeInFlight = future;
+    try {
+      await future;
+    } finally {
+      if (identical(_loadHomeInFlight, future)) {
+        _loadHomeInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _runLoadHomeData({required bool refresh}) async {
     try {
       await Future.wait([
         _loadOverview(),
@@ -263,6 +292,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         _loadPortfolioRole(),
       ]);
       await _resolveExperienceStage();
+      _lastHomeLoadAt = DateTime.now();
     } catch (e) {
       if (e is Exception) {
         showErrorMessage(e.toString());
@@ -1286,7 +1316,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   }
 
   static Future<void> refreshIfRegistered() async {
-    if (Get.isRegistered<HomeController>()) {
+    if (GetxInstanceProbe.isAlive<HomeController>()) {
       await Get.find<HomeController>().loadHomeData(refresh: true);
     }
   }

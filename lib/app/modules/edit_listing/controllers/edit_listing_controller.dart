@@ -251,10 +251,6 @@ class EditListingController extends BaseController {
 
     final newLoc = propertyLocationController.text.trim();
     final newName = propertyNameController.text.trim();
-    if (newLoc.isEmpty) {
-      Get.snackbar('Error', 'Please enter a property location');
-      return;
-    }
     if (isApartmentProperty && apartmentUnits.isEmpty) {
       Get.snackbar('Error', 'Add at least one apartment unit');
       return;
