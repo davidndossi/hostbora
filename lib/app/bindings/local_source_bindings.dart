@@ -329,11 +329,13 @@ class LocalSourceBindings implements Bindings {
       RemoteAccountSyncService(
         repository: Get.find<AppRepository>(tag: (AppRepository).toString()),
         propertyLocal: Get.find<PropertyLocalDataSource>(),
+        tenantLocal: Get.find<TenantLocalDataSource>(),
         staffLocal: Get.find<RentStaffLocalDataSource>(),
         preferenceManager: Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),
         syncWorker: syncWorker,
+        syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
       ),
       permanent: true,
     );

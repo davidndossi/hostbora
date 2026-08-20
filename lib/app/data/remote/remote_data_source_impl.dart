@@ -18,8 +18,8 @@ import '../model/update_booking_request.dart';
 import '../model/add_expense_request.dart';
 import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
+import '../model/login_otp_request.dart';
 import '../model/login_request.dart';
-import '../model/otp_response.dart';
 import '../model/otp_request.dart';
 import '../model/page_request.dart';
 import '../model/reg_request.dart';
@@ -46,6 +46,32 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   @override
   Future<LoginResponse> signIn(LoginRequest request) {
     var endpoint = '${DioProvider.baseUrl}/api/auth/login';
+    var dioCall = dioClient.post(endpoint, data: request.toJson());
+
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => LoginResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> requestLoginOtp(LoginOtpRequest request) {
+    var endpoint = '${DioProvider.baseUrl}/api/auth/login/otp/request';
+    var dioCall = dioClient.post(endpoint, data: request.toJson());
+
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<LoginResponse> verifyLoginOtp(LoginOtpRequest request) {
+    var endpoint = '${DioProvider.baseUrl}/api/auth/login/otp/verify';
     var dioCall = dioClient.post(endpoint, data: request.toJson());
 
     try {
@@ -136,13 +162,13 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
-  Future<OtpResponse> verifyPhoneNumber(OtpRequest request) {
+  Future<LoginResponse> verifyPhoneNumber(OtpRequest request) {
     var endpoint = '${DioProvider.baseUrl}/api/verifyPhone';
-    var dioCall = dioDevClient.post(endpoint, data: request);
+    var dioCall = dioDevClient.post(endpoint, data: request.toJson());
 
     try {
       return callApiWithErrorParser(dioCall)
-          .then((response) => OtpResponse.fromJson(response.data));
+          .then((response) => LoginResponse.fromJson(response.data));
     } catch (e) {
       rethrow;
     }
@@ -1103,6 +1129,18 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
+  Future<GeneralResponse> getMyTenants() {
+    final endpoint = '${DioProvider.baseUrl}/api/tenants';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<GeneralResponse> createTenant(Map<String, dynamic> body) {
     final endpoint = '${DioProvider.baseUrl}/api/tenants';
     final dioCall = dioClient.post(endpoint, data: body);
@@ -1405,6 +1443,18 @@ class RemoteDataSourceImpl extends BaseRemoteSource
     final endpoint =
         '${DioProvider.baseUrl}/api/properties/ref/${Uri.encodeComponent(propertyRef)}';
     final dioCall = dioClient.put(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> deleteProperty(int id) {
+    final endpoint = '${DioProvider.baseUrl}/api/properties/$id';
+    final dioCall = dioClient.delete(endpoint);
     try {
       return callApiWithErrorParser(dioCall)
           .then((response) => GeneralResponse.fromJson(response.data));

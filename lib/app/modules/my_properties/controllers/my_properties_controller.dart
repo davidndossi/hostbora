@@ -1,9 +1,11 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/getx_instance_probe.dart';
 import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/deleted_properties_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/repository/app_repository.dart';
@@ -23,12 +25,14 @@ class MyPropertiesController extends BaseController {
         _tenantLocal = Get.find<TenantLocalDataSource>(),
         _preferenceManager = Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
-        );
+        ),
+        _deleted = DeletedPropertiesStore();
 
   final AppRepository _repository;
   final PropertyLocalDataSource _local;
   final TenantLocalDataSource _tenantLocal;
   final PreferenceManager _preferenceManager;
+  final DeletedPropertiesStore _deleted;
 
   /// Status sent to API for filter: null = all, ACTIVE, DRAFT, ARCHIVED.
   static const List<String?> _filterStatuses = [null, 'ACTIVE', 'DRAFT', 'ARCHIVED'];
@@ -63,10 +67,30 @@ class MyPropertiesController extends BaseController {
     workspaceModeFilter.value = ws.toLowerCase();
   }
 
+  /// Immediately drops matching cards from the in-memory list (before reload).
+  void removePropertyFromList(Iterable<String> ids) {
+    final keys = ids.map((e) => e.trim()).where((e) => e.isNotEmpty).toSet();
+    if (keys.isEmpty) return;
+    properties.assignAll(
+      properties.where((p) => !keys.contains(p.id)).toList(),
+    );
+  }
+
+  static Future<void> refreshIfRegistered() async {
+    if (!GetxInstanceProbe.isAlive<MyPropertiesController>()) return;
+    await Get.find<MyPropertiesController>().loadProperties();
+  }
+
+  static void removeIfRegistered(Iterable<String> ids) {
+    if (!GetxInstanceProbe.isAlive<MyPropertiesController>()) return;
+    Get.find<MyPropertiesController>().removePropertyFromList(ids);
+  }
+
   /// Fetches properties from service by current filter (All / Active / Drafts / Archive).
   Future<void> loadProperties() async {
     loading.value = true;
     final status = _filterStatuses[selectedFilterIndex.value];
+    final deleted = _deleted.load();
     try {
       if (Get.isRegistered<RemoteAccountSyncService>()) {
         await Get.find<RemoteAccountSyncService>().syncPropertiesFromRemote();
@@ -92,13 +116,19 @@ class MyPropertiesController extends BaseController {
       final remoteList = (await Future.wait(
               maps.map(_listingFromMap),
             ))
-          .where((e) => e.id.isNotEmpty)
+          .where((e) => e.id.isNotEmpty && !deleted.contains(e.id))
           .toList();
-      properties.assignAll(_mergeListings(localList, remoteList));
+      properties.assignAll(
+        _mergeListings(localList, remoteList)
+            .where((p) => !deleted.contains(p.id))
+            .toList(),
+      );
     } catch (e) {
       // Fall back to local rows so screen stays useful offline / API failure.
       final localList = await _loadLocalListings(status: status);
-      properties.assignAll(localList);
+      properties.assignAll(
+        localList.where((p) => !deleted.contains(p.id)).toList(),
+      );
       Get.snackbar('Error', 'Could not load properties');
     } finally {
       loading.value = false;
@@ -109,6 +139,7 @@ class MyPropertiesController extends BaseController {
     required String? status,
   }) async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
+    final deleted = _deleted.load();
     final rowsByKey = <String, PropertyRecord>{};
     for (final workspace in const ['bnb', 'rent']) {
       final rows = await _local.getAllVisibleNewestFirst(
@@ -119,6 +150,9 @@ class MyPropertiesController extends BaseController {
         final key = row.propertyRef.trim().isNotEmpty
             ? row.propertyRef.trim()
             : 'local_${row.id}';
+        if (deleted.contains(key) || deleted.contains('local_${row.id}')) {
+          continue;
+        }
         rowsByKey[key] = row;
       }
     }
@@ -147,7 +181,6 @@ class MyPropertiesController extends BaseController {
       title: title,
       rating: 0,
       location: r.propertyLocation,
-      // pricePerNight: price,
       activeTenants: tenants,
       unitSlots: units,
       mode: _normalizeListingMode(r.workspaceType),
@@ -210,7 +243,6 @@ class MyPropertiesController extends BaseController {
       title: title,
       rating: rating,
       location: location,
-      // pricePerNight: price,
       activeTenants: tenants,
       unitSlots: units,
       mode: mode,
@@ -240,7 +272,6 @@ class MyPropertiesController extends BaseController {
         title: p.title,
         rating: p.rating,
         location: p.location,
-        // pricePerNight: p.pricePerNight,
         activeTenants: p.activeTenants,
         unitSlots: p.unitSlots,
         mode: p.mode,
@@ -255,17 +286,19 @@ class MyPropertiesController extends BaseController {
     }
   }
 
-  void manageProperty(PropertyListing p) {
-    Get.toNamed(
+  Future<void> manageProperty(PropertyListing p) async {
+    final result = await Get.toNamed(
       Routes.LISTING_DETAILS,
       arguments: {
         'property_id': p.id,
         'property_name': p.title,
         'property_location': p.location,
-        // 'property_price': p.pricePerNight,
         'property_image': p.imageUrl,
       },
     );
+    if (result == true) {
+      await loadProperties();
+    }
   }
 
   Future<void> addProperty() async {
@@ -279,7 +312,6 @@ class PropertyListing {
   final String title;
   final double rating;
   final String location;
-  // final int pricePerNight;
   final int activeTenants;
   final int unitSlots;
   /// Property operation mode: `bnb`, `rent`, or `both`.
@@ -292,7 +324,6 @@ class PropertyListing {
     required this.title,
     required this.rating,
     required this.location,
-    // required this.pricePerNight,
     required this.activeTenants,
     required this.unitSlots,
     required this.mode,

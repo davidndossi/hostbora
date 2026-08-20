@@ -75,11 +75,16 @@ class MoreView extends BaseView<MoreController> {
         Icons.key_outlined,
         Routes.GUEST_ACCESS_CODES,
       ),
+      // _MoreLink(
+      //   _t('Send SMS / WhatsApp', 'Tuma SMS / WhatsApp'),
+      //   Icons.sms_outlined,
+      //   Routes.SEND_SMS,
+      //   arguments: const {'workspace': 'bnb'},
+      // ),
       _MoreLink(
-        _t('Send SMS / WhatsApp', 'Tuma SMS / WhatsApp'),
-        Icons.sms_outlined,
-        Routes.SEND_SMS,
-        arguments: const {'workspace': 'bnb'},
+        _t('Offers', 'Ofa'),
+        Icons.stars_rounded,
+        Routes.RENT_ACTIVE_LOYALTY_PROGRAMS,
       ),
       _MoreLink(
         _t('Documents', 'Nyaraka'),
@@ -106,11 +111,11 @@ class MoreView extends BaseView<MoreController> {
         Icons.help_outline,
         Routes.SUPPORT,
       ),
-      _MoreLink(
-        _t('Settings', 'Mipangilio'),
-        Icons.settings_outlined,
-        Routes.SETTINGS,
-      ),
+      // _MoreLink(
+      //   _t('Settings', 'Mipangilio'),
+      //   Icons.settings_outlined,
+      //   Routes.SETTINGS,
+      // ),
     ];
   }
 

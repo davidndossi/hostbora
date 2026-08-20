@@ -17,6 +17,8 @@ class HelpCenterView extends BaseView<HelpCenterController> {
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
         appBarTitleText: _t('Help center', 'Kituo cha msaada'),
         isCentered: true,
+        // Opaque so bordered feature tiles cannot paint through title / back / actions.
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       );
 
   @override
@@ -29,11 +31,12 @@ class HelpCenterView extends BaseView<HelpCenterController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Opaque pinned header so list content never paints underneath.
           Material(
             color: headerBg,
             elevation: 0,
+            clipBehavior: Clip.hardEdge,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
@@ -88,15 +91,16 @@ class HelpCenterView extends BaseView<HelpCenterController> {
             ),
           ),
           Expanded(
-            child: TabBarView(
-              // Keep TabBarView stable — rebuild lists inside Obx only.
-              // Recreating TabBarView on search caused content to draw under the header.
+            child: Material(
+              color: headerBg,
               clipBehavior: Clip.hardEdge,
-              children: [
-                Obx(() => _guidesList(context)),
-                Obx(() => _featuresList(context)),
-                Obx(() => _toursList(context)),
-              ],
+              child: TabBarView(
+                children: [
+                  Obx(() => _guidesList(context)),
+                  Obx(() => _featuresList(context)),
+                  Obx(() => _toursList(context)),
+                ],
+              ),
             ),
           ),
         ],
@@ -139,7 +143,6 @@ class HelpCenterView extends BaseView<HelpCenterController> {
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      clipBehavior: Clip.hardEdge,
       itemCount: guides.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
@@ -166,7 +169,6 @@ class HelpCenterView extends BaseView<HelpCenterController> {
         : Colors.grey.shade300;
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      clipBehavior: Clip.hardEdge,
       itemCount: features.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
@@ -194,7 +196,6 @@ class HelpCenterView extends BaseView<HelpCenterController> {
     final muted = Theme.of(context).hintColor;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      clipBehavior: Clip.hardEdge,
       children: [
         Text(
           _t(

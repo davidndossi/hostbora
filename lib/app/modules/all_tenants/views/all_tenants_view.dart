@@ -54,46 +54,49 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final c = FormSurfaceColors.of(context);
+    final radius = BorderRadius.circular(AppValues.radius_12);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Container(
-        height: 46,
-        decoration: BoxDecoration(
-          color: c.isDark
-              ? theme.colorScheme.surfaceContainerHigh
-              : Colors.white,
-          borderRadius: BorderRadius.circular(AppValues.radius_12),
-          border: Border.all(
-            color: c.isDark
-                ? theme.colorScheme.outlineVariant
-                : AppColors.designInputBorder,
-          ),
-        ),
-        child: TextField(
+      child: Obx(
+        () => TextField(
+          controller: controller.searchController,
           onChanged: controller.onSearchChanged,
+          style: TextStyle(color: c.headline, fontSize: 14),
           decoration: InputDecoration(
             hintText: isSw
                 ? 'Tafuta jina, mali, nambari…'
                 : 'Search name, property, phone…',
-            hintStyle: TextStyle(
-              color: c.isDark
-                  ? theme.colorScheme.onSurfaceVariant
-                  : AppColors.designPlaceholder,
-              fontSize: 14,
-            ),
-            prefixIcon: Icon(
-              Icons.search,
-              size: 20,
-              color: c.isDark
-                  ? theme.colorScheme.onSurfaceVariant
-                  : AppColors.designPlaceholder,
-            ),
-            border: InputBorder.none,
+            hintStyle: TextStyle(color: c.hint, fontSize: 14),
+            prefixIcon: Icon(Icons.search, size: 20, color: c.hint),
+            suffixIcon: controller.searchQuery.value.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: isSw ? 'Futa' : 'Clear',
+                    icon: Icon(Icons.clear, size: 20, color: c.hint),
+                    onPressed: controller.clearSearch,
+                  ),
+            // Override global InputDecorationTheme (light theme forces white fill).
+            filled: true,
+            fillColor: c.inputFill,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 12,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide(color: c.inputBorder),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide(color: c.inputBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: const BorderSide(
+                color: AppColors.colorPrimary,
+                width: 1.5,
+              ),
             ),
           ),
         ),

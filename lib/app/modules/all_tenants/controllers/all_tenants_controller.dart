@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -63,6 +64,7 @@ class AllTenantsController extends BaseController {
   final filteredItems = <TenantListItem>[].obs;
   final isLoading = false.obs;
 
+  final searchController = TextEditingController();
   final searchQuery = ''.obs;
   final categoryFilter = TenantCategoryFilter.all.obs;
   final statusFilter = TenantStatusFilter.all.obs;
@@ -77,6 +79,12 @@ class AllTenantsController extends BaseController {
   void onInit() {
     super.onInit();
     loadTenants();
+  }
+
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
   }
 
   Future<void> loadTenants() async {
@@ -133,6 +141,12 @@ class AllTenantsController extends BaseController {
 
   void onSearchChanged(String value) {
     searchQuery.value = value.trim();
+    _applyFilters();
+  }
+
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
     _applyFilters();
   }
 

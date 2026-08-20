@@ -303,18 +303,18 @@ class AddListingView extends BaseView<AddListingController> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Text(
-                      _t(
-                        context,
-                        en: 'By clicking "Publish Listing", you agree to our Hosting Terms and Cancellation Policies.',
-                        sw: 'Kwa kubofya "Chapisha Tangazo", unakubali Masharti ya Ukaribishaji na Sera za Kughairi.',
-                      ),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: c.secondary,
-                        height: 1.4,
-                      ),
-                    ),
+                    // Text(
+                    //   _t(
+                    //     context,
+                    //     en: 'By clicking "Publish Listing", you agree to our Hosting Terms and Cancellation Policies.',
+                    //     sw: 'Kwa kubofya "Chapisha Tangazo", unakubali Masharti ya Ukaribishaji na Sera za Kughairi.',
+                    //   ),
+                    //   style: TextStyle(
+                    //     fontSize: 12,
+                    //     color: c.secondary,
+                    //     height: 1.4,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),

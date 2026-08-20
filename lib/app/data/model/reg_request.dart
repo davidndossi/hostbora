@@ -8,7 +8,8 @@ class RegRequest {
     String? email,
     String? password,
     String? referralCode,
-  }){
+    String? channel,
+  }) {
     _firstName = firstName;
     _middleName = middleName;
     _surname = surname;
@@ -17,6 +18,7 @@ class RegRequest {
     _email = email;
     _password = password;
     _referralCode = referralCode;
+    _channel = channel;
   }
 
   RegRequest.fromJson(dynamic json) {
@@ -28,6 +30,7 @@ class RegRequest {
     _email = json['email'];
     _password = json['password'];
     _referralCode = json['referralCode'] ?? json['referral_code'];
+    _channel = json['channel'];
   }
 
   String? _firstName;
@@ -38,6 +41,7 @@ class RegRequest {
   String? _email;
   String? _password;
   String? _referralCode;
+  String? _channel;
 
   String? get firstName => _firstName;
   String? get middleName => _middleName;
@@ -47,6 +51,7 @@ class RegRequest {
   String? get email => _email;
   String? get password => _password;
   String? get referralCode => _referralCode;
+  String? get channel => _channel;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -56,12 +61,17 @@ class RegRequest {
     map['gender'] = _gender;
     map['mobileNumber'] = _mobileNumber;
     map['email'] = _email;
-    map['password'] = _password;
+    // Passwordless: omit password unless a legacy client still sends one.
+    if (_password != null && _password!.isNotEmpty) {
+      map['password'] = _password;
+    }
+    if (_channel != null && _channel!.isNotEmpty) {
+      map['channel'] = _channel;
+    }
     if (_referralCode != null && _referralCode!.trim().isNotEmpty) {
       map['referralCode'] = _referralCode!.trim().toUpperCase();
     }
 
     return map;
   }
-
 }

@@ -152,6 +152,36 @@ class RentStaffLocalDataSource {
     await db.delete(_table, where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Re-inserts a deleted row with the same local id (and optional backend id).
+  /// Idempotent: no-op if [record.id] already exists.
+  Future<bool> restore(
+    RentStaffRecord record, {
+    String? backendStaffId,
+  }) async {
+    if (await getById(record.id) != null) return false;
+    final db = await database;
+    final map = <String, Object?>{
+      'id': record.id,
+      'name': record.name,
+      'job_title': record.jobTitle,
+      'pay_amount_label': record.payAmountLabel,
+      'pay_day_label': record.payDayLabel,
+      'created_at_ms': record.createdAtMs,
+      'payment_type': record.paymentType,
+      'amount_value': record.amountValue,
+    };
+    final backend = backendStaffId?.trim() ?? '';
+    if (backend.isNotEmpty) {
+      map['backend_staff_id'] = backend;
+    }
+    await db.insert(
+      _table,
+      map,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+    return true;
+  }
+
   Future<RentStaffRecord?> getByBackendId(String backendId) async {
     final id = backendId.trim();
     if (id.isEmpty) return null;

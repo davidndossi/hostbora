@@ -16,10 +16,10 @@ import '../model/update_booking_request.dart';
 import '../model/add_expense_request.dart';
 import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
+import '../model/login_otp_request.dart';
 import '../model/login_request.dart';
 import '../model/login_response.dart';
 import '../model/otp_request.dart';
-import '../model/otp_response.dart';
 import '../model/page_request.dart';
 import '../model/reg_request.dart';
 import '../model/update_preference_request.dart';
@@ -42,6 +42,16 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<LoginResponse> signIn(LoginRequest request) {
     return _remoteSource.signIn(request);
+  }
+
+  @override
+  Future<GeneralResponse> requestLoginOtp(LoginOtpRequest request) {
+    return _remoteSource.requestLoginOtp(request);
+  }
+
+  @override
+  Future<LoginResponse> verifyLoginOtp(LoginOtpRequest request) {
+    return _remoteSource.verifyLoginOtp(request);
   }
 
   @override
@@ -75,7 +85,7 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
-  Future<OtpResponse> verifyPhoneNumber(OtpRequest request) {
+  Future<LoginResponse> verifyPhoneNumber(OtpRequest request) {
     return _remoteSource.verifyPhoneNumber(request);
   }
 
@@ -400,6 +410,11 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> getMyTenants() {
+    return _remoteSource.getMyTenants();
+  }
+
+  @override
   Future<GeneralResponse> createTenant(Map<String, dynamic> body) {
     return _remoteSource.createTenant(body);
   }
@@ -529,6 +544,11 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body) {
     return _remoteSource.updatePropertyByRef(propertyRef, body);
+  }
+
+  @override
+  Future<GeneralResponse> deleteProperty(int id) {
+    return _remoteSource.deleteProperty(id);
   }
 
   @override

@@ -81,7 +81,9 @@ class RentTenantLedgerOccupancyController extends BaseController {
   @override
   void onInit() {
     super.onInit();
-    tenantId.value = int.tryParse(Get.parameters['id'] ?? '') ?? 0;
+    tenantId.value = int.tryParse(Get.parameters['id'] ?? '') ??
+        int.tryParse(Get.parameters['tenantId'] ?? '') ??
+        0;
     tenantName.value = Get.parameters['name'] ?? '';
     propertyLine.value = Get.parameters['property'] ?? '';
     _captureSourceContext();
@@ -101,6 +103,13 @@ class RentTenantLedgerOccupancyController extends BaseController {
   }
 
   void goBackToTenancyInsights() {
+    // Prefer the real previous route (listing details, Tenancy Insights, etc.).
+    // Always using [Get.offNamed] replaced the stack and left light-theme
+    // screens underneath misaligned after returning from activity → ledger.
+    if (Get.key.currentState?.canPop() == true) {
+      Get.back();
+      return;
+    }
     Get.offNamed(
       Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,
       parameters: {

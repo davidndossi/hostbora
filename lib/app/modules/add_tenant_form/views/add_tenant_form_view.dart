@@ -369,66 +369,107 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
 
   Widget _leaseDateRangeField(BuildContext context, FormSurfaceColors colors) {
     final dateFmt = DateFormat('dd/MM/yyyy');
+    final theme = Theme.of(context);
+    final errorColor = theme.colorScheme.error;
 
-    return Obx(() {
-      final start = controller.leaseStart.value;
-      final end = controller.leaseEnd.value;
-      final String label;
-      final bool hasRange;
-      if (start != null && end != null) {
-        hasRange = true;
-        label = '${dateFmt.format(start)} – ${dateFmt.format(end)}';
-      } else {
-        hasRange = false;
-        label = _isSw ? 'Mwanzo – mwisho wa mkataba' : 'Lease start – end';
-      }
-      return Material(
-        color: colors.inputFill,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: () async {
-            final now = DateTime.now();
-            final initial = hasRange && start != null && end != null
-                ? DateTimeRange(start: start, end: end)
-                : DateTimeRange(
-                    start: now,
-                    end: now.add(const Duration(days: 365)),
-                  );
-            final picked = await showDateRangePicker(
-              context: context,
-              firstDate: DateTime(now.year - 2),
-              lastDate: DateTime(now.year + 10, 12, 31),
-              initialDateRange: initial,
-              locale: const Locale('en', 'GB'),
-            );
-            if (picked != null) {
-              controller.setLeaseDateRange(picked);
-            }
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            child: Row(
-              children: [
-                Icon(Icons.date_range_outlined, size: 22, color: AppColors.colorPrimary.withValues(alpha: 0.9)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: hasRange ? colors.headline : colors.hint,
+    return FormField<DateTimeRange?>(
+      validator: controller.validateLeasePeriod,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      builder: (field) {
+        return Obx(() {
+          final start = controller.leaseStart.value;
+          final end = controller.leaseEnd.value;
+          final String label;
+          final bool hasRange;
+          if (start != null && end != null) {
+            hasRange = true;
+            label = '${dateFmt.format(start)} – ${dateFmt.format(end)}';
+          } else {
+            hasRange = false;
+            label = _isSw ? 'Mwanzo – mwisho wa mkataba' : 'Lease start – end';
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Material(
+                color: colors.inputFill,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () async {
+                    final now = DateTime.now();
+                    final initial = hasRange && start != null && end != null
+                        ? DateTimeRange(start: start, end: end)
+                        : DateTimeRange(
+                            start: now,
+                            end: now.add(const Duration(days: 365)),
+                          );
+                    final picked = await showDateRangePicker(
+                      context: context,
+                      firstDate: DateTime(now.year - 2),
+                      lastDate: DateTime(now.year + 10, 12, 31),
+                      initialDateRange: initial,
+                      locale: const Locale('en', 'GB'),
+                    );
+                    if (picked != null) {
+                      controller.setLeaseDateRange(picked);
+                      field.didChange(picked);
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: field.hasError
+                          ? Border.all(color: errorColor)
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.date_range_outlined,
+                          size: 22,
+                          color: AppColors.colorPrimary.withValues(alpha: 0.9),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: hasRange ? colors.headline : colors.hint,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.expand_more_rounded,
+                          color: colors.secondary,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                Icon(Icons.expand_more_rounded, color: colors.secondary),
-              ],
-            ),
-          ),
-        ),
-      );
-    });
+              ),
+              if (field.hasError && field.errorText != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, top: 8),
+                  child: Text(
+                    field.errorText!,
+                    style: TextStyle(
+                      color: errorColor,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        });
+      },
+    );
   }
 
   Widget _sectionCard({required FormSurfaceColors colors, required List<Widget> children}) {

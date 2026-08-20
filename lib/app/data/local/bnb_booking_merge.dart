@@ -23,12 +23,25 @@ class BnbBookingMerge {
     final nights = (m['numberOfNights'] as num?)?.toInt() ?? 0;
     final guestName = (m['guestName'] ?? '').toString();
     final key = resolveBookingKey(m, checkIn: checkIn, guestName: guestName);
-    final checkOut = _overrides.effectiveCheckOut(key, rawCheckOut) ?? rawCheckOut;
+    final fallbackKey = '${guestName}_$checkIn';
+    final overrideKeys = <String>{
+      key,
+      if (fallbackKey.trim().isNotEmpty) fallbackKey,
+      for (final field in ['bookingId', 'id', 'booking_id'])
+        if ((m[field]?.toString().trim() ?? '').isNotEmpty)
+          m[field]!.toString().trim(),
+    };
+    final checkOut =
+        _overrides.effectiveCheckOut(key, rawCheckOut) ??
+        (fallbackKey != key
+            ? _overrides.effectiveCheckOut(fallbackKey, rawCheckOut)
+            : rawCheckOut) ??
+        rawCheckOut;
     final status = (m['status'] ?? '').toString().trim().toLowerCase();
-    final checkedOut = _overrides.isCheckedOut(key) ||
+    final checkedOut = _overrides.isCheckedOutForAny(overrideKeys) ||
         status == 'checked_out' ||
         status == 'completed';
-    final cancelled = _overrides.isCancelled(key) ||
+    final cancelled = _overrides.isCancelledForAny(overrideKeys) ||
         status == 'cancelled' ||
         status == 'canceled';
     final confirmedFlag = m['isConfirmed'];
@@ -78,9 +91,19 @@ class BnbBookingMerge {
   }) {
     final checkIn = (m['checkIn'] ?? '').toString();
     final rawCheckOut = (m['checkOut'] ?? '').toString();
-    final checkOut = _overrides.effectiveCheckOut(localId, rawCheckOut) ?? rawCheckOut;
-    final checkedOut = _overrides.isCheckedOut(localId);
-    final cancelled = _overrides.isCancelled(localId);
+    final guestName = (m['guestName'] ?? '').toString();
+    final guestKey = '${guestName}_$checkIn';
+    final overrideKeys = <String>{
+      localId,
+      if (guestKey.trim().isNotEmpty) guestKey,
+      if (syncQueueId != null) 'local_sync_$syncQueueId',
+    };
+    final checkOut =
+        _overrides.effectiveCheckOut(localId, rawCheckOut) ??
+        _overrides.effectiveCheckOut(guestKey, rawCheckOut) ??
+        rawCheckOut;
+    final checkedOut = _overrides.isCheckedOutForAny(overrideKeys);
+    final cancelled = _overrides.isCancelledForAny(overrideKeys);
 
     return CheckInItem(
       bookingId: localId,
@@ -93,7 +116,7 @@ class BnbBookingMerge {
       isCheckedOut: checkedOut,
       isCancelled: cancelled,
       imageUrl: '',
-      guestName: (m['guestName'] ?? '').toString(),
+      guestName: guestName,
       guestPhone: (m['guestPhoneNumber'] ?? m['guestPhone'] ?? '').toString(),
       guestAvatarUrl: '',
       propertyType: propertyLabel,

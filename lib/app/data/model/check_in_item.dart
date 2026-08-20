@@ -41,6 +41,9 @@ class CheckInItem {
   String get bookingKey =>
       bookingId ?? '${guestName}_$checkInIso';
 
+  /// Guest+date fallback used when API id and local override keys diverge.
+  String get guestCheckInKey => '${guestName}_$checkInIso';
+
   bool get isInactive => isCheckedOut || isCancelled;
 
   bool get canCheckOut => !isInactive;
@@ -50,4 +53,42 @@ class CheckInItem {
   bool get canCancel => !isInactive;
 
   bool get showSyncBadge => syncStatus.showSyncBadge;
+
+  CheckInItem copyWith({
+    String? bookingId,
+    String? checkInIso,
+    String? checkOutIso,
+    String? listingId,
+    bool? isLocalPending,
+    ItemSyncStatus? syncStatus,
+    int? syncQueueId,
+    bool? isCheckedOut,
+    bool? isCancelled,
+    String? imageUrl,
+    String? guestName,
+    String? guestPhone,
+    String? guestAvatarUrl,
+    String? propertyType,
+    String? dates,
+    bool? isConfirmed,
+  }) {
+    return CheckInItem(
+      bookingId: bookingId ?? this.bookingId,
+      checkInIso: checkInIso ?? this.checkInIso,
+      checkOutIso: checkOutIso ?? this.checkOutIso,
+      listingId: listingId ?? this.listingId,
+      isLocalPending: isLocalPending ?? this.isLocalPending,
+      syncStatus: syncStatus ?? this.syncStatus,
+      syncQueueId: syncQueueId ?? this.syncQueueId,
+      isCheckedOut: isCheckedOut ?? this.isCheckedOut,
+      isCancelled: isCancelled ?? this.isCancelled,
+      imageUrl: imageUrl ?? this.imageUrl,
+      guestName: guestName ?? this.guestName,
+      guestPhone: guestPhone ?? this.guestPhone,
+      guestAvatarUrl: guestAvatarUrl ?? this.guestAvatarUrl,
+      propertyType: propertyType ?? this.propertyType,
+      dates: dates ?? this.dates,
+      isConfirmed: isConfirmed ?? this.isConfirmed,
+    );
+  }
 }

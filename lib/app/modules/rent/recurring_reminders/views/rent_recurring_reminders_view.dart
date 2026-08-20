@@ -91,11 +91,11 @@ class RentRecurringRemindersView
               segments: [
                 ButtonSegment(
                   value: 'all',
-                  label: Text(_isSw ? 'Zote' : 'All properties'),
+                  label: Text(_isSw ? 'Zote' : 'All properties', style: TextStyle(fontSize: 14)),
                 ),
                 ButtonSegment(
                   value: 'property',
-                  label: Text(_isSw ? 'Mali moja' : 'One property'),
+                  label: Text(_isSw ? 'Mali moja' : 'One property', style: TextStyle(fontSize: 14)),
                 ),
               ],
               selected: {controller.propertyScope.value},

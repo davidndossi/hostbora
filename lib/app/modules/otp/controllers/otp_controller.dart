@@ -6,12 +6,18 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/account_sync_trigger.dart';
+import '../../../data/local/service/session_service.dart';
+import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/general_response.dart';
+import '../../../data/model/login_otp_request.dart';
+import '../../../data/model/login_response.dart';
 import '../../../data/model/otp_request.dart';
-import '../../../data/model/otp_response.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../data/service/app_review_service.dart';
 import '../../../network/exceptions/api_exception.dart';
 import '../../../routes/app_pages.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class OtpController extends BaseController {
   String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
@@ -34,12 +40,26 @@ class OtpController extends BaseController {
   late String msisdn;
   String get flow => Get.arguments?['flow']?.toString() ?? '';
   String? get email => Get.arguments?['email']?.toString();
+  String? get channel => Get.arguments?['channel']?.toString();
 
   String get otpSubtitle {
-    if (flow == 'registration') {
+    final ch = channel?.toUpperCase();
+    if (ch == 'EMAIL') {
       return _t(
-        'We sent a verification code to your email and phone number. Enter the code below.',
-        'Tumetuma msimbo wa uthibitisho kwenye barua pepe na namba yako ya simu. Weka msimbo hapa chini.',
+        'We sent a 4-digit code to your email. Enter it below.',
+        'Tumetuma msimbo wa tarakimu 4 kwenye barua pepe yako. Weka hapa chini.',
+      );
+    }
+    if (ch == 'SMS') {
+      return _t(
+        'We sent a 4-digit code by SMS. Enter it below.',
+        'Tumetuma msimbo wa tarakimu 4 kwa SMS. Weka hapa chini.',
+      );
+    }
+    if (flow == 'registration' || flow == 'login') {
+      return _t(
+        'Enter the 4-digit verification code we sent you.',
+        'Weka msimbo wa uthibitisho wa tarakimu 4 tuliokutumia.',
       );
     }
     return appLocalization.otpSubtitle;
@@ -69,7 +89,6 @@ class OtpController extends BaseController {
       enteredPin.removeAt(selectedIndex.value);
       selectedIndex(enteredPin.isEmpty ? -1 : enteredPin.length - 1);
     } else if (enteredPin.isNotEmpty) {
-      // If no digit selected, delete last one
       enteredPin.removeLast();
       selectedIndex(enteredPin.isEmpty ? -1 : enteredPin.length - 1);
     }
@@ -84,30 +103,73 @@ class OtpController extends BaseController {
     selectedIndex(index);
   }
 
-  void _handleVerificationResponseSuccess(OtpResponse res) async {
-    if (res.respCode == '0') {
-      if (flow == 'reset_password') {
-        Get.offAllNamed(
-          Routes.NEW_PASSWORD,
-          arguments: {'msisdn': msisdn, 'otp': otp.value},
-        );
-      } else if (flow == 'registration') {
-        Get.offAllNamed(Routes.AUTH);
-        showSuccessMessage(
-          'Registration successful. Please sign in with your phone and password.',
-        );
-      } else {
-        Get.until((route) => route.isFirst);
-      }
+  /// Returns to the previous step so the user can update phone/email.
+  /// Registration / forgot-password often clear the stack (`offAllNamed`), so
+  /// we navigate explicitly when [Get.back] is not available.
+  void goBack() {
+    if (Get.key.currentState?.canPop() ?? false) {
+      Get.back();
       return;
     }
-    // Do not fall back to /api/auth/verify — it previously skipped OTP checks.
-    showErrorMessage(
-      res.respMsg?.isNotEmpty == true
-          ? res.respMsg!
-          : _t('Invalid OTP', 'OTP si sahihi'),
+    switch (flow) {
+      case 'registration':
+        Get.offAllNamed(Routes.CREATE_HOST_ACCOUNT);
+        break;
+      case 'forgot':
+      case 'forgot_password':
+      case 'reset_password':
+        Get.offAllNamed(Routes.RESET_PASSWORD);
+        break;
+      case 'login':
+      default:
+        Get.offAllNamed(Routes.AUTH);
+        break;
+    }
+  }
+
+  Future<void> _completeLogin(LoginResponse res) async {
+    if (res.token == null || res.token!.isEmpty) {
+      showErrorMessage(
+        _t('Login failed. Please try again.', 'Kuingia kumeshindikana. Jaribu tena.'),
+      );
+      errorController?.add(ErrorAnimationType.shake);
+      return;
+    }
+    if (Get.isRegistered<AuthController>()) {
+      await Get.find<AuthController>().proceedToLogin(res);
+      return;
+    }
+    // Fallback if AuthController is not in memory (e.g. deep-linked OTP).
+    await Get.find<SessionService>().saveFromLogin(res);
+    await _preferenceManager.setString(
+      PreferenceManager.keyUsername,
+      res.user?.msisdn ?? msisdn,
     );
-    errorController?.add(ErrorAnimationType.shake);
+    await _preferenceManager.setString(
+      PreferenceManager.keyFullName,
+      res.user?.fullName ?? '',
+    );
+    try {
+      await Get.find<AppReviewService>().onSuccessfulLogin();
+    } catch (_) {}
+    triggerRemoteAccountSync();
+    final hasPinEnabled = await _preferenceManager.getBool(
+      PreferenceManager.keyPinEnabled,
+      defaultValue: false,
+    );
+    final storedPin = await _preferenceManager.getString(
+      PreferenceManager.keyPinCode,
+      defaultValue: '',
+    );
+    if (!hasPinEnabled || storedPin.length != 4) {
+      Get.offAllNamed(Routes.CHANGE_PIN);
+    } else {
+      await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace();
+    }
+  }
+
+  void _handleLoginOrRegistrationSuccess(LoginResponse res) {
+    _completeLogin(res);
   }
 
   void _handleVerificationResponseError(Exception e) {
@@ -137,7 +199,10 @@ class OtpController extends BaseController {
     }
     showErrorMessage(
       res.message ??
-          _t('Failed to resend OTP or code', 'Imeshindikana kutuma tena OTP au msimbo'),
+          _t(
+            'Failed to resend OTP or code',
+            'Imeshindikana kutuma tena OTP au msimbo',
+          ),
     );
   }
 
@@ -150,10 +215,23 @@ class OtpController extends BaseController {
       );
       return;
     }
+    if (flow == 'login') {
+      callDataService(
+        _repository.verifyLoginOtp(
+          LoginOtpRequest(msisdn: msisdn, otp: otp.value),
+        ),
+        onError: _handleVerificationResponseError,
+        onSuccess: _handleLoginOrRegistrationSuccess,
+      );
+      return;
+    }
+    // Registration (default) — verifyPhone now returns a login session.
     callDataService(
-      _repository.verifyPhoneNumber(OtpRequest(msisdn: msisdn, otp: otp.value)),
+      _repository.verifyPhoneNumber(
+        OtpRequest(msisdn: msisdn, otp: otp.value),
+      ),
       onError: _handleVerificationResponseError,
-      onSuccess: _handleVerificationResponseSuccess,
+      onSuccess: _handleLoginOrRegistrationSuccess,
     );
   }
 
@@ -171,13 +249,35 @@ class OtpController extends BaseController {
     }
   }
 
+  void _clearOtpInput() {
+    otp.value = '';
+    otpController.clear();
+  }
+
   void resendOtp() {
+    // Clear any previously entered digits so the user cannot submit an
+    // expired/invalid code after requesting a new one.
+    _clearOtpInput();
+    if (flow == 'login') {
+      callDataService(
+        _repository.requestLoginOtp(
+          LoginOtpRequest(
+            msisdn: msisdn,
+            channel: channel ?? 'SMS',
+          ),
+        ),
+        onError: _handleResendOtpResponseError,
+        onSuccess: _handleResendOtpSuccess,
+      );
+      return;
+    }
     callDataService(
       _repository.resendOtp(
         OtpRequest(
           msisdn: msisdn,
           email: email,
           flow: flow.isEmpty ? 'registration' : flow,
+          channel: channel,
         ),
       ),
       onError: _handleResendOtpResponseError,

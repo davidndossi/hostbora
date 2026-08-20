@@ -72,6 +72,7 @@ extension FeedbackExtensions on BaseController {
       }
     }
     // GetX pages often lack a ScaffoldMessenger ancestor for Get.context.
+    var undone = false;
     Get.rawSnackbar(
       messageText: Text(
         message,
@@ -84,6 +85,8 @@ extension FeedbackExtensions on BaseController {
       ),
       mainButton: TextButton(
         onPressed: () {
+          if (undone) return;
+          undone = true;
           if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
           onUndo();
         },

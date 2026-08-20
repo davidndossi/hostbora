@@ -187,83 +187,96 @@ class _BookingCard extends StatelessWidget {
                               fontSize: 14,
                               color: textColor,
                             ),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (item.showSyncBadge) ...[
-                          SyncStatusChip(
-                            status: item.syncStatus,
-                            onRetry: onRetrySync,
-                            compact: true,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        if (item.isCancelled)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .error
-                                  .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              AppLocalizations.of(context)!.bookingCancelledLabel,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        if (item.isCancelled) const SizedBox(width: 4),
-                        if (item.isCheckedOut)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.textColorSecondary.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              AppLocalizations.of(context)!.bookingCheckedOut,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: subTextColor,
-                              ),
-                            ),
-                          ),
-                        if (item.isCheckedOut) const SizedBox(width: 4),
-                        if (item.isConfirmed && !item.isInactive)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.colorPrimaryLight,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              Get.locale?.languageCode == 'sw'
-                                  ? 'Imethibitishwa'
-                                  : 'Confirmed',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.colorPrimary,
-                              ),
-                            ),
-                          ),
                       ],
                     ),
+                    if (item.showSyncBadge ||
+                        item.isCancelled ||
+                        item.isCheckedOut ||
+                        (item.isConfirmed && !item.isInactive)) ...[
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: [
+                          if (item.showSyncBadge)
+                            SyncStatusChip(
+                              status: item.syncStatus,
+                              onRetry: onRetrySync,
+                              compact: true,
+                            ),
+                          if (item.isCancelled)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .error
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                AppLocalizations.of(context)!
+                                    .bookingCancelledLabel,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          if (item.isCheckedOut)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.textColorSecondary
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                AppLocalizations.of(context)!
+                                    .bookingCheckedOut,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: subTextColor,
+                                ),
+                              ),
+                            ),
+                          if (item.isConfirmed && !item.isInactive)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.colorPrimaryLight,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                Get.locale?.languageCode == 'sw'
+                                    ? 'Imethibitishwa'
+                                    : 'Confirmed',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.colorPrimary,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Text(
                       item.propertyType,

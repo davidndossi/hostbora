@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
-import '../../../core/utils/password_policy.dart';
 import '../../../core/utils/util.dart';
+import '../../../core/widget/otp_channel_sheet.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/model/reg_request.dart';
@@ -17,9 +17,7 @@ class CreateHostAccountController extends BaseController {
   final fullNameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
-  final passwordController = TextEditingController();
   final referralCodeController = TextEditingController();
-  final obscurePassword = true.obs;
   final isLoading = false.obs;
   final referralValid = Rxn<bool>();
   final referralAgentName = RxnString();
@@ -29,17 +27,13 @@ class CreateHostAccountController extends BaseController {
 
   late String firebaseToken;
 
-  final PreferenceManager _preferenceManager = Get.find(tag: (PreferenceManager)
-      .toString());
+  final PreferenceManager _preferenceManager =
+      Get.find(tag: (PreferenceManager).toString());
 
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
 
   final Rx<GeneralResponse> _generalResponse = GeneralResponse().obs;
   GeneralResponse get generalResponse => _generalResponse.value;
-
-  void togglePasswordVisibility() {
-    obscurePassword.value = !obscurePassword.value;
-  }
 
   void goBack() => Get.back();
 
@@ -73,17 +67,15 @@ class CreateHostAccountController extends BaseController {
     }
   }
 
-  void signUp() async {
+  Future<void> signUp() async {
     if (!formKey.currentState!.validate()) return;
 
     String name = fullNameController.text.trim();
     String firstName = '';
     String middleName = '';
     String lastName = '';
-    List<String> names = name
-        .split(RegExp(r'\s+'))
-        .where((s) => s.isNotEmpty)
-        .toList();
+    List<String> names =
+        name.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
     if (names.length >= 3) {
       firstName = names[0];
       middleName = names[1];
@@ -98,31 +90,40 @@ class CreateHostAccountController extends BaseController {
     String emailStr = emailController.text.trim();
     msisdn(msisdnValue);
     email(emailStr);
-    String password = passwordController.text;
 
     if (!await Util.isOnline()) {
       showErrorMessage(appLocalization.noInternet);
       return;
     }
-    RegRequest regRequest = RegRequest(
-        firstName: firstName,
-        middleName: middleName.isEmpty ? null : middleName,
-        surname: lastName.isEmpty ? null : lastName,
-        mobileNumber: msisdnValue,
-        email: emailStr.isEmpty ? null : emailStr,
-        password: password,
-        referralCode: referralCodeController.text.trim().isEmpty
-            ? null
-            : referralCodeController.text.trim(),
-      );
-      _preferenceManager.setString(PreferenceManager.keyUsername, msisdnValue);
-      callDataService<GeneralResponse>(
-        _repository.createUserProfile(regRequest),
-        // onStart: () => isLoading(true),
-        // onComplete: () => isLoading(false),
-        onError: _handleRegistrationResponseError,
-        onSuccess: _handleRegistrationResponseSuccess,
-      );
+
+    final ctx = Get.context;
+    if (ctx == null) return;
+    final channel = await showOtpChannelSheet(
+      ctx,
+      isSw: _isSw,
+      emailAvailable: true,
+    );
+    if (channel == null) return;
+
+    final regRequest = RegRequest(
+      firstName: firstName,
+      middleName: middleName.isEmpty ? null : middleName,
+      surname: lastName.isEmpty ? null : lastName,
+      mobileNumber: msisdnValue,
+      email: emailStr,
+      channel: channel,
+      referralCode: referralCodeController.text.trim().isEmpty
+          ? null
+          : referralCodeController.text.trim(),
+    );
+    _preferenceManager.setString(PreferenceManager.keyUsername, msisdnValue);
+    callDataService<GeneralResponse>(
+      _repository.createUserProfile(regRequest),
+      onStart: () => isLoading(true),
+      onComplete: () => isLoading(false),
+      onError: _handleRegistrationResponseError,
+      onSuccess: (res) => _handleRegistrationResponseSuccess(res, channel),
+    );
   }
 
   Future<void> getFirebaseToken() async {
@@ -156,7 +157,10 @@ class CreateHostAccountController extends BaseController {
     }
   }
 
-  void _handleRegistrationResponseSuccess(GeneralResponse res) async {
+  void _handleRegistrationResponseSuccess(
+    GeneralResponse res,
+    String channel,
+  ) async {
     _generalResponse(res);
     isLoading(false);
     if (res.responseCode == '0' || res.responseCode == null) {
@@ -166,6 +170,7 @@ class CreateHostAccountController extends BaseController {
           'msisdn': msisdn.value,
           'email': email.value,
           'flow': 'registration',
+          'channel': channel,
         },
       );
     } else {
@@ -187,8 +192,8 @@ class CreateHostAccountController extends BaseController {
     if (name.isEmpty) {
       return _isSw ? 'Jina kamili linahitajika' : 'Full name is required';
     }
-    // Letters (incl. accented), spaces, apostrophes, hyphens only
-    final nameRegex = RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ\s'\-]{1,118}$");
+    final nameRegex =
+        RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ\s'\-]{1,118}$");
     if (!nameRegex.hasMatch(name)) {
       return _isSw
           ? 'Jina linaweza kuwa na herufi, nafasi, (-) au (\') pekee'
@@ -202,7 +207,6 @@ class CreateHostAccountController extends BaseController {
     if (phone.isEmpty) {
       return _isSw ? 'Namba ya simu inahitajika' : 'Phone number is required';
     }
-    // Tanzanian mobile: 0 then 6/7/8, then 8 digits (e.g. 0712345678)
     final phoneRegex = RegExp(r'^0[678]\d{8}$');
     if (!phoneRegex.hasMatch(phone)) {
       return _isSw
@@ -223,15 +227,12 @@ class CreateHostAccountController extends BaseController {
     return null;
   }
 
-  String? validatePassword(String? value) =>
-      PasswordPolicy.validate(value, isSw: _isSw);
-
   @override
   void onClose() {
     fullNameController.dispose();
     emailController.dispose();
     phoneController.dispose();
-    passwordController.dispose();
+    referralCodeController.dispose();
     super.onClose();
   }
 }

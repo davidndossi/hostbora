@@ -19,12 +19,15 @@ import '../../../data/local/db/rent_payment_reminder_local_data_source.dart';
 import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/deleted_properties_store.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../core/utils/property_financial_time_series.dart';
 import '../../../core/utils/property_listing_finance_scope.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../home/controllers/home_controller.dart';
+import '../../my_properties/controllers/my_properties_controller.dart';
 import '../../rent/listing_activity_log/controllers/rent_listing_activity_log_controller.dart';
 import '../../rent/staff_management/controllers/rent_staff_management_controller.dart';
 import '../../rent/staff_payroll_details/controllers/rent_staff_payroll_details_controller.dart';
@@ -268,12 +271,15 @@ class ListingDetailsController extends BaseController
   }
 
   /// Local income/expense rows win so new entries show immediately after add forms.
+  /// Remote activity is only used when this listing has no local rows yet.
   Future<List<ListingActivityVm>> _resolveRecentActivity(
       Map<String, dynamic>? remoteListing,
       ) async {
     final local = await _loadActivityFromLocal();
     if (local.isNotEmpty) return local;
     if (remoteListing == null) return const [];
+    // New / unmatched listings often get empty remote payloads — never fall
+    // through to another listing's activity via a loose local filter.
     return _activityFromAnyMap(remoteListing);
   }
 
@@ -302,13 +308,7 @@ class ListingDetailsController extends BaseController
       await _loadMaintenanceRows();
       await _loadAssigneeStaffOptions();
 
-      var activities = remoteListing == null
-          ? <ListingActivityVm>[]
-          : _activityFromAnyMap(remoteListing);
-      if (activities.isEmpty) {
-        activities = await _loadActivityFromLocal();
-      }
-      recentActivity.assignAll(activities);
+      recentActivity.assignAll(await _resolveRecentActivity(remoteListing));
 
       var staff = remoteListing == null
           ? <ListingStaffVm>[]
@@ -842,14 +842,20 @@ class ListingDetailsController extends BaseController
   }
 
   Future<List<ListingStaffVm>> _loadStaffFromLocal() async {
-    final rows = await _staffLocal.getAllNewestFirst();
-    return rows
-        .map((s) => ListingStaffVm(name: s.name, jobTitle: s.jobTitle))
-        .toList();
+    // Local staff rows are account-scoped (no property_ref). Never attach the
+    // whole roster to a single listing — especially a brand-new empty one.
+    return const [];
   }
 
   Future<List<ListingActivityVm>> _loadActivityFromLocal() async {
     final scopeRefs = await _listingPropertyRefsForActivity();
+    // Without a property identity we cannot safely attribute any local rows.
+    if (scopeRefs.isEmpty &&
+        _propertyName.trim().isEmpty &&
+        _propertyLocation.trim().isEmpty) {
+      return const [];
+    }
+
     final candidates = <({int ts, ListingActivityVm vm})>[];
     final unitActivityKeys = <String>{};
 
@@ -911,33 +917,8 @@ class ListingDetailsController extends BaseController
       }
     } catch (_) {}
 
-    try {
-      final row = await _findLocalPropertyRowForListing();
-      final decoded = jsonDecode(
-        row?.unitsJson.trim().isEmpty ?? true ? '[]' : row!.unitsJson,
-      );
-      if (decoded is List && row != null) {
-        for (final e in decoded.whereType<Map>()) {
-          final m = Map<String, dynamic>.from(e);
-          final name = (m['unitName'] ?? m['name'] ?? '').toString().trim();
-          if (name.isEmpty) continue;
-          final key = name.toLowerCase();
-          if (unitActivityKeys.contains(key)) continue;
-          unitActivityKeys.add(key);
-          final rent = (m['unitRent'] ?? m['rent'] ?? '').toString().trim();
-          candidates.add((
-            ts: row.createdAtMs,
-            vm: ListingActivityVm(
-              title: _isSw ? 'Unit imeongezwa' : 'Property unit added',
-              subtitle: name,
-              trailing: rent.isEmpty ? '' : rent,
-              timeLabel: _relativeDateFromMs(row.createdAtMs),
-              accentColor: const Color(0xFF2563EB),
-            ),
-          ));
-        }
-      }
-    } catch (_) {}
+    // Do not synthesize "unit added" rows from unitsJson — those are created
+    // with the property itself and look like prior activity on a new listing.
 
     try {
       final tenants = await _tenantLocal.getAllNewestFirst();
@@ -961,25 +942,7 @@ class ListingDetailsController extends BaseController
       }
     } catch (_) {}
 
-    try {
-      final staff = await _staffLocal.getAllNewestFirst();
-      for (final s in staff) {
-        candidates.add((
-          ts: s.createdAtMs,
-          vm: ListingActivityVm(
-            title: _isSw ? 'Mfanyakazi ameongezwa' : 'Staff added',
-            subtitle: s.jobTitle.trim().isEmpty
-                ? s.name
-                : '${s.name} · ${s.jobTitle}',
-            trailing: s.displayAmountLine == '—' ? '' : s.displayAmountLine,
-            timeLabel: _relativeDateFromMs(s.createdAtMs),
-            accentColor: const Color(0xFF7C3AED),
-            activityType: ActivityType.staff,
-            staffId: s.id,
-          ),
-        ));
-      }
-    } catch (_) {}
+    // Staff is account-scoped in local DB — omit from per-property activity.
 
     final incomes = <IncomeRecord>[];
     final expenses = <ExpenseRecord>[];
@@ -987,16 +950,17 @@ class ListingDetailsController extends BaseController
       incomes.addAll(await _incomeLocal.getAllNewestFirst(workspaceType: ws));
       expenses.addAll(await _expenseLocal.getAllNewestFirst(workspaceType: ws));
     }
-    final propNameLc = _propertyName.toLowerCase();
-
-    bool matchProperty(String apartment, String notes) {
-      if (propNameLc.isEmpty) return true;
-      return apartment.toLowerCase().contains(propNameLc) ||
-          notes.toLowerCase().contains(propNameLc);
-    }
 
     for (final i in incomes) {
-      if (!matchProperty(i.apartment, i.notes)) continue;
+      if (!_financeRowMatchesListing(
+        scopeRefs: scopeRefs,
+        propertyRef: i.propertyRef,
+        apartment: i.apartment,
+        apartmentUnit: i.apartmentUnit,
+        notes: i.notes,
+      )) {
+        continue;
+      }
       candidates.add((
         ts: _activitySortTimestampIncome(i),
         vm: ListingActivityVm(
@@ -1012,7 +976,15 @@ class ListingDetailsController extends BaseController
       ));
     }
     for (final e in expenses) {
-      if (!matchProperty(e.apartment, e.notes)) continue;
+      if (!_financeRowMatchesListing(
+        scopeRefs: scopeRefs,
+        propertyRef: '',
+        apartment: e.apartment,
+        apartmentUnit: e.apartmentUnit,
+        notes: e.notes,
+      )) {
+        continue;
+      }
       candidates.add((
         ts: _activitySortTimestampExpense(e),
         vm: ListingActivityVm(
@@ -1031,6 +1003,41 @@ class ListingDetailsController extends BaseController
 
     candidates.sort((a, b) => b.ts.compareTo(a.ts));
     return candidates.map((e) => e.vm).toList();
+  }
+
+  /// True when a finance row belongs to this listing (never "match all").
+  bool _financeRowMatchesListing({
+    required Set<String> scopeRefs,
+    required String propertyRef,
+    required String apartment,
+    required String apartmentUnit,
+    required String notes,
+  }) {
+    final pr = propertyRef.trim();
+    if (pr.isNotEmpty && scopeRefs.isNotEmpty && scopeRefs.contains(pr)) {
+      return true;
+    }
+    final name = _propertyName.trim().toLowerCase();
+    final loc = _propertyLocation.trim().toLowerCase();
+    if (name.isEmpty && loc.isEmpty) return false;
+
+    final apt = apartment.trim().toLowerCase();
+    final unit = apartmentUnit.trim().toLowerCase();
+    final notesLc = notes.trim().toLowerCase();
+
+    if (name.isNotEmpty && (apt == name || unit == name)) return true;
+    if (loc.isNotEmpty && (apt == loc || unit == loc)) return true;
+
+    // Containment only for reasonably specific names (avoids short false hits).
+    if (name.length >= 4 &&
+        (apt.contains(name) || unit.contains(name) || notesLc.contains(name))) {
+      return true;
+    }
+    if (loc.length >= 4 &&
+        (apt.contains(loc) || unit.contains(loc) || notesLc.contains(loc))) {
+      return true;
+    }
+    return false;
   }
 
   Future<Set<String>> _listingPropertyRefsForActivity() async {
@@ -1053,20 +1060,16 @@ class ListingDetailsController extends BaseController
     if (pref.isNotEmpty && scopeRefs.contains(pref)) return true;
     final label = r.propertyLabel.trim().toLowerCase();
     if (label.isEmpty) return false;
-    final nameLc = _propertyName.toLowerCase();
-    final locLc = _propertyLocation.toLowerCase();
-    if (nameLc.isNotEmpty &&
-        (label == nameLc || label.contains(nameLc) || nameLc.contains(label))) {
-      return true;
-    }
-    if (locLc.isNotEmpty &&
-        (label == locLc || label.contains(locLc) || locLc.contains(label))) {
-      return true;
-    }
+    final nameLc = _propertyName.trim().toLowerCase();
+    final locLc = _propertyLocation.trim().toLowerCase();
+    // Exact label match only — substring matching pulls in other properties.
+    if (nameLc.isNotEmpty && label == nameLc) return true;
+    if (locLc.isNotEmpty && label == locLc) return true;
     return false;
   }
 
   bool _unitMatchesListing(PropertyUnitRecord r, Set<String> scopeRefs) {
+    if (scopeRefs.isEmpty) return false;
     final ref = r.propertyRef.trim();
     return ref.isNotEmpty && scopeRefs.contains(ref);
   }
@@ -1076,16 +1079,10 @@ class ListingDetailsController extends BaseController
     if (ref.isNotEmpty && scopeRefs.contains(ref)) return true;
     final label = r.propertyLabel.trim().toLowerCase();
     if (label.isEmpty) return false;
-    final nameLc = _propertyName.toLowerCase();
-    final locLc = _propertyLocation.toLowerCase();
-    if (nameLc.isNotEmpty &&
-        (label == nameLc || label.contains(nameLc) || nameLc.contains(label))) {
-      return true;
-    }
-    if (locLc.isNotEmpty &&
-        (label == locLc || label.contains(locLc) || locLc.contains(label))) {
-      return true;
-    }
+    final nameLc = _propertyName.trim().toLowerCase();
+    final locLc = _propertyLocation.trim().toLowerCase();
+    if (nameLc.isNotEmpty && label == nameLc) return true;
+    if (locLc.isNotEmpty && label == locLc) return true;
     return false;
   }
 
@@ -1148,7 +1145,7 @@ class ListingDetailsController extends BaseController
             _propertyName.isNotEmpty &&
             r.propertyLocation.trim() == _propertyName,
       );
-      target ??= rows.first;
+      if (target == null) return const [];
       final tenants = await _tenantLocal.getAllNewestFirst();
       final listingRef = target.propertyRef.trim().isNotEmpty
           ? target.propertyRef.trim()
@@ -1162,11 +1159,10 @@ class ListingDetailsController extends BaseController
         final ref = t.propertyRef.trim();
         if (ref.isNotEmpty && ref == listingRef) return true;
         final label = t.propertyLabel.trim().toLowerCase();
-        if (listingName.isNotEmpty &&
-            label.contains(listingName.toLowerCase())) {
+        if (listingName.isNotEmpty && label == listingName.toLowerCase()) {
           return true;
         }
-        if (listingLoc.isNotEmpty && label.contains(listingLoc.toLowerCase())) {
+        if (listingLoc.isNotEmpty && label == listingLoc.toLowerCase()) {
           return true;
         }
         return false;
@@ -1733,10 +1729,22 @@ class ListingDetailsController extends BaseController
 
     await runBusy(() async {
       try {
+        final listIds = <String>{
+          if (_propertyId.isNotEmpty) _propertyId,
+          if (row.propertyRef.trim().isNotEmpty) row.propertyRef.trim(),
+          'local_${row.id}',
+          'legacy_${row.id}',
+        };
+        await DeletedPropertiesStore().markDeleted(listIds);
         await _purgeLocalPropertyRelations(row);
         await _propertyLocal.deleteById(row.id);
-        Get.back();
+        // Drop from the open My Properties list immediately (don't wait for reload).
+        MyPropertiesController.removeIfRegistered(listIds);
+        unawaited(_bestEffortRemotePropertyDelete(listIds));
+        Get.back(result: true);
         showSuccessWithHaptic(_isSw ? 'Mali imefutwa' : 'Property removed');
+        unawaited(MyPropertiesController.refreshIfRegistered());
+        unawaited(HomeController.refreshIfRegistered());
       } catch (e, st) {
         logger.e('onDeleteProperty $e $st');
         showErrorMessage(
@@ -1744,6 +1752,37 @@ class ListingDetailsController extends BaseController
         );
       }
     });
+  }
+
+  /// Best-effort server delete so sync does not resurrect the property.
+  Future<void> _bestEffortRemotePropertyDelete(Set<String> refs) async {
+    try {
+      final res = await _repository.getMyProperties();
+      final data = res.data;
+      List<dynamic> rows = const [];
+      if (data is Map && data['properties'] is List) {
+        rows = data['properties'] as List;
+      } else if (data is List) {
+        rows = data;
+      }
+      for (final raw in rows.whereType<Map>()) {
+        final map = Map<String, dynamic>.from(raw);
+        final ref = (map['property_ref'] ??
+                map['propertyRef'] ??
+                map['id'] ??
+                '')
+            .toString()
+            .trim();
+        if (ref.isEmpty || !refs.contains(ref)) continue;
+        final remoteId = int.tryParse((map['id'] ?? '').toString());
+        if (remoteId == null) continue;
+        try {
+          await _repository.deleteProperty(remoteId);
+        } catch (_) {}
+      }
+    } catch (_) {
+      // Offline / API error — tombstone keeps it hidden until next successful delete.
+    }
   }
 
   Future<void> _purgeLocalPropertyRelations(PropertyRecord row) async {
@@ -1793,7 +1832,18 @@ class ListingDetailsController extends BaseController
         if (id == null) return;
         await Get.toNamed(
           Routes.RENT_TENANT_LEDGER_OCCUPANCY,
-          parameters: {'tenantId': id.toString()},
+          parameters: {
+            'id': id.toString(),
+            'name': activity.subtitle,
+            if (_propertyName.isNotEmpty) 'property': _propertyName,
+            'ws': _workspaceParamForMode(propertyWorkspaceMode.value),
+            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+            if (_propertyName.isNotEmpty) 'propertyTitle': _propertyName,
+            if (_propertyLocation.isNotEmpty) 'propertyLoc': _propertyLocation,
+          },
+          arguments: {
+            'ws': _workspaceParamForMode(propertyWorkspaceMode.value),
+          },
         );
 
       case ActivityType.maintenance:

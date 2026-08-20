@@ -53,7 +53,11 @@ class AuthView extends BaseView<AuthController> {
             ),
             const SizedBox(height: 8),
             Text(
-              appLocalization.enterPasswordContinue,
+              _t(
+                context,
+                'Enter your phone number. We\'ll send a one-time code — no password needed.',
+                'Weka namba yako ya simu. Tutakutumia msimbo wa mara moja — hakuna nenosiri.',
+              ),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -119,71 +123,19 @@ class AuthView extends BaseView<AuthController> {
                 validator: controller.validator,
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              _t(context, 'Password', 'Nenosiri'),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: context.tokens.textMuted,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Obx(
-              () => TextFormField(
-                controller: controller.passwordController,
-                keyboardType: TextInputType.visiblePassword,
-                obscureText: controller.obscurePassword.value,
-                style: TextStyle(
-                  color: context.tokens.textPrimary,
-                ),
-                decoration: _inputDecoration(
-                  context: context,
-                  hint: '••••••••',
-                ).copyWith(
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      controller.obscurePassword.value
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: context.tokens.textMuted,
-                      size: 22,
-                    ),
-                    onPressed: controller.togglePasswordVisibility,
-                  ),
-                ),
-                validator: controller.passwordValidator,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => Get.toNamed(Routes.RESET_PASSWORD),
-                child: Text(
-                  appLocalization.forgotPassword,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.colorPrimary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
             Obx(
               () => SizedBox(
                 height: 52,
                 child: ElevatedButton(
                   onPressed: controller.isLoading.isTrue
                       ? null
-                      : controller.login,
+                      : controller.continueWithOtp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.colorPrimary,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.colorPrimary.withOpacity(
-                      0.6,
-                    ),
+                    disabledBackgroundColor:
+                        AppColors.colorPrimary.withOpacity(0.6),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppValues.radius_6),
                     ),
@@ -198,7 +150,7 @@ class AuthView extends BaseView<AuthController> {
                           ),
                         )
                       : Text(
-                          appLocalization.login,
+                          _t(context, 'Continue', 'Endelea'),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -234,7 +186,9 @@ class AuthView extends BaseView<AuthController> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
         borderSide: BorderSide(
-          color: isDark ? context.tokens.elevatedSurface : AppColors.designInputBorder,
+          color: isDark
+              ? context.tokens.elevatedSurface
+              : AppColors.designInputBorder,
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -270,9 +224,6 @@ class AuthView extends BaseView<AuthController> {
 
   Widget _buildUsePinButton(BuildContext context) {
     return Obx(() {
-      // While pin-status is still loading from SharedPreferences, show a
-      // skeleton-height placeholder so the button doesn't flicker
-      // enabled → disabled between frames.
       if (controller.isPinStatusLoading.value) {
         return SizedBox(
           width: double.infinity,
@@ -281,7 +232,9 @@ class AuthView extends BaseView<AuthController> {
             onPressed: null,
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              side: BorderSide(color: AppColors.colorPrimary.withValues(alpha: 0.3)),
+              side: BorderSide(
+                color: AppColors.colorPrimary.withValues(alpha: 0.3),
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppValues.radius_6),
               ),
@@ -339,18 +292,6 @@ class AuthView extends BaseView<AuthController> {
             ),
           ),
         ),
-        // const SizedBox(height: 20),
-        // TextButton(
-        //   onPressed: controller.clearPrefs,
-        //   child: Text(
-        //     appLocalization.clear,
-        //     style: TextStyle(
-        //       fontSize: 15,
-        //       fontWeight: FontWeight.w600,
-        //       color: AppColors.colorPrimary,
-        //     ),
-        //   ),
-        // ),
       ],
     );
   }

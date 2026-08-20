@@ -507,7 +507,8 @@ class RentStaffManagementController extends BaseController {
     if (parsed == null) return;
     final snapshot = await _local.getById(parsed);
     if (snapshot == null) return;
-    final apiStaffId = await _apiStaffId(parsed);
+    final backendStaffId = await _local.backendIdForLocal(parsed);
+    final apiStaffId = backendStaffId ?? '$parsed';
 
     final confirmed = await confirmDestructive(
       title: 'Remove staff member?',
@@ -552,13 +553,8 @@ class RentStaffManagementController extends BaseController {
         );
       },
       onUndo: () async {
-        await _local.insert(
-          name: snapshot.name,
-          jobTitle: snapshot.jobTitle,
-          payDayLabel: snapshot.payDayLabel,
-          paymentType: snapshot.paymentType,
-          amountValue: snapshot.amountValue,
-        );
+        await _syncQueue.deleteByDedupeKey('staff:delete:$apiStaffId');
+        await _local.restore(snapshot, backendStaffId: backendStaffId);
         await loadStaff();
       },
     );

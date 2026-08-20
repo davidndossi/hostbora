@@ -34,6 +34,17 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
     );
   }
 
+  /// Visible chevron for dropdown fields (do not use [SizedBox.shrink] as icon).
+  Widget _dropdownIcon(BuildContext context) {
+    return Icon(
+      Icons.keyboard_arrow_down_rounded,
+      size: 28,
+      color: FormSurfaceColors.of(context).isDark
+          ? Colors.white70
+          : AppColors.designPlaceholder,
+    );
+  }
+
   InputDecoration _inputDecoration(
     BuildContext context, {
     required String hint,
@@ -337,22 +348,14 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
               }
               return DropdownButtonFormField<String>(
                 initialValue: controller.selectedListingId.value,
-                decoration:
-                    _inputDecoration(
-                      context,
-                      hint: _t(
-                        context,
-                        en: 'Choose a listing',
-                        sw: 'Chagua tangazo',
-                      ),
-                    ).copyWith(
-                      suffixIcon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: FormSurfaceColors.of(context).isDark
-                            ? Colors.white70
-                            : AppColors.designPlaceholder,
-                      ),
-                    ),
+                decoration: _inputDecoration(
+                  context,
+                  hint: _t(
+                    context,
+                    en: 'Choose a listing',
+                    sw: 'Chagua tangazo',
+                  ),
+                ),
                 hint: Text(
                   _t(context, en: 'Choose a listing', sw: 'Chagua tangazo'),
                   style: TextStyle(
@@ -362,7 +365,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                     fontSize: 16,
                   ),
                 ),
-                icon: const SizedBox.shrink(),
+                icon: _dropdownIcon(context),
                 isExpanded: true,
                 items: controller.listings
                     .map(
@@ -391,18 +394,10 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: controller.selectedUnitId.value,
-                    decoration:
-                        _inputDecoration(
-                          context,
-                          hint: _t(context, en: 'Choose a unit', sw: 'Chagua unit'),
-                        ).copyWith(
-                          suffixIcon: Icon(
-                            Icons.keyboard_arrow_down,
-                            color: FormSurfaceColors.of(context).isDark
-                                ? Colors.white70
-                                : AppColors.designPlaceholder,
-                          ),
-                        ),
+                    decoration: _inputDecoration(
+                      context,
+                      hint: _t(context, en: 'Choose a unit', sw: 'Chagua unit'),
+                    ),
                     hint: Text(
                       _t(context, en: 'Choose a unit', sw: 'Chagua unit'),
                       style: TextStyle(
@@ -412,7 +407,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                         fontSize: 16,
                       ),
                     ),
-                    icon: const SizedBox.shrink(),
+                    icon: _dropdownIcon(context),
                     isExpanded: true,
                     items: controller.propertyUnits
                         .map(
@@ -422,7 +417,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                           ),
                         )
                         .toList(),
-                    onChanged: (v) => controller.selectedUnitId.value = v,
+                    onChanged: controller.selectUnit,
                     validator: controller.validateUnit,
                   ),
                   const SizedBox(height: 20),
@@ -506,46 +501,61 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
               ],
             ),
             const SizedBox(height: 20),
-            _buildLabel(
-              context,
-              _t(context, en: 'Number of Guests', sw: 'Idadi ya Wageni'),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: controller.numberOfGuestsController,
-              keyboardType: TextInputType.number,
-              decoration:
-                  _inputDecoration(
-                    context,
-                    hint: _t(context, en: 'e.g. 2', sw: 'mf. 2'),
-                  ).copyWith(
-                    suffixIcon: Icon(
-                      Icons.people_outline,
-                      size: 22,
-                      color: FormSurfaceColors.of(context).isDark
-                          ? Colors.white70
-                          : AppColors.designPlaceholder,
-                    ),
+            Obx(() {
+              final maxGuests = controller.maxAllowedGuests;
+              final label = maxGuests != null
+                  ? _t(
+                      context,
+                      en: 'Number of Guests (max $maxGuests)',
+                      sw: 'Idadi ya Wageni (upeo $maxGuests)',
+                    )
+                  : _t(
+                      context,
+                      en: 'Number of Guests',
+                      sw: 'Idadi ya Wageni',
+                    );
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel(context, label),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: controller.numberOfGuestsController,
+                    keyboardType: TextInputType.number,
+                    decoration:
+                        _inputDecoration(
+                          context,
+                          hint: maxGuests != null
+                              ? _t(
+                                  context,
+                                  en: 'e.g. 2 (max $maxGuests)',
+                                  sw: 'mf. 2 (upeo $maxGuests)',
+                                )
+                              : _t(context, en: 'e.g. 2', sw: 'mf. 2'),
+                        ).copyWith(
+                          suffixIcon: Icon(
+                            Icons.people_outline,
+                            size: 22,
+                            color: FormSurfaceColors.of(context).isDark
+                                ? Colors.white70
+                                : AppColors.designPlaceholder,
+                          ),
+                          helperText: maxGuests != null
+                              ? _t(
+                                  context,
+                                  en:
+                                      'This property allows up to $maxGuests guests',
+                                  sw:
+                                      'Mali hii inaruhusu wageni hadi $maxGuests',
+                                )
+                              : null,
+                        ),
+                    validator: controller.validateNumberOfGuests,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                   ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return _t(
-                    context,
-                    en: 'Number of guests is required',
-                    sw: 'Idadi ya wageni inahitajika',
-                  );
-                }
-                final n = int.tryParse(v.trim());
-                if (n == null || n < 1) {
-                  return _t(
-                    context,
-                    en: 'Enter a valid number',
-                    sw: 'Weka namba sahihi',
-                  );
-                }
-                return null;
-              },
-            ),
+                ],
+              );
+            }),
             const SizedBox(height: 20),
             _buildLabel(context, _t(context, en: 'Notes', sw: 'Maelezo')),
             const SizedBox(height: 8),

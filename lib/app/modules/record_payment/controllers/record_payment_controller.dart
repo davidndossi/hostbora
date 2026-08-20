@@ -21,6 +21,7 @@ import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/local/service/property_break_even_notification_service.dart';
+import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/model/record_payment_request.dart';
 import '../../../data/repository/app_repository.dart';
@@ -433,6 +434,16 @@ class RecordPaymentController extends BaseController {
       selectedBookingKey.value = presetBooking;
     }
     await _loadProperties(workspace);
+    // Properties page merges remote listings; income form is local-only.
+    // If local is empty, pull remote then reload once.
+    if (propertyOptions.isEmpty) {
+      try {
+        if (Get.isRegistered<RemoteAccountSyncService>()) {
+          await Get.find<RemoteAccountSyncService>().syncPropertiesFromRemote();
+        }
+      } catch (_) {}
+      await _loadProperties(workspace);
+    }
     await _loadBookingsForSelectedProperty();
     final preset = selectedBookingKey.value?.trim();
     if (preset != null && preset.isNotEmpty) {
@@ -448,10 +459,21 @@ class RecordPaymentController extends BaseController {
 
   Future<void> _loadProperties(String workspace) async {
     final userId = (await _preferenceManager.getUser()).id ?? '';
-    final rows = await _propertyLocal.getAllVisibleNewestFirst(
+    var rows = await _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
       workspaceType: workspace,
     );
+    // Owner-id mismatch can hide rows that My Properties still shows via
+    // remote merge — fall back to unscoped local rows before giving up.
+    if (rows.isEmpty && userId.isNotEmpty) {
+      rows = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: '',
+        workspaceType: workspace,
+      );
+    }
+    if (rows.isEmpty) {
+      rows = await _propertyLocal.getAllNewestFirst();
+    }
     _cachedUnitsPropertyId = null;
     _cachedUnitsJsonSnapshot = '';
     _cachedIncomeUnits = const [];
@@ -682,7 +704,12 @@ class RecordPaymentController extends BaseController {
 
   Future<void> saveIncomeOffline() async {
     if (saving.value) return;
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    // Only validate FormState when a Form is mounted (full Record Payment
+    // screen). The quick-add income wizard has no Form(key: formKey), so
+    // formKey.currentState is null — treating that as failure made Submit
+    // return immediately with no feedback.
+    final formState = formKey.currentState;
+    if (formState != null && !formState.validate()) return;
     if (selectedProperty.value.trim().isEmpty) {
       showErrorMessage('Please select a property');
       return;

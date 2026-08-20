@@ -14,11 +14,13 @@ import '../../../../core/utils/getx_instance_probe.dart';
 import '../../../../core/utils/property_break_even_metrics.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
 import '../../../../data/local/db/rent_property_estimate_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
+import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../routes/app_pages.dart';
 
 /// Payment box state for M1…M6 ledger.
@@ -29,6 +31,10 @@ enum TenancyExcelTemplate { customerRentDetails, customerRentTenantSummary }
 enum TenantReportFrequency { weekly, monthly }
 
 enum TenantFinanceWindow { tenure, allTime }
+
+enum TenantPaymentStatusFilter { all, onSchedule, behind }
+
+enum TenantLeaseStatusFilter { all, active, endingSoon, ended }
 
 class PropertyPrincipalSnapshot {
   const PropertyPrincipalSnapshot({
@@ -95,6 +101,7 @@ class TenantInsight {
 class RentTenantResidencyPaymentTrackerController extends BaseController {
   RentTenantResidencyPaymentTrackerController()
     : _tenantLocal = Get.find<TenantLocalDataSource>(),
+      _propertyLocal = Get.find<PropertyLocalDataSource>(),
       _incomeLocal = Get.find<IncomeLocalDataSource>(),
       _expenseLocal = Get.find<ExpenseLocalDataSource>(),
       _estimateLocal = Get.find<RentPropertyEstimateLocalDataSource>(),
@@ -104,6 +111,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
       _notificationScheduler = Get.find<LocalNotificationSchedulerService>();
 
   final TenantLocalDataSource _tenantLocal;
+  final PropertyLocalDataSource _propertyLocal;
   final IncomeLocalDataSource _incomeLocal;
   final ExpenseLocalDataSource _expenseLocal;
   final RentPropertyEstimateLocalDataSource _estimateLocal;
@@ -126,6 +134,11 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   final nextWhatsappScheduleAt = Rxn<DateTime>();
   final propertyPrincipal = Rxn<PropertyPrincipalSnapshot>();
 
+  final paymentStatusFilter = TenantPaymentStatusFilter.all.obs;
+  final leaseStatusFilter = TenantLeaseStatusFilter.all.obs;
+  /// Empty string = all properties; otherwise matches [TenantInsight.propertyLine].
+  final propertyLineFilter = ''.obs;
+
   static const _waScheduleEnabledKey = 'tenant_report_wa_schedule_enabled';
   static const _waScheduleFrequencyKey = 'tenant_report_wa_schedule_frequency';
   static const _waScheduleTemplateKey = 'tenant_report_wa_schedule_template';
@@ -143,6 +156,8 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   String _filterPropertyTitle = '';
   String _filterPropertyLoc = '';
   String _filterPropertySuite = '';
+  /// Expanded hub ids for the listing filter (`propertyRef`, `local_`, `legacy_`).
+  Set<String> _filterPropertyRefAliases = const {};
 
   int get activeLeasesCount => tenants.length;
   double get collectionRatePct {
@@ -166,17 +181,64 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
   List<TenantInsight> get filteredTenants {
     final q = searchQuery.value.trim().toLowerCase();
-    final base = tenants.toList();
-    final searched = q.isEmpty
-        ? base
-        : base
-              .where(
-                (t) =>
-                    t.name.toLowerCase().contains(q) ||
-                    t.propertyLine.toLowerCase().contains(q),
-              )
-              .toList();
-    return searched;
+    final payment = paymentStatusFilter.value;
+    final lease = leaseStatusFilter.value;
+    final propertyLine = propertyLineFilter.value.trim();
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+
+    var result = tenants.toList();
+    if (q.isNotEmpty) {
+      result = result
+          .where(
+            (t) =>
+                t.name.toLowerCase().contains(q) ||
+                t.propertyLine.toLowerCase().contains(q),
+          )
+          .toList();
+    }
+    if (propertyLine.isNotEmpty) {
+      result = result.where((t) => t.propertyLine == propertyLine).toList();
+    }
+    switch (payment) {
+      case TenantPaymentStatusFilter.onSchedule:
+        result = result.where((t) => t.onSchedule).toList();
+      case TenantPaymentStatusFilter.behind:
+        result = result.where((t) => !t.onSchedule).toList();
+      case TenantPaymentStatusFilter.all:
+        break;
+    }
+    switch (lease) {
+      case TenantLeaseStatusFilter.active:
+        result = result
+            .where((t) => !t.leaseEnd.isBefore(today))
+            .toList();
+      case TenantLeaseStatusFilter.endingSoon:
+        result = result.where((t) => t.isLeaseEndingSoon).toList();
+      case TenantLeaseStatusFilter.ended:
+        result = result.where((t) => t.leaseEnd.isBefore(today)).toList();
+      case TenantLeaseStatusFilter.all:
+        break;
+    }
+    return result;
+  }
+
+  bool get hasActiveFilters =>
+      paymentStatusFilter.value != TenantPaymentStatusFilter.all ||
+      leaseStatusFilter.value != TenantLeaseStatusFilter.all ||
+      propertyLineFilter.value.trim().isNotEmpty;
+
+  List<String> get availablePropertyLines {
+    final lines = tenants
+        .map((t) => t.propertyLine.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet()
+        .toList();
+    lines.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return lines;
   }
 
   List<TenantInsight> get comparedTenants => tenants
@@ -288,11 +350,39 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     if (ws.isEmpty && args is Map) {
       ws = (args['ws'] ?? args['workspace'] ?? '').toString().trim();
     }
+    if (ws.isEmpty) {
+      try {
+        ws = Get.find<WorkspaceContextService>().currentWorkspace.value;
+      } catch (_) {}
+    }
     _workspaceType = _normalizeWorkspace(ws);
     _filterPropertyRef = Get.parameters['propertyRef']?.trim() ?? '';
     _filterPropertyTitle = Get.parameters['propertyTitle']?.trim() ?? '';
     _filterPropertyLoc = Get.parameters['propertyLoc']?.trim() ?? '';
     _filterPropertySuite = Get.parameters['propertySuite']?.trim() ?? '';
+    if (args is Map) {
+      if (_filterPropertyRef.isEmpty) {
+        _filterPropertyRef =
+            (args['propertyRef'] ?? args['property_ref'] ?? '').toString().trim();
+      }
+      if (_filterPropertyTitle.isEmpty) {
+        _filterPropertyTitle = (args['propertyTitle'] ?? args['property_title'] ?? '')
+            .toString()
+            .trim();
+      }
+      if (_filterPropertyLoc.isEmpty) {
+        _filterPropertyLoc =
+            (args['propertyLoc'] ?? args['property_location'] ?? '')
+                .toString()
+                .trim();
+      }
+      if (_filterPropertySuite.isEmpty) {
+        _filterPropertySuite =
+            (args['propertySuite'] ?? args['property_suite'] ?? '')
+                .toString()
+                .trim();
+      }
+    }
     _routeContextCaptured = true;
   }
 
@@ -305,32 +395,281 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     if (!hasFilter) return true;
 
     final r = t.propertyRef.trim();
-    if (ref.isNotEmpty && r.isNotEmpty && r == ref) return true;
+    if (r.isNotEmpty) {
+      if (ref.isNotEmpty && r == ref) return true;
+      if (_filterPropertyRefAliases.contains(r)) return true;
+    }
 
     final pl = t.propertyLabel.trim();
-    if (ref.isNotEmpty && r.isEmpty) {
-      if (title.isNotEmpty && pl == title) return true;
-      if (loc.isNotEmpty && pl == loc) return true;
-      if (loc.isNotEmpty && suite.isNotEmpty && pl == '$loc · $suite') {
+    final plLower = pl.toLowerCase();
+    if (title.isNotEmpty) {
+      final tLower = title.toLowerCase();
+      if (pl == title || plLower.contains(tLower) || tLower.contains(plLower)) {
         return true;
       }
     }
-    if (ref.isEmpty) {
-      if (title.isNotEmpty && pl == title) return true;
-      if (loc.isNotEmpty && pl == loc) return true;
-      if (loc.isNotEmpty && suite.isNotEmpty && pl == '$loc · $suite') {
+    if (loc.isNotEmpty) {
+      final locLower = loc.toLowerCase();
+      if (pl == loc || plLower.contains(locLower)) return true;
+    }
+    if (loc.isNotEmpty && suite.isNotEmpty) {
+      final combined = '$loc · $suite';
+      if (pl == combined ||
+          plLower.contains(combined.toLowerCase()) ||
+          plLower.contains(suite.toLowerCase())) {
         return true;
       }
     }
     return false;
   }
 
+  Future<void> _resolveListingFilterAliases() async {
+    _filterPropertyRefAliases = const {};
+    final ref = _filterPropertyRef.trim();
+    if (ref.isEmpty) return;
+    final aliases = <String>{ref};
+    try {
+      final row = await _propertyLocal.findByHubId(ref);
+      if (row != null) {
+        aliases.add('local_${row.id}');
+        aliases.add('legacy_${row.id}');
+        final hub = row.propertyRef.trim();
+        if (hub.isNotEmpty) aliases.add(hub);
+      }
+    } catch (_) {}
+    _filterPropertyRefAliases = aliases;
+  }
+
   void onSearchChanged(String value) {
     searchQuery.value = value;
   }
 
+  void setPaymentStatusFilter(TenantPaymentStatusFilter value) {
+    paymentStatusFilter.value = value;
+  }
+
+  void setLeaseStatusFilter(TenantLeaseStatusFilter value) {
+    leaseStatusFilter.value = value;
+  }
+
+  void setPropertyLineFilter(String? value) {
+    propertyLineFilter.value = (value ?? '').trim();
+  }
+
+  void clearFilters() {
+    paymentStatusFilter.value = TenantPaymentStatusFilter.all;
+    leaseStatusFilter.value = TenantLeaseStatusFilter.all;
+    propertyLineFilter.value = '';
+  }
+
   void onFilterPressed() {
-    Get.snackbar('Filter', 'Filters coming soon');
+    final isSw = Get.locale?.languageCode == 'sw';
+    Get.bottomSheet<void>(
+      SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          decoration: BoxDecoration(
+            color: Get.theme.cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Obx(() {
+            final propertyLines = availablePropertyLines;
+            final selectedProperty = propertyLineFilter.value;
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          isSw ? 'Vichujio' : 'Filters',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      if (hasActiveFilters)
+                        TextButton(
+                          onPressed: clearFilters,
+                          child: Text(isSw ? 'Futa' : 'Clear'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    isSw ? 'Hali ya malipo' : 'Payment status',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Get.theme.hintColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _filterChip(
+                        label: isSw ? 'Wote' : 'All',
+                        selected: paymentStatusFilter.value ==
+                            TenantPaymentStatusFilter.all,
+                        onTap: () => setPaymentStatusFilter(
+                          TenantPaymentStatusFilter.all,
+                        ),
+                      ),
+                      _filterChip(
+                        label: isSw ? 'Kwa ratiba' : 'On schedule',
+                        selected: paymentStatusFilter.value ==
+                            TenantPaymentStatusFilter.onSchedule,
+                        onTap: () => setPaymentStatusFilter(
+                          TenantPaymentStatusFilter.onSchedule,
+                        ),
+                      ),
+                      _filterChip(
+                        label: isSw ? 'Nyuma' : 'Behind',
+                        selected: paymentStatusFilter.value ==
+                            TenantPaymentStatusFilter.behind,
+                        onTap: () => setPaymentStatusFilter(
+                          TenantPaymentStatusFilter.behind,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    isSw ? 'Hali ya mkataba' : 'Lease status',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Get.theme.hintColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _filterChip(
+                        label: isSw ? 'Wote' : 'All',
+                        selected: leaseStatusFilter.value ==
+                            TenantLeaseStatusFilter.all,
+                        onTap: () => setLeaseStatusFilter(
+                          TenantLeaseStatusFilter.all,
+                        ),
+                      ),
+                      _filterChip(
+                        label: isSw ? 'Hai' : 'Active',
+                        selected: leaseStatusFilter.value ==
+                            TenantLeaseStatusFilter.active,
+                        onTap: () => setLeaseStatusFilter(
+                          TenantLeaseStatusFilter.active,
+                        ),
+                      ),
+                      _filterChip(
+                        label: isSw ? 'Inaisha hivi karibuni' : 'Ending soon',
+                        selected: leaseStatusFilter.value ==
+                            TenantLeaseStatusFilter.endingSoon,
+                        onTap: () => setLeaseStatusFilter(
+                          TenantLeaseStatusFilter.endingSoon,
+                        ),
+                      ),
+                      _filterChip(
+                        label: isSw ? 'Imeisha' : 'Ended',
+                        selected: leaseStatusFilter.value ==
+                            TenantLeaseStatusFilter.ended,
+                        onTap: () => setLeaseStatusFilter(
+                          TenantLeaseStatusFilter.ended,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (propertyLines.isNotEmpty) ...[
+                    const SizedBox(height: 18),
+                    Text(
+                      isSw ? 'Mali' : 'Property',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Get.theme.hintColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      // ignore: deprecated_member_use
+                      value: selectedProperty.isEmpty
+                          ? ''
+                          : (propertyLines.contains(selectedProperty)
+                              ? selectedProperty
+                              : ''),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Get.theme.scaffoldBackgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: '',
+                          child: Text(isSw ? 'Mali zote' : 'All properties'),
+                        ),
+                        ...propertyLines.map(
+                          (line) => DropdownMenuItem(
+                            value: line,
+                            child: Text(line, overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
+                      ],
+                      onChanged: setPropertyLineFilter,
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Get.back<void>(),
+                      child: Text(
+                        isSw
+                            ? 'Onyesha ${filteredTenants.length}'
+                            : 'Show ${filteredTenants.length}',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _filterChip({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Get.theme;
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      selectedColor: theme.colorScheme.primary.withValues(alpha: 0.18),
+      checkmarkColor: theme.colorScheme.primary,
+      labelStyle: TextStyle(
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+        color: selected ? theme.colorScheme.primary : null,
+      ),
+    );
   }
 
   String get scheduleSubtitle {
@@ -482,6 +821,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
   Future<void> _loadTenantsCore() async {
     final ws = _workspaceType;
+    await _resolveListingFilterAliases();
     final rows = await _tenantLocal.getAllNewestFirstByWorkspace(ws);
     final scoped = rows.where(_recordMatchesListingFilter).toList();
     final incomeRows = await _incomeLocal.getAllNewestFirst(workspaceType: ws);

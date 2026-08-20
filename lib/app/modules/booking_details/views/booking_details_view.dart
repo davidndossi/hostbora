@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/property_listing_image.dart';
 import '../../../core/widget/sync_status_chip.dart';
 import '../controllers/booking_details_controller.dart';
 
@@ -388,17 +389,9 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              controller.propertyImageUrl.value,
+            PropertyListingImage(
+              imagePath: controller.propertyImageUrl.value,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: AppColors.lightGreyColor,
-                child: Icon(
-                  Icons.home_work_outlined,
-                  size: 64,
-                  color: AppColors.textColorSecondary,
-                ),
-              ),
             ),
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -452,7 +445,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
             ),
             // Keep actions above the gradient / title so taps always register.
             Positioned(
-              top: 0,
+              top: 8,
               left: 0,
               right: 0,
               child: SafeArea(
@@ -465,28 +458,22 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                     0,
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _headerIconButton(
-                        onPressed: controller.goBack,
-                        icon: Icons.arrow_back,
+                      Builder(
+                        builder: (btnCtx) => _headerIconButton(
+                          context: btnCtx,
+                          onPressed: () => controller.share(btnCtx),
+                          icon: Icons.share_outlined,
+                        ),
                       ),
-                      Row(
-                        children: [
-                          Builder(
-                            builder: (btnCtx) => _headerIconButton(
-                              onPressed: () => controller.share(btnCtx),
-                              icon: Icons.share_outlined,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Builder(
-                            builder: (btnCtx) => _headerIconButton(
-                              onPressed: () => controller.moreOptions(btnCtx),
-                              icon: Icons.more_horiz,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 12),
+                      Builder(
+                        builder: (btnCtx) => _headerIconButton(
+                          context: btnCtx,
+                          onPressed: () => controller.moreOptions(btnCtx),
+                          icon: Icons.more_horiz,
+                        ),
                       ),
                     ],
                   ),
@@ -500,18 +487,20 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
   }
 
   Widget _headerIconButton({
+    required BuildContext context,
     required VoidCallback onPressed,
     required IconData icon,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.white.withValues(alpha: 0.25),
+      color: scheme.surface.withValues(alpha: 0.82),
       borderRadius: BorderRadius.circular(24),
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(24),
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Icon(icon, color: Colors.white, size: 24),
+          child: Icon(icon, color: scheme.onSurface, size: 24),
         ),
       ),
     );

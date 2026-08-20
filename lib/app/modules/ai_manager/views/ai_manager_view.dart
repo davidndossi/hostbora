@@ -399,14 +399,23 @@ class _ChatBubble extends StatelessWidget {
                 width: 30,
                 height: 30,
                 margin: const EdgeInsets.only(top: 6, left: 8),
-                decoration: const BoxDecoration(
-                  color: Colors.black12,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  color: isDark
+                      ? AppColors.colorPrimary.withValues(alpha: 0.28)
+                      : AppColors.colorPrimaryLight,
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.colorPrimary.withValues(alpha: 0.7)
+                        : AppColors.colorPrimary.withValues(alpha: 0.35),
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person,
                   size: 18,
-                  color: Colors.black54,
+                  color: isDark
+                      ? Colors.white
+                      : AppColors.colorPrimaryDark,
                 ),
               ),
           ],

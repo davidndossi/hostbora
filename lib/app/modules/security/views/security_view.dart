@@ -81,34 +81,34 @@ class SecurityView extends BaseView<SecurityController> {
               ),
             ),
           ], context),
-          const SizedBox(height: 24),
-          _buildSection(appLocalization.additionalProtection, [
-            _SettingsRow(
-              icon: Icons.shield_outlined,
-              iconColor: AppColors.colorPrimary,
-              title: appLocalization.twoFactorAuth,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    appLocalization.notConfigured,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: FormSurfaceColors.of(context).isDark ? Colors.white70 : _secondaryText,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_right,
-                    color: FormSurfaceColors.of(context).isDark ? Colors.white : _bodyText,
-                    size: 22,
-                  ),
-                ],
-              ),
-              onTap: controller.openTwoFactor,
-            ),
-          ], context),
+          // const SizedBox(height: 24),
+          // _buildSection(appLocalization.additionalProtection, [
+          //   _SettingsRow(
+          //     icon: Icons.shield_outlined,
+          //     iconColor: AppColors.colorPrimary,
+          //     title: appLocalization.twoFactorAuth,
+          //     trailing: Row(
+          //       mainAxisSize: MainAxisSize.min,
+          //       children: [
+          //         Text(
+          //           appLocalization.notConfigured,
+          //           style: TextStyle(
+          //             fontSize: 15,
+          //             fontWeight: FontWeight.w500,
+          //             color: FormSurfaceColors.of(context).isDark ? Colors.white70 : _secondaryText,
+          //           ),
+          //         ),
+          //         const SizedBox(width: 4),
+          //         Icon(
+          //           Icons.chevron_right,
+          //           color: FormSurfaceColors.of(context).isDark ? Colors.white : _bodyText,
+          //           size: 22,
+          //         ),
+          //       ],
+          //     ),
+          //     onTap: controller.openTwoFactor,
+          //   ),
+          // ], context),
           const SizedBox(height: 24),
           _buildDeviceSection(context),
           const SizedBox(height: 24),

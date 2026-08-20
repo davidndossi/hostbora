@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/getx_instance_probe.dart';
+import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../core/widget/undo_snackbar.dart';
 import '../../../core/models/item_sync_status.dart';
 import '../../../data/local/bnb_booking_actions.dart';
@@ -22,7 +23,9 @@ import '../../../data/model/send_payment_link_request.dart';
 import '../../../data/service/snippe_payment_link_service.dart';
 import '../../../routes/app_pages.dart';
 import '../../all_bookings/controllers/all_bookings_controller.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../home/controllers/home_controller.dart';
+import '../../host_calendar/controllers/host_calendar_controller.dart';
 import '../../record_payment/views/record_payment_sheet.dart';
 import '../views/bnb_guest_whatsapp_schedule_sheet.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -231,6 +234,29 @@ class BookingDetailsController extends BaseController {
 
   void goBack() => Get.back(result: true);
 
+  void _applyResolvedProperty(PropertyRecord p) {
+    final ref = p.propertyRef.trim();
+    final legacy = 'legacy_${p.id}';
+    _propertyRef = ref.isNotEmpty ? ref : legacy;
+    final label = p.propertyName.trim().isNotEmpty
+        ? p.propertyName.trim()
+        : p.propertyLocation.trim();
+    if (label.isNotEmpty) {
+      _propertyLabel = label;
+      propertyTitle.value = label;
+    }
+    final location = p.propertyLocation.trim();
+    if (location.isNotEmpty) {
+      propertyLocation.value = location;
+    }
+    propertyImageUrl.value = PropertyListingImageAssigner.resolveDisplayPath(
+      storedPath: p.coverPhotoPath,
+      propertyRef: _propertyRef,
+      localPropertyId: p.id,
+      propertyName: p.propertyName,
+    );
+  }
+
   Future<void> _resolvePropertyContext() async {
     final listingId = (_item.listingId ?? '').trim();
     if (listingId.isNotEmpty) {
@@ -248,18 +274,14 @@ class BookingDetailsController extends BaseController {
         final local = 'local_${p.id}';
         if (listingId.isNotEmpty &&
             (listingId == ref || listingId == legacy || listingId == local)) {
-          _propertyRef = ref.isNotEmpty ? ref : legacy;
-          final label = p.propertyName.trim().isNotEmpty
-              ? p.propertyName.trim()
-              : p.propertyLocation.trim();
-          if (label.isNotEmpty) _propertyLabel = label;
+          _applyResolvedProperty(p);
           return;
         }
         final label = p.propertyName.trim().isNotEmpty
             ? p.propertyName.trim()
             : p.propertyLocation.trim();
         if (label.isNotEmpty && label == _propertyLabel) {
-          _propertyRef = ref.isNotEmpty ? ref : legacy;
+          _applyResolvedProperty(p);
           return;
         }
       }
@@ -620,6 +642,15 @@ class BookingDetailsController extends BaseController {
   bool get _isInactive =>
       isCheckedOut.value || isCancelled.value;
 
+  Future<void> _refreshBookingSurfaces() async {
+    await Future.wait([
+      HomeController.refreshIfRegistered(),
+      AllBookingsController.refreshIfRegistered(),
+      HostCalendarController.refreshIfRegistered(),
+      DashboardController.refreshIfRegistered(),
+    ]);
+  }
+
   Future<void> confirmCancelBooking() async {
     if (_isInactive || processing.value) return;
     final confirmed = await Get.dialog<bool>(
@@ -651,17 +682,25 @@ class BookingDetailsController extends BaseController {
     try {
       final wasLocal = _item.isLocalPending;
       final bookingKey = _item.bookingKey;
+      final aliasKeys = <String>{
+        bookingKey,
+        if ((_item.bookingId ?? '').trim().isNotEmpty) _item.bookingId!.trim(),
+        _item.guestCheckInKey,
+      }.where((k) => k.trim().isNotEmpty).toList();
       final pendingSnapshot = wasLocal
           ? await _actions.snapshotPendingBooking(bookingKey)
           : null;
       await _actions.cancelBooking(
         bookingKey: bookingKey,
         isLocalPending: wasLocal,
+        syncQueueId: _item.syncQueueId,
+        aliasKeys: aliasKeys,
       );
       isCancelled.value = true;
-      // Refresh lists before leaving so home/all-bookings never keep "Confirmed".
-      await HomeController.refreshIfRegistered();
-      await AllBookingsController.refreshIfRegistered();
+      // Flip Home cards immediately so they never briefly stay "Confirmed".
+      HomeController.applyCancelledBookingLocally(aliasKeys);
+      // Refresh all booking surfaces before leaving so none keep "Confirmed".
+      await _refreshBookingSurfaces();
       final undoCtx = Get.context;
       final undoMessage = _l10n.bookingCancelledSuccess;
       final undoLabel =
@@ -677,10 +716,10 @@ class BookingDetailsController extends BaseController {
               bookingKey: bookingKey,
               wasLocalPending: wasLocal,
               pendingSnapshot: pendingSnapshot,
+              aliasKeys: aliasKeys,
             );
             isCancelled.value = false;
-            await HomeController.refreshIfRegistered();
-            await AllBookingsController.refreshIfRegistered();
+            await _refreshBookingSurfaces();
           },
         );
       }
@@ -722,8 +761,7 @@ class BookingDetailsController extends BaseController {
         isLocalPending: _item.isLocalPending,
       );
       isCheckedOut.value = true;
-      await HomeController.refreshIfRegistered();
-      await AllBookingsController.refreshIfRegistered();
+      await _refreshBookingSurfaces();
       Get.snackbar(_l10n.checkOutGuest, _l10n.guestCheckedOut);
       Get.back(result: true);
     } catch (e) {

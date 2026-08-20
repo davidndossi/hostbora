@@ -10,8 +10,6 @@ import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/skeleton_presets.dart';
 import '../controllers/documents_controller.dart';
 
-const _vaultTeal = Color(0xFF00BCD4);
-const _uploadButtonBlue = Color(0xFF1A237E);
 const _pdfRed = Color(0xFFE53935);
 const _excelGreen = Color(0xFF2E7D32);
 const _imageBlue = Color(0xFF1976D2);
@@ -140,7 +138,7 @@ class DocumentsView extends BaseView<DocumentsController> {
               isSelected:
                   controller.selectedFilter.value == DocumentFilter.verified,
               leadingIcon: Icons.check_circle_outline,
-              leadingIconColor: _vaultTeal,
+              leadingIconColor: Theme.of(context).colorScheme.primary,
               onTap: () => controller.selectFilter(DocumentFilter.verified),
             ),
             const SizedBox(width: 10),
@@ -149,7 +147,7 @@ class DocumentsView extends BaseView<DocumentsController> {
               isSelected:
                   controller.selectedFilter.value == DocumentFilter.more,
               leadingIcon: Icons.format_list_bulleted,
-              leadingIconColor: AppColors.textColorSecondary,
+              leadingIconColor: FormSurfaceColors.of(context).secondary,
               onTap: () => controller.selectFilter(DocumentFilter.more),
             ),
           ],
@@ -159,23 +157,24 @@ class DocumentsView extends BaseView<DocumentsController> {
   }
 
   Widget _buildUploadButton(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: double.infinity,
       height: AppValues.formButtonHeight + 8,
       child: ElevatedButton.icon(
         onPressed: controller.uploadDocument,
-        icon: const Icon(Icons.upload_outlined, size: 22, color: Colors.white),
+        icon: Icon(Icons.upload_outlined, size: 22, color: scheme.onPrimary),
         label: Text(
           appLocalization.uploadDocument,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: scheme.onPrimary,
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: _uploadButtonBlue,
-          foregroundColor: Colors.white,
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppValues.radius_6),
           ),
@@ -206,12 +205,9 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = FormSurfaceColors.of(context);
+    final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: isSelected
-          ? _vaultTeal
-          : (c.isDark
-                ? Colors.white.withValues(alpha: 0.12)
-                : AppColors.lightGreyColor.withValues(alpha: 0.4)),
+      color: isSelected ? scheme.primary : c.chipUnselectedBg,
       borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
       child: InkWell(
         onTap: onTap,
@@ -226,8 +222,8 @@ class _FilterChip extends StatelessWidget {
                   leadingIcon!,
                   size: leadingIconSize ?? 18,
                   color: isSelected
-                      ? Colors.white
-                      : (leadingIconColor ?? AppColors.textColorSecondary),
+                      ? scheme.onPrimary
+                      : (leadingIconColor ?? c.secondary),
                 ),
                 const SizedBox(width: 6),
               ],
@@ -236,9 +232,7 @@ class _FilterChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
+                  color: isSelected ? scheme.onPrimary : scheme.onSurface,
                 ),
               ),
             ],
@@ -310,11 +304,13 @@ class _DocumentCard extends StatelessWidget {
     final displayName = item.name.length > 28
         ? '${item.name.substring(0, 25)}...'
         : item.name;
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite,
+        color: c.card,
         borderRadius: BorderRadius.circular(AppValues.radius_12),
+        border: Border.all(color: c.border.withValues(alpha: 0.6)),
         boxShadow: [
           BoxShadow(
             color: c.isDark
@@ -338,7 +334,7 @@ class _DocumentCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: scheme.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -350,9 +346,7 @@ class _DocumentCard extends StatelessWidget {
                       item.size,
                       style: TextStyle(
                         fontSize: 13,
-                        color: c.isDark
-                            ? Colors.white70
-                            : AppColors.textColorSecondary,
+                        color: c.secondary,
                       ),
                     ),
                     if (item.synced) ...[
@@ -360,7 +354,7 @@ class _DocumentCard extends StatelessWidget {
                       Icon(
                         Icons.check_circle,
                         size: 14,
-                        color: AppColors.colorSuccessGreen,
+                        color: scheme.primary,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -368,7 +362,7 @@ class _DocumentCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.colorSuccessGreen,
+                          color: scheme.primary,
                         ),
                       ),
                     ],

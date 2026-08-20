@@ -25,15 +25,29 @@ import '../../host_calendar/controllers/host_calendar_controller.dart';
 
 /// Lightweight listing for property dropdown (from GET /api/listings).
 class ListingItem {
-  ListingItem({required this.id, required this.propertyName});
+  ListingItem({
+    required this.id,
+    required this.propertyName,
+    this.maxGuests = 0,
+  });
   final String id;
   final String propertyName;
+
+  /// Listing-level capacity from API (`maxGuests`). 0 = unknown.
+  final int maxGuests;
 }
 
 class BookingUnitItem {
-  BookingUnitItem({required this.id, required this.unitName});
+  BookingUnitItem({
+    required this.id,
+    required this.unitName,
+    this.maxGuests = 0,
+  });
   final String id;
   final String unitName;
+
+  /// Unit capacity. 0 = unknown.
+  final int maxGuests;
 }
 
 class AddNewBookingController extends BaseController {
@@ -78,8 +92,33 @@ class AddNewBookingController extends BaseController {
 
   static const _minSnippeAmountTzs = 500;
 
+  /// Hard ceiling when property/unit capacity is not configured.
+  static const absoluteMaxGuests = 50;
+
   static const _dateFormat = 'MMM d, yyyy';
   static const _isoDateFormat = 'yyyy-MM-dd';
+
+  /// Effective guest capacity for the selected property/unit, or null if unknown.
+  int? get maxAllowedGuests {
+    final unitId = selectedUnitId.value?.trim() ?? '';
+    if (unitId.isNotEmpty) {
+      final unit = propertyUnits.firstWhereOrNull((u) => u.id == unitId);
+      if (unit != null && unit.maxGuests > 0) return unit.maxGuests;
+    }
+    if (propertyUnits.length == 1 && propertyUnits.first.maxGuests > 0) {
+      return propertyUnits.first.maxGuests;
+    }
+    final listingId = selectedListingId.value;
+    final listing =
+        listings.firstWhereOrNull((l) => l.id == listingId);
+    if (listing != null && listing.maxGuests > 0) return listing.maxGuests;
+    final caps =
+        propertyUnits.map((u) => u.maxGuests).where((g) => g > 0).toList();
+    if (caps.isNotEmpty) {
+      return caps.reduce((a, b) => a > b ? a : b);
+    }
+    return null;
+  }
 
   String get checkInLabel =>
       checkInDate.value != null
@@ -132,17 +171,33 @@ class AddNewBookingController extends BaseController {
       };
       if (data is List) {
         final remoteItems = data
-            .map(
-              (e) => ListingItem(
-                id: (e is Map ? e['id'] : null)?.toString() ?? '',
-                propertyName: (e is Map ? e['propertyName'] : null)?.toString() ??
-                    (e is Map ? e['id'] : null)?.toString() ??
-                    'Property',
-              ),
-            )
-            .where((e) => e.id.isNotEmpty);
+            .map((e) {
+              if (e is! Map) return null;
+              final m = Map<String, dynamic>.from(e);
+              final id = (m['id'] ?? '').toString();
+              if (id.isEmpty) return null;
+              final maxGuests = (m['maxGuests'] as num?)?.toInt() ??
+                  (m['max_guests'] as num?)?.toInt() ??
+                  0;
+              return ListingItem(
+                id: id,
+                propertyName: (m['propertyName'] ?? m['id'] ?? 'Property')
+                    .toString(),
+                maxGuests: maxGuests > 0 ? maxGuests : 0,
+              );
+            })
+            .whereType<ListingItem>();
         for (final item in remoteItems) {
-          merged[item.id] = item;
+          final existing = merged[item.id];
+          merged[item.id] = ListingItem(
+            id: item.id,
+            propertyName: item.propertyName.isNotEmpty
+                ? item.propertyName
+                : (existing?.propertyName ?? 'Property'),
+            maxGuests: item.maxGuests > 0
+                ? item.maxGuests
+                : (existing?.maxGuests ?? 0),
+          );
         }
       }
       listings.assignAll(merged.values.toList());
@@ -185,6 +240,7 @@ class AddNewBookingController extends BaseController {
   Future<void> selectProperty(String? listingId) async {
     selectedListingId.value = listingId;
     await _loadUnitsForListing(listingId);
+    formKey.currentState?.validate();
   }
 
   Future<void> _loadUnitsForListing(String? listingId) async {
@@ -204,8 +260,11 @@ class AddNewBookingController extends BaseController {
         if (unitName.isEmpty) continue;
         units.add(
           BookingUnitItem(
-            id: row.propertyUnitRef.trim().isNotEmpty ? row.propertyUnitRef.trim() : '${row.id}',
+            id: row.propertyUnitRef.trim().isNotEmpty
+                ? row.propertyUnitRef.trim()
+                : '${row.id}',
             unitName: unitName,
+            maxGuests: row.maxGuests > 0 ? row.maxGuests : 0,
           ),
         );
       }
@@ -222,13 +281,18 @@ class AddNewBookingController extends BaseController {
           if (decoded is List) {
             for (final e in decoded.whereType<Map>()) {
               final m = Map<String, dynamic>.from(e);
-              final unitName = (m['unitName'] ?? m['name'] ?? '').toString().trim();
+              final unitName =
+                  (m['unitName'] ?? m['name'] ?? '').toString().trim();
               if (unitName.isEmpty) continue;
               final unitId = (m['unitId'] ?? '').toString().trim();
+              final maxGuests = (m['maxGuests'] as num?)?.toInt() ??
+                  (m['max_guests'] as num?)?.toInt() ??
+                  0;
               units.add(
                 BookingUnitItem(
                   id: unitId.isNotEmpty ? unitId : '__n:$unitName',
                   unitName: unitName,
+                  maxGuests: maxGuests > 0 ? maxGuests : 0,
                 ),
               );
             }
@@ -241,6 +305,12 @@ class AddNewBookingController extends BaseController {
     if (units.length == 1) {
       selectedUnitId.value = units.first.id;
     }
+  }
+
+  void selectUnit(String? unitId) {
+    selectedUnitId.value = unitId;
+    // Re-check guest count against the newly selected unit capacity.
+    formKey.currentState?.validate();
   }
 
   Future<void> pickCheckIn() async {
@@ -326,6 +396,33 @@ class AddNewBookingController extends BaseController {
       return _t(
         'Check-out must be after check-in',
         'Tarehe ya kutoka lazima iwe baada ya kuingia',
+      );
+    }
+    return null;
+  }
+
+  String? validateNumberOfGuests(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return _t(
+        'Number of guests is required',
+        'Idadi ya wageni inahitajika',
+      );
+    }
+    final n = int.tryParse(value.trim());
+    if (n == null || n < 1) {
+      return _t('Enter a valid number', 'Weka namba sahihi');
+    }
+    final cap = maxAllowedGuests;
+    if (cap != null && n > cap) {
+      return _t(
+        'Maximum $cap guests allowed for this property',
+        'Upeo ni wageni $cap kwa mali hii',
+      );
+    }
+    if (cap == null && n > absoluteMaxGuests) {
+      return _t(
+        'Enter a realistic guest count (max $absoluteMaxGuests)',
+        'Weka idadi ya wageni inayofaa (upeo $absoluteMaxGuests)',
       );
     }
     return null;

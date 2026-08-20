@@ -147,9 +147,30 @@ class _QuickAddExpenseWizardBodyState
   }
 
   Future<void> _submit() async {
+    if (_submitting) return;
     setState(() => _submitting = true);
     try {
-      await controller.saveExpenseOffline();
+      final ok = await controller.saveExpenseOffline();
+      // On success the controller closes this sheet via Get.back.
+      if (!mounted || ok) return;
+      final err = controller.errorMessage.trim();
+      Get.snackbar(
+        'Could not save',
+        err.isNotEmpty
+            ? err
+            : 'Something went wrong while saving the expense. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 4),
+      );
+      if (err.isNotEmpty) controller.showErrorMessage('');
+    } catch (_) {
+      if (!mounted) return;
+      Get.snackbar(
+        'Could not save',
+        'Something went wrong while saving the expense. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 4),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -181,24 +202,30 @@ class _QuickAddExpenseWizardBodyState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         quickWizardHeading(context, 'Which property is this expense for?'),
-        if (!controller.hasProperties)
-          Text(
-            'No properties yet — add a property first.',
-            style: TextStyle(color: c.hint),
-          )
-        else
-          Obx(
-            () => DropdownButtonFormField<String>(
-              initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
-                  ? controller.selectedProperty.value
-                  : null,
-              decoration: _decoration(context, hint: 'Select property'),
-              items: controller.propertyOptions
-                  .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                  .toList(),
-              onChanged: controller.updateSelectedProperty,
+        Obx(() {
+          if (!controller.hasProperties) {
+            return Text(
+              'No properties yet — add a property first.',
+              style: TextStyle(color: c.hint),
+            );
+          }
+          return DropdownButtonFormField<String>(
+            key: ValueKey(
+              'qe-property-${controller.propertyOptions.length}-'
+              '${controller.selectedProperty.value}',
             ),
-          ),
+            initialValue: controller.propertyOptions.contains(
+                  controller.selectedProperty.value,
+                )
+                ? controller.selectedProperty.value
+                : null,
+            decoration: _decoration(context, hint: 'Select property'),
+            items: controller.propertyOptions
+                .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                .toList(),
+            onChanged: controller.updateSelectedProperty,
+          );
+        }),
       ],
     );
   }

@@ -25,9 +25,14 @@ class MainController extends BaseController with WidgetsBindingObserver {
 
   MenuCode get selectedMenuCode => _selectedMenuCodeController.value;
 
+  int get selectedMenuIndex => MenuCode.values.indexOf(selectedMenuCode);
+
   final lifeCardUpdateController = false.obs;
   final currentLocale = 'en'.obs;
   final title = ''.obs;
+
+  /// Tabs that have been opened at least once (kept alive in [IndexedStack]).
+  final builtMenuCodes = <MenuCode>{MenuCode.HOME}.obs;
 
   @override
   void onInit() async {
@@ -35,10 +40,9 @@ class MainController extends BaseController with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     final args = Get.arguments as Map<String, dynamic>?;
     if (args?['initialMenu'] == 'home') {
-      _selectedMenuCodeController(MenuCode.HOME);
-      try {
-        Get.find<BottomNavController>().updateSelectedIndex(0);
-      } catch (_) {}
+      _applyMenuSelection(MenuCode.HOME);
+    } else {
+      _syncNavIndex(selectedMenuCode);
     }
     // All bindings are registered by the time MainController initialises,
     // so RemoteDataSource is available. Delay slightly so the UI paints first.
@@ -104,30 +108,44 @@ class MainController extends BaseController with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Re-assign the same value to force all Obx listeners to rebuild.
-      final current = _selectedMenuCodeController.value;
-      _selectedMenuCodeController.value = current;
-      // Also nudge BottomNavController so the nav bar visual state is fresh.
-      try {
-        final nav = Get.find<BottomNavController>();
-        final idx = nav.selectedIndex;
-        nav.updateSelectedIndex(idx);
-      } catch (_) {}
+      // Same value does not notify GetX listeners — force a refresh.
+      _selectedMenuCodeController.refresh();
+      builtMenuCodes.refresh();
+      _syncNavIndex(selectedMenuCode);
     }
   }
 
+  void _applyMenuSelection(MenuCode menuCode) {
+    builtMenuCodes.add(menuCode);
+    builtMenuCodes.refresh();
+    if (_selectedMenuCodeController.value != menuCode) {
+      _selectedMenuCodeController.value = menuCode;
+    } else {
+      _selectedMenuCodeController.refresh();
+    }
+    _syncNavIndex(menuCode);
+  }
+
+  void _syncNavIndex(MenuCode menuCode) {
+    try {
+      Get.find<BottomNavController>().updateSelectedIndex(
+        MenuCode.values.indexOf(menuCode),
+      );
+    } catch (_) {}
+  }
+
   Future<void> onMenuSelected(MenuCode menuCode) async {
-    _selectedMenuCodeController(menuCode);
+    _applyMenuSelection(menuCode);
     switch (menuCode) {
       case MenuCode.HOME:
         // Refresh only if Home is already constructed (avoid lazyPut stampede).
         if (GetxInstanceProbe.isAlive<HomeController>()) {
-          await Get.find<HomeController>().loadHomeData(refresh: true);
+          unawaited(Get.find<HomeController>().loadHomeData(refresh: true));
         }
         break;
       case MenuCode.PROPERTIES:
         if (GetxInstanceProbe.isAlive<MyPropertiesController>()) {
-          await Get.find<MyPropertiesController>().loadProperties();
+          unawaited(Get.find<MyPropertiesController>().loadProperties());
         }
         // One-time tip; never stacks with another coach mark in-session.
         unawaited(
@@ -140,7 +158,7 @@ class MainController extends BaseController with WidgetsBindingObserver {
       case MenuCode.FINANCES:
         // User opened Finances — create Dashboard if needed, then load.
         if (Get.isRegistered<DashboardController>()) {
-          await Get.find<DashboardController>().loadDashboard();
+          unawaited(Get.find<DashboardController>().loadDashboard());
         }
         unawaited(
           Future<void>.delayed(
@@ -151,7 +169,7 @@ class MainController extends BaseController with WidgetsBindingObserver {
         break;
       case MenuCode.MAINTENANCE:
         if (GetxInstanceProbe.isAlive<MaintenanceTasksController>()) {
-          await Get.find<MaintenanceTasksController>().loadTasks();
+          unawaited(Get.find<MaintenanceTasksController>().loadTasks());
         }
         break;
       case MenuCode.MORE:

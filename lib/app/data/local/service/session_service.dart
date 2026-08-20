@@ -54,8 +54,14 @@ class SessionService extends GetxService {
   Future<bool> isAccessTokenValid() =>
       _isAccessTokenValid(_preferenceManager);
 
-  Future<bool> ensureValidSession() async {
-    if (await isAccessTokenValid()) return true;
+  /// Ensures a usable access token.
+  ///
+  /// When [forceRefresh] is true (e.g. after a 401/403 from the API), always
+  /// attempt a refresh even if the locally stored access-token expiry has not
+  /// elapsed — the server may have rejected the token for clock skew, secret
+  /// rotation, or an earlier expiry than the client tracked.
+  Future<bool> ensureValidSession({bool forceRefresh = false}) async {
+    if (!forceRefresh && await isAccessTokenValid()) return true;
     return _refreshAccessToken();
   }
 

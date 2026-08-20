@@ -23,7 +23,25 @@ class MainView extends BaseView<MainController> {
 
   @override
   Widget body(BuildContext context) {
-    return Obx(() => getPageOnSelectedMenu(controller.selectedMenuCode));
+    // IndexedStack keeps visited tabs alive and switches by index so a stale
+    // Element cannot keep showing the previous page after resume.
+    return Obx(() {
+      final selected = controller.selectedMenuCode;
+      final built = controller.builtMenuCodes;
+      return IndexedStack(
+        index: MenuCode.values.indexOf(selected),
+        sizing: StackFit.expand,
+        children: [
+          for (final code in MenuCode.values)
+            KeyedSubtree(
+              key: ValueKey(code),
+              child: built.contains(code)
+                  ? getPageOnSelectedMenu(code)
+                  : const SizedBox.shrink(),
+            ),
+        ],
+      );
+    });
   }
 
   @override

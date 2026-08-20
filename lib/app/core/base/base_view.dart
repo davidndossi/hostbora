@@ -8,7 +8,6 @@ import '../../../l10n/app_localizations.dart';
 import '/app/core/base/base_controller.dart';
 import '/app/core/model/page_state.dart';
 import '/app/core/values/text_styles.dart';
-import '/app/core/theme/app_theme_tokens.dart';
 import '/app/core/widget/skeleton_presets.dart';
 import '/flavors/build_config.dart';
 
@@ -29,6 +28,15 @@ abstract class BaseView<Controller extends BaseController>
   /// When true, merges [moduleDefaultTextStyle] (16px) into the page [body].
   /// Rent module views use [RentBaseView] which sets this to false.
   bool get applyModuleDefaultTextStyle => true;
+
+  /// When false, the scaffold does not shrink for the keyboard. Use for views
+  /// hosted inside a bottom sheet that already pads for [viewInsets].
+  bool get resizeToAvoidBottomInset => true;
+
+  /// SafeArea around [body]. Disable sides when the host (e.g. bottom sheet)
+  /// already handles insets.
+  bool get safeAreaTop => !extendBodyBehindAppBar();
+  bool get safeAreaBottom => true;
 
   @override
   Widget build(BuildContext context) {
@@ -66,31 +74,19 @@ abstract class BaseView<Controller extends BaseController>
   }
 
   Widget pageScaffold(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x3F000000),
-            blurRadius: 10,
-            offset: Offset(10, 10),
-            spreadRadius: 0,
-          )
-        ],
-      ),
-      child: Scaffold(
-        //sets ios status bar color
-        backgroundColor: pageBackgroundColor(context),
-        key: globalKey,
-        appBar: appBar(context),
-        floatingActionButton: floatingActionButton(),
-        floatingActionButtonLocation: floatingActionButtonLocation(),
-        body: pageContent(context),
-        bottomNavigationBar: bottomNavigationBar(),
-        extendBody: true,
-        drawer: drawer(),
-        extendBodyBehindAppBar: extendBodyBehindAppBar(),
-        // resizeToAvoidBottomInset: false
-      ),
+    return Scaffold(
+      //sets ios status bar color
+      backgroundColor: pageBackgroundColor(context),
+      key: globalKey,
+      appBar: appBar(context),
+      floatingActionButton: floatingActionButton(),
+      floatingActionButtonLocation: floatingActionButtonLocation(),
+      body: pageContent(context),
+      bottomNavigationBar: bottomNavigationBar(),
+      extendBody: true,
+      drawer: drawer(),
+      extendBodyBehindAppBar: extendBodyBehindAppBar(),
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
     );
   }
 
@@ -98,7 +94,8 @@ abstract class BaseView<Controller extends BaseController>
     Widget content = bottomNavigationBar() != null
         ? body(context)
         : SafeArea(
-            top: !extendBodyBehindAppBar(),
+            top: safeAreaTop,
+            bottom: safeAreaBottom,
             child: body(context),
           );
     if (applyModuleDefaultTextStyle) {

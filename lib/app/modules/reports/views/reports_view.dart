@@ -346,82 +346,103 @@ class ReportsView extends BaseView<ReportsController> {
           const SizedBox(height: 8),
           _chartCard(
             context,
-            SizedBox(
-              height: 240,
-              child: labels.isEmpty
-                  ? Center(child: Text(appLocalization.reportsNoData))
-                  : BarChart(
-                      BarChartData(
-                        alignment: BarChartAlignment.spaceAround,
-                        maxY: _maxY([
-                          ...controller.revenuePerBucket,
-                          ...controller.expensePerBucket,
-                        ]),
-                        gridData: const FlGridData(show: true),
-                        titlesData: FlTitlesData(
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 32,
-                              getTitlesWidget: (v, m) {
-                                final i = v.toInt();
-                                if (i < 0 || i >= labels.length) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Text(
-                                  labels[i],
-                                  style: const TextStyle(fontSize: 9),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                );
-                              },
-                            ),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 44,
-                              getTitlesWidget: (v, m) => Text(
-                                _compactMoney(v),
-                                style: const TextStyle(fontSize: 9),
+            labels.isEmpty
+                ? SizedBox(
+                    height: 240,
+                    child: Center(child: Text(appLocalization.reportsNoData)),
+                  )
+                : Builder(
+                    builder: (context) {
+                      const barSlotWidth = 36.0;
+                      final viewportWidth =
+                          MediaQuery.sizeOf(context).width - 48;
+                      final chartWidth = math.max(
+                        viewportWidth,
+                        labels.length * barSlotWidth,
+                      );
+                      return SizedBox(
+                        height: 300,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: chartWidth,
+                            child: BarChart(
+                              BarChartData(
+                                alignment: BarChartAlignment.spaceAround,
+                                maxY: _maxY([
+                                  ...controller.revenuePerBucket,
+                                  ...controller.expensePerBucket,
+                                ]),
+                                gridData: const FlGridData(show: true),
+                                titlesData: FlTitlesData(
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 78,
+                                      getTitlesWidget: (v, meta) {
+                                        final i = v.toInt();
+                                        if (i < 0 || i >= labels.length) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return _verticalBottomTitle(
+                                          context,
+                                          labels[i],
+                                          meta,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 44,
+                                      getTitlesWidget: (v, m) => Text(
+                                        _compactMoney(v),
+                                        style: const TextStyle(fontSize: 9),
+                                      ),
+                                    ),
+                                  ),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                ),
+                                borderData: FlBorderData(show: false),
+                                barGroups: List.generate(labels.length, (i) {
+                                  return BarChartGroupData(
+                                    x: i,
+                                    barRods: [
+                                      BarChartRodData(
+                                        toY: controller.revenuePerBucket[i],
+                                        width: 10,
+                                        color: AppColors.colorPrimary,
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                          top: Radius.circular(4),
+                                        ),
+                                      ),
+                                      BarChartRodData(
+                                        toY: controller.expensePerBucket[i],
+                                        width: 10,
+                                        color: AppColors.colorOrange,
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                          top: Radius.circular(4),
+                                        ),
+                                      ),
+                                    ],
+                                    barsSpace: 4,
+                                  );
+                                }),
                               ),
                             ),
-                          ),
-                          topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
                           ),
                         ),
-                        borderData: FlBorderData(show: false),
-                        barGroups: List.generate(labels.length, (i) {
-                          return BarChartGroupData(
-                            x: i,
-                            barRods: [
-                              BarChartRodData(
-                                toY: controller.revenuePerBucket[i],
-                                width: 10,
-                                color: AppColors.colorPrimary,
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(4),
-                                ),
-                              ),
-                              BarChartRodData(
-                                toY: controller.expensePerBucket[i],
-                                width: 10,
-                                color: AppColors.colorOrange,
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(4),
-                                ),
-                              ),
-                            ],
-                            barsSpace: 4,
-                          );
-                        }),
-                      ),
-                    ),
-            ),
+                      );
+                    },
+                  ),
           ),
           if (hasExp) ...[
             const SizedBox(height: 12),
@@ -465,6 +486,33 @@ class ReportsView extends BaseView<ReportsController> {
     return m <= 0 ? 100 : m * 1.15;
   }
 
+  /// Bottom axis labels drawn vertically so dense periods stay readable.
+  Widget _verticalBottomTitle(
+    BuildContext context,
+    String label,
+    TitleMeta meta,
+  ) {
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      space: 8,
+      angle: -math.pi / 2,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 72),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 10,
+            height: 1.0,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _expensesBody(BuildContext context) {
     return Obx(() {
       final labels = controller.expenseCategoryLabels.toList();
@@ -481,7 +529,6 @@ class ReportsView extends BaseView<ReportsController> {
         viewportWidth,
         labels.length * barSlotWidth,
       );
-      final rotateLabels = labels.length > 3;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,7 +549,7 @@ class ReportsView extends BaseView<ReportsController> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SizedBox(
-                        height: rotateLabels ? 300 : 260,
+                        height: 300,
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: SizedBox(
@@ -540,32 +587,16 @@ class ReportsView extends BaseView<ReportsController> {
                                   bottomTitles: AxisTitles(
                                     sideTitles: SideTitles(
                                       showTitles: true,
-                                      reservedSize: rotateLabels ? 70 : 48,
+                                      reservedSize: 78,
                                       getTitlesWidget: (v, meta) {
                                         final i = v.toInt();
                                         if (i < 0 || i >= labels.length) {
                                           return const SizedBox.shrink();
                                         }
-                                        return SideTitleWidget(
-                                          axisSide: meta.axisSide,
-                                          space: 8,
-                                          angle: rotateLabels ? -0.75 : 0,
-                                          child: SizedBox(
-                                            width: barSlotWidth - 12,
-                                            child: Text(
-                                              labels[i],
-                                              textAlign: TextAlign.center,
-                                              maxLines: rotateLabels ? 1 : 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              softWrap: true,
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                height: 1.1,
-                                                color: theme
-                                                    .colorScheme.onSurfaceVariant,
-                                              ),
-                                            ),
-                                          ),
+                                        return _verticalBottomTitle(
+                                          context,
+                                          labels[i],
+                                          meta,
                                         );
                                       },
                                     ),

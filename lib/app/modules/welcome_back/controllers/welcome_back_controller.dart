@@ -9,22 +9,12 @@ import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/local/service/session_service.dart';
 import '../../../data/local/service/workspace_context_service.dart';
-import '../../../data/service/app_review_service.dart';
-import '../../../data/model/login_request.dart';
-import '../../../data/model/login_response.dart';
-import '../../../data/repository/app_repository.dart';
-import '../../../network/exceptions/api_exception.dart';
 import '../../../routes/app_pages.dart';
 
 class WelcomeBackController extends BaseController {
   WelcomeBackController()
       : _preferenceManager =
             Get.find<PreferenceManager>(tag: (PreferenceManager).toString());
-
-  final Rx<LoginResponse> _loginResponse = LoginResponse().obs;
-  LoginResponse get loginResponse => _loginResponse.value;
-
-  final AppRepository _repository = Get.find(tag: (AppRepository).toString());
 
   final PreferenceManager _preferenceManager;
   final pinLength = 4;
@@ -37,7 +27,6 @@ class WelcomeBackController extends BaseController {
   final setupPrompt = 'Create a 4-digit PIN'.obs;
   final lockoutMessage = ''.obs;
   final msisdn = ''.obs;
-  final password = ''.obs;
   String _storedPin = '';
   bool _pinLoaded = false;
   final faceIdEnabledPref = false.obs;
@@ -47,7 +36,7 @@ class WelcomeBackController extends BaseController {
   String _t(String en, String sw) =>
       Get.locale?.languageCode == 'sw' ? sw : en;
 
-  /// True when user just logged in with phone+password; show Continue instead of PIN.
+  /// True when user just logged in with OTP; show Continue instead of PIN.
   final fromPasswordLogin = false.obs;
 
   /// True when device has biometrics available (fingerprint or face).
@@ -137,64 +126,13 @@ class WelcomeBackController extends BaseController {
     }
   }
 
-  void _handleLoginResponseSuccess(LoginResponse res) async {
-    _loginResponse(res);
-    proceedToLogin(res);
-  }
-
-  void _handleLoginResponseError(Exception? e) {
-    if (e is ApiException && (e.message).isNotEmpty) {
-      showErrorMessage(e.message);
-    }
-  }
-
-  Future<void> proceedToLogin(LoginResponse res) async {
-    if (res.message == 'expired_version') {
-      showErrorMessage(appLocalization.expiredVersion);
-    } else if (res.message == 'auth_success') {
-      await Get.find<SessionService>().saveFromLogin(res);
-      try {
-        await Get.find<AppReviewService>().onSuccessfulLogin();
-      } catch (_) {}
-      if (res.token != null) {
-        triggerRemoteAccountSync();
-        await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
-          arguments: {
-            'initialMenu': 'home',
-            'from_password_login': true,
-            WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,
-          },
-        );
-      } else {
-        showErrorMessage(appLocalization.loginFailed);
-      }
-    } else {
-      showErrorMessage(appLocalization.loginFailed);
-    }
-  }
-
+  /// Legacy password re-login removed — passwordless OTP is the only sign-in.
   void loginUsingSavedCredentials() {
-    final loginRequest = LoginRequest(
-      username: msisdn.value,
-      password: password.value,
-      verified: true,
-      firebaseToken: firebaseToken.isNotEmpty ? firebaseToken : null,
-    );
-    callDataService<LoginResponse>(
-      _repository.signIn(loginRequest),
-      onError: _handleLoginResponseError,
-      onSuccess: _handleLoginResponseSuccess,
-      useFullScreenLoader: true
-    );
+    Get.offAllNamed(Routes.AUTH);
   }
 
   void loadCredentials() async {
-    var phone = await _preferenceManager.getString(PreferenceManager.keyUsername);
-    // TODO(security): replace plaintext userApp storage with a secure token/credential API.
-    var a = await _preferenceManager.getString('userApp');
-    msisdn(phone);
-    password(a.toString());
-    loginUsingSavedCredentials();
+    Get.offAllNamed(Routes.AUTH);
   }
 
   void _validateAndNavigate() {
@@ -222,8 +160,8 @@ class WelcomeBackController extends BaseController {
     final session = Get.find<SessionService>();
     if (!await session.hasPersistedSession()) {
       showErrorMessage(_t(
-        'Session expired. Sign in with phone and password once.',
-        'Kipindi kimeisha. Ingia kwa simu na nenosiri mara moja.',
+        'Session expired. Sign in with your phone and OTP once.',
+        'Kipindi kimeisha. Ingia kwa simu na OTP mara moja.',
       ));
       Get.offAllNamed(Routes.AUTH);
       return;
@@ -232,8 +170,8 @@ class WelcomeBackController extends BaseController {
     if (!ok) {
       await session.clearFullSession();
       showErrorMessage(_t(
-        'Session expired. Sign in with phone and password once.',
-        'Kipindi kimeisha. Ingia kwa simu na nenosiri mara moja.',
+        'Session expired. Sign in with your phone and OTP once.',
+        'Kipindi kimeisha. Ingia kwa simu na OTP mara moja.',
       ));
       Get.offAllNamed(Routes.AUTH);
       return;

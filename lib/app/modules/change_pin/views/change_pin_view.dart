@@ -20,10 +20,20 @@ class ChangePinView extends BaseView<ChangePinController> {
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isDark ? Colors.white : AppColors.appBarIconColor;
     return CustomAppBar(
       appBarTitleText: controller.remoteConfirmMode.value
           ? _t(context, en: 'Confirm Your PIN', sw: 'Thibitisha PIN Yako')
-          : _t(context, en: 'Setup New PIN', sw: 'Weka PIN Mpya'),
+          : controller.changePinMode.value
+              ? _t(context, en: 'Change PIN', sw: 'Badilisha PIN')
+              : _t(context, en: 'Setup New PIN', sw: 'Weka PIN Mpya'),
+      isBackButtonEnabled: false,
+      leading: IconButton(
+        tooltip: _t(context, en: 'Back', sw: 'Rudi'),
+        icon: Icon(Icons.arrow_back, color: iconColor),
+        onPressed: controller.goBack,
+      ),
     );
   }
 

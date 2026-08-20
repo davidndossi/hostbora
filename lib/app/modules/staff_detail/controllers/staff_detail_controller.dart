@@ -269,6 +269,7 @@ class StaffDetailController extends BaseController {
       showErrorMessage(appLocalization.staffDetailRemovedSuccess);
       return;
     }
+    final backendStaffId = await _staffLocal.backendIdForLocal(id);
 
     await runDestructiveWithUndo(
       message: appLocalization.staffDetailRemovedSuccess,
@@ -277,13 +278,7 @@ class StaffDetailController extends BaseController {
         Get.back(result: true);
       },
       onUndo: () async {
-        await _staffLocal.insert(
-          name: snapshot.name,
-          jobTitle: snapshot.jobTitle,
-          payDayLabel: snapshot.payDayLabel,
-          paymentType: snapshot.paymentType,
-          amountValue: snapshot.amountValue,
-        );
+        await _staffLocal.restore(snapshot, backendStaffId: backendStaffId);
       },
     );
   }

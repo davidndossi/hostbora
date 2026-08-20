@@ -98,7 +98,15 @@ Future<void> mergePendingBnbBookings({
       syncStatus: ItemSyncStatusX.fromQueueStatus(m['syncStatus']?.toString()),
       syncQueueId: syncQueueId,
     );
-    if (item.isInactive) continue;
-    merged[localId] = item;
+    final imageUrl = resolveBnbBookingPropertyImage(
+      listingId: item.listingId,
+      propertyLabel: propertyLabel,
+      properties: properties,
+    );
+    final withImage =
+        imageUrl.isEmpty ? item : item.copyWith(imageUrl: imageUrl);
+    // Keep cancelled rows so UI can show the Cancelled badge; drop check-outs.
+    if (withImage.isCheckedOut) continue;
+    merged[localId] = withImage;
   }
 }

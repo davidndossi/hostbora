@@ -11,6 +11,7 @@ import '../data/local/preference/preference_manager.dart';
 import '../data/local/service/session_service.dart';
 import '../data/model/body_request.dart';
 import '../routes/app_pages.dart';
+import 'dio_request_retrier.dart';
 
 class RequestHeaderInterceptor extends InterceptorsWrapper {
   final PreferenceManager _preferenceManager = g.Get.find(tag: (PreferenceManager)
@@ -72,15 +73,29 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
     final statusCode = err.response?.statusCode;
     final path = err.requestOptions.path;
     final isRefreshCall = path.contains('/api/auth/refresh');
+    final alreadyRetried = err.requestOptions.extra['authRetried'] == true;
 
-    if ((statusCode == 401 || statusCode == 403) && !isRefreshCall) {
+    if ((statusCode == 401 || statusCode == 403) &&
+        !isRefreshCall &&
+        !alreadyRetried) {
       var recovered = false;
       if (g.Get.isRegistered<SessionService>()) {
-        recovered = await g.Get.find<SessionService>().ensureValidSession();
+        // Force refresh: local access expiry can still look valid when the
+        // server has already rejected the JWT.
+        recovered = await g.Get.find<SessionService>().ensureValidSession(
+          forceRefresh: true,
+        );
       }
       if (recovered) {
-        handler.next(err);
-        return;
+        try {
+          final response = await DioRequestRetrier(
+            requestOptions: err.requestOptions,
+          ).retry();
+          handler.resolve(response);
+          return;
+        } catch (_) {
+          // Fall through to session clear / reject.
+        }
       }
       await _preferenceManager.clearSession();
       // Do not interrupt registration / OTP / forgot-password with a Login redirect.
@@ -88,9 +103,10 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
         g.Get.offAllNamed(AppPages.auth);
       }
       handler.reject(err);
-    } else {
-      handler.next(err);
+      return;
     }
+
+    handler.next(err);
   }
 
   Future<Map<String, String>> getCustomHeaders({String? requestPath}) async {

@@ -7,6 +7,7 @@ import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
 
 enum PINStatus { verifyCurrent, confirmRemote, enterFirst, enterSecond, equals, unequals }
@@ -72,6 +73,16 @@ class ChangePinController extends BaseController {
 
   String _t(String en, String sw) =>
       Get.locale?.languageCode == 'sw' ? sw : en;
+
+  /// Returns to the previous screen, or Auth when this page is the stack root
+  /// (e.g. post-login PIN setup via [Get.offAllNamed]).
+  void goBack() {
+    if (Get.key.currentState?.canPop() == true) {
+      Get.back();
+      return;
+    }
+    Get.offAllNamed(Routes.AUTH);
+  }
 
   int getCountsOfPIN() {
     if (pinStatus.value == PINStatus.verifyCurrent ||

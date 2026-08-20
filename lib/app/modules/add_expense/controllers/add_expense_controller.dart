@@ -17,6 +17,7 @@ import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/model/add_expense_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
@@ -238,10 +239,33 @@ class AddExpenseController extends BaseController {
     final propertyMode = selectedPropertyRecord != null
         ? _normalizeWorkspace(selectedPropertyRecord?.workspaceType)
         : 'all';
-    final rows = await _propertyLocal.getAllVisibleNewestFirst(
+    var rows = await _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
       workspaceType: propertyMode,
     );
+    if (rows.isEmpty && userId.isNotEmpty) {
+      rows = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: '',
+        workspaceType: propertyMode,
+      );
+    }
+    if (rows.isEmpty) {
+      rows = await _propertyLocal.getAllNewestFirst();
+    }
+    if (rows.isEmpty) {
+      try {
+        if (Get.isRegistered<RemoteAccountSyncService>()) {
+          await Get.find<RemoteAccountSyncService>().syncPropertiesFromRemote();
+        }
+        rows = await _propertyLocal.getAllVisibleNewestFirst(
+          userId: userId,
+          workspaceType: propertyMode,
+        );
+        if (rows.isEmpty) {
+          rows = await _propertyLocal.getAllNewestFirst();
+        }
+      } catch (_) {}
+    }
     _propertyRows = rows;
     final options = rows
         .map((e) {
@@ -327,18 +351,27 @@ class AddExpenseController extends BaseController {
     _syncTenantFieldToSelectedUnit();
   }
 
-  Future<void> saveExpenseOffline() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+  /// Returns `true` when the expense was saved (and the screen was closed).
+  /// Returns `false` when validation failed or an error occurred — callers
+  /// outside [BaseView] (e.g. quick-add wizard) should surface
+  /// [errorMessage] themselves.
+  Future<bool> saveExpenseOffline() async {
+    // Only validate FormState when a Form is mounted (full Add Expense
+    // screen). The quick-add expense wizard has no Form(key: formKey), so
+    // formKey.currentState is null — treating that as failure made Submit
+    // return immediately with no feedback.
+    final formState = formKey.currentState;
+    if (formState != null && !formState.validate()) return false;
     if (selectedProperty.value.trim().isEmpty) {
       showErrorMessage('Please select a property');
-      return;
+      return false;
     }
 
     final parsed = _parseMoneyForSave(amountController.text.trim());
-    if (parsed == null) return;
+    if (parsed == null) return false;
     if (parsed.inputAmount <= 0) {
       showErrorMessage('Enter a valid amount greater than 0');
-      return;
+      return false;
     }
 
     final dateRaw = datePaidController.text.trim();
@@ -347,45 +380,85 @@ class AddExpenseController extends BaseController {
       paidDate = DateFormat('dd/MM/yyyy').parseStrict(dateRaw);
     } catch (_) {
       showErrorMessage('Use date format dd/MM/yyyy');
-      return;
+      return false;
     }
 
-    await runBusy(() async {
-      final property = selectedProperty.value.trim();
-      final unitDraft = _draftForExpenseUnitKey(selectedExpenseUnitKey.value);
-      final unitName = unitDraft?.unitName.trim() ?? '';
-      final workspaceType = _workspaceForExpenseSave(unitDraft);
-      final unitLine = _optionalUnitNotesLine();
-      final baseNotes = StringBuffer('Property: $property');
-      if (unitLine.isNotEmpty) {
-        baseNotes.write(", ");
-        baseNotes.writeln(unitLine);
-      }
-      final extra = notesController.text.trim();
-      if (extra.isNotEmpty) {
-        baseNotes.write(" ");
-        baseNotes.writeln(extra);
-      }
-      final notesStr = baseNotes.toString().trim();
-      final isoDate = DateFormat('yyyy-MM-dd').format(paidDate);
-      final vendor = tenantController.text.trim().isNotEmpty
-          ? tenantController.text.trim()
-          : property;
+    try {
+      final saved = await runBusy(() async {
+        final property = selectedProperty.value.trim();
+        final unitDraft = _draftForExpenseUnitKey(selectedExpenseUnitKey.value);
+        final unitName = unitDraft?.unitName.trim() ?? '';
+        final workspaceType = _workspaceForExpenseSave(unitDraft);
+        final unitLine = _optionalUnitNotesLine();
+        final baseNotes = StringBuffer('Property: $property');
+        if (unitLine.isNotEmpty) {
+          baseNotes.write(", ");
+          baseNotes.writeln(unitLine);
+        }
+        final extra = notesController.text.trim();
+        if (extra.isNotEmpty) {
+          baseNotes.write(" ");
+          baseNotes.writeln(extra);
+        }
+        final notesStr = baseNotes.toString().trim();
+        final isoDate = DateFormat('yyyy-MM-dd').format(paidDate);
+        final vendor = tenantController.text.trim().isNotEmpty
+            ? tenantController.text.trim()
+            : property;
 
-      final request = AddExpenseRequest(
-        amount: parsed.baseAmount,
-        category: selectedExpense,
-        expenseDate: isoDate,
-        vendor: vendor,
-        taxDeductible: true,
-        description: notesStr,
-      );
+        final request = AddExpenseRequest(
+          amount: parsed.baseAmount,
+          category: selectedExpense,
+          expenseDate: isoDate,
+          vendor: vendor,
+          taxDeductible: true,
+          description: notesStr,
+        );
 
-      final editId = editExpenseId.value;
-      if (editId != null) {
-        // ── Edit mode: update locally first ──────────────────────────────
-        await _expenseLocal.update(
-          id: editId,
+        final editId = editExpenseId.value;
+        if (editId != null) {
+          // ── Edit mode: update locally first ──────────────────────────────
+          await _expenseLocal.update(
+            id: editId,
+            tenantName: tenantController.text.trim(),
+            amountValue: parsed.baseAmount,
+            datePaidIso: isoDate,
+            category: selectedExpense,
+            workspaceType: workspaceType,
+            notes: notesStr,
+            apartment: property,
+            apartmentUnit: unitName,
+            currencyCode: parsed.currency,
+            inputAmountValue: parsed.inputAmount,
+          );
+
+          // Try to update on backend if we have the backend UUID
+          final backendId = await _expenseLocal.getBackendExpenseId(editId);
+          if (backendId != null) {
+            try {
+              await _repository.updateExpense(backendId, request);
+            } catch (_) {
+              // Queue for later retry
+              await _syncQueue.enqueue(
+                entityType: 'expense',
+                operation: 'update',
+                payloadJson: jsonEncode({
+                  ...request.toJson(),
+                  'backendExpenseId': backendId,
+                }),
+                dedupeKey: 'expense:update:$backendId',
+              );
+              Future.microtask(() => _syncWorker.runNow(maxItems: 5));
+            }
+          }
+
+          showSuccessMessage('Expense updated.');
+          Get.back(result: true);
+          return true;
+        }
+
+        // ── Create mode: save locally ─────────────────────────────────────
+        final localExpenseId = await _expenseLocal.insert(
           tenantName: tenantController.text.trim(),
           amountValue: parsed.baseAmount,
           datePaidIso: isoDate,
@@ -398,88 +471,57 @@ class AddExpenseController extends BaseController {
           inputAmountValue: parsed.inputAmount,
         );
 
-        // Try to update on backend if we have the backend UUID
-        final backendId = await _expenseLocal.getBackendExpenseId(editId);
-        if (backendId != null) {
-          try {
-            await _repository.updateExpense(backendId, request);
-          } catch (_) {
-            // Queue for later retry
-            await _syncQueue.enqueue(
-              entityType: 'expense',
-              operation: 'update',
-              payloadJson: jsonEncode({
-                ...request.toJson(),
-                'backendExpenseId': backendId,
-              }),
-              dedupeKey: 'expense:update:$backendId',
-            );
-            Future.microtask(() => _syncWorker.runNow(maxItems: 5));
+        // Try to save to backend directly; queue as fallback
+        try {
+          final res = await _repository.addExpense(request);
+          final ok = res.responseCode == '0' ||
+              res.responseCode == '200' ||
+              res.responseCode == '201';
+          if (ok) {
+            // Persist backend UUID for future edits
+            final backendId = (res.data is Map)
+                ? (res.data as Map)['expenseId']?.toString() ?? ''
+                : '';
+            if (backendId.isNotEmpty) {
+              await _expenseLocal.saveBackendExpenseId(
+                localId: localExpenseId,
+                backendId: backendId,
+              );
+            }
+            showSuccessMessage('Expense saved and synced.');
+            _maybePromptRestock(propertyRef: _propertyRefForExpense());
+            Get.back(result: true);
+            return true;
           }
+        } catch (_) {
+          // Fall through to offline queue
         }
 
-        showSuccessMessage('Expense updated.');
+        // Backend unreachable – queue for later
+        await _syncQueue.enqueue(
+          entityType: 'expense',
+          operation: 'create',
+          payloadJson: jsonEncode({
+            ...request.toJson(),
+            'localExpenseId': localExpenseId,
+          }),
+          dedupeKey: 'expense:create:$localExpenseId',
+        );
+        Future.microtask(() => _syncWorker.runNow(maxItems: 20));
+        showSuccessMessage(
+          'Expense saved. Will sync when internet is available.',
+        );
+        _maybePromptRestock(propertyRef: _propertyRefForExpense());
         Get.back(result: true);
-        return;
-      }
-
-      // ── Create mode: save locally ─────────────────────────────────────
-      final localExpenseId = await _expenseLocal.insert(
-        tenantName: tenantController.text.trim(),
-        amountValue: parsed.baseAmount,
-        datePaidIso: isoDate,
-        category: selectedExpense,
-        workspaceType: workspaceType,
-        notes: notesStr,
-        apartment: property,
-        apartmentUnit: unitName,
-        currencyCode: parsed.currency,
-        inputAmountValue: parsed.inputAmount,
+        return true;
+      });
+      return saved ?? false;
+    } catch (_) {
+      showErrorMessage(
+        'Failed to save expense. Please try again.',
       );
-
-      // Try to save to backend directly; queue as fallback
-      try {
-        final res = await _repository.addExpense(request);
-        final ok = res.responseCode == '0' ||
-            res.responseCode == '200' ||
-            res.responseCode == '201';
-        if (ok) {
-          // Persist backend UUID for future edits
-          final backendId = (res.data is Map)
-              ? (res.data as Map)['expenseId']?.toString() ?? ''
-              : '';
-          if (backendId.isNotEmpty) {
-            await _expenseLocal.saveBackendExpenseId(
-              localId: localExpenseId,
-              backendId: backendId,
-            );
-          }
-          showSuccessMessage('Expense saved and synced.');
-          _maybePromptRestock(propertyRef: _propertyRefForExpense());
-          Get.back(result: true);
-          return;
-        }
-      } catch (_) {
-        // Fall through to offline queue
-      }
-
-      // Backend unreachable – queue for later
-      await _syncQueue.enqueue(
-        entityType: 'expense',
-        operation: 'create',
-        payloadJson: jsonEncode({
-          ...request.toJson(),
-          'localExpenseId': localExpenseId,
-        }),
-        dedupeKey: 'expense:create:$localExpenseId',
-      );
-      Future.microtask(() => _syncWorker.runNow(maxItems: 20));
-      showSuccessMessage(
-        'Expense saved. Will sync when internet is available.',
-      );
-      _maybePromptRestock(propertyRef: _propertyRefForExpense());
-      Get.back(result: true);
-    });
+      return false;
+    }
   }
 
   ({double baseAmount, double inputAmount, String currency})?

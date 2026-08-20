@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../../../core/theme/form_surface_colors.dart';
 
 import '../../../core/base/base_view.dart';
-import '../../../core/utils/password_policy.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
@@ -178,36 +177,15 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                 );
               }),
               const SizedBox(height: 20),
-              _buildLabel(context, _t(context, en: 'Password', sw: 'Nenosiri')),
-              const SizedBox(height: 4),
               Text(
-                PasswordPolicy.requirementsHint(
-                  isSw: Localizations.localeOf(context).languageCode == 'sw',
+                _t(
+                  context,
+                  en:
+                      'No password needed. After sign-up you\'ll choose Email or SMS to receive a 4-digit code.',
+                  sw:
+                      'Hakuna nenosiri. Baada ya kujisajili utachagua Barua pepe au SMS kupokea msimbo wa tarakimu 4.',
                 ),
-                style: TextStyle(fontSize: 12, color: c.hint, height: 1.35),
-              ),
-              const SizedBox(height: 8),
-              Obx(
-                () => TextFormField(
-                  controller: controller.passwordController,
-                  obscureText: controller.obscurePassword.value,
-                  style: TextStyle(color: c.headline),
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  decoration: _inputDecoration(context, hint: '••••••••')
-                      .copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            controller.obscurePassword.value
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            color: AppColors.designPlaceholder,
-                            size: 22,
-                          ),
-                          onPressed: controller.togglePasswordVisibility,
-                        ),
-                      ),
-                  validator: controller.validatePassword,
-                ),
+                style: TextStyle(fontSize: 13, color: c.hint, height: 1.35),
               ),
               const SizedBox(height: 24),
               Center(

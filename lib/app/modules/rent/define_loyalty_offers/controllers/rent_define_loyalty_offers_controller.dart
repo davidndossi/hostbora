@@ -92,11 +92,14 @@ class RentDefineLoyaltyOffersController extends BaseController {
       terms: terms,
     );
 
+    final offerType = offerTypeLabels[selectedOfferType.value];
     final payload = <String, dynamic>{
+      'title': offerType,
+      'offerType': offerType,
       'minStayMonths': minStay,
       'revenueThresholdTsh': revenue,
-      'offerType': offerTypeLabels[selectedOfferType.value],
       'terms': terms,
+      'status': 'active',
     };
     try {
       final res = await _repository.createLoyaltyOffer(payload);

@@ -14,10 +14,10 @@ import '../model/update_booking_request.dart';
 import '../model/add_expense_request.dart';
 import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
+import '../model/login_otp_request.dart';
 import '../model/login_request.dart';
 import '../model/login_response.dart';
 import '../model/otp_request.dart';
-import '../model/otp_response.dart';
 import '../model/page_request.dart';
 import '../model/reg_request.dart';
 import '../model/update_preference_request.dart';
@@ -36,6 +36,10 @@ abstract class AppRepository {
 
   Future<LoginResponse> signIn(LoginRequest request);
 
+  Future<GeneralResponse> requestLoginOtp(LoginOtpRequest request);
+
+  Future<LoginResponse> verifyLoginOtp(LoginOtpRequest request);
+
   Future<LoginResponse> refreshSession(String refreshToken);
 
   Future<GeneralResponse> changePassword(ChangePasswordRequest request);
@@ -48,7 +52,7 @@ abstract class AppRepository {
 
   Future<GeneralResponse> verifyForgotOtp(OtpRequest request);
 
-  Future<OtpResponse> verifyPhoneNumber(OtpRequest request);
+  Future<LoginResponse> verifyPhoneNumber(OtpRequest request);
 
   Future<GeneralResponse> resendOtp(OtpRequest request);
 
@@ -196,6 +200,7 @@ abstract class AppRepository {
   /// POST /api/exchange/rates — FX list (currency, buying, selling).
   Future<FxResponse> getExchangeRates();
 
+  Future<GeneralResponse> getMyTenants();
   Future<GeneralResponse> createTenant(Map<String, dynamic> body);
   Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body);
   Future<GeneralResponse> deleteTenant(String id);
@@ -231,6 +236,9 @@ abstract class AppRepository {
 
   /// PUT /api/properties/ref/{propertyRef}
   Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body);
+
+  /// DELETE /api/properties/{id}
+  Future<GeneralResponse> deleteProperty(int id);
 
   // ── Subscription ──────────────────────────────────────────────────────────
 

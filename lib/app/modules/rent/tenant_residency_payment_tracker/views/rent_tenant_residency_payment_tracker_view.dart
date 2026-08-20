@@ -19,74 +19,16 @@ class RentTenantResidencyPaymentTrackerView
   static const _teal = Color(0xFF004D40);
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(
-        controller.tenantsScreenTitle,
-        actions: [
-          Obx(
-            () => IconButton(
-              tooltip: _isSw ? 'Ratiba ya WhatsApp' : 'WhatsApp schedule',
-              onPressed: () => _openScheduleSheet(context),
-              icon: Icon(
-                controller.whatsappScheduleEnabled.value
-                    ? Icons.schedule_send
-                    : Icons.schedule_outlined,
-              ),
-            ),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              switch (value) {
-                case 'export_details':
-                  await controller.exportCustomerRentDetailsExcel();
-                  break;
-                case 'export_summary':
-                  await controller.exportCustomerRentTenantSummaryExcel();
-                  break;
-                case 'send_now':
-                  await controller.sendScheduledReportNowViaWhatsApp();
-                  break;
-                case 'schedule':
-                  _openScheduleSheet(context);
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'export_details',
-                child: Text(
-                  _isSw
-                      ? 'Pakua Excel: Rent details'
-                      : 'Download Excel: Rent details',
-                ),
-              ),
-              PopupMenuItem(
-                value: 'export_summary',
-                child: Text(
-                  _isSw
-                      ? 'Pakua Excel: Tenant summary'
-                      : 'Download Excel: Tenant summary',
-                ),
-              ),
-              PopupMenuItem(
-                value: 'send_now',
-                child: Text(
-                  _isSw
-                      ? 'Tuma kupitia WhatsApp sasa'
-                      : 'Send via WhatsApp now',
-                ),
-              ),
-              PopupMenuItem(
-                value: 'schedule',
-                child: Text(
-                  _isSw
-                      ? 'Ratiba ya WhatsApp (wiki/mwezi)'
-                      : 'WhatsApp schedule (weekly/monthly)',
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
+  Color pageBackgroundColor(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return dark
+        ? Theme.of(context).scaffoldBackgroundColor
+        : const Color(0xFFF8F7F4);
+  }
+
+  @override
+  PreferredSizeWidget? appBar(BuildContext context) =>
+      rentAppBar(controller.tenantsScreenTitle);
 
   @override
   Widget body(BuildContext context) {
@@ -105,6 +47,8 @@ class RentTenantResidencyPaymentTrackerView
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _bodyActionsRow(context),
+              const SizedBox(height: 12),
               Text(
                 _isSw ? 'Muhtasari' : 'Overview',
                 style: TextStyle(
@@ -149,6 +93,96 @@ class RentTenantResidencyPaymentTrackerView
         ),
       );
     });
+  }
+
+  Widget _bodyActionsRow(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final tokens = context.tokens;
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            _isSw ? 'Zana' : 'Tools',
+            style: TextStyle(
+              fontSize: 10,
+              letterSpacing: 1.4,
+              fontWeight: FontWeight.w800,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ),
+        Obx(
+          () => IconButton(
+            tooltip: _isSw ? 'Ratiba ya WhatsApp' : 'WhatsApp schedule',
+            onPressed: () => _openScheduleSheet(context),
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              controller.whatsappScheduleEnabled.value
+                  ? Icons.schedule_send
+                  : Icons.schedule_outlined,
+              color: controller.whatsappScheduleEnabled.value
+                  ? _teal
+                  : scheme.onSurface,
+            ),
+          ),
+        ),
+        PopupMenuButton<String>(
+          tooltip: _isSw ? 'Zaidi' : 'More',
+          color: tokens.cardBackground,
+          onSelected: (value) async {
+            switch (value) {
+              case 'export_details':
+                await controller.exportCustomerRentDetailsExcel();
+                break;
+              case 'export_summary':
+                await controller.exportCustomerRentTenantSummaryExcel();
+                break;
+              case 'send_now':
+                await controller.sendScheduledReportNowViaWhatsApp();
+                break;
+              case 'schedule':
+                _openScheduleSheet(context);
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'export_details',
+              child: Text(
+                _isSw
+                    ? 'Pakua Excel: Rent details'
+                    : 'Download Excel: Rent details',
+              ),
+            ),
+            PopupMenuItem(
+              value: 'export_summary',
+              child: Text(
+                _isSw
+                    ? 'Pakua Excel: Tenant summary'
+                    : 'Download Excel: Tenant summary',
+              ),
+            ),
+            PopupMenuItem(
+              value: 'send_now',
+              child: Text(
+                _isSw
+                    ? 'Tuma kupitia WhatsApp sasa'
+                    : 'Send via WhatsApp now',
+              ),
+            ),
+            PopupMenuItem(
+              value: 'schedule',
+              child: Text(
+                _isSw
+                    ? 'Ratiba ya WhatsApp (wiki/mwezi)'
+                    : 'WhatsApp schedule (weekly/monthly)',
+              ),
+            ),
+          ],
+          icon: Icon(Icons.more_vert, color: scheme.onSurface),
+        ),
+      ],
+    );
   }
 
   @override
@@ -225,19 +259,24 @@ class RentTenantResidencyPaymentTrackerView
                     const SizedBox(height: 10),
                     DropdownButtonFormField<TenancyExcelTemplate>(
                       initialValue: template,
+                      isExpanded: true,
                       decoration: InputDecoration(
                         labelText: _isSw ? 'Aina ya Excel' : 'Excel template',
                       ),
                       items: [
                         DropdownMenuItem(
                           value: TenancyExcelTemplate.customerRentDetails,
-                          child: const Text('customer_rent_details_template.csv'),
+                          child: Text(
+                            'customer_rent_details_template.csv',
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         DropdownMenuItem(
                           value:
                               TenancyExcelTemplate.customerRentTenantSummary,
-                          child: const Text(
+                          child: Text(
                             'customer_rent_tenant_summary_template.csv',
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -605,19 +644,49 @@ class RentTenantResidencyPaymentTrackerView
           ),
         ),
         const SizedBox(width: 10),
-        Material(
-          color: fieldBg,
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            onTap: controller.onFilterPressed,
+        Obx(() {
+          final active = controller.hasActiveFilters;
+          return Material(
+            color: fieldBg,
             borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: 48,
-              height: 48,
-              child: Icon(Icons.tune_rounded, color: filterIconColor),
+            child: InkWell(
+              onTap: controller.onFilterPressed,
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      Icons.tune_rounded,
+                      color: active
+                          ? (isDark
+                              ? const Color(0xFF5EC9C3)
+                              : _teal)
+                          : filterIconColor,
+                    ),
+                    if (active)
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF5EC9C3)
+                                : _teal,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }

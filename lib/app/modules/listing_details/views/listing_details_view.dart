@@ -52,6 +52,14 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
   );
 
   @override
+  Color pageBackgroundColor(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return dark
+        ? Theme.of(context).scaffoldBackgroundColor
+        : _ListingUi.cream;
+  }
+
+  @override
   Widget body(BuildContext context) {
     final u = _ListingUi(context);
     return Obx(() {
@@ -1862,10 +1870,18 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: activity.canEdit
-            ? () => controller.onEditActivity(activity)
+            ? () async {
+                // Close the activity sheet first so returning from edit/ledger
+                // lands on a clean listing details scaffold (light theme).
+                Navigator.of(u.context).maybePop();
+                await controller.onEditActivity(activity);
+              }
             : null,
         onLongPress: activity.canDelete
-            ? () => controller.onDeleteActivity(activity)
+            ? () async {
+                Navigator.of(u.context).maybePop();
+                await controller.onDeleteActivity(activity);
+              }
             : null,
         child: tile,
       ),

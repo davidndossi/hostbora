@@ -7,12 +7,15 @@ import 'package:get/get.dart';
 
 import '../../../core/service/launch_prompt_gate.dart';
 import '../../../core/utils/booking_api_response.dart';
+import '../../../core/utils/bnb_property_listing.dart';
 import '../../../core/utils/getx_instance_probe.dart';
 import '../../../core/values/text_styles.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '../../../data/local/bnb_booking_merge.dart';
+import '../../../data/local/bnb_booking_overrides_store.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
@@ -25,7 +28,6 @@ import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../host_calendar/controllers/host_calendar_controller.dart';
-import '../../main/controllers/bottom_nav_controller.dart';
 import '../../main/controllers/main_controller.dart';
 import '../../main/model/menu_code.dart';
 import '../../main/widgets/nav_tab_spotlight_overlay.dart';
@@ -38,14 +40,14 @@ enum HomeExperienceStage { noProperties, firstWeek, established }
 class HomeController extends BaseController with GetTickerProviderStateMixin {
   final unreadCount = 0.obs;
 
-  // final PreferenceManager _preferenceManager =
-  //     Get.find(tag: (PreferenceManager).toString());
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
   final PropertyLocalDataSource _propertyLocal =
       Get.find<PropertyLocalDataSource>();
   final TenantLocalDataSource _bnbTenantLocal =
       Get.find<TenantLocalDataSource>();
   final IncomeLocalDataSource _incomeLocal = Get.find<IncomeLocalDataSource>();
+  final RentScheduledMaintenanceLocalDataSource _maintenanceLocal =
+      Get.find<RentScheduledMaintenanceLocalDataSource>();
   final PreferenceManager _preferenceManager = Get.find(
     tag: (PreferenceManager).toString(),
   );
@@ -63,8 +65,6 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final communityId = ''.obs;
   final isAdmin = false.obs;
   final isLeader = false.obs;
-
-  // Timer? _debounce;
 
   final showList = false.obs;
 
@@ -114,7 +114,10 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   /// Average daily occupancy % for the current week (0–100).
   final bnbOccupancyRate = 0.obs;
 
-  /// Total units across both BnB and Rent workspaces.
+  /// Distinct properties (unique [propertyRef]) across BnB + Rent.
+  final totalPropertiesCount = 0.obs;
+
+  /// Total rentable units across both BnB and Rent (sum of units per property).
   final totalUnitsCount = 0.obs;
   /// % of rent units currently occupied by an active tenant.
   final rentOccupancyRate = 0.obs;
@@ -122,6 +125,18 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final rentTenantsCount = 0.obs;
   /// % of expected monthly rent that has been collected this month.
   final collectionRate = 0.obs;
+
+  /// Expected income for the current calendar month (formatted, base currency).
+  final expectedIncomeLabel = RxString(CurrencyService.zeroLabel());
+
+  /// Collected income for the current calendar month (formatted, base currency).
+  final collectedIncomeLabel = RxString(CurrencyService.zeroLabel());
+
+  /// Newest income rows (unfiltered); use [visibleRecentPayments] for UI.
+  final recentPayments = <IncomeRecord>[].obs;
+
+  /// Maintenance scheduled from today through the next 7 days.
+  final upcomingMaintenance = <RentScheduledMaintenanceRecord>[].obs;
 
   /// Home workspace chip: `all` | `bnb` | `rent`.
   final homeWorkspaceFilter = 'all'.obs;
@@ -203,6 +218,32 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     return f == 'all' || f == 'rent';
   }
 
+  /// Up to 5 recent payments for the current home workspace filter.
+  List<IncomeRecord> get visibleRecentPayments {
+    final showBnb = showBnbHomeContent;
+    final showRent = showRentHomeContent;
+    Iterable<IncomeRecord> rows = recentPayments;
+    if (showBnb && !showRent) {
+      rows = rows.where((r) => r.workspaceType.trim().toLowerCase() == 'bnb');
+    } else if (showRent && !showBnb) {
+      rows = rows.where((r) => r.workspaceType.trim().toLowerCase() != 'bnb');
+    }
+    return rows.take(5).toList();
+  }
+
+  /// Upcoming maintenance visible for the current workspace filter.
+  List<RentScheduledMaintenanceRecord> get visibleUpcomingMaintenance {
+    final showBnb = showBnbHomeContent;
+    final showRent = showRentHomeContent;
+    Iterable<RentScheduledMaintenanceRecord> rows = upcomingMaintenance;
+    if (showBnb && !showRent) {
+      rows = rows.where((r) => r.workspaceType.trim().toLowerCase() == 'bnb');
+    } else if (showRent && !showBnb) {
+      rows = rows.where((r) => r.workspaceType.trim().toLowerCase() != 'bnb');
+    }
+    return rows.toList();
+  }
+
   /// Opens the single Create menu. Never auto-shown.
   Future<void> openCreateMenu() async {
     if (!hasAnyProperty.value) {
@@ -224,7 +265,6 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void openPropertiesTab() {
     try {
       Get.find<MainController>().onMenuSelected(MenuCode.PROPERTIES);
-      Get.find<BottomNavController>().updateSelectedIndex(1);
     } catch (_) {
       Get.toNamed(Routes.MY_PROPERTIES);
     }
@@ -251,12 +291,20 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   Future<void>? _loadHomeInFlight;
   DateTime? _lastHomeLoadAt;
 
-  Future<void> loadHomeData({bool refresh = false}) async {
+  /// Loads home data.
+  ///
+  /// [refresh] shows the pull-to-refresh indicator when already loaded.
+  /// [force] bypasses the 2s refresh throttle and waits out any in-flight load
+  /// then reloads — required after cancel/checkout so Today lists drop inactive
+  /// bookings instead of keeping a stale "Confirmed" card.
+  Future<void> loadHomeData({bool refresh = false, bool force = false}) async {
     // Coalesce overlapping loads (sync drain + tab reselect + onInit).
     if (_loadHomeInFlight != null) {
-      return _loadHomeInFlight!;
+      if (!force) return _loadHomeInFlight!;
+      await _loadHomeInFlight!;
     }
-    if (refresh &&
+    if (!force &&
+        refresh &&
         homeHasLoaded.value &&
         _lastHomeLoadAt != null &&
         DateTime.now().difference(_lastHomeLoadAt!) <
@@ -288,6 +336,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         _loadBookingLists(),
         _loadBnbOverviewStats(),
         _loadRentOverviewStats(),
+        _loadRecentPayments(),
+        _loadUpcomingMaintenance(),
         _loadPropertyPresence(),
         _loadPortfolioRole(),
       ]);
@@ -591,9 +641,15 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         loader: _pendingBookingLoader,
       );
 
+      // One property = one unit, keyed by propertyRef.
+      final seenBnbRefs = <String>{};
       for (final p in properties) {
-        unitsTotal += _bnbUnitCountForProperty(p);
+        final key = p.propertyRef.trim().isNotEmpty
+            ? p.propertyRef.trim()
+            : 'local_${p.id}';
+        seenBnbRefs.add(key);
       }
+      unitsTotal = seenBnbRefs.length;
       bnbUnitsCount.value = unitsTotal;
     } catch (_) {
       bnbUnitsCount.value = 0;
@@ -629,18 +685,19 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
     _assignWeeklyRevenue(incomes, weekStart);
 
-    // Occupancy: use all tenants (rent + BnB) whose lease covers each day,
-    // measured against all units across both workspaces.
+    // Occupancy denominator = distinct property count across all workspaces.
     final allTenants = await _bnbTenantLocal.getAllNewestFirst();
-    var allUnitsTotal = unitsTotal; // already have BnB units
+    var allUnitsTotal = 0;
     try {
-      final rentProps = await _propertyLocal.getAllByWorkspace(
-        userId: '',
-        workspaceType: 'rent',
-      );
-      for (final p in rentProps) {
-        allUnitsTotal += _bnbUnitCountForProperty(p);
+      final allProps = await _propertyLocal.fetchAll(userId: '');
+      final seenOccRefs = <String>{};
+      for (final p in allProps) {
+        final key = p.propertyRef.trim().isNotEmpty
+            ? p.propertyRef.trim()
+            : 'local_${p.id}';
+        seenOccRefs.add(key);
       }
+      allUnitsTotal = seenOccRefs.length;
     } catch (_) {}
     _assignWeeklyOccupancy(allTenants, allUnitsTotal, weekStart);
 
@@ -660,26 +717,46 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       final monthStart = DateTime(now.year, now.month, 1);
       final nextMonthStart = DateTime(now.year, now.month + 1, 1);
 
-      // ── Units: count across both workspaces ──────────────────────────────
-      final rentProperties = await _propertyLocal.getAllByWorkspace(
-        userId: '',
-        workspaceType: 'rent',
-      );
-      var rentUnits = 0;
-      for (final p in rentProperties) {
-        rentUnits += _bnbUnitCountForProperty(p);
+      // Deduplicate by propertyRef so the same property is not counted twice
+      // when it appears in multiple workspace rows.
+      final allProperties = await _propertyLocal.fetchAll(userId: '');
+
+      if (kDebugMode) {
+        debugPrint('[Units] Local DB rows: ${allProperties.length}');
+        for (final p in allProperties) {
+          debugPrint(
+            '[Units]  local row id=${p.id} '
+            'ref="${p.propertyRef}" '
+            'name="${p.propertyName}" '
+            'workspace="${p.workspaceType}" '
+            'units=${p.units} '
+            'unitsJson="${p.unitsJson.length > 60 ? '${p.unitsJson.substring(0, 60)}…' : p.unitsJson}"',
+          );
+        }
       }
-      // Total = rent + BnB (already counted in _loadBnbOverviewStats)
-      // We re-count BnB here to avoid a race condition with the parallel call.
-      final bnbProperties = await _propertyLocal.getAllByWorkspace(
-        userId: '',
-        workspaceType: 'bnb',
-      );
-      var bnbUnits = 0;
-      for (final p in bnbProperties) {
-        bnbUnits += _bnbUnitCountForProperty(p);
+
+      final byRef = <String, PropertyRecord>{};
+      final rentRefs = <String>{};
+      for (final p in allProperties) {
+        final key = p.propertyRef.trim().isNotEmpty
+            ? p.propertyRef.trim()
+            : 'local_${p.id}';
+        final existing = byRef[key];
+        if (existing == null ||
+            _bnbUnitCountForProperty(p) > _bnbUnitCountForProperty(existing)) {
+          byRef[key] = p;
+        }
+        final ws = p.workspaceType.trim().toLowerCase();
+        if (ws == 'rent' || ws == 'both' || ws.isEmpty) {
+          rentRefs.add(key);
+        }
       }
-      totalUnitsCount.value = rentUnits + bnbUnits;
+      final rentUnits = rentRefs.length;
+      totalPropertiesCount.value = byRef.length;
+      totalUnitsCount.value = byRef.values.fold<int>(
+        0,
+        (sum, p) => sum + _bnbUnitCountForProperty(p),
+      );
 
       // ── All active tenants (rent + BnB guests) ───────────────────────────
       final allTenants = await _bnbTenantLocal.getAllNewestFirst();
@@ -755,11 +832,48 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       } else {
         collectionRate.value = 0;
       }
+      expectedIncomeLabel.value = cs.formatBaseShort(expectedIncome);
+      collectedIncomeLabel.value = cs.formatBaseShort(collectedIncome);
     } catch (_) {
+      totalPropertiesCount.value = 0;
       totalUnitsCount.value = 0;
       rentOccupancyRate.value = 0;
       rentTenantsCount.value = 0;
       collectionRate.value = 0;
+      expectedIncomeLabel.value = CurrencyService.zeroLabel();
+      collectedIncomeLabel.value = CurrencyService.zeroLabel();
+    }
+  }
+
+  Future<void> _loadRecentPayments() async {
+    try {
+      final rows = await _incomeLocal.getAllNewestFirst();
+      recentPayments.assignAll(rows.take(20).toList());
+    } catch (_) {
+      recentPayments.clear();
+    }
+  }
+
+  Future<void> _loadUpcomingMaintenance() async {
+    try {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final end = today.add(const Duration(days: 7));
+      final rows = await _maintenanceLocal.getAllNewestFirst();
+      final upcoming = <RentScheduledMaintenanceRecord>[];
+      for (final r in rows) {
+        final parsed = DateTime.tryParse(r.scheduledDateIso.trim());
+        if (parsed == null) continue;
+        final day = DateTime(parsed.year, parsed.month, parsed.day);
+        if (day.isBefore(today) || day.isAfter(end)) continue;
+        upcoming.add(r);
+      }
+      upcoming.sort(
+        (a, b) => a.scheduledDateIso.compareTo(b.scheduledDateIso),
+      );
+      upcomingMaintenance.assignAll(upcoming);
+    } catch (_) {
+      upcomingMaintenance.clear();
     }
   }
 
@@ -873,7 +987,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     final upcoming = <CheckInItem>[];
 
     for (final item in all) {
-      if (item.isInactive) continue;
+      // Checked-out stays off Home cards; cancelled stays so the badge can flip.
+      if (item.isCheckedOut) continue;
       final ci = _parseCalendarDay(item.checkInIso);
       final co = _parseCalendarDay(item.checkOutIso);
       if (ci != null && _dateOnly(ci) == today) {
@@ -922,6 +1037,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   Future<List<CheckInItem>> loadMergedActiveBnbBookings() async {
     final merge = BnbBookingMerge(pending: _pendingBookingsStore);
     final merged = <String, CheckInItem>{};
+    var properties = <PropertyRecord>[];
 
     try {
       final res = await _repository.getUpcomingBookings();
@@ -934,13 +1050,14 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       }
       for (final e in rows.whereType<Map>()) {
         final item = merge.fromApiMap(Map<String, dynamic>.from(e));
-        if (item.isInactive) continue;
+        // Keep cancelled so Home can show Cancelled; drop check-outs only.
+        if (item.isCheckedOut) continue;
         merged[item.bookingKey] = item;
       }
     } catch (_) {}
 
     try {
-      final properties = await _propertyLocal.getAllVisibleNewestFirst(
+      properties = await _propertyLocal.getAllVisibleNewestFirst(
         userId: '',
         workspaceType: 'bnb',
       );
@@ -952,7 +1069,16 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       );
     } catch (_) {}
 
-    return merged.values.toList();
+    return merged.values.map((item) {
+      final imageUrl = resolveBnbBookingPropertyImage(
+        listingId: item.listingId,
+        propertyLabel: item.propertyType,
+        properties: properties,
+        existingImageUrl: item.imageUrl,
+      );
+      if (imageUrl.isEmpty || imageUrl == item.imageUrl) return item;
+      return item.copyWith(imageUrl: imageUrl);
+    }).toList();
   }
 
   static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -1066,6 +1192,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void openTodayRevenue() =>
       Get.toNamed(Routes.RENT_MANAGE_PAYMENTS, arguments: {'ws': ''});
 
+  void openScheduledMaintenance() => calendar();
+
   void _assignWeeklyRevenue(List<IncomeRecord> incomes, DateTime weekStart) {
     final totals = List<double>.filled(7, 0);
     for (final r in incomes) {
@@ -1160,10 +1288,34 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     ) async {
       if (refreshed == true) {
         await _loadBookingLists();
+        _restampCancelledFromOverrides();
         await DashboardController.refreshIfRegistered();
         await HostCalendarController.refreshIfRegistered();
       }
     });
+  }
+
+  /// After a details-pop reload, force Cancelled badges from the override store
+  /// so a stale API row cannot briefly show Confirmed again.
+  void _restampCancelledFromOverrides() {
+    final overrides = BnbBookingOverridesStore();
+    bool cancelled(CheckInItem i) => overrides.isCancelledForAny([
+          i.bookingKey,
+          if ((i.bookingId ?? '').trim().isNotEmpty) i.bookingId!.trim(),
+          i.guestCheckInKey,
+        ]);
+
+    List<CheckInItem> patch(List<CheckInItem> list) => list
+        .map(
+          (i) => cancelled(i)
+              ? i.copyWith(isCancelled: true, isConfirmed: false)
+              : i,
+        )
+        .toList();
+
+    checkIns.assignAll(patch(checkIns.toList()));
+    checkInsToday.assignAll(patch(checkInsToday.toList()));
+    checkOutsToday.assignAll(patch(checkOutsToday.toList()));
   }
 
   Future<void> _guardPropertyBeforeAction({
@@ -1316,9 +1468,40 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   }
 
   static Future<void> refreshIfRegistered() async {
-    if (GetxInstanceProbe.isAlive<HomeController>()) {
-      await Get.find<HomeController>().loadHomeData(refresh: true);
-    }
+    if (!GetxInstanceProbe.isAlive<HomeController>()) return;
+    await Get.find<HomeController>().loadHomeData(
+      refresh: true,
+      force: true,
+    );
+  }
+
+  /// Immediately marks matching Today cards as cancelled (badge flip) before
+  /// a full reload finishes — avoids a stale "Confirmed" chip after cancel.
+  static void applyCancelledBookingLocally(Iterable<String> keys) {
+    if (!GetxInstanceProbe.isAlive<HomeController>()) return;
+    Get.find<HomeController>()._applyCancelledBookingLocally(keys);
+  }
+
+  void _applyCancelledBookingLocally(Iterable<String> keys) {
+    final keySet = keys.map((k) => k.trim()).where((k) => k.isNotEmpty).toSet();
+    if (keySet.isEmpty) return;
+
+    bool matches(CheckInItem i) =>
+        keySet.contains(i.bookingKey) ||
+        keySet.contains((i.bookingId ?? '').trim()) ||
+        keySet.contains(i.guestCheckInKey);
+
+    List<CheckInItem> patch(List<CheckInItem> list) => list
+        .map(
+          (i) => matches(i)
+              ? i.copyWith(isCancelled: true, isConfirmed: false)
+              : i,
+        )
+        .toList();
+
+    checkIns.assignAll(patch(checkIns.toList()));
+    checkInsToday.assignAll(patch(checkInsToday.toList()));
+    checkOutsToday.assignAll(patch(checkOutsToday.toList()));
   }
 
   Future<void> retryBookingSync(CheckInItem item) async {

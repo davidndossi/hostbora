@@ -185,24 +185,32 @@ class _QuickAddIncomeWizardBodyState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         quickWizardHeading(context, 'Which property is this income for?'),
-        if (!controller.hasProperties)
-          Text(
-            'No properties yet — add a property first.',
-            style: TextStyle(color: c.hint),
-          )
-        else
-          Obx(
-            () => DropdownButtonFormField<String>(
-              initialValue: controller.propertyOptions.contains(controller.selectedProperty.value)
-                  ? controller.selectedProperty.value
-                  : null,
-              decoration: _decoration(context, hint: 'Select property'),
-              items: controller.propertyOptions
-                  .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                  .toList(),
-              onChanged: controller.updateSelectedProperty,
+        // Must observe propertyOptions — load is async in onInit; a bare
+        // hasProperties check freezes on the empty "No properties" state.
+        Obx(() {
+          if (!controller.hasProperties) {
+            return Text(
+              'No properties yet — add a property first.',
+              style: TextStyle(color: c.hint),
+            );
+          }
+          return DropdownButtonFormField<String>(
+            key: ValueKey(
+              'qi-property-${controller.propertyOptions.length}-'
+              '${controller.selectedProperty.value}',
             ),
-          ),
+            initialValue: controller.propertyOptions.contains(
+                  controller.selectedProperty.value,
+                )
+                ? controller.selectedProperty.value
+                : null,
+            decoration: _decoration(context, hint: 'Select property'),
+            items: controller.propertyOptions
+                .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                .toList(),
+            onChanged: controller.updateSelectedProperty,
+          );
+        }),
       ],
     );
   }

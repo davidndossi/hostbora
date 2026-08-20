@@ -20,6 +20,16 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   @override
   bool get applyModuleDefaultTextStyle => !sheetMode;
 
+  /// Sheet host already pads for the keyboard — avoid double inset shrink.
+  @override
+  bool get resizeToAvoidBottomInset => !sheetMode;
+
+  @override
+  bool get safeAreaTop => !sheetMode;
+
+  @override
+  bool get safeAreaBottom => !sheetMode;
+
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     if (sheetMode) return null;
@@ -545,6 +555,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
       decoration: BoxDecoration(
         color: colors.fieldWellFill,
         borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colors.inputBorder),
       ),
       child: TextFormField(
         controller: fieldController,
@@ -558,8 +569,9 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
         textCapitalization: TextCapitalization.sentences,
         validator: validator,
         style: TextStyle(
-          fontSize: 14,
-          color: colors.secondary,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: colors.headline,
           height: isMultiline ? 1.35 : 1.25,
         ),
         decoration: InputDecoration(
@@ -569,8 +581,8 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
           hintStyle: hintStyle,
           prefixText: prefixText.isEmpty ? null : prefixText,
           prefixStyle: TextStyle(
-            fontSize: 14,
-            color: colors.secondary,
+            fontSize: 16,
+            color: colors.headline,
             fontWeight: FontWeight.w700,
           ),
           suffixIcon: suffix == null

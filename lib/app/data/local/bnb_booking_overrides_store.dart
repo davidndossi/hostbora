@@ -45,13 +45,33 @@ class BnbBookingOverridesStore {
   Map<String, dynamic>? get(String bookingKey) => _loadAll()[bookingKey];
 
   bool isCheckedOut(String bookingKey) {
-    final o = get(bookingKey);
-    return o?['status']?.toString() == 'checked_out';
+    return _statusIs(bookingKey, 'checked_out');
   }
 
   bool isCancelled(String bookingKey) {
-    final o = get(bookingKey);
-    return o?['status']?.toString() == 'cancelled';
+    return _statusIs(bookingKey, 'cancelled');
+  }
+
+  /// True when any of [keys] is marked cancelled (API id vs guest_date aliases).
+  bool isCancelledForAny(Iterable<String> keys) {
+    for (final k in keys) {
+      if (isCancelled(k.trim())) return true;
+    }
+    return false;
+  }
+
+  bool isCheckedOutForAny(Iterable<String> keys) {
+    for (final k in keys) {
+      if (isCheckedOut(k.trim())) return true;
+    }
+    return false;
+  }
+
+  bool _statusIs(String bookingKey, String status) {
+    final key = bookingKey.trim();
+    if (key.isEmpty) return false;
+    final o = get(key);
+    return o?['status']?.toString() == status;
   }
 
   String? effectiveCheckOut(String bookingKey, String fallbackIso) {
@@ -69,24 +89,45 @@ class BnbBookingOverridesStore {
     await _saveAll(all);
   }
 
-  Future<void> markCancelled(String bookingKey) async {
+  /// Marks cancelled under [bookingKey] and optional [aliases] so home/all-bookings
+  /// still match when API id and guest_date keys differ.
+  Future<void> markCancelled(
+    String bookingKey, {
+    Iterable<String> aliases = const [],
+  }) async {
     final all = _loadAll();
-    final existing = Map<String, dynamic>.from(all[bookingKey] ?? {});
-    existing['status'] = 'cancelled';
-    existing['cancelledAt'] = DateTime.now().toIso8601String();
-    all[bookingKey] = existing;
+    final keys = <String>{
+      bookingKey.trim(),
+      ...aliases.map((k) => k.trim()),
+    }.where((k) => k.isNotEmpty);
+    final now = DateTime.now().toIso8601String();
+    for (final k in keys) {
+      final existing = Map<String, dynamic>.from(all[k] ?? {});
+      existing['status'] = 'cancelled';
+      existing['cancelledAt'] = now;
+      all[k] = existing;
+    }
     await _saveAll(all);
   }
 
-  Future<void> clearCancelled(String bookingKey) async {
+  Future<void> clearCancelled(
+    String bookingKey, {
+    Iterable<String> aliases = const [],
+  }) async {
     final all = _loadAll();
-    final existing = Map<String, dynamic>.from(all[bookingKey] ?? {});
-    existing.remove('status');
-    existing.remove('cancelledAt');
-    if (existing.isEmpty) {
-      all.remove(bookingKey);
-    } else {
-      all[bookingKey] = existing;
+    final keys = <String>{
+      bookingKey.trim(),
+      ...aliases.map((k) => k.trim()),
+    }.where((k) => k.isNotEmpty);
+    for (final k in keys) {
+      final existing = Map<String, dynamic>.from(all[k] ?? {});
+      existing.remove('status');
+      existing.remove('cancelledAt');
+      if (existing.isEmpty) {
+        all.remove(k);
+      } else {
+        all[k] = existing;
+      }
     }
     await _saveAll(all);
   }

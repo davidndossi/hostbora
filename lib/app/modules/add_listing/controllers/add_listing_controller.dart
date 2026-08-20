@@ -531,7 +531,12 @@ class AddListingController extends BaseController {
   /// requirement is bypassed (used by the condensed quick-add wizard, which
   /// does not collect a rent amount at property-creation time).
   Future<void> saveProperty({bool skipRentAmountRequirement = false}) async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    // Only run FormState validation when a Form is mounted (full Add Listing
+    // screen). The quick-add wizard has no Form(key: formKey), so
+    // formKey.currentState is null — treating that as failure used to make
+    // Submit return immediately with no loading state and no error.
+    final formState = formKey.currentState;
+    if (formState != null && !formState.validate()) return;
 
     final location = propertyLocationController.text.trim();
     if (location.isEmpty) {

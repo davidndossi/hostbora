@@ -414,10 +414,6 @@ class AddTenantFormController extends BaseController {
       return;
     }
 
-    if (leaseStart.value == null || leaseEnd.value == null) {
-      showErrorMessage('Lease period is required');
-      return;
-    }
     if (availableUnitDrafts.isNotEmpty) {
       if (selectedUnitKey.value == null || selectedUnitKey.value!.isEmpty) {
         showErrorMessage('Please select a unit');
@@ -785,6 +781,13 @@ class AddTenantFormController extends BaseController {
     if (raw.isEmpty) return 'Rent amount is required';
     final n = double.tryParse(raw);
     if (n == null || n <= 0) return 'Enter a valid amount';
+    return null;
+  }
+
+  String? validateLeasePeriod(DateTimeRange? _) {
+    if (leaseStart.value == null || leaseEnd.value == null) {
+      return 'Lease period is required';
+    }
     return null;
   }
 

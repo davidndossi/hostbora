@@ -21,6 +21,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final PreferredSizeWidget? bottom;
   final bool showLanguageToggle;
   final bool showThemeToggle;
+  /// When null, the bar stays transparent (default). Pass a solid color on
+  /// scroll-heavy screens so list outlines do not show through title/actions.
+  final Color? backgroundColor;
 
   const CustomAppBar({
     super.key,
@@ -33,6 +36,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.bottom,
     this.showLanguageToggle = true,
     this.showThemeToggle = true,
+    this.backgroundColor,
   });
 
   @override
@@ -92,7 +96,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     ];
 
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: backgroundColor ?? Colors.transparent,
+      forceMaterialTransparency: backgroundColor == null,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: themeController!.isDarkMode.value ? Brightness.light : Brightness.dark,

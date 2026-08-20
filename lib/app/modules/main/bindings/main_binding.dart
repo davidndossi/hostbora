@@ -15,7 +15,12 @@ class MainBinding extends Bindings {
   @override
   void dependencies() {
     Get.put<BottomNavController>(BottomNavController(), permanent: true);
-    Get.lazyPut<MainController>(() => MainController(), fenix: true);
+    // Permanent: after long background / app-lock overlays, fenix recreation
+    // left MainView's Obx subscribed to a disposed Rx while the nav bar
+    // (also permanent) kept updating — tabs changed color but pages did not.
+    if (!Get.isRegistered<MainController>()) {
+      Get.put<MainController>(MainController(), permanent: true);
+    }
     Get.lazyPut<OtherController>(() => OtherController(), fenix: true);
     Get.lazyPut<HomeController>(() => HomeController(), fenix: true);
     Get.lazyPut<DashboardController>(() => DashboardController(), fenix: true);

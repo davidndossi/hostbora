@@ -14,10 +14,10 @@ import '../model/update_booking_request.dart';
 import '../model/add_expense_request.dart';
 import '../model/record_payment_request.dart';
 import '../model/general_response.dart';
+import '../model/login_otp_request.dart';
 import '../model/login_request.dart';
 import '../model/login_response.dart';
 import '../model/otp_request.dart';
-import '../model/otp_response.dart';
 import '../model/page_request.dart';
 import '../model/reg_request.dart';
 import '../model/send_sms_request.dart';
@@ -37,6 +37,10 @@ abstract class RemoteDataSource {
 
   Future<LoginResponse> signIn(LoginRequest request);
 
+  Future<GeneralResponse> requestLoginOtp(LoginOtpRequest request);
+
+  Future<LoginResponse> verifyLoginOtp(LoginOtpRequest request);
+
   Future<LoginResponse> refreshSession(String refreshToken);
 
   Future<GeneralResponse> changePassword(ChangePasswordRequest request);
@@ -49,7 +53,8 @@ abstract class RemoteDataSource {
 
   Future<GeneralResponse> verifyForgotOtp(OtpRequest request);
 
-  Future<OtpResponse> verifyPhoneNumber(OtpRequest request);
+  /// Registration OTP verify — returns a full login session on success.
+  Future<LoginResponse> verifyPhoneNumber(OtpRequest request);
 
   Future<GeneralResponse> createUserProfile(RegRequest request);
 
@@ -223,6 +228,7 @@ abstract class RemoteDataSource {
 
   Future<FxResponse> getExchangeRates();
 
+  Future<GeneralResponse> getMyTenants();
   Future<GeneralResponse> createTenant(Map<String, dynamic> body);
   Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body);
   Future<GeneralResponse> deleteTenant(String id);
@@ -254,6 +260,7 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> createProperty(Map<String, dynamic> body);
   Future<GeneralResponse> updateProperty(int id, Map<String, dynamic> body);
   Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body);
+  Future<GeneralResponse> deleteProperty(int id);
 
   /// Check the latest available app version from the backend.
   /// [platform] should be "android" or "ios".

@@ -1,43 +1,61 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../../repository/app_repository.dart';
 import '../../../modules/rent/staff_management/utils/rent_staff_pay_format.dart';
+import '../db/offline_sync_queue_local_data_source.dart';
 import '../db/property_local_data_source.dart';
 import '../db/rent_staff_local_data_source.dart';
+import '../db/tenant_local_data_source.dart';
+import '../deleted_properties_store.dart';
 import '../preference/preference_manager.dart';
 import 'offline_sync_worker_service.dart';
 
-/// Pulls account-scoped properties and staff from the backend into local SQLite
-/// so the same user sees consistent data across devices.
+/// Reconciles account-scoped properties, tenants, and staff between the backend
+/// and local SQLite so the same user stays consistent across devices.
+///
+/// Property/tenant sync is bidirectional:
+/// - Remote present → upsert locally
+/// - Local present but missing remotely → create on remote (or enqueue offline)
 class RemoteAccountSyncService extends GetxService {
   RemoteAccountSyncService({
     required AppRepository repository,
     required PropertyLocalDataSource propertyLocal,
+    required TenantLocalDataSource tenantLocal,
     required RentStaffLocalDataSource staffLocal,
     required PreferenceManager preferenceManager,
     required OfflineSyncWorkerService syncWorker,
+    required OfflineSyncQueueLocalDataSource syncQueue,
   })  : _repository = repository,
         _propertyLocal = propertyLocal,
+        _tenantLocal = tenantLocal,
         _staffLocal = staffLocal,
         _preferenceManager = preferenceManager,
-        _syncWorker = syncWorker;
+        _syncWorker = syncWorker,
+        _syncQueue = syncQueue;
 
   final AppRepository _repository;
   final PropertyLocalDataSource _propertyLocal;
+  final TenantLocalDataSource _tenantLocal;
   final RentStaffLocalDataSource _staffLocal;
   final PreferenceManager _preferenceManager;
   final OfflineSyncWorkerService _syncWorker;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
 
   bool _syncing = false;
 
-  /// Push pending offline changes, then pull remote properties + staff.
+  /// Drain offline queue, then reconcile properties + tenants + pull staff.
+  /// Safe to call fire-and-forget after login.
   Future<void> syncAll() async {
     if (_syncing) return;
     _syncing = true;
     try {
       await _syncWorker.runNow(maxItems: 50);
       await Future.wait([
-        syncPropertiesFromRemote(),
+        syncProperties(),
+        syncTenants(),
         syncStaffFromRemote(),
       ]);
     } catch (_) {
@@ -47,17 +65,117 @@ class RemoteAccountSyncService extends GetxService {
     }
   }
 
-  Future<void> syncPropertiesFromRemote() async {
+  /// Bidirectional property sync (remote↔local). Prefer this after login.
+  Future<void> syncProperties() async {
     try {
+      final ownerUserId =
+          ((await _preferenceManager.getUser()).id ?? '').trim();
       final res = await _repository.getMyProperties();
-      if (!res.isSuccess || res.data == null) return;
-      final ownerUserId = ((await _preferenceManager.getUser()).id ?? '').trim();
-      for (final map in _extractMaps(res.data)) {
+      final remoteMaps =
+          (res.isSuccess && res.data != null) ? _extractMaps(res.data) : const <Map<String, dynamic>>[];
+
+      final remoteRefs = <String>{};
+      final remoteNameLoc = <String>{};
+      for (final map in remoteMaps) {
+        final ref = _refFromApiMap(map);
+        if (ref.isNotEmpty) remoteRefs.add(ref);
+        final key = _nameLocKey(
+          (map['name'] ?? map['propertyName'] ?? map['title'] ?? '')
+              .toString(),
+          (map['location'] ?? map['propertyLocation'] ?? '').toString(),
+        );
+        if (key.isNotEmpty) remoteNameLoc.add(key);
+      }
+
+      // Local → remote for rows the server does not know about.
+      final localRows = await _propertyLocal.fetchAll(userId: ownerUserId);
+      for (final row in localRows) {
+        if (_isKnownRemotely(row, remoteRefs, remoteNameLoc)) continue;
+        await _pushLocalPropertyToRemote(row);
+      }
+
+      if (kDebugMode) {
+        debugPrint('[PropertySync] Remote DB returned ${remoteMaps.length} properties:');
+        for (final map in remoteMaps) {
+          final ref  = _refFromApiMap(map);
+          final name = (map['name'] ?? map['propertyName'] ?? map['title'] ?? '').toString();
+          final ws   = (map['workspaceType'] ?? map['workspace_type'] ?? '').toString();
+          debugPrint('[PropertySync]  remote ref="$ref" name="$name" workspace="$ws"');
+        }
+      }
+
+      // Remote → local for every property the server returned.
+      final deleted = DeletedPropertiesStore().load();
+      for (final map in remoteMaps) {
+        final ref = _refFromApiMap(map);
+        if (ref.isNotEmpty && deleted.contains(ref)) continue;
         await _propertyLocal.upsertFromRemote(
           _propertyFromApiMap(map, ownerUserId: ownerUserId),
         );
       }
-    } catch (_) {}
+
+      if (kDebugMode) {
+        final afterSync = await _propertyLocal.fetchAll(userId: ownerUserId);
+        debugPrint('[PropertySync] Local DB after sync: ${afterSync.length} rows:');
+        for (final p in afterSync) {
+          debugPrint(
+            '[PropertySync]  local id=${p.id} ref="${p.propertyRef}" '
+            'name="${p.propertyName}" workspace="${p.workspaceType}"',
+          );
+        }
+      }
+    } catch (_) {
+      // Offline / API error — keep local data; next login or Main sync retries.
+    }
+  }
+
+  /// Pull-only convenience used by My Properties refresh.
+  Future<void> syncPropertiesFromRemote() => syncProperties();
+
+  /// Bidirectional tenant sync (remote↔local).
+  Future<void> syncTenants() async {
+    try {
+      final res = await _repository.getMyTenants();
+      final remoteMaps = (res.isSuccess && res.data != null)
+          ? _extractMaps(res.data)
+          : const <Map<String, dynamic>>[];
+
+      final remoteBackendIds = <String>{};
+      final remotePhonePropKeys = <String>{};
+      final remoteNamePropKeys = <String>{};
+      for (final map in remoteMaps) {
+        final id = (map['id'] ?? '').toString().trim();
+        if (id.isNotEmpty) remoteBackendIds.add(id);
+        final phone = (map['phone'] ?? '').toString().trim();
+        final propRef = (map['propertyRef'] ?? map['property_ref'] ?? '')
+            .toString()
+            .trim();
+        final name = (map['name'] ?? '').toString().trim().toLowerCase();
+        final phoneKey = _tenantPhonePropKey(phone, propRef);
+        if (phoneKey.isNotEmpty) remotePhonePropKeys.add(phoneKey);
+        final nameKey = _tenantNamePropKey(name, propRef);
+        if (nameKey.isNotEmpty) remoteNamePropKeys.add(nameKey);
+      }
+
+      final localRows = await _tenantLocal.getAllNewestFirst();
+      for (final row in localRows) {
+        if (_isTenantKnownRemotely(
+          row,
+          remoteBackendIds,
+          remotePhonePropKeys,
+          remoteNamePropKeys,
+        )) {
+          continue;
+        }
+        await _pushLocalTenantToRemote(row);
+      }
+
+      for (final map in remoteMaps) {
+        await _upsertTenantFromApiMap(map);
+      }
+    } catch (_) {
+      // Offline / API error — keep local tenants; next sync retries.
+    }
   }
 
   Future<void> syncStaffFromRemote() async {
@@ -70,6 +188,206 @@ class RemoteAccountSyncService extends GetxService {
     } catch (_) {}
   }
 
+  Future<void> _pushLocalTenantToRemote(TenantRecord row) async {
+    final name = row.tenantName.trim();
+    if (name.isEmpty) return;
+    final payload = {
+      'name': name,
+      'phone': row.phoneNumber.trim(),
+      'email': row.email.trim(),
+      'propertyRef': row.propertyRef.trim(),
+      'propertyName': row.propertyLabel.trim(),
+      'unitId': row.apartmentUnitId.trim(),
+      'unitName': row.unitLabel.trim(),
+      'leaseStart': row.leaseStartIso.trim(),
+      'leaseEnd': row.leaseEndIso.trim(),
+      'rentAmount': row.rentAmountValue,
+      'rentFrequency': row.rentFrequency.trim(),
+      'operationMode': 'rent',
+      'rentCurrency': row.rentCurrency.trim(),
+      'localTenantId': row.id,
+    };
+    final dedupe =
+        'tenant:create:${row.propertyRef.trim()}:${row.tenantName.trim()}';
+    try {
+      final res = await _repository.createTenant(payload);
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201';
+      if (!ok) throw Exception(res.message ?? 'createTenant failed');
+      final backendId = (res.data is Map)
+          ? (res.data as Map)['id']?.toString() ?? ''
+          : '';
+      if (backendId.isNotEmpty) {
+        await _tenantLocal.saveBackendTenantId(
+          localId: row.id,
+          backendId: backendId,
+        );
+      }
+    } catch (_) {
+      try {
+        await _syncQueue.enqueue(
+          entityType: 'tenant',
+          operation: 'create',
+          payloadJson: jsonEncode(payload),
+          dedupeKey: dedupe,
+        );
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _upsertTenantFromApiMap(Map<String, dynamic> map) async {
+    final backendId = (map['id'] ?? '').toString().trim();
+    final name = (map['name'] ?? '').toString().trim();
+    if (name.isEmpty && backendId.isEmpty) return;
+    final propertyRef =
+        (map['propertyRef'] ?? map['property_ref'] ?? '').toString().trim();
+    final propertyName =
+        (map['propertyName'] ?? map['property_name'] ?? '').toString().trim();
+    await _tenantLocal.upsertFromRemote(
+      backendTenantId: backendId,
+      tenantName: name,
+      phoneNumber: (map['phone'] ?? '').toString().trim(),
+      email: (map['email'] ?? '').toString().trim(),
+      propertyRef: propertyRef,
+      propertyLabel:
+          propertyName.isNotEmpty ? propertyName : propertyRef,
+      apartmentUnitId:
+          (map['unitId'] ?? map['unit_id'] ?? '').toString().trim(),
+      unitLabel: (map['unitName'] ?? map['unit_name'] ?? '').toString().trim(),
+      rentAmountValue: (map['rentAmount'] as num?)?.toDouble() ??
+          (map['rent_amount'] as num?)?.toDouble() ??
+          0,
+      rentFrequency:
+          (map['rentFrequency'] ?? map['rent_frequency'] ?? '').toString(),
+      leaseStartIso:
+          (map['leaseStart'] ?? map['lease_start'] ?? '').toString(),
+      leaseEndIso: (map['leaseEnd'] ?? map['lease_end'] ?? '').toString(),
+      rentCurrency:
+          (map['rentCurrency'] ?? map['rent_currency'] ?? 'TZS').toString(),
+    );
+  }
+
+  static bool _isTenantKnownRemotely(
+    TenantRecord row,
+    Set<String> remoteBackendIds,
+    Set<String> remotePhonePropKeys,
+    Set<String> remoteNamePropKeys,
+  ) {
+    final backendId = row.backendTenantId.trim();
+    if (backendId.isNotEmpty && remoteBackendIds.contains(backendId)) {
+      return true;
+    }
+    final phoneKey =
+        _tenantPhonePropKey(row.phoneNumber, row.propertyRef);
+    if (phoneKey.isNotEmpty && remotePhonePropKeys.contains(phoneKey)) {
+      return true;
+    }
+    final nameKey =
+        _tenantNamePropKey(row.tenantName, row.propertyRef);
+    if (nameKey.isNotEmpty && remoteNamePropKeys.contains(nameKey)) {
+      return true;
+    }
+    return false;
+  }
+
+  static String _tenantPhonePropKey(String phone, String propertyRef) {
+    final p = phone.trim();
+    final r = propertyRef.trim();
+    if (p.isEmpty || r.isEmpty) return '';
+    return '$p|$r';
+  }
+
+  static String _tenantNamePropKey(String name, String propertyRef) {
+    final n = name.trim().toLowerCase();
+    final r = propertyRef.trim();
+    if (n.isEmpty || r.isEmpty) return '';
+    return '$n|$r';
+  }
+
+  Future<void> _pushLocalPropertyToRemote(PropertyRecord row) async {
+    final payload = _createPayloadFromLocal(row);
+    final ref = (payload['property_ref'] as String?)?.trim() ?? '';
+    if (ref.isEmpty) return;
+    final name = (payload['name'] as String?)?.trim() ?? '';
+    final location = (payload['location'] as String?)?.trim() ?? '';
+    if (name.isEmpty && location.isEmpty) return;
+
+    try {
+      final res = await _repository.createProperty(payload);
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201';
+      if (!ok) throw Exception(res.message ?? 'createProperty failed');
+    } catch (_) {
+      try {
+        await _syncQueue.enqueue(
+          entityType: 'property',
+          operation: 'create',
+          payloadJson: jsonEncode(payload),
+          dedupeKey: 'property:create:$ref',
+        );
+      } catch (_) {}
+    }
+  }
+
+  static Map<String, dynamic> _createPayloadFromLocal(PropertyRecord row) {
+    var ref = row.propertyRef.trim();
+    if (ref.isEmpty) {
+      ref = 'local_${row.id}';
+    }
+    final owner = row.ownerUserId.trim();
+    return {
+      'property_ref': ref,
+      'location': row.propertyLocation,
+      'name': row.propertyName,
+      'type': row.propertyType,
+      'tenants': row.tenants,
+      'units': row.units,
+      'owner_user_id': owner,
+      'ownerUserId': owner,
+      'workspace_type': row.workspaceType,
+      'created_at_ms': row.createdAtMs,
+      'rent_amount': row.rentAmount,
+      'rent_frequency': row.rentFrequency,
+      'min_rental_duration': row.minRentalDuration,
+      'units_json': row.unitsJson,
+      'floor_count': row.floorCount,
+      'cover_photo_path': row.coverPhotoPath,
+    };
+  }
+
+  static bool _isKnownRemotely(
+    PropertyRecord row,
+    Set<String> remoteRefs,
+    Set<String> remoteNameLoc,
+  ) {
+    final ref = row.propertyRef.trim();
+    if (ref.isNotEmpty && remoteRefs.contains(ref)) return true;
+    if (remoteRefs.contains('local_${row.id}')) return true;
+    if (remoteRefs.contains('legacy_${row.id}')) return true;
+    final key = _nameLocKey(row.propertyName, row.propertyLocation);
+    if (key.isNotEmpty && remoteNameLoc.contains(key)) return true;
+    return false;
+  }
+
+  static String _nameLocKey(String name, String location) {
+    final n = name.trim().toLowerCase();
+    final l = location.trim().toLowerCase();
+    if (n.isEmpty && l.isEmpty) return '';
+    return '$n|$l';
+  }
+
+  static String _refFromApiMap(Map<String, dynamic> m) {
+    return (m['property_ref'] ??
+            m['propertyRef'] ??
+            m['id'] ??
+            m['listingId'] ??
+            '')
+        .toString()
+        .trim();
+  }
+
   static List<Map<String, dynamic>> _extractMaps(dynamic data) {
     if (data is List) {
       return data
@@ -78,7 +396,14 @@ class RemoteAccountSyncService extends GetxService {
           .toList();
     }
     if (data is Map) {
-      for (final key in ['staff', 'properties', 'content', 'items', 'data']) {
+      for (final key in [
+        'tenants',
+        'staff',
+        'properties',
+        'content',
+        'items',
+        'data',
+      ]) {
         final nested = data[key];
         if (nested is List) {
           return nested
@@ -96,13 +421,7 @@ class RemoteAccountSyncService extends GetxService {
     Map<String, dynamic> m, {
     required String ownerUserId,
   }) {
-    final ref = (m['property_ref'] ??
-            m['propertyRef'] ??
-            m['id'] ??
-            m['listingId'] ??
-            '')
-        .toString()
-        .trim();
+    final ref = _refFromApiMap(m);
     final name =
         (m['name'] ?? m['propertyName'] ?? m['title'] ?? '').toString().trim();
     final location = (m['location'] ?? m['propertyLocation'] ?? '')
@@ -112,7 +431,7 @@ class RemoteAccountSyncService extends GetxService {
         (m['type'] ?? m['propertyType'] ?? m['propertyCategory'] ?? '')
             .toString()
             .trim();
-    final workspace = (m['workspace_type'] ??
+    final workspaceRaw = (m['workspace_type'] ??
             m['workspaceType'] ??
             m['listingMode'] ??
             m['operationMode'] ??
@@ -120,6 +439,11 @@ class RemoteAccountSyncService extends GetxService {
         .toString()
         .trim()
         .toLowerCase();
+    final workspace = (workspaceRaw == 'bnb' ||
+            workspaceRaw == 'both' ||
+            workspaceRaw == 'rent')
+        ? workspaceRaw
+        : 'rent';
     final createdAtMs = (m['created_at_ms'] as num?)?.toInt() ??
         (m['createdAtMs'] as num?)?.toInt() ??
         DateTime.now().millisecondsSinceEpoch;
@@ -134,7 +458,7 @@ class RemoteAccountSyncService extends GetxService {
       units: (m['units'] as num?)?.toInt() ?? 0,
       ownerUserId: (m['owner_user_id'] ?? m['ownerUserId'] ?? ownerUserId)
           .toString(),
-      workspaceType: workspace == 'bnb' ? 'bnb' : 'rent',
+      workspaceType: workspace,
       createdAtMs: createdAtMs,
       rentAmount: (m['rent_amount'] ?? m['rentAmount'] ?? '').toString(),
       rentFrequency:

@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import 'app_local_database.dart';
+import 'property_local_data_source.dart';
 
 class TenantRecord {
   final int id;
@@ -142,21 +143,59 @@ class TenantLocalDataSource {
     return maps.map(TenantRecord.fromMap).toList();
   }
 
+  /// Tenants linked to properties in [ws] (`rent` / `bnb`).
+  ///
+  /// Matches `property_ref`, `local_<id>` / `legacy_<id>`, and property label
+  /// aliases. Includes properties with workspace `both`.
   Future<List<TenantRecord>> getAllNewestFirstByWorkspace(String ws) async {
-    final db = await database;
     final w = _normalizeWorkspace(ws);
-    final maps = await db.rawQuery(
-      '''
-      SELECT t.*
-      FROM ${AppLocalDatabase.tenantTable} t
-      INNER JOIN ${AppLocalDatabase.propertiesTable} p
-        ON p.property_ref = t.property_ref
-      WHERE lower(trim(coalesce(nullif(trim(p.workspace_type), ''), 'rent'))) = ?
-      ORDER BY t.created_at_ms DESC
-      ''',
-      [w],
-    );
-    return maps.map(TenantRecord.fromMap).toList();
+    final tenants = await getAllNewestFirst();
+    if (tenants.isEmpty) return const [];
+
+    final db = await database;
+    final propMaps = await db.query(AppLocalDatabase.propertiesTable);
+    final props = <PropertyRecord>[];
+    for (final m in propMaps) {
+      final p = PropertyRecord.fromMap(m);
+      final pws = p.workspaceType.trim().toLowerCase();
+      final normalized = pws.isEmpty ? 'rent' : pws;
+      if (normalized == w || normalized == 'both') {
+        props.add(p);
+      }
+    }
+    if (props.isEmpty) return const [];
+
+    final out = <TenantRecord>[];
+    final seen = <int>{};
+    for (final t in tenants) {
+      for (final p in props) {
+        if (_tenantMatchesProperty(t, p) && seen.add(t.id)) {
+          out.add(t);
+          break;
+        }
+      }
+    }
+    return out;
+  }
+
+  static bool _tenantMatchesProperty(TenantRecord t, PropertyRecord p) {
+    final ref = t.propertyRef.trim();
+    final pRef = p.propertyRef.trim();
+    if (ref.isNotEmpty) {
+      if (pRef.isNotEmpty && ref == pRef) return true;
+      if (ref == 'legacy_${p.id}' || ref == 'local_${p.id}') return true;
+    }
+    final label = t.propertyLabel.trim().toLowerCase();
+    if (label.isEmpty) return false;
+    final loc = p.propertyLocation.trim().toLowerCase();
+    final name = p.propertyName.trim().toLowerCase();
+    final line = loc.isNotEmpty && name.isNotEmpty
+        ? '$loc · $name'
+        : (loc.isNotEmpty ? loc : name);
+    if (label == line || label == name || label == loc) return true;
+    if (name.isNotEmpty && label.contains(name)) return true;
+    if (loc.isNotEmpty && label.contains(loc)) return true;
+    return false;
   }
 
   /// Loads tenants whose property (joined by `property_ref`) is in BnB workspace.
@@ -303,6 +342,107 @@ class TenantLocalDataSource {
       where: 'id = ?',
       whereArgs: [localId],
     );
+  }
+
+  Future<TenantRecord?> findByBackendTenantId(String backendId) async {
+    final id = backendId.trim();
+    if (id.isEmpty) return null;
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      where: 'backend_tenant_id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return TenantRecord.fromMap(maps.first);
+  }
+
+  Future<TenantRecord?> findByPhoneAndPropertyRef({
+    required String phoneNumber,
+    required String propertyRef,
+  }) async {
+    final phone = phoneNumber.trim();
+    final ref = propertyRef.trim();
+    if (phone.isEmpty || ref.isEmpty) return null;
+    final db = await database;
+    final maps = await db.query(
+      _table,
+      where: 'phone_number = ? AND property_ref = ?',
+      whereArgs: [phone, ref],
+      orderBy: 'created_at_ms DESC',
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return TenantRecord.fromMap(maps.first);
+  }
+
+  /// Upsert a tenant row pulled from the backend.
+  Future<TenantRecord> upsertFromRemote({
+    required String backendTenantId,
+    required String tenantName,
+    required String phoneNumber,
+    required String email,
+    required String propertyRef,
+    required String propertyLabel,
+    required String apartmentUnitId,
+    required String unitLabel,
+    required double rentAmountValue,
+    required String rentFrequency,
+    required String leaseStartIso,
+    required String leaseEndIso,
+    required String rentCurrency,
+  }) async {
+    final backendId = backendTenantId.trim();
+    final existing = backendId.isNotEmpty
+        ? await findByBackendTenantId(backendId)
+        : null;
+    final byPhone = existing ??
+        await findByPhoneAndPropertyRef(
+          phoneNumber: phoneNumber,
+          propertyRef: propertyRef,
+        );
+    final byName = byPhone ??
+        (tenantName.trim().isEmpty
+            ? null
+            : await findByNameAndProperty(
+                tenantName: tenantName.trim(),
+                propertyLabel: propertyLabel.trim().isNotEmpty
+                    ? propertyLabel.trim()
+                    : propertyRef.trim(),
+              ));
+
+    final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final data = <String, Object?>{
+      'property_label': propertyLabel,
+      'property_ref': propertyRef,
+      'apartment_unit_id': apartmentUnitId,
+      'unit_label': unitLabel,
+      'tenant_name': tenantName,
+      'gender': byName?.gender ?? '',
+      'amount_paid': rentAmountValue,
+      'rent_frequency': rentFrequency,
+      'phone_number': phoneNumber,
+      'email': email,
+      'is_whatsapp': byName?.isWhatsapp == true ? 1 : 0,
+      'lease_start_iso': leaseStartIso,
+      'lease_end_iso': leaseEndIso,
+      'contract_file_path': byName?.contractFilePath ?? '',
+      'contract_file_name': byName?.contractFileName ?? '',
+      'rent_currency': TenantRecord._normCurrency(rentCurrency),
+      'backend_tenant_id': backendId.isNotEmpty
+          ? backendId
+          : (byName?.backendTenantId ?? ''),
+      'created_at_ms': byName?.createdAtMs ?? now,
+    };
+
+    if (byName != null) {
+      await db.update(_table, data, where: 'id = ?', whereArgs: [byName.id]);
+      return (await findById(byName.id))!;
+    }
+    final newId = await db.insert(_table, data);
+    return (await findById(newId))!;
   }
 
   Future<void> endTenancy({

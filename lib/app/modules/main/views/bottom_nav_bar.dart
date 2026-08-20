@@ -6,6 +6,7 @@ import '../../../../l10n/app_localizations.dart';
 import '/app/core/values/app_colors.dart';
 import '/app/core/values/app_values.dart';
 import '/app/modules/main/controllers/bottom_nav_controller.dart';
+import '/app/modules/main/controllers/main_controller.dart';
 import '/app/modules/main/model/menu_code.dart';
 import '/app/modules/main/model/menu_item.dart';
 
@@ -39,40 +40,41 @@ class BottomNavBar extends StatelessWidget {
     List<BottomNavItem> navItems = _getNavItems();
 
     return Obx(
-      () => Container(
-        decoration: BoxDecoration(
-          color: navBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(navItems.length, (index) {
-                final item = navItems[index];
-                final isSelected = navController.selectedIndex == index;
-                return Expanded(
-                  child: _NavBarTile(
-                    key: item.menuCode == MenuCode.PROPERTIES
-                        ? navController.propertiesTabKey
-                        : null,
-                    item: item,
-                    isSelected: isSelected,
-                    selectedColor: selectedItemColor,
-                    unselectedColor: unselectedItemColor,
-                    onTap: () {
-                      navController.updateSelectedIndex(index);
-                      onNewMenuSelected(item.menuCode);
-                    },
-                  ),
-                );
-              }),
+      () {
+        // Drive highlight from MainController (same source as the page stack).
+        final selectedCode = Get.find<MainController>().selectedMenuCode;
+        return Container(
+          decoration: BoxDecoration(
+            color: navBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(navItems.length, (index) {
+                  final item = navItems[index];
+                  final isSelected = item.menuCode == selectedCode;
+                  return Expanded(
+                    child: _NavBarTile(
+                      key: item.menuCode == MenuCode.PROPERTIES
+                          ? navController.propertiesTabKey
+                          : null,
+                      item: item,
+                      isSelected: isSelected,
+                      selectedColor: selectedItemColor,
+                      unselectedColor: unselectedItemColor,
+                      onTap: () => onNewMenuSelected(item.menuCode),
+                    ),
+                  );
+                }),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -95,7 +97,7 @@ class BottomNavBar extends StatelessWidget {
       ),
       BottomNavItem(
         navTitle: appLocalization.maintenance,
-        iconSvgName: 'ic_completion.svg',
+        iconSvgName: 'ic_calendar_cog.svg',
         menuCode: MenuCode.MAINTENANCE,
       ),
       BottomNavItem(

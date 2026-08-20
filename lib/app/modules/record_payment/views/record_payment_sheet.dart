@@ -57,19 +57,23 @@ class _RecordPaymentSheetHost extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final media = MediaQuery.of(context);
+    final keyboard = media.viewInsets.bottom;
+    // Keep the sheet fully on-screen above the keyboard (single inset owner).
+    final availableHeight =
+        media.size.height - keyboard - media.padding.top;
+    final sheetHeight = (availableHeight * 0.92).clamp(320.0, availableHeight);
+
     final radius = const BorderRadius.vertical(top: Radius.circular(20));
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.92,
-        minChildSize: 0.55,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) {
-          return Material(
+      padding: EdgeInsets.only(bottom: keyboard),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: SizedBox(
+          height: sheetHeight,
+          width: double.infinity,
+          child: Material(
             color: tokens.scaffoldBackground,
             borderRadius: radius,
             clipBehavior: Clip.antiAlias,
@@ -111,15 +115,12 @@ class _RecordPaymentSheetHost extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: RecordPaymentView(
-                    sheetMode: true,
-                    scrollController: scrollController,
-                  ),
+                  child: RecordPaymentView(sheetMode: true),
                 ),
               ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

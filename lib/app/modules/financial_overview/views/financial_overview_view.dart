@@ -157,62 +157,79 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _t(
-                      context,
-                      'Performance Trends',
-                      'Mwelekeo wa Utendaji',
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _t(
+                        context,
+                        'Performance Trends',
+                        'Mwelekeo wa Utendaji',
+                      ),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
+                    const SizedBox(height: 2),
+                    Text(
+                      _t(
+                        context,
+                        'Current vs. Previous Period',
+                        'Kipindi cha sasa dhidi ya kilichopita',
+                      ),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: context.tokens.textSecondary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _t(
-                      context,
-                      'Current vs. Previous Period',
-                      'Kipindi cha sasa dhidi ya kilichopita',
-                    ),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: context.tokens.textSecondary,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Row(
-                children: [
-                  _legendDot(AppColors.designAccent),
-                  const SizedBox(width: 6),
-                  Text(
-                    _t(context, 'CURRENT', 'SASA'),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: context.tokens.textSecondary,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _legendDot(AppColors.designAccent),
+                        const SizedBox(width: 6),
+                        Text(
+                          _t(context, 'CURRENT', 'SASA'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: context.tokens.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  _legendDot(_chartPreviousColor),
-                  const SizedBox(width: 6),
-                  Text(
-                    _t(context, 'PREVIOUS', 'KILICHOPITA'),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: context.tokens.textSecondary,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _legendDot(_chartPreviousColor),
+                        const SizedBox(width: 6),
+                        Text(
+                          _t(context, 'PREVIOUS', 'KILICHOPITA'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: context.tokens.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
