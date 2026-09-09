@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../l10n/app_localizations.dart';
 import '/app/bindings/initial_binding.dart';
+import '/app/core/locale/app_locale_controller.dart';
 import '/app/core/theme/app_theme_tokens.dart';
 import '/app/core/theme/theme_controller.dart';
 import '/app/core/values/app_colors.dart';
@@ -25,9 +26,8 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  late String _lang;
-  late String _countryCode;
   late AppLifecycleManager _lifecycleManager;
+  late final AppLocaleController _localeController;
 
   bool _isLoggedIn = false;
   bool _hasValidPin = false;
@@ -42,8 +42,7 @@ class _MainAppState extends State<MainApp> {
   final EnvConfig _envConfig = BuildConfig.instance.config;
 
   Future<void> loadLanguage() async {
-    _lang = await _preferenceManager.getString('language', defaultValue: 'en');
-    _countryCode = _lang == 'en' ? 'US' : 'TZ';
+    await _localeController.loadFromPreferences(_preferenceManager);
   }
 
   Future<bool> isSessionValid() async {
@@ -125,14 +124,13 @@ class _MainAppState extends State<MainApp> {
       }
       if (!mounted) return;
       setState(() {
-        _lang = 'en';
-        _countryCode = 'US';
         _isLoggedIn = false;
         _hasSeenOnboarding = true; // on error, skip onboarding to avoid loop
         _hasValidPin = false;
         _shouldShowWelcomeBack = false;
         _loading = false;
       });
+      await _localeController.setLanguage('en');
     }
   }
 
@@ -164,8 +162,10 @@ class _MainAppState extends State<MainApp> {
     _lifecycleManager = AppLifecycleManager(context);
     _lifecycleManager.startObserving();
 
-    _lang = 'en';
-    _countryCode = 'US';
+    _localeController = Get.put<AppLocaleController>(
+      AppLocaleController(preferenceManager: _preferenceManager),
+      permanent: true,
+    );
 
     // Run bootstrap after the first frame so the loading screen paints and replaces the native splash.
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
@@ -174,7 +174,9 @@ class _MainAppState extends State<MainApp> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return MaterialApp(
+      return Obx(() {
+        final isSw = _localeController.isSw;
+        return MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: AppColors.colorPrimary),
@@ -196,7 +198,7 @@ class _MainAppState extends State<MainApp> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  _lang == 'sw' ? 'Inapakia...' : 'Loading...',
+                  isSw ? 'Inapakia...' : 'Loading...',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.textColorSecondary,
@@ -208,6 +210,7 @@ class _MainAppState extends State<MainApp> {
           ),
         ),
       );
+      });
     }
 
     if (!Get.isRegistered<ThemeController>()) {
@@ -219,21 +222,26 @@ class _MainAppState extends State<MainApp> {
     final themeController = Get.find<ThemeController>();
 
     return Obx(
-      () => GetMaterialApp(
-        title: _envConfig.appName,
-        initialRoute: _initialRoute(),
-        initialBinding: InitialBinding(),
-        getPages: AppPages.routes,
-        locale: Locale(_lang, _countryCode),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: _getSupportedLocal(),
-        themeMode: themeController.isDarkMode.value
-            ? ThemeMode.dark
-            : ThemeMode.light,
-        theme: _lightTheme(),
-        darkTheme: _darkTheme(),
-        debugShowCheckedModeBanner: false,
-      ),
+      () {
+        // Rebuild MaterialApp when theme OR language changes so
+        // AppLocalizations / alerts follow the selected language.
+        final isDark = themeController.isDarkMode.value;
+        final locale = _localeController.materialLocale;
+        return GetMaterialApp(
+          title: _envConfig.appName,
+          initialRoute: _initialRoute(),
+          initialBinding: InitialBinding(),
+          getPages: AppPages.routes,
+          locale: locale,
+          fallbackLocale: const Locale('en', 'US'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: _getSupportedLocal(),
+          themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+          theme: _lightTheme(),
+          darkTheme: _darkTheme(),
+          debugShowCheckedModeBanner: false,
+        );
+      },
     );
   }
 

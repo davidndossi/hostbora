@@ -73,6 +73,7 @@ class AppLocalDatabase {
         await _ensureUtilityTopupPropertyRefColumn(db);
         await _ensurePropertiesFloorCountColumn(db);
         await _ensurePropertiesCoverPhotoPathColumn(db);
+        await _ensurePropertiesListingStatusColumn(db);
         await _ensurePropertyUnitOperationModeColumn(db);
         await _ensureIncomeBookingIdColumn(db);
         await _ensureCurrencyColumns(db);
@@ -116,7 +117,8 @@ class AppLocalDatabase {
         min_rental_duration TEXT NOT NULL DEFAULT '',
         units_json TEXT NOT NULL DEFAULT '',
         floor_count INTEGER NOT NULL DEFAULT 1,
-        cover_photo_path TEXT NOT NULL DEFAULT ''
+        cover_photo_path TEXT NOT NULL DEFAULT '',
+        listing_status TEXT NOT NULL DEFAULT 'ACTIVE'
       )
     ''');
     await db.execute(
@@ -610,6 +612,15 @@ class AppLocalDatabase {
       "TEXT NOT NULL DEFAULT ''",
     );
     await _backfillPropertyCoverPhotoPaths(db);
+  }
+
+  static Future<void> _ensurePropertiesListingStatusColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      propertiesTable,
+      'listing_status',
+      "TEXT NOT NULL DEFAULT 'ACTIVE'",
+    );
   }
 
   /// Assigns LR-1..LR-14 images to legacy rows missing a cover path.

@@ -1,8 +1,7 @@
-import 'dart:convert';
-
 import '../../data/local/db/income_local_data_source.dart';
 import '../../data/local/db/property_local_data_source.dart';
 import '../../data/local/db/tenant_local_data_source.dart';
+import 'property_unit_count.dart';
 
 /// Portfolio-level rent KPIs for hub / dashboard cards.
 class RentPortfolioMetrics {
@@ -127,16 +126,8 @@ class RentPortfolioMetricsCalculator {
     );
   }
 
-  static int _unitCountForProperty(PropertyRecord p) {
-    if (p.units > 0) return p.units;
-    try {
-      final raw = p.unitsJson.trim();
-      if (raw.isEmpty) return 0;
-      final decoded = jsonDecode(raw);
-      if (decoded is List) return decoded.length;
-    } catch (_) {}
-    return 0;
-  }
+  static int _unitCountForProperty(PropertyRecord p) =>
+      PropertyUnitCount.of(p);
 
   static bool _tenantMatchesProperty(TenantRecord t, PropertyRecord p) {
     final ref = t.propertyRef.trim();

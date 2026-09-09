@@ -88,6 +88,9 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
   Widget _buildSearchBar(BuildContext context) {
     final theme = Theme.of(context);
     final c = FormSurfaceColors.of(context);
+    final hintColor = c.isDark
+        ? theme.colorScheme.onSurfaceVariant
+        : AppColors.designPlaceholder;
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -101,27 +104,33 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
               : AppColors.designInputBorder,
         ),
       ),
-      child: TextField(
-        onChanged: controller.onSearchChanged,
-        decoration: InputDecoration(
-          hintText: appLocalization.searchVaultDocuments,
-          hintStyle: TextStyle(
-            color: c.isDark
-                ? theme.colorScheme.onSurfaceVariant
-                : AppColors.designPlaceholder,
-            fontSize: 15,
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            size: 22,
-            color: c.isDark
-                ? theme.colorScheme.onSurfaceVariant
-                : AppColors.designPlaceholder,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
+      child: Obx(
+        () => TextField(
+          controller: controller.searchController,
+          onChanged: controller.onSearchChanged,
+          decoration: InputDecoration(
+            hintText: appLocalization.searchVaultDocuments,
+            hintStyle: TextStyle(
+              color: hintColor,
+              fontSize: 15,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              size: 22,
+              color: hintColor,
+            ),
+            suffixIcon: controller.searchQuery.value.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: Get.locale?.languageCode == 'sw' ? 'Futa' : 'Clear',
+                    icon: Icon(Icons.clear, size: 20, color: hintColor),
+                    onPressed: controller.clearSearch,
+                  ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ),

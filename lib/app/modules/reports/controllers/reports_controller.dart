@@ -520,7 +520,36 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
 
   // ——— Exports ———
 
-  Future<void> exportPdf() async {
+  final exporting = false.obs;
+
+  Future<void> exportPdf([BuildContext? context]) =>
+      _runExport(context, _doExportPdf);
+
+  Future<void> exportCsv([BuildContext? context]) =>
+      _runExport(context, _doExportCsv);
+
+  Future<void> exportExcel([BuildContext? context]) =>
+      _runExport(context, _doExportExcel);
+
+  Future<void> _runExport(
+    BuildContext? context,
+    Future<void> Function(Rect? shareOrigin) action,
+  ) async {
+    if (exporting.value) return;
+    exporting.value = true;
+    final shareOrigin = _shareOrigin(context);
+    try {
+      await action(shareOrigin);
+      showSuccessMessage(appLocalization.reportsExportDone);
+    } catch (e, st) {
+      logger.e('Report export failed: $e\n$st');
+      showErrorMessage(appLocalization.reportsExportFailed);
+    } finally {
+      exporting.value = false;
+    }
+  }
+
+  Future<void> _doExportPdf(Rect? shareOrigin) async {
     final tab = tabController.index;
     final title = _exportTitle(tab);
     final rows = _exportRows(tab);
@@ -548,11 +577,11 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
       ),
     );
     final bytes = await doc.save();
-    await Printing.sharePdf(bytes: bytes, filename: _fileBase(tab, 'pdf'));
-    showSuccessMessage(appLocalization.reportsExportDone);
+    final name = _fileBase(tab, 'pdf');
+    await Printing.sharePdf(bytes: bytes, filename: name);
   }
 
-  Future<void> exportCsv() async {
+  Future<void> _doExportCsv(Rect? shareOrigin) async {
     final tab = tabController.index;
     final rows = _exportRows(tab);
     final buf = StringBuffer('\uFEFF');
@@ -565,24 +594,34 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
         buf.writeln(headers.map((h) => _csvEscape('${m[h] ?? ''}')).join(','));
       }
     }
-    final path = await _writeTemp(_fileBase(tab, 'csv'), buf.toString());
-    await Share.shareXFiles([XFile(path, mimeType: 'text/csv')]);
-    showSuccessMessage(appLocalization.reportsExportDone);
+    final name = _fileBase(tab, 'csv');
+    final path = await _writeTemp(name, buf.toString());
+    await _shareFile(
+      path: path,
+      fileName: name,
+      mimeType: 'text/csv',
+      shareOrigin: shareOrigin,
+    );
   }
 
-  Future<void> exportExcel() async {
+  Future<void> _doExportExcel(Rect? shareOrigin) async {
     final tab = tabController.index;
     final rows = _exportRows(tab);
     final excelLib = Excel.createExcel();
+    // Default workbook has "Sheet1"; replace with a named report sheet.
     final sheet = excelLib['Report'];
+    if (excelLib.tables.containsKey('Sheet1')) {
+      excelLib.delete('Sheet1');
+    }
     if (rows.isEmpty) {
       sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0)).value =
           TextCellValue(appLocalization.reportsNoData);
     } else {
       final headers = rows.first.keys.toList();
       for (var c = 0; c < headers.length; c++) {
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0)).value =
-            TextCellValue(headers[c]);
+        sheet
+            .cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0))
+            .value = TextCellValue(headers[c]);
       }
       for (var r = 0; r < rows.length; r++) {
         for (var c = 0; c < headers.length; c++) {
@@ -598,20 +637,63 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
         }
       }
     }
-    final bytes = excelLib.save(fileName: _fileBase(tab, 'xlsx'));
-    if (bytes == null) {
-      showErrorMessage('Excel');
-      return;
+    final name = _fileBase(tab, 'xlsx');
+    final bytes = excelLib.save();
+    if (bytes == null || bytes.isEmpty) {
+      throw StateError('Excel encode returned empty bytes');
     }
-    final path = await _writeTempBytes(_fileBase(tab, 'xlsx'), bytes);
-    await Share.shareXFiles([
-      XFile(
-        path,
-        mimeType:
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      ),
-    ]);
-    showSuccessMessage(appLocalization.reportsExportDone);
+    final path = await _writeTempBytes(name, bytes);
+    await _shareFile(
+      path: path,
+      fileName: name,
+      mimeType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      shareOrigin: shareOrigin,
+    );
+  }
+
+  Future<void> _shareFile({
+    required String path,
+    required String fileName,
+    required String mimeType,
+    Rect? shareOrigin,
+  }) async {
+    final file = File(path);
+    if (!await file.exists() || await file.length() == 0) {
+      throw StateError('Export file was not written');
+    }
+    final xFile = XFile(path, mimeType: mimeType, name: fileName);
+    var origin = shareOrigin;
+    try {
+      await Share.shareXFiles(
+        [xFile],
+        subject: fileName,
+        sharePositionOrigin: origin,
+      );
+    } catch (_) {
+      // iPad / macOS require a non-empty origin inside the root view.
+      final size = Get.size;
+      origin = Rect.fromCenter(
+        center: Offset(size.width / 2, size.height / 2),
+        width: 2,
+        height: 2,
+      );
+      await Share.shareXFiles(
+        [xFile],
+        subject: fileName,
+        sharePositionOrigin: origin,
+      );
+    }
+  }
+
+  Rect? _shareOrigin(BuildContext? context) {
+    final ctx = context ?? Get.context;
+    if (ctx == null || !ctx.mounted) return null;
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    final origin = box.localToGlobal(Offset.zero) & box.size;
+    if (origin.width <= 0 || origin.height <= 0) return null;
+    return origin;
   }
 
   String _fileBase(int tab, String ext) {
@@ -673,14 +755,14 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
   Future<String> _writeTemp(String name, String content) async {
     final dir = await getTemporaryDirectory();
     final f = File('${dir.path}/$name');
-    await f.writeAsString(content, encoding: utf8);
+    await f.writeAsString(content, encoding: utf8, flush: true);
     return f.path;
   }
 
   Future<String> _writeTempBytes(String name, List<int> bytes) async {
     final dir = await getTemporaryDirectory();
     final f = File('${dir.path}/$name');
-    await f.writeAsBytes(bytes);
+    await f.writeAsBytes(bytes, flush: true);
     return f.path;
   }
 

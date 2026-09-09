@@ -69,6 +69,8 @@ class MaintenanceTask {
       description: description.trim().isEmpty ? null : description.trim(),
       dueDate: dueIso,
       assignee: assigneeValue,
+      completed: isCompleted,
+      status: apiStatus,
     );
   }
 
@@ -132,6 +134,11 @@ class MaintenanceTask {
     }
 
     final isCompleted = raw['isCompleted'] == true;
+    if (status == TaskStatus.pending &&
+        !isCompleted &&
+        _hasAssignee(assignee)) {
+      status = TaskStatus.inProgress;
+    }
 
     return MaintenanceTask(
       id: id,
@@ -148,12 +155,27 @@ class MaintenanceTask {
 
   /// Parses one task object from GET list/detail or nested API payloads.
   factory MaintenanceTask.fromApiMap(Map<String, dynamic> m) {
-    final completed = m['completed'] as bool? ?? false;
-    final statusStr = (m['status'] as String?)?.toUpperCase();
-    TaskStatus status = completed ? TaskStatus.completed : TaskStatus.pending;
-    if (statusStr == 'IN_PROGRESS') status = TaskStatus.inProgress;
-    if (statusStr == 'COMPLETED' || completed) status = TaskStatus.completed;
-    if (statusStr == 'PENDING') status = TaskStatus.pending;
+    final completed = _readBool(m['completed']);
+    final statusStr = (m['status'] ?? '')
+        .toString()
+        .trim()
+        .toUpperCase()
+        .replaceAll(' ', '_')
+        .replaceAll('-', '_');
+    TaskStatus status;
+    if (completed ||
+        statusStr == 'COMPLETED' ||
+        statusStr == 'DONE' ||
+        statusStr == 'COMPLETE') {
+      status = TaskStatus.completed;
+    } else if (statusStr == 'IN_PROGRESS' ||
+        statusStr == 'INPROGRESS' ||
+        statusStr == 'STARTED' ||
+        statusStr == 'PROGRESS') {
+      status = TaskStatus.inProgress;
+    } else {
+      status = TaskStatus.pending;
+    }
 
     DateTime? due;
     final dueStr = m['dueDate'] as String?;
@@ -172,13 +194,20 @@ class MaintenanceTask {
     if (priorityStr == 'HIGH') priority = TaskPriority.high;
     if (priorityStr == 'LOW') priority = TaskPriority.low;
 
-    final assignee =
-        m['assignee']?.toString() ?? m['assignedTo']?.toString() ?? 'Unassigned';
+    final rawAssignee =
+        (m['assignee'] ?? m['assignedTo'] ?? '').toString().trim();
+    final assignee = rawAssignee.isEmpty || rawAssignee.toLowerCase() == 'null'
+        ? 'Unassigned'
+        : rawAssignee;
     final description = m['description']?.toString() ?? '';
+    if (status == TaskStatus.pending && _hasAssignee(assignee)) {
+      status = TaskStatus.inProgress;
+    }
 
     return MaintenanceTask(
       id: m['taskId']?.toString() ?? m['id']?.toString() ?? '',
-      title: m['title']?.toString() ?? '',
+      title: (m['title'] ?? m['name'] ?? m['taskName'] ?? m['task_name'] ?? '')
+          .toString(),
       assignee: assignee,
       description: description,
       priority: priority,
@@ -187,5 +216,28 @@ class MaintenanceTask {
       isCompleted: completed,
       completedAt: completedAt,
     );
+  }
+
+  static bool _readBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    final s = value?.toString().trim().toLowerCase();
+    return s == 'true' || s == '1' || s == 'yes';
+  }
+
+  static bool _hasAssignee(String value) {
+    final s = value.trim().toLowerCase();
+    return s.isNotEmpty && s != 'unassigned' && s != '—' && s != '-';
+  }
+
+  String get apiStatus {
+    switch (status) {
+      case TaskStatus.completed:
+        return 'COMPLETED';
+      case TaskStatus.inProgress:
+        return 'IN_PROGRESS';
+      case TaskStatus.pending:
+        return 'PENDING';
+    }
   }
 }

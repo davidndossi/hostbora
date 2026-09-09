@@ -45,7 +45,9 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
               if (controller.loading.value) {
                 return const DefaultScreenSkeleton();
               }
-              final list = controller.tasks;
+              controller.selectedFilter.value;
+              controller.allTasks.length;
+              final list = controller.visibleTasks;
               if (list.isEmpty) {
                 return Center(
                   child: Text(
@@ -88,6 +90,7 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
         scrollDirection: Axis.horizontal,
         child: Obx(
           () {
+            controller.allTasks.length;
             final f = controller.selectedFilter.value;
             final all = controller.countAll;
             final pending = controller.countPending;

@@ -19,6 +19,13 @@ class BaseCurrencyPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!Get.isRegistered<CurrencyService>()) {
+      final currency = Get.put<CurrencyService>(
+        CurrencyService(),
+        permanent: true,
+      );
+      currency.init();
+    }
     final svc = Get.find<CurrencyService>();
     final muted = forDarkBackground
         ? Colors.white70

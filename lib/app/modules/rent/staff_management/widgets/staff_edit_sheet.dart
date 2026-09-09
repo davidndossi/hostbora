@@ -228,6 +228,7 @@ class _StaffEditSheetBodyState extends State<_StaffEditSheetBody> {
                           decoration: InputDecoration(
                             labelText: _t('Pay day (1–31)', 'Siku ya malipo (1–31)'),
                             border: const OutlineInputBorder(),
+                            errorMaxLines: 3,
                           ),
                           validator: widget.controller.validatePayDate,
                         ),

@@ -51,6 +51,8 @@ class ManagePaymentsController extends BaseController {
   late final List<DateTime> monthChoices;
 
   final selectedMonthIndex = 0.obs;
+  /// When true, income is not limited to [selectedMonth] (Home → See all).
+  final showAllMonths = false.obs;
   final apartmentKeys = <String>[''].obs;
   final selectedApartmentKey = ''.obs;
   final statusFilter = ManagePaymentStatusFilter.all.obs;
@@ -64,6 +66,7 @@ class ManagePaymentsController extends BaseController {
       monthChoices[selectedMonthIndex.value.clamp(0, monthChoices.length - 1)];
 
   bool get isFutureMonth {
+    if (showAllMonths.value) return false;
     final m = selectedMonth;
     final now = DateTime.now();
     final cur = DateTime(now.year, now.month, 1);
@@ -82,6 +85,38 @@ class ManagePaymentsController extends BaseController {
     var idx = monthChoices.indexWhere((e) => e.year == cur.year && e.month == cur.month);
     if (idx < 0) idx = monthChoices.length ~/ 2;
     selectedMonthIndex.value = idx;
+    _applyRouteArgs();
+  }
+
+  Map<String, dynamic>? _routeArgs() {
+    final args = Get.arguments;
+    if (args is Map) return Map<String, dynamic>.from(args);
+    return null;
+  }
+
+  /// `null` = every workspace. Missing `ws` (Rent hub) still defaults to rent.
+  String? _workspaceFilter() {
+    final args = _routeArgs();
+    if (args == null || !args.containsKey('ws')) return 'rent';
+    final raw = args['ws']?.toString().trim().toLowerCase() ?? '';
+    if (raw.isEmpty || raw == 'all') return null;
+    return raw == 'bnb' ? 'bnb' : 'rent';
+  }
+
+  void _applyRouteArgs() {
+    final args = _routeArgs();
+    if (args == null) return;
+    if (args['allMonths'] == true) {
+      showAllMonths.value = true;
+    }
+    final focus = args['focusMonth'];
+    if (focus is DateTime) {
+      final cur = DateTime(focus.year, focus.month, 1);
+      final idx = monthChoices.indexWhere(
+        (e) => e.year == cur.year && e.month == cur.month,
+      );
+      if (idx >= 0) selectedMonthIndex.value = idx;
+    }
   }
 
   @override
@@ -103,7 +138,13 @@ class ManagePaymentsController extends BaseController {
 
   void setMonthIndex(int? i) {
     if (i == null) return;
+    if (i == -1) {
+      showAllMonths.value = true;
+      refreshRows();
+      return;
+    }
     if (i < 0 || i >= monthChoices.length) return;
+    showAllMonths.value = false;
     selectedMonthIndex.value = i;
     refreshRows();
   }
@@ -182,13 +223,12 @@ class ManagePaymentsController extends BaseController {
 
   Future<void> refreshRows() async {
     loading.value = true;
-    String ws = 'rent';
-    if (Get.arguments != null && Get.arguments['ws'] != null) {
-      ws = Get.arguments['ws'];
-    }
+    final ws = _workspaceFilter();
     try {
       final income = await _incomeLocal.getAllNewestFirst(workspaceType: ws);
-      final tenants = await _tenantLocal.getAllNewestFirstByWorkspace(ws);
+      final tenants = ws == null
+          ? await _tenantLocal.getAllNewestFirst()
+          : await _tenantLocal.getAllNewestFirstByWorkspace(ws);
 
       final y = selectedMonth.year;
       final m = selectedMonth.month;
@@ -234,7 +274,9 @@ class ManagePaymentsController extends BaseController {
       } else {
         for (final r in income) {
           final paid = r.paidLocalCalendarOrCreated();
-          if (paid.year != y || paid.month != m) continue;
+          if (!showAllMonths.value && (paid.year != y || paid.month != m)) {
+            continue;
+          }
           if (!_inDateRange(paid)) continue;
           final line = _apartmentKeyFromIncome(r);
           if (!_apartmentFilterMatches(line)) continue;

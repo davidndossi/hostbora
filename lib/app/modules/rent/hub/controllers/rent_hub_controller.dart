@@ -229,8 +229,11 @@ class RentHubController extends BaseController {
     }
   }
 
-  void openTenancyInsights() =>
-      Get.toNamed(Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER);
+  void openTenancyInsights() => Get.toNamed(
+        Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,
+        parameters: const {'ws': 'rent'},
+        arguments: const {'ws': 'rent'},
+      );
 
   void openManagePayments() => Get.toNamed(Routes.RENT_MANAGE_PAYMENTS);
 

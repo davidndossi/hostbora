@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import '../../../core/service/launch_prompt_gate.dart';
 import '../../../core/utils/booking_api_response.dart';
 import '../../../core/utils/bnb_property_listing.dart';
 import '../../../core/utils/getx_instance_probe.dart';
+import '../../../core/utils/property_unit_count.dart';
 import '../../../core/values/text_styles.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
@@ -17,6 +17,7 @@ import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_overrides_store.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
+import '../../../data/local/deleted_properties_store.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
@@ -588,16 +589,37 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         .subtract(Duration(days: now.weekday - 1));
   }
 
-  static int _bnbUnitCountForProperty(PropertyRecord p) {
-    final raw = p.unitsJson.trim();
-    if (raw.isNotEmpty && raw != '[]') {
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is List && decoded.isNotEmpty) return decoded.length;
-      } catch (_) {}
+  /// Same property set My Properties uses: visible to the logged-in user,
+  /// both workspaces, deduped by propertyRef, excluding deleted refs.
+  Future<Map<String, PropertyRecord>> _visiblePropertiesByRef() async {
+    final userId = (await _preferenceManager.getUser()).id ?? '';
+    final deleted = DeletedPropertiesStore().load();
+    final byRef = <String, PropertyRecord>{};
+    for (final workspace in const ['bnb', 'rent']) {
+      final rows = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: userId,
+        workspaceType: workspace,
+      );
+      for (final p in rows) {
+        final key = p.propertyRef.trim().isNotEmpty
+            ? p.propertyRef.trim()
+            : 'local_${p.id}';
+        if (deleted.contains(key) || deleted.contains('local_${p.id}')) {
+          continue;
+        }
+        final existing = byRef[key];
+        if (existing == null) {
+          byRef[key] = p;
+          continue;
+        }
+        // Prefer the row with the richer unit definition when the same
+        // property exists in both BnB and Rent workspace rows.
+        if (PropertyUnitCount.of(p) > PropertyUnitCount.of(existing)) {
+          byRef[key] = p;
+        }
+      }
     }
-    if (p.units > 0) return p.units;
-    return 1;
+    return byRef;
   }
 
   static bool _isActiveBnbBooking(CheckInItem item) {
@@ -685,19 +707,15 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
     _assignWeeklyRevenue(incomes, weekStart);
 
-    // Occupancy denominator = distinct property count across all workspaces.
+    // Occupancy denominator = total rentable units across visible properties.
     final allTenants = await _bnbTenantLocal.getAllNewestFirst();
     var allUnitsTotal = 0;
     try {
-      final allProps = await _propertyLocal.fetchAll(userId: '');
-      final seenOccRefs = <String>{};
-      for (final p in allProps) {
-        final key = p.propertyRef.trim().isNotEmpty
-            ? p.propertyRef.trim()
-            : 'local_${p.id}';
-        seenOccRefs.add(key);
-      }
-      allUnitsTotal = seenOccRefs.length;
+      final byRef = await _visiblePropertiesByRef();
+      allUnitsTotal = byRef.values.fold<int>(
+        0,
+        (sum, p) => sum + PropertyUnitCount.of(p),
+      );
     } catch (_) {}
     _assignWeeklyOccupancy(allTenants, allUnitsTotal, weekStart);
 
@@ -717,46 +735,37 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       final monthStart = DateTime(now.year, now.month, 1);
       final nextMonthStart = DateTime(now.year, now.month + 1, 1);
 
-      // Deduplicate by propertyRef so the same property is not counted twice
-      // when it appears in multiple workspace rows.
-      final allProperties = await _propertyLocal.fetchAll(userId: '');
+      // Match My Properties: visible rows for this user, deduped by propertyRef.
+      final byRef = await _visiblePropertiesByRef();
 
       if (kDebugMode) {
-        debugPrint('[Units] Local DB rows: ${allProperties.length}');
-        for (final p in allProperties) {
+        debugPrint('[Units] Visible properties: ${byRef.length}');
+        for (final e in byRef.entries) {
+          final p = e.value;
           debugPrint(
-            '[Units]  local row id=${p.id} '
-            'ref="${p.propertyRef}" '
-            'name="${p.propertyName}" '
-            'workspace="${p.workspaceType}" '
-            'units=${p.units} '
-            'unitsJson="${p.unitsJson.length > 60 ? '${p.unitsJson.substring(0, 60)}…' : p.unitsJson}"',
+            '[Units]  ref="${e.key}" name="${p.propertyName}" '
+            'workspace="${p.workspaceType}" unitsCol=${p.units} '
+            'unitCount=${PropertyUnitCount.of(p)}',
           );
         }
       }
 
-      final byRef = <String, PropertyRecord>{};
       final rentRefs = <String>{};
-      for (final p in allProperties) {
-        final key = p.propertyRef.trim().isNotEmpty
-            ? p.propertyRef.trim()
-            : 'local_${p.id}';
-        final existing = byRef[key];
-        if (existing == null ||
-            _bnbUnitCountForProperty(p) > _bnbUnitCountForProperty(existing)) {
-          byRef[key] = p;
-        }
-        final ws = p.workspaceType.trim().toLowerCase();
+      for (final e in byRef.entries) {
+        final ws = e.value.workspaceType.trim().toLowerCase();
         if (ws == 'rent' || ws == 'both' || ws.isEmpty) {
-          rentRefs.add(key);
+          rentRefs.add(e.key);
         }
       }
-      final rentUnits = rentRefs.length;
+
       totalPropertiesCount.value = byRef.length;
       totalUnitsCount.value = byRef.values.fold<int>(
         0,
-        (sum, p) => sum + _bnbUnitCountForProperty(p),
+        (sum, p) => sum + PropertyUnitCount.of(p),
       );
+      final rentUnitsTotal = byRef.entries
+          .where((e) => rentRefs.contains(e.key))
+          .fold<int>(0, (sum, e) => sum + PropertyUnitCount.of(e.value));
 
       // ── All active tenants (rent + BnB guests) ───────────────────────────
       final allTenants = await _bnbTenantLocal.getAllNewestFirst();
@@ -772,7 +781,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       rentTenantsCount.value = activeTenants.length;
 
       // Occupancy: distinct occupied unit slots / total rent units
-      if (rentUnits > 0) {
+      if (rentUnitsTotal > 0) {
         final occupiedUnitIds = <String>{};
         for (final t in activeTenants) {
           final uid = t.apartmentUnitId.trim();
@@ -784,7 +793,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
           }
         }
         rentOccupancyRate.value =
-            ((occupiedUnitIds.length / rentUnits) * 100).round().clamp(0, 100);
+            ((occupiedUnitIds.length / rentUnitsTotal) * 100)
+                .round()
+                .clamp(0, 100);
       } else {
         rentOccupancyRate.value = 0;
       }
@@ -1189,8 +1200,34 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void documents() => Get.toNamed(Routes.PROPERTY_VAULT);
 
-  void openTodayRevenue() =>
-      Get.toNamed(Routes.RENT_MANAGE_PAYMENTS, arguments: {'ws': ''});
+  /// Workspace arg for payment lists: `rent`, `bnb`, or `''` (all).
+  String _paymentsWorkspaceArg() {
+    final showBnb = showBnbHomeContent;
+    final showRent = showRentHomeContent;
+    if (showBnb && !showRent) return 'bnb';
+    if (showRent && !showBnb) return 'rent';
+    return '';
+  }
+
+  void openTodayRevenue() => Get.toNamed(
+        Routes.RENT_MANAGE_PAYMENTS,
+        arguments: {'ws': _paymentsWorkspaceArg()},
+      );
+
+  /// Full payment list matching the home Recent payments section.
+  void openAllRecentPayments() {
+    final newest = visibleRecentPayments.isEmpty
+        ? null
+        : visibleRecentPayments.first.paidLocalCalendarOrCreated();
+    Get.toNamed(
+      Routes.RENT_MANAGE_PAYMENTS,
+      arguments: {
+        'ws': _paymentsWorkspaceArg(),
+        'allMonths': true,
+        if (newest != null) 'focusMonth': newest,
+      },
+    );
+  }
 
   void openScheduledMaintenance() => calendar();
 

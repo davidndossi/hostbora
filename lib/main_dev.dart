@@ -13,6 +13,7 @@ import '/flavors/env_config.dart';
 import '/flavors/environment.dart';
 import 'app/data/local/service/storage_service.dart';
 import 'app/data/local/service/lease_reminder_workmanager.dart';
+import 'app/data/service/apple_iap_service.dart';
 import 'app/routes/app_pages.dart';
 import 'firebase_options.dart';
 
@@ -200,6 +201,7 @@ void main() async {
   );
 
   WidgetsFlutterBinding.ensureInitialized();
+  AppleIapService.registerPlatform();
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

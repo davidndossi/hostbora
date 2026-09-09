@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/getx_instance_probe.dart';
 import '../../../core/utils/property_listing_image_assigner.dart';
+import '../../../core/utils/property_unit_count.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/deleted_properties_store.dart';
@@ -10,6 +12,7 @@ import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../home/controllers/home_controller.dart';
 
 class MyPropertiesController extends BaseController {
   final selectedFilterIndex = 0.obs;
@@ -121,6 +124,10 @@ class MyPropertiesController extends BaseController {
       properties.assignAll(
         _mergeListings(localList, remoteList)
             .where((p) => !deleted.contains(p.id))
+            .where((p) {
+              if (status == null || status.isEmpty) return true;
+              return p.status == PropertyRecord.normalizeListingStatus(status);
+            })
             .toList(),
       );
     } catch (e) {
@@ -153,16 +160,17 @@ class MyPropertiesController extends BaseController {
         if (deleted.contains(key) || deleted.contains('local_${row.id}')) {
           continue;
         }
-        rowsByKey[key] = row;
+        final existing = rowsByKey[key];
+        if (existing == null ||
+            PropertyUnitCount.of(row) > PropertyUnitCount.of(existing)) {
+          rowsByKey[key] = row;
+        }
       }
     }
     final local = await Future.wait(rowsByKey.values.map(_listingFromLocal));
-    if (status == null) return local;
-    if (status == 'ACTIVE') {
-      return local;
-    }
-    // Local table does not currently persist DRAFT / ARCHIVED status.
-    return const [];
+    if (status == null || status.isEmpty) return local;
+    final want = PropertyRecord.normalizeListingStatus(status);
+    return local.where((p) => p.status == want).toList();
   }
 
   Future<PropertyListing> _listingFromLocal(PropertyRecord r) async {
@@ -175,14 +183,13 @@ class MyPropertiesController extends BaseController {
         ? r.propertyRef.trim()
         : 'local_${r.id}';
     final tenants = await _tenantLocal.countByPropertyRef(id);
-    final units = r.units;
     return PropertyListing(
       id: id,
       title: title,
       rating: 0,
       location: r.propertyLocation,
       activeTenants: tenants,
-      unitSlots: units,
+      unitSlots: PropertyUnitCount.of(r),
       mode: _normalizeListingMode(r.workspaceType),
       isFavorite: false,
       imageUrl: PropertyListingImageAssigner.resolveDisplayPath(
@@ -191,6 +198,8 @@ class MyPropertiesController extends BaseController {
         localPropertyId: r.id,
         propertyName: title,
       ),
+      status: PropertyRecord.normalizeListingStatus(r.listingStatus),
+      localRowId: r.id,
     );
   }
 
@@ -199,23 +208,46 @@ class MyPropertiesController extends BaseController {
     List<PropertyListing> remote,
   ) {
     final byId = <String, PropertyListing>{};
-    // Keep remote as source of truth when same id exists.
     for (final item in local) {
       byId[item.id] = item;
     }
     for (final item in remote) {
-      byId[item.id] = item;
+      final existing = byId[item.id];
+      if (existing == null) {
+        byId[item.id] = item;
+        continue;
+      }
+      byId[item.id] = PropertyListing(
+        id: item.id,
+        title: item.title,
+        rating: item.rating,
+        location: item.location,
+        activeTenants: item.activeTenants,
+        unitSlots: item.unitSlots > 0 ? item.unitSlots : existing.unitSlots,
+        mode: item.mode,
+        isFavorite: item.isFavorite,
+        imageUrl: item.imageUrl.isNotEmpty ? item.imageUrl : existing.imageUrl,
+        // Local lifecycle (Draft/Archive) wins: the API often omits status or
+        // always returns ACTIVE, which would otherwise revert a just-changed card.
+        status: existing.status,
+        statusSource: existing.statusSource,
+        localRowId: existing.localRowId ?? item.localRowId,
+      );
     }
     return byId.values.toList();
   }
 
   Future<PropertyListing> _listingFromMap(Map<String, dynamic> m) async {
     final id = m['id']?.toString() ?? m['listingId']?.toString() ?? '';
-    final title = m['propertyName']?.toString() ?? m['title']?.toString() ?? 'Property';
+    final title =
+        m['propertyName']?.toString() ?? m['title']?.toString() ?? 'Property';
     final rating = (m['rating'] as num?)?.toDouble() ?? 0.0;
-    final location = m['propertyLocation']?.toString() ?? m['location']?.toString() ?? '';
+    final location =
+        m['propertyLocation']?.toString() ?? m['location']?.toString() ?? '';
     final tenants = await _tenantLocal.countByPropertyRef(id);
-    final units = (m['units'] as num?)?.toInt() ?? 0;
+    final remoteUnits = (m['units'] as num?)?.toInt() ?? 0;
+    final remoteUnitsJson =
+        (m['units_json'] ?? m['unitsJson'] ?? '').toString();
     var mode = _normalizeListingMode(
       m['workspaceType'] ?? m['listingMode'] ?? m['operationMode'],
     );
@@ -224,19 +256,38 @@ class MyPropertiesController extends BaseController {
         m['imageUrl']?.toString() ??
         '';
     imageUrl = imageUrl.trim();
-    if (imageUrl.isEmpty) {
-      final localRow = await _local.findByHubId(id);
-      if (localRow != null) {
-        mode = _normalizeListingMode(localRow.workspaceType);
+    final rawStatus = m['status']?.toString() ?? m['listingStatus']?.toString();
+    final hasRemoteStatus =
+        rawStatus != null && rawStatus.trim().isNotEmpty;
+    var status = hasRemoteStatus
+        ? PropertyRecord.normalizeListingStatus(rawStatus)
+        : PropertyRecord.listingStatusActive;
+    int? localRowId;
+    var units = remoteUnits;
+    if (units <= 0 && remoteUnitsJson.trim().isNotEmpty) {
+      units = PropertyUnitCount.fromUnitsJson(remoteUnitsJson);
+    }
+    final localRow = id.isEmpty ? null : await _local.findByHubId(id);
+    if (localRow != null) {
+      localRowId = localRow.id;
+      mode = _normalizeListingMode(localRow.workspaceType);
+      // Prefer local structured count when remote payload is thin.
+      final localUnits = PropertyUnitCount.of(localRow);
+      if (units <= 0 && localUnits > 0) {
+        units = localUnits;
+      }
+      if (imageUrl.isEmpty) {
         imageUrl = PropertyListingImageAssigner.resolveDisplayPath(
           storedPath: localRow.coverPhotoPath,
           propertyRef: localRow.propertyRef,
           localPropertyId: localRow.id,
           propertyName: title,
         );
-      } else if (id.isNotEmpty) {
-        imageUrl = PropertyListingImageAssigner.assignForProperty(propertyRef: id);
       }
+      status = PropertyRecord.normalizeListingStatus(localRow.listingStatus);
+    } else if (id.isNotEmpty && imageUrl.isEmpty) {
+      imageUrl =
+          PropertyListingImageAssigner.assignForProperty(propertyRef: id);
     }
     return PropertyListing(
       id: id,
@@ -248,6 +299,9 @@ class MyPropertiesController extends BaseController {
       mode: mode,
       isFavorite: false,
       imageUrl: imageUrl,
+      status: status,
+      statusSource: hasRemoteStatus ? 'remote' : 'local',
+      localRowId: localRowId,
     );
   }
 
@@ -267,22 +321,160 @@ class MyPropertiesController extends BaseController {
   void toggleFavorite(PropertyListing p) {
     final i = properties.indexWhere((e) => e.id == p.id);
     if (i >= 0) {
-      final updated = PropertyListing(
-        id: p.id,
-        title: p.title,
-        rating: p.rating,
-        location: p.location,
-        activeTenants: p.activeTenants,
-        unitSlots: p.unitSlots,
-        mode: p.mode,
-        isFavorite: !p.isFavorite,
-        imageUrl: p.imageUrl,
-      );
+      final updated = p.copyWith(isFavorite: !p.isFavorite);
       properties.value = [
         ...properties.take(i),
         updated,
         ...properties.skip(i + 1),
       ];
+    }
+  }
+
+  Future<void> setListingStatus(
+    PropertyListing p,
+    String status,
+  ) async {
+    final next = PropertyRecord.normalizeListingStatus(status);
+    if (p.status == next) return;
+
+    try {
+      _applyStatusInMemory(p.id, next);
+
+      if (p.localRowId != null) {
+        await _local.updateListingStatus(
+          id: p.localRowId!,
+          listingStatus: next,
+        );
+      } else {
+        final byRef = await _local.updateListingStatusByRef(
+          propertyRef: p.id,
+          listingStatus: next,
+        );
+        if (byRef == null && p.id.startsWith('local_')) {
+          final id = int.tryParse(p.id.replaceFirst('local_', ''));
+          if (id != null) {
+            await _local.updateListingStatus(id: id, listingStatus: next);
+          }
+        }
+      }
+
+      if (!p.id.startsWith('local_')) {
+        try {
+          await _repository.updatePropertyByRef(p.id, {
+            'status': next,
+            'listingStatus': next,
+            'listing_status': next,
+          });
+        } catch (_) {
+          // Local status still applies when offline / API unavailable.
+        }
+      }
+
+      final isSw = Get.locale?.languageCode == 'sw';
+      final label = switch (next) {
+        PropertyRecord.listingStatusDraft =>
+          isSw ? 'Rasimu' : 'Draft',
+        PropertyRecord.listingStatusArchived =>
+          isSw ? 'Hifadhi' : 'Archive',
+        _ => isSw ? 'Hai' : 'Active',
+      };
+      showSuccessMessage(
+        isSw ? 'Mali imewekwa kama $label' : 'Property marked as $label',
+      );
+      await loadProperties();
+    } catch (e) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Imeshindikana kubadilisha hali ya mali.'
+            : 'Could not update property status.',
+      );
+    }
+  }
+
+  void _applyStatusInMemory(String id, String status) {
+    final i = properties.indexWhere((e) => e.id == id);
+    if (i < 0) return;
+    properties[i] = properties[i].copyWith(
+      status: status,
+      statusSource: 'local',
+    );
+    properties.refresh();
+  }
+
+  Future<void> deleteProperty(PropertyListing p) async {
+    final isSw = Get.locale?.languageCode == 'sw';
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(isSw ? 'Futa mali?' : 'Delete property?'),
+        content: Text(
+          isSw
+              ? 'Hii itafuta "${p.title}" na rekodi zake kwenye kifaa hiki. Hatua hii haiwezi kutenduliwa.'
+              : 'This will remove "${p.title}" and its saved details from this device. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(isSw ? 'Ghairi' : 'Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFB91C1C),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Get.back(result: true),
+            child: Text(isSw ? 'Futa' : 'Delete'),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+    if (confirmed != true) return;
+
+    try {
+      final ids = <String>{
+        if (p.id.trim().isNotEmpty) p.id.trim(),
+        if (p.localRowId != null) 'local_${p.localRowId}',
+      };
+      await _deleted.markDeleted(ids);
+
+      if (p.localRowId != null) {
+        await _local.deleteById(p.localRowId!);
+      } else {
+        final row = await _local.findByHubId(p.id);
+        if (row != null) {
+          ids.add('local_${row.id}');
+          if (row.propertyRef.trim().isNotEmpty) {
+            ids.add(row.propertyRef.trim());
+          }
+          await _deleted.markDeleted(ids);
+          await _local.deleteById(row.id);
+        }
+      }
+
+      removePropertyFromList(ids);
+
+      if (!p.id.startsWith('local_')) {
+        try {
+          final parsed = int.tryParse(p.id);
+          if (parsed != null) {
+            await _repository.deleteProperty(parsed);
+          } else {
+            await _repository.updatePropertyByRef(p.id, {
+              'status': 'DELETED',
+              'listingStatus': 'DELETED',
+            });
+          }
+        } catch (_) {
+          // Tombstone keeps it hidden until a later remote delete succeeds.
+        }
+      }
+
+      showSuccessMessage(isSw ? 'Mali imefutwa.' : 'Property deleted.');
+      await HomeController.refreshIfRegistered();
+    } catch (_) {
+      showErrorMessage(
+        isSw ? 'Imeshindikana kufuta mali.' : 'Could not delete property.',
+      );
     }
   }
 
@@ -318,6 +510,11 @@ class PropertyListing {
   final String mode;
   final bool isFavorite;
   final String imageUrl;
+  /// Lifecycle status: ACTIVE, DRAFT, or ARCHIVED.
+  final String status;
+  /// `remote` when status came from API; otherwise `local`.
+  final String statusSource;
+  final int? localRowId;
 
   PropertyListing({
     required this.id,
@@ -329,5 +526,30 @@ class PropertyListing {
     required this.mode,
     required this.isFavorite,
     required this.imageUrl,
+    this.status = PropertyRecord.listingStatusActive,
+    this.statusSource = 'local',
+    this.localRowId,
   });
+
+  PropertyListing copyWith({
+    bool? isFavorite,
+    String? status,
+    String? statusSource,
+    int? localRowId,
+  }) {
+    return PropertyListing(
+      id: id,
+      title: title,
+      rating: rating,
+      location: location,
+      activeTenants: activeTenants,
+      unitSlots: unitSlots,
+      mode: mode,
+      isFavorite: isFavorite ?? this.isFavorite,
+      imageUrl: imageUrl,
+      status: status ?? this.status,
+      statusSource: statusSource ?? this.statusSource,
+      localRowId: localRowId ?? this.localRowId,
+    );
+  }
 }

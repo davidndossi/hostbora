@@ -231,54 +231,54 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               ),
             ),
             const SizedBox(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Obx(
-                    () => Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _capsLabel(u, controller.amountFieldLabel),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: controller.amountController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          textInputAction: TextInputAction.next,
-                          validator: controller.validateAmount,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          style: TextStyle(color: u.onSurface, fontWeight: FontWeight.w500),
-                          cursorColor: u.brandTeal,
-                          decoration: _fieldDeco(
-                            u,
-                            hint: controller.amountHint,
-                          ),
-                        ),
-                      ],
+            Obx(
+              () => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _capsLabel(u, controller.amountFieldLabel),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: controller.amountController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: controller.validateAmount,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    style: TextStyle(
+                      color: u.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    cursorColor: u.brandTeal,
+                    decoration: _fieldDeco(
+                      u,
+                      hint: controller.amountHint,
                     ),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _capsLabel(
+                  u,
+                  _isSw ? 'Siku ya malipo (1–31)' : 'Pay day (1–31)',
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _capsLabel(u, 'Payment date'),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: controller.payDateController,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        validator: controller.validatePayDate,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        style: TextStyle(color: u.onSurface, fontWeight: FontWeight.w500),
-                        cursorColor: u.brandTeal,
-                        decoration: _fieldDeco(u, hint: '28'),
-                      ),
-                    ],
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: controller.payDateController,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  validator: controller.validatePayDate,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  style: TextStyle(
+                    color: u.onSurface,
+                    fontWeight: FontWeight.w500,
                   ),
+                  cursorColor: u.brandTeal,
+                  decoration: _fieldDeco(u, hint: '28'),
                 ),
               ],
             ),
@@ -706,6 +706,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
       fillColor: u.fieldFill,
       hintText: hint,
       hintStyle: TextStyle(color: u.muted),
+      errorMaxLines: 3,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: borderSide,

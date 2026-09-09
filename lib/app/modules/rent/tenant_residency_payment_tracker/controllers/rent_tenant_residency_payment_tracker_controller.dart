@@ -20,7 +20,6 @@ import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
-import '../../../../data/local/service/workspace_context_service.dart';
 import '../../../../routes/app_pages.dart';
 
 /// Payment box state for M1…M6 ledger.
@@ -350,11 +349,9 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     if (ws.isEmpty && args is Map) {
       ws = (args['ws'] ?? args['workspace'] ?? '').toString().trim();
     }
-    if (ws.isEmpty) {
-      try {
-        ws = Get.find<WorkspaceContextService>().currentWorkspace.value;
-      } catch (_) {}
-    }
+    // Rent Tenancy Insights defaults to rent when the route does not pass ws.
+    // Do not inherit the global app workspace (often "bnb") or rent tenants
+    // never show after being added.
     _workspaceType = _normalizeWorkspace(ws);
     _filterPropertyRef = Get.parameters['propertyRef']?.trim() ?? '';
     _filterPropertyTitle = Get.parameters['propertyTitle']?.trim() ?? '';
@@ -442,6 +439,11 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
   void onSearchChanged(String value) {
     searchQuery.value = value;
+  }
+
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
   }
 
   void setPaymentStatusFilter(TenantPaymentStatusFilter value) {
@@ -828,6 +830,8 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     final expenseRows = await _expenseLocal.getAllNewestFirst(
       workspaceType: ws,
     );
+    final properties = await _propertyLocal.getAllNewestFirst();
+    final propertiesByRef = _indexPropertiesByRef(properties);
     _incomeRowsCache = incomeRows;
     _expenseRowsCache = expenseRows;
     _tenantRecordsById
@@ -893,7 +897,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
         return TenantInsight(
           id: '${r.id}',
           name: r.tenantName,
-          propertyLine: r.propertyLabel,
+          propertyLine: _propertyNameUnitLine(r, propertiesByRef),
           totalStayLabel: '$spentMonths Months',
           leasePeriodLabel: '${fmt.format(start)} – ${fmt.format(end)}',
           leaseProgress: progress,
@@ -919,6 +923,94 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
       }),
     );
   }
+
+  Map<String, PropertyRecord> _indexPropertiesByRef(
+    List<PropertyRecord> properties,
+  ) {
+    final byRef = <String, PropertyRecord>{};
+    for (final p in properties) {
+      final hub = p.propertyRef.trim();
+      if (hub.isNotEmpty) byRef[hub] = p;
+      byRef['local_${p.id}'] = p;
+      byRef['legacy_${p.id}'] = p;
+    }
+    return byRef;
+  }
+
+  /// Card subtitle: human-readable property name and unit (not hub UUID/ref).
+  String _propertyNameUnitLine(
+    TenantRecord tenant,
+    Map<String, PropertyRecord> propertiesByRef,
+  ) {
+    final prop = _resolveProperty(tenant, propertiesByRef);
+    final propertyName = _humanPropertyName(tenant, prop);
+    final unit = tenant.unitLabel.trim();
+
+    if (propertyName.isEmpty && unit.isEmpty) {
+      return _isSw ? 'Mali' : 'Property';
+    }
+    if (propertyName.isEmpty) return unit;
+    if (unit.isEmpty) return propertyName;
+    if (propertyName.toLowerCase().contains(unit.toLowerCase())) {
+      return propertyName;
+    }
+    return '$propertyName / $unit';
+  }
+
+  PropertyRecord? _resolveProperty(
+    TenantRecord tenant,
+    Map<String, PropertyRecord> propertiesByRef,
+  ) {
+    final ref = tenant.propertyRef.trim();
+    if (ref.isNotEmpty) {
+      final hit = propertiesByRef[ref];
+      if (hit != null) return hit;
+    }
+    final label = tenant.propertyLabel.trim();
+    if (label.isNotEmpty) {
+      final byLabel = propertiesByRef[label];
+      if (byLabel != null) return byLabel;
+      for (final p in propertiesByRef.values) {
+        final name = p.propertyName.trim();
+        final loc = p.propertyLocation.trim();
+        if (label == name ||
+            label == loc ||
+            label == '$name · $loc' ||
+            label == '$loc · $name') {
+          return p;
+        }
+      }
+    }
+    return null;
+  }
+
+  String _humanPropertyName(TenantRecord tenant, PropertyRecord? prop) {
+    if (prop != null) {
+      final name = prop.propertyName.trim();
+      final loc = prop.propertyLocation.trim();
+      if (name.isNotEmpty) return name;
+      if (loc.isNotEmpty) return loc;
+    }
+    final label = tenant.propertyLabel.trim();
+    if (label.isEmpty || _looksLikePropertyRef(label)) return '';
+    return label;
+  }
+
+  bool _looksLikePropertyRef(String value) {
+    final s = value.trim();
+    if (s.isEmpty) return false;
+    if (s.startsWith('local_') || s.startsWith('legacy_')) return true;
+    // UUID / long opaque hub ids should not appear on cards.
+    if (RegExp(r'^[0-9a-fA-F-]{20,}$').hasMatch(s)) return true;
+    if (RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+            caseSensitive: false)
+        .hasMatch(s)) {
+      return true;
+    }
+    return false;
+  }
+
+  bool get _isSw => Get.locale?.languageCode == 'sw';
 
   Future<void> _exportExcel({
     required TenancyExcelTemplate template,

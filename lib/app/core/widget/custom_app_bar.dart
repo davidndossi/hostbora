@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../routes/app_pages.dart';
+import '/app/core/locale/app_locale_controller.dart';
 import '/app/core/theme/theme_controller.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/core/values/app_colors.dart';
@@ -48,7 +49,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final actionColor = isLight
         ? Colors.white
         : (isDark ? Colors.white : AppColors.appBarIconColor);
-    final currentLang = Get.locale?.languageCode == 'sw' ? 'sw' : 'en';
+    final currentLang = Get.isRegistered<AppLocaleController>()
+        ? (Get.find<AppLocaleController>().isSw ? 'sw' : 'en')
+        : (Get.locale?.languageCode == 'sw' ? 'sw' : 'en');
     final themeController =
         Get.isRegistered<ThemeController>() ? Get.find<ThemeController>() : null;
     final actionsList = <Widget>[
@@ -74,17 +77,19 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           icon: Icon(Icons.language, color: actionColor),
           onPressed: () async {
             final nextLang = currentLang == 'sw' ? 'en' : 'sw';
-            final nextLocale = nextLang == 'sw'
-                ? const Locale('sw', 'TZ')
-                : const Locale('en', 'US');
-            Get.updateLocale(nextLocale);
-            try {
-              final pref = Get.find<PreferenceManager>(
-                tag: (PreferenceManager).toString(),
-              );
-              await pref.setString(PreferenceManager.keyLang, nextLang);
-            } catch (_) {
-              // No-op: locale is already updated for current session.
+            if (Get.isRegistered<AppLocaleController>()) {
+              await Get.find<AppLocaleController>().setLanguage(nextLang);
+            } else {
+              final nextLocale = nextLang == 'sw'
+                  ? const Locale('sw', 'TZ')
+                  : const Locale('en', 'US');
+              Get.updateLocale(nextLocale);
+              try {
+                final pref = Get.find<PreferenceManager>(
+                  tag: (PreferenceManager).toString(),
+                );
+                await pref.setString(PreferenceManager.keyLang, nextLang);
+              } catch (_) {}
             }
           },
         ),

@@ -189,10 +189,18 @@ class TenantLocalDataSource {
     if (label.isEmpty) return false;
     final loc = p.propertyLocation.trim().toLowerCase();
     final name = p.propertyName.trim().toLowerCase();
-    final line = loc.isNotEmpty && name.isNotEmpty
-        ? '$loc · $name'
-        : (loc.isNotEmpty ? loc : name);
-    if (label == line || label == name || label == loc) return true;
+    final lineLocName =
+        loc.isNotEmpty && name.isNotEmpty ? '$loc · $name' : '';
+    final lineNameLoc =
+        loc.isNotEmpty && name.isNotEmpty ? '$name · $loc' : '';
+    final single = loc.isNotEmpty ? loc : name;
+    if (label == lineLocName ||
+        label == lineNameLoc ||
+        label == name ||
+        label == loc ||
+        (single.isNotEmpty && label == single)) {
+      return true;
+    }
     if (name.isNotEmpty && label.contains(name)) return true;
     if (loc.isNotEmpty && label.contains(loc)) return true;
     return false;
@@ -300,21 +308,73 @@ class TenantLocalDataSource {
     );
   }
 
-  /// Returns the number of tenant rows with this [propertyRef] (trimmed),
-  /// matching [PropertyRecord.propertyRef] / `local_<id>` / `legacy_<id>`.
+  /// Returns the number of tenant rows for this listing hub id.
+  ///
+  /// Counts rows whose `property_ref` matches [propertyRef] or any alias
+  /// (`local_<id>`, `legacy_<id>`, or the property's stored hub UUID).
   Future<int> countByPropertyRef(String propertyRef) async {
     final r = propertyRef.trim();
     if (r.isEmpty) return 0;
+    final aliases = await _propertyRefAliases(r);
+    if (aliases.isEmpty) return 0;
     final db = await database;
+    final placeholders = List.filled(aliases.length, '?').join(',');
     final rows = await db.rawQuery(
-      'SELECT COUNT(*) AS c FROM $_table WHERE property_ref = ?',
-      [r],
+      'SELECT COUNT(*) AS c FROM $_table WHERE property_ref IN ($placeholders)',
+      aliases.toList(),
     );
     if (rows.isEmpty) return 0;
     final v = rows.first['c'];
     if (v is int) return v;
     if (v is num) return v.toInt();
     return 0;
+  }
+
+  Future<Set<String>> _propertyRefAliases(String propertyRef) async {
+    final r = propertyRef.trim();
+    if (r.isEmpty) return const {};
+    final aliases = <String>{r};
+    final db = await database;
+
+    int? localId;
+    if (r.startsWith('local_')) {
+      localId = int.tryParse(r.substring('local_'.length));
+    } else if (r.startsWith('legacy_')) {
+      localId = int.tryParse(r.substring('legacy_'.length));
+    }
+
+    if (localId != null) {
+      aliases.add('local_$localId');
+      aliases.add('legacy_$localId');
+      final props = await db.query(
+        AppLocalDatabase.propertiesTable,
+        columns: ['property_ref'],
+        where: 'id = ?',
+        whereArgs: [localId],
+        limit: 1,
+      );
+      if (props.isNotEmpty) {
+        final hub = props.first['property_ref']?.toString().trim() ?? '';
+        if (hub.isNotEmpty) aliases.add(hub);
+      }
+      return aliases;
+    }
+
+    final props = await db.query(
+      AppLocalDatabase.propertiesTable,
+      columns: ['id', 'property_ref'],
+      where: 'property_ref = ?',
+      whereArgs: [r],
+      limit: 1,
+    );
+    if (props.isNotEmpty) {
+      final id = props.first['id'] as int?;
+      if (id != null) {
+        aliases.add('local_$id');
+        aliases.add('legacy_$id');
+      }
+    }
+    return aliases;
   }
 
   /// Deletes tenant rows whose [property_ref] matches (same hub id as properties table).

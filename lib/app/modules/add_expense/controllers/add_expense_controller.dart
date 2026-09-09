@@ -489,7 +489,7 @@ class AddExpenseController extends BaseController {
               );
             }
             showSuccessMessage('Expense saved and synced.');
-            _maybePromptRestock(propertyRef: _propertyRefForExpense());
+            await _maybePromptRestock(propertyRef: _propertyRefForExpense());
             Get.back(result: true);
             return true;
           }
@@ -511,7 +511,7 @@ class AddExpenseController extends BaseController {
         showSuccessMessage(
           'Expense saved. Will sync when internet is available.',
         );
-        _maybePromptRestock(propertyRef: _propertyRefForExpense());
+        await _maybePromptRestock(propertyRef: _propertyRefForExpense());
         Get.back(result: true);
         return true;
       });
@@ -603,12 +603,12 @@ class AddExpenseController extends BaseController {
     return ref.isNotEmpty ? ref : 'local_${rec.id}';
   }
 
-  void _maybePromptRestock({required String propertyRef}) {
+  Future<void> _maybePromptRestock({required String propertyRef}) async {
     if (!isRestockCategory) return;
     if (propertyRef.isEmpty) return;
 
     final isSw = Get.locale?.languageCode == 'sw';
-    Get.dialog(
+    await Get.dialog(
       AlertDialog(
         title: Text(
           isSw ? 'Ongeza hisa tena?' : 'Record a restock?',

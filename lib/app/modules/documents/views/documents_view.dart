@@ -98,8 +98,10 @@ class DocumentsView extends BaseView<DocumentsController> {
                       );
                     },
                   ),
-                  const SizedBox(height: 24),
-                  _buildUploadButton(context),
+                  if (!controller.recentOnly) ...[
+                    const SizedBox(height: 24),
+                    _buildUploadButton(context),
+                  ],
                   SizedBox(height: 80 + MediaQuery.of(context).padding.bottom),
                 ],
               ),
@@ -255,6 +257,21 @@ class _DocumentCard extends StatelessWidget {
   });
 
   Widget get _fileTypeIcon {
+    if (item.isDirectory) {
+      return Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: AppColors.colorPrimary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppValues.radius_6),
+        ),
+        child: const Icon(
+          Icons.folder_outlined,
+          color: AppColors.colorPrimary,
+          size: 24,
+        ),
+      );
+    }
     switch (item.fileType) {
       case DocumentFileType.pdf:
         return Container(
@@ -349,7 +366,7 @@ class _DocumentCard extends StatelessWidget {
                         color: c.secondary,
                       ),
                     ),
-                    if (item.synced) ...[
+                    if (item.synced && !item.isDirectory) ...[
                       const SizedBox(width: 8),
                       Icon(
                         Icons.check_circle,

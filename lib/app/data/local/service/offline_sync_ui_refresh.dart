@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../core/utils/getx_instance_probe.dart';
 import '../../../modules/all_bookings/controllers/all_bookings_controller.dart';
+import '../../../modules/all_tenants/controllers/all_tenants_controller.dart';
 import '../../../modules/booking_details/controllers/booking_details_controller.dart';
 import '../../../modules/dashboard/controllers/dashboard_controller.dart';
 import '../../../modules/home/controllers/home_controller.dart';
@@ -54,6 +55,9 @@ Future<void> _refreshAfterSync() async {
     if (GetxInstanceProbe.isAlive<
         RentTenantResidencyPaymentTrackerController>()) {
       await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+    }
+    if (GetxInstanceProbe.isAlive<AllTenantsController>()) {
+      await AllTenantsController.refreshIfRegistered();
     }
     if (GetxInstanceProbe.isAlive<BookingDetailsController>()) {
       await BookingDetailsController.refreshIfRegistered();

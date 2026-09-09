@@ -135,6 +135,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                   colors: c,
                   value: controller.gender.value,
                   options: AddTenantFormController.genderOptions,
+                  hintText: _isSw ? 'Chagua jinsia' : 'Select gender',
                   onChanged: controller.setGender,
                 ),
               ),
@@ -211,8 +212,12 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                       Expanded(
                         child: _whiteDropdown<String>(
                           colors: c,
-                          value: controller.rentFrequency.value,
+                          value: controller.rentFrequencyOptions
+                                  .contains(controller.rentFrequency.value)
+                              ? controller.rentFrequency.value
+                              : null,
                           options: controller.rentFrequencyOptions,
+                          hintText: _isSw ? 'Chagua chaguo' : 'Select an option',
                           onChanged: controller.setRentFrequency,
                           compact: true,
                         ),
@@ -304,34 +309,59 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                 () => Material(
                   color: c.inputFill,
                   borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: Checkbox(
-                            value: controller.isWhatsapp.value,
-                            activeColor: AppColors.colorPrimary,
-                            checkColor: Colors.white,
-                            side: BorderSide(color: c.border),
-                            onChanged: controller.setWhatsapp,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _isSw ? 'Hii ni namba yangu ya WhatsApp' : 'This is my WhatsApp number',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: c.secondary,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () =>
+                        controller.setWhatsapp(!controller.isWhatsapp.value),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: controller.isWhatsapp.value,
+                              // Unchecked border must contrast with [inputFill]
+                              // (dark tokens.border == elevatedSurface otherwise).
+                              side: BorderSide(
+                                color: c.isDark
+                                    ? Colors.white70
+                                    : c.headline.withValues(alpha: 0.55),
+                                width: 1.5,
+                              ),
+                              fillColor: WidgetStateProperty.resolveWith(
+                                (states) {
+                                  if (states.contains(WidgetState.selected)) {
+                                    return AppColors.colorPrimary;
+                                  }
+                                  return Colors.transparent;
+                                },
+                              ),
+                              checkColor: Colors.white,
+                              onChanged: controller.setWhatsapp,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _isSw
+                                  ? 'Hii ni namba yangu ya WhatsApp'
+                                  : 'This is my WhatsApp number',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: c.headline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -532,17 +562,23 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
   }) {
     String label(T e) => labelForOption != null ? labelForOption(e) : '$e';
 
+    final T? selected = value != null && options.contains(value) ? value : null;
+    final placeholder = hintText ?? (_isSw ? 'Chagua chaguo' : 'Select an option');
     return DropdownButtonFormField<T>(
-      initialValue: value != null && options.contains(value) ? value : null,
+      key: ValueKey('dropdown_${selected}_$placeholder'),
+      initialValue: selected,
       isExpanded: true,
-      hint: hintText != null
-          ? Text(hintText, style: TextStyle(color: colors.hint, fontSize: 15))
-          : null,
+      hint: Text(
+        placeholder,
+        style: TextStyle(color: colors.hint, fontSize: 15),
+      ),
       icon: Icon(Icons.expand_more_rounded, color: colors.secondary),
       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: colors.headline),
       decoration: InputDecoration(
         filled: true,
         fillColor: colors.inputFill,
+        hintText: selected == null ? placeholder : null,
+        hintStyle: TextStyle(color: colors.hint, fontSize: 15),
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 12 : 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

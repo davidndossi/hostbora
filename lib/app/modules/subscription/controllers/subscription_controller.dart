@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/subscription_status.dart';
 import '../../../data/service/subscription_service.dart';
 
@@ -15,6 +16,36 @@ class SubscriptionController extends BaseController {
   final activatingTrial    = false.obs;
   final startingCheckout   = false.obs;
   final selectedPlan       = 'pro'.obs;
+  final blockedForManager  = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _guardManagers();
+  }
+
+  Future<void> _guardManagers() async {
+    try {
+      final prefs = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
+      final isManager = await prefs.getBool(
+        PreferenceManager.keyIsPortfolioManager,
+        defaultValue: false,
+      );
+      if (isManager) {
+        blockedForManager.value = true;
+        showErrorMessage(
+          Get.locale?.languageCode == 'sw'
+              ? 'Wasimamizi hawawezi kufikia bili au mipango.'
+              : 'Managers cannot access billing or plans.',
+        );
+        Future.microtask(() {
+          if (Get.key.currentState?.canPop() == true) Get.back();
+        });
+      }
+    } catch (_) {}
+  }
 
   /// Activate the 30-day free trial (first-time users only).
   Future<void> requestTrial() async {
@@ -36,25 +67,67 @@ class SubscriptionController extends BaseController {
     startingCheckout.value = true;
     try {
       if (_subscriptionService.usesAppleIap) {
-        final ok = await _subscriptionService.startApplePurchase(plan);
-        if (ok) {
-          showSuccessMessage('Subscription activated. Thank you!');
+        final result = await _subscriptionService.startApplePurchase(plan);
+        if (result.success) {
+          showSuccessMessage(
+            Get.locale?.languageCode == 'sw'
+                ? 'Usajili umewezeshwa. Asante!'
+                : 'Subscription activated. Thank you!',
+          );
+        } else if (result.canceled) {
+          showErrorMessage(
+            Get.locale?.languageCode == 'sw'
+                ? 'Ununuzi umeghairiwa.'
+                : 'Purchase canceled.',
+          );
         } else {
-          showErrorMessage('Purchase was not completed. Please try again.');
+          final detail = (result.message ?? '').trim();
+          showErrorMessage(
+            detail.isNotEmpty
+                ? detail
+                : (Get.locale?.languageCode == 'sw'
+                    ? 'Ununuzi haukukamilika. Jaribu tena.'
+                    : 'Purchase was not completed. Please try again.'),
+          );
         }
         return;
       }
 
-      final checkout = await _subscriptionService.startCheckout(plan);
-      if (checkout == null) {
-        showErrorMessage('Could not start payment. Please try again.');
-      } else {
-        showSuccessMessage(
-          'Payment page opened. Complete payment in the browser, then return here.',
+      final result = await _subscriptionService.startCheckout(plan);
+      if (!result.opened) {
+        final detail = (result.message ?? '').trim();
+        showErrorMessage(
+          detail.isNotEmpty
+              ? detail
+              : (Get.locale?.languageCode == 'sw'
+                  ? 'Imeshindikana kuanza malipo. Jaribu tena.'
+                  : 'Could not start payment. Please try again.'),
         );
-        // Poll server after a short delay so the UI updates once the webhook fires.
-        await Future.delayed(const Duration(seconds: 5));
-        await _subscriptionService.refresh();
+        return;
+      }
+
+      showSuccessMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Ukurasa wa malipo (Snippe) umefunguliwa. Kamilisha malipo kisha rudi kwenye programu.'
+            : 'Snippe payment page opened. Complete payment, then return to the app.',
+      );
+
+      // Webhook activation can take a few seconds after mobile-money success.
+      final activated = await _subscriptionService.waitForPlanActivation(
+        plan: plan,
+      );
+      if (activated) {
+        showSuccessMessage(
+          Get.locale?.languageCode == 'sw'
+              ? 'Mpango umewashwa. Asante!'
+              : 'Plan activated. Thank you!',
+        );
+      } else {
+        showErrorMessage(
+          Get.locale?.languageCode == 'sw'
+              ? 'Malipo yanaweza bado kuchakatwa. Rudi hapa na ubonyeze Subscribe tena au onyesha upya baada ya dakika 1.'
+              : 'Payment may still be processing. Return here and tap Subscribe again, or pull to refresh in about a minute.',
+        );
       }
     } finally {
       startingCheckout.value = false;

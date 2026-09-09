@@ -93,7 +93,16 @@ class OtpView extends BaseView<OtpController> {
                               : Colors.black54,
                         ),
                         animationDuration: const Duration(milliseconds: 300),
-                        textStyle: const TextStyle(fontSize: 20, height: 1.6),
+                        textStyle: TextStyle(
+                          fontSize: 20,
+                          height: 1.6,
+                          color: isDark
+                              ? theme.colorScheme.onSurface
+                              : Colors.black,
+                        ),
+                        cursorColor: isDark
+                            ? theme.colorScheme.onSurface
+                            : Colors.black,
                         backgroundColor: Colors.transparent,
                         enableActiveFill: false,
                         errorAnimationController: controller.errorController,

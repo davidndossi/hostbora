@@ -18,6 +18,7 @@ class EditTaskController extends BaseController {
   final dueDate = Rxn<DateTime>();
   final saving = false.obs;
   String taskId = '';
+  Map<String, dynamic> _originalArgs = const {};
 
   String? get dueDateLabel {
     final d = dueDate.value;
@@ -30,6 +31,7 @@ class EditTaskController extends BaseController {
     super.onInit();
     final args = Get.arguments;
     if (args is Map) {
+      _originalArgs = Map<String, dynamic>.from(args);
       taskId = args['id']?.toString() ?? '';
       titleController.text = args['title']?.toString() ?? '';
       descriptionController.text = args['description']?.toString() ?? '';
@@ -48,6 +50,9 @@ class EditTaskController extends BaseController {
 
   Future<void> _refreshFromServer() async {
     if (taskId.isEmpty) return;
+    final typedTitle = titleController.text.trim();
+    final originalTitle = (_originalArgs['title'] ?? '').toString().trim();
+    if (typedTitle.isNotEmpty && typedTitle != originalTitle) return;
     try {
       final res = await _repository.getTask(taskId);
       if (res.responseCode != '0' || res.data == null) return;
@@ -111,7 +116,7 @@ class EditTaskController extends BaseController {
       if (res.responseCode == '200' ||
           res.responseCode == '201' ||
           res.responseCode == '0') {
-        Get.back(result: true);
+        Get.back(result: _editedArguments());
       } else {
         showErrorMessage(res.message ?? 'Could not update task');
       }
@@ -120,6 +125,20 @@ class EditTaskController extends BaseController {
     } finally {
       saving.value = false;
     }
+  }
+
+  Map<String, dynamic> _editedArguments() {
+    final due = dueDate.value;
+    final map = Map<String, dynamic>.from(_originalArgs);
+    map['id'] = taskId;
+    map['title'] = titleController.text.trim();
+    map['description'] = descriptionController.text.trim();
+    if (due != null) {
+      map['dueDateMs'] = due.millisecondsSinceEpoch;
+    } else {
+      map.remove('dueDateMs');
+    }
+    return map;
   }
 
   @override

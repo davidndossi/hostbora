@@ -96,5 +96,22 @@ class PropertyMembersLocalDataSource {
     final db = await database;
     return db.delete(_table, where: 'property_ref = ?', whereArgs: [r]);
   }
+
+  /// Removes all memberships for [userId] with the given [role] (e.g. after
+  /// portfolio manager access is revoked).
+  Future<int> deleteAllForUserWithRole({
+    required String userId,
+    required String role,
+  }) async {
+    final uid = userId.trim();
+    final r = role.trim();
+    if (uid.isEmpty || r.isEmpty) return 0;
+    final db = await database;
+    return db.delete(
+      _table,
+      where: 'user_id = ? AND role = ?',
+      whereArgs: [uid, r],
+    );
+  }
 }
 

@@ -177,18 +177,43 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
     });
   }
 
+  /// Portrait A4-ish aspect (height / width).
+  static const _documentAspect = 11 / 8.5;
+
+  /// Frame that fits inside the camera preview between chrome (app bar / shutter).
+  Rect _documentFrameRect(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final size = media.size;
+    final padding = media.padding;
+    const horizontalInset = 32.0;
+    final topChrome = padding.top + kToolbarHeight + 8;
+    final bottomChrome = padding.bottom + 140; // shutter row
+    const pillReserve = 52.0; // instruction pill under the frame
+
+    final maxWidth = (size.width - horizontalInset * 2).clamp(0.0, size.width);
+    final maxHeight = (size.height - topChrome - bottomChrome - pillReserve)
+        .clamp(120.0, size.height);
+
+    var frameWidth = maxWidth;
+    var frameHeight = frameWidth * _documentAspect;
+    if (frameHeight > maxHeight) {
+      frameHeight = maxHeight;
+      frameWidth = frameHeight / _documentAspect;
+    }
+
+    final left = (size.width - frameWidth) / 2;
+    final top = topChrome + (maxHeight - frameHeight) / 2;
+    return Rect.fromLTWH(left, top, frameWidth, frameHeight);
+  }
+
   Widget _buildDocumentFrameOverlay(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    const inset = 32.0;
-    final frameWidth = size.width - inset * 2;
-    final frameHeight = frameWidth * (11 / 8.5); // approximate A4 aspect
-    final top = (size.height - frameHeight) * 0.35;
+    final frame = _documentFrameRect(context);
 
     return Positioned(
-      left: inset,
-      top: top,
-      width: frameWidth,
-      height: frameHeight,
+      left: frame.left,
+      top: frame.top,
+      width: frame.width,
+      height: frame.height,
       child: CustomPaint(
         painter: _DocumentFramePainter(),
         child: const SizedBox.expand(),
@@ -201,16 +226,12 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
     required Color scannerPillBg,
     required Color textColor,
   }) {
-    final size = MediaQuery.of(context).size;
-    const inset = 32.0;
-    final frameWidth = size.width - inset * 2;
-    final frameHeight = frameWidth * (11 / 8.5);
-    final top = (size.height - frameHeight) * 0.35;
+    final frame = _documentFrameRect(context);
 
     return Positioned(
       left: 24,
       right: 24,
-      top: top + frameHeight + 16,
+      top: frame.bottom + 16,
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

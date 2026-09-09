@@ -532,8 +532,11 @@ class FinancialOverviewController extends BaseController {
 
   void openManagePayments() => Get.toNamed(Routes.RENT_MANAGE_PAYMENTS);
 
-  void openTenancyInsights() =>
-      Get.toNamed(Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER);
+  void openTenancyInsights() => Get.toNamed(
+        Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,
+        parameters: const {'ws': 'rent'},
+        arguments: const {'ws': 'rent'},
+      );
 
   Future<void> openHostDashboard() async {
     final hostName = (await _preferenceManager.getString(

@@ -10,6 +10,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/widget/property_listing_image.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/managing_for_banner.dart';
 import '../controllers/my_properties_controller.dart';
 
 class MyPropertiesView extends BaseView<MyPropertiesController> {
@@ -37,7 +38,8 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
     final theme = Theme.of(context);
     return Column(
       children: [
-        _buildFilterTabs(context),
+        const ManagingForBanner(),
+        // _buildFilterTabs(context),
         _buildWorkspaceModeFilter(context),
         Expanded(
           child: Obx(() {
@@ -58,6 +60,9 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
                   listing: p,
                   onFavorite: () => controller.toggleFavorite(p),
                   onManage: () => controller.manageProperty(p),
+                  onSetStatus: (status) =>
+                      controller.setListingStatus(p, status),
+                  onDelete: () => controller.deleteProperty(p),
                   t: _t,
                 );
               },
@@ -125,57 +130,63 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
     });
   }
 
-  Widget _buildFilterTabs(BuildContext context) {
-    final theme = Theme.of(context);
-    return Obx(
-      () => SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-        child: Row(
-          children: List.generate(
-            controller.filterLabels.length,
-            (index) => Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: Material(
-                color: index == controller.selectedFilterIndex.value
-                    ? AppColors.colorPrimary
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-                child: InkWell(
-                  onTap: () => controller.selectFilter(index),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: index == controller.selectedFilterIndex.value
-                        ? null
-                        : BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: theme.colorScheme.outlineVariant,
-                            ),
-                          ),
-                    child: Text(
-                      controller.filterLabels[index],
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: index == controller.selectedFilterIndex.value
-                            ? Colors.white
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildFilterTabs(BuildContext context) {
+  //   final theme = Theme.of(context);
+  //   final labels = <String>[
+  //     _t(context, en: 'All Listings', sw: 'Zote'),
+  //     _t(context, en: 'Active', sw: 'Hai'),
+  //     _t(context, en: 'Drafts', sw: 'Rasimu'),
+  //     _t(context, en: 'Archive', sw: 'Hifadhi'),
+  //   ];
+  //   return Obx(
+  //     () => SingleChildScrollView(
+  //       scrollDirection: Axis.horizontal,
+  //       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+  //       child: Row(
+  //         children: List.generate(
+  //           labels.length,
+  //           (index) => Padding(
+  //             padding: const EdgeInsets.only(right: 10),
+  //             child: Material(
+  //               color: index == controller.selectedFilterIndex.value
+  //                   ? AppColors.colorPrimary
+  //                   : Colors.transparent,
+  //               borderRadius: BorderRadius.circular(20),
+  //               child: InkWell(
+  //                 onTap: () => controller.selectFilter(index),
+  //                 borderRadius: BorderRadius.circular(20),
+  //                 child: Container(
+  //                   padding: const EdgeInsets.symmetric(
+  //                     horizontal: 20,
+  //                     vertical: 10,
+  //                   ),
+  //                   decoration: index == controller.selectedFilterIndex.value
+  //                       ? null
+  //                       : BoxDecoration(
+  //                           borderRadius: BorderRadius.circular(20),
+  //                           border: Border.all(
+  //                             color: theme.colorScheme.outlineVariant,
+  //                           ),
+  //                         ),
+  //                   child: Text(
+  //                     labels[index],
+  //                     style: TextStyle(
+  //                       fontSize: 14,
+  //                       fontWeight: FontWeight.w600,
+  //                       color: index == controller.selectedFilterIndex.value
+  //                           ? Colors.white
+  //                           : theme.colorScheme.onSurfaceVariant,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _emptyState(ThemeData theme, BuildContext context) {
     return Center(
@@ -193,11 +204,20 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
             ),
             const SizedBox(height: 16),
             Text(
-              _t(context, en: 'No properties', sw: 'Hakuna mjengo'),
+              _emptyTitle(context),
               style: TextStyle(
                 fontSize: 17,
                 color: Colors.grey,
                 fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _emptySubtitle(context),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
               ),
             ),
             const SizedBox(height: 8),
@@ -206,12 +226,50 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
       ),
     );
   }
+
+  String _emptyTitle(BuildContext context) {
+    switch (controller.selectedFilterIndex.value) {
+      case 2:
+        return _t(context, en: 'No draft properties', sw: 'Hakuna rasimu');
+      case 3:
+        return _t(context, en: 'No archived properties', sw: 'Hakuna hifadhi');
+      case 1:
+        return _t(context, en: 'No active properties', sw: 'Hakuna mali hai');
+      default:
+        return _t(context, en: 'No properties', sw: 'Hakuna mjengo');
+    }
+  }
+
+  String _emptySubtitle(BuildContext context) {
+    switch (controller.selectedFilterIndex.value) {
+      case 2:
+        return _t(
+          context,
+          en: 'Use ⋮ on a property card to move it to Drafts.',
+          sw: 'Tumia ⋮ kwenye kadi ya mali kuihamisha kwa Rasimu.',
+        );
+      case 3:
+        return _t(
+          context,
+          en: 'Use ⋮ on a property card to move it to Archive.',
+          sw: 'Tumia ⋮ kwenye kadi ya mali kuihamisha kwa Hifadhi.',
+        );
+      default:
+        return _t(
+          context,
+          en: 'Add a property to get started.',
+          sw: 'Ongeza mali ili kuanza.',
+        );
+    }
+  }
 }
 
 class _PropertyCard extends StatelessWidget {
   final PropertyListing listing;
   final VoidCallback onFavorite;
   final VoidCallback onManage;
+  final ValueChanged<String> onSetStatus;
+  final VoidCallback onDelete;
   final String Function(
     BuildContext context, {
     required String en,
@@ -223,6 +281,8 @@ class _PropertyCard extends StatelessWidget {
     required this.listing,
     required this.onFavorite,
     required this.onManage,
+    required this.onSetStatus,
+    required this.onDelete,
     required this.t,
   });
 
@@ -260,7 +320,16 @@ class _PropertyCard extends StatelessWidget {
               Positioned(
                 top: 12,
                 right: 12,
-                child: _ModeBadge(mode: listing.mode),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (listing.status != 'ACTIVE') ...[
+                      _StatusBadge(status: listing.status, t: t),
+                      const SizedBox(width: 8),
+                    ],
+                    _ModeBadge(mode: listing.mode),
+                  ],
+                ),
               ),
             ],
           ),
@@ -269,13 +338,70 @@ class _PropertyCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  listing.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    // color: Colors.white,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        listing.title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      tooltip: t(context, en: 'More', sw: 'Zaidi'),
+                      onSelected: (value) {
+                        if (value == 'DELETE') {
+                          onDelete();
+                          return;
+                        }
+                        onSetStatus(value);
+                      },
+                      itemBuilder: (context) => [
+                        if (listing.status != 'ACTIVE')
+                          PopupMenuItem(
+                            value: 'ACTIVE',
+                            child: Text(
+                              t(context, en: 'Mark Active', sw: 'Weka Hai'),
+                            ),
+                          ),
+                        if (listing.status != 'DRAFT')
+                          PopupMenuItem(
+                            value: 'DRAFT',
+                            child: Text(
+                              t(
+                                context,
+                                en: 'Move to Drafts',
+                                sw: 'Hamisha kwa Rasimu',
+                              ),
+                            ),
+                          ),
+                        if (listing.status != 'ARCHIVED')
+                          PopupMenuItem(
+                            value: 'ARCHIVED',
+                            child: Text(
+                              t(
+                                context,
+                                en: 'Move to Archive',
+                                sw: 'Hamisha kwa Hifadhi',
+                              ),
+                            ),
+                          ),
+                        PopupMenuItem(
+                          value: 'DELETE',
+                          child: Text(
+                            t(context, en: 'Delete', sw: 'Futa'),
+                            style: const TextStyle(color: Color(0xFFB91C1C)),
+                          ),
+                        ),
+                      ],
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -316,7 +442,8 @@ class _PropertyCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      Icons.person_outline_rounded, size: 18,
+                      Icons.person_outline_rounded,
+                      size: 18,
                       color: c.isDark
                           ? theme.colorScheme.primary
                           : AppColors.colorPrimaryLight,
@@ -337,7 +464,7 @@ class _PropertyCard extends StatelessWidget {
                         onTap: onManage,
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 10,
                           ),
@@ -346,14 +473,14 @@ class _PropertyCard extends StatelessWidget {
                             children: [
                               Text(
                                 t(context, en: 'Manage', sw: 'Simamia'),
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
                               ),
-                              SizedBox(width: 4),
-                              Icon(
+                              const SizedBox(width: 4),
+                              const Icon(
                                 Icons.arrow_forward_ios,
                                 size: 12,
                                 color: Colors.white,
@@ -369,6 +496,43 @@ class _PropertyCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String status;
+  final String Function(
+    BuildContext context, {
+    required String en,
+    required String sw,
+  })
+  t;
+
+  const _StatusBadge({required this.status, required this.t});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDraft = status == 'DRAFT';
+    final label = isDraft
+        ? t(context, en: 'Draft', sw: 'Rasimu')
+        : t(context, en: 'Archived', sw: 'Hifadhi');
+    final color = isDraft ? const Color(0xFFF59E0B) : const Color(0xFF64748B);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.9)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }

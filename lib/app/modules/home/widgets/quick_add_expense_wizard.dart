@@ -151,14 +151,22 @@ class _QuickAddExpenseWizardBodyState
     setState(() => _submitting = true);
     try {
       final ok = await controller.saveExpenseOffline();
-      // On success the controller closes this sheet via Get.back.
-      if (!mounted || ok) return;
+      if (!mounted) return;
+      if (ok) {
+        Get.snackbar(
+          'Expense saved',
+          'Your expense was recorded.',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 3),
+        );
+        return;
+      }
       final err = controller.errorMessage.trim();
       Get.snackbar(
         'Could not save',
         err.isNotEmpty
             ? err
-            : 'Something went wrong while saving the expense. Please try again.',
+            : 'Check the amount, date, and property, then try again.',
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 4),
       );

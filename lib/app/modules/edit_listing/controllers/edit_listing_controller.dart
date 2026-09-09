@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../core/base/feedback_extensions.dart';
+import '../../../core/utils/property_name_rules.dart';
 import '../../../data/local/db/property_listing_units_sync.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
@@ -193,6 +194,11 @@ class EditListingController extends BaseController {
     if (n == null || n <= 0) return 'Enter a valid amount';
     return null;
   }
+
+  String? validatePropertyName(String? value) => PropertyNameRules.validate(
+        value,
+        isSw: Get.locale?.languageCode == 'sw',
+      );
 
   void addApartmentUnit() {
     final name = draftUnitNameController.text.trim();

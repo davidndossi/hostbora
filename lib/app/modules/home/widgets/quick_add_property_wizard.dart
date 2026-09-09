@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/theme/form_surface_colors.dart';
+import '../../../core/utils/property_name_rules.dart';
 import '../../add_listing/bindings/add_listing_binding.dart';
 import '../../add_listing/controllers/add_listing_controller.dart';
 import '../../add_listing/views/add_units_section.dart';
@@ -55,10 +56,10 @@ class _QuickAddPropertyWizardBodyState
         required: true,
         content: (context) => _nameStep(context),
         validate: () {
-          if (controller.propertyNameController.text.trim().isEmpty) {
-            return 'Please enter a property name';
-          }
-          return null;
+          return PropertyNameRules.validate(
+            controller.propertyNameController.text,
+            isSw: Get.locale?.languageCode == 'sw',
+          );
         },
       ),
       _WizardStep(
@@ -188,8 +189,10 @@ class _QuickAddPropertyWizardBodyState
           controller: controller.propertyNameController,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
+          maxLength: PropertyNameRules.maxLength,
           style: TextStyle(fontSize: 16, color: c.headline),
-          decoration: _decoration(context, hint: 'e.g., AB Apartment'),
+          decoration: _decoration(context, hint: 'e.g., AB Apartment')
+              .copyWith(counterText: ''),
         ),
       ],
     );

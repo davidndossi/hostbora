@@ -745,33 +745,43 @@ class ReportsView extends BaseView<ReportsController> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: controller.exportPdf,
-                  child: Text(appLocalization.reportsExportPdf),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: controller.exportCsv,
-                  child: Text(appLocalization.reportsExportCsv),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.colorPrimary,
+          child: Obx(() {
+            final busy = controller.exporting.value;
+            return Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: busy ? null : () => controller.exportPdf(context),
+                    child: Text(appLocalization.reportsExportPdf),
                   ),
-                  onPressed: controller.exportExcel,
-                  child: Text(appLocalization.reportsExportExcel),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: busy ? null : () => controller.exportCsv(context),
+                    child: Text(appLocalization.reportsExportCsv),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.colorPrimary,
+                    ),
+                    onPressed:
+                        busy ? null : () => controller.exportExcel(context),
+                    child: busy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(appLocalization.reportsExportExcel),
+                  ),
+                ),
+              ],
+            );
+          }),
         ),
       ),
     );

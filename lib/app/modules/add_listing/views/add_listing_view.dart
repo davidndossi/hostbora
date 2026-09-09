@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
+import '../../../core/utils/property_name_rules.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
@@ -100,6 +101,7 @@ class AddListingView extends BaseView<AddListingController> {
                     TextFormField(
                       controller: controller.propertyNameController,
                       textCapitalization: TextCapitalization.words,
+                      maxLength: PropertyNameRules.maxLength,
                       decoration: _inputDecoration(
                         context,
                         hint: _t(
@@ -107,11 +109,9 @@ class AddListingView extends BaseView<AddListingController> {
                           en: 'e.g., AB Apartment',
                           sw: 'mf., AB Apartment',
                         ),
-                      ),
-                      validator: (v) => controller.validateRequired(
-                        v,
-                        _t(context, en: 'Property name', sw: 'Jina la mali'),
-                      ),
+                      ).copyWith(counterText: ''),
+                      validator: controller.validatePropertyName,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                     ),
                     const SizedBox(height: 20),
                     _buildLabel(

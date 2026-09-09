@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import '../../../core/locale/app_locale_controller.dart';
 import '../../../core/service/app_update_service.dart';
 import '../../../core/widget/tab_coach_mark.dart';
 import '../../../data/local/service/session_service.dart';
@@ -38,6 +39,11 @@ class MainController extends BaseController with WidgetsBindingObserver {
   void onInit() async {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
+    if (Get.isRegistered<AppLocaleController>()) {
+      final localeCtrl = Get.find<AppLocaleController>();
+      currentLocale(localeCtrl.code.value);
+      ever<String>(localeCtrl.code, (c) => currentLocale(c));
+    }
     final args = Get.arguments as Map<String, dynamic>?;
     if (args?['initialMenu'] == 'home') {
       _applyMenuSelection(MenuCode.HOME);
@@ -178,16 +184,14 @@ class MainController extends BaseController with WidgetsBindingObserver {
   }
 
   void setDefaultLocale(final bool isUpdate) {
-    // _storageService.write('language', currentLocale.value);
-
-    // String locale = currentLocale.value == 'sw' ? 'sw_TZ' : 'en_US';
-    // initializeDateFormatting(locale, null);
-    // Intl.defaultLocale = locale;
-
-    if (isUpdate) {
-      Locale locale = currentLocale.value == 'sw'
-          ? const Locale('sw', 'TZ')
-          : const Locale('en', 'US');
+    if (!isUpdate) return;
+    final next = currentLocale.value == 'sw' ? 'en' : 'sw';
+    currentLocale.value = next;
+    if (Get.isRegistered<AppLocaleController>()) {
+      unawaited(Get.find<AppLocaleController>().setLanguage(next));
+    } else {
+      final locale =
+          next == 'sw' ? const Locale('sw', 'TZ') : const Locale('en', 'US');
       Get.updateLocale(locale);
     }
   }

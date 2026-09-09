@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -10,6 +11,7 @@ import '../../../data/local/vault_documents_store.dart';
 import '../../../data/local/vault_recent_access_store.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../documents/controllers/documents_controller.dart';
 import '../../documents/vault_route_args.dart';
 
 class RecentDocumentItem {
@@ -54,6 +56,7 @@ class PropertyVaultController extends BaseController {
   final VaultRecentAccessStore _recentStore;
 
   final searchQuery = ''.obs;
+  final searchController = TextEditingController();
   final recentlyAccessed = <RecentDocumentItem>[].obs;
   final directories = <VaultDirectoryItem>[].obs;
   final loadError = RxnString();
@@ -183,6 +186,12 @@ class PropertyVaultController extends BaseController {
     _applySearchFilter();
   }
 
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
+    _applySearchFilter();
+  }
+
   void _applySearchFilter() {
     final q = searchQuery.value.toLowerCase();
     if (q.isEmpty) {
@@ -195,7 +204,19 @@ class PropertyVaultController extends BaseController {
   }
 
   void viewAllRecent() {
-    Get.toNamed(Routes.DOCUMENTS);
+    // Ensure a fresh controller picks up recent-only args (not a prior folder).
+    if (Get.isRegistered<DocumentsController>()) {
+      Get.delete<DocumentsController>(force: true);
+    }
+    Get.toNamed(
+      Routes.DOCUMENTS,
+      arguments: VaultRouteArgs(
+        recentOnly: true,
+        directoryName: Get.locale?.languageCode == 'sw'
+            ? 'Zilizofikiwa hivi karibuni'
+            : 'Recently accessed',
+      ).toMap(),
+    );
   }
 
   Future<void> openDirectory(VaultDirectoryItem dir) async {
@@ -251,4 +272,10 @@ class PropertyVaultController extends BaseController {
   }
 
   Future<void> retry() => loadVault();
+
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
+  }
 }

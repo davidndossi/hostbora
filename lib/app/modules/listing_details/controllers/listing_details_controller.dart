@@ -251,7 +251,7 @@ class ListingDetailsController extends BaseController
   static Future<void> refreshIfRegistered() async {
     await RentListingActivityLogController.refreshIfRegistered();
     if (!Get.isRegistered<ListingDetailsController>()) return;
-    await Get.find<ListingDetailsController>().refreshRecentActivityAndRevenue();
+    await Get.find<ListingDetailsController>().loadListingDetail();
   }
 
   /// Refreshes recent activity and monthly revenue without reloading units/staff.
@@ -727,13 +727,18 @@ class ListingDetailsController extends BaseController
   }
 
   Future<int> _extractTenantCountFromLocal() async {
+    if (_propertyId.isNotEmpty) {
+      final byRef = await _tenantLocal.countByPropertyRef(_propertyId);
+      if (byRef > 0) return byRef;
+    }
+
     final tenants = await _tenantLocal.getAllNewestFirst();
     if (tenants.isEmpty) return 0;
 
     bool matchesListing(TenantRecord t) {
       final ref = t.propertyRef.trim();
-      if (_propertyId.isNotEmpty && ref.isNotEmpty) {
-        if (ref == _propertyId) return true;
+      if (_propertyId.isNotEmpty && ref.isNotEmpty && ref == _propertyId) {
+        return true;
       }
       final labelLc = t.propertyLabel.trim().toLowerCase();
       if (_propertyName.isNotEmpty &&
@@ -1157,12 +1162,26 @@ class ListingDetailsController extends BaseController
 
       bool tenantMatchesListing(TenantRecord t) {
         final ref = t.propertyRef.trim();
-        if (ref.isNotEmpty && ref == listingRef) return true;
+        if (ref.isNotEmpty) {
+          if (ref == listingRef) return true;
+          if (ref == 'local_${target?.id}' || ref == 'legacy_${target?.id}') {
+            return true;
+          }
+          final hub = target?.propertyRef.trim();
+          if (hub != null && hub.isNotEmpty && ref == hub) return true;
+        }
         final label = t.propertyLabel.trim().toLowerCase();
         if (listingName.isNotEmpty && label == listingName.toLowerCase()) {
           return true;
         }
         if (listingLoc.isNotEmpty && label == listingLoc.toLowerCase()) {
+          return true;
+        }
+        if (listingName.isNotEmpty &&
+            listingLoc.isNotEmpty &&
+            (label == '${listingName.toLowerCase()} · ${listingLoc.toLowerCase()}' ||
+                label ==
+                    '${listingLoc.toLowerCase()} · ${listingName.toLowerCase()}')) {
           return true;
         }
         return false;
@@ -1611,6 +1630,8 @@ class ListingDetailsController extends BaseController
       parameters: {
         'propertyRef': ref,
         'propertyLabel': _propertyLabelForEstimate(),
+        if (_propertyName.isNotEmpty) 'propertyName': _propertyName,
+        if (_propertyLocation.isNotEmpty) 'propertyLocation': _propertyLocation,
       },
     );
     await loadListingDetail();
@@ -2063,16 +2084,18 @@ class ListingDetailsController extends BaseController
       mode.trim().toLowerCase() == 'rent' ? 'rent' : 'bnb';
 
   void onAddTenantForWorkspace(String workspace) {
+    final ws = _workspaceParamForMode(workspace);
     Get.toNamed(
       Routes.ADD_NEW_TENANT,
       parameters: {
         if (_propertyName.isNotEmpty) 'property': _propertyName,
         if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
-        'workspaceType': _workspaceParamForMode(workspace),
+        'workspaceType': ws,
       },
       arguments: {
         if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
         if (_propertyName.isNotEmpty) 'property': _propertyName,
+        'workspaceType': ws,
       },
     )?.then((_) => loadListingDetail());
   }
@@ -2184,13 +2207,20 @@ class ListingDetailsController extends BaseController
         showSuccessMessage(_isSw ? 'Angalia maelezo' : 'View details');
         break;
       case ListingUnitStatus.short:
+        final ws = _workspaceParamForMode(workspace);
         Get.toNamed(
           Routes.ADD_NEW_TENANT,
           parameters: {
             if (_propertyName.isNotEmpty) 'property': _propertyName,
             if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
             'unitName': row.name,
-            'workspaceType': _workspaceParamForMode(workspace),
+            'workspaceType': ws,
+          },
+          arguments: {
+            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+            if (_propertyName.isNotEmpty) 'property': _propertyName,
+            'unitName': row.name,
+            'workspaceType': ws,
           },
         )?.then((_) => loadListingDetail());
         break;

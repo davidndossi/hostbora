@@ -1237,6 +1237,55 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
+  Future<GeneralResponse> getMyAccess() {
+    final endpoint = '${DioProvider.baseUrl}/api/me/access';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getPortfolioManagers() {
+    final endpoint = '${DioProvider.baseUrl}/api/portfolio-managers';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> invitePortfolioManager(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/portfolio-managers';
+    final dioCall = dioClient.post(endpoint, data: body);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> revokePortfolioManager(String managerUserId) {
+    final endpoint =
+        '${DioProvider.baseUrl}/api/portfolio-managers/$managerUserId';
+    final dioCall = dioClient.delete(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<GeneralResponse> submitFeedback(Map<String, dynamic> body) {
     final endpoint = '${DioProvider.baseUrl}/api/feedback';
     final dioCall = dioClient.post(endpoint, data: body);

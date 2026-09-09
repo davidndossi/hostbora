@@ -343,6 +343,24 @@
   "role": "Wajibu",
   "joinUser": "Unga Uanachama",
   "sendInvite": "Tuma Mwaliko",
+  "inviteManager": "Alika meneja",
+  "portfolioManagers": "Wasimamizi wa portfolio",
+  "managingPortfolioBanner": "Unasimamia portfolio ya {hostName}",
+  "@managingPortfolioBanner": {
+    "placeholders": {
+      "hostName": { "type": "String" }
+    }
+  },
+  "managersFullAccessHint": "Wasimamizi wanaweza kuingia na kusimamia mali zako zote.",
+  "noManagersInvited": "Hakuna wasimamizi walioalikwa bado.",
+  "managerInvitePhoneHint": "Watapata ufikiaji kamili wa mali zako baada ya kuingia kwa namba hii.",
+  "managerInvitedCanLogin": "Meneja amealikwa. Anaweza kuingia kwa namba {phone}.",
+  "@managerInvitedCanLogin": {
+    "placeholders": {
+      "phone": { "type": "String" }
+    }
+  },
+  "revokeManagerAccess": "Ondoa",
   "requestJoin": "Omba kujiunga",
   "pendingInvites": "Mialiko Inayosubiri",
   "visibility": "Visibility",
@@ -720,6 +738,7 @@
   "reportsExportExcel": "Excel",
   "reportsInvalidDateRange": "Tarehe ya kuanza lazima iwe kabla au sawa na tarehe ya mwisho.",
   "reportsExportDone": "Hamisho liko tayari kushiriki",
+  "reportsExportFailed": "Imeshindikana kuhamisha ripoti. Jaribu tena.",
   "reportsNoData": "Hakuna data ya kipindi hiki.",
   "homeCheckInGuestsToday": "Wageni wa kuingia leo",
   "homeCheckOutGuestsToday": "Wageni wa kutoka leo",

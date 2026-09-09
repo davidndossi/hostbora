@@ -366,6 +366,24 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_property_members_wor
     CREATE INDEX idx_property_members_workspace_user ON dbo.property_members (workspace_type, user_id);
 GO
 
+-- ── portfolio_managers ────────────────────────────────────────────────────────
+-- Portfolio-level grant: manager may fully manage the host's properties.
+
+IF OBJECT_ID(N'dbo.portfolio_managers', N'U') IS NULL
+CREATE TABLE dbo.portfolio_managers (
+    id               NVARCHAR(36)  NOT NULL PRIMARY KEY,
+    host_user_id     NVARCHAR(36)  NOT NULL,
+    manager_user_id  NVARCHAR(36)  NOT NULL,
+    status           NVARCHAR(50)  NOT NULL DEFAULT N'active',
+    created_at_ms    BIGINT        NOT NULL,
+    CONSTRAINT uq_portfolio_managers_host_manager UNIQUE (host_user_id, manager_user_id)
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_portfolio_managers_manager' AND object_id = OBJECT_ID(N'dbo.portfolio_managers'))
+    CREATE INDEX idx_portfolio_managers_manager ON dbo.portfolio_managers (manager_user_id, status);
+GO
+
 -- ── offline_sync_queue ────────────────────────────────────────────────────────
 -- dedupe_key is NULL when there is no key; UNIQUE ignores NULLs in SQL Server,
 -- mirroring SQLite's partial index (WHERE dedupe_key != '').

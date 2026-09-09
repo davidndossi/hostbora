@@ -19,6 +19,8 @@ import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
 import '../../listing_details/controllers/listing_details_controller.dart';
+import '../../my_properties/controllers/my_properties_controller.dart';
+import '../../all_tenants/controllers/all_tenants_controller.dart';
 import '../../rent/expected_payment_schedule/controllers/rent_expected_payment_schedule_controller.dart';
 import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
@@ -55,7 +57,7 @@ class AddTenantFormController extends BaseController {
   final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
 
   final gender = 'Female'.obs;
-  final rentFrequency = 'Per Day'.obs;
+  final rentFrequency = 'Per Night'.obs;
   final isWhatsapp = false.obs;
   final saving = false.obs;
 
@@ -70,7 +72,10 @@ class AddTenantFormController extends BaseController {
   final stayTotalPreview = 0.0.obs;
 
   PropertyRecord? _linkedProperty;
+  /// True when the route explicitly asked for rent (`workspaceType=rent`).
   bool _routePrefersRent = false;
+  /// True when `workspaceType` was provided on the route (Rent/BnB tab intent).
+  bool _routeWorkspaceExplicit = false;
 
   static const genderOptions = [
     'Female',
@@ -114,15 +119,15 @@ class AddTenantFormController extends BaseController {
   void onInit() {
     super.onInit();
     selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
-    final ws = Get.parameters['workspaceType']?.trim().toLowerCase();
-    _routePrefersRent = ws == 'rent' ||
-        Get.currentRoute.contains(Routes.ADD_NEW_TENANT);
+    _resolveRouteWorkspacePreference();
 
-    final ref = Get.parameters['propertyRef']?.trim();
+    final ref = Get.parameters['propertyRef']?.trim() ??
+        _argString('propertyRef');
     if (ref != null && ref.isNotEmpty) {
       propertyRef.value = ref;
     }
-    final fromRoute = Get.parameters['property']?.trim();
+    final fromRoute =
+        Get.parameters['property']?.trim() ?? _argString('property');
     if (fromRoute != null && fromRoute.isNotEmpty) {
       propertyContextLabel.value = fromRoute;
     }
@@ -130,12 +135,45 @@ class AddTenantFormController extends BaseController {
       isRentFlow.value = true;
       rentFrequency.value = 'Per Month';
     }
-    final paramUnitId = Get.parameters['unitId']?.trim() ?? '';
-    final paramUnitName = Get.parameters['unitName']?.trim() ?? '';
+    _syncRentFrequencyForFlow();
+    final paramUnitId = Get.parameters['unitId']?.trim() ??
+        _argString('unitId') ??
+        '';
+    final paramUnitName = Get.parameters['unitName']?.trim() ??
+        _argString('unitName') ??
+        '';
     _loadPropertyUnits(
       preferredUnitId: paramUnitId,
       preferredUnitName: paramUnitName,
     );
+  }
+
+  String? _argString(String key) {
+    final args = Get.arguments;
+    if (args is Map) {
+      final v = args[key]?.toString().trim();
+      if (v != null && v.isNotEmpty) return v;
+    }
+    return null;
+  }
+
+  /// Rent vs BnB is decided by the tab that opened this form, not by the
+  /// shared `/add-new-tenant` route name (that path is used for both).
+  void _resolveRouteWorkspacePreference() {
+    final ws = (Get.parameters['workspaceType']?.trim().toLowerCase() ??
+            _argString('workspaceType')?.toLowerCase() ??
+            '')
+        .trim();
+    if (ws == 'rent') {
+      _routePrefersRent = true;
+      _routeWorkspaceExplicit = true;
+    } else if (ws == 'bnb') {
+      _routePrefersRent = false;
+      _routeWorkspaceExplicit = true;
+    } else {
+      _routePrefersRent = false;
+      _routeWorkspaceExplicit = false;
+    }
   }
 
   Future<List<PropertyRecord>> _allVisibleProperties(String userId) async {
@@ -192,7 +230,7 @@ class AddTenantFormController extends BaseController {
     _linkedProperty = selected;
     propertyRef.value = selected.propertyRef.isNotEmpty
         ? selected.propertyRef
-        : 'legacy_${selected.id}';
+        : 'local_${selected.id}';
     final composed = selected.propertyName.trim().isNotEmpty
         ? '${selected.propertyName.trim()} · ${selected.propertyLocation.trim()}'
         : selected.propertyLocation.trim();
@@ -203,15 +241,22 @@ class AddTenantFormController extends BaseController {
     _updateFlowForProperty(selected);
 
     final drafts = _parseUnitDrafts(selected.unitsJson);
-    availableUnitDrafts.assignAll(drafts);
+    final flowDrafts = _unitsForCurrentFlow(drafts, selected);
+    final tenants = await _tenantLocal.getActiveTenants();
+    final visibleDrafts = _excludeAssignedUnits(
+      flowDrafts,
+      property: selected,
+      tenants: tenants,
+    );
+    availableUnitDrafts.assignAll(visibleDrafts);
 
-    if (drafts.isEmpty) {
+    if (visibleDrafts.isEmpty) {
       selectedUnitKey.value = null;
       return;
     }
 
     if (preferredUnitId.isNotEmpty) {
-      for (final u in drafts) {
+      for (final u in visibleDrafts) {
         if (u.unitId == preferredUnitId) {
           selectedUnitKey.value = u.selectionKey;
           _prefillRentFromUnit(u, selected);
@@ -220,7 +265,7 @@ class AddTenantFormController extends BaseController {
       }
     }
     if (preferredUnitName.isNotEmpty) {
-      for (final u in drafts) {
+      for (final u in visibleDrafts) {
         if (u.unitName.trim() == preferredUnitName) {
           selectedUnitKey.value = u.selectionKey;
           _prefillRentFromUnit(u, selected);
@@ -228,11 +273,133 @@ class AddTenantFormController extends BaseController {
         }
       }
     }
-    selectedUnitKey.value =
-        drafts.length == 1 ? drafts.first.selectionKey : null;
-    if (drafts.length == 1) {
-      _prefillRentFromUnit(drafts.first, selected);
+
+    // Prefer a unit that matches the tab that opened this form.
+    final preferred = _preferredUnitForFlow(visibleDrafts);
+    if (preferred != null) {
+      selectedUnitKey.value = preferred.selectionKey;
+      _prefillRentFromUnit(preferred, selected);
+      return;
     }
+
+    selectedUnitKey.value =
+        visibleDrafts.length == 1 ? visibleDrafts.first.selectionKey : null;
+    if (visibleDrafts.length == 1) {
+      _prefillRentFromUnit(visibleDrafts.first, selected);
+    }
+  }
+
+  /// Units already linked to an active tenant (or marked occupied in
+  /// [PropertyRecord.unitsJson]) must not appear in the Add Tenant dropdown.
+  List<ApartmentUnitDraft> _excludeAssignedUnits(
+    List<ApartmentUnitDraft> drafts, {
+    required PropertyRecord property,
+    required List<TenantRecord> tenants,
+  }) {
+    if (drafts.isEmpty) return drafts;
+
+    final propertyTenants =
+        tenants.where((t) => _tenantMatchesProperty(t, property)).toList();
+    final occupiedIds = <String>{};
+    final occupiedNames = <String>{};
+
+    for (final t in propertyTenants) {
+      final id = t.apartmentUnitId.trim();
+      if (id.isNotEmpty) occupiedIds.add(id);
+      final name = t.unitLabel.trim();
+      if (name.isNotEmpty) occupiedNames.add(name.toLowerCase());
+    }
+
+    try {
+      final decoded = jsonDecode(property.unitsJson);
+      if (decoded is List) {
+        for (final e in decoded.whereType<Map>()) {
+          final m = Map<String, dynamic>.from(e);
+          final occupied = m['occupied'] == true ||
+              m['status']?.toString().trim().toLowerCase() == 'occupied';
+          if (!occupied) continue;
+          final id = (m['unitId'] ?? m['id'] ?? '').toString().trim();
+          final name = (m['unitName'] ?? m['name'] ?? '').toString().trim();
+          if (id.isNotEmpty) occupiedIds.add(id);
+          if (name.isNotEmpty) occupiedNames.add(name.toLowerCase());
+        }
+      }
+    } catch (_) {}
+
+    if (occupiedIds.isEmpty && occupiedNames.isEmpty) return drafts;
+
+    return drafts.where((u) {
+      final id = u.unitId.trim();
+      if (id.isNotEmpty && occupiedIds.contains(id)) return false;
+      final name = u.unitName.trim().toLowerCase();
+      if (name.isNotEmpty && occupiedNames.contains(name)) return false;
+      return true;
+    }).toList();
+  }
+
+  bool _tenantMatchesProperty(TenantRecord t, PropertyRecord property) {
+    final listingRef = property.propertyRef.trim().isNotEmpty
+        ? property.propertyRef.trim()
+        : 'local_${property.id}';
+    final listingName = property.propertyName.trim().isNotEmpty
+        ? property.propertyName.trim()
+        : property.propertyLocation.trim();
+    final listingLoc = property.propertyLocation.trim();
+
+    final ref = t.propertyRef.trim();
+    if (ref.isNotEmpty) {
+      if (ref == listingRef) return true;
+      if (ref == 'local_${property.id}' || ref == 'legacy_${property.id}') {
+        return true;
+      }
+      final hub = property.propertyRef.trim();
+      if (hub.isNotEmpty && ref == hub) return true;
+    }
+
+    final label = t.propertyLabel.trim().toLowerCase();
+    if (listingName.isNotEmpty && label == listingName.toLowerCase()) {
+      return true;
+    }
+    if (listingLoc.isNotEmpty && label == listingLoc.toLowerCase()) {
+      return true;
+    }
+    if (listingName.isNotEmpty &&
+        listingLoc.isNotEmpty &&
+        (label == '${listingName.toLowerCase()} · ${listingLoc.toLowerCase()}' ||
+            label ==
+                '${listingLoc.toLowerCase()} · ${listingName.toLowerCase()}')) {
+      return true;
+    }
+    return false;
+  }
+
+  List<ApartmentUnitDraft> _unitsForCurrentFlow(
+    List<ApartmentUnitDraft> drafts,
+    PropertyRecord property,
+  ) {
+    if (!_routeWorkspaceExplicit) return drafts;
+    final propertyWs = property.workspaceType.trim().toLowerCase();
+    if (propertyWs == 'rent' || propertyWs == 'bnb') {
+      // Single-mode listing: all units belong to that mode.
+      return drafts;
+    }
+    // Dual-mode: only show units for the tab that opened add-tenant.
+    return drafts.where((u) {
+      final um = u.operationMode.trim().toLowerCase();
+      return _routePrefersRent ? um == 'rent' : um != 'rent';
+    }).toList();
+  }
+
+  ApartmentUnitDraft? _preferredUnitForFlow(List<ApartmentUnitDraft> drafts) {
+    if (drafts.isEmpty) return null;
+    if (drafts.length == 1) return drafts.first;
+    if (!_routeWorkspaceExplicit) return null;
+    for (final u in drafts) {
+      final um = u.operationMode.trim().toLowerCase();
+      if (_routePrefersRent && um == 'rent') return u;
+      if (!_routePrefersRent && um != 'rent') return u;
+    }
+    return null;
   }
 
   bool _propertyMatchesLabel(PropertyRecord p, String wanted) {
@@ -249,6 +416,14 @@ class AddTenantFormController extends BaseController {
   }
 
   void _updateFlowForProperty(PropertyRecord property, {ApartmentUnitDraft? unit}) {
+    // Explicit Rent/BnB tab navigation must not be overridden by a unit whose
+    // operationMode still defaults to "bnb" on dual-mode properties.
+    if (_routeWorkspaceExplicit) {
+      isRentFlow.value = _routePrefersRent;
+      _syncRentFrequencyForFlow();
+      return;
+    }
+
     final ws = property.workspaceType.trim().toLowerCase();
     if (unit != null && ws == 'both') {
       isRentFlow.value = unit.operationMode == 'rent';
@@ -544,6 +719,7 @@ class AddTenantFormController extends BaseController {
     } else {
       showSuccessMessage('Tenant saved offline');
     }
+    await _refreshPropertyTenantSurfaces();
     Get.back(result: true);
   }
 
@@ -639,9 +815,7 @@ class AddTenantFormController extends BaseController {
       _syncWorker.runNow();
     }
 
-    await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
-    await ListingDetailsController.refreshIfRegistered();
-    await RentExpectedPaymentScheduleController.refreshIfRegistered();
+    await _refreshPropertyTenantSurfaces();
 
     hapticPrimaryConfirm();
     showSuccessMessage('Tenant saved offline');
@@ -663,6 +837,14 @@ class AddTenantFormController extends BaseController {
     }
 
     Get.back(result: true);
+  }
+
+  Future<void> _refreshPropertyTenantSurfaces() async {
+    await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+    await ListingDetailsController.refreshIfRegistered();
+    await RentExpectedPaymentScheduleController.refreshIfRegistered();
+    await MyPropertiesController.refreshIfRegistered();
+    await AllTenantsController.refreshIfRegistered();
   }
 
   Future<bool?> _promptAddIncomeAfterTenant() {

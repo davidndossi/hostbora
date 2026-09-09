@@ -19,13 +19,27 @@ const _hostCalendarPaidBg = Color(0xFF1C6E64);
 class HostCalendarView extends BaseView<HostCalendarController> {
   HostCalendarView({super.key});
 
-  
-
   String _t(BuildContext context, {required String en, required String sw}) {
     final code =
         Get.locale?.languageCode ??
         Localizations.localeOf(context).languageCode;
     return code == 'sw' ? sw : en;
+  }
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  /// Primary body/title text — high contrast in light and dark.
+  Color _primaryText(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
+
+  /// Secondary/muted labels — still readable on dark scaffolds.
+  Color _secondaryText(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    if (_isDark(context)) {
+      return scheme.onSurface.withValues(alpha: 0.78);
+    }
+    return AppColors.textColorSecondary;
   }
 
   @override
@@ -102,7 +116,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w600,
-              color: AppColors.textColorPrimary,
+              color: _primaryText(context),
               letterSpacing: -0.5,
             ),
           ),
@@ -198,7 +212,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textColorPrimary,
+                color: _primaryText(context),
               ),
             ),
             const Spacer(),
@@ -229,7 +243,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
             fontSize: 11,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
-            color: AppColors.textColorSecondary,
+            color: _secondaryText(context),
           ),
         ),
         const SizedBox(height: 8),
@@ -275,7 +289,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
             fontSize: 11,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
-            color: AppColors.textColorSecondary,
+            color: _secondaryText(context),
           ),
         ),
         const SizedBox(height: 8),
@@ -335,12 +349,16 @@ class HostCalendarView extends BaseView<HostCalendarController> {
             value: value,
             hint: Text(
               hint,
-              style: TextStyle(color: AppColors.textColorSecondary),
+              style: TextStyle(color: _secondaryText(context)),
             ),
             icon: Icon(
               Icons.keyboard_arrow_down,
-              color: AppColors.textColorSecondary,
+              color: _secondaryText(context),
             ),
+            style: TextStyle(color: _primaryText(context), fontSize: 15),
+            dropdownColor: FormSurfaceColors.of(context).isDark
+                ? theme.colorScheme.surfaceContainerHigh
+                : AppColors.colorWhite,
             items: items,
             onChanged: onChanged,
           ),
@@ -350,6 +368,8 @@ class HostCalendarView extends BaseView<HostCalendarController> {
   }
 
   Widget _buildCalendarGrid(BuildContext context) {
+    final textColor = _primaryText(context);
+    final mutedText = _secondaryText(context);
     return Obx(() {
       controller.calendarRevision.value;
       controller.calendarProperties.length;
@@ -389,12 +409,12 @@ class HostCalendarView extends BaseView<HostCalendarController> {
           weekdayStyle: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColorSecondary,
+            color: mutedText,
           ),
           weekendStyle: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColorSecondary,
+            color: mutedText,
           ),
         ),
         calendarStyle: CalendarStyle(
@@ -402,12 +422,12 @@ class HostCalendarView extends BaseView<HostCalendarController> {
           defaultTextStyle: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColorPrimary,
+            color: textColor,
           ),
           outsideTextStyle: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColorSecondary,
+            color: mutedText.withValues(alpha: 0.55),
           ),
           // Fallback if selectedBuilder is missing — solid primary, not pale tint.
           selectedDecoration: const BoxDecoration(
@@ -619,14 +639,17 @@ class HostCalendarView extends BaseView<HostCalendarController> {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         _legendDot(
+          context,
           color: _hostCalendarBookedBg,
           label: appLocalization.calendarBooked,
         ),
         _legendDot(
+          context,
           color: _hostCalendarPaidBg,
           label: appLocalization.calendarPaidStay,
         ),
         _legendDot(
+          context,
           color: AppColors.colorPrimary,
           label: appLocalization.today,
         ),
@@ -634,7 +657,11 @@ class HostCalendarView extends BaseView<HostCalendarController> {
     );
   }
 
-  Widget _legendDot({required Color color, required String label}) {
+  Widget _legendDot(
+    BuildContext context, {
+    required Color color,
+    required String label,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -649,7 +676,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: AppColors.textColorSecondary,
+            color: _secondaryText(context),
           ),
         ),
       ],
@@ -674,14 +701,14 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textColorPrimary,
+                  color: _primaryText(context),
                 ),
               ),
               Text(
                 '${events.length} ${_t(context, en: 'EVENTS', sw: 'MATUKIO')}',
                 style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.textColorSecondary,
+                  color: _secondaryText(context),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -755,6 +782,10 @@ class _EventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final c = FormSurfaceColors.of(context);
+    final primary = theme.colorScheme.onSurface;
+    final secondary = c.isDark
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.78)
+        : AppColors.textColorSecondary;
     final isMaintenance = event.type == CalendarEventType.maintenance;
     final isPaymentReminder = event.type == CalendarEventType.paymentReminder;
     return Container(
@@ -802,7 +833,7 @@ class _EventCard extends StatelessWidget {
                 event.time,
                 style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.textColorSecondary,
+                  color: secondary,
                 ),
               ),
             ],
@@ -813,7 +844,7 @@ class _EventCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: AppColors.textColorPrimary,
+              color: primary,
             ),
           ),
           if (isMaintenance || isPaymentReminder) ...[
@@ -824,7 +855,7 @@ class _EventCard extends StatelessWidget {
                 Icon(
                   Icons.home_work_outlined,
                   size: 16,
-                  color: AppColors.textColorSecondary,
+                  color: secondary,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -832,7 +863,7 @@ class _EventCard extends StatelessWidget {
                     event.propertyName.isEmpty ? '—' : event.propertyName,
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textColorSecondary,
+                      color: secondary,
                     ),
                   ),
                 ),
@@ -848,7 +879,7 @@ class _EventCard extends StatelessWidget {
                         ? Icons.payments_outlined
                         : Icons.notes_outlined,
                     size: 16,
-                    color: AppColors.textColorSecondary,
+                    color: secondary,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -858,7 +889,7 @@ class _EventCard extends StatelessWidget {
                         fontSize: 13,
                         fontWeight:
                             isPaymentReminder ? FontWeight.w600 : FontWeight.normal,
-                        color: AppColors.textColorSecondary,
+                        color: secondary,
                       ),
                     ),
                   ),
@@ -872,14 +903,14 @@ class _EventCard extends StatelessWidget {
                 Icon(
                   Icons.people_outline,
                   size: 16,
-                  color: AppColors.textColorSecondary,
+                  color: secondary,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   '${event.guests} ${t(context, en: 'Guests', sw: 'Wageni')}',
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textColorSecondary,
+                    color: secondary,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -890,7 +921,7 @@ class _EventCard extends StatelessWidget {
                   size: 16,
                   color: event.subtitleHighlight
                       ? AppColors.colorOrange
-                      : AppColors.textColorSecondary,
+                      : secondary,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -900,7 +931,7 @@ class _EventCard extends StatelessWidget {
                       fontSize: 13,
                       color: event.subtitleHighlight
                           ? AppColors.colorOrange
-                          : AppColors.textColorSecondary,
+                          : secondary,
                       fontWeight: event.subtitleHighlight
                           ? FontWeight.w500
                           : FontWeight.normal,

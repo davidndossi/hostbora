@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '/app/core/locale/app_localizations_resolver.dart';
 import '/app/core/model/page_state.dart';
 import '/app/network/exceptions/api_exception.dart';
 import '/app/network/exceptions/app_exception.dart';
@@ -18,8 +19,9 @@ import '/flavors/build_config.dart';
 abstract class BaseController extends GetxController {
   final Logger logger = BuildConfig.instance.config.logger;
 
-  AppLocalizations get appLocalization => AppLocalizations.of(Get.context!)!;
-
+  /// Always resolves strings for the *current* app language, even if a stale
+  /// BuildContext still holds the previous [AppLocalizations] delegate.
+  AppLocalizations get appLocalization => resolveAppLocalizations();
   final logoutController = false.obs;
 
   //Reload the page

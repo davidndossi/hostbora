@@ -10,6 +10,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../core/base/feedback_extensions.dart';
 import '../../../core/utils/util.dart';
 import '../../../core/utils/property_listing_image_assigner.dart';
+import '../../../core/utils/property_name_rules.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_listing_units_sync.dart';
@@ -1529,6 +1530,11 @@ class AddListingController extends BaseController {
     }
     return null;
   }
+
+  bool get _isSw => Get.locale?.languageCode == 'sw';
+
+  String? validatePropertyName(String? value) =>
+      PropertyNameRules.validate(value, isSw: _isSw);
 
   @override
   void onClose() {

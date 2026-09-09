@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/getx_instance_probe.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/service/currency_service.dart';
 
@@ -85,6 +86,11 @@ class AllTenantsController extends BaseController {
   void onClose() {
     searchController.dispose();
     super.onClose();
+  }
+
+  static Future<void> refreshIfRegistered() async {
+    if (!GetxInstanceProbe.isAlive<AllTenantsController>()) return;
+    await Get.find<AllTenantsController>().loadTenants();
   }
 
   Future<void> loadTenants() async {

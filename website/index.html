@@ -91,18 +91,6 @@
         <div class="container hero__grid">
           <div class="hero__copy">
             <p class="hero__badge" data-i18n="hero.badge">Early access — join 200+ landlords already using HostBora</p>
-            <p class="eyebrow">
-              <img
-                src="./assets/logo.svg"
-                width="22"
-                height="22"
-                alt=""
-                aria-hidden="true"
-                class="eyebrow__mark"
-                decoding="async"
-              />
-              <span data-i18n="hero.eyebrow">Built for landlords &amp; property managers</span>
-            </p>
             <h1 id="hero-title" data-i18n="hero.title">Property management that stays clear — from guest nights to monthly rent.</h1>
             <p class="hero__sw" data-i18n="hero.tagline">Manage your properties with ease — short-stay BnB and long-term rent.</p>
             <p class="lead" data-i18n="hero.lead">
@@ -110,7 +98,7 @@
               tenants, record payments in TZS, manage staff and expenses, and see how each property performs.
             </p>
 
-            <div class="cta">
+            <div class="cta" role="group" aria-label="Download HostBora">
               <a href="https://play.google.com/store/apps/details?id=tz.co.artbel.paa_yangu"
                  target="_blank"
                  rel="noopener noreferrer">
@@ -127,9 +115,6 @@
               </a>
             </div>
             <p class="app-update" data-i18n="app.version">App v1.2.3 · Updated <time datetime="2026-06">June 2026</time></p>
-<!--            <div>-->
-<!--              <a class="btn btn&#45;&#45;ghost" href="#features" data-i18n="cta.explore">Explore features ↓ </a>-->
-<!--            </div>-->
 
             <ul class="hero__stats" data-i18n-aria-label="hero.stats.label" aria-label="Highlights">
               <li><strong data-i18n="hero.stats.bnb">BnB + Rent</strong><span data-i18n="hero.stats.bnbSub">Two workspaces</span></li>
@@ -179,6 +164,7 @@
       <section class="section" id="features">
         <div class="container">
           <div class="section__head section__head--center">
+            <p class="section__kicker" data-i18n="features.kicker">Daily toolkit</p>
             <p class="pain-statement" data-i18n="features.pain">
               Most landlords in Dar manage rent via M-Pesa screenshots, WhatsApp threads, and handwritten notebooks.
               HostBora replaces that chaos.
@@ -190,119 +176,121 @@
             </p>
           </div>
 
-          <div class="video-demo" aria-labelledby="demo-title">
-            <div class="video-demo__head">
-              <h3 id="demo-title" data-i18n="demo.title">See HostBora in 60 seconds</h3>
-              <p class="muted" data-i18n="demo.sub">A quick walkthrough of the app — properties, payments, staff, and more.</p>
-            </div>
-            <div class="video-demo__wrap">
-              <div class="video-demo__frame">
-                <iframe
-                  src="https://www.youtube.com/embed/2I3nRSxMr9g?rel=0"
-                  title="HostBora app walkthrough"
-                  data-i18n-title="demo.iframeTitle"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowfullscreen
-                  loading="lazy"
-                  referrerpolicy="strict-origin-when-cross-origin"
-                ></iframe>
+          <div class="features-stage">
+            <div class="video-demo" aria-labelledby="demo-title">
+              <div class="video-demo__head">
+                <h3 id="demo-title" data-i18n="demo.title">See HostBora in 60 seconds</h3>
+                <p class="muted" data-i18n="demo.sub">A quick walkthrough of the app — properties, payments, staff, and more.</p>
+              </div>
+              <div class="video-demo__wrap">
+                <div class="video-demo__frame">
+                  <iframe
+                    src="https://www.youtube.com/embed/2I3nRSxMr9g?rel=0"
+                    title="HostBora app walkthrough"
+                    data-i18n-title="demo.iframeTitle"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen
+                    loading="lazy"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                  ></iframe>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="grid-features">
-            <article class="card">
-              <div class="card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M4 20V10l8-6 8 6v10" />
-                  <path d="M9 20v-6h6v6" />
-                </svg>
-              </div>
-              <h3 data-i18n="feat.rentals.title">Rentals &amp; tenants</h3>
-              <p data-i18n="feat.rentals.desc">List units, track leases, and keep tenant details organized across your portfolio.</p>
-            </article>
+            <div class="grid-features">
+              <article class="card card--featured">
+                <div class="card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="6" width="18" height="14" rx="2" />
+                    <path d="M7 10h4M7 14h10" />
+                  </svg>
+                </div>
+                <h3 data-i18n="feat.payments.title">Payments &amp; expenses</h3>
+                <p data-i18n="feat.payments.desc">Track M-Pesa and mobile money payments — Tigo Pesa, Airtel Money, and more. Record rent and guest income, log expenses, and see cash flow without spreadsheet chaos.</p>
+              </article>
 
-            <article class="card">
-              <div class="card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <rect x="3" y="6" width="18" height="14" rx="2" />
-                  <path d="M7 10h4M7 14h10" />
-                </svg>
-              </div>
-              <h3 data-i18n="feat.payments.title">Payments &amp; expenses</h3>
-              <p data-i18n="feat.payments.desc">Track M-Pesa and mobile money payments — Tigo Pesa, Airtel Money, and more. Record rent and guest income, log expenses, and see cash flow without spreadsheet chaos.</p>
-            </article>
+              <article class="card">
+                <div class="card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 20V10l8-6 8 6v10" />
+                    <path d="M9 20v-6h6v6" />
+                  </svg>
+                </div>
+                <h3 data-i18n="feat.rentals.title">Rentals &amp; tenants</h3>
+                <p data-i18n="feat.rentals.desc">List units, track leases, and keep tenant details organized across your portfolio.</p>
+              </article>
 
-            <article class="card">
-              <div class="card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="9" cy="8" r="3" />
-                  <circle cx="17" cy="10" r="2.5" />
-                  <path d="M3 20c1.5-3 4-4.5 6-4.5s4.5 1.5 6 4.5" />
-                </svg>
-              </div>
-              <h3 data-i18n="feat.staff.title">Staff &amp; tasks</h3>
-              <p data-i18n="feat.staff.desc">Assign cleaners, guards, or maintenance — with due dates and status so nothing is missed.</p>
-            </article>
+              <article class="card">
+                <div class="card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="9" cy="8" r="3" />
+                    <circle cx="17" cy="10" r="2.5" />
+                    <path d="M3 20c1.5-3 4-4.5 6-4.5s4.5 1.5 6 4.5" />
+                  </svg>
+                </div>
+                <h3 data-i18n="feat.staff.title">Staff &amp; tasks</h3>
+                <p data-i18n="feat.staff.desc">Assign cleaners, guards, or maintenance — with due dates and status so nothing is missed.</p>
+              </article>
 
-            <article class="card">
-              <div class="card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M12 3v3M12 18v3M5 12H2M22 12h-3" />
-                  <circle cx="12" cy="12" r="4" />
-                </svg>
-              </div>
-              <h3 data-i18n="feat.reminders.title">Reminders</h3>
-              <p data-i18n="feat.reminders.desc">Stay ahead of renewals, check-ins, payment follow-ups, and recurring property chores.</p>
-            </article>
+              <article class="card">
+                <div class="card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M12 3v3M12 18v3M5 12H2M22 12h-3" />
+                    <circle cx="12" cy="12" r="4" />
+                  </svg>
+                </div>
+                <h3 data-i18n="feat.reminders.title">Reminders</h3>
+                <p data-i18n="feat.reminders.desc">Stay ahead of renewals, check-ins, payment follow-ups, and recurring property chores.</p>
+              </article>
 
-            <article class="card">
-              <div class="card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M4 12h6l2-4 4 8 2-4h2" />
-                </svg>
-              </div>
-              <h3 data-i18n="feat.bnb.title">BnB &amp; long-term rent</h3>
-              <p data-i18n="feat.bnb.desc">Run short-stay bookings and monthly leases from the same portfolio — switch when you need to.</p>
-            </article>
+              <article class="card">
+                <div class="card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 12h6l2-4 4 8 2-4h2" />
+                  </svg>
+                </div>
+                <h3 data-i18n="feat.bnb.title">BnB &amp; long-term rent</h3>
+                <p data-i18n="feat.bnb.desc">Run short-stay bookings and monthly leases from the same portfolio — switch when you need to.</p>
+              </article>
 
-            <article class="card">
-              <div class="card__icon" aria-hidden="true">
-                <img src="./assets/ic_reports.svg" alt="" width="22" height="22" />
-              </div>
-              <h3 data-i18n="feat.reports.title">Reports &amp; profitability</h3>
-              <p data-i18n="feat.reports.desc">Understand income vs spend per property with summaries that support real decisions.</p>
-            </article>
+              <article class="card">
+                <div class="card__icon" aria-hidden="true">
+                  <img src="./assets/ic_reports.svg" alt="" width="22" height="22" />
+                </div>
+                <h3 data-i18n="feat.reports.title">Reports &amp; profitability</h3>
+                <p data-i18n="feat.reports.desc">Understand income vs spend per property with summaries that support real decisions.</p>
+              </article>
 
-            <article class="card">
-              <div class="card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <rect x="5" y="11" width="14" height="10" rx="2" />
-                  <path d="M8 11V8a4 4 0 018 0v3" />
-                </svg>
-              </div>
-              <h3 data-i18n="feat.access.title">Smart access</h3>
-              <p data-i18n="feat.access.desc">Coordinate digital locks and guest access where supported — fewer handoffs at check-in.</p>
-            </article>
+              <article class="card">
+                <div class="card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V8a4 4 0 018 0v3" />
+                  </svg>
+                </div>
+                <h3 data-i18n="feat.access.title">Smart access</h3>
+                <p data-i18n="feat.access.desc">Coordinate digital locks and guest access where supported — fewer handoffs at check-in.</p>
+              </article>
 
-            <article class="card">
-              <div class="card__icon" aria-hidden="true">
-                <img src="./assets/ic_vault.svg" alt="" width="22" height="22" />
-              </div>
-              <h3 data-i18n="feat.vault.title">Document vault</h3>
-              <p data-i18n="feat.vault.desc">Store leases, IDs, manuals, and tax records in clear folders — ready when you need them.</p>
-            </article>
+              <article class="card">
+                <div class="card__icon" aria-hidden="true">
+                  <img src="./assets/ic_vault.svg" alt="" width="22" height="22" />
+                </div>
+                <h3 data-i18n="feat.vault.title">Document vault</h3>
+                <p data-i18n="feat.vault.desc">Store leases, IDs, manuals, and tax records in clear folders — ready when you need them.</p>
+              </article>
 
-            <article class="card">
-              <div class="card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <rect x="4" y="5" width="16" height="16" rx="2" />
-                  <path d="M8 3v4M16 3v4M4 11h16" />
-                </svg>
-              </div>
-              <h3 data-i18n="feat.calendar.title">Calendar sync</h3>
-              <p data-i18n="feat.calendar.desc">Link external calendars to reduce double bookings and keep blocked dates aligned.</p>
-            </article>
+              <article class="card">
+                <div class="card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="4" y="5" width="16" height="16" rx="2" />
+                    <path d="M8 3v4M16 3v4M4 11h16" />
+                  </svg>
+                </div>
+                <h3 data-i18n="feat.calendar.title">Calendar sync</h3>
+                <p data-i18n="feat.calendar.desc">Link external calendars to reduce double bookings and keep blocked dates aligned.</p>
+              </article>
+            </div>
           </div>
         </div>
       </section>
@@ -310,6 +298,7 @@
       <section class="section section--alt" id="workspaces">
         <div class="container">
           <div class="section__head">
+            <p class="section__kicker" data-i18n="workspaces.kicker">BnB + Rent</p>
             <h2 data-i18n="workspaces.title">Two workspaces, one app</h2>
             <p class="muted" data-i18n="workspaces.sub">Switch between BnB and Rent anytime — same properties, tailored flows.</p>
           </div>
@@ -349,6 +338,7 @@
       <section class="section" id="audience">
         <div class="container">
           <div class="section__head section__head--center">
+            <p class="section__kicker" data-i18n="audience.kicker">Who it’s for</p>
             <h2 data-i18n="audience.title">Made for people who run properties</h2>
             <p class="muted" data-i18n="audience.sub">Whether you own one unit or manage a growing portfolio across Dar, Arusha, or beyond.</p>
           </div>
@@ -392,6 +382,7 @@
       <section class="section" id="pricing" aria-labelledby="pricing-title">
         <div class="container">
           <div class="section__head section__head--center">
+            <p class="section__kicker" data-i18n="pricing.kicker">Pricing</p>
             <h2 id="pricing-title" data-i18n="pricing.title">Simple, transparent pricing</h2>
             <p class="muted" data-i18n="pricing.sub">No surprises — start free today, then pick a plan that fits your portfolio when billing begins.</p>
           </div>
@@ -468,6 +459,7 @@
       <section class="section section--alt" id="trust">
         <div class="container">
           <div class="section__head section__head--center">
+            <p class="section__kicker" data-i18n="trust.kicker">Trust</p>
             <h2 data-i18n="trust.title">Built for how you work in East Africa</h2>
             <p class="muted" data-i18n="trust.sub">Professional, dependable, and respectful of local realities — not a generic import.</p>
           </div>

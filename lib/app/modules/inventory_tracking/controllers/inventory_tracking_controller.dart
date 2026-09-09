@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -200,8 +202,11 @@ class InventoryTrackingController extends BaseController {
 
   final exporting = false.obs;
 
-  Future<void> exportToCsv() async {
+  Future<void> exportToCsv({BuildContext? shareContext}) async {
     if (exporting.value) return;
+    // Capture popover anchor before awaits (iOS requires a non-zero origin).
+    final shareOrigin =
+        _shareOrigin(shareContext) ?? _shareOrigin(Get.context);
     exporting.value = true;
     try {
       final ref = propertyRef.value.trim();
@@ -245,20 +250,65 @@ class InventoryTrackingController extends BaseController {
       final subjectLabel = propertyName.value.trim().isNotEmpty
           ? propertyName.value.trim()
           : (_isSw ? 'Mali Zote' : 'All Properties');
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'text/csv')],
-        subject: _isSw
-            ? 'Orodha ya Vifaa · $subjectLabel'
-            : 'Inventory List · $subjectLabel',
+      final subject = _isSw
+          ? 'Orodha ya Vifaa · $subjectLabel'
+          : 'Inventory List · $subjectLabel';
+      final xFile = XFile(file.path, mimeType: 'text/csv', name: name);
+      await _shareInventoryFile(
+        xFile: xFile,
+        subject: subject,
+        shareOrigin: shareOrigin,
       );
       showSuccessMessage(
         _isSw ? 'Faili iko tayari kushirikiwa.' : 'File ready to share.',
       );
     } catch (e) {
-      showErrorMessage(e.toString());
+      showErrorMessage(
+        _isSw
+            ? 'Imeshindikana kushiriki orodha. Jaribu tena.'
+            : 'Could not share the inventory file. Please try again.',
+      );
     } finally {
       exporting.value = false;
     }
+  }
+
+  Future<void> _shareInventoryFile({
+    required XFile xFile,
+    required String subject,
+    Rect? shareOrigin,
+  }) async {
+    var origin = shareOrigin;
+    try {
+      await Share.shareXFiles(
+        [xFile],
+        subject: subject,
+        sharePositionOrigin: origin,
+      );
+    } catch (_) {
+      // iOS/iPad require a non-zero origin inside the source view bounds.
+      final size = Get.size;
+      origin = Rect.fromCenter(
+        center: Offset(size.width / 2, size.height / 2),
+        width: 2,
+        height: 2,
+      );
+      await Share.shareXFiles(
+        [xFile],
+        subject: subject,
+        sharePositionOrigin: origin,
+      );
+    }
+  }
+
+  Rect? _shareOrigin(BuildContext? context) {
+    final ctx = context;
+    if (ctx == null || !ctx.mounted) return null;
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    final origin = box.localToGlobal(Offset.zero) & box.size;
+    if (origin.width <= 0 || origin.height <= 0) return null;
+    return origin;
   }
 
   // ── Bulk import (CSV) ─────────────────────────────────────────────────────
@@ -369,17 +419,20 @@ class InventoryTrackingController extends BaseController {
 
   // ── Stock adjustment ──────────────────────────────────────────────────────
 
-  Future<void> adjustStock({
+  final adjusting = false.obs;
+
+  Future<bool> adjustStock({
     required InventoryItemRecord item,
     required String movementType,
     required int quantityDelta,
     String notes = '',
   }) async {
+    if (adjusting.value) return false;
     if (quantityDelta == 0) {
       showErrorMessage(
         _isSw ? 'Weka idadi halali.' : 'Enter a valid quantity.',
       );
-      return;
+      return false;
     }
     final newQty = item.quantity + quantityDelta;
     if (newQty < 0) {
@@ -388,20 +441,60 @@ class InventoryTrackingController extends BaseController {
             ? 'Idadi haiwezi kuwa chini ya sifuri.'
             : 'Quantity cannot go below zero.',
       );
-      return;
+      return false;
     }
 
-    final clientMovementId =
-        'mov_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(99999)}';
-    final movementLocalId = await _movementLocal.insert(
-      itemLocalId: item.id,
-      clientMovementId: clientMovementId,
-      movementType: movementType,
-      quantityDelta: quantityDelta,
-      notes: notes,
-    );
-    await _itemLocal.updateQuantity(item.id, newQty);
+    adjusting.value = true;
+    try {
+      final clientMovementId =
+          'mov_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(99999)}';
+      final movementLocalId = await _movementLocal.insert(
+        itemLocalId: item.id,
+        clientMovementId: clientMovementId,
+        movementType: movementType,
+        quantityDelta: quantityDelta,
+        notes: notes,
+      );
+      await _itemLocal.updateQuantity(item.id, newQty);
 
+      // Refresh UI and confirm immediately — don't wait on the network.
+      await _reloadLocal();
+      showSuccessMessage(
+        _isSw ? 'Hisa imesasishwa.' : 'Stock updated.',
+      );
+
+      // Sync to server in the background (or queue offline).
+      unawaited(
+        _syncMovementInBackground(
+          item: item,
+          movementLocalId: movementLocalId,
+          clientMovementId: clientMovementId,
+          movementType: movementType,
+          quantityDelta: quantityDelta,
+          notes: notes,
+        ),
+      );
+      return true;
+    } catch (_) {
+      showErrorMessage(
+        _isSw
+            ? 'Imeshindikana kuhifadhi. Jaribu tena.'
+            : 'Could not save the adjustment. Please try again.',
+      );
+      return false;
+    } finally {
+      adjusting.value = false;
+    }
+  }
+
+  Future<void> _syncMovementInBackground({
+    required InventoryItemRecord item,
+    required int movementLocalId,
+    required String clientMovementId,
+    required String movementType,
+    required int quantityDelta,
+    required String notes,
+  }) async {
     final backendId = item.backendItemId.trim();
     final movementRequest = InventoryMovementRequest(
       clientMovementId: clientMovementId,
@@ -432,6 +525,7 @@ class InventoryTrackingController extends BaseController {
             backendId: remoteId,
           );
         }
+        return;
       } catch (_) {
         await _syncQueue.enqueue(
           entityType: 'inventory_movement',
@@ -446,26 +540,22 @@ class InventoryTrackingController extends BaseController {
           }),
         );
         _syncWorker.runNow();
+        return;
       }
-    } else {
-      await _syncQueue.enqueue(
-        entityType: 'inventory_movement',
-        operation: 'create',
-        payloadJson: jsonEncode({
-          'localMovementId': movementLocalId,
-          'itemLocalId': item.id,
-          'clientMovementId': clientMovementId,
-          'movementType': movementType,
-          'quantityDelta': quantityDelta,
-          'notes': notes,
-        }),
-      );
-      _syncWorker.runNow();
     }
 
-    await _reloadLocal();
-    showSuccessMessage(
-      _isSw ? 'Hisa imesasishwa.' : 'Stock updated.',
+    await _syncQueue.enqueue(
+      entityType: 'inventory_movement',
+      operation: 'create',
+      payloadJson: jsonEncode({
+        'localMovementId': movementLocalId,
+        'itemLocalId': item.id,
+        'clientMovementId': clientMovementId,
+        'movementType': movementType,
+        'quantityDelta': quantityDelta,
+        'notes': notes,
+      }),
     );
+    _syncWorker.runNow();
   }
 }

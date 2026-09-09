@@ -87,6 +87,37 @@ class SettingsView extends BaseView<SettingsController> {
         SettingsSection(
           title: _tileTitle(context, appLocalization.common),
           tiles: [
+            SettingsTile.navigation(
+              onPressed: (_) => controller.openSubscription(),
+              leading: const Icon(Icons.workspace_premium_outlined),
+              title: _tileTitle(
+                context,
+                _t(context, 'Subscription & billing', 'Usajili na bili'),
+              ),
+              description: Obx(
+                () => _tileDescription(
+                  context,
+                  controller.isPortfolioManagerSession.value
+                      ? _t(
+                          context,
+                          'Only the host can manage billing plans.',
+                          'Mwenyeji pekee anaweza kusimamia mipango ya malipo.',
+                        )
+                      : _t(
+                          context,
+                          'View plan, trial, and renewals',
+                          'Angalia mpango, majaribio, na upyaaji',
+                        ),
+                ),
+              ),
+              trailing: Obx(
+                () => Icon(
+                  controller.isPortfolioManagerSession.value
+                      ? Icons.lock_outline
+                      : Icons.chevron_right_outlined,
+                ),
+              ),
+            ),
             SettingsTile(
               onPressed: (context) =>
                   controller.showBaseCurrencyPicker(context),

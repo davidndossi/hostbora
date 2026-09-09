@@ -5,6 +5,7 @@ import '../../../core/base/base_view.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/loading.dart';
 import '../../../data/service/subscription_service.dart';
 import '../controllers/subscription_controller.dart';
 
@@ -16,27 +17,11 @@ class SubscriptionView extends BaseView<SubscriptionController> {
         appBarTitleText: 'HostBora Plans',
         isCentered: true,
         actions: [
-          Obx(() {
-            final busy = controller.startingCheckout.value ||
-                controller.activatingTrial.value;
-            return busy
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.refresh_rounded),
-                    tooltip: 'Refresh',
-                    onPressed: controller.refresh,
-                  );
-          }),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
+            onPressed: controller.refresh,
+          ),
         ],
       );
 
@@ -46,83 +31,102 @@ class SubscriptionView extends BaseView<SubscriptionController> {
 
     return Obx(() {
       final sub = controller.currentStatus;
+      final busy = controller.startingCheckout.value ||
+          controller.activatingTrial.value;
 
-      return ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppValues.padding,
-          vertical: AppValues.largePadding,
-        ),
+      return Stack(
+        alignment: Alignment.center,
         children: [
-          // ── Status banner ──────────────────────────────────────
-          if (sub.isActive) _StatusBanner(sub: sub),
-          if (sub.isActive) const SizedBox(height: AppValues.spacing_20),
+          Positioned.fill(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppValues.padding,
+                vertical: AppValues.largePadding,
+              ),
+              children: [
+                // ── Status banner ──────────────────────────────────────
+                if (sub.isActive) _StatusBanner(sub: sub),
+                if (sub.isActive) const SizedBox(height: AppValues.spacing_20),
 
-          // ── Header ────────────────────────────────────────────
-          Text(
-            sub.isActive ? 'Your Plan' : 'Choose a Plan',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textColorPrimary,
+                // ── Header ────────────────────────────────────────────
+                Text(
+                  sub.isActive ? 'Your Plan' : 'Choose a Plan',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textColorPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppValues.halfPadding),
+                Text(
+                  sub.isActive
+                      ? 'Upgrade or manage your subscription below.'
+                      : 'Start with a free 30-day trial. No credit card required.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textColorSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppValues.spacing_20),
+
+                // ── Plan cards ────────────────────────────────────────
+                ...hostBoraPlanInfos.map((plan) => _PlanCard(
+                      info: plan,
+                      isCurrentPlan: sub.isActive && sub.plan == plan.key,
+                      priceOverride: controller.priceLabel(plan.key),
+                      usesAppleIap: controller.usesAppleIap,
+                      onSubscribe: controller.startingCheckout.value
+                          ? null
+                          : () => controller.subscribe(plan.key),
+                    )),
+
+                const SizedBox(height: AppValues.spacing_20),
+
+                // ── Trial CTA ─────────────────────────────────────────
+                if (!sub.isActive) ...[
+                  _TrialCard(
+                    loading: controller.activatingTrial.value,
+                    onActivate: controller.requestTrial,
+                  ),
+                  const SizedBox(height: AppValues.spacing_20),
+                ],
+
+                // ── Restore purchases (iOS) ───────────────────────────
+                if (controller.usesAppleIap) ...[
+                  TextButton(
+                    onPressed: controller.startingCheckout.value
+                        ? null
+                        : controller.restorePurchases,
+                    child: const Text('Restore Purchases'),
+                  ),
+                  const SizedBox(height: AppValues.spacing_20),
+                ],
+
+                // ── Footer note ───────────────────────────────────────
+                Text(
+                  controller.usesAppleIap
+                      ? 'Subscriptions are billed through your Apple ID and auto-renew monthly. '
+                          'If a purchase does not activate, tap Subscribe again or Restore Purchases. '
+                          'Manage or cancel in Settings → Apple ID → Subscriptions.'
+                      : 'On Android, payment opens in Snippe (mobile money / QR). '
+                          'After you pay, return to Host Bora — your plan activates when payment confirms. '
+                          'If it is not active yet, wait a minute and tap Subscribe again or refresh.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+                const SizedBox(height: AppValues.largePadding),
+              ],
             ),
           ),
-          const SizedBox(height: AppValues.halfPadding),
-          Text(
-            sub.isActive
-                ? 'Upgrade or manage your subscription below.'
-                : 'Start with a free 30-day trial. No credit card required.',
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textColorSecondary,
+          if (busy)
+            const Positioned.fill(
+              child: ColoredBox(
+                color: Color(0x66000000),
+                child: Loading(),
+              ),
             ),
-          ),
-          const SizedBox(height: AppValues.spacing_20),
-
-          // ── Plan cards ────────────────────────────────────────
-          ...hostBoraPlanInfos.map((plan) => _PlanCard(
-                info: plan,
-                isCurrentPlan: sub.isActive && sub.plan == plan.key,
-                priceOverride: controller.priceLabel(plan.key),
-                usesAppleIap: controller.usesAppleIap,
-                onSubscribe: controller.startingCheckout.value
-                    ? null
-                    : () => controller.subscribe(plan.key),
-              )),
-
-          const SizedBox(height: AppValues.spacing_20),
-
-          // ── Trial CTA ─────────────────────────────────────────
-          if (!sub.isActive) ...[
-            _TrialCard(
-              loading: controller.activatingTrial.value,
-              onActivate: controller.requestTrial,
-            ),
-            const SizedBox(height: AppValues.spacing_20),
-          ],
-
-          // ── Restore purchases (iOS) ───────────────────────────
-          if (controller.usesAppleIap) ...[
-            TextButton(
-              onPressed: controller.startingCheckout.value
-                  ? null
-                  : controller.restorePurchases,
-              child: const Text('Restore Purchases'),
-            ),
-            const SizedBox(height: AppValues.spacing_20),
-          ],
-
-          // ── Footer note ───────────────────────────────────────
-          Text(
-            controller.usesAppleIap
-                ? 'Subscriptions are billed through your Apple ID and auto-renew monthly. '
-                    'Manage or cancel in Settings → Apple ID → Subscriptions.'
-                : 'Payments processed securely via Snippe. Subscriptions auto-renew monthly.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: AppValues.largePadding),
         ],
       );
     });

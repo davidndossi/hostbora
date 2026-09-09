@@ -35,12 +35,17 @@ class AuthController extends BaseController {
 
   final AppRepository _repository = Get.find(tag: (AppRepository).toString());
 
-  final TextEditingController msisdnController = TextEditingController();
+  /// Owned by the login form; do not dispose in [onClose] — Auth can stay
+  /// under OTP / Create Account while GetX briefly drops this controller
+  /// (fenix), which would leave TextFormField attached to a disposed TEC.
+  TextEditingController msisdnController = TextEditingController();
 
   late String firebaseToken;
 
   @override
   void onInit() {
+    // Fenix may construct a fresh controller; ensure a live TEC every time.
+    msisdnController = TextEditingController(text: msisdn.value);
     getFirebaseToken();
     _loadPinStatus();
     super.onInit();
@@ -48,9 +53,7 @@ class AuthController extends BaseController {
 
   @override
   void onClose() {
-    try {
-      msisdnController.dispose();
-    } catch (_) {}
+    // Intentionally not disposing [msisdnController] here. See field note.
     super.onClose();
   }
 

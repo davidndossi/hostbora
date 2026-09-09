@@ -35,6 +35,14 @@ abstract class PreferenceManager {
   static const keyHasSeenFinancesCoachMark = 'has_seen_finances_coach_mark';
   static const keyHasDismissedHomeAiInsight = 'has_dismissed_home_ai_insight';
 
+  /// Portfolio manager mode: host user id we write/manage under.
+  static const keyActingAsHostUserId = 'acting_as_host_user_id';
+  static const keyManagedHostName = 'managed_host_name';
+  static const keyIsPortfolioManager = 'is_portfolio_manager';
+
+  /// JSON map of taskId → {assignee, status} when the API list omits them.
+  static const keyTaskAssignmentOverrides = 'task_assignment_overrides';
+
   Future<String> getString(String key, {String defaultValue = ''});
 
   Future<bool> setString(String key, String value);

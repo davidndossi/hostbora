@@ -22,7 +22,12 @@ class PropertyRecord {
     this.unitsJson = '',
     this.floorCount = 1,
     this.coverPhotoPath = '',
+    this.listingStatus = listingStatusActive,
   });
+
+  static const listingStatusActive = 'ACTIVE';
+  static const listingStatusDraft = 'DRAFT';
+  static const listingStatusArchived = 'ARCHIVED';
 
   final int id;
   final String propertyName;
@@ -43,8 +48,18 @@ class PropertyRecord {
   /// Bundled asset (`images/LR-n.ext`), local file path, or remote URL.
   final String coverPhotoPath;
 
+  /// Listing lifecycle: [listingStatusActive], [listingStatusDraft], or [listingStatusArchived].
+  final String listingStatus;
+
   /// Rent “apartment suite” field — same as [propertyName] in local schema.
   String get apartmentSuite => propertyName;
+
+  static String normalizeListingStatus(String? raw) {
+    final s = (raw ?? '').trim().toUpperCase();
+    if (s == 'DRAFT') return listingStatusDraft;
+    if (s == 'ARCHIVED' || s == 'ARCHIVE') return listingStatusArchived;
+    return listingStatusActive;
+  }
 
   factory PropertyRecord.fromMap(Map<String, Object?> m) {
     return PropertyRecord(
@@ -64,6 +79,7 @@ class PropertyRecord {
       unitsJson: m['units_json'] as String? ?? '',
       floorCount: (m['floor_count'] as num?)?.toInt() ?? 1,
       coverPhotoPath: m['cover_photo_path'] as String? ?? '',
+      listingStatus: normalizeListingStatus(m['listing_status'] as String?),
     );
   }
 
@@ -83,7 +99,50 @@ class PropertyRecord {
     'units_json': unitsJson,
     'floor_count': floorCount,
     'cover_photo_path': coverPhotoPath,
+    'listing_status': normalizeListingStatus(listingStatus),
   };
+
+  PropertyRecord copyWith({
+    int? id,
+    String? propertyName,
+    String? propertyType,
+    String? propertyLocation,
+    String? propertyRef,
+    int? tenants,
+    int? units,
+    String? ownerUserId,
+    String? workspaceType,
+    int? createdAtMs,
+    String? rentAmount,
+    String? rentFrequency,
+    String? minRentalDuration,
+    String? unitsJson,
+    int? floorCount,
+    String? coverPhotoPath,
+    String? listingStatus,
+  }) {
+    return PropertyRecord(
+      id: id ?? this.id,
+      propertyName: propertyName ?? this.propertyName,
+      propertyType: propertyType ?? this.propertyType,
+      propertyLocation: propertyLocation ?? this.propertyLocation,
+      propertyRef: propertyRef ?? this.propertyRef,
+      tenants: tenants ?? this.tenants,
+      units: units ?? this.units,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
+      workspaceType: workspaceType ?? this.workspaceType,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      rentAmount: rentAmount ?? this.rentAmount,
+      rentFrequency: rentFrequency ?? this.rentFrequency,
+      minRentalDuration: minRentalDuration ?? this.minRentalDuration,
+      unitsJson: unitsJson ?? this.unitsJson,
+      floorCount: floorCount ?? this.floorCount,
+      coverPhotoPath: coverPhotoPath ?? this.coverPhotoPath,
+      listingStatus: listingStatus != null
+          ? normalizeListingStatus(listingStatus)
+          : this.listingStatus,
+    );
+  }
 }
 
 class PropertyLocalDataSource {
@@ -391,6 +450,8 @@ class PropertyLocalDataSource {
             : existing.propertyLocation,
         propertyRef: ref.isNotEmpty ? ref : existing.propertyRef,
         tenants: row.tenants > 0 ? row.tenants : existing.tenants,
+        // Trust remote unit count when provided. If remote asserts units but
+        // sends empty unitsJson, clear stale local JSON so counters stay aligned.
         units: row.units > 0 ? row.units : existing.units,
         ownerUserId: row.ownerUserId.isNotEmpty
             ? row.ownerUserId
@@ -407,11 +468,16 @@ class PropertyLocalDataSource {
         minRentalDuration: row.minRentalDuration.isNotEmpty
             ? row.minRentalDuration
             : existing.minRentalDuration,
-        unitsJson: row.unitsJson.isNotEmpty ? row.unitsJson : existing.unitsJson,
+        unitsJson: row.unitsJson.isNotEmpty
+            ? row.unitsJson
+            : (row.units > 0 ? '' : existing.unitsJson),
         floorCount: row.floorCount > 0 ? row.floorCount : existing.floorCount,
         coverPhotoPath: row.coverPhotoPath.isNotEmpty
             ? row.coverPhotoPath
             : existing.coverPhotoPath,
+        listingStatus: row.listingStatus.trim().isEmpty
+            ? existing.listingStatus
+            : PropertyRecord.normalizeListingStatus(row.listingStatus),
       );
       await update(merged);
       return merged;
@@ -434,6 +500,31 @@ class PropertyLocalDataSource {
       unitsJson: row.unitsJson,
       floorCount: row.floorCount,
       coverPhotoPath: row.coverPhotoPath,
+      listingStatus: row.listingStatus,
     );
+  }
+
+  Future<void> updateListingStatus({
+    required int id,
+    required String listingStatus,
+  }) async {
+    final db = await database;
+    await db.update(
+      _table,
+      {'listing_status': PropertyRecord.normalizeListingStatus(listingStatus)},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<PropertyRecord?> updateListingStatusByRef({
+    required String propertyRef,
+    required String listingStatus,
+  }) async {
+    final existing = await getByPropertyRef(propertyRef.trim());
+    if (existing == null) return null;
+    final updated = existing.copyWith(listingStatus: listingStatus);
+    await update(updated);
+    return updated;
   }
 }

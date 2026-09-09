@@ -343,6 +343,24 @@
   "role": "Role",
   "joinUser": "Join User",
   "sendInvite": "Send Invite",
+  "inviteManager": "Invite manager",
+  "portfolioManagers": "Portfolio managers",
+  "managingPortfolioBanner": "Managing {hostName}'s portfolio",
+  "@managingPortfolioBanner": {
+    "placeholders": {
+      "hostName": { "type": "String" }
+    }
+  },
+  "managersFullAccessHint": "Managers can log in and fully manage all your properties.",
+  "noManagersInvited": "No managers invited yet.",
+  "managerInvitePhoneHint": "They get full access to all your properties after logging in with this phone.",
+  "managerInvitedCanLogin": "Manager invited. They can log in with {phone}.",
+  "@managerInvitedCanLogin": {
+    "placeholders": {
+      "phone": { "type": "String" }
+    }
+  },
+  "revokeManagerAccess": "Revoke",
   "requestJoin": "Request to Join",
   "pendingInvites": "Pending Invites",
   "visibility": "Visibility",
@@ -723,6 +741,7 @@
   "reportsExportExcel": "Excel",
   "reportsInvalidDateRange": "Start date must be on or before end date.",
   "reportsExportDone": "Export ready to share",
+  "reportsExportFailed": "Could not export the report. Please try again.",
   "reportsNoData": "No data for this period.",
   "homeCheckInGuestsToday": "Check-in guests",
   "homeCheckOutGuestsToday": "Check-out guests",

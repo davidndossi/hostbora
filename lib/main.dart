@@ -14,6 +14,7 @@ import '/flavors/environment.dart';
 import 'app/core/config/tuya_config.dart';
 import 'app/data/local/service/storage_service.dart';
 import 'app/data/local/service/lease_reminder_workmanager.dart';
+import 'app/data/service/apple_iap_service.dart';
 import 'app/data/service/tuya_service.dart';
 import 'app/data/service/tuya_smart_lock_service.dart';
 import 'app/routes/app_pages.dart';
@@ -208,6 +209,7 @@ void main() async {
   );
 
   WidgetsFlutterBinding.ensureInitialized();
+  AppleIapService.registerPlatform();
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

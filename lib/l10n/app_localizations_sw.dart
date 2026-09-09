@@ -974,6 +974,36 @@ class AppLocalizationsSw extends AppLocalizations {
   String get sendInvite => 'Tuma Mwaliko';
 
   @override
+  String get inviteManager => 'Alika meneja';
+
+  @override
+  String get portfolioManagers => 'Wasimamizi wa portfolio';
+
+  @override
+  String managingPortfolioBanner(String hostName) {
+    return 'Unasimamia portfolio ya $hostName';
+  }
+
+  @override
+  String get managersFullAccessHint =>
+      'Wasimamizi wanaweza kuingia na kusimamia mali zako zote.';
+
+  @override
+  String get noManagersInvited => 'Hakuna wasimamizi walioalikwa bado.';
+
+  @override
+  String get managerInvitePhoneHint =>
+      'Watapata ufikiaji kamili wa mali zako baada ya kuingia kwa namba hii.';
+
+  @override
+  String managerInvitedCanLogin(String phone) {
+    return 'Meneja amealikwa. Anaweza kuingia kwa namba $phone.';
+  }
+
+  @override
+  String get revokeManagerAccess => 'Ondoa';
+
+  @override
   String get requestJoin => 'Omba kujiunga';
 
   @override
@@ -2099,6 +2129,10 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get reportsExportDone => 'Hamisho liko tayari kushiriki';
+
+  @override
+  String get reportsExportFailed =>
+      'Imeshindikana kuhamisha ripoti. Jaribu tena.';
 
   @override
   String get reportsNoData => 'Hakuna data ya kipindi hiki.';

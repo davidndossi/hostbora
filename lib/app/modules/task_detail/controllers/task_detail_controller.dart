@@ -7,6 +7,7 @@ import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/model/add_task_request.dart';
+import '../../maintenance_tasks/task_assignment_store.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../maintenance_tasks/model/maintenance_task.dart';
@@ -61,20 +62,23 @@ class TaskDetailController extends BaseController {
     if (t == null || name.trim().isEmpty) return;
     assigningStaff.value = true;
     final trimmed = name.trim();
-    final request = t.toUpdateRequest(assigneeOverride: trimmed);
+    final updated = t.copyWith(
+      assignee: trimmed,
+      status: t.isCompleted ? TaskStatus.completed : TaskStatus.inProgress,
+    );
+    final request = updated.toUpdateRequest(assigneeOverride: trimmed);
+    task.value = updated;
+    await TaskAssignmentStore.remember(updated);
     try {
       final res = await _repository.updateTask(t.id, request);
       if (res.isSuccess) {
-        task.value = t.copyWith(assignee: trimmed);
         showSuccessMessage('Assigned to $trimmed');
       } else {
         await _queueTaskUpdate(t.id, request);
-        task.value = t.copyWith(assignee: trimmed);
         showSuccessMessage('Assigned locally — will sync when online');
       }
     } catch (_) {
       await _queueTaskUpdate(t.id, request);
-      task.value = t.copyWith(assignee: trimmed);
       showSuccessMessage('Assigned locally — will sync when online');
     } finally {
       assigningStaff.value = false;
@@ -117,7 +121,9 @@ class TaskDetailController extends BaseController {
         final map = _unwrapTaskMap(res.data);
         if (map != null) {
           final remote = MaintenanceTask.fromApiMap(map);
-          task.value = _mergeWithCached(cached, remote);
+          final merged = _mergeWithCached(cached, remote);
+          task.value = merged;
+          await TaskAssignmentStore.remember(merged);
           return;
         }
       }
@@ -180,8 +186,29 @@ class TaskDetailController extends BaseController {
     final t = task.value;
     if (t == null) return;
     Get.toNamed(Routes.EDIT_TASK, arguments: t.toArguments())?.then((saved) {
+      if (saved is Map) {
+        applyLocalUpdate(Map<String, dynamic>.from(saved));
+        return;
+      }
       if (saved == true) loadTask();
     });
+  }
+
+  void applyLocalUpdate(Map<String, dynamic> raw) {
+    final edited = MaintenanceTask.fromArguments(raw);
+    if (edited.id.isEmpty) return;
+    final current = task.value;
+    task.value = MaintenanceTask(
+      id: edited.id,
+      title: edited.title.isNotEmpty ? edited.title : (current?.title ?? ''),
+      assignee: current?.assignee ?? edited.assignee,
+      description: edited.description,
+      priority: current?.priority ?? edited.priority,
+      status: current?.status ?? edited.status,
+      dueDate: edited.dueDate,
+      isCompleted: current?.isCompleted ?? edited.isCompleted,
+      completedAt: current?.completedAt ?? edited.completedAt,
+    );
   }
 
   void toggleComplete() {

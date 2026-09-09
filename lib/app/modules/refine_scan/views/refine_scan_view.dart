@@ -204,7 +204,7 @@ class RefineScanView extends BaseView<RefineScanController> {
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
                 color: c.isDark
-                    ? theme.colorScheme.onSurfaceVariant
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.85)
                     : AppColors.textColorSecondary,
               ),
             ),
@@ -235,7 +235,7 @@ class RefineScanView extends BaseView<RefineScanController> {
             child: _AdjustButton(
               icon: Icons.rotate_right,
               label: _t(context, en: 'Rotate', sw: 'Zungusha'),
-              onTap: processing ? () {} : () => controller.rotate(),
+              onTap: processing ? null : () => controller.rotate(),
             ),
           ),
           const SizedBox(width: 12),
@@ -243,7 +243,7 @@ class RefineScanView extends BaseView<RefineScanController> {
             child: _AdjustButton(
               icon: Icons.auto_fix_high,
               label: _t(context, en: 'Enhance', sw: 'Boresha'),
-              onTap: processing ? () {} : () => controller.enhance(),
+              onTap: processing ? null : () => controller.enhance(),
             ),
           ),
           const SizedBox(width: 12),
@@ -251,7 +251,7 @@ class RefineScanView extends BaseView<RefineScanController> {
             child: _AdjustButton(
               icon: Icons.contrast,
               label: _t(context, en: 'B&W', sw: 'Nyeusi/Nyeupe'),
-              onTap: processing ? () {} : controller.toggleBlackAndWhite,
+              onTap: processing ? null : controller.toggleBlackAndWhite,
               isActive: controller.blackAndWhiteOn.value,
             ),
           ),
@@ -598,7 +598,7 @@ class _CornerHandle extends StatelessWidget {
 class _AdjustButton extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isActive;
 
   const _AdjustButton({
@@ -610,38 +610,62 @@ class _AdjustButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final c = FormSurfaceColors.of(context);
+    final enabled = onTap != null;
+    // Dark theme: use onSurface / bright accent so tools never look like
+    // disabled grey-on-grey. Light theme keeps the existing ink colors.
+    final Color fg;
+    if (!enabled) {
+      fg = c.isDark
+          ? theme.colorScheme.onSurface.withValues(alpha: 0.38)
+          : AppColors.textColorPrimary.withValues(alpha: 0.38);
+    } else if (isActive) {
+      fg = c.isDark ? const Color(0xFF5ECFBF) : AppColors.designAccent;
+    } else {
+      fg = c.isDark ? theme.colorScheme.onSurface : AppColors.textColorPrimary;
+    }
+    final Color bg;
+    if (isActive) {
+      bg = (c.isDark ? const Color(0xFF5ECFBF) : AppColors.designAccent)
+          .withValues(alpha: c.isDark ? 0.22 : 0.12);
+    } else if (c.isDark) {
+      bg = theme.colorScheme.surfaceContainerHigh;
+    } else {
+      bg = AppColors.lightGreyColor.withValues(alpha: 0.4);
+    }
+    final borderColor = c.isDark
+        ? (isActive
+            ? const Color(0xFF5ECFBF).withValues(alpha: 0.7)
+            : theme.colorScheme.onSurface.withValues(alpha: 0.28))
+        : Colors.transparent;
+
     return Material(
-      color: isActive
-          ? AppColors.designAccent.withValues(alpha: 0.12)
-          : (c.isDark
-                ? Theme.of(context).colorScheme.surfaceContainerHighest
-                : AppColors.lightGreyColor.withValues(alpha: 0.4)),
+      color: bg,
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppValues.radius_6),
+            border: Border.all(color: borderColor, width: 1),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 24,
-                color: isActive
-                    ? AppColors.designAccent
-                    : AppColors.textColorPrimary,
-              ),
+              Icon(icon, size: 24, color: fg),
               const SizedBox(height: 6),
               Text(
                 label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isActive
-                      ? AppColors.designAccent
-                      : AppColors.textColorPrimary,
+                  color: fg,
                 ),
               ),
             ],

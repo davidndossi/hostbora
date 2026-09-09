@@ -11,6 +11,7 @@ import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/widget/hub_insight_banner.dart';
+import '../../../core/widget/managing_for_banner.dart';
 import '../../../core/widget/property_listing_image.dart';
 import '/app/core/base/base_view.dart';
 import '../../../core/widget/skeleton_presets.dart';
@@ -71,6 +72,7 @@ class HomeView extends BaseView<HomeController> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const ManagingForBanner(),
                   const SizedBox(height: 8),
                   if (controller.showWorkspaceFilterChips) ...[
                     _buildWorkspaceFilter(context),
@@ -574,7 +576,7 @@ class HomeView extends BaseView<HomeController> {
                 child: _sectionTitle(context, 'Recent payments', 'Malipo ya hivi karibuni'),
               ),
               TextButton(
-                onPressed: controller.openTodayRevenue,
+                onPressed: controller.openAllRecentPayments,
                 child: Text(
                   _t(context, 'See all', 'Ona yote'),
                   style: TextStyle(

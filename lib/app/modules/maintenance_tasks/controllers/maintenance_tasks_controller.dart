@@ -4,21 +4,41 @@ import 'package:intl/intl.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/haptic_feedback_util.dart';
 import '../../../data/repository/app_repository.dart';
+import '../task_assignment_store.dart';
 import '../../../routes/app_pages.dart';
 import '../model/maintenance_task.dart';
 
 enum TaskFilter { all, pending, inProgress, completed }
 
-/// Status sent to API for filter: null = all, PENDING, IN_PROGRESS, COMPLETED.
-const List<String?> _taskFilterStatuses = [null, 'PENDING', 'IN_PROGRESS', 'COMPLETED'];
-
 class MaintenanceTasksController extends BaseController {
   final AppRepository _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
 
   final Rx<TaskFilter> selectedFilter = TaskFilter.all.obs;
-  /// Tasks loaded from service by status (no static list).
-  final RxList<MaintenanceTask> tasks = <MaintenanceTask>[].obs;
+  /// Full unfiltered set — counters always read from here.
+  final RxList<MaintenanceTask> allTasks = <MaintenanceTask>[].obs;
   final loading = false.obs;
+
+  /// Visible rows for the selected tab.
+  List<MaintenanceTask> get visibleTasks {
+    switch (selectedFilter.value) {
+      case TaskFilter.pending:
+        return allTasks.where((t) => t.status == TaskStatus.pending).toList();
+      case TaskFilter.inProgress:
+        return allTasks.where((t) => t.status == TaskStatus.inProgress).toList();
+      case TaskFilter.completed:
+        return allTasks.where((t) => t.status == TaskStatus.completed).toList();
+      case TaskFilter.all:
+        return allTasks.toList();
+    }
+  }
+
+  int get countAll => allTasks.length;
+  int get countPending =>
+      allTasks.where((t) => t.status == TaskStatus.pending).length;
+  int get countInProgress =>
+      allTasks.where((t) => t.status == TaskStatus.inProgress).length;
+  int get countCompleted =>
+      allTasks.where((t) => t.status == TaskStatus.completed).length;
 
   @override
   void onInit() {
@@ -26,14 +46,13 @@ class MaintenanceTasksController extends BaseController {
     loadTasks();
   }
 
-  /// Fetches tasks from service by current filter (All / Pending / In Progress / Completed).
+  /// Always loads every task so tab counters stay correct.
   Future<void> loadTasks() async {
     loading.value = true;
+    final previous = allTasks.toList();
     try {
-      final status = _taskFilterStatuses[selectedFilter.value.index];
-      final res = await _repository.getTasks(status: status);
+      final res = await _repository.getTasks();
       if (!res.isSuccess || res.data == null) {
-        tasks.clear();
         return;
       }
       final raw = res.data!;
@@ -45,64 +64,53 @@ class MaintenanceTasksController extends BaseController {
       } else if (raw is Map && raw['content'] is List) {
         list = raw['content'] as List;
       }
-      var items = list
+      final items = list
           .whereType<Map>()
           .map((e) => MaintenanceTask.fromApiMap(Map<String, dynamic>.from(e)))
           .where((t) => t.id.isNotEmpty)
           .toList();
-      if (status != null && status.isNotEmpty) {
-        items = items.where((t) => _statusMatchesFilter(t, status)).toList();
-      }
-      tasks.assignAll(items);
+      allTasks.assignAll(
+        await TaskAssignmentStore.applyAll(items, memory: previous),
+      );
     } catch (_) {
-      tasks.clear();
+      // Keep the current list so a failed refresh does not wipe assignments.
     } finally {
       loading.value = false;
     }
   }
 
-  static bool _statusMatchesFilter(MaintenanceTask t, String status) {
-    switch (status) {
-      case 'PENDING':
-        return t.status == TaskStatus.pending;
-      case 'IN_PROGRESS':
-        return t.status == TaskStatus.inProgress;
-      case 'COMPLETED':
-        return t.status == TaskStatus.completed;
-      default:
-        return true;
-    }
-  }
-
-  /// Counts from the currently-loaded list so chips are always accurate.
-  int get countAll => tasks.length;
-  int get countPending =>
-      tasks.where((t) => t.status == TaskStatus.pending).length;
-  int get countInProgress =>
-      tasks.where((t) => t.status == TaskStatus.inProgress).length;
-  int get countCompleted =>
-      tasks.where((t) => t.status == TaskStatus.completed).length;
-
   void setFilter(TaskFilter filter) {
     if (selectedFilter.value == filter) return;
     selectedFilter.value = filter;
-    loadTasks();
   }
 
-  void toggleComplete(MaintenanceTask task) {
-    final idx = tasks.indexWhere((t) => t.id == task.id);
+  Future<void> toggleComplete(MaintenanceTask task) async {
+    final idx = allTasks.indexWhere((t) => t.id == task.id);
     if (idx == -1) return;
     final now = DateTime.now();
-    tasks[idx] = task.copyWith(
-      isCompleted: !task.isCompleted,
-      status: task.isCompleted ? TaskStatus.pending : TaskStatus.completed,
-      completedAt: task.isCompleted ? null : now,
+    final completing = !task.isCompleted;
+    final updated = MaintenanceTask(
+      id: task.id,
+      title: task.title,
+      assignee: task.assignee,
+      description: task.description,
+      priority: task.priority,
+      status: completing ? TaskStatus.completed : TaskStatus.pending,
+      dueDate: task.dueDate,
+      isCompleted: completing,
+      completedAt: completing ? now : null,
     );
+    allTasks[idx] = updated;
+    try {
+      await _repository.updateTask(task.id, updated.toUpdateRequest());
+    } catch (_) {
+      // Keep the local status so the Completed tab stays accurate offline.
+    }
   }
 
-  void completeTaskFromSwipe(MaintenanceTask task) {
+  Future<void> completeTaskFromSwipe(MaintenanceTask task) async {
     if (task.isCompleted) return;
-    toggleComplete(task);
+    await toggleComplete(task);
     hapticPrimaryConfirm();
   }
 
@@ -115,10 +123,7 @@ class MaintenanceTasksController extends BaseController {
     try {
       final res = await _repository.updateTask(task.id, request);
       if (res.isSuccess) {
-        final idx = tasks.indexWhere((t) => t.id == task.id);
-        if (idx != -1) {
-          tasks[idx] = task.copyWith(dueDate: newDue);
-        }
+        _replaceTask(task.copyWith(dueDate: newDue));
         hapticPrimaryConfirm();
         showSuccessMessage(
           'Due ${DateFormat('MMM d, yyyy').format(newDue)}',
@@ -127,10 +132,7 @@ class MaintenanceTasksController extends BaseController {
       }
       showErrorMessage(res.message ?? 'Could not snooze task');
     } catch (e) {
-      final idx = tasks.indexWhere((t) => t.id == task.id);
-      if (idx != -1) {
-        tasks[idx] = task.copyWith(dueDate: newDue);
-      }
+      _replaceTask(task.copyWith(dueDate: newDue));
       showSuccessMessage('Due date moved locally to $dueIso');
     }
   }
@@ -157,26 +159,32 @@ class MaintenanceTasksController extends BaseController {
     });
   }
 
+  void _replaceTask(MaintenanceTask updated) {
+    final idx = allTasks.indexWhere((t) => t.id == updated.id);
+    if (idx == -1) return;
+    allTasks[idx] = updated;
+  }
+
   void _mergeTaskIntoList(MaintenanceTask updated) {
     if (updated.id.isEmpty) return;
-    final idx = tasks.indexWhere((t) => t.id == updated.id);
+    final idx = allTasks.indexWhere((t) => t.id == updated.id);
     if (idx == -1) return;
-    final current = tasks[idx];
-    final assignee = _isUnassigned(current.assignee) &&
-            !_isUnassigned(updated.assignee)
-        ? updated.assignee
-        : current.assignee;
-    tasks[idx] = current.copyWith(
-      assignee: assignee,
+    final current = allTasks[idx];
+    final assignee = _isUnassigned(updated.assignee)
+        ? current.assignee
+        : updated.assignee;
+    allTasks[idx] = MaintenanceTask(
+      id: current.id,
       title: updated.title.isNotEmpty ? updated.title : current.title,
-      description: updated.description.isNotEmpty
-          ? updated.description
-          : current.description,
-      dueDate: updated.dueDate ?? current.dueDate,
+      assignee: assignee,
+      description: updated.description,
+      priority: updated.priority,
       status: updated.status,
+      dueDate: updated.dueDate,
       isCompleted: updated.isCompleted,
-      completedAt: updated.completedAt ?? current.completedAt,
+      completedAt: updated.completedAt,
     );
+    TaskAssignmentStore.remember(allTasks[idx]);
   }
 
   static bool _isUnassigned(String value) {

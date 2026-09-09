@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -18,6 +20,7 @@ import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/local/service/currency_service.dart';
+import '../../../core/locale/app_locale_controller.dart';
 import '../../../core/widget/base_currency_dialog.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../routes/app_pages.dart';
@@ -40,6 +43,8 @@ class SettingsController extends BaseController {
   final userId = ''.obs;
   final isAdmin = false.obs;
   final isSalesAgent = false.obs;
+  /// True when this session is managing another host's portfolio (no billing).
+  final isPortfolioManagerSession = false.obs;
   final deviceName = ''.obs;
   final language = 'en'.obs;
   final isFL = false.obs;
@@ -65,6 +70,11 @@ class SettingsController extends BaseController {
   @override
   void onInit() {
     getPrefValues();
+    if (Get.isRegistered<AppLocaleController>()) {
+      final localeCtrl = Get.find<AppLocaleController>();
+      language(localeCtrl.code.value);
+      ever<String>(localeCtrl.code, (c) => language(c));
+    }
     super.onInit();
   }
 
@@ -98,7 +108,25 @@ class SettingsController extends BaseController {
     isSalesAgent(
       roles.any((r) => r.toLowerCase() == 'sales_agent'),
     );
+    isPortfolioManagerSession(
+      await _preferenceManager.getBool(
+        PreferenceManager.keyIsPortfolioManager,
+        defaultValue: false,
+      ),
+    );
     loadSettings();
+  }
+
+  void openSubscription() {
+    if (isPortfolioManagerSession.value) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Wasimamizi hawawezi kufikia bili au mipango.'
+            : 'Managers cannot access billing or plans.',
+      );
+      return;
+    }
+    Get.toNamed(Routes.SUBSCRIPTION);
   }
 
   void openAdminWhatsAppCredentials() {
@@ -138,15 +166,18 @@ class SettingsController extends BaseController {
   }
 
   void setDefaultLocale() {
-    if (language.value == 'en') {
-      language('sw');
+    final next = language.value == 'en' ? 'sw' : 'en';
+    language(next);
+    if (Get.isRegistered<AppLocaleController>()) {
+      unawaited(Get.find<AppLocaleController>().setLanguage(next));
     } else {
-      language('en');
+      final locale =
+          next == 'sw' ? const Locale('sw', 'TZ') : const Locale('en', 'US');
+      Get.updateLocale(locale);
+      unawaited(
+        _preferenceManager.setString(PreferenceManager.keyLang, next),
+      );
     }
-    String countryCode = language.value == 'sw' ? 'sw_TZ' : 'en_US';
-    var locale = Locale(language.value, countryCode);
-    Get.updateLocale(locale);
-    _preferenceManager.setString(PreferenceManager.keyLang, language.value);
   }
 
   void toggleTheme() {

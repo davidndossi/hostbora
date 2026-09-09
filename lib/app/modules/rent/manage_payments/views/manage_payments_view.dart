@@ -110,11 +110,20 @@ class ManagePaymentsView extends RentBaseView<ManagePaymentsController> {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 isExpanded: true,
-                value: controller.selectedMonthIndex.value.clamp(
-                  0,
-                  controller.monthChoices.length - 1,
-                ),
+                value: controller.showAllMonths.value
+                    ? -1
+                    : controller.selectedMonthIndex.value.clamp(
+                        0,
+                        controller.monthChoices.length - 1,
+                      ),
                 items: [
+                  DropdownMenuItem(
+                    value: -1,
+                    child: Text(
+                      _isSw ? 'Miezi yote' : 'All months',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                   for (var i = 0; i < controller.monthChoices.length; i++)
                     DropdownMenuItem(
                       value: i,

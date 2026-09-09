@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '/app/core/base/base_controller.dart';
+import '/app/core/locale/app_localizations_resolver.dart';
 import '/app/core/model/page_state.dart';
 import '/app/core/values/text_styles.dart';
 import '/app/core/widget/skeleton_presets.dart';
@@ -17,7 +18,7 @@ abstract class BaseView<Controller extends BaseController>
 
   BaseView({super.key});
 
-  AppLocalizations get appLocalization => AppLocalizations.of(Get.context!)!;
+  AppLocalizations get appLocalization => resolveAppLocalizations();
 
   final Logger logger = BuildConfig.instance.config.logger;
 

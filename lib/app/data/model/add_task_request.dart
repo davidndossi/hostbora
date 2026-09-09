@@ -8,6 +8,8 @@ class AddTaskRequest {
     this.propertyRef,
     this.workspaceType,
     this.assignee,
+    this.completed,
+    this.status,
   });
 
   final String title;
@@ -21,6 +23,8 @@ class AddTaskRequest {
 
   /// Name of the staff member to assign the task to.
   final String? assignee;
+  final bool? completed;
+  final String? status;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -38,6 +42,8 @@ class AddTaskRequest {
         'assignee': assignee,
         'assignedTo': assignee,
       },
+      if (completed != null) 'completed': completed,
+      if (status != null && status!.isNotEmpty) 'status': status,
     };
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../data/local/preference/preference_manager.dart';
 import '../../data/service/subscription_service.dart';
 import '../../routes/app_pages.dart';
 
@@ -25,6 +26,20 @@ class PlanGate {
 
   static SubscriptionService get _svc => Get.find<SubscriptionService>();
 
+  static Future<bool> isPortfolioManagerSession() async {
+    try {
+      final prefs = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
+      return prefs.getBool(
+        PreferenceManager.keyIsPortfolioManager,
+        defaultValue: false,
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Returns true if the user's active plan satisfies [required].
   static bool check(RequiredPlan required) {
     final svc = _svc;
@@ -38,6 +53,26 @@ class PlanGate {
 
   /// Shows an upgrade bottom sheet and navigates to the subscription page.
   static void showUpgradeSheet(
+    RequiredPlan required, {
+    required String featureName,
+    String? subtitle,
+  }) {
+    // Managers cannot change host billing — skip upgrade CTA.
+    isPortfolioManagerSession().then((isManager) {
+      if (isManager) {
+        Get.snackbar(
+          Get.locale?.languageCode == 'sw' ? 'Bili' : 'Billing',
+          Get.locale?.languageCode == 'sw'
+              ? 'Wasimamizi hawawezi kubadilisha mpango wa malipo.'
+              : 'Managers cannot change billing plans.',
+        );
+        return;
+      }
+      _showUpgradeSheetImpl(required, featureName: featureName, subtitle: subtitle);
+    });
+  }
+
+  static void _showUpgradeSheetImpl(
     RequiredPlan required, {
     required String featureName,
     String? subtitle,

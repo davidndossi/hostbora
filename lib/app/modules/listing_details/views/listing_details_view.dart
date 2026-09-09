@@ -506,25 +506,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
           );
         }),
 
-        const SizedBox(height: 24),
-
-        // ── Staff payroll section ─────────────────────────────────────────
-        Text(
-          _isSw ? 'Malipo ya wafanyakazi' : 'Staff payroll',
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
-            color: u.text,
-          ),
-        ),
-        const SizedBox(height: 10),
-        ListingDetailsStaffPanel(
-          isSw: _isSw,
-          compactListOnly: false,
-          onStaffChanged: controller.refreshStaffPanel,
-        ),
+        const SizedBox(height: 24)
       ],
     );
   }
@@ -1759,7 +1741,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
   }
 
   Widget _activityLogTile(_ListingUi u, ListingActivityVm activity) {
-    final tile = Container(
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
         color: u.soft.withValues(alpha: u.dark ? 0.35 : 0.55),
@@ -1825,29 +1807,27 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (activity.canEdit)
-                    Builder(builder: (ctx) {
-                      return Text(
-                        _isSw ? 'Hariri' : 'Edit',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(ctx).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      );
-                    }),
+                    _activityActionLink(
+                      label: _isSw ? 'Hariri' : 'Edit',
+                      color: Theme.of(u.context).colorScheme.primary,
+                      onTap: () async {
+                        Navigator.of(u.context).maybePop();
+                        await controller.onEditActivity(activity);
+                      },
+                    ),
                   if (activity.canEdit && activity.canDelete)
                     Text(
                       ' • ',
                       style: TextStyle(fontSize: 12, color: u.muted),
                     ),
                   if (activity.canDelete)
-                    Text(
-                      _isSw ? 'Futa' : 'Delete',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFFEF4444),
-                        fontWeight: FontWeight.w600,
-                      ),
+                    _activityActionLink(
+                      label: _isSw ? 'Futa' : 'Delete',
+                      color: const Color(0xFFEF4444),
+                      onTap: () async {
+                        Navigator.of(u.context).maybePop();
+                        await controller.onDeleteActivity(activity);
+                      },
                     ),
                   if (activity.canEdit || activity.canDelete)
                     Text(
@@ -1865,25 +1845,26 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
         ],
       ),
     );
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: activity.canEdit
-            ? () async {
-                // Close the activity sheet first so returning from edit/ledger
-                // lands on a clean listing details scaffold (light theme).
-                Navigator.of(u.context).maybePop();
-                await controller.onEditActivity(activity);
-              }
-            : null,
-        onLongPress: activity.canDelete
-            ? () async {
-                Navigator.of(u.context).maybePop();
-                await controller.onDeleteActivity(activity);
-              }
-            : null,
-        child: tile,
+  }
+
+  Widget _activityActionLink({
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

@@ -455,6 +455,26 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> getMyAccess() {
+    return _remoteSource.getMyAccess();
+  }
+
+  @override
+  Future<GeneralResponse> getPortfolioManagers() {
+    return _remoteSource.getPortfolioManagers();
+  }
+
+  @override
+  Future<GeneralResponse> invitePortfolioManager(Map<String, dynamic> body) {
+    return _remoteSource.invitePortfolioManager(body);
+  }
+
+  @override
+  Future<GeneralResponse> revokePortfolioManager(String managerUserId) {
+    return _remoteSource.revokePortfolioManager(managerUserId);
+  }
+
+  @override
   Future<GeneralResponse> submitFeedback(Map<String, dynamic> body) {
     return _remoteSource.submitFeedback(body);
   }

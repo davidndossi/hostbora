@@ -98,10 +98,17 @@ class LocalSourceBindings implements Bindings {
       () => ExchangeRateLocalDataSource(),
       fenix: true,
     );
-    Get.putAsync<CurrencyService>(
-      () => CurrencyService().init(),
-      permanent: true,
-    );
+    // Register synchronously so onboarding / BaseCurrencyPicker can
+    // Get.find immediately. putAsync left the type unregistered until
+    // init() finished, which crashed the first onboarding frame.
+    if (!Get.isRegistered<CurrencyService>()) {
+      final currency = Get.put<CurrencyService>(
+        CurrencyService(),
+        permanent: true,
+      );
+      // Load saved base currency + local rates without blocking first paint.
+      currency.init();
+    }
     // Get.lazyPut<RentPropertyLocalDataSource>(
     //   () => RentPropertyLocalDataSource(),
     //   fenix: true,
@@ -331,6 +338,7 @@ class LocalSourceBindings implements Bindings {
         propertyLocal: Get.find<PropertyLocalDataSource>(),
         tenantLocal: Get.find<TenantLocalDataSource>(),
         staffLocal: Get.find<RentStaffLocalDataSource>(),
+        propertyMembers: Get.find<PropertyMembersLocalDataSource>(),
         preferenceManager: Get.find<PreferenceManager>(
           tag: (PreferenceManager).toString(),
         ),

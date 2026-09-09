@@ -209,6 +209,11 @@ abstract class AppRepository {
   Future<GeneralResponse> getStaffList();
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body);
   Future<GeneralResponse> deleteStaff(String id);
+
+  Future<GeneralResponse> getMyAccess();
+  Future<GeneralResponse> getPortfolioManagers();
+  Future<GeneralResponse> invitePortfolioManager(Map<String, dynamic> body);
+  Future<GeneralResponse> revokePortfolioManager(String managerUserId);
   Future<GeneralResponse> submitFeedback(Map<String, dynamic> body);
   Future<GeneralResponse> createLoyaltyOffer(Map<String, dynamic> body);
   Future<GeneralResponse> createTenantCharge(Map<String, dynamic> body);

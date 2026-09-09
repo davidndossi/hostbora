@@ -198,15 +198,28 @@ class RentStaffManagementController extends BaseController {
   String? validatePhone(String? value) {
     final phone = value?.trim() ?? '';
     if (phone.isEmpty) return 'Phone number is required';
-    final normalized = phone
-        .replaceAll(RegExp(r'[\s\-]'), '')
-        .replaceFirst(RegExp(r'^\+255'), '0')
-        .replaceFirst(RegExp(r'^255'), '0');
-    final phonePattern = RegExp(r'^0[678]\d{8}$');
-    if (!phonePattern.hasMatch(normalized)) {
+    final normalized = _normalizePhone(phone);
+    if (normalized == null) {
       return 'Enter a valid phone number (e.g. 0712345678)';
     }
     return null;
+  }
+
+  /// Matches backend StaffService phone rules used for login usernames.
+  String? _normalizePhone(String raw) {
+    var digits = raw
+        .trim()
+        .replaceAll(RegExp(r'[\s\-()]'), '')
+        .replaceFirst(RegExp(r'^\+'), '');
+    if (digits.startsWith('255') && digits.length >= 12) {
+      digits = '0${digits.substring(3)}';
+    }
+    digits = digits.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 9 && RegExp(r'^[678]').hasMatch(digits)) {
+      digits = '0$digits';
+    }
+    if (!RegExp(r'^0[678]\d{8}$').hasMatch(digits)) return null;
+    return digits;
   }
 
   String? validateAmount(String? value) {
@@ -217,10 +230,16 @@ class RentStaffManagementController extends BaseController {
 
   String? validatePayDate(String? value) {
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Please enter payment date';
+    if (v.isEmpty) {
+      return Get.locale?.languageCode == 'sw'
+          ? 'Weka siku ya malipo'
+          : 'Please enter payment day';
+    }
     final day = int.tryParse(v);
     if (day == null || day < 1 || day > 31) {
-      return 'Use a day between 1 and 31';
+      return Get.locale?.languageCode == 'sw'
+          ? 'Siku lazima iwe kati ya 1 na 31'
+          : 'Day must be between 1 and 31';
     }
     return null;
   }
@@ -276,13 +295,15 @@ class RentStaffManagementController extends BaseController {
     String? id,
     String? startDate,
   }) {
+    final phone =
+        _normalizePhone(phoneController.text) ?? phoneController.text.trim();
     return StaffRequest(
       id: id,
       name: name,
       role: role,
       salary: amount,
       salaryFrequency: paymentType.value,
-      phone: phoneController.text.trim(),
+      phone: phone,
       notes: notesController.text.trim(),
       propertyName: _propertyName,
       propertyRef: _propertyRef,
@@ -298,12 +319,22 @@ class RentStaffManagementController extends BaseController {
     final payDay = payDateController.text.trim();
     final role = selectedPrimaryRole.value.trim();
     final amount = _parseAmount(amountController.text);
+    final phone = _normalizePhone(phoneController.text);
 
     if (role.isEmpty) {
       Get.snackbar('Error', 'Please select a primary role');
       return;
     }
     if (amount == null) return;
+    if (phone == null) {
+      showErrorMessage(
+        _isSw
+            ? 'Weka namba sahihi ya simu (mf. 0712345678)'
+            : 'Enter a valid phone number (e.g. 0712345678)',
+      );
+      return;
+    }
+    phoneController.text = phone;
 
     await runBusy(() async {
       try {
@@ -329,7 +360,8 @@ class RentStaffManagementController extends BaseController {
             final res =
                 await _repository.updateStaff(apiStaffId, request.toApiJson());
             if (!res.isSuccess) throw Exception(res.message ?? 'API error');
-          } catch (_) {
+          } catch (e) {
+            if (_isClientValidationError(e)) rethrow;
             final payload = request.toApiJson()..['id'] = apiStaffId;
             await _syncQueue.enqueue(
               entityType: 'staff',
@@ -365,6 +397,7 @@ class RentStaffManagementController extends BaseController {
           payDay: payDay,
           startDate: startDate,
         );
+        var provisionedOnline = false;
         try {
           final res = await _repository.createStaff(request.toApiJson());
           if (!res.isSuccess) throw Exception(res.message ?? 'API error');
@@ -372,7 +405,9 @@ class RentStaffManagementController extends BaseController {
           if (backendId != null) {
             await _local.saveBackendId(localId, backendId);
           }
-        } catch (_) {
+          provisionedOnline = true;
+        } catch (e) {
+          if (_isClientValidationError(e)) rethrow;
           await _syncQueue.enqueue(
             entityType: 'staff',
             operation: 'create',
@@ -383,13 +418,37 @@ class RentStaffManagementController extends BaseController {
         }
         _clearFormFields();
         await loadStaff();
-        showSuccessWithHaptic('Staff was added successfully');
+        showSuccessWithHaptic(
+          provisionedOnline
+              ? (_isSw
+                  ? 'Mfanyakazi ameongezwa. Anaweza kuingia kwa namba $phone.'
+                  : 'Staff added. They can log in with $phone.')
+              : (_isSw
+                  ? 'Mfanyakazi amehifadhiwa. Akaunti ya kuingia itaundwa baada ya kusawazisha.'
+                  : 'Staff saved offline. Login account will be created after sync.'),
+        );
       } catch (e, st) {
         logger.e('registerStaff $e $st');
         hapticValidationError();
-        Get.snackbar('Error', 'Could not save staff');
+        final msg = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+        showErrorMessage(
+          msg.isNotEmpty && msg != 'null'
+              ? msg
+              : (_isSw
+                  ? 'Imeshindikana kuhifadhi mfanyakazi'
+                  : 'Could not save staff'),
+        );
       }
     });
+  }
+
+  bool _isClientValidationError(Object e) {
+    final text = e.toString().toLowerCase();
+    return text.contains('phone') ||
+        text.contains('required') ||
+        text.contains('invalid') ||
+        text.contains('400') ||
+        text.contains('illegalargument');
   }
 
   Future<RentStaffRecord?> peekStaffRecord(int id) => _local.getById(id);

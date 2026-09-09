@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/theme/form_surface_colors.dart';
+import '../../../core/utils/property_name_rules.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/property_unit_floor.dart';
@@ -112,6 +113,7 @@ class EditListingView extends BaseView<EditListingController> {
                     TextFormField(
                       controller: controller.propertyNameController,
                       textCapitalization: TextCapitalization.words,
+                      maxLength: PropertyNameRules.maxLength,
                       decoration: _inputDecoration(
                         context,
                         hint: _t(
@@ -119,17 +121,9 @@ class EditListingView extends BaseView<EditListingController> {
                           en: 'e.g., AB Apartment',
                           sw: 'mf., AB Apartment',
                         ),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return _t(
-                            context,
-                            en: 'Property name is required',
-                            sw: 'Jina la mali linahitajika',
-                          );
-                        }
-                        return null;
-                      },
+                      ).copyWith(counterText: ''),
+                      validator: controller.validatePropertyName,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                     ),
                     if (controller.showUnitsEditor)
                       Column(

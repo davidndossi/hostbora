@@ -118,6 +118,13 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
       'content-type': 'application/json',
       'Authorization': 'Bearer $token',
     };
+    final actingAs = await _preferenceManager.getString(
+      PreferenceManager.keyActingAsHostUserId,
+      defaultValue: '',
+    );
+    if (actingAs.trim().isNotEmpty) {
+      customHeaders['X-Acting-As-Host'] = actingAs.trim();
+    }
 
     return customHeaders;
   }

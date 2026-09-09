@@ -42,6 +42,7 @@
       'hero.stats.tzsSub': 'Local currency',
       'hero.stats.offline': 'Offline-friendly',
       'hero.stats.offlineSub': 'Works on the go',
+      'features.kicker': 'Daily toolkit',
       'features.pain':
         'Most landlords in Dar manage rent via M-Pesa screenshots, WhatsApp threads, and handwritten notebooks. HostBora replaces that chaos.',
       'features.title': 'Everything landlords and managers need daily',
@@ -77,6 +78,7 @@
       'feat.calendar.title': 'Calendar sync',
       'feat.calendar.desc':
         'Link external calendars to reduce double bookings and keep blocked dates aligned.',
+      'workspaces.kicker': 'BnB + Rent',
       'workspaces.title': 'Two workspaces, one app',
       'workspaces.sub': 'Switch between BnB and Rent anytime — same properties, tailored flows.',
       'workspaces.bnb.badge': 'BnB',
@@ -93,6 +95,7 @@
       'workspaces.rent.li1': 'Tenants, units & lease tracking',
       'workspaces.rent.li2': 'Rent payments & arrears visibility',
       'workspaces.rent.li3': 'Staff, utilities & building costs',
+      'audience.kicker': 'Who it’s for',
       'audience.title': 'Made for people who run properties',
       'audience.sub':
         'Whether you own one unit or manage a growing portfolio across Dar, Arusha, or beyond.',
@@ -105,6 +108,7 @@
       'audience.hosts.title': 'Hosts & operators',
       'audience.hosts.desc':
         'Run BnB or mixed portfolios — from boutique stays to serviced apartments — with bookings and ops in sync.',
+      'pricing.kicker': 'Pricing',
       'pricing.title': 'Simple, transparent pricing',
       'pricing.sub':
         'No surprises — start free today, then pick a plan that fits your portfolio when billing begins.',
@@ -139,6 +143,7 @@
       'pricing.ultra.li4': 'Priority support',
       'pricing.footnote':
         'Planned rates shown in Tanzanian shillings. M-Pesa and mobile money supported when billing starts. <a href="#contact">Questions?</a> Chat with us on WhatsApp or email.',
+      'trust.kicker': 'Trust',
       'trust.title': 'Built for how you work in East Africa',
       'trust.sub':
         'Professional, dependable, and respectful of local realities — not a generic import.',
@@ -222,6 +227,7 @@
       'hero.stats.tzsSub': 'Sarafu ya ndani',
       'hero.stats.offline': 'Inafanya kazi nje ya mtandao',
       'hero.stats.offlineSub': 'Inafanya kazi popote',
+      'features.kicker': 'Zana za kila siku',
       'features.pain':
         'Wamiliki wengi Dar wanadhibiti kodi kupitia picha za M-Pesa, mazungumzo ya WhatsApp, na daftari za mkono. HostBora inachukua nafasi ya msukosuko huo.',
       'features.title': 'Kila kitu wamiliki na wasimamizi wanahitaji kila siku',
@@ -257,6 +263,7 @@
       'feat.calendar.title': 'Usawazishaji wa kalenda',
       'feat.calendar.desc':
         'Unganisha kalenda za nje kupunguza uhifadhi maradufu na kuweka tarehe zilizozuiliwa sawa.',
+      'workspaces.kicker': 'BnB + Kodi',
       'workspaces.title': 'Nafasi mbili za kazi, programu moja',
       'workspaces.sub': 'Badilisha kati ya BnB na Kodi wakati wowote — mali zile zile, mtiririko ulioboreshwa.',
       'workspaces.bnb.badge': 'BnB',
@@ -273,6 +280,7 @@
       'workspaces.rent.li1': 'Wapangaji, vyumba na ufuatiliaji wa mikataba',
       'workspaces.rent.li2': 'Malipo ya kodi na mwonekano wa deni',
       'workspaces.rent.li3': 'Wafanyakazi, huduma na gharama za jengo',
+      'audience.kicker': 'Kwa nani',
       'audience.title': 'Imeundwa kwa watu wanaodhibiti mali',
       'audience.sub':
         'Ukiwa unamiliki chumba kimoja au unasimamia mfuko unaokua katika Dar, Arusha, au zaidi.',
@@ -285,6 +293,7 @@
       'audience.hosts.title': 'Wenyeji na waendeshaji',
       'audience.hosts.desc':
         'Endesha BnB au mali mchanganyiko — kutoka makao ya boutique hadi vyumba vya huduma — na uhifadhi na uendeshaji vikiendana.',
+      'pricing.kicker': 'Bei',
       'pricing.title': 'Bei rahisi na wazi',
       'pricing.sub':
         'Hakuna mshangao — anza bure leo, kisha chagua mpango unaofaa mfuko wako wakati malipo yataanza.',
@@ -319,6 +328,7 @@
       'pricing.ultra.li4': 'Msaada wa kipaumbele',
       'pricing.footnote':
         'Viwango vilivyopangwa vinaonyeshwa kwa shilingi za Tanzania. M-Pesa na pesa za simu zinasaidiwa malipo yatakapoanza. <a href="#contact">Maswali?</a> Wasiliana nasi kupitia WhatsApp au barua pepe.',
+      'trust.kicker': 'Uaminifu',
       'trust.title': 'Imeundwa kwa jinsi unavyofanya kazi Afrika Mashariki',
       'trust.sub':
         'Ya kitaalamu, ya kuaminika, na inayheshimu hali halisi ya ndani — si bidhaa ya jeneriki iliyoagizwa.',

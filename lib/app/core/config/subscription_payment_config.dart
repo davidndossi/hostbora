@@ -24,7 +24,7 @@ class AppleIapProducts {
   static const all = {starter, pro, ultra};
 
   static String productIdForPlan(String plan) {
-    switch (plan) {
+    switch (plan.trim().toLowerCase()) {
       case 'starter':
         return starter;
       case 'pro':

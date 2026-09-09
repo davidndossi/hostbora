@@ -1922,6 +1922,54 @@ abstract class AppLocalizations {
   /// **'Send Invite'**
   String get sendInvite;
 
+  /// No description provided for @inviteManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite manager'**
+  String get inviteManager;
+
+  /// No description provided for @portfolioManagers.
+  ///
+  /// In en, this message translates to:
+  /// **'Portfolio managers'**
+  String get portfolioManagers;
+
+  /// No description provided for @managingPortfolioBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Managing {hostName}\'s portfolio'**
+  String managingPortfolioBanner(String hostName);
+
+  /// No description provided for @managersFullAccessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Managers can log in and fully manage all your properties.'**
+  String get managersFullAccessHint;
+
+  /// No description provided for @noManagersInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'No managers invited yet.'**
+  String get noManagersInvited;
+
+  /// No description provided for @managerInvitePhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'They get full access to all your properties after logging in with this phone.'**
+  String get managerInvitePhoneHint;
+
+  /// No description provided for @managerInvitedCanLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager invited. They can log in with {phone}.'**
+  String managerInvitedCanLogin(String phone);
+
+  /// No description provided for @revokeManagerAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get revokeManagerAccess;
+
   /// No description provided for @requestJoin.
   ///
   /// In en, this message translates to:
@@ -4087,6 +4135,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export ready to share'**
   String get reportsExportDone;
+
+  /// No description provided for @reportsExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not export the report. Please try again.'**
+  String get reportsExportFailed;
 
   /// No description provided for @reportsNoData.
   ///

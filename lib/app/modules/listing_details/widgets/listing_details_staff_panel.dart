@@ -88,7 +88,8 @@ class ListingDetailsStaffPanel extends StatelessWidget {
         ? const Color(0xFF3A3A3C)
         : const Color(0xFFE6E1D7);
 
-    InputDecoration inputDeco(String label) => InputDecoration(
+    InputDecoration inputDeco(String label, {int errorMaxLines = 3}) =>
+        InputDecoration(
           labelText: label,
           filled: true,
           fillColor: inputFill,
@@ -107,6 +108,7 @@ class ListingDetailsStaffPanel extends StatelessWidget {
               width: 1.5,
             ),
           ),
+          errorMaxLines: errorMaxLines,
           labelStyle: TextStyle(color: muted),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 14,
@@ -225,34 +227,26 @@ class ListingDetailsStaffPanel extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Obx(
-                          () => TextFormField(
-                            controller: c.amountController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: inputDeco(c.amountFieldLabel),
-                            validator: c.validateAmount,
-                          ),
-                        ),
+                  // Full-width fields so Pay day validation errors are not
+                  // clipped in a narrow side-by-side column.
+                  Obx(
+                    () => TextFormField(
+                      controller: c.amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        flex: 2,
-                        child: TextFormField(
-                          controller: c.payDateController,
-                          keyboardType: TextInputType.number,
-                          decoration: inputDeco(
-                            _t('Pay day', 'Siku ya malipo'),
-                          ),
-                          validator: c.validatePayDate,
-                        ),
-                      ),
-                    ],
+                      decoration: inputDeco(c.amountFieldLabel),
+                      validator: c.validateAmount,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: c.payDateController,
+                    keyboardType: TextInputType.number,
+                    decoration: inputDeco(
+                      _t('Pay day (1–31)', 'Siku ya malipo (1–31)'),
+                    ),
+                    validator: c.validatePayDate,
                   ),
                   const SizedBox(height: 20),
                   Obx(

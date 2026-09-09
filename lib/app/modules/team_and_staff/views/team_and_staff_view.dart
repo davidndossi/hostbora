@@ -38,45 +38,236 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
           Expanded(
             child: Obx(() {
               if (controller.loadingStaff.value &&
-                  controller.staffList.isEmpty) {
+                  controller.staffList.isEmpty &&
+                  controller.managers.isEmpty) {
                 return const DefaultScreenSkeleton();
               }
               final list = controller.filteredStaff;
-              if (list.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      _t(
-                        context,
-                        en: 'No staff yet. Add people from Rent → Staff management.',
-                        sw:
-                            'Hakuna wafanyakazi bado. Ongeza kutoka Kodi → Usimamizi wa wafanyakazi.',
-                      ),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: context.tokens.textSecondary,
-                      ),
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                children: [
+                  if (!controller.isPortfolioManagerSession.value) ...[
+                    _buildManagersSection(context),
+                    const SizedBox(height: 20),
+                  ],
+                  Text(
+                    _t(context, en: 'Staff', sw: 'Wafanyakazi'),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                );
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                itemCount: list.length,
-                separatorBuilder: (_, index) => const SizedBox(height: 12),
-                itemBuilder: (context, index) => _StaffCard(
-                  member: list[index],
-                  onTap: controller.openStaffDetail,
-                  onMessage: controller.messageStaff,
-                  onEdit: controller.editStaff,
-                ),
+                  const SizedBox(height: 12),
+                  if (list.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Text(
+                        _t(
+                          context,
+                          en: 'No staff yet. Add people from Rent → Staff management.',
+                          sw:
+                              'Hakuna wafanyakazi bado. Ongeza kutoka Kodi → Usimamizi wa wafanyakazi.',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: context.tokens.textSecondary,
+                        ),
+                      ),
+                    )
+                  else
+                    ...List.generate(list.length, (index) {
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index == list.length - 1 ? 0 : 12,
+                        ),
+                        child: _StaffCard(
+                          member: list[index],
+                          onTap: controller.openStaffDetail,
+                          onMessage: controller.messageStaff,
+                          onEdit: controller.editStaff,
+                        ),
+                      );
+                    }),
+                ],
               );
             }),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildManagersSection(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                appLocalization.portfolioManagers,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => _openInviteManagerSheet(context),
+              icon: const Icon(Icons.person_add_alt_1, size: 18),
+              label: Text(appLocalization.inviteManager),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          appLocalization.managersFullAccessHint,
+          style: TextStyle(
+            fontSize: 13,
+            color: context.tokens.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Obx(() {
+          if (controller.loadingManagers.value &&
+              controller.managers.isEmpty) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: LinearProgressIndicator(minHeight: 2),
+            );
+          }
+          if (controller.managers.isEmpty) {
+            return Text(
+              appLocalization.noManagersInvited,
+              style: TextStyle(
+                fontSize: 14,
+                color: context.tokens.textSecondary,
+              ),
+            );
+          }
+          return Column(
+            children: controller.managers.map((m) {
+              final title =
+                  m.fullName.trim().isEmpty ? m.phone : m.fullName.trim();
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: c.isDark
+                      ? const Color(0xFF1F1F1F)
+                      : AppColors.colorWhite,
+                  borderRadius: BorderRadius.circular(AppValues.radius_6),
+                  border: Border.all(color: c.inputBorder),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          if (m.phone.isNotEmpty)
+                            Text(
+                              m.phone,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: context.tokens.textSecondary,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => controller.revokeManager(m),
+                      child: Text(appLocalization.revokeManagerAccess),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          );
+        }),
+      ],
+    );
+  }
+
+  void _openInviteManagerSheet(BuildContext context) {
+    Get.bottomSheet(
+      SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                appLocalization.inviteManager,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                appLocalization.managerInvitePhoneHint,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: context.tokens.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller.inviteNameController,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: _t(context, en: 'Full name', sw: 'Jina kamili'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller.invitePhoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: _t(context, en: 'Phone number', sw: 'Namba ya simu'),
+                  hintText: '07XXXXXXXX',
+                ),
+              ),
+              const SizedBox(height: 20),
+              Obx(() {
+                final busy = controller.invitingManager.value;
+                return ElevatedButton(
+                  onPressed: busy ? null : controller.inviteManager,
+                  child: busy
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(appLocalization.sendInvite),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
     );
   }
 

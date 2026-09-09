@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '/app/core/base/base_controller.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
 import '/app/data/local/db/rent_property_estimate_local_data_source.dart';
+import '/app/data/local/service/currency_service.dart';
 import '/app/data/local/service/offline_sync_worker_service.dart';
 import '/app/data/local/service/property_break_even_notification_service.dart';
 import '/app/data/repository/app_repository.dart';
@@ -73,7 +75,7 @@ class RentPropertyRoiEstimateFormController extends BaseController {
 
   final mode = EstimateInputMode.approximate.obs;
   final selectedCategory = 'Structural Materials'.obs;
-  final selectedUnit = 'bags'.obs;
+  final selectedUnit = 'kilo'.obs;
   final selectedPaymentMethod = 'Cash'.obs;
   final startDate = Rxn<DateTime>();
   final completionDate = Rxn<DateTime>();
@@ -95,18 +97,66 @@ class RentPropertyRoiEstimateFormController extends BaseController {
     'Logistics & Miscellaneous': ['Transport', 'Fuel', 'Equipment rental', 'Permits'],
   };
 
-  static const List<String> unitOptions = ['bags', 'tons', 'pieces', 'meters', 'liters', 'kg', 'hours', 'days'];
-  static const List<String> paymentMethodOptions = ['Cash', 'Bank', 'Mobile Money', 'Cheque', 'Credit'];
+  static const List<String> unitOptions = [
+    'kilo',
+    'kg',
+    'bags',
+    'tons',
+    'pieces',
+    'meters',
+    'liters',
+    'hours',
+    'days',
+  ];
+  static const List<String> paymentMethodOptions = [
+    'Cash',
+    'Bank',
+    'Mobile Money',
+    'Cheque',
+    'Credit',
+  ];
+
+  final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
 
   String get propertyRef => (Get.parameters['propertyRef'] ?? '').trim();
+
   String get propertyLabel {
     final label = (Get.parameters['propertyLabel'] ?? '').trim();
+    if (label.isNotEmpty) return label;
+    final name = propertyName;
+    final loc = propertyAddress;
+    if (name.isNotEmpty && loc.isNotEmpty) return '$name · $loc';
+    return name.isNotEmpty ? name : 'Property';
+  }
+
+  String get propertyName {
+    final fromParam = (Get.parameters['propertyName'] ?? '').trim();
+    if (fromParam.isNotEmpty) return fromParam;
+    final label = (Get.parameters['propertyLabel'] ?? '').trim();
+    if (label.contains('·')) {
+      return label.split('·').first.trim();
+    }
     return label.isEmpty ? 'Property' : label;
+  }
+
+  String get propertyAddress {
+    final fromParam = (Get.parameters['propertyLocation'] ??
+            Get.parameters['propertyAddress'] ??
+            '')
+        .trim();
+    if (fromParam.isNotEmpty) return fromParam;
+    final label = (Get.parameters['propertyLabel'] ?? '').trim();
+    if (label.contains('·')) {
+      return label.split('·').skip(1).join('·').trim();
+    }
+    return '';
   }
 
   @override
   void onInit() {
     super.onInit();
+    selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
+    selectedUnit.value = 'kilo';
     quantityController.addListener(_syncDraftTotal);
     unitCostController.addListener(_syncDraftTotal);
   }
@@ -296,7 +346,36 @@ class RentPropertyRoiEstimateFormController extends BaseController {
     unitCostController.clear();
     supplierController.clear();
     receiptPathController.clear();
-    selectedPaymentMethod.value = '';
+    selectedPaymentMethod.value = 'Cash';
+    entries.refresh();
+    showSuccessMessage(
+      Get.locale?.languageCode == 'sw'
+          ? 'Kipengele kimeongezwa'
+          : 'Cost item added',
+    );
+  }
+
+  Future<void> pickReceipt() async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 2000,
+      );
+      if (picked == null) return;
+      receiptPathController.text = picked.path;
+      entries.refresh();
+    } catch (_) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Imeshindikana kuchagua risiti'
+            : 'Could not pick receipt',
+      );
+    }
+  }
+
+  void clearReceipt() {
+    receiptPathController.clear();
     entries.refresh();
   }
 

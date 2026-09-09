@@ -237,6 +237,18 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> getStaffList();
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body);
   Future<GeneralResponse> deleteStaff(String id);
+
+  /// GET /api/me/access — portfolio manager grants for the logged-in user.
+  Future<GeneralResponse> getMyAccess();
+
+  /// GET /api/portfolio-managers — managers invited by the current host.
+  Future<GeneralResponse> getPortfolioManagers();
+
+  /// POST /api/portfolio-managers — invite by phone + fullName.
+  Future<GeneralResponse> invitePortfolioManager(Map<String, dynamic> body);
+
+  /// DELETE /api/portfolio-managers/{managerUserId}
+  Future<GeneralResponse> revokePortfolioManager(String managerUserId);
   Future<GeneralResponse> submitFeedback(Map<String, dynamic> body);
   Future<GeneralResponse> createLoyaltyOffer(Map<String, dynamic> body);
   Future<GeneralResponse> createTenantCharge(Map<String, dynamic> body);

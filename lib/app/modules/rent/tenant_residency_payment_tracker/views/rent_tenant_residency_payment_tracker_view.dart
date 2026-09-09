@@ -596,35 +596,44 @@ class RentTenantResidencyPaymentTrackerView
     return Row(
       children: [
         Expanded(
-          child: TextField(
-            controller: controller.searchController,
-            onChanged: controller.onSearchChanged,
-            style: TextStyle(color: inputColor, fontSize: 14),
-            cursorColor: isDark ? tokens.accent : _teal,
-            decoration: InputDecoration(
-              isDense: true,
-              filled: true,
-              fillColor: fieldBg,
-              hintText: _isSw ? 'Tafuta wapangaji' : 'Search tenants',
-              hintStyle: TextStyle(color: hintColor, fontSize: 14),
-              prefixIcon: Icon(Icons.search, color: hintColor, size: 22),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: borderSide,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: borderSide,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: isDark
-                    ? const BorderSide(color: Color(0xFF5EC9C3), width: 1.2)
-                    : BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 4,
+          child: Obx(
+            () => TextField(
+              controller: controller.searchController,
+              onChanged: controller.onSearchChanged,
+              style: TextStyle(color: inputColor, fontSize: 14),
+              cursorColor: isDark ? tokens.accent : _teal,
+              decoration: InputDecoration(
+                isDense: true,
+                filled: true,
+                fillColor: fieldBg,
+                hintText: _isSw ? 'Tafuta wapangaji' : 'Search tenants',
+                hintStyle: TextStyle(color: hintColor, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: hintColor, size: 22),
+                suffixIcon: controller.searchQuery.value.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: _isSw ? 'Futa' : 'Clear',
+                        icon: Icon(Icons.clear, size: 20, color: hintColor),
+                        onPressed: controller.clearSearch,
+                      ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: borderSide,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: borderSide,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: isDark
+                      ? const BorderSide(color: Color(0xFF5EC9C3), width: 1.2)
+                      : BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 4,
+                ),
               ),
             ),
           ),

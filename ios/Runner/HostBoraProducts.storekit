@@ -1,0 +1,116 @@
+{
+  "identifier" : "HostBoraProducts",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "214A9E31",
+      "localizations" : [
+
+      ],
+      "name" : "HostBora Plans",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "650A0001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "HostBora Starter monthly subscription",
+              "displayName" : "Starter",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "hostbora_starter_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Starter Monthly",
+          "subscriptionGroupID" : "214A9E31",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "650A0002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "HostBora Pro monthly subscription",
+              "displayName" : "Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "hostbora_pro_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro Monthly",
+          "subscriptionGroupID" : "214A9E31",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "650A0003",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "HostBora Ultra monthly subscription",
+              "displayName" : "Ultra",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "hostbora_ultra_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Ultra Monthly",
+          "subscriptionGroupID" : "214A9E31",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

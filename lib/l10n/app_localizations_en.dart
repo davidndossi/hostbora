@@ -976,6 +976,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendInvite => 'Send Invite';
 
   @override
+  String get inviteManager => 'Invite manager';
+
+  @override
+  String get portfolioManagers => 'Portfolio managers';
+
+  @override
+  String managingPortfolioBanner(String hostName) {
+    return 'Managing $hostName\'s portfolio';
+  }
+
+  @override
+  String get managersFullAccessHint =>
+      'Managers can log in and fully manage all your properties.';
+
+  @override
+  String get noManagersInvited => 'No managers invited yet.';
+
+  @override
+  String get managerInvitePhoneHint =>
+      'They get full access to all your properties after logging in with this phone.';
+
+  @override
+  String managerInvitedCanLogin(String phone) {
+    return 'Manager invited. They can log in with $phone.';
+  }
+
+  @override
+  String get revokeManagerAccess => 'Revoke';
+
+  @override
   String get requestJoin => 'Request to Join';
 
   @override
@@ -2099,6 +2129,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportsExportDone => 'Export ready to share';
+
+  @override
+  String get reportsExportFailed =>
+      'Could not export the report. Please try again.';
 
   @override
   String get reportsNoData => 'No data for this period.';

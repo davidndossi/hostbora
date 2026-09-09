@@ -152,12 +152,16 @@ class SubscriptionService extends GetxService {
   // ── Checkout ──────────────────────────────────────────────────────────────
 
   /// iOS: starts an App Store in-app purchase for [plan].
-  Future<bool> startApplePurchase(String plan) async {
+  Future<ApplePurchaseResult> startApplePurchase(String plan) async {
     final iap = _appleIap;
-    if (iap == null) return false;
-    final ok = await iap.purchasePlan(plan);
-    if (ok) await refresh();
-    return ok;
+    if (iap == null) {
+      return ApplePurchaseResult.failed(
+        'In-app purchase is not available. Please restart the app and try again.',
+      );
+    }
+    final result = await iap.purchasePlan(plan);
+    if (result.success) await refresh();
+    return result;
   }
 
   /// Restores previous App Store purchases (iOS).
@@ -173,24 +177,89 @@ class SubscriptionService extends GetxService {
   String? applePriceForPlan(String plan) => _appleIap?.storePriceForPlan(plan);
 
   /// Android / web: Snippe hosted checkout in the system browser.
-  Future<SubscriptionCheckout?> startCheckout(String plan) async {
+  ///
+  /// Returns a [SnippeCheckoutResult]. On success the browser is opened; the
+  /// plan activates when Snippe's webhook reaches the server (not instantly).
+  Future<SnippeCheckoutResult> startCheckout(String plan) async {
     try {
       final resp = await _repository.createSubscriptionCheckout(plan);
-      if (resp.responseCode == '201' && resp.data != null) {
-        final checkout = SubscriptionCheckout.fromJson(
-          Map<String, dynamic>.from(resp.data as Map),
+      if (resp.responseCode != '201' && resp.responseCode != '0') {
+        final msg = (resp.message ?? '').trim();
+        return SnippeCheckoutResult.failed(
+          msg.isNotEmpty
+              ? msg
+              : 'Could not create payment session. Please try again.',
         );
-        // Open Snippe's hosted checkout page in the system browser.
-        // After payment Snippe fires the webhook → server activates subscription.
-        final uri = Uri.tryParse(checkout.paymentLinkUrl);
-        if (uri != null && uri.hasScheme) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-        return checkout;
       }
-      return null;
-    } catch (_) {
-      return null;
+      if (resp.data == null) {
+        return SnippeCheckoutResult.failed(
+          'Payment session response was empty. Please try again.',
+        );
+      }
+      final checkout = SubscriptionCheckout.fromJson(
+        Map<String, dynamic>.from(resp.data as Map),
+      );
+      final link = checkout.paymentLinkUrl.trim().isNotEmpty
+          ? checkout.paymentLinkUrl.trim()
+          : checkout.checkoutUrl.trim();
+      if (link.isEmpty) {
+        return SnippeCheckoutResult.failed(
+          'No payment link was returned. Please try again.',
+        );
+      }
+      final uri = Uri.tryParse(link);
+      if (uri == null || !uri.hasScheme) {
+        return SnippeCheckoutResult.failed(
+          'Invalid payment link. Please try again.',
+        );
+      }
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        return SnippeCheckoutResult.failed(
+          'Could not open the payment page. Allow browser access and try again.',
+        );
+      }
+      return SnippeCheckoutResult.opened(checkout);
+    } catch (e) {
+      return SnippeCheckoutResult.failed(
+        'Could not start Snippe payment. Check your connection and try again.',
+      );
     }
   }
+
+  /// Polls subscription status after a Snippe checkout (webhook may lag).
+  Future<bool> waitForPlanActivation({
+    required String plan,
+    Duration timeout = const Duration(seconds: 45),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      await refresh();
+      final s = status.value;
+      if (s.isActive && s.plan == plan) return true;
+      await Future.delayed(const Duration(seconds: 3));
+    }
+    await refresh();
+    final s = status.value;
+    return s.isActive && s.plan == plan;
+  }
+}
+
+/// Outcome of starting a Snippe hosted-checkout subscription payment.
+class SnippeCheckoutResult {
+  const SnippeCheckoutResult._({
+    required this.opened,
+    this.checkout,
+    this.message,
+  });
+
+  final bool opened;
+  final SubscriptionCheckout? checkout;
+  final String? message;
+
+  factory SnippeCheckoutResult.opened(SubscriptionCheckout checkout) =>
+      SnippeCheckoutResult._(opened: true, checkout: checkout);
+
+  factory SnippeCheckoutResult.failed(String message) =>
+      SnippeCheckoutResult._(opened: false, message: message);
 }

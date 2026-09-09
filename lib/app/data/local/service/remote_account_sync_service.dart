@@ -7,6 +7,7 @@ import '../../repository/app_repository.dart';
 import '../../../modules/rent/staff_management/utils/rent_staff_pay_format.dart';
 import '../db/offline_sync_queue_local_data_source.dart';
 import '../db/property_local_data_source.dart';
+import '../db/property_members_local_data_source.dart';
 import '../db/rent_staff_local_data_source.dart';
 import '../db/tenant_local_data_source.dart';
 import '../deleted_properties_store.dart';
@@ -25,6 +26,7 @@ class RemoteAccountSyncService extends GetxService {
     required PropertyLocalDataSource propertyLocal,
     required TenantLocalDataSource tenantLocal,
     required RentStaffLocalDataSource staffLocal,
+    required PropertyMembersLocalDataSource propertyMembers,
     required PreferenceManager preferenceManager,
     required OfflineSyncWorkerService syncWorker,
     required OfflineSyncQueueLocalDataSource syncQueue,
@@ -32,6 +34,7 @@ class RemoteAccountSyncService extends GetxService {
         _propertyLocal = propertyLocal,
         _tenantLocal = tenantLocal,
         _staffLocal = staffLocal,
+        _propertyMembers = propertyMembers,
         _preferenceManager = preferenceManager,
         _syncWorker = syncWorker,
         _syncQueue = syncQueue;
@@ -40,6 +43,7 @@ class RemoteAccountSyncService extends GetxService {
   final PropertyLocalDataSource _propertyLocal;
   final TenantLocalDataSource _tenantLocal;
   final RentStaffLocalDataSource _staffLocal;
+  final PropertyMembersLocalDataSource _propertyMembers;
   final PreferenceManager _preferenceManager;
   final OfflineSyncWorkerService _syncWorker;
   final OfflineSyncQueueLocalDataSource _syncQueue;
@@ -53,6 +57,7 @@ class RemoteAccountSyncService extends GetxService {
     _syncing = true;
     try {
       await _syncWorker.runNow(maxItems: 50);
+      await syncAccess();
       await Future.wait([
         syncProperties(),
         syncTenants(),
@@ -65,11 +70,73 @@ class RemoteAccountSyncService extends GetxService {
     }
   }
 
+  /// Pull portfolio manager grants and persist acting-as host for API headers.
+  Future<void> syncAccess() async {
+    try {
+      final res = await _repository.getMyAccess();
+      if (!res.isSuccess || res.data == null) return;
+      final data = res.data;
+      Map<String, dynamic>? map;
+      if (data is Map) {
+        map = Map<String, dynamic>.from(data);
+      }
+      if (map == null) return;
+
+      final managedRaw = map['managedHosts'];
+      final hosts = <Map<String, dynamic>>[];
+      if (managedRaw is List) {
+        for (final e in managedRaw) {
+          if (e is Map) hosts.add(Map<String, dynamic>.from(e));
+        }
+      }
+
+      final isManager = map['isManager'] == true || hosts.isNotEmpty;
+      await _preferenceManager.setBool(
+        PreferenceManager.keyIsPortfolioManager,
+        isManager,
+      );
+      if (hosts.isNotEmpty) {
+        final first = hosts.first;
+        final hostId = (first['hostUserId'] ?? '').toString().trim();
+        final hostName = (first['hostName'] ?? first['hostPhone'] ?? '')
+            .toString()
+            .trim();
+        await _preferenceManager.setString(
+          PreferenceManager.keyActingAsHostUserId,
+          hostId,
+        );
+        await _preferenceManager.setString(
+          PreferenceManager.keyManagedHostName,
+          hostName,
+        );
+      } else {
+        await _preferenceManager.remove(
+          PreferenceManager.keyActingAsHostUserId,
+        );
+        await _preferenceManager.remove(PreferenceManager.keyManagedHostName);
+        // Revoked (or never a manager): drop local manager memberships so
+        // host portfolio rows stop showing via property_members visibility.
+        final sessionUserId =
+            ((await _preferenceManager.getUser()).id ?? '').trim();
+        if (sessionUserId.isNotEmpty) {
+          await _propertyMembers.deleteAllForUserWithRole(
+            userId: sessionUserId,
+            role: 'manager',
+          );
+        }
+      }
+    } catch (_) {}
+  }
+
   /// Bidirectional property sync (remote↔local). Prefer this after login.
   Future<void> syncProperties() async {
     try {
-      final ownerUserId =
+      final sessionUserId =
           ((await _preferenceManager.getUser()).id ?? '').trim();
+      final isManager = await _preferenceManager.getBool(
+        PreferenceManager.keyIsPortfolioManager,
+        defaultValue: false,
+      );
       final res = await _repository.getMyProperties();
       final remoteMaps =
           (res.isSuccess && res.data != null) ? _extractMaps(res.data) : const <Map<String, dynamic>>[];
@@ -88,7 +155,8 @@ class RemoteAccountSyncService extends GetxService {
       }
 
       // Local → remote for rows the server does not know about.
-      final localRows = await _propertyLocal.fetchAll(userId: ownerUserId);
+      // Only push properties owned by this session user (not managed host rows).
+      final localRows = await _propertyLocal.fetchAll(userId: sessionUserId);
       for (final row in localRows) {
         if (_isKnownRemotely(row, remoteRefs, remoteNameLoc)) continue;
         await _pushLocalPropertyToRemote(row);
@@ -109,13 +177,25 @@ class RemoteAccountSyncService extends GetxService {
       for (final map in remoteMaps) {
         final ref = _refFromApiMap(map);
         if (ref.isNotEmpty && deleted.contains(ref)) continue;
-        await _propertyLocal.upsertFromRemote(
-          _propertyFromApiMap(map, ownerUserId: ownerUserId),
-        );
+        final record = _propertyFromApiMap(map, ownerUserId: sessionUserId);
+        await _propertyLocal.upsertFromRemote(record);
+        if (isManager &&
+            sessionUserId.isNotEmpty &&
+            record.propertyRef.trim().isNotEmpty &&
+            record.ownerUserId.trim() != sessionUserId) {
+          await _propertyMembers.upsertMember(
+            propertyRef: record.propertyRef.trim(),
+            userId: sessionUserId,
+            workspaceType: record.workspaceType.trim().isEmpty
+                ? 'rent'
+                : record.workspaceType.trim(),
+            role: 'manager',
+          );
+        }
       }
 
       if (kDebugMode) {
-        final afterSync = await _propertyLocal.fetchAll(userId: ownerUserId);
+        final afterSync = await _propertyLocal.fetchAll(userId: sessionUserId);
         debugPrint('[PropertySync] Local DB after sync: ${afterSync.length} rows:');
         for (final p in afterSync) {
           debugPrint(
@@ -475,6 +555,10 @@ class RemoteAccountSyncService extends GetxService {
               m['imageUrl'] ??
               '')
           .toString(),
+      // Empty means "not provided" so upsert keeps a local Draft/Archive.
+      listingStatus: (m['listing_status'] ?? m['listingStatus'] ?? '')
+          .toString()
+          .trim(),
     );
   }
 

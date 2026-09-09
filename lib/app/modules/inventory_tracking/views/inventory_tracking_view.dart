@@ -31,7 +31,9 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
       actions: [
         Obx(
           () => IconButton(
-            onPressed: controller.exporting.value ? null : controller.exportToCsv,
+            onPressed: controller.exporting.value
+                ? null
+                : () => controller.exportToCsv(shareContext: context),
             icon: controller.exporting.value
                 ? const SizedBox(
                     width: 18,
@@ -503,131 +505,242 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
     );
   }
 
-  Future<void> _openAdjustSheet(FormSurfaceColors u, InventoryItemRecord item) async {
+  Future<void> _openAdjustSheet(
+    FormSurfaceColors u,
+    InventoryItemRecord item,
+  ) async {
+    final host = Get.context;
+    if (host == null) return;
+
     final qtyController = TextEditingController(text: '1');
     final notesController = TextEditingController();
     var movementType = 'add';
+    var saving = false;
 
-    await Get.bottomSheet(
-      StatefulBuilder(
-        builder: (context, setState) {
-          return Container(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              16,
-              20,
-              20 + MediaQuery.of(context).viewInsets.bottom,
-            ),
-            decoration: BoxDecoration(
-              color: u.card,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _isSw ? 'Rekebisha hisa' : 'Adjust stock',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: u.headline,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.name,
-                  style: TextStyle(fontSize: 13, color: u.hint),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    _movementChip(
-                      u,
-                      label: _isSw ? 'Ongeza' : 'Add',
-                      selected: movementType == 'add',
-                      onTap: () => setState(() => movementType = 'add'),
-                    ),
-                    _movementChip(
-                      u,
-                      label: _isSw ? 'Tumia' : 'Use',
-                      selected: movementType == 'use',
-                      onTap: () => setState(() => movementType = 'use'),
-                    ),
-                    _movementChip(
-                      u,
-                      label: _isSw ? 'Uharibifu' : 'Damage',
-                      selected: movementType == 'damage',
-                      onTap: () => setState(() => movementType = 'damage'),
-                    ),
-                    _movementChip(
-                      u,
-                      label: _isSw ? 'Sahihisha' : 'Adjust',
-                      selected: movementType == 'adjust',
-                      onTap: () => setState(() => movementType = 'adjust'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: qtyController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: _isSw ? 'Idadi' : 'Quantity',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: notesController,
-                  decoration: InputDecoration(
-                    labelText: _isSw ? 'Maelezo (si lazima)' : 'Notes (optional)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () async {
-                      final qty = int.tryParse(qtyController.text.trim()) ?? 0;
-                      if (qty <= 0) return;
-                      var delta = qty;
-                      if (movementType == 'use' || movementType == 'damage') {
-                        delta = -qty;
-                      } else if (movementType == 'adjust') {
-                        delta = qty - item.quantity;
-                      }
-                      Get.back();
-                      await controller.adjustStock(
-                        item: item,
-                        movementType: movementType,
-                        quantityDelta: delta,
-                        notes: notesController.text.trim(),
-                      );
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.colorPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: Text(
-                      _isSw ? 'Hifadhi' : 'Save',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+    // Use Flutter's sheet, not Get.bottomSheet: GetX's route pads the whole
+    // sheet by the keyboard inset and can pin an unconstrained child to the
+    // top of the screen (content hidden behind the status bar).
+    await showModalBottomSheet<void>(
+      context: host,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final media = MediaQuery.of(context);
+            final qtyLabel = movementType == 'adjust'
+                ? (_isSw ? 'Idadi mpya' : 'New quantity')
+                : (_isSw ? 'Idadi' : 'Quantity');
+            return Padding(
+              padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Material(
+                  color: u.card,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: media.size.height * 0.85,
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 36,
+                              height: 4,
+                              margin: const EdgeInsets.only(bottom: 14),
+                              decoration: BoxDecoration(
+                                color: u.hint.withValues(alpha: 0.35),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                            ),
+                          ),
+                          Text(
+                            _isSw ? 'Rekebisha hisa' : 'Adjust stock',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: u.headline,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${item.name} · ${_isSw ? 'sasa' : 'now'} ${item.quantity}',
+                            style: TextStyle(fontSize: 13, color: u.hint),
+                          ),
+                          const SizedBox(height: 14),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              _movementChip(
+                                u,
+                                label: _isSw ? 'Ongeza' : 'Add',
+                                selected: movementType == 'add',
+                                onTap: () => setState(() {
+                                  movementType = 'add';
+                                  if (qtyController.text.trim().isEmpty ||
+                                      qtyController.text.trim() ==
+                                          '${item.quantity}') {
+                                    qtyController.text = '1';
+                                  }
+                                }),
+                              ),
+                              _movementChip(
+                                u,
+                                label: _isSw ? 'Tumia' : 'Use',
+                                selected: movementType == 'use',
+                                onTap: () => setState(() {
+                                  movementType = 'use';
+                                  if (qtyController.text.trim() ==
+                                      '${item.quantity}') {
+                                    qtyController.text = '1';
+                                  }
+                                }),
+                              ),
+                              _movementChip(
+                                u,
+                                label: _isSw ? 'Uharibifu' : 'Damage',
+                                selected: movementType == 'damage',
+                                onTap: () => setState(() {
+                                  movementType = 'damage';
+                                  if (qtyController.text.trim() ==
+                                      '${item.quantity}') {
+                                    qtyController.text = '1';
+                                  }
+                                }),
+                              ),
+                              _movementChip(
+                                u,
+                                label: _isSw ? 'Sahihisha' : 'Set',
+                                selected: movementType == 'adjust',
+                                onTap: () => setState(() {
+                                  movementType = 'adjust';
+                                  qtyController.text = '${item.quantity}';
+                                }),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: qtyController,
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.done,
+                            decoration: InputDecoration(
+                              labelText: qtyLabel,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: notesController,
+                            textInputAction: TextInputAction.done,
+                            decoration: InputDecoration(
+                              labelText: _isSw
+                                  ? 'Maelezo (si lazima)'
+                                  : 'Notes (optional)',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              onPressed: saving
+                                  ? null
+                                  : () async {
+                                      FocusScope.of(context).unfocus();
+                                      final qty = int.tryParse(
+                                            qtyController.text.trim(),
+                                          ) ??
+                                          0;
+                                      if (qty <= 0) {
+                                        controller.showErrorMessage(
+                                          _isSw
+                                              ? 'Weka idadi halali.'
+                                              : 'Enter a valid quantity.',
+                                        );
+                                        return;
+                                      }
+                                      var delta = qty;
+                                      if (movementType == 'use' ||
+                                          movementType == 'damage') {
+                                        delta = -qty;
+                                      } else if (movementType == 'adjust') {
+                                        delta = qty - item.quantity;
+                                        if (delta == 0) {
+                                          controller.showErrorMessage(
+                                            _isSw
+                                                ? 'Idadi haijabadilika.'
+                                                : 'Quantity is unchanged.',
+                                          );
+                                          return;
+                                        }
+                                      }
+                                      setState(() => saving = true);
+                                      final ok = await controller.adjustStock(
+                                        item: item,
+                                        movementType: movementType,
+                                        quantityDelta: delta,
+                                        notes: notesController.text.trim(),
+                                      );
+                                      if (!ok) {
+                                        if (context.mounted) {
+                                          setState(() => saving = false);
+                                        }
+                                        return;
+                                      }
+                                      if (sheetContext.mounted) {
+                                        Navigator.of(sheetContext).pop();
+                                      }
+                                    },
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.colorPrimary,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              child: saving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      _isSw ? 'Hifadhi' : 'Save',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
+
+    qtyController.dispose();
+    notesController.dispose();
   }
 
   Widget _movementChip(

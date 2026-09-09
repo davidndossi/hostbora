@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
+import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
@@ -11,10 +12,14 @@ import '../../rent/staff_management/controllers/rent_staff_management_controller
 class TeamAndStaffController extends BaseController {
   TeamAndStaffController()
       : _staffLocal = Get.find<RentStaffLocalDataSource>(),
-        _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _prefs = Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        );
 
   final RentStaffLocalDataSource _staffLocal;
   final AppRepository _repository;
+  final PreferenceManager _prefs;
 
   final searchController = TextEditingController();
   final searchQuery = ''.obs;
@@ -22,6 +27,14 @@ class TeamAndStaffController extends BaseController {
   /// Loaded from [RentStaffLocalDataSource]; task counts from remote tasks API when available.
   final staffList = <StaffMember>[].obs;
   final loadingStaff = true.obs;
+
+  final managers = <PortfolioManagerVm>[].obs;
+  final loadingManagers = false.obs;
+  final isPortfolioManagerSession = false.obs;
+
+  final inviteNameController = TextEditingController();
+  final invitePhoneController = TextEditingController();
+  final invitingManager = false.obs;
 
   List<StaffMember> get filteredStaff {
     final q = searchQuery.value.trim().toLowerCase();
@@ -38,7 +51,19 @@ class TeamAndStaffController extends BaseController {
   @override
   void onInit() {
     super.onInit();
-    loadStaff();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    await _loadSessionFlags();
+    await Future.wait([loadStaff(), loadManagers()]);
+  }
+
+  Future<void> _loadSessionFlags() async {
+    isPortfolioManagerSession.value = await _prefs.getBool(
+      PreferenceManager.keyIsPortfolioManager,
+      defaultValue: false,
+    );
   }
 
   /// Reload staff rows and merge task counts (due today, incomplete).
@@ -68,6 +93,147 @@ class TeamAndStaffController extends BaseController {
       staffList.clear();
     } finally {
       loadingStaff.value = false;
+    }
+  }
+
+  Future<void> loadManagers() async {
+    if (isPortfolioManagerSession.value) {
+      managers.clear();
+      return;
+    }
+    loadingManagers.value = true;
+    try {
+      final res = await _repository.getPortfolioManagers();
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.isSuccess;
+      if (!ok || res.data == null) {
+        managers.clear();
+        return;
+      }
+      final data = res.data;
+      List raw = const [];
+      if (data is Map && data['managers'] is List) {
+        raw = data['managers'] as List;
+      } else if (data is List) {
+        raw = data;
+      }
+      managers.assignAll(
+        raw.whereType<Map>().map((e) {
+          final m = Map<String, dynamic>.from(e);
+          return PortfolioManagerVm(
+            managerUserId: (m['managerUserId'] ?? '').toString(),
+            fullName: (m['fullName'] ?? '').toString(),
+            phone: (m['phone'] ?? '').toString(),
+          );
+        }).where((m) => m.managerUserId.isNotEmpty),
+      );
+    } catch (_) {
+      managers.clear();
+    } finally {
+      loadingManagers.value = false;
+    }
+  }
+
+  Future<void> inviteManager() async {
+    if (isPortfolioManagerSession.value) return;
+    final name = inviteNameController.text.trim();
+    final phone = invitePhoneController.text.trim();
+    if (name.isEmpty || phone.isEmpty) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Jina na namba ya simu zinahitajika'
+            : 'Name and phone are required',
+      );
+      return;
+    }
+    invitingManager.value = true;
+    try {
+      final res = await _repository.invitePortfolioManager({
+        'fullName': name,
+        'phone': phone,
+      });
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201' ||
+          res.isSuccess;
+      if (!ok) {
+        showErrorMessage(
+          (res.message ?? '').trim().isNotEmpty
+              ? res.message!
+              : (Get.locale?.languageCode == 'sw'
+                  ? 'Imeshindikana kumualika meneja'
+                  : 'Could not invite manager'),
+        );
+        return;
+      }
+      inviteNameController.clear();
+      invitePhoneController.clear();
+      if (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
+        Get.back();
+      }
+      await loadManagers();
+      final invitedPhone = (res.data is Map)
+          ? ((res.data as Map)['phone'] ?? phone).toString()
+          : phone;
+      showSuccessMessage(
+        appLocalization.managerInvitedCanLogin(invitedPhone),
+      );
+    } catch (e) {
+      showErrorMessage(
+        e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''),
+      );
+    } finally {
+      invitingManager.value = false;
+    }
+  }
+
+  Future<void> revokeManager(PortfolioManagerVm manager) async {
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(
+          Get.locale?.languageCode == 'sw'
+              ? 'Ondoa ufikiaji?'
+              : 'Revoke access?',
+        ),
+        content: Text(
+          Get.locale?.languageCode == 'sw'
+              ? '${manager.fullName.isEmpty ? manager.phone : manager.fullName} hataweza tena kusimamia mali zako.'
+              : '${manager.fullName.isEmpty ? manager.phone : manager.fullName} will no longer manage your portfolio.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(Get.locale?.languageCode == 'sw' ? 'Ghairi' : 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(Get.locale?.languageCode == 'sw' ? 'Ondoa' : 'Revoke'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      final res =
+          await _repository.revokePortfolioManager(manager.managerUserId);
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.isSuccess;
+      if (!ok) {
+        showErrorMessage(res.message ?? 'Could not revoke');
+        return;
+      }
+      await loadManagers();
+      showSuccessMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Ufikiaji wa meneja umeondolewa'
+            : 'Manager access revoked',
+      );
+    } catch (e) {
+      showErrorMessage(
+        e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''),
+      );
     }
   }
 
@@ -169,9 +335,6 @@ class TeamAndStaffController extends BaseController {
   }
 
   Future<void> editStaff(StaffMember member) async {
-    // Open the edit sheet immediately. Navigating to Staff Management with
-    // arguments often no-ops when RentStaffManagementController is already
-    // registered (fenix) from listing details.
     if (!Get.isRegistered<RentStaffManagementController>()) {
       Get.put(RentStaffManagementController());
     }
@@ -191,6 +354,8 @@ class TeamAndStaffController extends BaseController {
   @override
   void onClose() {
     searchController.dispose();
+    inviteNameController.dispose();
+    invitePhoneController.dispose();
     super.onClose();
   }
 }
@@ -212,5 +377,17 @@ class StaffMember {
     required this.isHighTaskCount,
     required this.isOnDuty,
     required this.avatarUrl,
+  });
+}
+
+class PortfolioManagerVm {
+  final String managerUserId;
+  final String fullName;
+  final String phone;
+
+  PortfolioManagerVm({
+    required this.managerUserId,
+    required this.fullName,
+    required this.phone,
   });
 }

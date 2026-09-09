@@ -110,6 +110,9 @@ class AuthView extends BaseView<AuthController> {
             const SizedBox(height: 8),
             Obx(
               () => TextFormField(
+                // Remount when GetX fenix recreates AuthController so we never
+                // keep a TextFormField bound to a disposed TextEditingController.
+                key: ValueKey(identityHashCode(controller.msisdnController)),
                 controller: controller.msisdnController,
                 keyboardType: TextInputType.phone,
                 style: TextStyle(
