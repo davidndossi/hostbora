@@ -132,7 +132,9 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
               if (controller.items.isEmpty)
                 _emptyPlaceholder(u)
               else
-                ...controller.items.map((item) => _itemCard(u, item)),
+                ...controller.items.map(
+                  (item) => _itemCard(context, u, item),
+                ),
             ],
           ),
         );
@@ -174,7 +176,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
               Expanded(
                 child: _summaryStat(
                   u,
-                  label: _isSw ? 'Hisa chini' : 'Low stock',
+                  label: _isSw ? 'Bidhaa chini' : 'Low stock',
                   value: '${controller.lowStockCount.value}',
                   icon: Icons.warning_amber_rounded,
                   accent: controller.lowStockCount.value > 0
@@ -349,7 +351,11 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
     );
   }
 
-  Widget _itemCard(FormSurfaceColors u, InventoryItemRecord item) {
+  Widget _itemCard(
+    BuildContext context,
+    FormSurfaceColors u,
+    InventoryItemRecord item,
+  ) {
     final low = item.isLowStock;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -357,7 +363,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
         color: u.card,
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
-          onTap: () => _openHistorySheet(u, item),
+          onTap: () => _openHistorySheet(context, u, item),
           borderRadius: BorderRadius.circular(14),
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -404,7 +410,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                             ),
                             const SizedBox(width: 3),
                             Text(
-                              _isSw ? 'Hisa chini' : 'Low stock',
+                              _isSw ? 'Bidhaa chini' : 'Low stock',
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -466,7 +472,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                       ),
                     ),
                     TextButton.icon(
-                      onPressed: () => _openAdjustSheet(u, item),
+                      onPressed: () => _openAdjustSheet(context, u, item),
                       icon: const Icon(Icons.tune_rounded, size: 16),
                       label: Text(_isSw ? 'Rekebisha' : 'Adjust',
                           style: const TextStyle(fontSize: 12)),
@@ -495,33 +501,58 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
 
   // ── Movement history sheet ──────────────────────────────────────────────
 
-  Future<void> _openHistorySheet(FormSurfaceColors u, InventoryItemRecord item) async {
+  Future<void> _openHistorySheet(
+    BuildContext context,
+    FormSurfaceColors u,
+    InventoryItemRecord item,
+  ) async {
     final movements = await controller.loadMovements(item);
     await Get.bottomSheet(
-      _HistorySheet(u: u, item: item, movements: movements, isSw: _isSw,
-          onAdjust: () { Get.back(); _openAdjustSheet(u, item); },
-          onEdit: () { Get.back(); controller.onEditItem(item); }),
+      _HistorySheet(
+        u: u,
+        item: item,
+        movements: movements,
+        isSw: _isSw,
+        onAdjust: () {
+          Get.back();
+          _openAdjustSheet(context, u, item);
+        },
+        onEdit: () {
+          Get.back();
+          controller.onEditItem(item);
+        },
+      ),
       isScrollControlled: true,
     );
   }
 
+  /// Parses qty from the adjust sheet (commas / decimals from number pads).
+  static int? _parseAdjustQty(String raw) {
+    final cleaned = raw.trim().replaceAll(',', '').replaceAll(' ', '');
+    if (cleaned.isEmpty) return null;
+    final asInt = int.tryParse(cleaned);
+    if (asInt != null) return asInt;
+    final asDouble = double.tryParse(cleaned);
+    if (asDouble == null) return null;
+    return asDouble.round();
+  }
+
   Future<void> _openAdjustSheet(
+    BuildContext hostContext,
     FormSurfaceColors u,
     InventoryItemRecord item,
   ) async {
-    final host = Get.context;
-    if (host == null) return;
-
     final qtyController = TextEditingController(text: '1');
     final notesController = TextEditingController();
     var movementType = 'add';
     var saving = false;
+    String? errorText;
 
     // Use Flutter's sheet, not Get.bottomSheet: GetX's route pads the whole
     // sheet by the keyboard inset and can pin an unconstrained child to the
     // top of the screen (content hidden behind the status bar).
     await showModalBottomSheet<void>(
-      context: host,
+      context: hostContext,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       useSafeArea: true,
@@ -564,7 +595,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                             ),
                           ),
                           Text(
-                            _isSw ? 'Rekebisha hisa' : 'Adjust stock',
+                            _isSw ? 'Rekebisha bidhaa' : 'Adjust stock',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
@@ -586,6 +617,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                                 selected: movementType == 'add',
                                 onTap: () => setState(() {
                                   movementType = 'add';
+                                  errorText = null;
                                   if (qtyController.text.trim().isEmpty ||
                                       qtyController.text.trim() ==
                                           '${item.quantity}') {
@@ -599,6 +631,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                                 selected: movementType == 'use',
                                 onTap: () => setState(() {
                                   movementType = 'use';
+                                  errorText = null;
                                   if (qtyController.text.trim() ==
                                       '${item.quantity}') {
                                     qtyController.text = '1';
@@ -611,6 +644,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                                 selected: movementType == 'damage',
                                 onTap: () => setState(() {
                                   movementType = 'damage';
+                                  errorText = null;
                                   if (qtyController.text.trim() ==
                                       '${item.quantity}') {
                                     qtyController.text = '1';
@@ -623,6 +657,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                                 selected: movementType == 'adjust',
                                 onTap: () => setState(() {
                                   movementType = 'adjust';
+                                  errorText = null;
                                   qtyController.text = '${item.quantity}';
                                 }),
                               ),
@@ -631,10 +666,18 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                           const SizedBox(height: 12),
                           TextField(
                             controller: qtyController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: false,
+                            ),
                             textInputAction: TextInputAction.done,
+                            onChanged: (_) {
+                              if (errorText != null) {
+                                setState(() => errorText = null);
+                              }
+                            },
                             decoration: InputDecoration(
                               labelText: qtyLabel,
+                              errorText: errorText,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -661,16 +704,20 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                                   ? null
                                   : () async {
                                       FocusScope.of(context).unfocus();
-                                      final qty = int.tryParse(
-                                            qtyController.text.trim(),
-                                          ) ??
-                                          0;
-                                      if (qty <= 0) {
-                                        controller.showErrorMessage(
-                                          _isSw
+                                      final qty = _parseAdjustQty(
+                                        qtyController.text,
+                                      );
+                                      // Set mode may be zero; Add/Use/Damage need > 0.
+                                      if (qty == null ||
+                                          (movementType != 'adjust' &&
+                                              qty <= 0) ||
+                                          (movementType == 'adjust' &&
+                                              qty < 0)) {
+                                        setState(() {
+                                          errorText = _isSw
                                               ? 'Weka idadi halali.'
-                                              : 'Enter a valid quantity.',
-                                        );
+                                              : 'Enter a valid quantity.';
+                                        });
                                         return;
                                       }
                                       var delta = qty;
@@ -680,33 +727,36 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                                       } else if (movementType == 'adjust') {
                                         delta = qty - item.quantity;
                                         if (delta == 0) {
-                                          controller.showErrorMessage(
-                                            _isSw
+                                          setState(() {
+                                            errorText = _isSw
                                                 ? 'Idadi haijabadilika.'
-                                                : 'Quantity is unchanged.',
-                                          );
+                                                : 'Quantity is unchanged.';
+                                          });
                                           return;
                                         }
                                       }
-                                      setState(() => saving = true);
-                                      final ok = await controller.adjustStock(
-                                        item: item,
-                                        movementType: movementType,
-                                        quantityDelta: delta,
-                                        notes: notesController.text.trim(),
-                                      );
-                                      if (!ok) {
-                                        if (context.mounted) {
-                                          setState(() => saving = false);
-                                        }
-                                        return;
-                                      }
+                                      final notes =
+                                          notesController.text.trim();
+                                      final type = movementType;
+                                      setState(() {
+                                        saving = true;
+                                        errorText = null;
+                                      });
+                                      // Close first so BaseView toasts/snackbars
+                                      // are visible (they render behind modals).
                                       if (sheetContext.mounted) {
                                         Navigator.of(sheetContext).pop();
                                       }
+                                      await controller.adjustStock(
+                                        item: item,
+                                        movementType: type,
+                                        quantityDelta: delta,
+                                        notes: notes,
+                                      );
                                     },
                               style: FilledButton.styleFrom(
                                 backgroundColor: AppColors.colorPrimary,
+                                foregroundColor: Colors.white,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 14),
                               ),

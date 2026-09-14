@@ -611,12 +611,12 @@ class AddExpenseController extends BaseController {
     await Get.dialog(
       AlertDialog(
         title: Text(
-          isSw ? 'Ongeza hisa tena?' : 'Record a restock?',
+          isSw ? 'Ongeza bidhaa tena?' : 'Record a restock?',
         ),
         content: Text(
           isSw
               ? 'Gharama ya "${selectedExpense}" imehifadhiwa. Je, ungependa kurekodi '
-                  'ongezeko la hisa kwa mali hii?'
+                  'ongezeko la bidhaa kwa mali hii?'
               : 'The "${selectedExpense}" expense was saved. Would you like to record '
                   'a restock movement for an inventory item on this property?',
         ),
@@ -708,7 +708,7 @@ class AddExpenseController extends BaseController {
 
     final pickedName = picked!.name;
     showSuccessMessage(isSw
-        ? 'Hisa ya "$pickedName" imesasishwa (+$qty).'
+        ? 'Bidhaa ya "$pickedName" imesasishwa (+$qty).'
         : '"$pickedName" restocked (+$qty).');
   }
 

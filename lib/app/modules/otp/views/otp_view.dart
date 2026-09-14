@@ -122,36 +122,52 @@ class OtpView extends BaseView<OtpController> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: appLocalization.noCode,
-                            style: TextStyle(
-                              color: isDark
-                                  ? theme.colorScheme.onSurface
-                                  : Colors.black,
-                            ),
-                          ),
-                          const WidgetSpan(child: SizedBox(width: 6)),
-                          WidgetSpan(
-                            alignment: PlaceholderAlignment.baseline,
-                            baseline: TextBaseline.alphabetic,
-                            child: InkWell(
-                              onTap: () => controller.resendOtp(),
-                              child: Text(
-                                appLocalization.resendOtp,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: AppColors.colorPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                    Obx(() {
+                      final canResend = controller.canResend;
+                      final muted = isDark
+                          ? theme.colorScheme.onSurfaceVariant
+                          : Colors.black54;
+                      return RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: appLocalization.noCode,
+                              style: TextStyle(
+                                color: isDark
+                                    ? theme.colorScheme.onSurface
+                                    : Colors.black,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                            const WidgetSpan(child: SizedBox(width: 6)),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.baseline,
+                              baseline: TextBaseline.alphabetic,
+                              child: canResend
+                                  ? InkWell(
+                                      onTap: controller.resendOtp,
+                                      child: Text(
+                                        appLocalization.resendOtp,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: AppColors.colorPrimary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      Get.locale?.languageCode == 'sw'
+                                          ? 'Tuma tena baada ya ${controller.resendCooldownLabel}'
+                                          : 'Resend in ${controller.resendCooldownLabel}',
+                                      style: TextStyle(
+                                        color: muted,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                     const Spacer(),
                     const SizedBox(height: 24),
                     Obx(

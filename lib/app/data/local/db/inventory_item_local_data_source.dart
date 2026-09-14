@@ -295,11 +295,20 @@ class InventoryItemLocalDataSource {
             (m['createdAtMs'] ?? m['created_at_ms'] as num?)?.toInt() ?? now,
       });
     } else {
+      final localId = existing.first['id'];
+      final localSync =
+          (existing.first['sync_status'] as String? ?? '').trim();
+      // Keep a fresher local quantity when a stock adjustment is still pending
+      // sync — otherwise pull-to-refresh / reopen restores the stale remote qty.
+      if (localSync == 'pending') {
+        row['quantity'] = existing.first['quantity'];
+        row['sync_status'] = 'pending';
+      }
       await db.update(
         _table,
         row,
         where: 'id = ?',
-        whereArgs: [existing.first['id']],
+        whereArgs: [localId],
       );
     }
   }

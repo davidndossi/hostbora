@@ -443,13 +443,14 @@ class BookingDetailsController extends BaseController {
                     onTap: () => scheduleGuestWhatsApp(),
                   ),
                   if (!_isInactive) ...[
-                    tile(
-                      icon: Icons.link_outlined,
-                      title: isSw
-                          ? 'Tuma kiungo cha malipo'
-                          : 'Send payment link',
-                      onTap: () => sendPaymentLinkViaWhatsApp(),
-                    ),
+                    // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+                    // tile(
+                    //   icon: Icons.link_outlined,
+                    //   title: isSw
+                    //       ? 'Tuma kiungo cha malipo'
+                    //       : 'Send payment link',
+                    //   onTap: () => sendPaymentLinkViaWhatsApp(),
+                    // ),
                     tile(
                       icon: Icons.payments_outlined,
                       title: _l10n.recordPayment,
@@ -535,6 +536,14 @@ class BookingDetailsController extends BaseController {
   }
 
   Future<void> sendPaymentLinkViaWhatsApp() async {
+    // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+    showErrorMessage(
+      Get.locale?.languageCode == 'sw'
+          ? 'Utumaji wa WhatsApp umesimamishwa kwa sasa tunaposhughulikia masuala ya Meta.'
+          : 'WhatsApp sending is temporarily unavailable while we resolve Meta issues.',
+    );
+    return;
+    // ignore: dead_code
     if (isListingMode || _isInactive || sendingPaymentLink.value) return;
     final phone = guestPhone.value.trim();
     if (phone.isEmpty) {

@@ -95,26 +95,27 @@ class RentSchedulePaymentReminderView
           const SizedBox(height: 16),
           _messagePreviewCard(c),
           const SizedBox(height: 24),
-          Obx(
-            () => OutlinedButton.icon(
-              onPressed: controller.sendingPaymentLink.value
-                  ? null
-                  : controller.sendPaymentLinkNow,
-              icon: const Icon(Icons.link),
-              label: Text(
-                _isSw ? 'Tuma kiungo cha malipo sasa' : 'Send payment link now',
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _ReminderPalette.teal,
-                side: BorderSide(color: _ReminderPalette.teal),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
+          // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+          // Obx(
+          //   () => OutlinedButton.icon(
+          //     onPressed: controller.sendingPaymentLink.value
+          //         ? null
+          //         : controller.sendPaymentLinkNow,
+          //     icon: const Icon(Icons.link),
+          //     label: Text(
+          //       _isSw ? 'Tuma kiungo cha malipo sasa' : 'Send payment link now',
+          //     ),
+          //     style: OutlinedButton.styleFrom(
+          //       foregroundColor: _ReminderPalette.teal,
+          //       side: BorderSide(color: _ReminderPalette.teal),
+          //       padding: const EdgeInsets.symmetric(vertical: 14),
+          //       shape: RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.circular(14),
+          //       ),
+          //     ),
+          //   ),
+          // ),
+          // const SizedBox(height: 12),
           _scheduleCta(),
         ],
       ),

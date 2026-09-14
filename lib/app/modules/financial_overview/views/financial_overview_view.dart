@@ -169,6 +169,8 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                         'Performance Trends',
                         'Mwelekeo wa Utendaji',
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -182,6 +184,8 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                         'Current vs. Previous Period',
                         'Kipindi cha sasa dhidi ya kilichopita',
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 14,
                         color: context.tokens.textSecondary,
@@ -280,6 +284,8 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
                               FinancialOverviewController.trendLabels[i],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -501,6 +507,8 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
                               labels[i],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -606,9 +614,16 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            _t(context, 'Portfolio totals across all properties (this month)', 'Makadirio kwa mali zote (mwezi huu)'),
-            style: TextStyle(fontSize: 11, color: muted),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              _t(
+                context,
+                'Portfolio totals across all properties (this month)',
+                'Makadirio kwa mali zote (mwezi huu)',
+              ),
+              style: TextStyle(fontSize: 11, color: muted),
+            ),
           ),
         ],
       ),
@@ -639,6 +654,8 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
               const SizedBox(height: 10),
               Text(
                 label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 9,
                   letterSpacing: 0.8,
@@ -647,15 +664,19 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: valueColor,
-                  height: 1.1,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: valueColor,
+                    height: 1.1,
+                  ),
                 ),
               ),
             ],
@@ -746,14 +767,19 @@ class _SegmentButton extends StatelessWidget {
                 color: isSelected ? Colors.white : AppColors.textColorSecondary,
               ),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
             ],
@@ -804,6 +830,8 @@ class _MetricCard extends StatelessWidget {
         children: [
           Text(
             label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 14,
               color: c.secondary,
@@ -811,12 +839,18 @@ class _MetricCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              softWrap: false,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
           const SizedBox(height: 4),
@@ -828,12 +862,16 @@ class _MetricCard extends StatelessWidget {
                 color: changeColor,
               ),
               const SizedBox(width: 4),
-              Text(
-                change,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: changeColor,
+              Expanded(
+                child: Text(
+                  change,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: changeColor,
+                  ),
                 ),
               ),
             ],

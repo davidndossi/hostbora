@@ -873,7 +873,7 @@ class ListingDetailsView extends BaseView<ListingDetailsController> {
                     const SizedBox(height: 3),
                     Text(
                       _isSw
-                          ? 'Fuatilia vifaa, hisa na mabadiliko kwa kila unit'
+                          ? 'Fuatilia vifaa, bidhaa na mabadiliko kwa kila unit'
                           : 'Track items, stock levels and changes per unit',
                       style: TextStyle(
                         fontSize: 12.5,

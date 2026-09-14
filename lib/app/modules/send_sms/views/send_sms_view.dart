@@ -1182,19 +1182,20 @@ class SendSmsView extends BaseView<SendSmsController> {
                                             ),
                                           );
                                         }),
-                                        Obx(
-                                          () => LoadingButton(
-                                            label: _t(
-                                              context,
-                                              'Send via WhatsApp',
-                                              'Tuma kwa WhatsApp',
-                                            ),
-                                            onPressed: controller.sendViaWhatsApp,
-                                            isLoading: controller.isLoading.value,
-                                            icon: Icons.send_outlined,
-                                            minimumSize: const Size.fromHeight(48),
-                                          ),
-                                        ),
+                                        // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+                                        // Obx(
+                                        //   () => LoadingButton(
+                                        //     label: _t(
+                                        //       context,
+                                        //       'Send via WhatsApp',
+                                        //       'Tuma kwa WhatsApp',
+                                        //     ),
+                                        //     onPressed: controller.sendViaWhatsApp,
+                                        //     isLoading: controller.isLoading.value,
+                                        //     icon: Icons.send_outlined,
+                                        //     minimumSize: const Size.fromHeight(48),
+                                        //   ),
+                                        // ),
                                         const SizedBox(
                                           height: AppValues.spacing_10,
                                         ),

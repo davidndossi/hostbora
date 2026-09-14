@@ -1001,6 +1001,16 @@ class SendSmsController extends BaseController
 
   /// Sends via WhatsApp Cloud API (per-user credentials) or opens the device app as fallback.
   Future<void> sendViaWhatsApp() async {
+    // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+    showErrorMessage(
+      _t(
+        'WhatsApp sending is temporarily unavailable while we resolve Meta issues.',
+        'Utumaji wa WhatsApp umesimamishwa kwa sasa tunaposhughulikia masuala ya Meta.',
+      ),
+    );
+    return;
+
+    // ignore: dead_code
     if (formKey.currentState?.validate() != true) return;
     final invalid = <String>[];
     final numbers = validatePhoneNumbers(phoneNumbersController.text, invalid);

@@ -762,6 +762,14 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   }
 
   Future<void> sendScheduledReportNowViaWhatsApp() async {
+    // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+    showErrorMessage(
+      Get.locale?.languageCode == 'sw'
+          ? 'Utumaji wa WhatsApp umesimamishwa kwa sasa tunaposhughulikia masuala ya Meta.'
+          : 'WhatsApp sending is temporarily unavailable while we resolve Meta issues.',
+    );
+    return;
+    // ignore: dead_code
     await _exportExcel(
       template: whatsappScheduleTemplate.value,
       viaWhatsApp: true,

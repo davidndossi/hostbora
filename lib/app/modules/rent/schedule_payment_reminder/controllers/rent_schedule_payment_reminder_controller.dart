@@ -112,6 +112,12 @@ class RentSchedulePaymentReminderController extends BaseController {
   }
 
   Future<void> sendPaymentLinkNow() async {
+    // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+    showErrorMessage(
+      'WhatsApp payment links are temporarily unavailable while we resolve Meta issues.',
+    );
+    return;
+    // ignore: dead_code
     if (sendingPaymentLink.value) return;
     if (_recipientPhone.isEmpty) {
       showErrorMessage('Tenant phone number not available');

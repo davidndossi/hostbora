@@ -528,6 +528,18 @@ class LocalSourceBindings implements Bindings {
               backendId: backendId,
             );
           }
+          final itemLocalId = map['itemLocalId'] as int?;
+          if (itemLocalId != null) {
+            await itemLocal.updateSyncStatus(itemLocalId, 'synced');
+          } else if (backendItemId.isNotEmpty) {
+            final rows = await itemLocal.listAll();
+            for (final r in rows) {
+              if (r.backendItemId.trim() == backendItemId) {
+                await itemLocal.updateSyncStatus(r.id, 'synced');
+                break;
+              }
+            }
+          }
         }
       },
     );

@@ -488,6 +488,8 @@ class AddNewBookingController extends BaseController {
 
     saving.value = true;
     try {
+      // TEMP: Meta WhatsApp send disabled — never send Snippe link via WhatsApp.
+      sendPaymentLink.value = false;
       String? serverBookingId;
       if (sendPaymentLink.value) {
         final createRes = await _repository.createBooking(request);

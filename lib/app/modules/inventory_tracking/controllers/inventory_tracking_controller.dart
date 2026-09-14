@@ -427,7 +427,14 @@ class InventoryTrackingController extends BaseController {
     required int quantityDelta,
     String notes = '',
   }) async {
-    if (adjusting.value) return false;
+    if (adjusting.value) {
+      showErrorMessage(
+        _isSw
+            ? 'Subiri, bidhaa inasasishwa...'
+            : 'Please wait — stock is still updating.',
+      );
+      return false;
+    }
     if (quantityDelta == 0) {
       showErrorMessage(
         _isSw ? 'Weka idadi halali.' : 'Enter a valid quantity.',
@@ -460,7 +467,7 @@ class InventoryTrackingController extends BaseController {
       // Refresh UI and confirm immediately — don't wait on the network.
       await _reloadLocal();
       showSuccessMessage(
-        _isSw ? 'Hisa imesasishwa.' : 'Stock updated.',
+        _isSw ? 'Bidhaa imesasishwa.' : 'Stock updated.',
       );
 
       // Sync to server in the background (or queue offline).
@@ -514,6 +521,7 @@ class InventoryTrackingController extends BaseController {
             res.responseCode == '201';
         if (!saved) throw Exception(res.message ?? 'movement failed');
         await _movementLocal.updateSyncStatus(movementLocalId, 'synced');
+        await _itemLocal.updateSyncStatus(item.id, 'synced');
         final remoteId = (res.data is Map)
             ? ((res.data as Map)['movementId'] ?? (res.data as Map)['id'])
                 ?.toString() ??
@@ -532,6 +540,7 @@ class InventoryTrackingController extends BaseController {
           operation: 'create',
           payloadJson: jsonEncode({
             'localMovementId': movementLocalId,
+            'itemLocalId': item.id,
             'backendItemId': backendId,
             'clientMovementId': clientMovementId,
             'movementType': movementType,

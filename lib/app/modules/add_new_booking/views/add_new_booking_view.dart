@@ -9,7 +9,6 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
-import '../../../data/local/service/currency_service.dart';
 import '../controllers/add_new_booking_controller.dart';
 
 const _bookingNavTeal = Color(0xFF1E8877);
@@ -223,83 +222,84 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
               autovalidateMode: AutovalidateMode.onUserInteraction,
             ),
             const SizedBox(height: 20),
-            Obx(() {
-              final sendLink = controller.sendPaymentLink.value;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          value: sendLink,
-                          onChanged: (v) =>
-                              controller.setSendPaymentLink(v ?? false),
-                          activeColor: _bookingNavTeal,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => controller.setSendPaymentLink(!sendLink),
-                          child: _buildLabel(
-                            context,
-                            _t(
-                              context,
-                              en: 'Send Snippe payment link via WhatsApp',
-                              sw: 'Tuma kiungo cha malipo cha Snippe kupitia WhatsApp',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (sendLink) ...[
-                    const SizedBox(height: 12),
-                    _buildLabel(
-                      context,
-                      _t(
-                        context,
-                        en: 'Amount (${Get.find<CurrencyService>().inputSuffix})',
-                        sw: 'Kiasi (${Get.find<CurrencyService>().inputSuffix})',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: controller.pushToPayAmountController,
-                      keyboardType: TextInputType.number,
-                      decoration: _inputDecoration(
-                        context,
-                        hint: _t(context, en: 'e.g. 50000', sw: 'mf. 50000'),
-                      ),
-                      validator: controller.validatePaymentLinkAmount,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _t(
-                        context,
-                        en: 'Requires internet. Guest receives a WhatsApp message with a secure payment link.',
-                        sw: 'Inahitaji mtandao. Mgeni atapokea ujumbe wa WhatsApp wenye kiungo cha malipo.',
-                      ),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: FormSurfaceColors.of(context).isDark
-                            ? Colors.white70
-                            : AppColors.designPlaceholder,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ] else
-                    const SizedBox(height: 20),
-                ],
-              );
-            }),
+            // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+            // Obx(() {
+            //   final sendLink = controller.sendPaymentLink.value;
+            //   return Column(
+            //     crossAxisAlignment: CrossAxisAlignment.start,
+            //     children: [
+            //       Row(
+            //         children: [
+            //           SizedBox(
+            //             height: 24,
+            //             width: 24,
+            //             child: Checkbox(
+            //               value: sendLink,
+            //               onChanged: (v) =>
+            //                   controller.setSendPaymentLink(v ?? false),
+            //               activeColor: _bookingNavTeal,
+            //               shape: RoundedRectangleBorder(
+            //                 borderRadius: BorderRadius.circular(4),
+            //               ),
+            //             ),
+            //           ),
+            //           const SizedBox(width: 8),
+            //           Expanded(
+            //             child: GestureDetector(
+            //               onTap: () => controller.setSendPaymentLink(!sendLink),
+            //               child: _buildLabel(
+            //                 context,
+            //                 _t(
+            //                   context,
+            //                   en: 'Send Snippe payment link via WhatsApp',
+            //                   sw: 'Tuma kiungo cha malipo cha Snippe kupitia WhatsApp',
+            //                 ),
+            //               ),
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //       if (sendLink) ...[
+            //         const SizedBox(height: 12),
+            //         _buildLabel(
+            //           context,
+            //           _t(
+            //             context,
+            //             en: 'Amount (${Get.find<CurrencyService>().inputSuffix})',
+            //             sw: 'Kiasi (${Get.find<CurrencyService>().inputSuffix})',
+            //           ),
+            //         ),
+            //         const SizedBox(height: 8),
+            //         TextFormField(
+            //           controller: controller.pushToPayAmountController,
+            //           keyboardType: TextInputType.number,
+            //           decoration: _inputDecoration(
+            //             context,
+            //             hint: _t(context, en: 'e.g. 50000', sw: 'mf. 50000'),
+            //           ),
+            //           validator: controller.validatePaymentLinkAmount,
+            //           autovalidateMode: AutovalidateMode.onUserInteraction,
+            //         ),
+            //         const SizedBox(height: 8),
+            //         Text(
+            //           _t(
+            //             context,
+            //             en: 'Requires internet. Guest receives a WhatsApp message with a secure payment link.',
+            //             sw: 'Inahitaji mtandao. Mgeni atapokea ujumbe wa WhatsApp wenye kiungo cha malipo.',
+            //           ),
+            //           style: TextStyle(
+            //             fontSize: 12,
+            //             color: FormSurfaceColors.of(context).isDark
+            //                 ? Colors.white70
+            //                 : AppColors.designPlaceholder,
+            //           ),
+            //         ),
+            //         const SizedBox(height: 20),
+            //       ] else
+            //         const SizedBox(height: 20),
+            //     ],
+            //   );
+            // }),
             _buildLabel(
               context,
               _t(context, en: 'Select Property', sw: 'Chagua Mali'),

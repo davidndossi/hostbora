@@ -118,7 +118,7 @@ class _InventoryLowStockBannerState extends State<InventoryLowStockBanner> {
                             ? '$_lowStock ${_lowStock == 1 ? 'kifaa kinahitaji' : 'vifaa vinahitaji'} kujazwa tena · jumla $_total'
                             : '$_lowStock item${_lowStock == 1 ? '' : 's'} low on stock · $_total total')
                         : (_isSw
-                            ? 'Vifaa $_total, hisa yote inatosha'
+                            ? 'Vifaa $_total, bidhaa yote inatosha'
                             : '$_total item${_total == 1 ? '' : 's'}, all stock levels OK'),
                     style: TextStyle(
                       fontSize: 12,

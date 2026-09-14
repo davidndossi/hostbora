@@ -26,6 +26,21 @@ class OtpController extends BaseController {
   final otp = ''.obs;
   final isLoading = false.obs;
 
+  /// Cooldown before another OTP can be requested (sign-in / registration).
+  static const int resendCooldownSeconds = 60;
+  final secondsLeft = 0.obs;
+  final isResending = false.obs;
+  Timer? _resendTimer;
+
+  bool get canResend => secondsLeft.value <= 0 && !isResending.value;
+
+  String get resendCooldownLabel {
+    final s = secondsLeft.value;
+    final m = s ~/ 60;
+    final sec = s % 60;
+    return '${m.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+  }
+
   final PreferenceManager _preferenceManager = Get.find(
     tag: (PreferenceManager).toString(),
   );
@@ -74,7 +89,22 @@ class OtpController extends BaseController {
         this.msisdn = argMsisdn is String ? argMsisdn : argMsisdn.toString();
       }
     }
+    // First OTP was already sent on the previous screen — start cooldown.
+    _startResendCooldown();
     super.onInit();
+  }
+
+  void _startResendCooldown() {
+    secondsLeft.value = resendCooldownSeconds;
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (secondsLeft.value > 0) {
+        secondsLeft.value--;
+      } else {
+        _resendTimer?.cancel();
+        _resendTimer = null;
+      }
+    });
   }
 
   void addDigit(String digit) {
@@ -181,6 +211,11 @@ class OtpController extends BaseController {
   }
 
   void _handleResendOtpResponseError(Exception e) {
+    isResending.value = false;
+    // Allow retry after a failed send (do not keep the full cooldown).
+    _resendTimer?.cancel();
+    _resendTimer = null;
+    secondsLeft.value = 0;
     final message = e is ApiException && e.message.isNotEmpty
         ? e.message
         : _t(
@@ -191,12 +226,20 @@ class OtpController extends BaseController {
   }
 
   void _handleResendOtpSuccess(GeneralResponse res) {
+    isResending.value = false;
     if (res.responseCode == '0' || res.responseCode == null) {
+      // Cooldown already started when the request was sent.
       showSuccessMessage(
-        _t('OTP resent successfully', 'OTP imetumwa tena kwa mafanikio'),
+        _t(
+          'OTP resent successfully. You can request another in $resendCooldownSeconds seconds.',
+          'OTP imetumwa tena. Unaweza kuomba nyingine baada ya sekunde $resendCooldownSeconds.',
+        ),
       );
       return;
     }
+    _resendTimer?.cancel();
+    _resendTimer = null;
+    secondsLeft.value = 0;
     showErrorMessage(
       res.message ??
           _t(
@@ -255,9 +298,23 @@ class OtpController extends BaseController {
   }
 
   void resendOtp() {
+    if (!canResend) {
+      if (secondsLeft.value > 0) {
+        showErrorMessage(
+          _t(
+            'Please wait $resendCooldownLabel before requesting another code.',
+            'Tafadhali subiri $resendCooldownLabel kabla ya kuomba msimbo mwingine.',
+          ),
+        );
+      }
+      return;
+    }
     // Clear any previously entered digits so the user cannot submit an
     // expired/invalid code after requesting a new one.
     _clearOtpInput();
+    isResending.value = true;
+    // Start cooldown immediately so rapid taps cannot queue multiple sends.
+    _startResendCooldown();
     if (flow == 'login') {
       callDataService(
         _repository.requestLoginOtp(
@@ -283,5 +340,14 @@ class OtpController extends BaseController {
       onError: _handleResendOtpResponseError,
       onSuccess: _handleResendOtpSuccess,
     );
+  }
+
+  @override
+  void onClose() {
+    _resendTimer?.cancel();
+    _resendTimer = null;
+    otpController.dispose();
+    errorController?.close();
+    super.onClose();
   }
 }

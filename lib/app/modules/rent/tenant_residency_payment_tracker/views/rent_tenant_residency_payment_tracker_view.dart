@@ -137,9 +137,10 @@ class RentTenantResidencyPaymentTrackerView
               case 'export_summary':
                 await controller.exportCustomerRentTenantSummaryExcel();
                 break;
-              case 'send_now':
-                await controller.sendScheduledReportNowViaWhatsApp();
-                break;
+              // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+              // case 'send_now':
+              //   await controller.sendScheduledReportNowViaWhatsApp();
+              //   break;
               case 'schedule':
                 _openScheduleSheet(context);
                 break;
@@ -162,14 +163,15 @@ class RentTenantResidencyPaymentTrackerView
                     : 'Download Excel: Tenant summary',
               ),
             ),
-            PopupMenuItem(
-              value: 'send_now',
-              child: Text(
-                _isSw
-                    ? 'Tuma kupitia WhatsApp sasa'
-                    : 'Send via WhatsApp now',
-              ),
-            ),
+            // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+            // PopupMenuItem(
+            //   value: 'send_now',
+            //   child: Text(
+            //     _isSw
+            //         ? 'Tuma kupitia WhatsApp sasa'
+            //         : 'Send via WhatsApp now',
+            //   ),
+            // ),
             PopupMenuItem(
               value: 'schedule',
               child: Text(

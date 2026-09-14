@@ -391,6 +391,17 @@ class _QuickSendReminderWizardBodyState
     var sent = 0;
     final template = _stripResolvedValues(_messageController.text.trim());
 
+    // TEMP: Meta WhatsApp send disabled until Meta issues are cleared.
+    setState(() => _sending = false);
+    _showSnack(
+      _t(
+        'WhatsApp sending is temporarily unavailable while we resolve Meta issues.',
+        'Utumaji wa WhatsApp umesimamishwa kwa sasa tunaposhughulikia masuala ya Meta.',
+      ),
+    );
+    return;
+
+    // ignore: dead_code
     try {
       if (recipients.length == 1) {
         final tenant = recipients.first;

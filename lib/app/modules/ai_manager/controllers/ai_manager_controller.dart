@@ -68,10 +68,10 @@ class AiManagerController extends BaseController {
     if (source == 'inventory') {
       return _isSw
           ? const [
-              'Orodha vifaa vyote',
+              'Orodhesha vifaa vyote',
               'Nimetumia taulo 2',
               'Nimejaza sabuni 5',
-              'Vifaa vya hisa chini',
+              'Bidhaa zenye idadi ya chini',
             ]
           : const [
               'List all inventory',
@@ -160,7 +160,7 @@ class AiManagerController extends BaseController {
       'nimeongeza',
       'imeharibiwa',
       'imeharibika',
-      'hisa',
+      'bidhaa',
       'vifaa',
       // finance
       'gharama',
@@ -802,7 +802,7 @@ class AiManagerController extends BaseController {
     caseSensitive: false,
   );
   static final _lowStockRe = RegExp(
-    r'\b(?:low\s*stock|hisa\s*chini|vifaa\s*vichache|out\s*of\s*stock)\b',
+    r'\b(?:low\s*stock|bidhaa\s*chini|vifaa\s*vichache|out\s*of\s*stock)\b',
     caseSensitive: false,
   );
 
@@ -822,7 +822,7 @@ class AiManagerController extends BaseController {
       );
       if (rows.isEmpty) {
         return isSw
-            ? '✅ Hakuna vifaa vyenye hisa chini kwa sasa.'
+            ? '✅ Hakuna bidhaa zenye idadi ya chini kwa sasa.'
             : '✅ No low-stock items at the moment — all levels look good.';
       }
       final lines = rows.map((r) {
@@ -836,7 +836,7 @@ class AiManagerController extends BaseController {
             '${where.isNotEmpty ? '  ($where)' : ''}';
       });
       final header = isSw
-          ? '⚠️ Vifaa vyenye hisa chini (${rows.length}):\n'
+          ? '⚠️ Bidhaa zenye idadi ya chini (${rows.length}):\n'
           : '⚠️ Low-stock items (${rows.length}):\n';
       return header + lines.join('\n');
     }
@@ -947,7 +947,7 @@ class AiManagerController extends BaseController {
             .where((s) => s.isNotEmpty)
             .join(' · ');
         final low = item.reorderLevel > 0 && newQty <= item.reorderLevel;
-        final lowFlag = low ? (isSw ? ' ⚠️ hisa chini!' : ' ⚠️ low stock!') : '';
+        final lowFlag = low ? (isSw ? ' ⚠️ Bidhaa idadi ya chini!' : ' ⚠️ low stock!') : '';
         applied.add(
           isSw
               ? '• ${_swActionLabel(cmd.movementType)} ×${cmd.quantity} '
@@ -962,7 +962,7 @@ class AiManagerController extends BaseController {
 
     final buf = StringBuffer();
     if (applied.isNotEmpty) {
-      buf.writeln(isSw ? '✅ Hisa imesasishwa:\n' : '✅ Stock updated:\n');
+      buf.writeln(isSw ? '✅ Bidhaa imesasishwa:\n' : '✅ Stock updated:\n');
       buf.writeln(applied.join('\n'));
     }
     if (notFound.isNotEmpty) {
@@ -976,7 +976,7 @@ class AiManagerController extends BaseController {
     }
     if (applied.isEmpty && notFound.isEmpty) {
       return isSw
-          ? 'Samahani, sikuweza kuelewa amri hiyo ya hisa.'
+          ? 'Samahani, sikuweza kuelewa amri hiyo ya bidhaa.'
           : 'Sorry, I couldn\'t understand that stock command.';
     }
     return buf.toString().trim();
