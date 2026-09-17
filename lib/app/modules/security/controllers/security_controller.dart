@@ -35,7 +35,7 @@ class SecurityController extends BaseController {
 
   void goBack() => Get.back();
 
-  void changePassword() => Get.toNamed(Routes.CHANGE_PASSWORD);
+  // void changePassword() => Get.toNamed(Routes.CHANGE_PASSWORD);
 
   Future<void> openPinCode() async {
     // Enabling PIN lock for the first time on this device: if the account

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 
 import 'base_currency_picker.dart';
@@ -14,6 +15,20 @@ void showBaseCurrencyDialog(BuildContext context) {
           title: isSw
               ? 'Ripoti na chati zitaonyesha kiasi katika sarafu hii'
               : 'Reports and charts will use this currency',
+          onChanged: (code) {
+            if (Get.isDialogOpen ?? false) {
+              Get.back();
+            }
+            Fluttertoast.showToast(
+              msg: isSw
+                  ? 'Sarafu ya msingi imesasishwa ($code)'
+                  : 'Base currency updated ($code)',
+              toastLength: Toast.LENGTH_SHORT,
+              timeInSecForIosWeb: 2,
+              backgroundColor: Colors.green,
+              textColor: Colors.white,
+            );
+          },
         ),
       ),
       actions: [

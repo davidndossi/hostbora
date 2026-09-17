@@ -110,7 +110,7 @@ class _BottomNavBarState extends State<BottomNavBar>
         ? theme.colorScheme.surfaceContainerHigh
         : AppColors.colorWhite;
     final closedFabBg = isDark
-        ? theme.colorScheme.surfaceContainerHighest
+        ? const Color(0xFF25292D)
         : const Color(0xFFE2E8F0);
     final closedFabIcon = isDark
         ? theme.colorScheme.onSurfaceVariant
@@ -198,7 +198,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            SizedBox(height: lerpDouble(28, 8, t)),
+                            SizedBox(height: lerpDouble(16, 8, t)),
                             Text(
                               appLocalization.more,
                               style: TextStyle(

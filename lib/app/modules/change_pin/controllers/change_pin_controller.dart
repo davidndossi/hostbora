@@ -84,61 +84,91 @@ class ChangePinController extends BaseController {
     Get.offAllNamed(Routes.AUTH);
   }
 
+  /// Brief pause after the 4th digit so all four indicators paint before
+  /// verify / advance clears or switches the active PIN field.
+  static const _pinFeedbackDelay = Duration(milliseconds: 220);
+
   int getCountsOfPIN() {
-    if (pinStatus.value == PINStatus.verifyCurrent ||
-        pinStatus.value == PINStatus.confirmRemote) {
-      return firstPIN.value.length;
+    switch (pinStatus.value) {
+      case PINStatus.verifyCurrent:
+      case PINStatus.confirmRemote:
+      case PINStatus.enterFirst:
+        return firstPIN.value.length;
+      case PINStatus.enterSecond:
+      case PINStatus.equals:
+      case PINStatus.unequals:
+        return secondPIN.value.length;
     }
-    return firstPIN.value.length < 4
-        ? firstPIN.value.length
-        : secondPIN.value.length;
   }
 
-  void setPIN(int pinNum) {
+  Future<void> setPIN(int pinNum) async {
     if (pinStatus.value == PINStatus.confirmRemote) {
       if (isVerifyingRemotePin.value) return;
-      if (firstPIN.value.length < 4) {
-        remoteConfirmError.value = null;
-        firstPIN('${firstPIN.value}$pinNum');
-        if (firstPIN.value.length == 4) {
-          _verifyRemotePin();
-        }
-      }
+      if (firstPIN.value.length >= 4) return;
+      remoteConfirmError.value = null;
+      firstPIN('${firstPIN.value}$pinNum');
       update();
+      if (firstPIN.value.length == 4) {
+        await Future.delayed(_pinFeedbackDelay);
+        if (firstPIN.value.length != 4 ||
+            pinStatus.value != PINStatus.confirmRemote) {
+          return;
+        }
+        await _verifyRemotePin();
+      }
       return;
     }
 
     if (pinStatus.value == PINStatus.verifyCurrent) {
-      if (firstPIN.value.length < 4) {
-        firstPIN('${firstPIN.value}$pinNum');
-        if (firstPIN.value.length == 4) {
-          _verifyCurrentPin();
-        }
-      }
+      if (firstPIN.value.length >= 4) return;
+      firstPIN('${firstPIN.value}$pinNum');
       update();
+      if (firstPIN.value.length == 4) {
+        await Future.delayed(_pinFeedbackDelay);
+        if (firstPIN.value.length != 4 ||
+            pinStatus.value != PINStatus.verifyCurrent) {
+          return;
+        }
+        _verifyCurrentPin();
+      }
       return;
     }
 
     if (firstPIN.value.length < 4) {
       final currentPIN = '${firstPIN.value}$pinNum';
       firstPIN(currentPIN);
-      if (currentPIN.length < 4) {
-        pinStatus(PINStatus.enterFirst);
-      } else {
+      pinStatus(PINStatus.enterFirst);
+      update();
+      if (currentPIN.length == 4) {
+        await Future.delayed(_pinFeedbackDelay);
+        if (firstPIN.value.length != 4 ||
+            pinStatus.value != PINStatus.enterFirst) {
+          return;
+        }
         pinStatus(PINStatus.enterSecond);
+        update();
       }
-    } else {
-      final currentPIN = '${secondPIN.value}$pinNum';
-      secondPIN(currentPIN);
-      if (currentPIN.length < 4) {
-        pinStatus(PINStatus.enterSecond);
-      } else if (secondPIN.value == firstPIN.value) {
+      return;
+    }
+
+    if (secondPIN.value.length >= 4) return;
+    final currentPIN = '${secondPIN.value}$pinNum';
+    secondPIN(currentPIN);
+    pinStatus(PINStatus.enterSecond);
+    update();
+    if (currentPIN.length == 4) {
+      await Future.delayed(_pinFeedbackDelay);
+      if (secondPIN.value.length != 4 ||
+          pinStatus.value != PINStatus.enterSecond) {
+        return;
+      }
+      if (secondPIN.value == firstPIN.value) {
         pinStatus(PINStatus.equals);
       } else {
         pinStatus(PINStatus.unequals);
       }
+      update();
     }
-    update();
   }
 
   void _verifyCurrentPin() {

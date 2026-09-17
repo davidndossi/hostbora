@@ -12,15 +12,14 @@ import '../../../core/widget/skeleton_presets.dart';
 import '../../../data/local/vault_recent_access_store.dart';
 import '../controllers/property_vault_controller.dart';
 
-const _vaultTeal = Color(0xFF1C6E64);
-
 class PropertyVaultView extends BaseView<PropertyVaultController> {
   PropertyVaultView({super.key});
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
     return CustomAppBar(
-      appBarTitleText: appLocalization.propertyVault
+      appBarTitleText: appLocalization.propertyVault,
+      isCentered: true,
     );
   }
 
@@ -150,7 +149,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
-                color: _vaultTeal,
+                color: AppColors.colorPrimary,
               ),
             ),
             TextButton(
@@ -160,7 +159,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: _vaultTeal,
+                  color: AppColors.colorPrimary,
                 ),
               ),
             ),
@@ -212,7 +211,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
             fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,
-            color: _vaultTeal,
+            color: AppColors.colorPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -262,14 +261,14 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: (c.isDark ? theme.colorScheme.primary : _vaultTeal).withValues(
+        color: (c.isDark ? theme.colorScheme.primary : AppColors.colorPrimary).withValues(
           alpha: 0.12,
         ),
         borderRadius: BorderRadius.circular(AppValues.radius_12),
       ),
       child: Row(
         children: [
-          Icon(Icons.cloud_done, size: 32, color: _vaultTeal),
+          Icon(Icons.cloud_done, size: 32, color: AppColors.colorPrimary),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -280,7 +279,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: _vaultTeal,
+                    color: AppColors.colorPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -310,7 +309,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
   Widget _buildFab(BuildContext context) {
     return FloatingActionButton(
       onPressed: controller.onFabTap,
-      backgroundColor: _vaultTeal,
+      backgroundColor: AppColors.colorPrimary,
       child: const Icon(Icons.add, color: Colors.white, size: 28),
     );
   }
@@ -450,7 +449,7 @@ class _DirectoryCard extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: _vaultTeal,
+                      color: AppColors.colorPrimary,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(_icon, color: Colors.white, size: 24),

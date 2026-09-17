@@ -321,7 +321,7 @@ class HostDashboardController extends BaseController {
 
   void assignTasks() => Get.toNamed(Routes.TEAM_AND_STAFF);
 
-  void reports() => Get.toNamed(Routes.REPORTS_HUB);
+  void reports() => Get.toNamed(Routes.REPORTS_MONTHLY_INCOME);
 
   void openNotifications() => Get.toNamed(Routes.NOTIFICATIONS);
 

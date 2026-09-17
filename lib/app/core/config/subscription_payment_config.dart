@@ -13,6 +13,18 @@ class SubscriptionPaymentConfig {
   static bool get usesSnippeCheckout => !usesAppleIap;
 }
 
+/// Public legal pages — also set these in App Store Connect (Guideline 3.1.2):
+/// - App Information → Privacy Policy URL
+/// - App Information → License Agreement → Custom EULA (Terms of Use URL)
+class HostBoraLegalUrls {
+  HostBoraLegalUrls._();
+
+  static const termsOfUse =
+      'https://hostbora.co.tz/terms-of-service.html';
+  static const privacyPolicy =
+      'https://hostbora.co.tz/privacy-policy.html';
+}
+
 /// App Store Connect product IDs — must match subscriptions configured there.
 class AppleIapProducts {
   AppleIapProducts._();

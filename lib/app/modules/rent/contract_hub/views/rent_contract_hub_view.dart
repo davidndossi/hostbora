@@ -2,40 +2,39 @@ import 'package:flutter/material.dart';
 import '../../../../core/widget/skeleton_presets.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/form_surface_colors.dart';
+import '../../../../core/values/app_colors.dart';
 
 import 'package:get/get.dart';
 
 import '../../../../core/base/rent_base_view.dart';
-import '../../rent_theme.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_contract_hub_controller.dart';
 
 class _HubUi {
-  _HubUi(this.context);
+  _HubUi(this.context) : c = FormSurfaceColors.of(context);
 
   final BuildContext context;
-  ThemeData get _t => Theme.of(context);
-  bool get dark => _t.brightness == Brightness.dark;
+  final FormSurfaceColors c;
 
-  Color get canvas =>
-      dark ? _t.scaffoldBackgroundColor : const Color(0xFFF9F8F4);
+  bool get dark => c.isDark;
 
-  Color get card => dark ? _t.cardColor : Colors.white;
+  Color get canvas => c.scaffold;
+  Color get card => c.card;
+  Color get onSurface => c.headline;
+  Color get muted => c.secondary;
 
-  Color get onSurface =>
-      dark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
-
-  Color get muted =>
-      dark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280);
-
-  static const Color forest = Color(0xFF004D40);
-  static const Color lightTeal = Color(0xFF149C95);
+  /// Status accents (not page chrome).
   static const Color urgentRed = Color(0xFFB71C1C);
   static const Color renewUrgentBg = Color(0xFF6D2E2E);
-  static const Color peachCard = Color(0xFFFFF3ED);
   static const Color badgeRose = Color(0xFFFFCDD2);
 
-  Color get forestAccent => dark ? lightTeal : forest;
+  Color get accent =>
+      dark ? context.tokens.accent : AppColors.colorPrimary;
+
+  Color get softAccentFill => dark
+      ? accent.withValues(alpha: 0.16)
+      : const Color(0xFFFFF3ED);
 
   List<BoxShadow> cardShadow(bool strong) => [
         BoxShadow(
@@ -46,14 +45,15 @@ class _HubUi {
       ];
 }
 
-/// Contract Hub — Evergreen / Concierge layout (cream, teal hero, contract cards).
+/// Contract Hub — aligned with Home / My Properties shell tokens.
 class RentContractHubView extends RentBaseView<RentContractHubController> {
   RentContractHubView({super.key});
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
-  Color pageBackgroundColor(BuildContext context) => _HubUi(context).canvas;
+  Color pageBackgroundColor(BuildContext context) =>
+      FormSurfaceColors.of(context).scaffold;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(
@@ -64,7 +64,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
   Widget body(BuildContext context) {
     final u = _HubUi(context);
     return RefreshIndicator(
-      color: _HubUi.forest,
+      color: u.accent,
       onRefresh: controller.onRefresh,
       child: Obx(() {
         if (controller.loading.value) {
@@ -73,22 +73,22 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
         controller.searchQuery.value;
         controller.filterExpiringSoon.value;
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
           children: [
             Text(
               _isSw ? 'Kitovu cha Mikataba' : 'Contract Hub',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                fontSize: 24,
-                height: 1.1,
-                color: u.forestAccent,
+                fontSize: 18,
+                height: 1.2,
+                color: u.onSurface,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               _isSw
-                  ? 'Simamia na panga makubaliano ya wapangaji kwa uwazi na urahisi.'
-                  : 'Manage and curate your tenant agreements with botanical precision and effortless clarity.',
+                  ? 'Simamia na panga makubaliano ya wapangaji.'
+                  : 'Manage and organize your tenant agreements.',
               style: TextStyle(
                 fontSize: 14,
                 height: 1.45,
@@ -96,13 +96,13 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 20),
             _searchField(context),
             const SizedBox(height: 12),
             _filtersButton(context),
-            const SizedBox(height: 22),
+            const SizedBox(height: 20),
             _uploadCtaCard(context),
-            const SizedBox(height: 26),
+            const SizedBox(height: 24),
             _activeContractsHeader(context),
             const SizedBox(height: 14),
             ..._buildContractCards(context),
@@ -114,7 +114,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
 
   Widget _searchField(BuildContext context) {
     final u = _HubUi(context);
-    final fill = u.dark ? context.tokens.elevatedSurface : const Color(0xFFEFEEE9);
+    final fill = u.c.fill;
     return Obx(
       () => TextField(
         controller: controller.searchController,
@@ -136,11 +136,15 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
           filled: true,
           fillColor: fill,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(28),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: u.c.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: u.c.border),
           ),
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
@@ -150,12 +154,12 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
     final u = _HubUi(context);
     return Material(
       color: u.card,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12),
       elevation: 0,
       shadowColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: u.cardShadow(false),
           border: u.dark
               ? Border.all(color: context.tokens.elevatedSurface)
@@ -163,13 +167,13 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
         ),
         child: InkWell(
           onTap: controller.openFiltersSheet,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.tune_rounded, size: 22, color: u.forestAccent),
+                Icon(Icons.tune_rounded, size: 22, color: u.accent),
                 const SizedBox(width: 10),
                 Text(
                   _isSw ? 'Vichujio' : 'Filters',
@@ -193,8 +197,8 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: _HubUi.forest,
-        borderRadius: BorderRadius.circular(20),
+        color: u.accent,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: u.cardShadow(true),
       ),
       child: Column(
@@ -205,8 +209,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
           Text(
             _isSw ? 'Hifadhi Mkataba Mpya' : 'Archive a New Agreement',
             style: const TextStyle(
-              fontFamily: 'serif',
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: Colors.white,
               height: 1.2,
@@ -230,10 +233,10 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
               onPressed: controller.onUploadSignedLease,
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.white,
-                foregroundColor: _HubUi.forest,
+                foregroundColor: u.accent,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: Text(
@@ -311,7 +314,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
     final u = _HubUi(context);
     final urgent = c.isUrgent || c.isExpiredOrDue;
     final cardBg = urgent
-        ? (u.dark ? const Color(0xFF3D2A28) : _HubUi.peachCard)
+        ? (u.dark ? const Color(0xFF3D2A28) : u.softAccentFill)
         : u.card;
 
     return Container(
@@ -345,7 +348,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                     errorBuilder: (context, error, stackTrace) => Container(
                       width: 72,
                       height: 72,
-                      color: RentTheme.sectionMist,
+                      color: u.c.fill,
                       child: Icon(Icons.home_work_outlined, color: u.muted),
                     ),
                   ),
@@ -365,7 +368,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.6,
-                                color: u.forestAccent,
+                                color: u.accent,
                               ),
                             ),
                           ),
@@ -443,7 +446,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
               children: [
                 IconButton(
                   onPressed: () => controller.onViewContract(c),
-                  icon: Icon(Icons.visibility_outlined, color: u.forestAccent),
+                  icon: Icon(Icons.visibility_outlined, color: u.accent),
                   tooltip: _isSw ? 'Angalia' : 'View',
                 ),
                 const SizedBox(width: 4),
@@ -471,8 +474,8 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                       : OutlinedButton(
                           onPressed: () => controller.onRenewLease(c),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: u.forestAccent,
-                            side: BorderSide(color: u.forestAccent.withValues(alpha: 0.45)),
+                            foregroundColor: u.accent,
+                            side: BorderSide(color: u.accent.withValues(alpha: 0.45)),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

@@ -8,11 +8,13 @@ PreferredSizeWidget rentAppBar(
   String title, {
   List<Widget>? actions,
   Widget? leading,
+  bool isCentered = true,
 }) {
   return CustomAppBar(
     appBarTitleText: title,
     actions: actions,
     leading: leading,
+    isCentered: isCentered,
     isBackButtonEnabled: leading == null,
   );
 }
@@ -27,7 +29,12 @@ Widget rentCard({required Widget child, EdgeInsetsGeometry? padding}) {
         padding: padding ?? const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: tokens.cardBackground,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFE8ECF0),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.06),

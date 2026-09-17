@@ -118,16 +118,31 @@ class RentDefineLoyaltyOffersController extends BaseController {
     }
 
     showSuccessMessage('Loyalty offer saved offline');
+    // Return to Offers (or previous screen) instead of leaving Thresholds
+    // under another Offers route on the stack.
+    Get.back(result: true);
   }
 
   /// Replace with real data: e.g. `hasActivePrograms.value = await _repo.getActiveLoyaltyProgramCount() > 0`.
   Future<void> refreshActiveProgramsPresence() async {
-    await Future<void>.delayed(Duration.zero);
-    hasActivePrograms.value = true;
+    try {
+      final rows = await _local.getAllNewestFirst();
+      hasActivePrograms.value = rows.isNotEmpty;
+    } catch (_) {
+      hasActivePrograms.value = false;
+    }
   }
 
   void openActiveLoyaltyPrograms() {
-    Get.toNamed(Routes.RENT_ACTIVE_LOYALTY_PROGRAMS);
+    // Offers → Thresholds → "View active programs" used toNamed and stacked a
+    // second Offers page. Back then landed on Thresholds with a disposed
+    // controller (blank page). Pop when Offers is already underneath; otherwise
+    // replace this route so Thresholds is not left on the stack.
+    if (Get.previousRoute == Routes.RENT_ACTIVE_LOYALTY_PROGRAMS) {
+      Get.back();
+      return;
+    }
+    Get.offNamed(Routes.RENT_ACTIVE_LOYALTY_PROGRAMS);
   }
 
   String? validateMinStay(String? value) {

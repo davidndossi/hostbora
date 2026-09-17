@@ -108,7 +108,9 @@ class _VaultDocumentsSearchSheetState extends State<VaultDocumentsSearchSheet> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       subtitle: Text(item.size),
-                      trailing: const Icon(Icons.more_vert),
+                      trailing: item.isDirectory
+                          ? null
+                          : const Icon(Icons.more_vert),
                       onTap: () => widget.onOpenItem(item),
                     );
                   },

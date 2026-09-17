@@ -1165,7 +1165,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void assignTasks() => Get.toNamed(Routes.TEAM_AND_STAFF);
 
   Future<void> reports() async {
-    await Get.toNamed(Routes.REPORTS_HUB);
+    await Get.toNamed(Routes.REPORTS_MONTHLY_INCOME);
   }
 
   void designStudio() => Get.toNamed(Routes.INTERIOR_DESIGN_STUDIO);

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
-import '../../../core/values/app_colors.dart';
+import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/feedback_controller.dart';
@@ -21,18 +21,17 @@ class FeedbackView extends BaseView<FeedbackController> {
   @override
   Widget body(BuildContext context) {
     final l10n = appLocalization;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bodyColor = isDark ? Colors.white70 : AppColors.textColorSecondary;
-    final labelColor = isDark ? Colors.white : AppColors.textColorPrimary;
+    final c = FormSurfaceColors.of(context);
+    final bodyColor = c.secondary;
+    final labelColor = c.headline;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppValues.padding),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
       child: Form(
         key: controller.formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: AppValues.margin_20),
             Text(
               l10n.sendFeedbackIntro,
               style: TextStyle(fontSize: 16, height: 1.5, color: bodyColor),

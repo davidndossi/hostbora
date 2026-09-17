@@ -38,12 +38,12 @@ class SecurityView extends BaseView<SecurityController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSection(appLocalization.loginSecurity, [
-            _SettingsRow(
-              icon: Icons.lock_outline,
-              iconColor: AppColors.colorPrimary,
-              title: appLocalization.changePassword,
-              onTap: controller.changePassword,
-            ),
+            // _SettingsRow(
+            //   icon: Icons.lock_outline,
+            //   iconColor: AppColors.colorPrimary,
+            //   title: appLocalization.changePassword,
+            //   onTap: controller.changePassword,
+            // ),
             const Divider(height: 1),
             Obx(
               () => _SettingsRow(

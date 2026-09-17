@@ -6,9 +6,8 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/module_default_text_scope.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/widget/skeleton_presets.dart';
 import '../controllers/guest_history_controller.dart';
-
-const _bnbTeal = Color(0xFF0D7377);
 
 class GuestHistoryView extends GetView<GuestHistoryController> {
   const GuestHistoryView({super.key});
@@ -24,12 +23,11 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
 
     return ModuleDefaultTextScope(
       child: Scaffold(
-        backgroundColor: c.isDark
-            ? theme.colorScheme.surface
-            : const Color(0xFFF6F8FA),
+        backgroundColor: c.scaffold,
         appBar: CustomAppBar(
           appBarTitleText: _t(en: 'Guest History', sw: 'Historia ya Wageni'),
           isBackButtonEnabled: true,
+          isCentered: true,
         ),
         body: Column(
           children: [
@@ -47,19 +45,13 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
     ThemeData theme,
   ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          color: c.isDark
-              ? theme.colorScheme.surfaceContainerHigh
-              : Colors.white,
+          color: c.card,
           borderRadius: BorderRadius.circular(AppValues.radius_12),
-          border: Border.all(
-            color: c.isDark
-                ? theme.colorScheme.outlineVariant
-                : AppColors.designInputBorder,
-          ),
+          border: Border.all(color: c.border),
         ),
         child: Obx(
           () => TextField(
@@ -71,17 +63,13 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
                 sw: 'Tafuta mgeni, mali…',
               ),
               hintStyle: TextStyle(
-                color: c.isDark
-                    ? theme.colorScheme.onSurfaceVariant
-                    : AppColors.designPlaceholder,
+                color: c.hint,
                 fontSize: 14,
               ),
               prefixIcon: Icon(
                 Icons.search,
                 size: 20,
-                color: c.isDark
-                    ? theme.colorScheme.onSurfaceVariant
-                    : AppColors.designPlaceholder,
+                color: c.hint,
               ),
               suffixIcon: controller.searchQuery.value.isEmpty
                   ? null
@@ -90,9 +78,7 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
                       icon: Icon(
                         Icons.clear,
                         size: 20,
-                        color: c.isDark
-                            ? theme.colorScheme.onSurfaceVariant
-                            : AppColors.designPlaceholder,
+                        color: c.hint,
                       ),
                       onPressed: controller.clearSearch,
                     ),
@@ -115,7 +101,7 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
   ) {
     return Obx(() {
       if (controller.isLoading.value && controller.allGuests.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
+        return const DefaultScreenSkeleton();
       }
       final guests = controller.filteredGuests;
       if (guests.isEmpty) {
@@ -126,7 +112,7 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
               Icon(
                 Icons.people_outline,
                 size: 56,
-                color: AppColors.textColorSecondary,
+                color: c.secondary,
               ),
               const SizedBox(height: 16),
               Text(
@@ -141,7 +127,7 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
                       ),
                 style: TextStyle(
                   fontSize: 15,
-                  color: AppColors.textColorSecondary,
+                  color: c.secondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -153,7 +139,7 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
       return RefreshIndicator(
         onRefresh: controller.loadGuestHistory,
         child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           itemCount: guests.length,
           separatorBuilder: (_, __) => const SizedBox(height: 10),
           itemBuilder: (context, index) {
@@ -226,13 +212,13 @@ class _GuestCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: _bnbTeal.withValues(alpha: 0.12),
+                    color: AppColors.colorPrimary.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.person_outline,
                     size: 22,
-                    color: _bnbTeal,
+                    color: AppColors.colorPrimary,
                   ),
                 ),
                 const SizedBox(width: 12),

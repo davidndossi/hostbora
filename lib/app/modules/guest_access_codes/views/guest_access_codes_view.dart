@@ -11,7 +11,6 @@ import '../../../core/widget/skeleton_presets.dart';
 import '../controllers/guest_access_codes_controller.dart';
 
 const _accessTeal = Color(0xFF0A6A69);
-const _screenBg = Color(0xFFF5F5F5);
 const _scheduledAmber = Color(0xFFE5A500);
 
 class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
@@ -26,14 +25,20 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
     return code == 'sw' ? sw : en;
   }
 
+  Color _accent(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    return c.isDark
+        ? Theme.of(context).colorScheme.primary
+        : AppColors.colorPrimary;
+  }
+
   @override
   Color pageBackgroundColor(BuildContext context) =>
-      FormSurfaceColors.of(context).isDark ? Theme.of(context).colorScheme.surface : _screenBg;
+      FormSurfaceColors.of(context).scaffold;
 
   @override
   PreferredSizeWidget? appBar(BuildContext context) {
-    final theme = Theme.of(context);
-    final c = FormSurfaceColors.of(context);
+    final accent = _accent(context);
     return CustomAppBar(
       appBarTitleText: appLocalization.guestAccessCodes,
       isCentered: true,
@@ -42,8 +47,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
           margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: (c.isDark ? theme.colorScheme.primary : _accessTeal)
-                .withValues(alpha: 0.15),
+            color: accent.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
           ),
           child: Text(
@@ -51,7 +55,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: c.isDark ? theme.colorScheme.primary : _accessTeal,
+              color: accent,
             ),
           ),
         ),

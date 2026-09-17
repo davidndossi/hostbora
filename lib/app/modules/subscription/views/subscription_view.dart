@@ -116,6 +116,13 @@ class SubscriptionView extends BaseView<SubscriptionController> {
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
+                const SizedBox(height: AppValues.padding),
+                // App Store Guideline 3.1.2 — Terms of Use (EULA) + Privacy near
+                // the subscription offer (metadata links still required in ASC).
+                _LegalLinksRow(
+                  onTerms: controller.openTermsOfUse,
+                  onPrivacy: controller.openPrivacyPolicy,
+                ),
                 const SizedBox(height: AppValues.largePadding),
               ],
             ),
@@ -419,6 +426,46 @@ class _Badge extends StatelessWidget {
           color: color,
         ),
       ),
+    );
+  }
+}
+
+class _LegalLinksRow extends StatelessWidget {
+  const _LegalLinksRow({
+    required this.onTerms,
+    required this.onPrivacy,
+  });
+
+  final VoidCallback onTerms;
+  final VoidCallback onPrivacy;
+
+  @override
+  Widget build(BuildContext context) {
+    final linkStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: AppColors.colorPrimary,
+      decoration: TextDecoration.underline,
+      decorationColor: AppColors.colorPrimary.withValues(alpha: 0.5),
+    );
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        TextButton(
+          onPressed: onTerms,
+          child: Text('Terms of Use (EULA)', style: linkStyle),
+        ),
+        Text(
+          '·',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
+        ),
+        TextButton(
+          onPressed: onPrivacy,
+          child: Text('Privacy Policy', style: linkStyle),
+        ),
+      ],
     );
   }
 }

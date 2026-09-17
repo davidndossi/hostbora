@@ -21,6 +21,7 @@ class DocumentsBinding extends Bindings {
         recentStore: Get.find<VaultRecentAccessStore>(),
         directoriesStore: Get.find<VaultDirectoriesStore>(),
       ),
+      fenix: true,
     );
   }
 }

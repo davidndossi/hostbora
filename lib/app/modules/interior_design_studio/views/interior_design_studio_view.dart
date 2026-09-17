@@ -39,9 +39,8 @@ class InteriorDesignStudioView
   }
 
   @override
-  Color pageBackgroundColor(BuildContext context) => FormSurfaceColors.of(context).isDark
-      ? Theme.of(context).colorScheme.surface
-      : AppColors.colorWhite;
+  Color pageBackgroundColor(BuildContext context) =>
+      FormSurfaceColors.of(context).scaffold;
 
   @override
   Widget body(BuildContext context) {
@@ -51,7 +50,7 @@ class InteriorDesignStudioView
       children: [
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            padding: const EdgeInsets.fromLTRB(20, 8, 16, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

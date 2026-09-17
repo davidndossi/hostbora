@@ -1,9 +1,12 @@
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/config/subscription_payment_config.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/subscription_status.dart';
 import '../../../data/service/subscription_service.dart';
+import '../../../routes/app_pages.dart';
 
 class SubscriptionController extends BaseController {
   SubscriptionController()
@@ -45,6 +48,30 @@ class SubscriptionController extends BaseController {
         });
       }
     } catch (_) {}
+  }
+
+  /// Opens the public Terms of Use (EULA) page used for App Store metadata.
+  Future<void> openTermsOfUse() => _openLegalUrl(
+        HostBoraLegalUrls.termsOfUse,
+        fallbackRoute: Routes.TERMS,
+      );
+
+  /// Opens the public Privacy Policy page used for App Store metadata.
+  Future<void> openPrivacyPolicy() => _openLegalUrl(
+        HostBoraLegalUrls.privacyPolicy,
+        fallbackRoute: Routes.PRIVACY,
+      );
+
+  Future<void> _openLegalUrl(
+    String url, {
+    required String fallbackRoute,
+  }) async {
+    final uri = Uri.parse(url);
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (ok) return;
+    } catch (_) {}
+    await Get.toNamed(fallbackRoute);
   }
 
   /// Activate the 30-day free trial (first-time users only).

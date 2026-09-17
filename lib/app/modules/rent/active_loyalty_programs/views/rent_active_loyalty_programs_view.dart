@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/widget/skeleton_presets.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/form_surface_colors.dart';
+import '../../../../core/values/app_colors.dart';
 
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -11,29 +13,27 @@ import '../../widgets/rent_ui.dart';
 import '../controllers/rent_active_loyalty_programs_controller.dart';
 
 class _ActiveLoyaltyUi {
-  _ActiveLoyaltyUi(this.context);
+  _ActiveLoyaltyUi(this.context) : c = FormSurfaceColors.of(context);
 
   final BuildContext context;
+  final FormSurfaceColors c;
 
-  ThemeData get _t => Theme.of(context);
+  bool get dark => c.isDark;
 
-  bool get dark => _t.brightness == Brightness.dark;
+  Color get brandTeal =>
+      dark ? context.tokens.accent : AppColors.colorPrimary;
 
-  static const Color teal = Color(0xFF005B5C);
+  Color get onSurface => c.headline;
 
-  Color get brandTeal => dark ? const Color(0xFF4DB6AC) : teal;
+  Color get muted => c.secondary;
 
-  Color get onSurface => dark ? const Color(0xFFF2F2F7) : const Color(0xFF1A1A1A);
+  Color get border => c.border;
 
-  Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
+  Color get tintedCard => c.fill;
 
-  Color get border => dark ? const Color(0xFF48484A) : const Color(0xFFE8E6E1);
+  Color get accentLabel => c.secondary;
 
-  Color get tintedCard => dark ? context.tokens.cardBackground : const Color(0xFFF5F3EF);
-
-  Color get accentLabel => dark ? const Color(0xFFFFAB91) : const Color(0xFF7B311A);
-
-  Color get card => _t.cardColor;
+  Color get card => c.card;
 
   List<BoxShadow> get cardShadow => [
         BoxShadow(
@@ -60,31 +60,30 @@ class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgra
         return const DefaultScreenSkeleton();
       }
       return SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isSw ? 'RETENTION SUITE' : 'RETENTION SUITE',
-              style: TextStyle(
-                fontSize: 10,
-                letterSpacing: 1.4,
-                fontWeight: FontWeight.w800,
-                color: u.accentLabel,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
               _isSw ? 'Uaminifu na Programu za Wakazi' : 'Loyalty & Resident Programs',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
-                fontStyle: FontStyle.normal,
-                height: 1.15,
                 color: u.onSurface,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
+            Text(
+              _isSw
+                  ? 'Simamia ofa na zawadi kwa wakazi wako.'
+                  : 'Manage offers and rewards for your residents.',
+              style: TextStyle(
+                fontSize: 14,
+                color: u.muted,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               _isSw
                   ? 'Programu zilizo hapa chini zimepakuliwa kutoka data halisi ya ofa zako za uaminifu.'
@@ -101,7 +100,7 @@ class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgra
               child: FilledButton.icon(
                 onPressed: controller.onCreateNewOffer,
                 style: FilledButton.styleFrom(
-                  backgroundColor: _ActiveLoyaltyUi.teal,
+                  backgroundColor: u.brandTeal,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -131,7 +130,7 @@ class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgra
             Text(
               _isSw ? 'Maarifa ya Utendaji' : 'Performance Insights',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: u.onSurface,
               ),
@@ -140,7 +139,7 @@ class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgra
             _insightCard(
               u,
               value: controller.retentionRateLabel,
-              label: 'RETENTION RATE',
+              label: _isSw ? 'KIWANGO CHA UHIFADHI' : 'RETENTION RATE',
               subtext: '${controller.activeProgramsCount} active program(s)',
             ),
             const SizedBox(height: 10),
@@ -257,7 +256,7 @@ class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgra
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: u.tintedCard,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: u.border.withValues(alpha: 0.75)),
       ),
       child: Text(
@@ -280,7 +279,7 @@ class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgra
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: u.tintedCard,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: u.border.withValues(alpha: 0.55)),
       ),
       child: Column(

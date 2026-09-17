@@ -84,6 +84,7 @@ class HomeView extends BaseView<HomeController> {
                     _buildFirstWeekStarter(context),
                     const SizedBox(height: 20),
                     _buildCreateCta(context),
+                    const SizedBox(height: 100),
                   ] else ...[
                     _buildSnapshotBlock(context),
                     const SizedBox(height: 16),
@@ -94,6 +95,7 @@ class HomeView extends BaseView<HomeController> {
                     _buildCreateCta(context),
                     const SizedBox(height: 20),
                     _buildGoToBlock(context),
+                    const SizedBox(height: 100),
                   ],
                   const SizedBox(height: 28),
                 ],

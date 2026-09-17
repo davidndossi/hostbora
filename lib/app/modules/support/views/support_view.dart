@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme_tokens.dart';
+import '../../../core/theme/form_surface_colors.dart';
 
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
-import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/support_controller.dart';
@@ -25,18 +24,17 @@ class SupportView extends BaseView<SupportController> {
   @override
   Widget body(BuildContext context) {
     final l10n = appLocalization;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bodyColor = isDark ? Colors.white70 : AppColors.textColorSecondary;
-    final headingColor = isDark ? Colors.white : AppColors.textColorPrimary;
-    final cardColor = isDark ? context.tokens.cardBackground : Colors.white;
-    final borderColor = isDark ? context.tokens.elevatedSurface : const Color(0xFFE5E7EB);
+    final c = FormSurfaceColors.of(context);
+    final bodyColor = c.secondary;
+    final headingColor = c.headline;
+    final cardColor = c.card;
+    final borderColor = c.border;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppValues.padding),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: AppValues.margin_20),
           Text(
             l10n.supportIntro,
             style: TextStyle(
@@ -209,7 +207,7 @@ class SupportView extends BaseView<SupportController> {
     return Text(
       text,
       style: TextStyle(
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: FontWeight.w700,
         color: color,
         letterSpacing: 0.2,

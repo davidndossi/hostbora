@@ -120,8 +120,8 @@ class QuickActionIntentResolver {
       'overall financial overview across properties',
     ),
     'REPORTS_HUB': _RouteEntry(
-      Routes.REPORTS_HUB,
-      'reports and analytics hub',
+      Routes.REPORTS_MONTHLY_INCOME,
+      'monthly income reports and analytics hub',
     ),
     'EXPENSE_ANALYSIS': _RouteEntry(
       Routes.EXPENSE_ANALYSIS,
@@ -433,7 +433,7 @@ class QuickActionIntentResolver {
       return const QuickActionResolution.route(Routes.SETTINGS);
     }
     if (hasAny(['reports', 'analytics', 'ripoti'])) {
-      return const QuickActionResolution.route(Routes.REPORTS_HUB);
+      return const QuickActionResolution.route(Routes.REPORTS_MONTHLY_INCOME);
     }
     if (hasAny(['calendar sync', 'sync calendar', 'google calendar'])) {
       return const QuickActionResolution.route(Routes.CALENDAR_SYNC);

@@ -58,7 +58,7 @@ class MoreView extends BaseView<MoreController> {
       _MoreLink(
         _t('Reports', 'Ripoti'),
         Icons.assessment_outlined,
-        Routes.REPORTS_HUB,
+        Routes.REPORTS_MONTHLY_INCOME,
       ),
       _MoreLink(
         _t('Contract hub', 'Kitovu cha Mikataba'),

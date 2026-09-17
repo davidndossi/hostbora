@@ -95,9 +95,38 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
     final today = DateTime(now.year, now.month, now.day);
     customStart.value ??= today.subtract(const Duration(days: 30));
     customEnd.value ??= today;
+    _applyRouteArgs();
     super.onInit();
     _recomputeCalendarRange();
     refreshAll();
+    _scheduleInitialTab();
+  }
+
+  void _applyRouteArgs() {
+    final raw = Get.arguments;
+    if (raw is! Map) return;
+    final year = raw['year'];
+    final month = raw['month'];
+    final y = year is int ? year : int.tryParse('$year');
+    final m = month is int ? month : int.tryParse('$month');
+    if (y != null && m != null && m >= 1 && m <= 12) {
+      periodKind.value = ReportsPeriodKind.custom;
+      customStart.value = DateTime(y, m, 1);
+      customEnd.value = DateTime(y, m + 1, 0);
+    }
+  }
+
+  void _scheduleInitialTab() {
+    final raw = Get.arguments;
+    if (raw is! Map) return;
+    final tab = raw['initialTab'];
+    final index = tab is int ? tab : int.tryParse('$tab');
+    if (index == null || index < 0 || index > 2) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!tabController.indexIsChanging) {
+        tabController.animateTo(index);
+      }
+    });
   }
 
   void _onTabChanged() {

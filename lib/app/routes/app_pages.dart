@@ -84,7 +84,9 @@ import '../modules/booking_details/views/booking_details_view.dart';
 import '../modules/financial_overview/bindings/financial_overview_binding.dart';
 import '../modules/financial_overview/views/financial_overview_view.dart';
 import '../modules/reports/bindings/reports_binding.dart';
+import '../modules/reports/bindings/monthly_income_reports_binding.dart';
 import '../modules/reports/views/reports_view.dart';
+import '../modules/reports/views/monthly_income_reports_view.dart';
 import '../modules/verify_identity/bindings/verify_identity_binding.dart';
 import '../modules/verify_identity/views/verify_identity_view.dart';
 import '../modules/host_calendar/bindings/host_calendar_binding.dart';
@@ -439,6 +441,11 @@ class AppPages {
       name: _Paths.REPORTS_HUB,
       page: () => ReportsView(),
       binding: ReportsBinding(),
+    ),
+    GetPage(
+      name: _Paths.REPORTS_MONTHLY_INCOME,
+      page: () => MonthlyIncomeReportsView(),
+      binding: MonthlyIncomeReportsBinding(),
     ),
     GetPage(
       name: _Paths.VERIFY_IDENTITY,

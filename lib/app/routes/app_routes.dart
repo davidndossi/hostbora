@@ -41,6 +41,7 @@ abstract class Routes {
   static const BOOKING_DETAILS = _Paths.BOOKING_DETAILS;
   static const FINANCIAL_OVERVIEW = _Paths.FINANCIAL_OVERVIEW;
   static const REPORTS_HUB = _Paths.REPORTS_HUB;
+  static const REPORTS_MONTHLY_INCOME = _Paths.REPORTS_MONTHLY_INCOME;
   static const VERIFY_IDENTITY = _Paths.VERIFY_IDENTITY;
   static const HOST_CALENDAR = _Paths.HOST_CALENDAR;
   static const MY_PROPERTIES = _Paths.MY_PROPERTIES;
@@ -155,6 +156,7 @@ abstract class _Paths {
   static const BOOKING_DETAILS = '/booking-details';
   static const FINANCIAL_OVERVIEW = '/financial-overview';
   static const REPORTS_HUB = '/reports-hub';
+  static const REPORTS_MONTHLY_INCOME = '/reports/monthly-income';
   static const VERIFY_IDENTITY = '/verify-identity';
   static const HOST_CALENDAR = '/host-calendar';
   static const MY_PROPERTIES = '/my-properties';

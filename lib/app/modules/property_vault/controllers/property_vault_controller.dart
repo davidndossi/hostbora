@@ -75,7 +75,7 @@ class PropertyVaultController extends BaseController {
       try {
         await _directoriesStore.ensureDefaults();
         await _tryMergeDirectoriesFromApi();
-        _allDirectories = _buildDirectoryItems();
+        _allDirectories = await _buildDirectoryItems();
         _applySearchFilter();
         _refreshRecent();
       } catch (e) {
@@ -109,11 +109,19 @@ class PropertyVaultController extends BaseController {
       }
     }
     return raw
-        .whereType<Map<String, dynamic>>()
-        .map((m) {
+        .whereType<Map>()
+        .map((e) {
+          final m = Map<String, dynamic>.from(e);
           final id = m['id']?.toString() ?? m['directoryId']?.toString() ?? '';
           final name = m['name']?.toString() ?? m['directoryName']?.toString() ?? '';
           if (id.isEmpty || name.isEmpty) return null;
+          // Skip file-like rows when /all mixes folders and documents.
+          if (m.containsKey('fileName') ||
+              m.containsKey('extension') ||
+              m.containsKey('url') ||
+              m.containsKey('localPath')) {
+            return null;
+          }
           return VaultDirectoryDef(
             id: id,
             nameEn: name,
@@ -125,9 +133,13 @@ class PropertyVaultController extends BaseController {
         .toList();
   }
 
-  List<VaultDirectoryItem> _buildDirectoryItems() {
+  Future<List<VaultDirectoryItem>> _buildDirectoryItems() async {
     final defs = _directoriesStore.loadDirectories();
     final isSw = Get.locale?.languageCode == 'sw';
+    final remoteCounts = await _remoteDocumentCounts(
+      defs.map((d) => d.id).toList(),
+    );
+
     return defs.map((def) {
       final localDocs = _documentsStore
           .loadForDirectory(def.id)
@@ -139,14 +151,71 @@ class PropertyVaultController extends BaseController {
           latest = doc.createdAt;
         }
       }
+      final recentDocCount = _recentStore
+          .loadAll()
+          .where(
+            (e) =>
+                e.targetType == VaultRecentTargetType.document &&
+                (e.directoryId ?? '') == def.id,
+          )
+          .length;
+      final remoteCount = remoteCounts[def.id] ?? 0;
+      final itemCount = [
+        localDocs.length,
+        remoteCount,
+        recentDocCount,
+      ].reduce((a, b) => a > b ? a : b);
+
       return VaultDirectoryItem(
         directoryId: def.id,
         name: isSw ? def.nameSw : def.nameEn,
-        itemCount: localDocs.length,
+        itemCount: itemCount,
         lastModified: latest,
         isLocked: def.isLocked,
       );
     }).toList();
+  }
+
+  Future<Map<String, int>> _remoteDocumentCounts(List<String> dirIds) async {
+    if (dirIds.isEmpty) return {};
+    final entries = await Future.wait(
+      dirIds.map((id) async {
+        try {
+          final res = await _repository.getVaultDocuments(id);
+          return MapEntry(id, _countDocumentsInResponse(res.data, id));
+        } catch (_) {
+          return MapEntry(id, 0);
+        }
+      }),
+    );
+    return Map<String, int>.fromEntries(entries);
+  }
+
+  static int _countDocumentsInResponse(dynamic data, String dirId) {
+    List<dynamic> rawList = [];
+    if (data is List) {
+      rawList = data.where((e) {
+        if (e is! Map) return false;
+        final m = Map<String, dynamic>.from(e);
+        final name =
+            m['name']?.toString() ?? m['fileName']?.toString() ?? '';
+        if (name.isEmpty) return false;
+        if (m.containsKey('directories') || m.containsKey('folders')) {
+          return false;
+        }
+        return true;
+      }).toList();
+    } else if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      if (map['documents'] is List) {
+        rawList = map['documents'] as List;
+      } else if (map['files'] is List) {
+        rawList = map['files'] as List;
+      } else if (map['content'] is List) {
+        rawList = map['content'] as List;
+      }
+    }
+    return rawList.length;
   }
 
   void _refreshRecent() {
@@ -225,6 +294,9 @@ class PropertyVaultController extends BaseController {
       displayName: dir.name,
     );
     _refreshRecent();
+    if (Get.isRegistered<DocumentsController>()) {
+      Get.delete<DocumentsController>(force: true);
+    }
     Get.toNamed(
       Routes.DOCUMENTS,
       arguments: VaultRouteArgs(
@@ -244,6 +316,17 @@ class PropertyVaultController extends BaseController {
         openDirectory(dir);
         return;
       }
+      // Fallback: match by display name when API/local IDs diverge.
+      final byName = _allDirectories.firstWhereOrNull(
+        (d) => d.name.toLowerCase() == entry.displayName.trim().toLowerCase(),
+      );
+      if (byName != null) {
+        openDirectory(byName);
+        return;
+      }
+      if (Get.isRegistered<DocumentsController>()) {
+        Get.delete<DocumentsController>(force: true);
+      }
       Get.toNamed(
         Routes.DOCUMENTS,
         arguments: VaultRouteArgs(
@@ -258,6 +341,9 @@ class PropertyVaultController extends BaseController {
             .firstWhereOrNull((d) => d.directoryId == dirId)
             ?.name ??
         entry.displayName;
+    if (Get.isRegistered<DocumentsController>()) {
+      Get.delete<DocumentsController>(force: true);
+    }
     Get.toNamed(
       Routes.DOCUMENTS,
       arguments: VaultRouteArgs(

@@ -6,6 +6,7 @@ import '../../routes/app_pages.dart';
 import '/app/core/locale/app_locale_controller.dart';
 import '/app/core/theme/theme_controller.dart';
 import '/app/data/local/preference/preference_manager.dart';
+import '/app/data/local/service/session_service.dart';
 import '/app/core/values/app_colors.dart';
 import '/app/core/widget/app_bar_title.dart';
 import '/app/core/widget/base_currency_dialog.dart';
@@ -93,10 +94,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             }
           },
         ),
-      IconButton(
-        tooltip: currentLang == 'sw' ? 'Zaidi' : 'More',
-        icon: Icon(Icons.more_vert, color: actionColor),
-        onPressed: () => _showAppBarMenu(context, currentLang),
+      _AuthenticatedOnly(
+        child: IconButton(
+          tooltip: currentLang == 'sw' ? 'Zaidi' : 'More',
+          icon: Icon(Icons.more_vert, color: actionColor),
+          onPressed: () => _showAppBarMenu(context, currentLang),
+        ),
       ),
     ];
 
@@ -185,6 +188,71 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Sign-in / PIN-setup routes where session tokens may already exist (e.g. after
+/// OTP) but the user is not yet in the main app — hide account More actions.
+const _kPreAppRoutes = <String>{
+  Routes.SPLASH,
+  Routes.ONBOARDING,
+  Routes.AUTH,
+  Routes.OTP,
+  Routes.CREATE_HOST_ACCOUNT,
+  Routes.WELCOME_BACK,
+  Routes.CHANGE_PIN,
+  Routes.RESET_PASSWORD,
+  Routes.VERIFY_IDENTITY,
+};
+
+/// Shows [child] only when a local auth session exists and the user is past
+/// sign-in / PIN setup (not merely holding post-OTP tokens).
+class _AuthenticatedOnly extends StatefulWidget {
+  const _AuthenticatedOnly({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_AuthenticatedOnly> createState() => _AuthenticatedOnlyState();
+}
+
+class _AuthenticatedOnlyState extends State<_AuthenticatedOnly> {
+  late final Future<bool> _authenticated;
+
+  @override
+  void initState() {
+    super.initState();
+    _authenticated = _resolveAuthenticated();
+  }
+
+  Future<bool> _resolveAuthenticated() async {
+    try {
+      if (_kPreAppRoutes.contains(Get.currentRoute)) {
+        return false;
+      }
+      if (!Get.isRegistered<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      )) {
+        return false;
+      }
+      final pref = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
+      return SessionService.hasLocalSession(pref);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _authenticated,
+      builder: (context, snapshot) {
+        if (snapshot.data != true) return const SizedBox.shrink();
+        return widget.child;
+      },
     );
   }
 }

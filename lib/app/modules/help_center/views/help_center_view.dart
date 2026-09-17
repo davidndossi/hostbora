@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/theme/form_surface_colors.dart';
+import '../../../core/values/app_colors.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../data/help/help_center_models.dart';
 import '../controllers/help_center_controller.dart';
@@ -9,7 +11,10 @@ import '../controllers/help_center_controller.dart';
 class HelpCenterView extends BaseView<HelpCenterController> {
   HelpCenterView({super.key});
 
-  static const _teal = Color(0xFF005F5F);
+  Color _accent(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    return c.isDark ? Theme.of(context).colorScheme.primary : AppColors.colorPrimary;
+  }
 
   String _t(String en, String sw) => controller.isSw ? sw : en;
 
@@ -25,6 +30,7 @@ class HelpCenterView extends BaseView<HelpCenterController> {
   Widget body(BuildContext context) {
     final theme = Theme.of(context);
     final headerBg = theme.scaffoldBackgroundColor;
+    final accent = _accent(context);
 
     return DefaultTabController(
       length: 3,
@@ -40,7 +46,7 @@ class HelpCenterView extends BaseView<HelpCenterController> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
                   child: Obx(
                     () => TextField(
                       controller: controller.searchController,
@@ -72,14 +78,14 @@ class HelpCenterView extends BaseView<HelpCenterController> {
                 ),
                 const SizedBox(height: 10),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Obx(() => _workspaceChips(context)),
                 ),
                 const SizedBox(height: 4),
                 TabBar(
-                  labelColor: _teal,
+                  labelColor: accent,
                   unselectedLabelColor: theme.hintColor,
-                  indicatorColor: _teal,
+                  indicatorColor: accent,
                   dividerColor: theme.dividerColor,
                   tabs: [
                     Tab(text: _t('Guides', 'Miongozo')),
@@ -118,8 +124,8 @@ class HelpCenterView extends BaseView<HelpCenterController> {
           label: Text(label),
           selected: selected,
           onSelected: (_) => controller.setWorkspaceFilter(ws),
-          selectedColor: _teal.withValues(alpha: 0.15),
-          checkmarkColor: _teal,
+          selectedColor: _accent(context).withValues(alpha: 0.15),
+          checkmarkColor: _accent(context),
         ),
       );
     }
@@ -142,7 +148,7 @@ class HelpCenterView extends BaseView<HelpCenterController> {
       return Center(child: Text(_t('No guides found', 'Hakuna miongozo')));
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(20, 12, 16, 24),
       itemCount: guides.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
@@ -168,7 +174,7 @@ class HelpCenterView extends BaseView<HelpCenterController> {
         ? const Color(0xFF3A3A3C)
         : Colors.grey.shade300;
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(20, 12, 16, 24),
       itemCount: features.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
@@ -178,7 +184,7 @@ class HelpCenterView extends BaseView<HelpCenterController> {
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(color: border),
           ),
-          leading: Icon(f.icon, color: _teal),
+          leading: Icon(f.icon, color: _accent(context)),
           title: Text(
             f.title(controller.isSw),
             style: const TextStyle(fontWeight: FontWeight.w600),
@@ -195,7 +201,7 @@ class HelpCenterView extends BaseView<HelpCenterController> {
     final tours = controller.tourGuides;
     final muted = Theme.of(context).hintColor;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(20, 12, 16, 24),
       children: [
         Text(
           _t(
@@ -220,7 +226,7 @@ class HelpCenterView extends BaseView<HelpCenterController> {
                 icon: const Icon(Icons.play_arrow, size: 18),
                 label: Text(_t('Start', 'Anza')),
                 style: FilledButton.styleFrom(
-                  backgroundColor: _teal,
+                  backgroundColor: _accent(context),
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -256,16 +262,16 @@ class _GuideCard extends StatelessWidget {
     final muted = Theme.of(context).hintColor;
     return Material(
       color: Theme.of(context).cardColor,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: HelpCenterView._teal, size: 28),
+              Icon(icon, color: AppColors.colorPrimary, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

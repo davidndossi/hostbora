@@ -173,7 +173,7 @@ class MoreOptionsSheet extends StatelessWidget {
         label: _t('Reports', 'Ripoti'),
         icon: Icons.receipt_long_outlined,
         iconBg: const Color(0xFFDCB5F3),
-        route: Routes.REPORTS_HUB,
+        route: Routes.REPORTS_MONTHLY_INCOME,
       ),
       _MoreOption(
         label: _t('Contract Hub', 'Kitovu cha Mikataba'),

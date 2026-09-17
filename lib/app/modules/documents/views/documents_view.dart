@@ -85,16 +85,20 @@ class DocumentsView extends BaseView<DocumentsController> {
                     itemCount: controller.documents.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
+                      final item = controller.documents[index];
                       return _DocumentCard(
-                        item: controller.documents[index],
+                        item: item,
                         syncedText: _t(
                           context,
                           en: 'SYNCED',
                           sw: 'IMESAWAZISHWA',
                         ),
-                        onOptionsTap: () => controller.openDocumentOptions(
-                          controller.documents[index],
-                        ),
+                        onTap: item.isDirectory
+                            ? () => controller.openDocumentOptions(item)
+                            : null,
+                        onOptionsTap: item.isDirectory
+                            ? null
+                            : () => controller.openDocumentOptions(item),
                       );
                     },
                   ),
@@ -247,12 +251,14 @@ class _FilterChip extends StatelessWidget {
 
 class _DocumentCard extends StatelessWidget {
   final DocumentItem item;
-  final VoidCallback onOptionsTap;
+  final VoidCallback? onTap;
+  final VoidCallback? onOptionsTap;
   final String syncedText;
 
   const _DocumentCard({
     required this.item,
-    required this.onOptionsTap,
+    this.onTap,
+    this.onOptionsTap,
     required this.syncedText,
   });
 
@@ -322,7 +328,7 @@ class _DocumentCard extends StatelessWidget {
         ? '${item.name.substring(0, 25)}...'
         : item.name;
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: c.card,
@@ -388,15 +394,23 @@ class _DocumentCard extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: onOptionsTap,
-            icon: const Icon(Icons.more_vert),
-            color: c.secondary,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          ),
+          if (onOptionsTap != null)
+            IconButton(
+              onPressed: onOptionsTap,
+              icon: const Icon(Icons.more_vert),
+              color: c.secondary,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
         ],
       ),
+    );
+
+    if (onTap == null) return card;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: card,
     );
   }
 }

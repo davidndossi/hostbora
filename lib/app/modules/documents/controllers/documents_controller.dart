@@ -438,7 +438,16 @@ class DocumentsController extends BaseController {
   }
 
   void _openRecentDirectory(DocumentItem item) {
-    final dirId = item.directoryId?.trim() ?? '';
+    var dirId = item.directoryId?.trim() ?? '';
+    if (dirId.isEmpty) {
+      final match = _directoriesStore.loadDirectories().firstWhereOrNull((d) {
+        final en = d.nameEn.trim().toLowerCase();
+        final sw = d.nameSw.trim().toLowerCase();
+        final name = item.name.trim().toLowerCase();
+        return en == name || sw == name;
+      });
+      dirId = match?.id ?? '';
+    }
     if (dirId.isEmpty) {
       showErrorMessage(
         Get.locale?.languageCode == 'sw'
@@ -447,16 +456,21 @@ class DocumentsController extends BaseController {
       );
       return;
     }
-    if (Get.isRegistered<DocumentsController>()) {
-      Get.delete<DocumentsController>(force: true);
+    final args = VaultRouteArgs(
+      directoryId: dirId,
+      directoryName: item.name,
+    ).toMap();
+    // Leave the recent list, then open the folder with a fresh controller.
+    // Deleting while still on this route can swallow the tap / navigation.
+    if (Get.key.currentState?.canPop() == true) {
+      Get.back();
     }
-    Get.offNamed(
-      Routes.DOCUMENTS,
-      arguments: VaultRouteArgs(
-        directoryId: dirId,
-        directoryName: item.name,
-      ).toMap(),
-    );
+    Future.microtask(() {
+      if (Get.isRegistered<DocumentsController>()) {
+        Get.delete<DocumentsController>(force: true);
+      }
+      Get.toNamed(Routes.DOCUMENTS, arguments: args);
+    });
   }
 
   Future<void> _openDocument(DocumentItem item) async {

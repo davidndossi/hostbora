@@ -419,7 +419,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
     VoidCallback? onTap,
     String prefixText = '',
   }) {
-    final textColor = colors.secondary;
+    // final textColor = colors.secondary;
     final hintStyle = TextStyle(
       fontSize: 14,
       color: colors.hint,
@@ -448,7 +448,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
         validator: validator,
         style: TextStyle(
           fontSize: 14,
-          color: textColor,
+          // color: textColor,
           height: isMultiline ? 1.35 : 1.25,
         ),
         decoration: InputDecoration(
@@ -459,7 +459,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
           prefixText: prefixText.isEmpty ? null : prefixText,
           prefixStyle: TextStyle(
             fontSize: 14,
-            color: textColor,
+            // color: textColor,
             fontWeight: FontWeight.w700,
           ),
           suffixIcon: suffix == null

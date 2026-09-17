@@ -81,8 +81,11 @@ class RentActiveLoyaltyProgramsController extends BaseController {
     }
   }
 
-  void onCreateNewOffer() {
-    Get.toNamed(Routes.RENT_DEFINE_LOYALTY_OFFERS);
+  Future<void> onCreateNewOffer() async {
+    final changed = await Get.toNamed(Routes.RENT_DEFINE_LOYALTY_OFFERS);
+    if (changed == true) {
+      await loadOffers();
+    }
   }
 
   void onViewAnalytics() {}
