@@ -31,7 +31,7 @@ class FeedbackController extends BaseController {
     _preferenceManager,
   );
 
-  static const String supportEmail = 'support@hostbora.co.tz';
+  static const String supportEmail = 'info@hostbora.co.tz';
 
   @override
   void onInit() {
@@ -86,6 +86,24 @@ class FeedbackController extends BaseController {
       case FeedbackCategory.other:
         return appLocalization.feedbackCategoryOther;
     }
+  }
+
+  IconData categoryIcon(FeedbackCategory category) {
+    switch (category) {
+      case FeedbackCategory.general:
+        return Icons.chat_bubble_outline_rounded;
+      case FeedbackCategory.bug:
+        return Icons.bug_report_outlined;
+      case FeedbackCategory.feature:
+        return Icons.lightbulb_outline_rounded;
+      case FeedbackCategory.other:
+        return Icons.more_horiz_rounded;
+    }
+  }
+
+  void selectCategory(FeedbackCategory category) {
+    selectedCategory.value =
+        selectedCategory.value == category ? null : category;
   }
 
   Future<void> submit() async {
@@ -148,6 +166,7 @@ class FeedbackController extends BaseController {
       } catch (_) {
         // Non-blocking — feedback already stored locally above.
       }
+      _resetForm();
     } catch (e, st) {
       logger.e('submitFeedback $e $st');
       try {
@@ -156,11 +175,20 @@ class FeedbackController extends BaseController {
           'email': emailController.text.trim(),
         });
         showSuccessMessage(appLocalization.feedbackThankYou);
+        _resetForm();
       } catch (_) {
         showErrorMessage(appLocalization.feedbackSubmitFailed);
       }
     } finally {
       isSubmitting(false);
     }
+  }
+
+  void _resetForm() {
+    messageController.clear();
+    emailController.clear();
+    selectedCategory.value = null;
+    formKey.currentState?.reset();
+    _prefillEmail();
   }
 }

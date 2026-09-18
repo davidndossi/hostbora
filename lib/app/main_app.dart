@@ -184,25 +184,60 @@ class _MainAppState extends State<MainApp> {
         ),
         home: Scaffold(
           backgroundColor: AppColors.pageBackground,
-          body: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+          body: SafeArea(
+            child: Stack(
               children: [
-                SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: CircularProgressIndicator(
-                    color: AppColors.colorPrimary,
-                    strokeWidth: 3,
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: CircularProgressIndicator(
+                          color: AppColors.colorPrimary,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        isSw ? 'Inapakia...' : 'Loading...',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textColorSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  isSw ? 'Inapakia...' : 'Loading...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textColorSecondary,
-                    fontWeight: FontWeight.w500,
+                const Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'HostBora',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.colorPrimary,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'from ArtBel Systems',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textColorSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

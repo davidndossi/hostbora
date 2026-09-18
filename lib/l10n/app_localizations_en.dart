@@ -587,46 +587,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportIntro =>
-      'Answers about Host Bora — BnB and Rent workspaces, multi-currency support, scheduled maintenance, tenant and guest reliability scoring, per-unit LUKU tracking, AI portfolio insights, and more. For anything not covered here, contact us below.';
+      'Get help with HostBora — short stays, long-term rentals, plans, reports, and messaging. Browse tips and FAQs, or reach us by email or WhatsApp.';
+
+  @override
+  String get supportReplySla => 'We reply within one business day';
+
+  @override
+  String get supportGetHelpHeading => 'Get help';
+
+  @override
+  String get supportEmailActionHint => 'info@hostbora.co.tz';
+
+  @override
+  String get supportWhatsAppActionHint => 'Message the HostBora team';
+
+  @override
+  String get supportFeedbackActionHint =>
+      'Send from the app — we email the team';
 
   @override
   String get supportTipsHeading => 'Quick tips';
 
   @override
   String get supportTipsBody =>
-      '• Switch between BnB and Rent from the home screen; pull down on a listing to refresh occupancy and revenue.\n• When entering an amount in a currency different from your base currency, the live exchange rate appears below the field — the original amount and currency are always stored.\n• LUKU electricity is tracked per unit — select a unit chip in the Utilities dashboard before logging a top-up or scanning an SMS.\n• Schedule maintenance from the Rent workspace; a push reminder fires the day before and the task appears in your host calendar.\n• Rate tenants and guests when they leave — scores are published after a cooling-off period and visible to other landlords.\n• Use Settings → Clear offline data only if you intend to remove all local records from this device.';
+      '• Use All, BnB, or Rent on Home to filter properties — there is no separate workspace to switch.\n• SMS and WhatsApp need a Pro plan or above — tap Upgrade to Pro when you open messaging.\n• Enter amounts in any currency; the live rate is stored with the original amount.\n• Assign maintenance tasks to staff from task detail; the assignee stays when you leave the list.\n• Open Reports for occupancy, revenue, and expense charts you can export.\n• Use Settings → Clear offline data only if you intend to remove all local records from this device.';
 
   @override
   String get supportFaqHeading => 'Common questions';
 
   @override
   String get supportFaq1Q =>
-      'What is the difference between BnB and Rent workspaces?';
+      'What is the difference between BnB and Rent properties?';
 
   @override
   String get supportFaq1A =>
-      'Host Bora has two workspaces. BnB is for short stays: listings, bookings, host calendar, calendar sync, and guest payments. Rent is for long-term tenancies: tenants, leases, rent payments, reminders, staff, scheduled maintenance, and smart utilities. Switch from the home screen any time — properties, expenses, financial overview, AI Manager, and Property Vault are shared across both.';
+      'HostBora is one home screen — there are no separate workspaces. Mark a property as BnB (short stays: bookings, calendar, guests) or Rent (long-term: tenants, leases, rent payments). Use the All / BnB / Rent chips on Home to filter the list. Properties, expenses, reports, AI Manager, and Property Vault stay in the same app.';
 
   @override
   String get supportFaq2Q => 'How do I record guest or tenant payments?';
 
   @override
   String get supportFaq2A =>
-      'In BnB, open a booking or use Record payment from the host hub. In Rent, use Manage payments on a tenant or listing. Enter the amount, date, and method — if the currency differs from your base currency, select it from the dropdown and the exchange rate is captured automatically. Payments attach to the property and unit. Pull to refresh on a listing if monthly totals look stale.';
+      'Use Record payment from Home, a booking, or a tenant. Or tap See all on Home Recent payments to open Manage payments. Enter amount, date, and method. If the currency differs from your base currency, pick it and the exchange rate is stored. Payments attach to the property and unit.';
 
   @override
-  String get supportFaq3Q => 'How do I manage BnB bookings?';
+  String get supportFaq3Q => 'How do I manage bookings?';
 
   @override
   String get supportFaq3A =>
-      'Use Host calendar and All bookings for upcoming stays. Open a booking for guest details, check-in and check-out, status updates, and checkout. Today’s check-ins appear on the BnB dashboard. Changes sync when you are online.';
+      'Open Host calendar or All bookings for upcoming stays. Open a booking for guest details, check-in and check-out, status updates, and checkout. Today’s check-ins appear on Home. Changes sync when you are online.';
 
   @override
   String get supportFaq4Q => 'How does calendar sync work?';
 
   @override
   String get supportFaq4A =>
-      'From a listing, open Calendar sync. Paste your Airbnb (or other) .ics import URL to pull external bookings. Create an export link and add it in Airbnb to block dates Host Bora already has booked. Linked calendars appear under subscriptions for that listing.';
+      'From a listing, open Calendar sync. Paste your Airbnb (or other) .ics import URL to pull external bookings. Create an export link and add it in Airbnb to block dates HostBora already has booked. Linked calendars appear under subscriptions for that listing.';
 
   @override
   String get supportFaq5Q => 'How do PIN, Face ID, and security work?';
@@ -636,7 +652,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'After your first sign-in you can set a 4-digit PIN under Security. Use PIN for faster return visits; enable Face ID or Touch ID only after PIN is set. Change PIN anytime from Settings. Smart access and entry logs require a connected compatible lock (e.g. Tuya).';
 
   @override
-  String get supportFaq6Q => 'Can I use Host Bora offline?';
+  String get supportFaq6Q => 'Can I use HostBora offline?';
 
   @override
   String get supportFaq6A =>
@@ -647,35 +663,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportFaq7A =>
-      'Open Send SMS from the menu, enter numbers or pick from contacts, then compose your message. An active SMS/WhatsApp subscription may be required for some messaging features—open Subscription in settings to check status and renew.';
+      'Open SMS / WhatsApp from Home. Enter numbers or pick from contacts, then compose your message. Messaging needs a Pro plan or above — tap Upgrade to Pro if you are on Starter. After you subscribe, status updates automatically.';
 
   @override
   String get supportFaq8Q => 'What is Property Vault?';
 
   @override
   String get supportFaq8A =>
-      'Property Vault stores scans and documents per property—leases, IDs, receipts, and folders you create. Scan from Document scanner or upload files, then organise in vault directories. Recent access is listed for quick return. Documents stay on your device and sync when online.';
+      'Property Vault stores scans and documents per property—leases, IDs, receipts, and folders you create. Scan from Document scanner or upload files, then organise in vault directories. Use search to find a file quickly. Documents stay on your device and sync when online.';
 
   @override
   String get supportFaq9Q => 'How do rent and lease reminders work?';
 
   @override
   String get supportFaq9A =>
-      'In Rent workspace, set a tenant reminder template in Settings for automatic WhatsApp notices when a lease is ending. Use Run lease reminder now to trigger a one-month check manually. Save each tenant’s phone number on their profile so reminders can be delivered.';
+      'Set a tenant reminder template in Settings for automatic WhatsApp notices when a lease is ending. Use Run lease reminder now to trigger a one-month check manually. Save each tenant’s phone number on their profile so reminders can be delivered.';
 
   @override
-  String get supportFaq10Q => 'What is the SMS/WhatsApp subscription?';
+  String get supportFaq10Q => 'What are HostBora Plans?';
 
   @override
   String get supportFaq10A =>
-      'The subscription unlocks SMS and WhatsApp messaging features for 30 days. Pay via the in-app mobile-money prompt. After payment, status updates automatically. Renew before expiry; messaging may be limited when inactive.';
+      'HostBora has Starter, Pro, and Ultra. SMS and WhatsApp messaging requires Pro or Ultra. On iPhone, subscribe with Apple In-App Purchase. On Android, pay with Snippe (mobile money). A 30-day trial may be available. Restore purchases from Subscription if you already paid on this Apple ID.';
 
   @override
   String get supportFaq11Q => 'How do I contact support?';
 
   @override
   String get supportFaq11A =>
-      'Use Email support or Chat on WhatsApp on this screen. Include your device model, app version, and what you were doing when the issue happened. For privacy requests email privacy@hostbora.co.tz. We aim to reply within one business day.';
+      'Use Email support, Chat on WhatsApp, or Send feedback on this screen. Email goes to info@hostbora.co.tz. Include your device model, app version, and what you were doing. For privacy requests email privacy@hostbora.co.tz. We aim to reply within one business day.';
 
   @override
   String get supportFaq12Q => 'How does multi-currency work?';
@@ -704,7 +720,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportFaq15A =>
-      'In the Rent workspace, open Scheduled Maintenance and tap the + button. Choose the property, category (Plumbing, Electrical, General, etc.), scheduled date, and priority. The task saves locally and syncs to the server when online. A push notification fires the day before as a reminder, and the task also appears in your host calendar.';
+      'Open Maintenance & Tasks and tap +. Choose the property, category, scheduled date, and priority. Assign a staff member from task detail — the assignee stays when you leave and return. Tasks save locally and sync when online. A reminder fires the day before, and the task appears in your host calendar.';
 
   @override
   String get supportFaq16Q => 'What does the AI Manager do?';
@@ -718,7 +734,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportContactBody =>
-      'Email our support team. We aim to respond within one business day.';
+      'Email or WhatsApp the HostBora team. Include your app version and what you were doing. We aim to reply within one business day.';
 
   @override
   String get supportEmailButton => 'Email support';
@@ -731,7 +747,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportLegalBody =>
-      'Your use of Host Bora is also governed by our Terms of Use and Privacy Policy.';
+      'Your use of HostBora is also governed by our Terms of Use and Privacy Policy.';
 
   @override
   String get supportOpenTerms => 'Terms of Use';
@@ -741,7 +757,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportFeedbackBody =>
-      'Tell us what works well or what we should improve. Your message opens in your email app with details we need to help.';
+      'Tell us what works well or what we should improve. Use the in-app form — pick a category, write a short message, and optionally add your email. We read every submission.';
 
   @override
   String get sendFeedback => 'Send feedback';
@@ -809,7 +825,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsContactUsDescription =>
-      'Email or chat with our support team.';
+      'Email, WhatsApp, or send in-app feedback to the Host Bora team.';
 
   @override
   String get settingsSendFeedbackDescription =>

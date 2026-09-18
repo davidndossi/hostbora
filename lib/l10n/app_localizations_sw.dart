@@ -586,45 +586,61 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportIntro =>
-      'Majibu kuhusu Host Bora — BnB na Rent, sarafu nyingi, matengenezo yaliyopangwa, alama za uaminifu wa wapangaji na wageni, ufuatiliaji wa LUKU kwa chumba, maarifa ya AI, na zaidi. Kwa mengine, wasiliana nasi hapa chini.';
+      'Pata msaada wa HostBora — makao mafupi, upangaji wa muda mrefu, mipango, ripoti, na ujumbe. Soma vidokezo na maswali, au wasiliana nasi kwa barua pepe au WhatsApp.';
+
+  @override
+  String get supportReplySla => 'Tunajibu ndani ya siku moja ya kazi';
+
+  @override
+  String get supportGetHelpHeading => 'Pata msaada';
+
+  @override
+  String get supportEmailActionHint => 'info@hostbora.co.tz';
+
+  @override
+  String get supportWhatsAppActionHint => 'Piga gumzo na timu ya HostBora';
+
+  @override
+  String get supportFeedbackActionHint =>
+      'Tuma kutoka aplikesheni — tunatuma barua pepe kwa timu';
 
   @override
   String get supportTipsHeading => 'Vidokezo muhimu';
 
   @override
   String get supportTipsBody =>
-      '• Badilisha BnB na Rent kutoka skrini ya nyumbani; buruta chini kwenye mali kusasisha idadi na mapato.\n• Ukiingiza kiasi katika sarafu tofauti na sarafu yako ya msingi, kiwango cha ubadilishaji kinaonekana chini ya sehemu ya kiasi — sarafu na kiasi cha asili vinahifadhiwa daima.\n• LUKU inafuatiliwa kwa kila chumba — chagua kichupo cha chumba katika dashibodi ya matumizi kabla ya kurekodi malipo au kuscan ujumbe wa SMS.\n• Panga matengenezo kutoka sehemu ya Rent; ukumbusho unatumwa siku moja kabla na kazi inaonekana katika kalenda yako.\n• Piga kura wapangaji na wageni wanapoondoka — alama zinachapishwa baada ya muda wa kusubiri.\n• Tumia Mipangilio → Futa data ya nje ya mtandao tu ukiwa na nia ya kuondoa rekodi zote kwenye kifaa hiki.';
+      '• Tumia Zote, BnB, au Kodi kwenye Nyumbani kuchuja mali — hakuna nafasi tofauti ya kazi ya kubadilisha.\n• SMS na WhatsApp zinahitaji mpango wa Pro au juu — gonga Boresha hadi Pro unapofungua ujumbe.\n• Weka kiasi katika sarafu yoyote; kiwango cha sasa kinahifadhiwa pamoja na kiasi cha asili.\n• Wape kazi za matengenezo wafanyakazi kutoka maelezo ya kazi; mgawo unabaki unapoondoka.\n• Fungua Ripoti kwa chati za utumiaji, mapato, na gharama unazoweza kuhamisha.\n• Tumia Mipangilio → Futa data ya nje ya mtandao tu ukiwa na nia ya kuondoa rekodi zote kwenye kifaa hiki.';
 
   @override
   String get supportFaqHeading => 'Maswali ya kawaida';
 
   @override
-  String get supportFaq1Q => 'Tofauti kati ya BnB na Rent ni ipi?';
+  String get supportFaq1Q => 'Tofauti kati ya mali ya BnB na Kodi ni ipi?';
 
   @override
   String get supportFaq1A =>
-      'Host Bora ina nafasi mbili za kazi. BnB ni kwa makao mafupi: orodha, uhifadhi, kalenda ya mwenyeji, usawazishaji wa kalenda, na malipo ya wageni. Rent ni kwa muda mrefu: wapangaji, mikataba, malipo ya kodi, vikumbusho, wafanyakazi, matengenezo yaliyopangwa, na matumizi mahiri. Badilisha kutoka skrini ya nyumbani wakati wowote — mali, gharama, muhtasari wa fedha, Msimamizi wa AI, na Property Vault vinashirikiwa.';
+      'HostBora ni skrini moja ya nyumbani — hakuna nafasi tofauti za kazi. Weka mali kama BnB (makao mafupi: uhifadhi, kalenda, wageni) au Kodi (muda mrefu: wapangaji, mikataba, malipo). Tumia vichupo vya Zote / BnB / Kodi kwenye Nyumbani kuchuja orodha. Mali, gharama, ripoti, Msimamizi wa AI, na Property Vault vinabaki katika programu moja.';
 
   @override
   String get supportFaq2Q => 'Ninawezaje kurekodi malipo ya mgeni au mpangaji?';
 
   @override
   String get supportFaq2A =>
-      'Katika BnB, fungua uhifadhi au tumia Rekodi malipo kutoka kitovu cha mwenyeji. Katika Rent, tumia Simamia malipo kwa mpangaji au mali. Weka kiasi, tarehe, na njia — ikiwa sarafu inatofautiana na sarafu yako ya msingi, ichague kwenye menyu ya chaguo na kiwango cha ubadilishaji kinahifadhiwa moja kwa moja. Malipo huunganishwa na mali na chumba. Buruta kusasisha ikiwa jumla haionekani sahihi.';
+      'Tumia Rekodi malipo kutoka Nyumbani, uhifadhi, au mpangaji. Au gonga Tazama zote kwenye Malipo ya hivi karibuni kufungua Simamia malipo. Weka kiasi, tarehe, na njia. Ikiwa sarafu inatofautiana na sarafu yako ya msingi, ichague na kiwango kinahifadhiwa. Malipo huunganishwa na mali na chumba.';
 
   @override
-  String get supportFaq3Q => 'Ninawezaje kusimamia uhifadhi wa BnB?';
+  String get supportFaq3Q => 'Ninawezaje kusimamia uhifadhi?';
 
   @override
   String get supportFaq3A =>
-      'Tumia Kalenda ya mwenyeji na Uhifadhi wote kwa makao yanayokuja. Fungua uhifadhi kwa maelezo ya mgeni, kuingia na kutoka, kusasisha hali, na checkout. Wageni wa leo wanaonekana kwenye dashibodi ya BnB. Mabadiliko husawazishwa ukiwa mtandaoni.';
+      'Fungua Kalenda ya mwenyeji au Uhifadhi wote kwa makao yanayokuja. Fungua uhifadhi kwa maelezo ya mgeni, kuingia na kutoka, kusasisha hali, na checkout. Wageni wa leo wanaonekana kwenye Nyumbani. Mabadiliko husawazishwa ukiwa mtandaoni.';
 
   @override
   String get supportFaq4Q => 'Usawazishaji wa kalenda unafanyaje kazi?';
 
   @override
   String get supportFaq4A =>
-      'Kutoka kwenye mali, fungua Usawazishaji wa kalenda. Bandika URL ya .ics kutoka Airbnb (au nyingine) kuvuta uhifadhi wa nje. Unda kiungo cha kuhamisha na kiongeze Airbnb kuzuia tarehe Host Bora tayari imehifadhi. Kalenda zilizounganishwa zinaonekana chini ya usajili wa mali hiyo.';
+      'Kutoka kwenye mali, fungua Usawazishaji wa kalenda. Bandika URL ya .ics kutoka Airbnb (au nyingine) kuvuta uhifadhi wa nje. Unda kiungo cha kuhamisha na kiongeze Airbnb kuzuia tarehe HostBora tayari imehifadhi. Kalenda zilizounganishwa zinaonekana chini ya usajili wa mali hiyo.';
 
   @override
   String get supportFaq5Q => 'PIN, Face ID, na usalama vinafanyaje kazi?';
@@ -634,7 +650,7 @@ class AppLocalizationsSw extends AppLocalizations {
       'Baada ya kuingia mara ya kwanza unaweza kuweka PIN ya tarakimu 4 chini ya Usalama. Tumia PIN kuingia haraka; wezesha Face ID au Touch ID baada ya PIN. Badilisha PIN wakati wowote kutoka Mipangilio. Ufikiaji mahiri na kumbukumbu za kuingia zinahitaji kufuli inayooana (mf. Tuya).';
 
   @override
-  String get supportFaq6Q => 'Naweza kutumia Host Bora bila mtandao?';
+  String get supportFaq6Q => 'Naweza kutumia HostBora bila mtandao?';
 
   @override
   String get supportFaq6A =>
@@ -645,35 +661,35 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportFaq7A =>
-      'Fungua Tuma SMS kutoka menyu, weka nambari au chagua kutoka anwani, kisha andika ujumbe. Usajili wa SMS/WhatsApp unaweza kuhitajika kwa baadhi ya huduma—fungua Usajili katika mipangilio kuangalia hali na kufanya upya.';
+      'Fungua SMS / WhatsApp kutoka Nyumbani. Weka nambari au chagua kutoka anwani, kisha andika ujumbe. Ujumbe unahitaji mpango wa Pro au juu — gonga Boresha hadi Pro ukiwa kwenye Starter. Baada ya kujisajili, hali husasishwa kiotomatiki.';
 
   @override
   String get supportFaq8Q => 'Property Vault ni nini?';
 
   @override
   String get supportFaq8A =>
-      'Property Vault huhifadhi skani na hati kwa kila mali—mikataba, vitambulisho, risiti, na folda unazounda. Skani kutoka Kichanganuzi cha hati au pakia faili, kisha panga katika folda za vault. Zilizofunguliwa hivi karibuni zinaorodheshwa kwa ufikiaji wa haraka. Hati zinabaki kwenye simu na kusawazishwa mtandaoni.';
+      'Property Vault huhifadhi skani na hati kwa kila mali—mikataba, vitambulisho, risiti, na folda unazounda. Skani kutoka Kichanganuzi cha hati au pakia faili, kisha panga katika folda za vault. Tumia utafutaji kupata faili haraka. Hati zinabaki kwenye simu na kusawazishwa mtandaoni.';
 
   @override
   String get supportFaq9Q => 'Vikumbusho vya kodi na mkataba vinafanyaje kazi?';
 
   @override
   String get supportFaq9A =>
-      'Katika Rent, weka kiolezo cha kikumbusho cha mpangaji katika Mipangilio kwa arifa za WhatsApp moja kwa moja mkataba unapoisha. Tumia Endesha kikumbusho cha mkataba sasa kwa ukaguzi wa mwezi mmoja kwa mkono. Hifadhi nambari ya simu ya mpangaji kwenye wasifu wake.';
+      'Weka kiolezo cha kikumbusho cha mpangaji katika Mipangilio kwa arifa za WhatsApp moja kwa moja mkataba unapoisha. Tumia Endesha kikumbusho cha mkataba sasa kwa ukaguzi wa mwezi mmoja kwa mkono. Hifadhi nambari ya simu ya mpangaji kwenye wasifu wake.';
 
   @override
-  String get supportFaq10Q => 'Usajili wa SMS/WhatsApp ni nini?';
+  String get supportFaq10Q => 'Mipango ya HostBora ni nini?';
 
   @override
   String get supportFaq10A =>
-      'Usajili unafungua huduma za SMS na WhatsApp kwa siku 30. Lipa kupitia kidokezo cha pesa za simu ndani ya aplikesheni. Baada ya malipo, hali husasishwa kiotomatiki. Fanya upya kabla ya kuisha; ujumbe unaweza kupunguzwa usajili ukiisha.';
+      'HostBora ina Starter, Pro, na Ultra. SMS na WhatsApp zinahitaji Pro au Ultra. Kwenye iPhone, jisajili kwa ununuzi wa ndani wa Apple. Kwenye Android, lipa kwa Snippe (pesa za simu). Jaribio la siku 30 linaweza kupatikana. Rejesha ununuzi kutoka Usajili ikiwa tayari umelipa kwa Apple ID hii.';
 
   @override
   String get supportFaq11Q => 'Ninawezaje kuwasiliana na msaada?';
 
   @override
   String get supportFaq11A =>
-      'Tumia Tuma barua pepe kwa msaada au Piga gumzo WhatsApp kwenye skrini hii. Jumuisha aina ya simu, toleo la aplikesheni, na ulichokuwa ukifanya. Kwa faragha tuma barua pepe privacy@hostbora.co.tz. Tunakusudia kujibu ndani ya siku moja ya kazi.';
+      'Tumia Tuma barua pepe, Piga gumzo WhatsApp, au Tuma maoni kwenye skrini hii. Barua pepe huenda kwa info@hostbora.co.tz. Jumuisha aina ya simu, toleo la aplikesheni, na ulichokuwa ukifanya. Kwa faragha tuma barua pepe privacy@hostbora.co.tz. Tunakusudia kujibu ndani ya siku moja ya kazi.';
 
   @override
   String get supportFaq12Q => 'Sarafu nyingi inafanya kazije?';
@@ -683,7 +699,7 @@ class AppLocalizationsSw extends AppLocalizations {
       'Chagua sarafu kutoka kwenye menyu ya chaguo katika sehemu yoyote ya kiasi. Ikiwa sarafu inatofautiana na sarafu yako ya msingi, kiwango cha ubadilishaji cha sasa kinaonekana chini na kinahifadhiwa pamoja na rekodi. Kiasi cha awali daima kinahifadhiwa katika sarafu yake ya asili. Sarafu yako ya msingi inaweza kubadilishwa kutoka Mipangilio.';
 
   @override
-  String get supportFaq13Q => 'Ninawezajefuatilia LUKU kwa kila chumba?';
+  String get supportFaq13Q => 'Ninawezaje kufuatilia LUKU kwa kila chumba?';
 
   @override
   String get supportFaq13A =>
@@ -702,7 +718,7 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportFaq15A =>
-      'Katika sehemu ya Rent, fungua Matengenezo Yaliyopangwa na ugonge kitufe cha +. Chagua mali, aina (Mabomba, Umeme, Jumla, n.k.), tarehe, na kipaumbele. Kazi inahifadhiwa ndani ya simu na kusawazishwa na seva ukiwa mtandaoni. Arifa ya ukumbusho inatumwa siku moja kabla, na kazi pia inaonekana katika kalenda yako.';
+      'Fungua Matengenezo na Kazi kisha gonga +. Chagua mali, aina, tarehe, na kipaumbele. Wape mfanyakazi kutoka maelezo ya kazi — mgawo unabaki unapoondoka na kurudi. Kazi zinahifadhiwa ndani na kusawazishwa mtandaoni. Ukumbusho unatumwa siku moja kabla, na kazi inaonekana katika kalenda yako.';
 
   @override
   String get supportFaq16Q => 'Msimamizi wa AI anafanya nini?';
@@ -716,7 +732,7 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportContactBody =>
-      'Tuma barua pepe kwa timu ya msaada. Tunakusudia kujibu ndani ya siku moja ya kazi.';
+      'Tuma barua pepe au WhatsApp kwa timu ya HostBora. Jumuisha toleo la aplikesheni na ulichokuwa ukifanya. Tunakusudia kujibu ndani ya siku moja ya kazi.';
 
   @override
   String get supportEmailButton => 'Tuma barua pepe kwa msaada';
@@ -729,7 +745,7 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportLegalBody =>
-      'Matumizi ya Host Bora pia yanategemea Masharti ya Matumizi na Sera ya Faragha.';
+      'Matumizi ya HostBora pia yanategemea Masharti ya Matumizi na Sera ya Faragha.';
 
   @override
   String get supportOpenTerms => 'Masharti ya Matumizi';
@@ -739,7 +755,7 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get supportFeedbackBody =>
-      'Tuambie kinachofanya kazi vizuri au tunachopaswa kuboresha. Ujumbe wako unafungua katika programu ya barua pepe pamoja na maelezo tunayohitaji.';
+      'Tuambie kinachofanya kazi vizuri au tunachopaswa kuboresha. Tumia fomu ndani ya aplikesheni — chagua aina, andika ujumbe mfupi, na uongeze barua pepe ikihitajika. Tunasoma kila ujumbe.';
 
   @override
   String get sendFeedback => 'Tuma maoni';
@@ -806,7 +822,7 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get settingsContactUsDescription =>
-      'Tuma barua pepe au piga gumzo na timu ya msaada.';
+      'Tuma barua pepe, WhatsApp, au maoni ndani ya programu kwa timu ya Host Bora.';
 
   @override
   String get settingsSendFeedbackDescription =>

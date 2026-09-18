@@ -802,4 +802,34 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
 
   bool get hasExpenseSignal =>
       _bnbExpenses.any((e) => _dayInRange(_parseExpenseDate(e), rangeStart.value, rangeEnd.value));
+
+  double get averageOccupancy {
+    if (occupancyPct.isEmpty) return 0;
+    return occupancyPct.reduce((a, b) => a + b) / occupancyPct.length;
+  }
+
+  double get peakOccupancy {
+    if (occupancyPct.isEmpty) return 0;
+    return occupancyPct.reduce((a, b) => a > b ? a : b);
+  }
+
+  double get totalRevenue =>
+      revenuePerBucket.fold<double>(0, (a, b) => a + b);
+
+  double get totalExpense =>
+      expensePerBucket.fold<double>(0, (a, b) => a + b);
+
+  double get totalNet => totalRevenue - totalExpense;
+
+  String get rangeLabel {
+    final a = rangeStart.value;
+    final b = rangeEnd.value;
+    if (a.year == b.year && a.month == b.month && a.day == b.day) {
+      return DateFormat('d MMM yyyy').format(a);
+    }
+    if (a.year == b.year) {
+      return '${DateFormat('d MMM').format(a)} – ${DateFormat('d MMM yyyy').format(b)}';
+    }
+    return '${DateFormat('d MMM yyyy').format(a)} – ${DateFormat('d MMM yyyy').format(b)}';
+  }
 }
