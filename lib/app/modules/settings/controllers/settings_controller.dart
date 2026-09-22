@@ -23,6 +23,7 @@ import '../../../data/local/service/currency_service.dart';
 import '../../../core/locale/app_locale_controller.dart';
 import '../../../core/widget/base_currency_dialog.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../../core/access/staff_access.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_controller.dart';
 import '/app/core/base/feedback_extensions.dart';
@@ -118,6 +119,11 @@ class SettingsController extends BaseController {
   }
 
   void openSubscription() {
+    if (Get.isRegistered<StaffAccessStore>() &&
+        Get.find<StaffAccessStore>().restricted.value) {
+      Get.find<StaffAccessStore>().showDenied();
+      return;
+    }
     if (isPortfolioManagerSession.value) {
       showErrorMessage(
         Get.locale?.languageCode == 'sw'

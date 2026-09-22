@@ -2628,4 +2628,170 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get finances => 'Finances';
+
+  @override
+  String get accountSection => 'Account';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountSubtitle =>
+      'Permanently remove your account and sign-in access';
+
+  @override
+  String get deleteAccountConfirmTitle => 'Delete your account?';
+
+  @override
+  String get deleteAccountConfirmMessage =>
+      'This permanently deletes your account. You will not be able to sign in again. This cannot be undone.';
+
+  @override
+  String get deleteAccountConfirmAction => 'Delete Account';
+
+  @override
+  String get deleteAccountFailed => 'Could not delete your account.';
+
+  @override
+  String get inventoryChooseProperty => 'Choose property';
+
+  @override
+  String get inventoryNoPropertiesYet =>
+      'No properties yet — add a property first.';
+
+  @override
+  String get inventoryNoPropertySelected => 'No property selected.';
+
+  @override
+  String get inventoryPropertyRequired => 'Property is required';
+
+  @override
+  String get inventoryFileSharedSuccessfully => 'File shared successfully.';
+
+  @override
+  String get staffAccessRole => 'Role';
+
+  @override
+  String get staffRoleCleaner => 'Cleaner';
+
+  @override
+  String get staffRoleCaretaker => 'Caretaker';
+
+  @override
+  String get staffRoleFrontDesk => 'Front desk';
+
+  @override
+  String get staffRoleAccountant => 'Accountant';
+
+  @override
+  String get staffRoleManager => 'Manager';
+
+  @override
+  String get staffAccessCustomize => 'Customize access';
+
+  @override
+  String get staffAccessScope => 'Property access';
+
+  @override
+  String get staffAccessAllProperties => 'All properties';
+
+  @override
+  String get staffAccessSelectedProperties => 'Selected properties only';
+
+  @override
+  String get staffAccessLegacyNote =>
+      'This team member still has full operational access until you save a checklist.';
+
+  @override
+  String get staffAccessDenied => 'You don\'t have access';
+
+  @override
+  String get staffAccessSaved => 'Access updated';
+
+  @override
+  String get staffAccessSelectProperty => 'Select at least one property';
+
+  @override
+  String get staffAccessSave => 'Save access';
+
+  @override
+  String get staffAccessGroupProperties => 'Properties';
+
+  @override
+  String get staffAccessGroupBookings => 'Bookings';
+
+  @override
+  String get staffAccessGroupPayments => 'Payments';
+
+  @override
+  String get staffAccessGroupExpenses => 'Expenses';
+
+  @override
+  String get staffAccessGroupReports => 'Reports';
+
+  @override
+  String get staffAccessGroupInventory => 'Inventory';
+
+  @override
+  String get staffAccessGroupTasks => 'Tasks';
+
+  @override
+  String get staffAccessGroupTenants => 'Tenants';
+
+  @override
+  String get staffPermViewProperties => 'View properties';
+
+  @override
+  String get staffPermEditProperties => 'Edit properties';
+
+  @override
+  String get staffPermViewBookings => 'View bookings';
+
+  @override
+  String get staffPermCheckInOut => 'Check-in and check-out';
+
+  @override
+  String get staffPermMessageGuest => 'Message guest';
+
+  @override
+  String get staffPermManageBookings => 'Manage bookings';
+
+  @override
+  String get staffPermViewPayments => 'View payments';
+
+  @override
+  String get staffPermRecordPayment => 'Record payment';
+
+  @override
+  String get staffPermViewExpenses => 'View expenses';
+
+  @override
+  String get staffPermManageExpenses => 'Manage expenses';
+
+  @override
+  String get staffPermViewReports => 'View reports';
+
+  @override
+  String get staffPermExportReports => 'Export reports';
+
+  @override
+  String get staffPermViewInventory => 'View inventory';
+
+  @override
+  String get staffPermManageInventory => 'Manage inventory';
+
+  @override
+  String get staffPermViewTasks => 'View tasks';
+
+  @override
+  String get staffPermCompleteTasks => 'Complete tasks';
+
+  @override
+  String get staffPermManageTasks => 'Manage tasks';
+
+  @override
+  String get staffPermViewTenants => 'View tenants';
+
+  @override
+  String get staffPermManageTenants => 'Manage tenants';
 }

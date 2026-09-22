@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:settings_ui/settings_ui.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../data/help/guided_tour_service.dart';
+import '../../../core/access/staff_access.dart';
 import '../../../routes/app_pages.dart';
 import '/app/core/base/base_view.dart';
 import '/app/core/widget/custom_app_bar.dart';
@@ -87,7 +88,9 @@ class SettingsView extends BaseView<SettingsController> {
         SettingsSection(
           title: _tileTitle(context, appLocalization.common),
           tiles: [
-            SettingsTile.navigation(
+            if (!Get.isRegistered<StaffAccessStore>() ||
+                !Get.find<StaffAccessStore>().restricted.value)
+              SettingsTile.navigation(
               onPressed: (_) => controller.openSubscription(),
               leading: const Icon(Icons.workspace_premium_outlined),
               title: _tileTitle(

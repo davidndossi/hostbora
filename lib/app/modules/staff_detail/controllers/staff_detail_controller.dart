@@ -1,10 +1,18 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/access/staff_access.dart';
 import '../../../core/base/base_controller.dart';
+import '../../../data/model/staff_request.dart';
+import '../../rent/staff_management/widgets/staff_access_editor.dart';
 import '../../../core/base/feedback_extensions.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/rent_staff_local_data_source.dart';
+import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../team_and_staff/controllers/team_and_staff_controller.dart';
@@ -12,10 +20,14 @@ import '../../team_and_staff/controllers/team_and_staff_controller.dart';
 class StaffDetailController extends BaseController {
   StaffDetailController()
       : _staffLocal = Get.find<RentStaffLocalDataSource>(),
-        _repository = Get.find<AppRepository>(tag: (AppRepository).toString());
+        _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
+        _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final RentStaffLocalDataSource _staffLocal;
   final AppRepository _repository;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
 
   late final StaffMember member;
 
@@ -26,6 +38,21 @@ class StaffDetailController extends BaseController {
   final phone = ''.obs;
   final payLine = ''.obs;
   final joinedLabel = ''.obs;
+  final permissionRole = StaffPermissions.roleCleaner.obs;
+  final grantedPermissions = StaffPermissions.preset(StaffPermissions.roleCleaner).obs;
+  final allPropertiesAccess = true.obs;
+  final selectedPropertyRefs = <String>{}.obs;
+  final accessProperties = <StaffPropertyOption>[].obs;
+  final legacyStaffAccess = false.obs;
+  final savingAccess = false.obs;
+
+  String _phone = '';
+  double _salary = 0;
+  String _salaryFrequency = 'monthly';
+  String _notes = '';
+  String? _backendId;
+  String _propertyRef = '';
+  String _propertyName = '';
 
   final totalTasks = 0.obs;
   final recentTasks = <RecentTask>[].obs;
@@ -75,6 +102,7 @@ class StaffDetailController extends BaseController {
         joinedLabel.value = '';
       }
       await _loadTasksForMember();
+      await _loadAccess();
       assignedProperties.clear();
     } catch (_) {
       recentTasks.clear();
@@ -222,6 +250,167 @@ class StaffDetailController extends BaseController {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  void applyPermissionRole(String value) {
+    permissionRole.value = value;
+    grantedPermissions.assignAll(StaffPermissions.preset(value));
+    allPropertiesAccess.value = StaffPermissions.defaultAllProperties(value);
+    legacyStaffAccess.value = false;
+  }
+
+  void togglePermission(String key) {
+    if (grantedPermissions.contains(key)) {
+      grantedPermissions.remove(key);
+    } else {
+      grantedPermissions.add(key);
+    }
+    legacyStaffAccess.value = false;
+  }
+
+  void setAllPropertiesAccess(bool value) {
+    allPropertiesAccess.value = value;
+    legacyStaffAccess.value = false;
+  }
+
+  void togglePropertyRef(String ref) {
+    if (selectedPropertyRefs.contains(ref)) {
+      selectedPropertyRefs.remove(ref);
+    } else {
+      selectedPropertyRefs.add(ref);
+    }
+    legacyStaffAccess.value = false;
+  }
+
+  Future<void> saveAccess() async {
+    final id = _backendId?.trim() ?? '';
+    if (id.isEmpty) {
+      showErrorMessage(appLocalization.staffDetailCannotRemove);
+      return;
+    }
+    if (!allPropertiesAccess.value && selectedPropertyRefs.isEmpty) {
+      showErrorMessage(appLocalization.staffAccessSelectProperty);
+      return;
+    }
+    if (_phone.trim().isEmpty) {
+      showErrorMessage(appLocalization.staffDetailCannotOpenPhone);
+      return;
+    }
+    savingAccess.value = true;
+    try {
+      final request = StaffRequest(
+        id: id,
+        name: displayName.value,
+        role: role.value.trim().isEmpty ? permissionRole.value : role.value,
+        salary: _salary,
+        salaryFrequency: _salaryFrequency,
+        phone: _phone,
+        notes: _notes,
+        propertyRef: _propertyRef,
+        propertyName: _propertyName,
+        permissionRole: permissionRole.value,
+        permissions: grantedPermissions.toList(),
+        allProperties: allPropertiesAccess.value,
+        propertyRefs: selectedPropertyRefs.toList(),
+      );
+      final res = await _repository.updateStaff(id, request.toApiJson());
+      if (!res.isSuccess) {
+        showErrorMessage(res.message ?? appLocalization.staffDetailCannotRemove);
+        return;
+      }
+      legacyStaffAccess.value = false;
+      showSuccessMessage(appLocalization.staffAccessSaved);
+    } catch (e) {
+      showErrorMessage(appLocalization.staffDetailCannotRemove);
+    } finally {
+      savingAccess.value = false;
+    }
+  }
+
+  Future<void> _loadAccess() async {
+    try {
+      final localId = int.tryParse(member.id);
+      if (localId != null) {
+        _backendId = await _staffLocal.backendIdForLocal(localId);
+      }
+    } catch (_) {}
+    await _loadProperties();
+    await _loadRemoteAccess();
+  }
+
+  Future<void> _loadProperties() async {
+    try {
+      final rows = await Get.find<PropertyLocalDataSource>().fetchAll(userId: '');
+      accessProperties.assignAll(
+        rows
+            .where((row) => row.propertyRef.trim().isNotEmpty)
+            .map(
+              (row) => StaffPropertyOption(
+                ref: row.propertyRef.trim(),
+                name: row.propertyName.trim(),
+              ),
+            ),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _loadRemoteAccess() async {
+    try {
+      final res = await _repository.getStaffList();
+      if (!res.isSuccess || res.data == null) return;
+      final maps = _staffMaps(res.data);
+      Map<String, dynamic>? match;
+      for (final row in maps) {
+        final id = (row['id'] ?? '').toString();
+        final rowName = (row['name'] ?? '').toString().trim().toLowerCase();
+        if (_backendId != null && id == _backendId) {
+          match = row;
+          break;
+        }
+        if (rowName.isNotEmpty && rowName == displayName.value.trim().toLowerCase()) {
+          match ??= row;
+        }
+      }
+      if (match == null) return;
+      _backendId = (match['id'] ?? _backendId)?.toString();
+      _phone = (match['phone'] ?? '').toString();
+      _salary = (match['salary'] as num?)?.toDouble() ?? _salary;
+      _salaryFrequency = (match['salaryFrequency'] ?? _salaryFrequency).toString();
+      _notes = (match['notes'] ?? '').toString();
+      _propertyRef = (match['propertyRef'] ?? '').toString();
+      _propertyName = (match['propertyName'] ?? '').toString();
+      if (_phone.isNotEmpty) phone.value = _phone;
+      final legacy = match['legacyAccess'] == true;
+      legacyStaffAccess.value = legacy;
+      final roleKey = (match['permissionRole'] ?? '').toString();
+      permissionRole.value = StaffPermissions.roles.contains(roleKey)
+          ? roleKey
+          : StaffPermissions.roleCleaner;
+      final raw = match['permissions'];
+      if (raw is List && raw.isNotEmpty) {
+        grantedPermissions.assignAll(raw.map((e) => e.toString()));
+      } else if (legacy) {
+        grantedPermissions.assignAll(StaffPermissions.all);
+      }
+      allPropertiesAccess.value = legacy || match['allProperties'] == true;
+      selectedPropertyRefs.clear();
+      final refs = match['propertyRefs'];
+      if (refs is List) {
+        selectedPropertyRefs.addAll(
+          refs.map((e) => e.toString().trim()).where((e) => e.isNotEmpty),
+        );
+      }
+    } catch (_) {}
+  }
+
+  List<Map<String, dynamic>> _staffMaps(dynamic raw) {
+    if (raw is Map && raw['staff'] is List) {
+      return (raw['staff'] as List)
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    return const [];
+  }
+
   void manageProperties() {
     showErrorMessage(appLocalization.staffDetailAssignFromListing);
   }
@@ -271,13 +460,27 @@ class StaffDetailController extends BaseController {
     }
     final backendStaffId = await _staffLocal.backendIdForLocal(id);
 
+    final apiStaffId = backendStaffId ?? '$id';
     await runDestructiveWithUndo(
       message: appLocalization.staffDetailRemovedSuccess,
       action: () async {
         await _staffLocal.deleteById(id);
+        try {
+          final res = await _repository.deleteStaff(apiStaffId);
+          if (!res.isSuccess) throw Exception(res.message ?? 'API error');
+        } catch (_) {
+          await _syncQueue.enqueue(
+            entityType: 'staff',
+            operation: 'delete',
+            payloadJson: jsonEncode({'id': apiStaffId}),
+            dedupeKey: 'staff:delete:$apiStaffId',
+          );
+          _syncWorker.runNow();
+        }
         Get.back(result: true);
       },
       onUndo: () async {
+        await _syncQueue.deleteByDedupeKey('staff:delete:$apiStaffId');
         await _staffLocal.restore(snapshot, backendStaffId: backendStaffId);
       },
     );

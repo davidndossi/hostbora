@@ -176,6 +176,17 @@ class SubscriptionService extends GetxService {
   /// App Store localized price label for [plan], if loaded.
   String? applePriceForPlan(String plan) => _appleIap?.storePriceForPlan(plan);
 
+  bool get appleProductsLoading => _appleIap?.loadingProducts.value ?? false;
+
+  String? get appleProductsError => _appleIap?.loadError.value;
+
+  bool get appleProductsReady =>
+      _appleIap != null && _appleIap!.products.isNotEmpty;
+
+  Future<void> reloadAppleProducts() async {
+    await _appleIap?.loadProducts();
+  }
+
   /// Android / web: Snippe hosted checkout in the system browser.
   ///
   /// Returns a [SnippeCheckoutResult]. On success the browser is opened; the

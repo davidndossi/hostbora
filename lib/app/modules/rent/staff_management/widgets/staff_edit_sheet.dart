@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/values/app_colors.dart';
 import '../controllers/rent_staff_management_controller.dart';
+import 'staff_access_editor.dart';
 import '../utils/rent_staff_pay_format.dart';
 
 /// Modal edit form for a staff member — always visible when Edit is tapped.
@@ -181,6 +182,21 @@ class _StaffEditSheetBodyState extends State<_StaffEditSheetBody> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        Obx(
+                          () => StaffAccessEditor(
+                            role: widget.controller.permissionRole.value,
+                            permissions: widget.controller.grantedPermissions.toSet(),
+                            allProperties: widget.controller.allPropertiesAccess.value,
+                            propertyRefs: widget.controller.selectedPropertyRefs.toSet(),
+                            properties: widget.controller.accessProperties.toList(),
+                            legacy: widget.controller.legacyStaffAccess.value,
+                            onRoleChanged: widget.controller.applyPermissionRole,
+                            onPermissionToggled: widget.controller.togglePermission,
+                            onAllPropertiesChanged: widget.controller.setAllPropertiesAccess,
+                            onPropertyToggled: widget.controller.togglePropertyRef,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
                         TextFormField(
                           controller: _name,
                           textCapitalization: TextCapitalization.words,

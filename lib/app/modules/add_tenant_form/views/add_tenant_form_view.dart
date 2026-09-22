@@ -197,32 +197,21 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // ── Currency + Frequency on their own row ──────────────────
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: CurrencyDropdownField(
-                          selectedCurrency: controller.selectedCurrency,
-                          label: _isSw ? 'Sarafu' : 'Currency',
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _whiteDropdown<String>(
-                          colors: c,
-                          value: controller.rentFrequencyOptions
-                                  .contains(controller.rentFrequency.value)
-                              ? controller.rentFrequency.value
-                              : null,
-                          options: controller.rentFrequencyOptions,
-                          hintText: _isSw ? 'Chagua chaguo' : 'Select an option',
-                          onChanged: controller.setRentFrequency,
-                          compact: true,
-                        ),
-                      ),
-                    ],
+                  CurrencyDropdownField(
+                    selectedCurrency: controller.selectedCurrency,
+                    label: _isSw ? 'Sarafu' : 'Currency',
+                  ),
+                  const SizedBox(height: 8),
+                  _whiteDropdown<String>(
+                    colors: c,
+                    value: controller.rentFrequencyOptions
+                            .contains(controller.rentFrequency.value)
+                        ? controller.rentFrequency.value
+                        : null,
+                    options: controller.rentFrequencyOptions,
+                    hintText: _isSw ? 'Chagua chaguo' : 'Select an option',
+                    onChanged: controller.setRentFrequency,
+                    compact: true,
                   ),
                 ],
               )),

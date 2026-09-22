@@ -93,35 +93,27 @@ class EditUnitView extends BaseView<EditUnitController> {
             const SizedBox(height: 14),
             _label(dark, _isSw ? 'KODI YA UNITI' : 'UNIT RENT'),
             const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: controller.unitRentController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [ThousandsSeparatorInputFormatter()],
-                    decoration: _input(dark, '0.00'),
-                    validator: (v) {
-                      final raw = (v ?? '').trim().replaceAll(',', '');
-                      final n = double.tryParse(raw);
-                      if (raw.isEmpty || n == null || n <= 0) {
-                        return _isSw ? 'Weka kodi sahihi' : 'Enter a valid rent amount';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 110,
-                  child: CurrencyDropdownField(
-                    selectedCurrency: controller.selectedCurrency,
-                    compact: false,
-                    showRateHint: true,
-                  ),
-                ),
-              ],
+            TextFormField(
+              controller: controller.unitRentController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [ThousandsSeparatorInputFormatter()],
+              decoration: _input(dark, '0.00'),
+              validator: (v) {
+                final raw = (v ?? '').trim().replaceAll(',', '');
+                final n = double.tryParse(raw);
+                if (raw.isEmpty || n == null || n <= 0) {
+                  return _isSw ? 'Weka kodi sahihi' : 'Enter a valid rent amount';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 14),
+            _label(dark, _isSw ? 'SARAFU' : 'CURRENCY'),
+            const SizedBox(height: 8),
+            CurrencyDropdownField(
+              selectedCurrency: controller.selectedCurrency,
+              compact: false,
+              showRateHint: true,
             ),
             const SizedBox(height: 14),
             _label(dark, _isSw ? 'MZUNGUKO WA KODI' : 'RENT FREQUENCY'),

@@ -1982,7 +1982,12 @@ class ListingDetailsController extends BaseController
         }
 
       case ActivityType.staff:
-        await _staffLocal.deleteById(activity.staffId!);
+        final staffId = activity.staffId!;
+        final backendStaffId = await _staffLocal.backendIdForLocal(staffId);
+        await _staffLocal.deleteById(staffId);
+        if (backendStaffId != null && backendStaffId.isNotEmpty) {
+          unawaited(_remoteDeleteStaff(backendStaffId));
+        }
 
       case ActivityType.unit:
         await _unitLocal.deleteById(activity.unitLocalId!);
@@ -2053,6 +2058,16 @@ class ListingDetailsController extends BaseController
       operation: 'delete',
       payload: {'taskId': backendTaskId},
       dedupeKey: 'task:delete:$backendTaskId',
+    );
+  }
+
+  Future<void> _remoteDeleteStaff(String backendStaffId) async {
+    await _tryOrQueue(
+      remoteCall: () => _repository.deleteStaff(backendStaffId),
+      entityType: 'staff',
+      operation: 'delete',
+      payload: {'id': backendStaffId},
+      dedupeKey: 'staff:delete:$backendStaffId',
     );
   }
 

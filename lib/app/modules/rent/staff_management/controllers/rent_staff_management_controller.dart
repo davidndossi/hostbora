@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/access/staff_access.dart';
 import '../../../../core/base/base_controller.dart';
+import '../../../../data/local/db/property_local_data_source.dart';
+import '../widgets/staff_access_editor.dart';
 import '../../../../core/base/feedback_extensions.dart';
 import '../../../../core/utils/haptic_feedback_util.dart';
 import '../../../../data/local/service/remote_account_sync_service.dart';
@@ -61,6 +64,12 @@ class RentStaffManagementController extends BaseController {
   final paymentType = RentStaffPayFormat.monthly.obs;
   final selectedPrimaryRole = ''.obs;
   final editingStaffId = Rxn<int>();
+  final permissionRole = StaffPermissions.roleCleaner.obs;
+  final grantedPermissions = StaffPermissions.preset(StaffPermissions.roleCleaner).obs;
+  final allPropertiesAccess = false.obs;
+  final selectedPropertyRefs = <String>{}.obs;
+  final accessProperties = <StaffPropertyOption>[].obs;
+  final legacyStaffAccess = false.obs;
 
   String _propertyRef = '';
   String _propertyName = '';
@@ -142,6 +151,7 @@ class RentStaffManagementController extends BaseController {
   @override
   void onReady() {
     super.onReady();
+    _loadAccessProperties();
     loadStaff().then((_) async {
       final id = editingStaffId.value;
       if (id != null) {
@@ -265,6 +275,130 @@ class RentStaffManagementController extends BaseController {
     payDateController.clear();
     selectedPrimaryRole.value = '';
     paymentType.value = RentStaffPayFormat.monthly;
+    _resetAccess();
+  }
+
+  void _resetAccess() {
+    permissionRole.value = StaffPermissions.roleCleaner;
+    grantedPermissions.assignAll(StaffPermissions.preset(StaffPermissions.roleCleaner));
+    allPropertiesAccess.value = false;
+    selectedPropertyRefs
+      ..clear()
+      ..addAll(_propertyRef.isEmpty ? const <String>[] : [_propertyRef]);
+    legacyStaffAccess.value = false;
+  }
+
+  void applyPermissionRole(String role) {
+    permissionRole.value = role;
+    grantedPermissions.assignAll(StaffPermissions.preset(role));
+    allPropertiesAccess.value = StaffPermissions.defaultAllProperties(role);
+    legacyStaffAccess.value = false;
+  }
+
+  void togglePermission(String key) {
+    if (grantedPermissions.contains(key)) {
+      grantedPermissions.remove(key);
+    } else {
+      grantedPermissions.add(key);
+    }
+    legacyStaffAccess.value = false;
+  }
+
+  void setAllPropertiesAccess(bool value) {
+    allPropertiesAccess.value = value;
+    legacyStaffAccess.value = false;
+  }
+
+  void togglePropertyRef(String ref) {
+    if (selectedPropertyRefs.contains(ref)) {
+      selectedPropertyRefs.remove(ref);
+    } else {
+      selectedPropertyRefs.add(ref);
+    }
+    legacyStaffAccess.value = false;
+  }
+
+  Future<void> _loadAccessProperties() async {
+    try {
+      final rows = await Get.find<PropertyLocalDataSource>().fetchAll(userId: '');
+      accessProperties.assignAll(
+        rows
+            .where((row) => row.propertyRef.trim().isNotEmpty)
+            .map(
+              (row) => StaffPropertyOption(
+                ref: row.propertyRef.trim(),
+                name: row.propertyName.trim(),
+              ),
+            ),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> loadSavedAccess({required int localId, required String name}) async {
+    try {
+      final backendId = await _local.backendIdForLocal(localId);
+      final res = await _repository.getStaffList();
+      if (!res.isSuccess || res.data == null) return;
+      final maps = _staffMaps(res.data);
+      Map<String, dynamic>? match;
+      for (final row in maps) {
+        final id = (row['id'] ?? '').toString();
+        final rowName = (row['name'] ?? '').toString().trim().toLowerCase();
+        if (backendId != null && id == backendId) {
+          match = row;
+          break;
+        }
+        if (rowName.isNotEmpty && rowName == name.trim().toLowerCase()) {
+          match ??= row;
+        }
+      }
+      if (match != null) applyAccessMap(match);
+    } catch (_) {}
+  }
+
+  void applyAccessMap(Map<String, dynamic> row) {
+    final legacy = row['legacyAccess'] == true;
+    legacyStaffAccess.value = legacy;
+    final role = (row['permissionRole'] ?? '').toString();
+    permissionRole.value = StaffPermissions.roles.contains(role)
+        ? role
+        : StaffPermissions.roleCleaner;
+    final raw = row['permissions'];
+    if (raw is List && raw.isNotEmpty) {
+      grantedPermissions.assignAll(raw.map((e) => e.toString()));
+    } else if (legacy) {
+      grantedPermissions.assignAll(StaffPermissions.all);
+    } else {
+      grantedPermissions.assignAll(StaffPermissions.preset(permissionRole.value));
+    }
+    allPropertiesAccess.value = legacy || row['allProperties'] == true;
+    selectedPropertyRefs.clear();
+    final refs = row['propertyRefs'];
+    if (refs is List) {
+      selectedPropertyRefs.addAll(
+        refs.map((e) => e.toString().trim()).where((e) => e.isNotEmpty),
+      );
+    }
+  }
+
+  List<Map<String, dynamic>> _staffMaps(dynamic raw) {
+    if (raw is Map && raw['staff'] is List) {
+      return (raw['staff'] as List)
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (raw is List) {
+      return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    return const [];
+  }
+
+  bool _accessReady() {
+    if (allPropertiesAccess.value) return true;
+    if (selectedPropertyRefs.isNotEmpty) return true;
+    showErrorMessage(appLocalization.staffAccessSelectProperty);
+    return false;
   }
 
   void cancelEdit() {
@@ -310,6 +444,10 @@ class RentStaffManagementController extends BaseController {
       startDate: startDate,
       status: 'active',
       payDayLabel: payDay,
+      permissionRole: permissionRole.value,
+      permissions: grantedPermissions.toList(),
+      allProperties: allPropertiesAccess.value,
+      propertyRefs: selectedPropertyRefs.toList(),
     );
   }
 
@@ -326,6 +464,7 @@ class RentStaffManagementController extends BaseController {
       return;
     }
     if (amount == null) return;
+    if (!_accessReady()) return;
     if (phone == null) {
       showErrorMessage(
         _isSw
@@ -467,6 +606,7 @@ class RentStaffManagementController extends BaseController {
     final amount = _parseAmount(amountRaw);
     if (amount == null || amount <= 0) return false;
     if (name.trim().isEmpty || role.trim().isEmpty) return false;
+    if (!_accessReady()) return false;
 
     try {
       await _local.updateById(
@@ -529,6 +669,7 @@ class RentStaffManagementController extends BaseController {
       return;
     }
     editingStaffId.value = id;
+    await loadSavedAccess(localId: id, name: member.name);
     await showStaffEditSheet(controller: this, member: member);
     // If user dismissed without saving, leave the page form clean.
     if (editingStaffId.value != null) {

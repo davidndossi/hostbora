@@ -4981,6 +4981,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finances'**
   String get finances;
+
+  /// No description provided for @accountSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountSection;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently remove your account and sign-in access'**
+  String get deleteAccountSubtitle;
+
+  /// No description provided for @deleteAccountConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account?'**
+  String get deleteAccountConfirmTitle;
+
+  /// No description provided for @deleteAccountConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your account. You will not be able to sign in again. This cannot be undone.'**
+  String get deleteAccountConfirmMessage;
+
+  /// No description provided for @deleteAccountConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccountConfirmAction;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete your account.'**
+  String get deleteAccountFailed;
+
+  /// No description provided for @inventoryChooseProperty.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose property'**
+  String get inventoryChooseProperty;
+
+  /// No description provided for @inventoryNoPropertiesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No properties yet — add a property first.'**
+  String get inventoryNoPropertiesYet;
+
+  /// No description provided for @inventoryNoPropertySelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No property selected.'**
+  String get inventoryNoPropertySelected;
+
+  /// No description provided for @inventoryPropertyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Property is required'**
+  String get inventoryPropertyRequired;
+
+  /// No description provided for @inventoryFileSharedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'File shared successfully.'**
+  String get inventoryFileSharedSuccessfully;
+
+  /// No description provided for @staffAccessRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get staffAccessRole;
+
+  /// No description provided for @staffRoleCleaner.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleaner'**
+  String get staffRoleCleaner;
+
+  /// No description provided for @staffRoleCaretaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Caretaker'**
+  String get staffRoleCaretaker;
+
+  /// No description provided for @staffRoleFrontDesk.
+  ///
+  /// In en, this message translates to:
+  /// **'Front desk'**
+  String get staffRoleFrontDesk;
+
+  /// No description provided for @staffRoleAccountant.
+  ///
+  /// In en, this message translates to:
+  /// **'Accountant'**
+  String get staffRoleAccountant;
+
+  /// No description provided for @staffRoleManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager'**
+  String get staffRoleManager;
+
+  /// No description provided for @staffAccessCustomize.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize access'**
+  String get staffAccessCustomize;
+
+  /// No description provided for @staffAccessScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Property access'**
+  String get staffAccessScope;
+
+  /// No description provided for @staffAccessAllProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'All properties'**
+  String get staffAccessAllProperties;
+
+  /// No description provided for @staffAccessSelectedProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected properties only'**
+  String get staffAccessSelectedProperties;
+
+  /// No description provided for @staffAccessLegacyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This team member still has full operational access until you save a checklist.'**
+  String get staffAccessLegacyNote;
+
+  /// No description provided for @staffAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have access'**
+  String get staffAccessDenied;
+
+  /// No description provided for @staffAccessSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Access updated'**
+  String get staffAccessSaved;
+
+  /// No description provided for @staffAccessSelectProperty.
+  ///
+  /// In en, this message translates to:
+  /// **'Select at least one property'**
+  String get staffAccessSelectProperty;
+
+  /// No description provided for @staffAccessSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save access'**
+  String get staffAccessSave;
+
+  /// No description provided for @staffAccessGroupProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'Properties'**
+  String get staffAccessGroupProperties;
+
+  /// No description provided for @staffAccessGroupBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookings'**
+  String get staffAccessGroupBookings;
+
+  /// No description provided for @staffAccessGroupPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments'**
+  String get staffAccessGroupPayments;
+
+  /// No description provided for @staffAccessGroupExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses'**
+  String get staffAccessGroupExpenses;
+
+  /// No description provided for @staffAccessGroupReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get staffAccessGroupReports;
+
+  /// No description provided for @staffAccessGroupInventory.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory'**
+  String get staffAccessGroupInventory;
+
+  /// No description provided for @staffAccessGroupTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get staffAccessGroupTasks;
+
+  /// No description provided for @staffAccessGroupTenants.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenants'**
+  String get staffAccessGroupTenants;
+
+  /// No description provided for @staffPermViewProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'View properties'**
+  String get staffPermViewProperties;
+
+  /// No description provided for @staffPermEditProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit properties'**
+  String get staffPermEditProperties;
+
+  /// No description provided for @staffPermViewBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'View bookings'**
+  String get staffPermViewBookings;
+
+  /// No description provided for @staffPermCheckInOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in and check-out'**
+  String get staffPermCheckInOut;
+
+  /// No description provided for @staffPermMessageGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Message guest'**
+  String get staffPermMessageGuest;
+
+  /// No description provided for @staffPermManageBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage bookings'**
+  String get staffPermManageBookings;
+
+  /// No description provided for @staffPermViewPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'View payments'**
+  String get staffPermViewPayments;
+
+  /// No description provided for @staffPermRecordPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Record payment'**
+  String get staffPermRecordPayment;
+
+  /// No description provided for @staffPermViewExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'View expenses'**
+  String get staffPermViewExpenses;
+
+  /// No description provided for @staffPermManageExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage expenses'**
+  String get staffPermManageExpenses;
+
+  /// No description provided for @staffPermViewReports.
+  ///
+  /// In en, this message translates to:
+  /// **'View reports'**
+  String get staffPermViewReports;
+
+  /// No description provided for @staffPermExportReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Export reports'**
+  String get staffPermExportReports;
+
+  /// No description provided for @staffPermViewInventory.
+  ///
+  /// In en, this message translates to:
+  /// **'View inventory'**
+  String get staffPermViewInventory;
+
+  /// No description provided for @staffPermManageInventory.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage inventory'**
+  String get staffPermManageInventory;
+
+  /// No description provided for @staffPermViewTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'View tasks'**
+  String get staffPermViewTasks;
+
+  /// No description provided for @staffPermCompleteTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete tasks'**
+  String get staffPermCompleteTasks;
+
+  /// No description provided for @staffPermManageTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage tasks'**
+  String get staffPermManageTasks;
+
+  /// No description provided for @staffPermViewTenants.
+  ///
+  /// In en, this message translates to:
+  /// **'View tenants'**
+  String get staffPermViewTenants;
+
+  /// No description provided for @staffPermManageTenants.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage tenants'**
+  String get staffPermManageTenants;
 }
 
 class _AppLocalizationsDelegate

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/access/staff_access.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/values/app_colors.dart';
@@ -112,6 +113,24 @@ class SecurityView extends BaseView<SecurityController> {
           const SizedBox(height: 24),
           _buildDeviceSection(context),
           const SizedBox(height: 24),
+          if (!Get.isRegistered<StaffAccessStore>() ||
+              !Get.find<StaffAccessStore>().restricted.value)
+          _buildSection(appLocalization.accountSection, [
+            _SettingsRow(
+              icon: Icons.delete_outline,
+              iconColor: AppColors.paaYanguAlert,
+              title: appLocalization.deleteAccount,
+              titleColor: AppColors.paaYanguAlert,
+              subtitle: appLocalization.deleteAccountSubtitle,
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: AppColors.paaYanguAlert,
+                size: 22,
+              ),
+              onTap: controller.confirmDeleteAccount,
+            ),
+          ], context),
+          const SizedBox(height: 24),
           _buildFooter(context),
         ],
       ),
@@ -222,6 +241,7 @@ class _SettingsRow extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String title;
+  final Color? titleColor;
   final String? subtitle;
   final Widget? trailing;
   final VoidCallback? onTap;
@@ -230,6 +250,7 @@ class _SettingsRow extends StatelessWidget {
     required this.icon,
     required this.iconColor,
     required this.title,
+    this.titleColor,
     this.subtitle,
     this.trailing,
     this.onTap,
@@ -255,7 +276,8 @@ class _SettingsRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: c.isDark ? Colors.white : const Color(0xFF333333),
+                      color: titleColor ??
+                          (c.isDark ? Colors.white : const Color(0xFF333333)),
                     ),
                   ),
                   if (subtitle != null) ...[

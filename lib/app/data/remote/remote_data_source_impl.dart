@@ -1461,6 +1461,18 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
+  Future<GeneralResponse> deleteMyAccount() {
+    final endpoint = '${DioProvider.baseUrl}/api/users/me';
+    final dioCall = dioClient.delete(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<GeneralResponse> createProperty(Map<String, dynamic> body) {
     final endpoint = '${DioProvider.baseUrl}/api/properties';
     final dioCall = dioClient.post(endpoint, data: body);

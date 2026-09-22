@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/access/staff_access.dart';
 import '../../../core/theme/form_surface_colors.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/service/quick_action_intent_resolver.dart';
@@ -38,12 +39,23 @@ Future<void> showCreateMenu({
 
   final route = outcome.route;
   if (route != null) {
+    if (Get.isRegistered<StaffAccessStore>() &&
+        !Get.find<StaffAccessStore>().allowsRoute(route)) {
+      Get.find<StaffAccessStore>().showDenied();
+      return;
+    }
     await Get.toNamed(route);
     return;
   }
 
   final action = outcome.action;
   if (action == null) return;
+  if (!_quickActionAllowed(action)) {
+    if (Get.isRegistered<StaffAccessStore>()) {
+      Get.find<StaffAccessStore>().showDenied();
+    }
+    return;
+  }
   final saved = await _runQuickAction(action);
   if (saved == true) {
     await onDataChanged();
@@ -59,6 +71,25 @@ Future<void> showQuickActionsDialog({
       onDataChanged: onDataChanged,
       portfolioRole: portfolioRole,
     );
+
+bool _quickActionAllowed(QuickHomeAction action) {
+  if (!Get.isRegistered<StaffAccessStore>()) return true;
+  final access = Get.find<StaffAccessStore>();
+  switch (action) {
+    case QuickHomeAction.addProperty:
+      return access.allows(StaffPermissions.editProperties);
+    case QuickHomeAction.addIncome:
+      return access.allows(StaffPermissions.recordPayment);
+    case QuickHomeAction.addExpense:
+      return access.allows(StaffPermissions.manageExpenses);
+    case QuickHomeAction.addBooking:
+      return access.allows(StaffPermissions.manageBookings);
+    case QuickHomeAction.addTenant:
+      return access.allows(StaffPermissions.manageTenants);
+    case QuickHomeAction.sendReminder:
+      return access.allows(StaffPermissions.messageGuest);
+  }
+}
 
 Future<bool?> _runQuickAction(QuickHomeAction action) {
   switch (action) {
@@ -127,6 +158,11 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
   bool get _showBnbActions {
     final r = widget.portfolioRole;
     return r == 'bnb' || r == 'both' || r == 'all';
+  }
+
+  bool _allow(String key) {
+    if (!Get.isRegistered<StaffAccessStore>()) return true;
+    return Get.find<StaffAccessStore>().allows(key);
   }
 
   bool get _showRentActions {
@@ -402,6 +438,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
         ),
         const SizedBox(height: 6),
 
+        if (_allow(StaffPermissions.editProperties))
         _optionTile(context,
           icon: Icons.home_work_outlined,
           label: _t('Add Property', 'Ongeza Mali'),
@@ -411,7 +448,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
             result: const _OtherActionOutcome.wizard(QuickHomeAction.addProperty),
           ),
         ),
-        if (_showRentActions)
+        if (_showRentActions && _allow(StaffPermissions.manageTenants))
           _optionTile(context,
             icon: Icons.person_add_alt_outlined,
             label: _t('Add Tenant', 'Ongeza Mpangaji'),
@@ -421,7 +458,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
               result: const _OtherActionOutcome.wizard(QuickHomeAction.addTenant),
             ),
           ),
-        if (_showRentActions)
+        if (_showRentActions && _allow(StaffPermissions.messageGuest))
           _optionTile(context,
             icon: Icons.notifications_active_outlined,
             label: _t('Send Reminder', 'Tuma Kikumbusho'),
@@ -448,6 +485,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
         ),
         const SizedBox(height: 6),
 
+        if (_allow(StaffPermissions.recordPayment))
         _optionTile(context,
           icon: Icons.payments_outlined,
           label: _t('Add Income', 'Ongeza Mapato'),
@@ -457,6 +495,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
             result: const _OtherActionOutcome.wizard(QuickHomeAction.addIncome),
           ),
         ),
+        if (_allow(StaffPermissions.manageExpenses))
         _optionTile(context,
           icon: Icons.receipt_long_outlined,
           label: _t('Add Expense', 'Ongeza Matumizi'),
@@ -466,7 +505,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
             result: const _OtherActionOutcome.wizard(QuickHomeAction.addExpense),
           ),
         ),
-        if (_showBnbActions)
+        if (_showBnbActions && _allow(StaffPermissions.manageBookings))
           _optionTile(context,
             icon: Icons.event_available_outlined,
             label: _t('Add Booking', 'Ongeza Uhifadhi'),

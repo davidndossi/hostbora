@@ -1024,6 +1024,23 @@ class LocalSourceBindings implements Bindings {
       },
     );
     syncWorker.registerHandler(
+      entityType: 'staff',
+      operation: 'delete',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final id = (map['id'] as String?) ?? '';
+        if (id.isEmpty) throw Exception('Missing id in staff:delete payload');
+        final res = await repository.deleteStaff(id);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
       entityType: 'loyalty',
       operation: 'create',
       handler: (item) async {

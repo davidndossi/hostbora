@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/form_surface_colors.dart';
+import '../../../core/access/staff_access.dart';
 import '../../inventory_tracking/views/inventory_low_stock_banner.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
@@ -92,7 +93,7 @@ class HomeView extends BaseView<HomeController> {
                     const SizedBox(height: 12),
                     const HubInsightBanner(compact: true, dismissible: true),
                     const SizedBox(height: 8),
-                    _buildCreateCta(context),
+                    if (_staffCanCreate()) _buildCreateCta(context),
                     const SizedBox(height: 20),
                     _buildGoToBlock(context),
                     const SizedBox(height: 100),
@@ -246,6 +247,23 @@ class HomeView extends BaseView<HomeController> {
     );
   }
 
+  bool _staffCanCreate() {
+    return _staffAllows(StaffPermissions.editProperties) ||
+        _staffAllows(StaffPermissions.manageTenants) ||
+        _staffAllows(StaffPermissions.messageGuest) ||
+        _staffAllows(StaffPermissions.recordPayment) ||
+        _staffAllows(StaffPermissions.manageExpenses) ||
+        _staffAllows(StaffPermissions.manageBookings);
+  }
+
+  bool _staffAllows(String key) {
+    if (!Get.isRegistered<StaffAccessStore>()) return true;
+    final access = Get.find<StaffAccessStore>();
+    access.restricted.value;
+    access.permissions.length;
+    return access.allows(key);
+  }
+
   /// Block 1 — what needs attention today (compact alerts, expand on tap).
   Widget _buildTodayBlock(BuildContext context) {
     return Obx(() {
@@ -256,13 +274,16 @@ class HomeView extends BaseView<HomeController> {
       final upcoming = showBnb ? controller.checkIns.length : 0;
       final maintenance = controller.visibleUpcomingMaintenance;
       final maintenanceCount = maintenance.length;
+      final accessOk = _staffAllows;
+      final showBookings = accessOk(StaffPermissions.viewBookings);
+      final showTasks = accessOk(StaffPermissions.viewTasks);
+      final showPayments = accessOk(StaffPermissions.viewPayments);
       final collectionLow =
+          showPayments &&
           showRent && controller.collectionRate.value > 0 && controller.collectionRate.value < 70;
-      final hasAlerts = checkIns > 0 ||
-          checkOuts > 0 ||
-          upcoming > 0 ||
+      final hasAlerts = (showBookings && (checkIns > 0 || checkOuts > 0 || upcoming > 0)) ||
           collectionLow ||
-          maintenanceCount > 0;
+          (showTasks && maintenanceCount > 0);
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,7 +299,7 @@ class HomeView extends BaseView<HomeController> {
               ),
             )
           else ...[
-            if (checkOuts > 0)
+            if (showBookings && checkOuts > 0)
               _TodayAlertTile(
                 icon: Icons.logout_rounded,
                 title: _t(context, 'Check-outs today', 'Wanatoka leo'),
@@ -295,7 +316,7 @@ class HomeView extends BaseView<HomeController> {
                 list: controller.checkOutsToday,
               ),
             ],
-            if (checkIns > 0) ...[
+            if (showBookings && checkIns > 0) ...[
               const SizedBox(height: 8),
               _TodayAlertTile(
                 icon: Icons.login_rounded,
@@ -314,7 +335,7 @@ class HomeView extends BaseView<HomeController> {
                 list: controller.checkInsToday,
               ),
             ],
-            if (upcoming > 0) ...[
+            if (showBookings && upcoming > 0) ...[
               const SizedBox(height: 8),
               _TodayAlertTile(
                 icon: Icons.event_available_rounded,
@@ -335,7 +356,7 @@ class HomeView extends BaseView<HomeController> {
                 seeAllLabel: _t(context, 'See All', 'Ona Yote'),
               ),
             ],
-            if (maintenanceCount > 0) ...[
+            if (showTasks && maintenanceCount > 0) ...[
               const SizedBox(height: 8),
               _TodayAlertTile(
                 icon: Icons.build_outlined,
@@ -396,6 +417,19 @@ class HomeView extends BaseView<HomeController> {
     return Obx(() {
       final showBnb = controller.showBnbHomeContent;
       final showRent = controller.showRentHomeContent;
+      final showProperties = _staffAllows(StaffPermissions.viewProperties);
+      final showBookings = _staffAllows(StaffPermissions.viewBookings);
+      final showTenants = _staffAllows(StaffPermissions.viewTenants);
+      final showMoney = _staffAllows(StaffPermissions.viewPayments) ||
+          _staffAllows(StaffPermissions.viewReports);
+      final hasCards = showBnb && showRent
+          ? showProperties || showTenants || showMoney
+          : showBnb
+              ? showBookings || showMoney || showProperties
+              : showTenants || showProperties || showMoney;
+      if (!hasCards && !_staffAllows(StaffPermissions.viewReports)) {
+        return const SizedBox.shrink();
+      }
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,6 +437,7 @@ class HomeView extends BaseView<HomeController> {
           Row(
             children: [
               Expanded(child: _sectionTitle(context, 'Summary', 'Muhtasari')),
+              if (_staffAllows(StaffPermissions.viewReports))
               TextButton(
                 onPressed: controller.viewTrends,
                 child: Text(
@@ -418,50 +453,55 @@ class HomeView extends BaseView<HomeController> {
           ),
           const SizedBox(height: 10),
           if (showBnb && showRent) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Jumla ya Mali' : 'Total Properties',
-                    value: '${controller.totalPropertiesCount.value}',
-                    subtitle: 'BnB + Rent',
-                    onTap: controller.openProperties,
+            if (showProperties)
+              Row(
+                children: [
+                  Expanded(
+                    child: _BnbOverviewCard(
+                      title: isSw ? 'Jumla ya Mali' : 'Total Properties',
+                      value: '${controller.totalPropertiesCount.value}',
+                      subtitle: 'BnB + Rent',
+                      onTap: controller.openProperties,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Jumla ya Vyumba' : 'Total Units',
-                    value: '${controller.totalUnitsCount.value}',
-                    subtitle: 'BnB + Rent',
-                    onTap: controller.openProperties,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _BnbOverviewCard(
+                      title: isSw ? 'Jumla ya Vyumba' : 'Total Units',
+                      value: '${controller.totalUnitsCount.value}',
+                      subtitle: 'BnB + Rent',
+                      onTap: controller.openProperties,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Wapangaji' : 'Tenants',
-                    value: '${controller.rentTenantsCount.value}',
-                    subtitle: isSw ? 'Wanaokaa sasa' : 'Active now',
-                    onTap: controller.openAllTenants,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Ukusanyaji' : 'Collection',
-                    value: '${controller.collectionRate.value}%',
-                    subtitle: isSw ? 'Mwezi huu' : 'This month',
-                    onTap: controller.openTodayRevenue,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+                ],
+              ),
+            if (showProperties) const SizedBox(height: 12),
+            if (showTenants || showMoney)
+              Row(
+                children: [
+                  if (showTenants)
+                    Expanded(
+                      child: _BnbOverviewCard(
+                        title: isSw ? 'Wapangaji' : 'Tenants',
+                        value: '${controller.rentTenantsCount.value}',
+                        subtitle: isSw ? 'Wanaokaa sasa' : 'Active now',
+                        onTap: controller.openAllTenants,
+                      ),
+                    ),
+                  if (showTenants && showMoney) const SizedBox(width: 12),
+                  if (showMoney)
+                    Expanded(
+                      child: _BnbOverviewCard(
+                        title: isSw ? 'Ukusanyaji' : 'Collection',
+                        value: '${controller.collectionRate.value}%',
+                        subtitle: isSw ? 'Mwezi huu' : 'This month',
+                        onTap: controller.openTodayRevenue,
+                      ),
+                    ),
+                ],
+              ),
+            if (showTenants || showMoney) const SizedBox(height: 12),
+            if (showMoney)
             _MonthIncomeCard(
               title: isSw ? 'Mapato ya mwezi' : 'Income this month',
               expectedLabel: isSw ? 'Inayotarajiwa' : 'Expected',
@@ -471,72 +511,80 @@ class HomeView extends BaseView<HomeController> {
               onTap: controller.openTodayRevenue,
             ),
           ] else if (showBnb) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Uhifadhi Hai' : 'Active Bookings',
-                    value: '${controller.activeBookings.value}',
-                    subtitle: controller.bookingsChange.value,
-                    onTap: controller.openBookings,
+            if (showBookings || showMoney)
+              Row(
+                children: [
+                  if (showBookings)
+                    Expanded(
+                      child: _BnbOverviewCard(
+                        title: isSw ? 'Uhifadhi Hai' : 'Active Bookings',
+                        value: '${controller.activeBookings.value}',
+                        subtitle: controller.bookingsChange.value,
+                        onTap: controller.openBookings,
+                      ),
+                    ),
+                  if (showBookings && showMoney) const SizedBox(width: 12),
+                  if (showMoney)
+                    Expanded(
+                      child: _BnbOverviewCard(
+                        title: isSw ? 'Mapato ya Mwezi' : 'Monthly Revenue',
+                        value: controller.monthlyRevenue.value,
+                        subtitle: controller.revenueChange.value,
+                        onTap: controller.viewTrends,
+                      ),
+                    ),
+                ],
+              ),
+            if (showProperties) const SizedBox(height: 12),
+            if (showProperties)
+              Row(
+                children: [
+                  Expanded(
+                    child: _BnbOverviewCard(
+                      title: isSw ? 'Ukaaji wa BnB' : 'BnB Occupancy',
+                      value: '${controller.bnbOccupancyRate.value}%',
+                      subtitle: isSw ? 'Wiki hii' : 'This week',
+                      onTap: controller.openBnbProperties,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Mapato ya Mwezi' : 'Monthly Revenue',
-                    value: controller.monthlyRevenue.value,
-                    subtitle: controller.revenueChange.value,
-                    onTap: controller.viewTrends,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _BnbOverviewCard(
+                      title: isSw ? 'Vyumba' : 'Units',
+                      value: '${controller.bnbUnitsCount.value}',
+                      subtitle: 'BnB',
+                      onTap: controller.openBnbProperties,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Ukaaji wa BnB' : 'BnB Occupancy',
-                    value: '${controller.bnbOccupancyRate.value}%',
-                    subtitle: isSw ? 'Wiki hii' : 'This week',
-                    onTap: controller.openBnbProperties,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Vyumba' : 'Units',
-                    value: '${controller.bnbUnitsCount.value}',
-                    subtitle: 'BnB',
-                    onTap: controller.openBnbProperties,
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
           ] else ...[
-            Row(
-              children: [
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Wapangaji' : 'Tenants',
-                    value: '${controller.rentTenantsCount.value}',
-                    subtitle: isSw ? 'Wanaokaa sasa' : 'Active now',
-                    onTap: controller.openAllTenants,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _BnbOverviewCard(
-                    title: isSw ? 'Ukaaji wa Rent' : 'Rent Occupancy',
-                    value: '${controller.rentOccupancyRate.value}%',
-                    subtitle: isSw ? 'Vyumbo vilivyokaliwa' : 'Units occupied',
-                    onTap: controller.openRentProperties,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+            if (showTenants || showProperties)
+              Row(
+                children: [
+                  if (showTenants)
+                    Expanded(
+                      child: _BnbOverviewCard(
+                        title: isSw ? 'Wapangaji' : 'Tenants',
+                        value: '${controller.rentTenantsCount.value}',
+                        subtitle: isSw ? 'Wanaokaa sasa' : 'Active now',
+                        onTap: controller.openAllTenants,
+                      ),
+                    ),
+                  if (showTenants && showProperties) const SizedBox(width: 12),
+                  if (showProperties)
+                    Expanded(
+                      child: _BnbOverviewCard(
+                        title: isSw ? 'Ukaaji wa Rent' : 'Rent Occupancy',
+                        value: '${controller.rentOccupancyRate.value}%',
+                        subtitle: isSw ? 'Vyumbo vilivyokaliwa' : 'Units occupied',
+                        onTap: controller.openRentProperties,
+                      ),
+                    ),
+                ],
+              ),
+            if (showMoney) const SizedBox(height: 12),
+            if (showMoney)
             _CollectionRateCard(
               title: isSw ? 'Ukusanyaji wa Kodi' : 'Collection',
               rate: controller.collectionRate.value,
@@ -546,7 +594,8 @@ class HomeView extends BaseView<HomeController> {
                   : 'Rent collected this month',
               onTap: controller.openTodayRevenue,
             ),
-            const SizedBox(height: 12),
+            if (showMoney) const SizedBox(height: 12),
+            if (showMoney)
             _MonthIncomeCard(
               title: isSw ? 'Mapato ya mwezi' : 'Income this month',
               expectedLabel: isSw ? 'Inayotarajiwa' : 'Expected',
@@ -566,6 +615,9 @@ class HomeView extends BaseView<HomeController> {
       // Touch Rx so filter changes rebuild the list.
       controller.homeWorkspaceFilter.value;
       controller.recentPayments.length;
+      if (!_staffAllows(StaffPermissions.viewPayments)) {
+        return const SizedBox.shrink();
+      }
       final payments = controller.visibleRecentPayments;
       if (payments.isEmpty) return const SizedBox.shrink();
 
@@ -609,6 +661,34 @@ class HomeView extends BaseView<HomeController> {
               ? _t(context, 'Tenants', 'Wapangaji')
               : _t(context, 'Tenants & Guests', 'Wapangaji na Wageni');
 
+      final tiles = <Widget>[
+        if (_staffAllows(StaffPermissions.viewBookings))
+          _QuickActionTile(
+            materialIcon: Icons.calendar_today_outlined,
+            label: _t(context, 'Calendar', 'Kalenda'),
+            onTap: controller.calendar,
+          ),
+        if (_staffAllows(StaffPermissions.viewTenants) ||
+            _staffAllows(StaffPermissions.viewBookings))
+          _QuickActionTile(
+            materialIcon: Icons.people_outline_rounded,
+            label: peopleLabel,
+            onTap: controller.openPeople,
+          ),
+        if (_staffAllows(StaffPermissions.messageGuest))
+          _QuickActionTile(
+            materialIcon: Icons.sms_outlined,
+            label: _t(context, 'SMS / WhatsApp', 'SMS / WhatsApp'),
+            onTap: controller.sendSmsWhatsapp,
+          ),
+        if (_staffAllows(StaffPermissions.viewReports))
+          _QuickActionTile(
+            materialIcon: Icons.assessment_outlined,
+            label: _t(context, 'Reports', 'Ripoti'),
+            onTap: controller.reports,
+          ),
+      ];
+      if (tiles.isEmpty) return const SizedBox.shrink();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -634,30 +714,10 @@ class HomeView extends BaseView<HomeController> {
             crossAxisSpacing: 12,
             // Taller cells so icon + 2-line labels fit without overflow.
             childAspectRatio: 1.2,
-            children: [
-              _QuickActionTile(
-                materialIcon: Icons.calendar_today_outlined,
-                label: _t(context, 'Calendar', 'Kalenda'),
-                onTap: controller.calendar,
-              ),
-              _QuickActionTile(
-                materialIcon: Icons.people_outline_rounded,
-                label: peopleLabel,
-                onTap: controller.openPeople,
-              ),
-              _QuickActionTile(
-                materialIcon: Icons.sms_outlined,
-                label: _t(context, 'SMS / WhatsApp', 'SMS / WhatsApp'),
-                onTap: controller.sendSmsWhatsapp,
-              ),
-              _QuickActionTile(
-                materialIcon: Icons.assessment_outlined,
-                label: _t(context, 'Reports', 'Ripoti'),
-                onTap: controller.reports,
-              ),
-            ],
+            children: tiles,
           ),
           const SizedBox(height: 4),
+          if (_staffAllows(StaffPermissions.viewReports))
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(

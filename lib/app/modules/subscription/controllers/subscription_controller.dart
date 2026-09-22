@@ -25,6 +25,9 @@ class SubscriptionController extends BaseController {
   void onInit() {
     super.onInit();
     _guardManagers();
+    if (_subscriptionService.usesAppleIap) {
+      _subscriptionService.reloadAppleProducts();
+    }
   }
 
   Future<void> _guardManagers() async {
@@ -163,7 +166,12 @@ class SubscriptionController extends BaseController {
 
   /// Manually refresh subscription state from the server.
   @override
-  Future<void> refresh() => _subscriptionService.refresh();
+  Future<void> refresh() async {
+    if (_subscriptionService.usesAppleIap) {
+      await _subscriptionService.reloadAppleProducts();
+    }
+    await _subscriptionService.refresh();
+  }
 
   Future<void> restorePurchases() async {
     if (!_subscriptionService.usesAppleIap) return;
@@ -184,6 +192,10 @@ class SubscriptionController extends BaseController {
   }
 
   bool get usesAppleIap => _subscriptionService.usesAppleIap;
+
+  bool get appleProductsLoading => _subscriptionService.appleProductsLoading;
+
+  String? get appleProductsError => _subscriptionService.appleProductsError;
 
   String planName(String key) {
     switch (key) {

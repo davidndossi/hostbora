@@ -40,6 +40,12 @@ abstract class PreferenceManager {
   static const keyManagedHostName = 'managed_host_name';
   static const keyIsPortfolioManager = 'is_portfolio_manager';
 
+  /// Restricted staff session. Absent/false means owner or portfolio manager.
+  static const keyStaffRestricted = 'staff_restricted';
+  static const keyStaffPermissions = 'staff_permissions';
+  static const keyStaffAllProperties = 'staff_all_properties';
+  static const keyStaffPropertyRefs = 'staff_property_refs';
+
   /// JSON map of taskId → {assignee, status} when the API list omits them.
   static const keyTaskAssignmentOverrides = 'task_assignment_overrides';
 

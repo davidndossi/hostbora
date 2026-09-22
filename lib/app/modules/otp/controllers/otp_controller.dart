@@ -21,6 +21,17 @@ import '../../auth/controllers/auth_controller.dart';
 
 class OtpController extends BaseController {
   String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
+
+  String _loginAccessMessage(String raw) {
+    final lower = raw.toLowerCase();
+    if (lower.contains('revoked') || lower.contains('account locked')) {
+      return _t(
+        'Your access has been revoked. Contact your property owner.',
+        'Ufikiaji wako umeondolewa. Wasiliana na mmiliki wa mali.',
+      );
+    }
+    return raw;
+  }
   final enteredPin = <String>[].obs;
   final selectedIndex = (-1).obs;
   final otp = ''.obs;
@@ -204,7 +215,7 @@ class OtpController extends BaseController {
 
   void _handleVerificationResponseError(Exception e) {
     final message = e is ApiException && e.message.isNotEmpty
-        ? e.message
+        ? _loginAccessMessage(e.message)
         : _t('Invalid OTP', 'OTP si sahihi');
     showErrorMessage(message);
     errorController?.add(ErrorAnimationType.shake);
@@ -217,7 +228,7 @@ class OtpController extends BaseController {
     _resendTimer = null;
     secondsLeft.value = 0;
     final message = e is ApiException && e.message.isNotEmpty
-        ? e.message
+        ? _loginAccessMessage(e.message)
         : _t(
             'Failed to resend OTP or code',
             'Imeshindikana kutuma tena OTP au msimbo',
@@ -241,11 +252,13 @@ class OtpController extends BaseController {
     _resendTimer = null;
     secondsLeft.value = 0;
     showErrorMessage(
-      res.message ??
-          _t(
-            'Failed to resend OTP or code',
-            'Imeshindikana kutuma tena OTP au msimbo',
-          ),
+      _loginAccessMessage(
+        res.message ??
+            _t(
+              'Failed to resend OTP or code',
+              'Imeshindikana kutuma tena OTP au msimbo',
+            ),
+      ),
     );
   }
 

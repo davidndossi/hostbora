@@ -115,5 +115,9 @@ class PreferenceManagerImpl implements PreferenceManager {
     await storage.delete(key: PreferenceManager.keyActingAsHostUserId);
     await storage.delete(key: PreferenceManager.keyManagedHostName);
     await storage.delete(key: PreferenceManager.keyIsPortfolioManager);
+    await storage.delete(key: PreferenceManager.keyStaffRestricted);
+    await storage.delete(key: PreferenceManager.keyStaffPermissions);
+    await storage.delete(key: PreferenceManager.keyStaffAllProperties);
+    await storage.delete(key: PreferenceManager.keyStaffPropertyRefs);
   }
 }

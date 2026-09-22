@@ -1,4 +1,14 @@
 {
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
   "identifier" : "HostBoraProducts",
   "nonRenewingSubscriptions" : [
 
@@ -9,16 +19,44 @@
   "settings" : {
     "_failTransactionsEnabled" : false,
     "_locale" : "en_US",
-    "_storefront" : "USA",
+    "_storefront" : "TZA",
     "_storeKitErrors" : [
-
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      }
     ]
   },
   "subscriptionGroups" : [
     {
       "id" : "214A9E31",
       "localizations" : [
-
+        {
+          "description" : "HostBora monthly plans",
+          "displayName" : "HostBora Plans",
+          "locale" : "en_US"
+        }
       ],
       "name" : "HostBora Plans",
       "subscriptions" : [
@@ -110,7 +148,7 @@
     }
   ],
   "version" : {
-    "major" : 3,
+    "major" : 4,
     "minor" : 0
   }
 }

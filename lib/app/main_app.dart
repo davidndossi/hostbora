@@ -14,6 +14,7 @@ import '/app/routes/app_pages.dart';
 import '/flavors/build_config.dart';
 import '/flavors/env_config.dart';
 import 'core/base/app_lifecycle_manager.dart';
+import 'core/access/staff_access.dart';
 import 'data/local/preference/preference_manager.dart';
 import 'data/local/preference/preference_manager_impl.dart';
 import 'data/local/service/session_service.dart';
@@ -39,6 +40,11 @@ class _MainAppState extends State<MainApp> {
     PreferenceManagerImpl(),
     tag: (PreferenceManager).toString(),
   );
+  final _staffRouteObserver = StaffAccessNavigatorObserver();
+  late final StaffAccessStore _staffAccess = Get.put(
+    StaffAccessStore(_preferenceManager),
+    permanent: true,
+  );
   final EnvConfig _envConfig = BuildConfig.instance.config;
 
   Future<void> loadLanguage() async {
@@ -55,6 +61,7 @@ class _MainAppState extends State<MainApp> {
   Future<void> _bootstrap() async {
     try {
       await loadLanguage().timeout(_bootstrapTimeout);
+      await _staffAccess.load().timeout(_bootstrapTimeout);
       final results = await Future.wait([
         isSessionValid().timeout(_bootstrapTimeout),
         _preferenceManager
@@ -275,6 +282,7 @@ class _MainAppState extends State<MainApp> {
           theme: _lightTheme(),
           darkTheme: _darkTheme(),
           debugShowCheckedModeBanner: false,
+          navigatorObservers: [_staffRouteObserver],
         );
       },
     );

@@ -194,6 +194,10 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                     )
                   else
                     DropdownButtonFormField<String?>(
+                      key: ValueKey(
+                        'rp-booking-${options.length}-${value ?? ''}-'
+                        '${options.map((o) => o.label).join('|')}',
+                      ),
                       initialValue: value,
                       isExpanded: true,
                       style: TextStyle(
@@ -224,33 +228,24 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
             }),
             const SizedBox(height: 16),
             _label(_isSw ? 'KIASI KILICHOLIPWA' : 'AMOUNT PAID', colors: c),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Obx(
-                    () => _field(
-                      c,
-                      controller.amountController,
-                      hint: '0.00',
-                      prefixText: '${controller.selectedCurrency.value} ',
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      validator: controller.validateAmount,
-                      inputFormatters: [controller.amountThousandsFormatter],
-                    ),
-                  ),
+            Obx(
+              () => _field(
+                c,
+                controller.amountController,
+                hint: '0.00',
+                prefixText: '${controller.selectedCurrency.value} ',
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: CurrencyDropdownField(
-                    selectedCurrency: controller.selectedCurrency,
-                    label: _isSw ? 'SARAFU' : 'CURRENCY',
-                  ),
-                ),
-              ],
+                validator: controller.validateAmount,
+                inputFormatters: [controller.amountThousandsFormatter],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _label(_isSw ? 'SARAFU' : 'CURRENCY', colors: c),
+            CurrencyDropdownField(
+              selectedCurrency: controller.selectedCurrency,
+              label: _isSw ? 'SARAFU' : 'CURRENCY',
             ),
             const SizedBox(height: 16),
             _label(_isSw ? 'TAREHE YA MALIPO' : 'DATE PAID', colors: c),
@@ -288,7 +283,6 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
               hint: _isSw
                   ? 'Ongeza maelezo yoyote kuhusu muamala huu...'
                   : 'Add any specific details regarding this transaction...',
-              minHeight: 120,
               isMultiline: true,
             ),
             const SizedBox(height: 22),
@@ -534,12 +528,11 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     required String hint,
     IconData? suffix,
     bool isMultiline = false,
-    double minHeight = 48,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
     bool readOnly = false,
-    VoidCallback? onTap,
+    Future<void> Function()? onTap,
     String prefixText = '',
   }) {
     final hintStyle = TextStyle(
@@ -548,54 +541,35 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
       height: isMultiline ? 1.35 : 1.2,
     );
 
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(minHeight: minHeight),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: colors.fieldWellFill,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colors.inputBorder),
+    return TextFormField(
+      controller: fieldController,
+      readOnly: readOnly,
+      onTap: onTap,
+      keyboardType: keyboardType ?? TextInputType.text,
+      inputFormatters: inputFormatters,
+      maxLines: isMultiline ? null : 1,
+      minLines: isMultiline ? 3 : 1,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      textCapitalization: TextCapitalization.sentences,
+      validator: validator,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: colors.headline,
+        height: isMultiline ? 1.35 : 1.25,
       ),
-      child: TextFormField(
-        controller: fieldController,
-        readOnly: readOnly,
-        onTap: onTap,
-        keyboardType: keyboardType ?? TextInputType.text,
-        inputFormatters: inputFormatters,
-        maxLines: isMultiline ? null : 1,
-        minLines: isMultiline ? 3 : 1,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        textCapitalization: TextCapitalization.sentences,
-        validator: validator,
-        style: TextStyle(
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: hintStyle,
+        prefixText: prefixText.isEmpty ? null : prefixText,
+        prefixStyle: TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w600,
           color: colors.headline,
-          height: isMultiline ? 1.35 : 1.25,
+          fontWeight: FontWeight.w700,
         ),
-        decoration: InputDecoration(
-          isDense: false,
-          border: InputBorder.none,
-          hintText: hint,
-          hintStyle: hintStyle,
-          prefixText: prefixText.isEmpty ? null : prefixText,
-          prefixStyle: TextStyle(
-            fontSize: 16,
-            color: colors.headline,
-            fontWeight: FontWeight.w700,
-          ),
-          suffixIcon: suffix == null
-              ? null
-              : Padding(
-                  padding: EdgeInsets.only(left: 8, top: isMultiline ? 12 : 0),
-                  child: Icon(suffix, size: 20, color: colors.secondary),
-                ),
-          suffixIconConstraints: BoxConstraints(
-            minWidth: suffix != null ? 40 : 0,
-            minHeight: suffix != null ? (isMultiline ? 52 : 40) : 0,
-          ),
-        ),
+        suffixIcon: suffix == null
+            ? null
+            : Icon(suffix, size: 20, color: colors.secondary),
       ),
     );
   }

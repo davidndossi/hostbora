@@ -35,13 +35,35 @@ class AppleIapProducts {
 
   static const all = {starter, pro, ultra};
 
+  /// Historical / reported misspellings that must never be sent to StoreKit.
+  static const _typoAliases = <String, String>{
+    'hostbora_starter_monthly': starter,
+    'hostbora_pro_monthly': pro,
+    'hostbora_ultra_monthly': ultra,
+  };
+
+  /// Maps a raw StoreKit / plan string onto the canonical product ID.
+  static String canonicalizeProductId(String productId) {
+    final id = productId.trim();
+    if (id.isEmpty) return id;
+    final lower = id.toLowerCase();
+    return _typoAliases[lower] ?? lower.replaceAll('monthalty', 'monthly');
+  }
+
   static String productIdForPlan(String plan) {
-    switch (plan.trim().toLowerCase()) {
+    final raw = plan.trim().toLowerCase();
+    final canonical = canonicalizeProductId(raw);
+    if (planForProductId(canonical) != null) return canonical;
+
+    switch (raw) {
       case 'starter':
+      case 'starter_monthly':
         return starter;
       case 'pro':
+      case 'pro_monthly':
         return pro;
       case 'ultra':
+      case 'ultra_monthly':
         return ultra;
       default:
         throw ArgumentError('Unknown plan: $plan');
@@ -49,7 +71,7 @@ class AppleIapProducts {
   }
 
   static String? planForProductId(String productId) {
-    switch (productId) {
+    switch (canonicalizeProductId(productId)) {
       case starter:
         return 'starter';
       case pro:
@@ -58,6 +80,19 @@ class AppleIapProducts {
         return 'ultra';
       default:
         return null;
+    }
+  }
+
+  static String displayNameForPlan(String plan) {
+    switch (plan.trim().toLowerCase()) {
+      case 'starter':
+        return 'Starter';
+      case 'pro':
+        return 'Pro';
+      case 'ultra':
+        return 'Ultra';
+      default:
+        return 'selected';
     }
   }
 }

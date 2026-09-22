@@ -233,6 +233,9 @@ abstract class AppRepository {
   /// POST /api/users/verify-pin — verifies a candidate PIN against the saved hash.
   Future<GeneralResponse> verifyPinOnServer(String pin);
 
+  /// DELETE /api/users/me — permanently delete the signed-in account.
+  Future<GeneralResponse> deleteMyAccount();
+
   /// POST /api/properties
   Future<GeneralResponse> createProperty(Map<String, dynamic> body);
 

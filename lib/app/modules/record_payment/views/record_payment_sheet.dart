@@ -11,6 +11,8 @@ Future<bool?> showRecordPaymentSheet({
   required String bookingId,
   String propertyRef = '',
   String property = '',
+  String guestName = '',
+  String dates = '',
 }) async {
   if (Get.isRegistered<RecordPaymentController>()) {
     await Get.delete<RecordPaymentController>(force: true);
@@ -33,6 +35,8 @@ Future<bool?> showRecordPaymentSheet({
         'bookingId': bookingId,
         if (propertyRef.isNotEmpty) 'propertyRef': propertyRef,
         if (property.isNotEmpty) 'property': property,
+        if (guestName.trim().isNotEmpty) 'guestName': guestName.trim(),
+        if (dates.trim().isNotEmpty) 'dates': dates.trim(),
       },
     ),
   );

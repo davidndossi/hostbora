@@ -552,6 +552,11 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> deleteMyAccount() {
+    return _remoteSource.deleteMyAccount();
+  }
+
+  @override
   Future<GeneralResponse> createProperty(Map<String, dynamic> body) {
     return _remoteSource.createProperty(body);
   }

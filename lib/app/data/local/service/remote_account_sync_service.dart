@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import '../../../core/access/staff_access.dart';
 import '../../repository/app_repository.dart';
 import '../../../modules/rent/staff_management/utils/rent_staff_pay_format.dart';
 import '../db/offline_sync_queue_local_data_source.dart';
@@ -81,6 +82,9 @@ class RemoteAccountSyncService extends GetxService {
         map = Map<String, dynamic>.from(data);
       }
       if (map == null) return;
+      if (Get.isRegistered<StaffAccessStore>()) {
+        await Get.find<StaffAccessStore>().applyPayload(map);
+      }
 
       final managedRaw = map['managedHosts'];
       final hosts = <Map<String, dynamic>>[];

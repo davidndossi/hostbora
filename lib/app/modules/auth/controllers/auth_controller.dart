@@ -25,6 +25,17 @@ class AuthController extends BaseController {
   final hasPinEnabled = false.obs;
   final isPinStatusLoading = true.obs;
   String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
+
+  String _loginAccessMessage(String raw) {
+    final lower = raw.toLowerCase();
+    if (lower.contains('revoked') || lower.contains('account locked')) {
+      return _t(
+        'Your access has been revoked. Contact your property owner.',
+        'Ufikiaji wako umeondolewa. Wasiliana na mmiliki wa mali.',
+      );
+    }
+    return raw;
+  }
   final authFormKey = GlobalKey<FormState>();
 
   final Rx<LoginResponse> _loginResponse = LoginResponse().obs;
@@ -120,7 +131,7 @@ class AuthController extends BaseController {
       onComplete: () => isLoading(false),
       onError: (e) {
         if (e is ApiException && e.message.isNotEmpty) {
-          showErrorMessage(e.message);
+          showErrorMessage(_loginAccessMessage(e.message));
         } else {
           showErrorMessage(_t('Could not send OTP', 'Imeshindikana kutuma OTP'));
         }
@@ -128,7 +139,10 @@ class AuthController extends BaseController {
       onSuccess: (res) async {
         if (res.responseCode != '0' && res.responseCode != null) {
           showErrorMessage(
-            res.message ?? _t('Could not send OTP', 'Imeshindikana kutuma OTP'),
+            _loginAccessMessage(
+              res.message ??
+                  _t('Could not send OTP', 'Imeshindikana kutuma OTP'),
+            ),
           );
           return;
         }

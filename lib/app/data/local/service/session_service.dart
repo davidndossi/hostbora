@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 
+import '../../../core/access/staff_access.dart';
 import '../../model/login_response.dart';
 import '../../repository/app_repository.dart';
 import '../preference/preference_manager.dart';
@@ -159,7 +160,19 @@ class SessionService extends GetxService {
         response.user?.isAdmin ?? false,
       );
     }
+    if (Get.isRegistered<StaffAccessStore>() && response.hasStaffFlag) {
+      await Get.find<StaffAccessStore>().applyPayload({
+        'staffRestricted': response.staffRestricted == true,
+        'staffPermissions': response.staffPermissions,
+        'propertyScope': response.propertyScope,
+      });
+    }
   }
 
-  Future<void> clearFullSession() => _preferenceManager.clearSession();
+  Future<void> clearFullSession() async {
+    await _preferenceManager.clearSession();
+    if (Get.isRegistered<StaffAccessStore>()) {
+      await Get.find<StaffAccessStore>().applyUnrestricted();
+    }
+  }
 }

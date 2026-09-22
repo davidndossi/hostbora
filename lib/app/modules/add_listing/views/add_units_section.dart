@@ -144,58 +144,57 @@ Widget buildAddUnitsSection(BuildContext context, AddListingController controlle
           ),
           const SizedBox(height: 8),
           Obx(
-            () => Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: TextFormField(
-                    controller: controller.draftUnitRentController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textInputAction: TextInputAction.next,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    validator: controller.validateDraftUnitRent,
-                    inputFormatters: [ThousandsSeparatorInputFormatter()],
-                    style: TextStyle(fontSize: 16, color: c.headline),
-                    decoration: InputDecoration(
-                      prefix: Text(
-                        '${controller.selectedCurrency.value} ',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: c.secondary,
-                        ),
-                      ),
-                      hintText: '0.00',
-                      hintStyle: TextStyle(fontSize: 16, color: c.hint),
-                      isDense: false,
-                      contentPadding: const EdgeInsets.only(
-                        left: 12,
-                        right: 8,
-                        top: 4,
-                        bottom: 4,
-                      ),
-                      filled: true,
-                      fillColor: c.fill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+            () => TextFormField(
+              controller: controller.draftUnitRentController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textInputAction: TextInputAction.next,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: controller.validateDraftUnitRent,
+              inputFormatters: [ThousandsSeparatorInputFormatter()],
+              style: TextStyle(fontSize: 16, color: c.headline),
+              decoration: InputDecoration(
+                prefix: Text(
+                  '${controller.selectedCurrency.value} ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: c.secondary,
                   ),
                 ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  width: 110,
-                  child: CurrencyDropdownField(
-                    selectedCurrency: controller.selectedCurrency,
-                    label: 'Currency',
-                  ),
+                hintText: '0.00',
+                hintStyle: TextStyle(fontSize: 16, color: c.hint),
+                isDense: false,
+                contentPadding: const EdgeInsets.only(
+                  left: 12,
+                  right: 8,
+                  top: 4,
+                  bottom: 4,
                 ),
-              ],
+                filled: true,
+                fillColor: c.fill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'CURRENCY',
+            style: TextStyle(
+              fontSize: 10,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w700,
+              color: c.hint,
+            ),
+          ),
+          const SizedBox(height: 8),
+          CurrencyDropdownField(
+            selectedCurrency: controller.selectedCurrency,
+            label: 'Currency',
           ),
           const SizedBox(height: 12),
           Padding(

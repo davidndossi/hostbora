@@ -26,12 +26,34 @@ class SubscriptionStatus {
   final DateTime? currentPeriodStart;
   final DateTime? currentPeriodEnd;
 
+  /// Trial or paid access that has not passed its end date.
+  ///
+  /// A stale payload with status trial/active is still inactive once
+  /// [trialEndAt] or [currentPeriodEnd] is already in the past. A blank end
+  /// date does not lock the user out.
   bool get isActive =>
-      status == 'trial' || status == 'active';
+      (status == 'trial' || status == 'active') && !_accessEnded;
 
-  bool get isTrial => status == 'trial';
-  bool get isPaid  => status == 'active';
-  bool get isExpired => status == 'expired' || status == 'cancelled' || status == 'past_due';
+  bool get isTrial => status == 'trial' && !_accessEnded;
+  bool get isPaid  => status == 'active' && !_accessEnded;
+  bool get isExpired =>
+      status == 'expired' ||
+      status == 'cancelled' ||
+      status == 'past_due' ||
+      _accessEnded;
+
+  bool get _accessEnded {
+    final now = DateTime.now();
+    if (status == 'trial') {
+      final end = trialEndAt;
+      return end != null && !end.isAfter(now);
+    }
+    if (status == 'active') {
+      final end = currentPeriodEnd;
+      return end != null && !end.isAfter(now);
+    }
+    return false;
+  }
 
   /// isPro or isUltra
   bool get isProOrAbove => plan == 'pro' || plan == 'ultra';

@@ -262,35 +262,27 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                   const SizedBox(height: 12),
                   Text(_isSw ? 'Kiasi' : 'Amount', style: sectionTitleStyle),
                   const SizedBox(height: 7),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Obx(
-                          () => _field(
-                            c,
-                            controller.amountController,
-                            hint: '0.00',
-                            prefixText: '${controller.selectedCurrency.value} ',
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            validator: controller.validateAmount,
-                            inputFormatters: [
-                              ThousandsSeparatorInputFormatter(),
-                            ],
-                          ),
-                        ),
+                  Obx(
+                    () => _field(
+                      c,
+                      controller.amountController,
+                      hint: '0.00',
+                      prefixText: '${controller.selectedCurrency.value} ',
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: CurrencyDropdownField(
-                          selectedCurrency: controller.selectedCurrency,
-                          label: _isSw ? 'Sarafu' : 'Currency',
-                        ),
-                      ),
-                    ],
+                      validator: controller.validateAmount,
+                      inputFormatters: [
+                        ThousandsSeparatorInputFormatter(),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(_isSw ? 'Sarafu' : 'Currency', style: sectionTitleStyle),
+                  const SizedBox(height: 7),
+                  CurrencyDropdownField(
+                    selectedCurrency: controller.selectedCurrency,
+                    label: _isSw ? 'Sarafu' : 'Currency',
                   ),
                   const SizedBox(height: 12),
                   Text(

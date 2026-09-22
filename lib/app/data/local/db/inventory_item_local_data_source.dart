@@ -131,6 +131,8 @@ class InventoryItemLocalDataSource {
     String currency = 'TZS',
     String apartmentUnitId = '',
     String apartmentUnitName = '',
+    String? propertyRef,
+    String? propertyLabel,
     String syncStatus = 'pending',
   }) async {
     final db = await database;
@@ -147,6 +149,8 @@ class InventoryItemLocalDataSource {
         'currency': currency.trim().isEmpty ? 'TZS' : currency.trim().toUpperCase(),
         'apartment_unit_id': apartmentUnitId.trim(),
         'apartment_unit_name': apartmentUnitName.trim(),
+        if (propertyRef != null) 'property_ref': propertyRef.trim(),
+        if (propertyLabel != null) 'property_label': propertyLabel.trim(),
         'sync_status': syncStatus,
         'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
       },

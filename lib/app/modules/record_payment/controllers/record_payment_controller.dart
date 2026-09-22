@@ -12,6 +12,7 @@ import '../../../core/utils/money_input_helper.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/bnb_booking_merge.dart';
+import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/client_event_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -54,6 +55,9 @@ class RecordPaymentController extends BaseController {
       _syncWorker = Get.find<OfflineSyncWorkerService>(),
       _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
       _pendingBookingsStore = PendingBookingsStore(),
+      _pendingBookingLoader = BnbBookingPendingLoader(
+        syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
+      ),
       _preferenceManager = Get.find<PreferenceManager>(
         tag: (PreferenceManager).toString(),
       );
@@ -66,6 +70,7 @@ class RecordPaymentController extends BaseController {
   final OfflineSyncWorkerService _syncWorker;
   final AppRepository _repository;
   final PendingBookingsStore _pendingBookingsStore;
+  final BnbBookingPendingLoader _pendingBookingLoader;
   final PreferenceManager _preferenceManager;
 
   final tenantController = TextEditingController();
@@ -268,7 +273,7 @@ class RecordPaymentController extends BaseController {
     final options = List<BookingPickerOption>.from(bookingOptions);
     final cacheKey = Object.hash(
       options.length,
-      options.map((o) => o.bookingKey).join(','),
+      options.map((o) => '${o.bookingKey}#${o.label}').join(','),
       optionalNoBookingLabel,
       itemColor,
       hintColor,
@@ -522,7 +527,7 @@ class RecordPaymentController extends BaseController {
     for (final o in bookingOptions) {
       if (o.bookingKey == bookingKey) {
         final guest = o.guestName.trim();
-        if (guest.isNotEmpty) {
+        if (guest.isNotEmpty && !_looksLikeInternalBookingId(guest)) {
           tenantController.text = guest;
         }
         return;
@@ -555,6 +560,58 @@ class RecordPaymentController extends BaseController {
     return !checkOutDay.isBefore(endOfToday);
   }
 
+  static bool _looksLikeInternalBookingId(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return false;
+    return value.startsWith('local_sync_') ||
+        value.startsWith('local_') ||
+        value.startsWith('legacy_');
+  }
+
+  static String _bookingPickerLabel({
+    required String guestName,
+    required String dates,
+  }) {
+    var guest = guestName.trim();
+    if (guest.isEmpty || _looksLikeInternalBookingId(guest)) {
+      guest = 'Guest';
+    }
+    final datePart = dates.trim();
+    return datePart.isEmpty ? guest : '$guest • $datePart';
+  }
+
+  static bool _itemMatchesBookingKey(CheckInItem item, String key) {
+    final wanted = key.trim();
+    if (wanted.isEmpty) return false;
+    if (item.bookingKey == wanted) return true;
+    if ((item.bookingId ?? '').trim() == wanted) return true;
+    if (item.guestCheckInKey == wanted) return true;
+    final queueId = item.syncQueueId;
+    return queueId != null && wanted == 'local_sync_$queueId';
+  }
+
+  BookingPickerOption _optionFromBooking(
+    CheckInItem item, {
+    String? bookingKey,
+  }) {
+    final guest = item.guestName.trim();
+    return BookingPickerOption(
+      bookingKey: (bookingKey ?? item.bookingKey).trim(),
+      guestName: guest,
+      label: _bookingPickerLabel(guestName: guest, dates: item.dates),
+    );
+  }
+
+  CheckInItem? _findMergedBooking(
+    Iterable<CheckInItem> items,
+    String bookingKey,
+  ) {
+    for (final item in items) {
+      if (_itemMatchesBookingKey(item, bookingKey)) return item;
+    }
+    return null;
+  }
+
   Future<void> _loadBookingsForSelectedProperty() async {
     final prop = selectedPropertyRecord;
     if (prop == null) {
@@ -585,62 +642,43 @@ class RecordPaymentController extends BaseController {
       } catch (_) {}
 
       try {
-        for (final m in _pendingBookingsStore.load()) {
-          final listingId = (m['listingId'] ?? '').toString().trim();
-          final checkIn = (m['checkIn'] ?? '').toString();
-          final checkOut = (m['checkOut'] ?? '').toString();
-          if (listingId.isEmpty || checkIn.isEmpty || checkOut.isEmpty) {
-            continue;
-          }
-          final propertyLabel = prop.propertyName.trim().isNotEmpty
-              ? prop.propertyName.trim()
-              : prop.propertyLocation.trim();
-          final localId = 'local_${m['createdAt'] ?? '${listingId}_$checkIn'}';
-          final item = merge.fromPendingMap(
-            m,
-            propertyLabel: propertyLabel.isNotEmpty
-                ? propertyLabel
-                : 'Property',
-            localId: localId,
-          );
-          merged[localId] = item;
-        }
+        await mergePendingBnbBookings(
+          merge: merge,
+          merged: merged,
+          properties: _propertyRows,
+          loader: _pendingBookingLoader,
+        );
       } catch (_) {}
 
       final options = <BookingPickerOption>[];
       for (final item in merged.values) {
         if (!_bookingMatchesProperty(item, prop)) continue;
         if (!_isActiveOrUpcoming(item)) continue;
-        final guest = item.guestName.trim().isEmpty
-            ? 'Guest'
-            : item.guestName.trim();
-        final dates = item.dates.trim();
-        options.add(
-          BookingPickerOption(
-            bookingKey: item.bookingKey,
-            guestName: guest,
-            label: dates.isEmpty ? guest : '$guest • $dates',
-          ),
-        );
+        options.add(_optionFromBooking(item));
       }
       options.sort((a, b) => a.label.compareTo(b.label));
-      bookingOptions.assignAll(options);
 
       final preset = selectedBookingKey.value?.trim() ?? _routeBookingId();
       if (preset.isNotEmpty &&
           options.every((o) => o.bookingKey != preset) &&
           _routeBookingId().isNotEmpty) {
-        bookingOptions.insert(
-          0,
-          BookingPickerOption(
-            bookingKey: preset,
-            guestName: tenantController.text.trim(),
-            label: tenantController.text.trim().isNotEmpty
-                ? tenantController.text.trim()
-                : preset,
-          ),
-        );
+        final matched = _findMergedBooking(merged.values, preset);
+        if (matched != null) {
+          options.insert(0, _optionFromBooking(matched, bookingKey: preset));
+        } else {
+          final guest = _routeGuestName();
+          final dates = _routeBookingDates();
+          options.insert(
+            0,
+            BookingPickerOption(
+              bookingKey: preset,
+              guestName: guest,
+              label: _bookingPickerLabel(guestName: guest, dates: dates),
+            ),
+          );
+        }
       }
+      bookingOptions.assignAll(options);
     } finally {
       loadingBookings.value = false;
     }
@@ -668,12 +706,27 @@ class RecordPaymentController extends BaseController {
   String _routeBookingId() {
     final fromParams = Get.parameters['bookingId']?.trim() ?? '';
     if (fromParams.isNotEmpty) return fromParams;
+    return _routeArg(['bookingId', 'booking_id', 'bookingKey']);
+  }
+
+  String _routeGuestName() {
+    final fromParams = Get.parameters['guestName']?.trim() ?? '';
+    if (fromParams.isNotEmpty) return fromParams;
+    return _routeArg(['guestName', 'guest_name']);
+  }
+
+  String _routeBookingDates() {
+    final fromParams = Get.parameters['dates']?.trim() ?? '';
+    if (fromParams.isNotEmpty) return fromParams;
+    return _routeArg(['dates', 'bookingDates', 'stayDates']);
+  }
+
+  String _routeArg(List<String> keys) {
     final args = Get.arguments;
-    if (args is Map) {
-      for (final key in ['bookingId', 'booking_id', 'bookingKey']) {
-        final v = (args[key] ?? '').toString().trim();
-        if (v.isNotEmpty) return v;
-      }
+    if (args is! Map) return '';
+    for (final key in keys) {
+      final v = (args[key] ?? '').toString().trim();
+      if (v.isNotEmpty) return v;
     }
     return '';
   }

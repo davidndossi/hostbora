@@ -10,7 +10,10 @@ class LoginResponse {
     int? refreshExpiresIn,
     User? user,
     int? build,
-    int? release
+    int? release,
+    bool? staffRestricted,
+    List<String>? staffPermissions,
+    Map<String, dynamic>? propertyScope,
   }){
     _message = message;
     _status = status;
@@ -21,6 +24,9 @@ class LoginResponse {
     _user = user;
     _build = build;
     _release = release;
+    _staffRestricted = staffRestricted;
+    _staffPermissions = staffPermissions;
+    _propertyScope = propertyScope;
   }
 
   LoginResponse.fromJson(dynamic json) {
@@ -33,6 +39,16 @@ class LoginResponse {
     _user = json['user'] != null ? User.fromJson(json['user']) : null;
     _build = json['build'];
     _release = json['release'];
+    _staffRestricted = json['staffRestricted'] == true;
+    final rawPerms = json['staffPermissions'];
+    if (rawPerms is List) {
+      _staffPermissions = rawPerms.map((e) => e.toString()).toList();
+    }
+    final scope = json['propertyScope'];
+    if (scope is Map) {
+      _propertyScope = Map<String, dynamic>.from(scope);
+    }
+    _hasStaffFlag = json is Map && json.containsKey('staffRestricted');
   }
 
   String? _message;
@@ -44,6 +60,10 @@ class LoginResponse {
   User? _user;
   int? _build;
   int? _release;
+  bool? _staffRestricted;
+  List<String>? _staffPermissions;
+  Map<String, dynamic>? _propertyScope;
+  bool _hasStaffFlag = false;
 
   String? get message => _message;
   String? get status => _status;
@@ -54,6 +74,10 @@ class LoginResponse {
   User? get user => _user;
   int? get build => _build;
   int? get release => _release;
+  bool get hasStaffFlag => _hasStaffFlag;
+  bool? get staffRestricted => _staffRestricted;
+  List<String>? get staffPermissions => _staffPermissions;
+  Map<String, dynamic>? get propertyScope => _propertyScope;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};

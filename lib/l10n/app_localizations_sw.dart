@@ -2633,4 +2633,171 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get finances => 'Fedha';
+
+  @override
+  String get accountSection => 'Akaunti';
+
+  @override
+  String get deleteAccount => 'Futa Akaunti';
+
+  @override
+  String get deleteAccountSubtitle =>
+      'Ondoa akaunti yako na ufikiaji wa kuingia kabisa';
+
+  @override
+  String get deleteAccountConfirmTitle => 'Futa akaunti yako?';
+
+  @override
+  String get deleteAccountConfirmMessage =>
+      'Hii inafuta akaunti yako kabisa. Hutaweza kuingia tena. Huwezi kurudisha.';
+
+  @override
+  String get deleteAccountConfirmAction => 'Futa Akaunti';
+
+  @override
+  String get deleteAccountFailed => 'Imeshindwa kufuta akaunti yako.';
+
+  @override
+  String get inventoryChooseProperty => 'Chagua mali';
+
+  @override
+  String get inventoryNoPropertiesYet =>
+      'Bado hakuna mali — ongeza mali kwanza.';
+
+  @override
+  String get inventoryNoPropertySelected => 'Hakuna mali iliyochaguliwa.';
+
+  @override
+  String get inventoryPropertyRequired => 'Mali inahitajika';
+
+  @override
+  String get inventoryFileSharedSuccessfully =>
+      'Faili imeshirikiwa kwa mafanikio.';
+
+  @override
+  String get staffAccessRole => 'Jukumu';
+
+  @override
+  String get staffRoleCleaner => 'Msafi';
+
+  @override
+  String get staffRoleCaretaker => 'Mlinzi wa mali';
+
+  @override
+  String get staffRoleFrontDesk => 'Mapokezi';
+
+  @override
+  String get staffRoleAccountant => 'Muhasibu';
+
+  @override
+  String get staffRoleManager => 'Meneja';
+
+  @override
+  String get staffAccessCustomize => 'Rekebisha ufikiaji';
+
+  @override
+  String get staffAccessScope => 'Ufikiaji wa mali';
+
+  @override
+  String get staffAccessAllProperties => 'Mali zote';
+
+  @override
+  String get staffAccessSelectedProperties => 'Mali zilizochaguliwa pekee';
+
+  @override
+  String get staffAccessLegacyNote =>
+      'Mfanyakazi huyu bado ana ufikiaji kamili wa kazi hadi uhifadhi orodha ya ruhusa.';
+
+  @override
+  String get staffAccessDenied => 'Huna ruhusa';
+
+  @override
+  String get staffAccessSaved => 'Ufikiaji umesasishwa';
+
+  @override
+  String get staffAccessSelectProperty => 'Chagua angalau mali moja';
+
+  @override
+  String get staffAccessSave => 'Hifadhi ufikiaji';
+
+  @override
+  String get staffAccessGroupProperties => 'Mali';
+
+  @override
+  String get staffAccessGroupBookings => 'Uhifadhi';
+
+  @override
+  String get staffAccessGroupPayments => 'Malipo';
+
+  @override
+  String get staffAccessGroupExpenses => 'Matumizi';
+
+  @override
+  String get staffAccessGroupReports => 'Ripoti';
+
+  @override
+  String get staffAccessGroupInventory => 'Hesabu';
+
+  @override
+  String get staffAccessGroupTasks => 'Kazi';
+
+  @override
+  String get staffAccessGroupTenants => 'Wapangaji';
+
+  @override
+  String get staffPermViewProperties => 'Angalia mali';
+
+  @override
+  String get staffPermEditProperties => 'Hariri mali';
+
+  @override
+  String get staffPermViewBookings => 'Angalia uhifadhi';
+
+  @override
+  String get staffPermCheckInOut => 'Kuingia na kuondoka';
+
+  @override
+  String get staffPermMessageGuest => 'Tuma ujumbe kwa mgeni';
+
+  @override
+  String get staffPermManageBookings => 'Simamia uhifadhi';
+
+  @override
+  String get staffPermViewPayments => 'Angalia malipo';
+
+  @override
+  String get staffPermRecordPayment => 'Rekodi malipo';
+
+  @override
+  String get staffPermViewExpenses => 'Angalia matumizi';
+
+  @override
+  String get staffPermManageExpenses => 'Simamia matumizi';
+
+  @override
+  String get staffPermViewReports => 'Angalia ripoti';
+
+  @override
+  String get staffPermExportReports => 'Hamisha ripoti';
+
+  @override
+  String get staffPermViewInventory => 'Angalia hesabu';
+
+  @override
+  String get staffPermManageInventory => 'Simamia hesabu';
+
+  @override
+  String get staffPermViewTasks => 'Angalia kazi';
+
+  @override
+  String get staffPermCompleteTasks => 'Kamilisha kazi';
+
+  @override
+  String get staffPermManageTasks => 'Simamia kazi';
+
+  @override
+  String get staffPermViewTenants => 'Angalia wapangaji';
+
+  @override
+  String get staffPermManageTenants => 'Simamia wapangaji';
 }

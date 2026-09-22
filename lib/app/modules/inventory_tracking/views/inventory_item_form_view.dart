@@ -7,6 +7,7 @@ import '../../../core/utils/thousand_separator.dart';
 import '../../../core/widget/currency_dropdown_field.dart';
 import '/app/core/values/app_colors.dart';
 import '/app/core/widget/custom_app_bar.dart';
+import '/l10n/app_localizations.dart';
 import '../controllers/inventory_item_form_controller.dart';
 import 'inventory_barcode_scanner_view.dart';
 
@@ -34,6 +35,8 @@ class InventoryItemFormView extends BaseView<InventoryItemFormController> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         children: [
+          _propertyPicker(context, c),
+          const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -82,7 +85,10 @@ class InventoryItemFormView extends BaseView<InventoryItemFormController> {
           const SizedBox(height: 12),
           Obx(
             () => DropdownButtonFormField<String>(
-              value: controller.selectedCategory.value,
+              key: ValueKey<String>(
+                'inv-category-${controller.selectedCategory.value}',
+              ),
+              initialValue: controller.selectedCategory.value,
               decoration: InputDecoration(
                 labelText: _isSw ? 'Aina' : 'Category',
                 border: OutlineInputBorder(
@@ -139,7 +145,10 @@ class InventoryItemFormView extends BaseView<InventoryItemFormController> {
           const SizedBox(height: 12),
           Obx(
             () => DropdownButtonFormField<String>(
-              value: controller.selectedCondition.value,
+              key: ValueKey<String>(
+                'inv-condition-${controller.selectedCondition.value}',
+              ),
+              initialValue: controller.selectedCondition.value,
               decoration: InputDecoration(
                 labelText: _isSw ? 'Hali' : 'Condition',
                 border: OutlineInputBorder(
@@ -227,54 +236,47 @@ class InventoryItemFormView extends BaseView<InventoryItemFormController> {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              SizedBox(
-                width: 110,
-                child: CurrencyDropdownField(
-                  selectedCurrency: controller.selectedCurrency,
-                  label: 'Currency',
+          Obx(
+            () => TextFormField(
+              controller: controller.purchaseValueController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textInputAction: TextInputAction.next,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: controller.validatePurchaseValue,
+              inputFormatters: [ThousandsSeparatorInputFormatter()],
+              style: TextStyle(fontSize: 16, color: c.headline),
+              decoration: InputDecoration(
+                labelText: _isSw ? 'Thamani ya ununuzi' : 'Purchase value',
+                prefix: Text(
+                  '${controller.selectedCurrency.value} ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: c.secondary,
+                  ),
+                ),
+                hintText: '0.00',
+                hintStyle: TextStyle(fontSize: 16, color: c.hint),
+                isDense: false,
+                contentPadding: const EdgeInsets.only(
+                  left: 12,
+                  right: 8,
+                  top: 4,
+                  bottom: 4,
+                ),
+                filled: true,
+                fillColor: c.fill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextFormField(
-                  controller: controller.purchaseValueController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  textInputAction: TextInputAction.next,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: controller.validatePurchaseValue,
-                  inputFormatters: [ThousandsSeparatorInputFormatter()],
-                  style: TextStyle(fontSize: 16, color: c.headline),
-                  decoration: InputDecoration(
-                    labelText: _isSw ? 'Thamani ya ununuzi' : 'Purchase value',
-                    prefix: Text(
-                      '${controller.selectedCurrency.value} ',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: c.secondary,
-                      ),
-                    ),
-                    hintText: '0.00',
-                    hintStyle: TextStyle(fontSize: 16, color: c.hint),
-                    isDense: false,
-                    contentPadding: const EdgeInsets.only(
-                      left: 12,
-                      right: 8,
-                      top: 4,
-                      bottom: 4,
-                    ),
-                    filled: true,
-                    fillColor: c.fill,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                )
-              )
-            ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          CurrencyDropdownField(
+            selectedCurrency: controller.selectedCurrency,
+            label: 'Currency',
           ),
           const SizedBox(height: 24),
           Obx(
@@ -308,5 +310,62 @@ class InventoryItemFormView extends BaseView<InventoryItemFormController> {
         ],
       ),
     );
+  }
+
+  Widget _propertyPicker(BuildContext context, FormSurfaceColors c) {
+    final l10n = AppLocalizations.of(context);
+    return Obx(() {
+      final options = controller.propertyOptions;
+      final selected = controller.selectedPropertyRef.value.trim();
+      final value =
+          options.any((o) => o.ref == selected) ? selected : null;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<String>(
+            key: ValueKey<String>(
+              'inv-property-${value ?? ''}-${options.length}',
+            ),
+            initialValue: (value == null || value.isEmpty) ? null : value,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: l10n?.selectProperty ??
+                  (_isSw ? 'Chagua Mali' : 'Select Property'),
+              hintText: l10n?.inventoryChooseProperty ??
+                  (_isSw ? 'Chagua mali' : 'Choose property'),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            items: options
+                .map(
+                  (o) => DropdownMenuItem<String>(
+                    value: o.ref,
+                    child: Text(
+                      o.label,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: options.isEmpty
+                ? null
+                : controller.updateSelectedProperty,
+            validator: controller.validateSelectedProperty,
+          ),
+          if (options.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 2),
+              child: Text(
+                l10n?.inventoryNoPropertiesYet ??
+                    (_isSw
+                        ? 'Bado hakuna mali — ongeza mali kwanza.'
+                        : 'No properties yet — add a property first.'),
+                style: TextStyle(fontSize: 12, color: c.hint),
+              ),
+            ),
+        ],
+      );
+    });
   }
 }

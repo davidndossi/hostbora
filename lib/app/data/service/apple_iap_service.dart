@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 
 import '../../core/config/subscription_payment_config.dart';
 import '../repository/app_repository.dart';
@@ -52,17 +56,32 @@ class AppleIapService extends GetxService {
   final products = <String, ProductDetails>{}.obs;
   final storeAvailable = false.obs;
   final loadingProducts = false.obs;
+  final loadError = RxnString();
   String? _lastProductQueryError;
   List<String> _lastNotFoundIds = const [];
+  Future<void>? _loadInFlight;
+
+  static bool _platformRegistered = false;
+
+  /// StoreKit 2 often returns an empty list (reported as
+  /// "Failed to get response from platform") on the first request.
+  static const _catalogRetryDelays = <Duration>[
+    Duration(milliseconds: 600),
+    Duration(milliseconds: 1200),
+  ];
 
   /// Must run once before any IAP calls (StoreKit plugin is not auto-registered
   /// when using `in_app_purchase_storekit` without the umbrella package).
+  ///
+  /// Calling this again replaces the platform instance and drops an in-flight
+  /// product query, so registration is idempotent.
   static void registerPlatform() {
-    if (kIsWeb) return;
+    if (kIsWeb || _platformRegistered) return;
     try {
       InAppPurchaseStoreKitPlatform.registerPlatform();
+      _platformRegistered = true;
     } catch (_) {
-      // Already registered / unsupported platform.
+      // Unsupported platform, or the engine is not ready yet.
     }
   }
 
@@ -73,19 +92,8 @@ class AppleIapService extends GetxService {
 
     try {
       registerPlatform();
-      storeAvailable.value = await _iap.isAvailable();
-      if (!storeAvailable.value) return;
-
-      _purchaseSub = _iap.purchaseStream.listen(
-        _onPurchaseUpdates,
-        onError: (Object e) {
-          _completeActivePurchase(
-            ApplePurchaseResult.failed(
-              'App Store error: $e. Please try again.',
-            ),
-          );
-        },
-      );
+      storeAvailable.value = await _waitUntilStoreAvailable();
+      _ensurePurchaseListener();
       await loadProducts();
     } catch (e) {
       if (kDebugMode) {
@@ -101,36 +109,92 @@ class AppleIapService extends GetxService {
     super.onClose();
   }
 
-  Future<void> loadProducts() async {
+  Future<void> loadProducts() {
+    final inFlight = _loadInFlight;
+    if (inFlight != null) return inFlight;
+    final run = _loadProducts();
+    _loadInFlight = run;
+    return run.whenComplete(() {
+      if (identical(_loadInFlight, run)) _loadInFlight = null;
+    });
+  }
+
+  Future<void> _loadProducts() async {
     if (!SubscriptionPaymentConfig.usesAppleIap) return;
     loadingProducts.value = true;
     try {
-      final response = await _iap.queryProductDetails(AppleIapProducts.all);
-      _lastProductQueryError = response.error?.message;
-      _lastNotFoundIds = List<String>.from(response.notFoundIDs);
-      if (response.error != null) {
-        if (kDebugMode) {
-          debugPrint('[AppleIAP] queryProductDetails error: ${response.error}');
-        }
+      registerPlatform();
+      if (!storeAvailable.value) {
+        storeAvailable.value = await _waitUntilStoreAvailable();
       }
-      if (response.notFoundIDs.isNotEmpty && kDebugMode) {
-        debugPrint('[AppleIAP] products not found: ${response.notFoundIDs}');
-      }
+      _ensurePurchaseListener();
+      await _waitUntilStoreReadyToQuery();
+
+      final ids = AppleIapProducts.all;
+      final response = await _queryCatalog(ids);
+      _rememberResponse(response);
       if (response.productDetails.isNotEmpty) {
         products.assignAll({
-          for (final p in response.productDetails) p.id: p,
+          for (final p in response.productDetails)
+            AppleIapProducts.canonicalizeProductId(p.id): p,
         });
+        loadError.value = null;
+        if ((response.error?.message ?? '').trim().isEmpty) {
+          _lastProductQueryError = null;
+        }
+      } else if (products.isEmpty) {
+        loadError.value = _catalogUnavailableMessage();
       }
       if (kDebugMode) {
         debugPrint(
           '[AppleIAP] loaded ${response.productDetails.length}/'
-          '${AppleIapProducts.all.length} products '
-          '(ids=${response.productDetails.map((p) => p.id).toList()})',
+          '${ids.length} products queried=$ids '
+          'returned=${response.productDetails.map((p) => p.id).toList()} '
+          'notFound=$_lastNotFoundIds error=$_lastProductQueryError',
         );
+      }
+    } catch (e) {
+      _lastProductQueryError = e.toString();
+      if (products.isEmpty) {
+        loadError.value = _catalogUnavailableMessage();
+      }
+      if (kDebugMode) {
+        debugPrint('[AppleIAP] loadProducts failed: $e');
       }
     } finally {
       loadingProducts.value = false;
     }
+  }
+
+  void _ensurePurchaseListener() {
+    if (_purchaseSub != null || !storeAvailable.value) return;
+    _purchaseSub = _iap.purchaseStream.listen(
+      _onPurchaseUpdates,
+      onError: (Object e) {
+        _completeActivePurchase(
+          ApplePurchaseResult.failed(
+            'App Store error: $e. Please try again.',
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool> _waitUntilStoreAvailable() async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        if (await _iap.isAvailable()) return true;
+      } catch (e) {
+        _lastProductQueryError = e.toString();
+        if (kDebugMode) {
+          debugPrint('[AppleIAP] isAvailable failed: $e');
+        }
+      }
+      if (attempt < 2) {
+        await Future<void>.delayed(_catalogRetryDelays[attempt]);
+      }
+    }
+    return false;
   }
 
   String? storePriceForPlan(String plan) {
@@ -149,6 +213,7 @@ class AppleIapService extends GetxService {
     if (!storeAvailable.value) {
       storeAvailable.value = await _iap.isAvailable();
     }
+    _ensurePurchaseListener();
     if (!storeAvailable.value) {
       return ApplePurchaseResult.failed(
         'App Store is unavailable on this device. Check your connection and Apple ID, then try again.',
@@ -205,21 +270,236 @@ class AppleIapService extends GetxService {
     }
   }
 
+  String _planLabelForProductId(String productId) {
+    final plan = AppleIapProducts.planForProductId(productId);
+    return AppleIapProducts.displayNameForPlan(plan ?? '');
+  }
+
+  bool _isStoreKitPlatformFailure(String? error) {
+    final err = (error ?? '').toLowerCase();
+    return err.contains('failed to get response from platform') ||
+        err.contains('storekit_no_response') ||
+        err.contains('storekit:');
+  }
+
+  String _catalogUnavailableMessage() {
+    return 'The App Store could not load HostBora plans right now. '
+        'Check your connection and Apple ID, then try again.';
+  }
+
   String _productMissingMessage(String productId) {
     if (kDebugMode) {
       debugPrint(
         '[AppleIAP] missing product=$productId '
+        'canonical=${AppleIapProducts.canonicalizeProductId(productId)} '
         'notFound=$_lastNotFoundIds error=$_lastProductQueryError',
       );
     }
+    final planLabel = _planLabelForProductId(productId);
+    if (_isStoreKitPlatformFailure(_lastProductQueryError)) {
+      return 'The $planLabel plan could not be loaded from the App Store. '
+          'Check your connection and Apple ID, then try again.';
+    }
     final err = (_lastProductQueryError ?? '').trim();
     if (err.isNotEmpty) {
-      return 'Could not load "$productId" from the App Store ($err). '
-          'Confirm the Product ID in App Store Connect, then try again.';
+      return 'The $planLabel plan could not be loaded from the App Store. '
+          'Please try again in a moment.';
     }
-    return 'Could not load "$productId" from the App Store. '
-        'For local debug, select HostBoraProducts.storekit in the Xcode scheme. '
-        'For TestFlight, confirm that Product ID exists and Paid Apps is Active.';
+    return 'The $planLabel plan is not available from the App Store right now. '
+        'Try again, or tap Restore Purchases if you already subscribed.';
+  }
+
+  /// StoreKit returns an empty catalog when queried before the scene is active.
+  /// `in_app_purchase_storekit` reports that empty list as `storekit_no_response`.
+  Future<void> _waitUntilStoreReadyToQuery() async {
+    final binding = WidgetsBinding.instance;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase != SchedulerPhase.idle) {
+      try {
+        await binding.endOfFrame;
+      } catch (_) {}
+    }
+    if (binding.lifecycleState == null ||
+        binding.lifecycleState == AppLifecycleState.resumed) {
+      return;
+    }
+    final completer = Completer<void>();
+    final observer = _StoreReadyObserver(() {
+      if (!completer.isCompleted) completer.complete();
+    });
+    binding.addObserver(observer);
+    try {
+      await completer.future.timeout(const Duration(seconds: 3));
+    } on TimeoutException {
+      // Still query; the catalog retries cover a late resume.
+    } finally {
+      binding.removeObserver(observer);
+    }
+  }
+
+  /// Queries the approved App Store Connect IDs in [AppleIapProducts.all].
+  ///
+  /// StoreKit 2 reports an empty catalog as `storekit_no_response` /
+  /// "Failed to get response from platform" even when the IDs are valid.
+  /// Retry that transient failure, then ask for each product, then StoreKit 1.
+  Future<ProductDetailsResponse> _queryCatalog(Set<String> productIds) async {
+    final ids = productIds
+        .map(AppleIapProducts.canonicalizeProductId)
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    var response = await _queryWithRetries(ids);
+    if (_returnedEveryId(ids, response)) return response;
+
+    if (ids.length > 1) {
+      final byId = await _queryEachProduct(ids, response);
+      if (byId.productDetails.isNotEmpty) {
+        response = byId;
+        if (_returnedEveryId(ids, response)) return response;
+      }
+    }
+
+    final sk1 = await _queryViaStoreKit1(ids);
+    if (sk1.isEmpty) return response;
+    final merged = <String, ProductDetails>{
+      for (final product in response.productDetails)
+        AppleIapProducts.canonicalizeProductId(product.id): product,
+      for (final product in sk1)
+        AppleIapProducts.canonicalizeProductId(product.id): product,
+    };
+    return ProductDetailsResponse(
+      productDetails: merged.values.toList(),
+      notFoundIDs: ids.difference(merged.keys.toSet()).toList(),
+    );
+  }
+
+  bool _returnedEveryId(Set<String> ids, ProductDetailsResponse response) {
+    if (response.productDetails.isEmpty) return false;
+    final found = response.productDetails
+        .map((product) => AppleIapProducts.canonicalizeProductId(product.id))
+        .toSet();
+    return ids.difference(found).isEmpty;
+  }
+
+  /// Initial request plus up to [extraRetries] repeats when StoreKit returns
+  /// no products. The plugin maps that empty list to
+  /// "Failed to get response from platform".
+  Future<ProductDetailsResponse> _queryWithRetries(
+    Set<String> ids, {
+    int extraRetries = 2,
+  }) async {
+    final retries = extraRetries.clamp(0, _catalogRetryDelays.length);
+    ProductDetailsResponse? last;
+    for (var attempt = 0; attempt <= retries; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(_catalogRetryDelays[attempt - 1]);
+      }
+      try {
+        last = await _queryProducts(ids);
+      } catch (e) {
+        _lastProductQueryError = e.toString();
+        if (kDebugMode) {
+          debugPrint('[AppleIAP] query $ids attempt ${attempt + 1} threw: $e');
+        }
+        if (!_isTransientCatalogFailure(_lastProductQueryError)) rethrow;
+        continue;
+      }
+      _rememberResponse(last);
+      if (last.productDetails.isNotEmpty) return last;
+      if (kDebugMode) {
+        debugPrint(
+          '[AppleIAP] query $ids attempt ${attempt + 1} empty '
+          'error=${last.error} notFound=${last.notFoundIDs}',
+        );
+      }
+    }
+    return last ??
+        ProductDetailsResponse(
+          productDetails: const <ProductDetails>[],
+          notFoundIDs: ids.toList(),
+        );
+  }
+
+  Future<ProductDetailsResponse> _queryEachProduct(
+    Set<String> ids,
+    ProductDetailsResponse batch,
+  ) async {
+    final merged = <String, ProductDetails>{
+      for (final product in batch.productDetails)
+        AppleIapProducts.canonicalizeProductId(product.id): product,
+    };
+    final missing = ids.difference(merged.keys.toSet());
+    for (final id in missing) {
+      final one = await _queryWithRetries({id}, extraRetries: 1);
+      for (final product in one.productDetails) {
+        merged[AppleIapProducts.canonicalizeProductId(product.id)] = product;
+      }
+    }
+    return ProductDetailsResponse(
+      productDetails: merged.values.toList(),
+      notFoundIDs: ids.difference(merged.keys.toSet()).toList(),
+    );
+  }
+
+  /// StoreKit 1 product request. Used when StoreKit 2 returns
+  /// `storekit_no_response` for IDs that are present in the local catalog.
+  Future<List<ProductDetails>> _queryViaStoreKit1(Set<String> ids) async {
+    try {
+      final response = await SKRequestMaker().startProductRequest(ids.toList());
+      if (response.invalidProductIdentifiers.isNotEmpty) {
+        _lastNotFoundIds = response.invalidProductIdentifiers
+            .map(AppleIapProducts.canonicalizeProductId)
+            .toList();
+      }
+      if (kDebugMode) {
+        debugPrint(
+          '[AppleIAP] StoreKit 1 returned ${response.products.length}/'
+          '${ids.length} invalid=${response.invalidProductIdentifiers}',
+        );
+      }
+      return response.products
+          .map(AppStoreProductDetails.fromSKProduct)
+          .toList();
+    } on PlatformException catch (e) {
+      _lastProductQueryError = e.message ?? e.toString();
+      if (kDebugMode) {
+        debugPrint('[AppleIAP] StoreKit 1 query failed: $e');
+      }
+      return const [];
+    }
+  }
+
+  void _rememberResponse(ProductDetailsResponse response) {
+    final message = response.error?.message;
+    if (message != null && message.trim().isNotEmpty) {
+      _lastProductQueryError = message;
+    }
+    if (response.notFoundIDs.isNotEmpty) {
+      _lastNotFoundIds = response.notFoundIDs
+          .map(AppleIapProducts.canonicalizeProductId)
+          .toList();
+    }
+    if (response.error != null && kDebugMode) {
+      debugPrint('[AppleIAP] queryProductDetails error: ${response.error}');
+    }
+    if (response.notFoundIDs.isNotEmpty && kDebugMode) {
+      debugPrint('[AppleIAP] products not found: ${response.notFoundIDs}');
+    }
+  }
+
+  bool _isTransientCatalogFailure(String? error) {
+    if (_isStoreKitPlatformFailure(error)) return true;
+    final err = (error ?? '').toLowerCase();
+    return err.contains('missingpluginexception') ||
+        err.contains('storekit2_products_error') ||
+        err.contains('storekit2_failed_to_fetch');
+  }
+
+  Future<ProductDetailsResponse> _queryProducts(Set<String> productIds) {
+    final ids = productIds
+        .map(AppleIapProducts.canonicalizeProductId)
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    return _iap.queryProductDetails(ids);
   }
 
   Future<void> restorePurchases() async {
@@ -228,30 +508,34 @@ class AppleIapService extends GetxService {
     if (!storeAvailable.value) {
       storeAvailable.value = await _iap.isAvailable();
     }
+    _ensurePurchaseListener();
     if (!storeAvailable.value) return;
     await _iap.restorePurchases();
   }
 
   Future<ProductDetails?> _fetchProduct(String productId) async {
-    final response = await _iap.queryProductDetails({productId});
+    final canonical = AppleIapProducts.canonicalizeProductId(productId);
+    final response = await _queryCatalog({canonical});
     _lastProductQueryError = response.error?.message ?? _lastProductQueryError;
     if (response.notFoundIDs.isNotEmpty) {
-      _lastNotFoundIds = List<String>.from(response.notFoundIDs);
+      _lastNotFoundIds = List<String>.from(response.notFoundIDs)
+          .map(AppleIapProducts.canonicalizeProductId)
+          .toList();
     }
     if (response.error != null && kDebugMode) {
-      debugPrint('[AppleIAP] fetch "$productId" error: ${response.error}');
+      debugPrint('[AppleIAP] fetch "$canonical" error: ${response.error}');
     }
     if (response.productDetails.isEmpty) {
       if (kDebugMode) {
         debugPrint(
-          '[AppleIAP] fetch "$productId" returned empty '
+          '[AppleIAP] fetch "$canonical" returned empty '
           '(notFound=${response.notFoundIDs})',
         );
       }
       return null;
     }
     final details = response.productDetails.first;
-    products[productId] = details;
+    products[canonical] = details;
     return details;
   }
 
@@ -384,5 +668,16 @@ class AppleIapService extends GetxService {
     }
     _activePurchase = null;
     _activeProductId = null;
+  }
+}
+
+class _StoreReadyObserver extends WidgetsBindingObserver {
+  _StoreReadyObserver(this._onResumed);
+
+  final VoidCallback _onResumed;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _onResumed();
   }
 }

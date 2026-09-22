@@ -11,6 +11,7 @@ import '../../../data/service/app_review_service.dart';
 import '../../../data/local/service/lease_expiry_reminder_prompt_service.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/remote/remote_data_source.dart';
+import '../../../core/access/staff_access.dart';
 import '../../../routes/app_pages.dart';
 import '../../my_properties/controllers/my_properties_controller.dart';
 import '/app/core/base/base_controller.dart';
@@ -141,6 +142,13 @@ class MainController extends BaseController with WidgetsBindingObserver {
   }
 
   Future<void> onMenuSelected(MenuCode menuCode) async {
+    if (Get.isRegistered<StaffAccessStore>()) {
+      final access = Get.find<StaffAccessStore>();
+      if (!access.allowsMenu(menuCode.name)) {
+        access.showDenied();
+        return;
+      }
+    }
     _applyMenuSelection(menuCode);
     switch (menuCode) {
       case MenuCode.HOME:

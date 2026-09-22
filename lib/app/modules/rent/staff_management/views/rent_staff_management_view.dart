@@ -11,6 +11,7 @@ import '../../../../core/widget/staff_quick_actions_sheet.dart';
 import '../../widgets/rent_ui.dart';
 import '../controllers/rent_staff_management_controller.dart';
 import '../utils/rent_staff_pay_format.dart';
+import '../widgets/staff_access_editor.dart';
 
 class _StaffUi {
   _StaffUi(this.context);
@@ -177,6 +178,22 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               );
             }),
             const SizedBox(height: 16),
+            Obx(
+              () => StaffAccessEditor(
+                role: controller.permissionRole.value,
+                permissions: controller.grantedPermissions.toSet(),
+                allProperties: controller.allPropertiesAccess.value,
+                propertyRefs: controller.selectedPropertyRefs.toSet(),
+                properties: controller.accessProperties.toList(),
+                legacy: controller.legacyStaffAccess.value,
+                accent: u.brandTeal,
+                onRoleChanged: controller.applyPermissionRole,
+                onPermissionToggled: controller.togglePermission,
+                onAllPropertiesChanged: controller.setAllPropertiesAccess,
+                onPropertyToggled: controller.togglePropertyRef,
+              ),
+            ),
+            const SizedBox(height: 14),
             _capsLabel(u, 'Full name'),
             const SizedBox(height: 8),
             TextFormField(

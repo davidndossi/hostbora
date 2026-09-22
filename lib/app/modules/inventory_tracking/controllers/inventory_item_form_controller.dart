@@ -8,18 +8,34 @@ import '../../../data/local/service/currency_service.dart';
 import '/app/core/base/base_controller.dart';
 import '/app/data/local/db/inventory_item_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
+import '/app/data/local/db/property_local_data_source.dart';
+import '/app/data/local/preference/preference_manager.dart';
 import '/app/data/local/service/offline_sync_worker_service.dart';
+import '/app/data/local/service/remote_account_sync_service.dart';
 import '/app/data/model/inventory_item_request.dart';
 import '/app/data/repository/app_repository.dart';
+import '/l10n/app_localizations.dart';
+
+class InventoryPropertyOption {
+  const InventoryPropertyOption({
+    required this.ref,
+    required this.label,
+  });
+
+  final String ref;
+  final String label;
+}
 
 class InventoryItemFormController extends BaseController {
   InventoryItemFormController()
       : _itemLocal = Get.find<InventoryItemLocalDataSource>(),
+        _propertyLocal = Get.find<PropertyLocalDataSource>(),
         _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
         _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
         _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final InventoryItemLocalDataSource _itemLocal;
+  final PropertyLocalDataSource _propertyLocal;
   final AppRepository _repository;
   final OfflineSyncQueueLocalDataSource _syncQueue;
   final OfflineSyncWorkerService _syncWorker;
@@ -35,7 +51,11 @@ class InventoryItemFormController extends BaseController {
   final selectedCategory = 'Other'.obs;
   final selectedCondition = 'Good'.obs;
 
-  String propertyRef = '';
+  final propertyOptions = <InventoryPropertyOption>[].obs;
+  final selectedPropertyRef = ''.obs;
+  final loadingProperties = false.obs;
+
+  String get propertyRef => selectedPropertyRef.value.trim();
   String propertyName = '';
   String apartmentUnitId = '';
   String apartmentUnitName = '';
@@ -78,16 +98,23 @@ class InventoryItemFormController extends BaseController {
   @override
   void onInit() {
     super.onInit();
-    propertyRef = (Get.parameters['propertyRef'] ?? '').trim();
+    selectedPropertyRef.value = (Get.parameters['propertyRef'] ?? '').trim();
     propertyName = (Get.parameters['propertyName'] ?? '').trim();
     apartmentUnitId = (Get.parameters['apartmentUnitId'] ?? '').trim();
     apartmentUnitName = (Get.parameters['apartmentUnitName'] ?? '').trim();
     final localIdRaw = (Get.parameters['itemLocalId'] ?? '').trim();
     if (localIdRaw.isNotEmpty) {
       editLocalId = int.tryParse(localIdRaw);
-      _loadExisting();
     }
     selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
+    _hydrateForm();
+  }
+
+  Future<void> _hydrateForm() async {
+    if (editLocalId != null) {
+      await _loadExisting();
+    }
+    await _loadProperties();
   }
 
   Future<void> _loadExisting() async {
@@ -115,6 +142,132 @@ class InventoryItemFormController extends BaseController {
         : CurrencyService.defaultBaseCurrency;
     apartmentUnitId = row.apartmentUnitId;
     apartmentUnitName = row.apartmentUnitName;
+    final existingRef = row.propertyRef.trim();
+    if (existingRef.isNotEmpty) {
+      selectedPropertyRef.value = existingRef;
+    }
+    final existingLabel = row.propertyLabel.trim();
+    if (existingLabel.isNotEmpty) {
+      propertyName = existingLabel;
+    }
+  }
+
+  Future<void> _loadProperties() async {
+    loadingProperties.value = true;
+    try {
+      var userId = '';
+      try {
+        final prefs = Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        );
+        userId = (await prefs.getUser()).id ?? '';
+      } catch (_) {}
+
+      var rows = await _propertyLocal.getAllVisibleNewestFirst(
+        userId: userId,
+        workspaceType: 'all',
+      );
+      if (rows.isEmpty && userId.isNotEmpty) {
+        rows = await _propertyLocal.getAllVisibleNewestFirst(
+          userId: '',
+          workspaceType: 'all',
+        );
+      }
+      if (rows.isEmpty) {
+        rows = await _propertyLocal.getAllNewestFirst();
+      }
+      if (rows.isEmpty) {
+        try {
+          if (Get.isRegistered<RemoteAccountSyncService>()) {
+            await Get.find<RemoteAccountSyncService>()
+                .syncPropertiesFromRemote();
+          }
+          rows = await _propertyLocal.getAllVisibleNewestFirst(
+            userId: userId,
+            workspaceType: 'all',
+          );
+          if (rows.isEmpty) {
+            rows = await _propertyLocal.getAllNewestFirst();
+          }
+        } catch (_) {}
+      }
+
+      final options = <InventoryPropertyOption>[];
+      final seen = <String>{};
+      for (final p in rows) {
+        final ref = p.propertyRef.trim().isNotEmpty
+            ? p.propertyRef.trim()
+            : 'local_${p.id}';
+        if (seen.contains(ref)) continue;
+        seen.add(ref);
+        options.add(
+          InventoryPropertyOption(ref: ref, label: _labelForProperty(p)),
+        );
+      }
+      propertyOptions.assignAll(options);
+      _ensureSelectedOptionPresent();
+
+      if (!isEditing &&
+          selectedPropertyRef.value.isEmpty &&
+          options.length == 1) {
+        updateSelectedProperty(options.first.ref);
+      } else if (selectedPropertyRef.value.isNotEmpty) {
+        propertyName = _labelForRef(selectedPropertyRef.value);
+      }
+    } finally {
+      loadingProperties.value = false;
+    }
+  }
+
+  String _labelForProperty(PropertyRecord p) {
+    final name = p.propertyName.trim();
+    if (name.isNotEmpty) return name;
+    final loc = p.propertyLocation.trim();
+    if (loc.isNotEmpty) return loc;
+    final ref = p.propertyRef.trim();
+    return ref.isNotEmpty ? ref : 'local_${p.id}';
+  }
+
+  String _labelForRef(String ref) {
+    final key = ref.trim();
+    for (final o in propertyOptions) {
+      if (o.ref == key) return o.label;
+    }
+    if (propertyName.trim().isNotEmpty) return propertyName.trim();
+    return key;
+  }
+
+  void _ensureSelectedOptionPresent() {
+    final ref = selectedPropertyRef.value.trim();
+    if (ref.isEmpty) return;
+    if (propertyOptions.any((o) => o.ref == ref)) return;
+    propertyOptions.add(
+      InventoryPropertyOption(
+        ref: ref,
+        label: propertyName.trim().isNotEmpty ? propertyName.trim() : ref,
+      ),
+    );
+  }
+
+  void updateSelectedProperty(String? ref) {
+    if (ref == null) return;
+    selectedPropertyRef.value = ref.trim();
+    propertyName = _labelForRef(ref);
+  }
+
+  String? validateSelectedProperty(String? value) {
+    final v = (value ?? selectedPropertyRef.value).trim();
+    if (v.isEmpty) {
+      return _l10n?.inventoryPropertyRequired ??
+          (_isSw ? 'Mali inahitajika' : 'Property is required');
+    }
+    return null;
+  }
+
+  AppLocalizations? get _l10n {
+    final ctx = Get.context;
+    if (ctx == null) return null;
+    return AppLocalizations.of(ctx);
   }
 
   @override
@@ -131,7 +284,8 @@ class InventoryItemFormController extends BaseController {
     if (!(formKey.currentState?.validate() ?? false)) return;
     if (propertyRef.isEmpty) {
       showErrorMessage(
-        _isSw ? 'Hakuna mali iliyochaguliwa.' : 'No property selected.',
+        _l10n?.inventoryNoPropertySelected ??
+            (_isSw ? 'Hakuna mali iliyochaguliwa.' : 'No property selected.'),
       );
       return;
     }
@@ -266,6 +420,8 @@ class InventoryItemFormController extends BaseController {
       currency: _currencyCode,
       apartmentUnitId: apartmentUnitId,
       apartmentUnitName: apartmentUnitName,
+      propertyRef: propertyRef,
+      propertyLabel: propertyName,
     );
 
     final request = InventoryItemRequest(

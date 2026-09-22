@@ -269,6 +269,9 @@ abstract class RemoteDataSource {
 
   /// Verifies a candidate PIN against the account's saved remote hash.
   Future<GeneralResponse> verifyPinOnServer(String pin);
+
+  /// DELETE /api/users/me — permanently delete the signed-in account.
+  Future<GeneralResponse> deleteMyAccount();
   Future<GeneralResponse> createProperty(Map<String, dynamic> body);
   Future<GeneralResponse> updateProperty(int id, Map<String, dynamic> body);
   Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body);

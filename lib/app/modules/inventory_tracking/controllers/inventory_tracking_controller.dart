@@ -17,6 +17,7 @@ import '/app/data/local/service/offline_sync_worker_service.dart';
 import '/app/data/model/inventory_item_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/routes/app_pages.dart';
+import '/l10n/app_localizations.dart';
 
 class InventoryUnitOption {
   const InventoryUnitOption({
@@ -53,6 +54,12 @@ class InventoryTrackingController extends BaseController {
   final recentlyChangedCount = 0.obs;
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
+
+  AppLocalizations? get _l10n {
+    final ctx = Get.context;
+    if (ctx == null) return null;
+    return AppLocalizations.of(ctx);
+  }
 
   /// True when the screen was opened without a propertyRef (e.g. from the home
   /// screen low-stock banner).  In this mode all inventory across all properties
@@ -176,11 +183,14 @@ class InventoryTrackingController extends BaseController {
   }
 
   Future<void> onEditItem(InventoryItemRecord item) async {
+    final itemRef = item.propertyRef.trim();
+    final itemLabel = item.propertyLabel.trim();
     final changed = await Get.toNamed(
       Routes.INVENTORY_ITEM_FORM,
       parameters: {
-        'propertyRef': propertyRef.value,
-        'propertyName': propertyName.value,
+        'propertyRef': itemRef.isNotEmpty ? itemRef : propertyRef.value,
+        'propertyName':
+            itemLabel.isNotEmpty ? itemLabel : propertyName.value,
         'apartmentUnitId': item.apartmentUnitId,
         'apartmentUnitName': item.apartmentUnitName,
         'itemLocalId': '${item.id}',
@@ -254,14 +264,19 @@ class InventoryTrackingController extends BaseController {
           ? 'Orodha ya Vifaa · $subjectLabel'
           : 'Inventory List · $subjectLabel';
       final xFile = XFile(file.path, mimeType: 'text/csv', name: name);
-      await _shareInventoryFile(
+      final result = await _shareInventoryFile(
         xFile: xFile,
         subject: subject,
         shareOrigin: shareOrigin,
       );
-      showSuccessMessage(
-        _isSw ? 'Faili iko tayari kushirikiwa.' : 'File ready to share.',
-      );
+      if (result.status == ShareResultStatus.success) {
+        showSuccessMessage(
+          _l10n?.inventoryFileSharedSuccessfully ??
+              (_isSw
+                  ? 'Faili imeshirikiwa kwa mafanikio.'
+                  : 'File shared successfully.'),
+        );
+      }
     } catch (e) {
       showErrorMessage(
         _isSw
@@ -273,14 +288,14 @@ class InventoryTrackingController extends BaseController {
     }
   }
 
-  Future<void> _shareInventoryFile({
+  Future<ShareResult> _shareInventoryFile({
     required XFile xFile,
     required String subject,
     Rect? shareOrigin,
   }) async {
     var origin = shareOrigin;
     try {
-      await Share.shareXFiles(
+      return await Share.shareXFiles(
         [xFile],
         subject: subject,
         sharePositionOrigin: origin,
@@ -293,7 +308,7 @@ class InventoryTrackingController extends BaseController {
         width: 2,
         height: 2,
       );
-      await Share.shareXFiles(
+      return Share.shareXFiles(
         [xFile],
         subject: subject,
         sharePositionOrigin: origin,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../l10n/app_localizations.dart';
+import '../../../core/access/staff_access.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/bottom_nav_controller.dart';
 import '../controllers/main_controller.dart';
@@ -143,7 +144,10 @@ class MoreOptionsSheet extends StatelessWidget {
   }
 
   List<_MoreOption> _items(AppLocalizations appLocalization) {
-    return [
+    final access = Get.isRegistered<StaffAccessStore>()
+        ? Get.find<StaffAccessStore>()
+        : null;
+    final all = [
       _MoreOption(
         label: _t('Add Property', 'Ongeza Mali'),
         icon: Icons.add_home_work_outlined,
@@ -224,6 +228,8 @@ class MoreOptionsSheet extends StatelessWidget {
         route: Routes.SUPPORT,
       ),
     ];
+    if (access == null || !access.restricted.value) return all;
+    return all.where((item) => access.allowsRoute(item.route)).toList();
   }
 }
 

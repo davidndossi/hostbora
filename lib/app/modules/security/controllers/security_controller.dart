@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:local_auth/local_auth.dart';
 
@@ -109,4 +110,49 @@ class SecurityController extends BaseController {
   }
 
   void openPrivacyPolicy() => Get.toNamed(Routes.PRIVACY);
+
+  Future<void> confirmDeleteAccount() async {
+    final ok = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(appLocalization.deleteAccountConfirmTitle),
+        content: Text(appLocalization.deleteAccountConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(appLocalization.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Get.theme.colorScheme.error,
+            ),
+            onPressed: () => Get.back(result: true),
+            child: Text(appLocalization.deleteAccountConfirmAction),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+    if (ok != true) return;
+    await _deleteAccount();
+  }
+
+  Future<void> _deleteAccount() async {
+    if (isBusy.value) return;
+    await runBusy(() async {
+      try {
+        final res = await _repository.deleteMyAccount();
+        if (!res.isSuccess) {
+          showErrorMessage(
+            res.message ?? appLocalization.deleteAccountFailed,
+          );
+          return;
+        }
+        await _preferenceManager.clearSession();
+        Get.offAllNamed(AppPages.auth);
+      } catch (e) {
+        logger.e('deleteAccount failed: $e');
+        showErrorMessage(appLocalization.deleteAccountFailed);
+      }
+    });
+  }
 }

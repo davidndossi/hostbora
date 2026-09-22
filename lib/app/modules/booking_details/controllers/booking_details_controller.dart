@@ -333,6 +333,8 @@ class BookingDetailsController extends BaseController {
       bookingId: _item.bookingKey,
       propertyRef: _propertyRef,
       property: property,
+      guestName: _item.guestName,
+      dates: _item.dates,
     );
     if (saved == true) {
       await _loadPaymentSummary();

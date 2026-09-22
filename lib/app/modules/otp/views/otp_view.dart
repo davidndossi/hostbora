@@ -178,92 +178,93 @@ class OtpView extends BaseView<OtpController> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Obx(
-                  () => MaterialButton(
-                    minWidth: 316,
-                    onPressed: controller.otp.value.length == 4
-                        ? controller.validateOtp
-                        : null,
-                    color: AppColors.colorPrimary,
-                    disabledColor: Colors.grey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 30,
-                    ),
-                    child: Obx(
-                      () => controller.isLoading.value
+                  () => SizedBox(
+                    height: 52,
+                    child: FilledButton(
+                      onPressed: controller.otp.value.length == 4
+                          ? controller.validateOtp
+                          : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.colorPrimary,
+                        disabledBackgroundColor: Colors.grey,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      child: controller.isLoading.value
                           ? const SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
-                                backgroundColor: Colors.white,
                                 color: Colors.white,
                                 strokeWidth: 2,
                               ),
                             )
                           : Text(
                               controller.appLocalization.verify,
-                              style: const TextStyle(color: Colors.white),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
+                              ),
                             ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      appLocalization.acceptStatement,
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.35,
-                        color: isDark
-                            ? theme.colorScheme.onSurface
-                            : Colors.black,
-                      ),
+                Text.rich(
+                  TextSpan(
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: isDark
+                          ? theme.colorScheme.onSurface
+                          : Colors.black,
                     ),
-                    GestureDetector(
-                      onTap: () => Get.toNamed(Routes.TERMS),
-                      child: Text(
-                        appLocalization.terms,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          height: 1.35,
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
-                          color: AppColors.colorPrimary,
+                    children: [
+                      TextSpan(text: appLocalization.acceptStatement),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: GestureDetector(
+                          onTap: () => Get.toNamed(Routes.TERMS),
+                          child: Text(
+                            appLocalization.terms,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              height: 1.4,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              color: AppColors.colorPrimary,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    Text(
-                      appLocalization.andOur,
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.35,
-                        color: isDark
-                            ? theme.colorScheme.onSurface
-                            : Colors.black,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Get.toNamed(Routes.PRIVACY),
-                      child: Text(
-                        appLocalization.privacyPolicy,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          height: 1.35,
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
-                          color: AppColors.colorPrimary,
+                      TextSpan(text: appLocalization.andOur),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: GestureDetector(
+                          onTap: () => Get.toNamed(Routes.PRIVACY),
+                          child: Text(
+                            appLocalization.privacyPolicy,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              height: 1.4,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              color: AppColors.colorPrimary,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),

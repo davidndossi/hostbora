@@ -68,6 +68,16 @@ class SubscriptionView extends BaseView<SubscriptionController> {
                 ),
                 const SizedBox(height: AppValues.spacing_20),
 
+                if (controller.usesAppleIap &&
+                    (controller.appleProductsError ?? '').isNotEmpty) ...[
+                  _StoreLoadBanner(
+                    message: controller.appleProductsError!,
+                    loading: controller.appleProductsLoading,
+                    onRetry: controller.refresh,
+                  ),
+                  const SizedBox(height: AppValues.spacing_20),
+                ],
+
                 // ── Plan cards ────────────────────────────────────────
                 ...hostBoraPlanInfos.map((plan) => _PlanCard(
                       info: plan,
@@ -176,6 +186,54 @@ class _StatusBanner extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: color,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StoreLoadBanner extends StatelessWidget {
+  const _StoreLoadBanner({
+    required this.message,
+    required this.loading,
+    required this.onRetry,
+  });
+
+  final String message;
+  final bool loading;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppValues.padding),
+      decoration: BoxDecoration(
+        color: AppColors.colorYellow.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppValues.smallRadius),
+        border: Border.all(
+          color: AppColors.colorYellow.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textColorPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: loading ? null : onRetry,
+              child: Text(loading ? 'Loading plans…' : 'Try again'),
             ),
           ),
         ],

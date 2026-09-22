@@ -8,6 +8,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/values/app_decorations.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../rent/staff_management/widgets/staff_access_editor.dart';
 import '../controllers/staff_detail_controller.dart';
 
 class StaffDetailView extends BaseView<StaffDetailController> {
@@ -40,6 +41,8 @@ class StaffDetailView extends BaseView<StaffDetailController> {
           child: Column(
             children: [
               _buildProfileSection(context),
+              const SizedBox(height: 24),
+              _buildAccessEditor(context),
               const SizedBox(height: 24),
               _buildStatsRow(context),
               if (controller.hasPayInfo) ...[
@@ -119,6 +122,51 @@ class StaffDetailView extends BaseView<StaffDetailController> {
               ),
             ],
           ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildAccessEditor(BuildContext context) {
+    return Obx(() {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: AppDecorations.card,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            StaffAccessEditor(
+              role: controller.permissionRole.value,
+              permissions: controller.grantedPermissions.toSet(),
+              allProperties: controller.allPropertiesAccess.value,
+              propertyRefs: controller.selectedPropertyRefs.toSet(),
+              properties: controller.accessProperties.toList(),
+              legacy: controller.legacyStaffAccess.value,
+              onRoleChanged: controller.applyPermissionRole,
+              onPermissionToggled: controller.togglePermission,
+              onAllPropertiesChanged: controller.setAllPropertiesAccess,
+              onPropertyToggled: controller.togglePropertyRef,
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: controller.savingAccess.value ? null : controller.saveAccess,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.colorPrimary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppValues.radius_6),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                controller.savingAccess.value
+                    ? '...'
+                    : appLocalization.staffAccessSave,
+              ),
+            ),
+          ],
         ),
       );
     });

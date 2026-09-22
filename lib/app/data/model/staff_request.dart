@@ -13,6 +13,10 @@ class StaffRequest {
     this.status = 'active',
     this.payDayLabel,
     this.id,
+    this.permissionRole,
+    this.permissions,
+    this.allProperties,
+    this.propertyRefs,
   });
 
   final String name;
@@ -35,6 +39,12 @@ class StaffRequest {
 
   /// Set for updates / offline sync.
   final String? id;
+
+  /// Checklist role key: cleaner, caretaker, front_desk, accountant, manager.
+  final String? permissionRole;
+  final List<String>? permissions;
+  final bool? allProperties;
+  final List<String>? propertyRefs;
 
   Map<String, dynamic> toApiJson() {
     final combinedNotes = _combinedNotes();
@@ -59,6 +69,11 @@ class StaffRequest {
       if (payDayLabel != null && payDayLabel!.trim().isNotEmpty)
         'payDayLabel': payDayLabel!.trim(),
       if (id != null && id!.trim().isNotEmpty) 'id': id!.trim(),
+      if (permissionRole != null && permissionRole!.trim().isNotEmpty)
+        'permissionRole': permissionRole!.trim(),
+      if (permissions != null) 'permissions': permissions,
+      if (allProperties != null) 'allProperties': allProperties,
+      if (propertyRefs != null) 'propertyRefs': propertyRefs,
     };
     _mirrorSnakeCase(body);
     return body;
@@ -73,6 +88,11 @@ class StaffRequest {
     mirror('propertyRef', 'property_ref');
     mirror('salaryFrequency', 'salary_frequency');
     mirror('startDate', 'start_date');
+  }
+
+  static List<String>? _stringList(dynamic raw) {
+    if (raw is! List) return null;
+    return raw.map((e) => e.toString()).where((e) => e.trim().isNotEmpty).toList();
   }
 
   String _combinedNotes() {
@@ -105,6 +125,10 @@ class StaffRequest {
       startDate: (map['startDate'] ?? map['start_date'])?.toString(),
       status: map['status']?.toString() ?? 'active',
       payDayLabel: map['payDayLabel']?.toString(),
+      permissionRole: map['permissionRole']?.toString(),
+      permissions: _stringList(map['permissions']),
+      allProperties: map['allProperties'] is bool ? map['allProperties'] as bool : null,
+      propertyRefs: _stringList(map['propertyRefs']),
     );
   }
 }
