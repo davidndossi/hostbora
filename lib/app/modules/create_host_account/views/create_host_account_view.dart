@@ -121,7 +121,11 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
               const SizedBox(height: 20),
               _buildLabel(
                 context,
-                _t(context, en: 'Referral code (optional)', sw: 'Msimbo wa mrejeleo (si lazima)'),
+                _t(
+                  context,
+                  en: 'Referral code (optional — checked after signup)',
+                  sw: 'Msimbo wa mrejeleo (si lazima — utathibitishwa baada ya kujisajili)',
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -130,7 +134,7 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                 style: TextStyle(color: c.headline),
                 decoration: _inputDecoration(
                   context,
-                  hint: _t(context, en: 'AGT-JOHN-001', sw: 'AGT-JOHN-001'),
+                  hint: _t(context, en: 'HB-ARTHUR23', sw: 'HB-ARTHUR23'),
                 ).copyWith(
                   suffixIcon: Obx(() {
                     if (controller.isCheckingReferral.value) {
@@ -153,8 +157,8 @@ class CreateHostAccountView extends BaseView<CreateHostAccountController> {
                     return const SizedBox.shrink();
                   }),
                 ),
-                onChanged: (_) => controller.validateReferralCode(),
-                onFieldSubmitted: (_) => controller.validateReferralCode(),
+                onChanged: (_) => controller.scheduleReferralHint(),
+                onFieldSubmitted: (_) => controller.scheduleReferralHint(),
               ),
               Obx(() {
                 final name = controller.referralAgentName.value;

@@ -345,6 +345,54 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
+  Future<GeneralResponse> getHostScore() {
+    final endpoint = '${DioProvider.baseUrl}/api/me/host-score';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getRewards() {
+    final endpoint = '${DioProvider.baseUrl}/api/me/rewards';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> completeAcademy() {
+    final endpoint = '${DioProvider.baseUrl}/api/me/rewards/academy';
+    final dioCall = dioClient.post(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> redeemReward(String itemKey) {
+    final endpoint = '${DioProvider.baseUrl}/api/me/rewards/redeem';
+    final dioCall = dioClient.post(endpoint, data: {'itemKey': itemKey});
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((response) => GeneralResponse.fromJson(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<GeneralResponse> saveWhatsAppCredentials(Map<String, dynamic> request) {
     final endpoint = '${DioProvider.baseUrl}/api/whatsapp/credentials';
     final dioCall = dioClient.put(endpoint, data: request);
@@ -1632,6 +1680,18 @@ class RemoteDataSourceImpl extends BaseRemoteSource
   }
 
   @override
+  Future<GeneralResponse> recordSalesAgentInvite() {
+    final endpoint = '${DioProvider.baseUrl}/api/sales-agents/me/invite';
+    final dioCall = dioClient.post(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((r) => GeneralResponse.fromJson(r.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<GeneralResponse> listSalesAgents() {
     final endpoint = '${DioProvider.baseUrl}/api/admin/sales-agents';
     final dioCall = dioClient.get(endpoint);
@@ -1672,6 +1732,30 @@ class RemoteDataSourceImpl extends BaseRemoteSource
     final endpoint =
         '${DioProvider.baseUrl}/api/admin/sales-agents/$agentId/status?status=${Uri.encodeComponent(status)}';
     final dioCall = dioClient.patch(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((r) => GeneralResponse.fromJson(r.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> getGrowthMetrics() {
+    final endpoint = '${DioProvider.baseUrl}/api/admin/metrics/growth';
+    final dioCall = dioClient.get(endpoint);
+    try {
+      return callApiWithErrorParser(dioCall)
+          .then((r) => GeneralResponse.fromJson(r.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<GeneralResponse> updateGrowthTargets(Map<String, dynamic> body) {
+    final endpoint = '${DioProvider.baseUrl}/api/admin/metrics/growth/targets';
+    final dioCall = dioClient.put(endpoint, data: body);
     try {
       return callApiWithErrorParser(dioCall)
           .then((r) => GeneralResponse.fromJson(r.data));

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -22,6 +24,7 @@ class CreateHostAccountController extends BaseController {
   final referralValid = Rxn<bool>();
   final referralAgentName = RxnString();
   final isCheckingReferral = false.obs;
+  Timer? _referralDebounce;
   final msisdn = ''.obs;
   final email = ''.obs;
 
@@ -42,6 +45,22 @@ class CreateHostAccountController extends BaseController {
   void goToTerms() => Get.toNamed(Routes.TERMS);
 
   void goToPrivacy() => Get.toNamed(Routes.PRIVACY);
+
+  /// Optional hint only. Signup never waits for this; the server attaches
+  /// the code after OTP verify on a background thread.
+  void scheduleReferralHint() {
+    _referralDebounce?.cancel();
+    final code = referralCodeController.text.trim();
+    if (code.isEmpty) {
+      referralValid.value = null;
+      referralAgentName.value = null;
+      isCheckingReferral.value = false;
+      return;
+    }
+    _referralDebounce = Timer(const Duration(milliseconds: 700), () {
+      unawaited(validateReferralCode());
+    });
+  }
 
   Future<void> validateReferralCode() async {
     final code = referralCodeController.text.trim();
@@ -229,6 +248,7 @@ class CreateHostAccountController extends BaseController {
 
   @override
   void onClose() {
+    _referralDebounce?.cancel();
     fullNameController.dispose();
     emailController.dispose();
     phoneController.dispose();

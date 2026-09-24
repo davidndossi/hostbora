@@ -24,6 +24,7 @@ import '../../../data/local/service/currency_service.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../controllers/home_controller.dart';
+import '../../challenges_rewards/widgets/challenges_home_banner.dart';
 import 'home_guest_quick_actions_sheet.dart';
 
 // ignore: must_be_immutable
@@ -75,6 +76,8 @@ class HomeView extends BaseView<HomeController> {
                 children: [
                   const ManagingForBanner(),
                   const SizedBox(height: 8),
+                  const ChallengesHomeBanner(),
+                  const SizedBox(height: 12),
                   if (controller.showWorkspaceFilterChips) ...[
                     _buildWorkspaceFilter(context),
                     const SizedBox(height: 16),

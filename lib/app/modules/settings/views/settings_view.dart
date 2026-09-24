@@ -56,9 +56,75 @@ class SettingsView extends BaseView<SettingsController> {
     );
   }
 
+  Widget _hostScoreCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Obx(() {
+      final score = controller.hostScore.value;
+      if (score == null) {
+        if (!controller.hostScoreLoading.value) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: LinearProgressIndicator(
+            minHeight: 2,
+            color: theme.colorScheme.primary,
+          ),
+        );
+      }
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _t(context, 'HOST SCORE', 'ALAMA YA MWENYEJI'),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    letterSpacing: 1.1,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${score.total} / ${score.max}',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _t(
+                    context,
+                    "You're currently a ${score.level}.",
+                    'Kwa sasa wewe ni ${score.level}.',
+                  ),
+                  style: theme.textTheme.titleMedium,
+                ),
+                if ((score.hint ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    score.hint!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
   @override
   Widget body(BuildContext context) {
-    return SettingsList(
+    return Column(
+      children: [
+        _hostScoreCard(context),
+        Expanded(
+          child: SettingsList(
       applicationType: ApplicationType.both,
       platform: DevicePlatform.device,
       lightTheme: SettingsThemeData(
@@ -88,6 +154,23 @@ class SettingsView extends BaseView<SettingsController> {
         SettingsSection(
           title: _tileTitle(context, appLocalization.common),
           tiles: [
+            SettingsTile.navigation(
+              onPressed: (_) => Get.toNamed(Routes.CHALLENGES_REWARDS),
+              leading: const Icon(Icons.emoji_events_outlined),
+              title: _tileTitle(
+                context,
+                _t(context, 'Challenges & Rewards', 'Changamoto na Zawadi'),
+              ),
+              description: _tileDescription(
+                context,
+                _t(
+                  context,
+                  'Monthly challenges and HB Points',
+                  'Changamoto za mwezi na HB Points',
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_outlined),
+            ),
             if (!Get.isRegistered<StaffAccessStore>() ||
                 !Get.find<StaffAccessStore>().restricted.value)
               SettingsTile.navigation(
@@ -344,6 +427,23 @@ class SettingsView extends BaseView<SettingsController> {
               trailing: const Icon(Icons.chevron_right_outlined),
             ),
             SettingsTile.navigation(
+              onPressed: (context) => controller.openAdminGrowthMetrics(),
+              leading: const Icon(Icons.trending_up_outlined),
+              title: _tileTitle(
+                context,
+                _t(context, 'Growth metrics (admin)', 'Vipimo vya ukuaji (msimamizi)'),
+              ),
+              description: _tileDescription(
+                context,
+                _t(
+                  context,
+                  'Community, registrations, property, retention, referrals',
+                  'Jamii, usajili, mali, kurudi, mrejeleo',
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_outlined),
+            ),
+            SettingsTile.navigation(
               onPressed: (context) => controller.openAdminSalesAgents(),
               leading: const Icon(Icons.groups_outlined),
               title: _tileTitle(
@@ -526,6 +626,9 @@ class SettingsView extends BaseView<SettingsController> {
               },
             ),
           ],
+        ),
+      ],
+          ),
         ),
       ],
     );

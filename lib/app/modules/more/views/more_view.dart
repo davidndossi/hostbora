@@ -51,6 +51,11 @@ class MoreView extends BaseView<MoreController> {
   List<_MoreLink> _links() {
     return [
       _MoreLink(
+        _t('Challenges', 'Changamoto'),
+        Icons.emoji_events_outlined,
+        Routes.CHALLENGES_REWARDS,
+      ),
+      _MoreLink(
         _t('Help center', 'Kituo cha Msaada'),
         Icons.help_outline_rounded,
         Routes.HELP_CENTER,

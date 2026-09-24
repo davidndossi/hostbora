@@ -82,6 +82,14 @@ abstract class RemoteDataSource {
 
   Future<GeneralResponse> getWhatsAppStatus();
 
+  Future<GeneralResponse> getHostScore();
+
+  Future<GeneralResponse> getRewards();
+
+  Future<GeneralResponse> completeAcademy();
+
+  Future<GeneralResponse> redeemReward(String itemKey);
+
   Future<GeneralResponse> saveWhatsAppCredentials(Map<String, dynamic> request);
 
   Future<GeneralResponse> sendWhatsApp(SendSmsRequest request);
@@ -300,8 +308,11 @@ abstract class RemoteDataSource {
 
   Future<GeneralResponse> validateReferralCode(String code);
   Future<GeneralResponse> getSalesAgentDashboard(String userId);
+  Future<GeneralResponse> recordSalesAgentInvite();
   Future<GeneralResponse> listSalesAgents();
   Future<GeneralResponse> createSalesAgent(Map<String, dynamic> body);
   Future<GeneralResponse> getAdminSalesAgentDashboard(int agentId);
   Future<GeneralResponse> updateSalesAgentStatus(int agentId, String status);
+  Future<GeneralResponse> getGrowthMetrics();
+  Future<GeneralResponse> updateGrowthTargets(Map<String, dynamic> body);
 }

@@ -126,6 +126,10 @@ class CommissionRow {
 class SalesAgentDashboard {
   const SalesAgentDashboard({
     required this.agent,
+    required this.inviteUrl,
+    required this.invited,
+    required this.registered,
+    required this.active,
     required this.totalRecruited,
     required this.activeSubscribers,
     required this.paidSubscribers,
@@ -138,6 +142,10 @@ class SalesAgentDashboard {
   });
 
   final SalesAgentSummary agent;
+  final String inviteUrl;
+  final int invited;
+  final int registered;
+  final int active;
   final int totalRecruited;
   final int activeSubscribers;
   final int paidSubscribers;
@@ -158,12 +166,28 @@ class SalesAgentDashboard {
     }
     final customersRaw = json['customers'];
     final commissionsRaw = json['recentCommissions'];
+    final agent = SalesAgentSummary.fromJson(
+      (json['agent'] as Map?)?.cast<String, dynamic>() ?? const {},
+    );
+    final recruited = int.tryParse(json['totalRecruited']?.toString() ?? '') ?? 0;
+    final activeSubs =
+        int.tryParse(json['activeSubscribers']?.toString() ?? '') ?? 0;
+    final registered =
+        int.tryParse(json['registered']?.toString() ?? '') ?? recruited;
+    final active = int.tryParse(json['active']?.toString() ?? '') ?? activeSubs;
+    final invited = int.tryParse(json['invited']?.toString() ?? '') ??
+        (registered > 0 ? registered : 0);
+    final inviteUrl = json['inviteUrl']?.toString().trim() ?? '';
     return SalesAgentDashboard(
-      agent: SalesAgentSummary.fromJson(
-        (json['agent'] as Map?)?.cast<String, dynamic>() ?? const {},
-      ),
-      totalRecruited: int.tryParse(json['totalRecruited']?.toString() ?? '') ?? 0,
-      activeSubscribers: int.tryParse(json['activeSubscribers']?.toString() ?? '') ?? 0,
+      agent: agent,
+      inviteUrl: inviteUrl.isNotEmpty
+          ? inviteUrl
+          : 'https://hostbora.co.tz/r/${agent.agentCode}',
+      invited: invited,
+      registered: registered,
+      active: active,
+      totalRecruited: recruited,
+      activeSubscribers: activeSubs,
       paidSubscribers: int.tryParse(json['paidSubscribers']?.toString() ?? '') ?? 0,
       byTier: tiers,
       commissionThisMonthTzs:

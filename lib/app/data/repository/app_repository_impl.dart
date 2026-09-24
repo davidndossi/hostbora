@@ -155,6 +155,26 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> getHostScore() {
+    return _remoteSource.getHostScore();
+  }
+
+  @override
+  Future<GeneralResponse> getRewards() {
+    return _remoteSource.getRewards();
+  }
+
+  @override
+  Future<GeneralResponse> completeAcademy() {
+    return _remoteSource.completeAcademy();
+  }
+
+  @override
+  Future<GeneralResponse> redeemReward(String itemKey) {
+    return _remoteSource.redeemReward(itemKey);
+  }
+
+  @override
   Future<GeneralResponse> saveWhatsAppCredentials(Map<String, dynamic> request) {
     return _remoteSource.saveWhatsAppCredentials(request);
   }
@@ -672,6 +692,10 @@ class AppRepositoryImpl implements AppRepository {
       _remoteSource.getSalesAgentDashboard(userId);
 
   @override
+  Future<GeneralResponse> recordSalesAgentInvite() =>
+      _remoteSource.recordSalesAgentInvite();
+
+  @override
   Future<GeneralResponse> listSalesAgents() => _remoteSource.listSalesAgents();
 
   @override
@@ -685,4 +709,11 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> updateSalesAgentStatus(int agentId, String status) =>
       _remoteSource.updateSalesAgentStatus(agentId, status);
+
+  @override
+  Future<GeneralResponse> getGrowthMetrics() => _remoteSource.getGrowthMetrics();
+
+  @override
+  Future<GeneralResponse> updateGrowthTargets(Map<String, dynamic> body) =>
+      _remoteSource.updateGrowthTargets(body);
 }

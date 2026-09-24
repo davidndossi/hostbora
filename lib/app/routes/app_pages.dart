@@ -32,6 +32,8 @@ import '../modules/admin_sales_agents/bindings/admin_sales_agent_detail_binding.
 import '../modules/admin_sales_agents/bindings/admin_sales_agents_binding.dart';
 import '../modules/admin_sales_agents/views/admin_sales_agent_detail_view.dart';
 import '../modules/admin_sales_agents/views/admin_sales_agents_view.dart';
+import '../modules/admin_growth_metrics/bindings/admin_growth_metrics_binding.dart';
+import '../modules/admin_growth_metrics/views/admin_growth_metrics_view.dart';
 import '../modules/sales_agent_dashboard/bindings/sales_agent_dashboard_binding.dart';
 import '../modules/sales_agent_dashboard/views/sales_agent_dashboard_view.dart';
 import '../modules/send_sms/bindings/send_sms_binding.dart';
@@ -42,6 +44,8 @@ import '../modules/onboarding/bindings/onboarding_binding.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
 import '../modules/settings/bindings/settings_binding.dart';
 import '../modules/settings/views/settings_view.dart';
+import '../modules/challenges_rewards/bindings/challenges_rewards_binding.dart';
+import '../modules/challenges_rewards/views/challenges_rewards_view.dart';
 import '../modules/help_center/bindings/help_center_binding.dart';
 import '../modules/help_center/views/help_center_view.dart';
 import '../modules/help_center/views/help_guide_detail_view.dart';
@@ -303,6 +307,11 @@ class AppPages {
       binding: HelpCenterBinding(),
     ),
     GetPage(
+      name: _Paths.CHALLENGES_REWARDS,
+      page: () => ChallengesRewardsView(),
+      binding: ChallengesRewardsBinding(),
+    ),
+    GetPage(
       name: _Paths.HELP_GUIDE_DETAIL,
       page: () => HelpGuideDetailView(),
       binding: HelpGuideDetailBinding(),
@@ -351,6 +360,11 @@ class AppPages {
       name: _Paths.ADMIN_SALES_AGENT_DETAIL,
       page: () => AdminSalesAgentDetailView(),
       binding: AdminSalesAgentDetailBinding(),
+    ),
+    GetPage(
+      name: _Paths.ADMIN_GROWTH_METRICS,
+      page: () => AdminGrowthMetricsView(),
+      binding: AdminGrowthMetricsBinding(),
     ),
     GetPage(
       name: _Paths.SALES_AGENT_DASHBOARD,

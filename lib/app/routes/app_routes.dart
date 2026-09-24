@@ -12,6 +12,7 @@ abstract class Routes {
   static const CHANGE_PASSWORD = _Paths.CHANGE_PASSWORD;
   static const SETTINGS = _Paths.SETTINGS;
   static const HELP_CENTER = _Paths.HELP_CENTER;
+  static const CHALLENGES_REWARDS = _Paths.CHALLENGES_REWARDS;
   static const HELP_GUIDE_DETAIL = _Paths.HELP_GUIDE_DETAIL;
   static const NOTIFICATIONS = _Paths.NOTIFICATIONS;
   static const SUCCESS = _Paths.SUCCESS;
@@ -22,6 +23,7 @@ abstract class Routes {
   static const ADMIN_WHATSAPP_CREDENTIALS = _Paths.ADMIN_WHATSAPP_CREDENTIALS;
   static const ADMIN_SALES_AGENTS = _Paths.ADMIN_SALES_AGENTS;
   static const ADMIN_SALES_AGENT_DETAIL = _Paths.ADMIN_SALES_AGENT_DETAIL;
+  static const ADMIN_GROWTH_METRICS = _Paths.ADMIN_GROWTH_METRICS;
   static const SALES_AGENT_DASHBOARD = _Paths.SALES_AGENT_DASHBOARD;
   static const SUBSCRIPTION = _Paths.SUBSCRIPTION;
   static const SPLASH = _Paths.SPLASH;
@@ -127,6 +129,7 @@ abstract class _Paths {
   static const NOTIFICATIONS = '/notifications';
   static const SETTINGS = '/settings';
   static const HELP_CENTER = '/help-center';
+  static const CHALLENGES_REWARDS = '/challenges-rewards';
   static const HELP_GUIDE_DETAIL = '/help-center/guide';
   static const SUCCESS = '/success';
   static const FAILED = '/failed';
@@ -137,6 +140,7 @@ abstract class _Paths {
   static const ADMIN_WHATSAPP_CREDENTIALS = '/admin/whatsapp-credentials';
   static const ADMIN_SALES_AGENTS = '/admin/sales-agents';
   static const ADMIN_SALES_AGENT_DETAIL = '/admin/sales-agents/detail';
+  static const ADMIN_GROWTH_METRICS = '/admin/growth-metrics';
   static const SALES_AGENT_DASHBOARD = '/sales-agent/dashboard';
   static const SUBSCRIPTION = '/subscription';
   static const SPLASH = '/splash';

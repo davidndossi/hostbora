@@ -35,8 +35,9 @@ class AdminSalesAgentDetailView extends BaseView<AdminSalesAgentDetailController
             title: Text(dash.agent.fullName),
             subtitle: Text('${dash.agent.agentCode} · ${dash.agent.region}'),
           ),
-          _row(_t('Recruited', 'Waliowajiliwa'), '${dash.totalRecruited}'),
-          _row(_t('Active', 'Hai'), '${dash.activeSubscribers}'),
+          _row(_t('Invited', 'Walioalikwa'), '${dash.invited}'),
+          _row(_t('Registered', 'Waliojisajili'), '${dash.registered}'),
+          _row(_t('Active', 'Hai'), '${dash.active}'),
           _row(_t('Paid', 'Waliolipa'), '${dash.paidSubscribers}'),
           _row(
             _t('Commission this month', 'Kamisheni mwezi huu'),

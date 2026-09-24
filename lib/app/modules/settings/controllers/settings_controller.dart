@@ -17,6 +17,7 @@ import '../../rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupa
 import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 import '../../../data/local/service/tenant_lease_reminder_service.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/model/host_score.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/local/service/currency_service.dart';
@@ -67,6 +68,8 @@ class SettingsController extends BaseController {
   final tenantReminderTemplate = ''.obs;
   final runningLeaseReminderNow = false.obs;
   final appLockTimeoutSeconds = 15.obs;
+  final hostScore = Rxn<HostScore>();
+  final hostScoreLoading = false.obs;
 
   @override
   void onInit() {
@@ -116,6 +119,22 @@ class SettingsController extends BaseController {
       ),
     );
     loadSettings();
+    loadHostScore();
+  }
+
+  Future<void> loadHostScore() async {
+    hostScoreLoading(true);
+    try {
+      final response = await _repository.getHostScore();
+      final data = response.data;
+      if (response.isSuccess && data is Map) {
+        hostScore(HostScore.fromJson(Map<String, dynamic>.from(data)));
+      }
+    } catch (_) {
+      // Keep the settings screen usable if score is unavailable.
+    } finally {
+      hostScoreLoading(false);
+    }
   }
 
   void openSubscription() {
@@ -157,6 +176,18 @@ class SettingsController extends BaseController {
       return;
     }
     Get.toNamed(Routes.ADMIN_SALES_AGENTS);
+  }
+
+  void openAdminGrowthMetrics() {
+    if (!isAdmin.value) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Ruhusa ya msimamizi inahitajika'
+            : 'Admin access required',
+      );
+      return;
+    }
+    Get.toNamed(Routes.ADMIN_GROWTH_METRICS);
   }
 
   void openSalesAgentDashboard() {
