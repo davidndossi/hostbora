@@ -4,7 +4,8 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import '../../../../core/widget/skeleton_presets.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/form_surface_colors.dart';
+import '../../../../core/values/app_colors.dart';
 
 import 'package:get/get.dart';
 
@@ -14,27 +15,6 @@ import '../../../../../l10n/app_localizations.dart';
 import '../controllers/rent_smart_utility_dashboard_controller.dart';
 import '../../../../data/local/service/currency_service.dart';
 import '../utils/luku_sms_ocr_parser.dart';
-
-class _UtilUi {
-  _UtilUi(this.context);
-
-  final BuildContext context;
-  ThemeData get _t => Theme.of(context);
-  bool get dark => _t.brightness == Brightness.dark;
-
-  static const Color forest = Color(0xFF0A5C5C);
-  static const Color deepForest = Color(0xFF004040);
-  static const Color mint = Color(0xFFCFE6DF);
-  static const Color cream = Color(0xFFFBF9F4);
-
-  Color get bg => dark ? _t.scaffoldBackgroundColor : cream;
-  Color get card => dark ? _t.cardColor : Colors.white;
-  Color get softSurface =>
-      dark ? context.tokens.cardBackground : const Color(0xFFF4F2EC);
-  Color get onSurface =>
-      dark ? const Color(0xFFF2F2F7) : const Color(0xFF111827);
-  Color get muted => dark ? const Color(0xFFAEAEB2) : const Color(0xFF6B7280);
-}
 
 class RentSmartUtilityDashboardView
     extends RentBaseView<RentSmartUtilityDashboardController> {
@@ -52,40 +32,41 @@ class RentSmartUtilityDashboardView
   }
 
   @override
-  Color pageBackgroundColor(BuildContext context) => _UtilUi(context).bg;
+  Color pageBackgroundColor(BuildContext context) =>
+      FormSurfaceColors.of(context).scaffold;
 
   @override
   Widget body(BuildContext context) {
-    final u = _UtilUi(context);
+    final c = FormSurfaceColors.of(context);
     return SafeArea(
       child: Obx(() {
         if (controller.loading.value) {
           return const Center(child: DefaultScreenSkeleton());
         }
         return RefreshIndicator(
-          color: _UtilUi.forest,
+          color: AppColors.colorPrimary,
           onRefresh: controller.loadAll,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
-              _globalStatusRow(u),
+              _globalStatusRow(c),
               if (controller.availableUnits.length > 1) ...[
                 const SizedBox(height: 12),
-                _unitSelector(u),
+                _unitSelector(c),
               ],
               const SizedBox(height: 16),
-              _lukuCard(u),
+              _lukuCard(c),
               const SizedBox(height: 12),
-              _waterCard(u),
+              _waterCard(c),
               const SizedBox(height: 20),
-              _weeklyUsageCard(u),
+              _weeklyUsageCard(c),
               const SizedBox(height: 20),
-              _recentActivityHeader(u),
+              _recentActivityHeader(context, c),
               const SizedBox(height: 10),
               if (controller.activities.isEmpty)
-                _emptyActivityTile(u)
+                _emptyActivityTile(c)
               else
-                ...controller.activities.map((a) => _activityTile(u, a)),
+                ...controller.activities.map((a) => _activityTile(c, a)),
             ],
           ),
         );
@@ -93,7 +74,7 @@ class RentSmartUtilityDashboardView
     );
   }
 
-  Widget _unitSelector(_UtilUi u) {
+  Widget _unitSelector(FormSurfaceColors c) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -102,7 +83,7 @@ class RentSmartUtilityDashboardView
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: u.muted,
+            color: c.secondary,
             letterSpacing: 0.4,
           ),
         ),
@@ -114,14 +95,14 @@ class RentSmartUtilityDashboardView
             return Row(
               children: [
                 _unitChip(
-                  u: u,
+                  c: c,
                   label: _isSw ? 'Zote' : 'All units',
                   selected: selected.isEmpty,
                   onTap: () => controller.selectUnit(''),
                 ),
                 ...controller.availableUnits.map(
                   (unit) => _unitChip(
-                    u: u,
+                    c: c,
                     label: unit.unitName.trim(),
                     selected: selected == unit.unitId,
                     onTap: () => controller.selectUnit(unit.unitId),
@@ -136,7 +117,7 @@ class RentSmartUtilityDashboardView
   }
 
   Widget _unitChip({
-    required _UtilUi u,
+    required FormSurfaceColors c,
     required String label,
     required bool selected,
     required VoidCallback onTap,
@@ -150,11 +131,11 @@ class RentSmartUtilityDashboardView
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: selected
-                ? _UtilUi.forest
-                : u.softSurface,
+                ? AppColors.colorPrimary
+                : c.fill,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: selected ? _UtilUi.forest : u.muted.withValues(alpha: 0.3),
+              color: selected ? AppColors.colorPrimary : c.secondary.withValues(alpha: 0.3),
             ),
           ),
           child: Text(
@@ -162,7 +143,7 @@ class RentSmartUtilityDashboardView
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : u.onSurface,
+              color: selected ? Colors.white : c.headline,
             ),
           ),
         ),
@@ -170,7 +151,7 @@ class RentSmartUtilityDashboardView
     );
   }
 
-  Widget _globalStatusRow(_UtilUi u) {
+  Widget _globalStatusRow(FormSurfaceColors c) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -184,18 +165,17 @@ class RentSmartUtilityDashboardView
                 style: TextStyle(
                   fontSize: 18,
                   letterSpacing: 1.2,
-                  fontWeight: FontWeight.w800,
-                  color: u.muted,
+                  fontWeight: FontWeight.w600,
+                  color: c.secondary,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 controller.globalStatus.value,
                 style: TextStyle(
-                  fontFamily: 'serif',
                   fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: u.onSurface,
+                  fontWeight: FontWeight.w600,
+                  color: c.headline,
                 ),
               ),
             ],
@@ -204,7 +184,7 @@ class RentSmartUtilityDashboardView
         // Container(
         //   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         //   decoration: BoxDecoration(
-        //     color: u.card,
+        //     color: c.card,
         //     borderRadius: BorderRadius.circular(14),
         //     boxShadow: const [
         //       BoxShadow(
@@ -217,7 +197,7 @@ class RentSmartUtilityDashboardView
         //   child: Row(
         //     mainAxisSize: MainAxisSize.min,
         //     children: [
-        //       const Icon(Icons.shield_rounded, size: 18, color: _UtilUi.forest),
+        //       const Icon(Icons.shield_outlined, size: 18, color: AppColors.colorPrimary),
         //       const SizedBox(width: 6),
         //       Column(
         //         crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,7 +208,7 @@ class RentSmartUtilityDashboardView
         //               fontSize: 9,
         //               letterSpacing: 1.0,
         //               fontWeight: FontWeight.w800,
-        //               color: u.muted,
+        //               color: c.secondary,
         //             ),
         //           ),
         //           Text(
@@ -236,7 +216,7 @@ class RentSmartUtilityDashboardView
         //             style: TextStyle(
         //               fontSize: 12,
         //               fontWeight: FontWeight.w800,
-        //               color: u.onSurface,
+        //               color: c.headline,
         //             ),
         //           ),
         //         ],
@@ -248,7 +228,7 @@ class RentSmartUtilityDashboardView
     );
   }
 
-  Widget _lukuCard(_UtilUi u) {
+  Widget _lukuCard(FormSurfaceColors c) {
     return Builder(
       builder: (ctx) => Obx(() {
         final unitName = controller.selectedUnitName.value.trim();
@@ -256,9 +236,9 @@ class RentSmartUtilityDashboardView
             ? 'LUKU Units'
             : 'LUKU · $unitName';
         return _utilityCard(
-          u: u,
-          iconBg: _UtilUi.forest,
-          icon: Icons.bolt_rounded,
+          c: c,
+          iconBg: AppColors.colorPrimary,
+          icon: Icons.bolt_outlined,
           title: title,
           actionLabel: _isSw ? 'JAZA' : 'TOP UP',
           onAction: () => _openTopUpSheet(ctx, isLuku: true),
@@ -272,19 +252,19 @@ class RentSmartUtilityDashboardView
           usageGraphLabel: AppLocalizations.of(
             ctx,
           )!.rentUtilityLukuUsageGraphLink,
-          watermarkIcon: Icons.bolt_rounded,
+          watermarkIcon: Icons.bolt_outlined,
           watermarkAngle: 0.14,
         );
       }),
     );
   }
 
-  Widget _waterCard(_UtilUi u) {
+  Widget _waterCard(FormSurfaceColors c) {
     return Builder(
       builder: (ctx) => _utilityCard(
-        u: u,
-        iconBg: _UtilUi.deepForest,
-        icon: Icons.water_drop_rounded,
+        c: c,
+        iconBg: AppColors.colorPrimaryDark,
+        icon: Icons.water_drop_outlined,
         title: _isSw ? 'Salio la Maji' : 'Water Balance',
         actionLabel: _isSw ? 'JAZA' : 'RECHARGE',
         onAction: () => _openTopUpSheet(ctx, isLuku: false),
@@ -301,7 +281,7 @@ class RentSmartUtilityDashboardView
         usageGraphLabel: AppLocalizations.of(
           ctx,
         )!.rentUtilityWaterUsageGraphLink,
-        watermarkIcon: Icons.water_drop_rounded,
+        watermarkIcon: Icons.water_drop_outlined,
       ),
     );
   }
@@ -348,7 +328,7 @@ class RentSmartUtilityDashboardView
   }
 
   Widget _utilityCard({
-    required _UtilUi u,
+    required FormSurfaceColors c,
     required Color iconBg,
     required IconData icon,
     required String title,
@@ -382,17 +362,16 @@ class RentSmartUtilityDashboardView
               child: Text(
                 title,
                 style: TextStyle(
-                  fontFamily: 'serif',
                   fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: u.onSurface,
+                  fontWeight: FontWeight.w600,
+                  color: c.headline,
                 ),
               ),
             ),
             TextButton(
               onPressed: onAction,
               style: TextButton.styleFrom(
-                backgroundColor: _UtilUi.forest,
+                backgroundColor: AppColors.colorPrimary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
@@ -406,7 +385,7 @@ class RentSmartUtilityDashboardView
                 actionLabel,
                 style: const TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 0.4,
                 ),
               ),
@@ -420,11 +399,10 @@ class RentSmartUtilityDashboardView
             Text(
               value,
               style: TextStyle(
-                fontFamily: 'serif',
                 fontSize: 38,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 height: 1,
-                color: u.onSurface,
+                color: c.headline,
               ),
             ),
             const Spacer(),
@@ -435,7 +413,7 @@ class RentSmartUtilityDashboardView
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: u.muted,
+                  color: c.secondary,
                 ),
               ),
             ),
@@ -446,13 +424,16 @@ class RentSmartUtilityDashboardView
           borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
             value: progress,
-            minHeight: 7,
-            backgroundColor: u.softSurface,
-            color: _UtilUi.forest,
+            minHeight: 8,
+            // Dark: brighter track + teal accent so the bar stays readable.
+            backgroundColor: c.isDark
+                ? const Color(0xFF48484A)
+                : const Color(0xFFE8E6E1),
+            color: c.isDark ? c.tokens.accent : AppColors.colorPrimary,
           ),
         ),
         const SizedBox(height: 8),
-        Text(footer, style: TextStyle(fontSize: 11, color: u.muted)),
+        Text(footer, style: TextStyle(fontSize: 11, color: c.secondary)),
         if (onUsageGraph != null && usageGraphLabel != null) ...[
           const SizedBox(height: 6),
           Align(
@@ -460,20 +441,20 @@ class RentSmartUtilityDashboardView
             child: TextButton.icon(
               onPressed: onUsageGraph,
               icon: const Icon(
-                Icons.show_chart_rounded,
+                Icons.show_chart_outlined,
                 size: 18,
-                color: _UtilUi.forest,
+                color: AppColors.colorPrimary,
               ),
               label: Text(
                 usageGraphLabel,
                 style: const TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 0.45,
                 ),
               ),
               style: TextButton.styleFrom(
-                foregroundColor: _UtilUi.forest,
+                foregroundColor: AppColors.colorPrimary,
                 padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
@@ -487,7 +468,7 @@ class RentSmartUtilityDashboardView
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: u.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(
@@ -508,7 +489,7 @@ class RentSmartUtilityDashboardView
                     child: Icon(
                       watermarkIcon,
                       size: 118,
-                      color: u.dark
+                      color: c.isDark
                           ? Colors.white.withValues(alpha: 0.06)
                           : iconBg.withValues(alpha: 0.08),
                     ),
@@ -521,7 +502,7 @@ class RentSmartUtilityDashboardView
     );
   }
 
-  Widget _weeklyUsageCard(_UtilUi u) {
+  Widget _weeklyUsageCard(FormSurfaceColors c) {
     const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
     final data = controller.weeklyUsage;
     final maxY = data.fold<double>(0, (a, b) => a > b ? a : b);
@@ -531,7 +512,7 @@ class RentSmartUtilityDashboardView
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
       decoration: BoxDecoration(
-        color: u.softSurface,
+        color: c.fill,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -543,10 +524,9 @@ class RentSmartUtilityDashboardView
                 child: Text(
                   _isSw ? 'Matumizi ya Wiki' : 'Weekly Usage',
                   style: TextStyle(
-                    fontFamily: 'serif',
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: u.onSurface,
+                    fontWeight: FontWeight.w600,
+                    color: c.headline,
                   ),
                 ),
               ),
@@ -555,8 +535,8 @@ class RentSmartUtilityDashboardView
                 style: TextStyle(
                   fontSize: 10,
                   letterSpacing: 0.8,
-                  fontWeight: FontWeight.w800,
-                  color: u.muted,
+                  fontWeight: FontWeight.w700,
+                  color: c.secondary,
                 ),
               ),
             ],
@@ -597,7 +577,7 @@ class RentSmartUtilityDashboardView
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: u.muted,
+                              color: c.secondary,
                             ),
                           ),
                         );
@@ -614,7 +594,7 @@ class RentSmartUtilityDashboardView
                       BarChartRodData(
                         toY: v,
                         width: 18,
-                        color: isPeak ? _UtilUi.forest : _UtilUi.mint,
+                        color: isPeak ? AppColors.colorPrimary : AppColors.colorPrimaryLight,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ],
@@ -628,28 +608,27 @@ class RentSmartUtilityDashboardView
     );
   }
 
-  Widget _recentActivityHeader(_UtilUi u) {
+  Widget _recentActivityHeader(BuildContext context, FormSurfaceColors c) {
     return Row(
       children: [
         Expanded(
           child: Text(
             _isSw ? 'Shughuli za Hivi Karibuni' : 'Recent Activity',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: u.onSurface,
+              fontWeight: FontWeight.w600,
+              color: c.headline,
             ),
           ),
         ),
         TextButton(
-          onPressed: controller.onViewAllActivity,
-          style: TextButton.styleFrom(foregroundColor: _UtilUi.forest),
+          onPressed: () => _showFullUtilityHistory(context),
+          style: TextButton.styleFrom(foregroundColor: AppColors.colorPrimary),
           child: Text(
             _isSw ? 'TAZAMA ZOTE' : 'VIEW ALL',
             style: const TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               letterSpacing: 0.6,
             ),
           ),
@@ -658,19 +637,152 @@ class RentSmartUtilityDashboardView
     );
   }
 
-  Widget _activityTile(_UtilUi u, UtilityActivityItem a) {
+  Future<void> _showFullUtilityHistory(BuildContext context) async {
+    final c = FormSurfaceColors.of(context);
+    // Capture once — do not create a new Future on each sheet rebuild.
+    final historyFuture = controller.loadFullActivityHistory();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final maxH = MediaQuery.sizeOf(ctx).height * 0.78;
+        return Container(
+          height: maxH,
+          decoration: BoxDecoration(
+            color: c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 10),
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: c.border,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 8, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _isSw ? 'Historia ya Huduma' : 'Utility History',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: c.headline,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: Icon(Icons.close_outlined, color: c.secondary),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: FutureBuilder<List<UtilityActivityItem>>(
+                    future: historyFuture,
+                    builder: (context, snap) {
+                      if (snap.hasError) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              _isSw
+                                  ? 'Imeshindwa kupakia historia ya huduma'
+                                  : 'Could not load utility history',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: c.secondary,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      if (snap.connectionState != ConnectionState.done) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: AppColors.colorPrimary,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _isSw
+                                    ? 'Inapakia historia kamili…'
+                                    : 'Loading full utility history…',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: c.secondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      final items = snap.data ?? const <UtilityActivityItem>[];
+                      if (items.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              _isSw
+                                  ? 'Hakuna historia ya huduma iliyopatikana'
+                                  : 'No utility history available',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: c.secondary,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                        itemCount: items.length,
+                        itemBuilder: (_, i) => _activityTile(c, items[i]),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _activityTile(FormSurfaceColors c, UtilityActivityItem a) {
     final icon = switch (a.type) {
-      UtilityActivityType.lukuTopUp => Icons.credit_card_rounded,
-      UtilityActivityType.waterBill => Icons.water_drop_rounded,
-      UtilityActivityType.other => Icons.receipt_long_rounded,
+      UtilityActivityType.lukuTopUp => Icons.credit_card_outlined,
+      UtilityActivityType.waterBill => Icons.water_drop_outlined,
+      UtilityActivityType.other => Icons.receipt_long_outlined,
     };
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: u.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFEAE6DE)),
+        border: Border.all(color: c.border),
       ),
       child: Row(
         children: [
@@ -678,10 +790,10 @@ class RentSmartUtilityDashboardView
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: u.softSurface,
+              color: c.fill,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: _UtilUi.forest),
+            child: Icon(icon, size: 18, color: AppColors.colorPrimary),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -693,13 +805,13 @@ class RentSmartUtilityDashboardView
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
-                    color: u.onSurface,
+                    color: c.headline,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   a.subtitle,
-                  style: TextStyle(fontSize: 11, color: u.muted),
+                  style: TextStyle(fontSize: 11, color: c.secondary),
                 ),
               ],
             ),
@@ -711,15 +823,15 @@ class RentSmartUtilityDashboardView
               Text(
                 a.impactLabel,
                 style: TextStyle(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   fontSize: 13,
-                  color: a.isPositive ? _UtilUi.forest : u.onSurface,
+                  color: a.isPositive ? AppColors.colorPrimary : c.headline,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 a.amountLabel,
-                style: TextStyle(fontSize: 11, color: u.muted),
+                style: TextStyle(fontSize: 11, color: c.secondary),
               ),
             ],
           ),
@@ -728,14 +840,14 @@ class RentSmartUtilityDashboardView
     );
   }
 
-  Widget _emptyActivityTile(_UtilUi u) {
+  Widget _emptyActivityTile(FormSurfaceColors c) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: u.card,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFEAE6DE)),
+        border: Border.all(color: c.border),
       ),
       child: Text(
         _isSw
@@ -743,7 +855,7 @@ class RentSmartUtilityDashboardView
             : 'No utility activity recorded yet.',
         style: TextStyle(
           fontSize: 13,
-          color: u.muted,
+          color: c.secondary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -819,7 +931,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
         data: Theme.of(ctx).copyWith(
           colorScheme: Theme.of(
             ctx,
-          ).colorScheme.copyWith(primary: _UtilUi.forest),
+          ).colorScheme.copyWith(primary: AppColors.colorPrimary),
         ),
         child: child!,
       ),
@@ -848,6 +960,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
   }
 
   Future<void> _scanLukuSmsPhoto() async {
+    if (_submitting || _scanning) return;
     final source = await _pickImageSource();
     if (source == null || !mounted) return;
 
@@ -858,6 +971,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
         source: source,
         imageQuality: 92,
       );
+      if (!mounted) return;
       if (image == null) return;
 
       final recognized = await recognizer.processImage(
@@ -882,47 +996,80 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
       } else {
         await _confirmImportMany(drafts);
       }
-    } catch (_) {
-      if (mounted) {
-        _showScanMessage(
-          _isSw
-              ? 'Imeshindikana kusoma picha. Jaribu picha iliyo wazi zaidi.'
-              : 'Could not read this image. Try a clearer screenshot or photo.',
-        );
-      }
+    } on Exception catch (e) {
+      if (!mounted) return;
+      final msg = e.toString().toLowerCase();
+      final denied = msg.contains('permission') ||
+          msg.contains('denied') ||
+          msg.contains('access');
+      _showScanMessage(
+        denied
+            ? (_isSw
+                ? 'Ruhusu kamera au picha kwenye mipangilio kisha jaribu tena.'
+                : 'Allow camera or photo access in Settings, then try again.')
+            : (_isSw
+                ? 'Imeshindikana kusoma picha. Jaribu picha iliyo wazi zaidi.'
+                : 'Could not read this image. Try a clearer screenshot or photo.'),
+      );
     } finally {
       await recognizer.close();
       if (mounted) setState(() => _scanning = false);
     }
   }
 
+  /// Source chooser must use the root navigator — this sheet is already a
+  /// modal, and a nested bottom sheet often never appears.
   Future<ImageSource?> _pickImageSource() {
-    return showModalBottomSheet<ImageSource>(
+    final c = FormSurfaceColors.of(context);
+    return showDialog<ImageSource>(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
+      useRootNavigator: true,
       builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_camera_rounded),
-                  title: Text(_isSw ? 'Piga picha' : 'Take photo'),
-                  onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_library_rounded),
-                  title: Text(_isSw ? 'Chagua picha' : 'Choose from photos'),
-                  onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
-                ),
-              ],
+        return AlertDialog(
+          backgroundColor: c.card,
+          title: Text(
+            _isSw ? 'Soma picha ya SMS' : 'Scan SMS photo',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: c.headline,
             ),
           ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.photo_camera_outlined,
+                  color: AppColors.colorPrimary,
+                ),
+                title: Text(
+                  _isSw ? 'Piga picha' : 'Take photo',
+                  style: TextStyle(color: c.headline),
+                ),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.photo_library_outlined,
+                  color: AppColors.colorPrimary,
+                ),
+                title: Text(
+                  _isSw ? 'Chagua picha' : 'Choose from photos',
+                  style: TextStyle(color: c.headline),
+                ),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(_isSw ? 'Ghairi' : 'Cancel'),
+            ),
+          ],
         );
       },
     );
@@ -979,7 +1126,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
               child: Text(_isSw ? 'HAPANA' : 'NO'),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: _UtilUi.forest),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.colorPrimary),
               onPressed: () => Navigator.of(ctx).pop(true),
               child: Text(_isSw ? 'INGIZA YOTE' : 'IMPORT ALL'),
             ),
@@ -1040,19 +1187,39 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
     final unitLabel = isLuku
         ? (_isSw ? 'Vitengo (kWh)' : 'Units (kWh)')
         : (_isSw ? 'Lita (L)' : 'Liters (L)');
-    final unitHint = isLuku ? 'e.g. 50' : 'e.g. 1500';
-    final icon = isLuku ? Icons.bolt_rounded : Icons.water_drop_rounded;
+    final unitHint = isLuku
+        ? (_isSw ? 'Weka vitengo (mf. 50)' : 'Enter units (e.g. 50)')
+        : (_isSw ? 'Weka lita (mf. 1500)' : 'Enter liters (e.g. 1500)');
+    final amountHint = _isSw
+        ? 'Weka kiasi kilicholipwa (mf. 35000)'
+        : 'Enter amount paid (e.g. 35000)';
+    final notesHint = isLuku
+        ? (_isSw
+            ? 'Maelezo hiari (mf. Meter 01013211901)'
+            : 'Optional notes (e.g. Meter 01013211901)')
+        : (_isSw
+            ? 'Maelezo hiari (mf. DAWASA Account 12345)'
+            : 'Optional notes (e.g. DAWASA Account 12345)');
+    final icon = isLuku ? Icons.bolt_outlined : Icons.water_drop_outlined;
     final dateLabel =
         '${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}';
+    final c = FormSurfaceColors.of(context);
+    final isDark = c.isDark;
+    final hintColor =
+        isDark ? const Color(0xFFD1D1D6) : const Color(0xFF6B7280);
+    final fieldFill =
+        isDark ? const Color(0xFF1C1C1E) : c.inputFill;
+    final fieldBorder =
+        isDark ? const Color(0xFF636366) : c.border;
 
-    return Padding(
+    final sheet = Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFFBF9F4),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        decoration: BoxDecoration(
+          color: c.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
         ),
         child: SafeArea(
           top: false,
@@ -1070,7 +1237,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD8D4CB),
+                        color: c.border,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -1081,20 +1248,19 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: _UtilUi.forest.withValues(alpha: 0.12),
+                          color: AppColors.colorPrimary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(icon, color: _UtilUi.forest, size: 20),
+                        child: Icon(icon, color: AppColors.colorPrimary, size: 20),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           title,
-                          style: const TextStyle(
-                            fontFamily: 'serif',
+                          style: TextStyle(
                             fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF111827),
+                            fontWeight: FontWeight.w600,
+                            color: c.headline,
                           ),
                         ),
                       ),
@@ -1102,8 +1268,8 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                         onPressed: _submitting
                             ? null
                             : () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close_rounded),
-                        color: const Color(0xFF6B7280),
+                        icon: const Icon(Icons.close_outlined),
+                        color: c.secondary,
                       ),
                     ],
                   ),
@@ -1116,8 +1282,8 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                             ? null
                             : _scanLukuSmsPhoto,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: _UtilUi.forest,
-                          side: const BorderSide(color: _UtilUi.forest),
+                          foregroundColor: AppColors.colorPrimary,
+                          side: const BorderSide(color: AppColors.colorPrimary),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1129,10 +1295,10 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                                 height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: _UtilUi.forest,
+                                  color: AppColors.colorPrimary,
                                 ),
                               )
-                            : const Icon(Icons.document_scanner_rounded),
+                            : const Icon(Icons.document_scanner_outlined),
                         label: Text(
                           _scanning
                               ? (_isSw
@@ -1143,7 +1309,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                                     : 'SCAN SMS PHOTO'),
                           style: const TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -1157,7 +1323,17 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: _inputDecoration(hint: unitHint),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: c.headline,
+                    ),
+                    decoration: _inputDecoration(
+                      hint: unitHint,
+                      hintColor: hintColor,
+                      fill: fieldFill,
+                      borderColor: fieldBorder,
+                    ),
                     validator: (v) {
                       final n = double.tryParse((v ?? '').replaceAll(',', ''));
                       if (n == null || n <= 0) {
@@ -1179,7 +1355,17 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: _inputDecoration(hint: 'e.g. 35000'),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: c.headline,
+                    ),
+                    decoration: _inputDecoration(
+                      hint: amountHint,
+                      hintColor: hintColor,
+                      fill: fieldFill,
+                      borderColor: fieldBorder,
+                    ),
                     validator: (v) {
                       final n = double.tryParse((v ?? '').replaceAll(',', ''));
                       if (n == null || n < 0) {
@@ -1194,9 +1380,27 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                   _fieldLabel(_isSw ? 'Njia ya Malipo' : 'Payment Method'),
                   DropdownButtonFormField<String>(
                     initialValue: _provider,
-                    decoration: _inputDecoration(),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: c.headline,
+                    ),
+                    dropdownColor: c.dropdownBg,
+                    decoration: _inputDecoration(
+                      hintColor: hintColor,
+                      fill: fieldFill,
+                      borderColor: fieldBorder,
+                    ),
                     items: _providers
-                        .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p,
+                            child: Text(
+                              p,
+                              style: TextStyle(color: c.headline),
+                            ),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) {
                       if (v != null) setState(() => _provider = v);
@@ -1208,20 +1412,24 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                     onTap: _pickDate,
                     borderRadius: BorderRadius.circular(12),
                     child: InputDecorator(
-                      decoration: _inputDecoration(),
+                      decoration: _inputDecoration(
+                        hintColor: hintColor,
+                        fill: fieldFill,
+                        borderColor: fieldBorder,
+                      ),
                       child: Row(
                         children: [
                           const Icon(
-                            Icons.event_rounded,
+                            Icons.event_outlined,
                             size: 18,
-                            color: _UtilUi.forest,
+                            color: AppColors.colorPrimary,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             dateLabel,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF111827),
+                              color: c.headline,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1234,14 +1442,15 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                   TextFormField(
                     controller: _notesCtrl,
                     maxLines: 2,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: c.headline,
+                    ),
                     decoration: _inputDecoration(
-                      hint: isLuku
-                          ? (_isSw
-                                ? 'Mf. Meter 01013211901'
-                                : 'e.g. Meter 01013211901')
-                          : (_isSw
-                                ? 'Mf. DAWASA Account 12345'
-                                : 'e.g. DAWASA Account 12345'),
+                      hint: notesHint,
+                      hintColor: hintColor,
+                      fill: fieldFill,
+                      borderColor: fieldBorder,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -1249,7 +1458,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                     width: double.infinity,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: _UtilUi.forest,
+                        backgroundColor: AppColors.colorPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1271,7 +1480,7 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
                                   : (_isSw ? 'ONGEZA MAJI' : 'ADD WATER UNITS'),
                               style: const TextStyle(
                                 fontSize: 13,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 letterSpacing: 0.8,
                               ),
                             ),
@@ -1284,40 +1493,68 @@ class _UtilityTopUpSheetState extends State<_UtilityTopUpSheet> {
         ),
       ),
     );
+
+    return Theme(
+      data: Theme.of(context).copyWith(
+        hintColor: hintColor,
+        inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
+          hintStyle: TextStyle(
+            color: hintColor,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+      child: sheet,
+    );
   }
 
-  Widget _fieldLabel(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 6),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: 11,
-        letterSpacing: 0.6,
-        fontWeight: FontWeight.w800,
-        color: Color(0xFF6B7280),
+  Widget _fieldLabel(String text) {
+    final c = FormSurfaceColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          letterSpacing: 0.6,
+          fontWeight: FontWeight.w700,
+          color: c.secondary,
+        ),
       ),
-    ),
-  );
+    );
+  }
 
-  InputDecoration _inputDecoration({String? hint}) {
+  InputDecoration _inputDecoration({
+    String? hint,
+    required Color hintColor,
+    required Color fill,
+    required Color borderColor,
+  }) {
     const radius = BorderRadius.all(Radius.circular(12));
     return InputDecoration(
-      isDense: true,
+      isDense: false,
       hintText: hint,
+      hintMaxLines: 2,
+      hintStyle: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+        color: hintColor,
+      ),
       filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: const OutlineInputBorder(
+      fillColor: fill,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      border: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: Color(0xFFE5E1D8)),
+        borderSide: BorderSide(color: borderColor),
       ),
-      enabledBorder: const OutlineInputBorder(
+      enabledBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: Color(0xFFE5E1D8)),
+        borderSide: BorderSide(color: borderColor),
       ),
-      focusedBorder: const OutlineInputBorder(
+      focusedBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: _UtilUi.forest, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
       ),
       errorBorder: const OutlineInputBorder(
         borderRadius: radius,

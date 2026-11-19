@@ -59,7 +59,7 @@ class GuidedTourOverlay extends StatelessWidget {
                         guideTitle,
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 0.6,
                           color: isDark
                               ? const Color(0xFFAEAEB2)
@@ -90,7 +90,7 @@ class GuidedTourOverlay extends StatelessWidget {
                   stepTitle,
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : const Color(0xFF111827),
                   ),
                 ),

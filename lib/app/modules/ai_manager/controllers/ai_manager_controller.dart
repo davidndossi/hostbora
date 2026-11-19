@@ -16,6 +16,12 @@ import '../../../data/local/service/ai_tenant_flow.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/service/inventory_nlp_parser.dart';
 import '../../../data/local/service/portfolio_ai_hybrid_service.dart';
+import '../../../data/local/service/quick_action_intent_resolver.dart';
+import '../../../data/repository/app_repository.dart';
+import '../../../routes/app_pages.dart';
+import '../../home/widgets/quick_actions_dialog.dart';
+import '../genui/host_genui_layout.dart';
+import '../genui/host_genui_session.dart';
 
 class AiChatMessage {
   const AiChatMessage({
@@ -24,6 +30,7 @@ class AiChatMessage {
     required this.role,
     required this.time,
     this.isTyping = false,
+    this.surfaceId,
   });
 
   final String text;
@@ -31,10 +38,14 @@ class AiChatMessage {
   final String role;
   final String time;
   final bool isTyping;
+
+  /// GenUI surface rendered in place of [text] when set.
+  final String? surfaceId;
 }
 
 class AiManagerController extends BaseController {
   late final PortfolioAiHybridService _hybrid;
+  late final HostGenUiSession genUi;
 
   final messages = <AiChatMessage>[].obs;
   final isBootstrapping = true.obs;
@@ -201,6 +212,7 @@ class AiManagerController extends BaseController {
   @override
   void onInit() {
     super.onInit();
+    genUi = HostGenUiSession(onAction: _onGeneratedAction);
     _bootstrap();
   }
 
@@ -253,6 +265,7 @@ class AiManagerController extends BaseController {
     _activeTenantFlow      = null;
     _activeBnbGuestFlow    = null;
     _activeMaintenanceFlow = null;
+    genUi.dispose();
     inputController.dispose();
     scrollController.dispose();
     super.onClose();
@@ -263,13 +276,23 @@ class AiManagerController extends BaseController {
   Future<void> _loadWelcome() async {
     isReplying.value = true;
     try {
-      final text = await _hybrid.welcomeMessage(isSw: _isSw);
+      final ctx = await _hybrid.loadContext();
+      final text = ctx.welcomeSummary(
+        formatMoney: _hybrid.formatMoney,
+        isSw: _isSw,
+      );
+      final layout = HostGenUiLayout.summary(
+        ctx: ctx,
+        formatMoney: _hybrid.formatMoney,
+        isSw: _isSw,
+      );
       messages.assignAll([
         AiChatMessage(
           fromAssistant: true,
           role: _isSw ? 'Msaidizi wa AI' : 'AI Assistant',
           time: _nowLabel(),
           text: text,
+          surfaceId: genUi.show(layout),
         ),
       ]);
       _scrollToEnd();
@@ -610,15 +633,9 @@ class AiManagerController extends BaseController {
       }
 
       // ── Inventory query: "list all", "low stock" ──────────────────────
-      final inventoryListReply = await _tryInventoryQuery(text);
-      if (inventoryListReply != null) {
-        messages.removeLast();
-        messages.add(AiChatMessage(
-          fromAssistant: true,
-          role: _isSw ? 'Msaidizi wa AI' : 'AI Assistant',
-          time: _nowLabel(),
-          text: inventoryListReply,
-        ));
+      final inventoryLayout = await _tryInventoryQuery(text);
+      if (inventoryLayout != null) {
+        _replaceTyping(inventoryLayout);
         return;
       }
 
@@ -627,18 +644,39 @@ class AiManagerController extends BaseController {
         final commands = InventoryNlpParser.parse(text);
         if (commands.isNotEmpty) {
           final reply = await _applyInventoryCommands(commands);
-          messages.removeLast();
-          messages.add(AiChatMessage(
-            fromAssistant: true,
-            role: _isSw ? 'Msaidizi wa AI' : 'AI Assistant',
-            time: _nowLabel(),
-            text: reply,
-          ));
+          final isSw = _isSw || _looksSwahili(text);
+          _replaceTyping(
+            HostGenUiLayout.note(
+              title: isSw ? 'Vifaa' : 'Inventory',
+              body: reply,
+              actions: [
+                HostGenUiAction(
+                  label: isSw ? 'Vifaa' : 'Inventory',
+                  action: HostGenUiActions.openInventory,
+                ),
+              ],
+            ),
+          );
           return;
         }
       }
 
-      // ── General AI answer ─────────────────────────────────────────────
+      // ── Any other typed action (booking, reminder, open a screen, …) ─
+      if (HostGenUiLayout.shouldTreatAsAction(text)) {
+        final actionLayout = await _resolveTypedAction(text);
+        if (actionLayout != null) {
+          _replaceTyping(actionLayout.layout);
+          try {
+            await _performResolvedAction(actionLayout.resolution);
+          } catch (e, st) {
+            logger.e('AiManager action failed: $e $st');
+          }
+          return;
+        }
+      }
+
+      // ── Question: GenUI card from local data, otherwise the model ────
+      final isSw = _isSw || _looksSwahili(text);
       final history = messages
           .where((m) => !m.isTyping)
           .map((m) => {
@@ -646,22 +684,23 @@ class AiManagerController extends BaseController {
                 'text': m.text,
               })
           .toList();
-
-      final reply = await _hybrid.answer(
+      final ctx = await _hybrid.loadContext();
+      final localLayout = HostGenUiLayout.fromQuestion(
         question: text,
-        isSw: _isSw || _looksSwahili(text),
-        conversation: history,
+        ctx: ctx,
+        formatMoney: _hybrid.formatMoney,
+        isSw: isSw,
       );
-
-      messages.removeLast();
-      messages.add(
-        AiChatMessage(
-          fromAssistant: true,
-          role: _isSw ? 'Msaidizi wa AI' : 'AI Assistant',
-          time: _nowLabel(),
-          text: reply,
-        ),
-      );
+      final layout = localLayout ??
+          HostGenUiLayout.parseModel(
+            await _hybrid.generativeUiSpec(
+              question: text,
+              isSw: isSw,
+              conversation: history,
+            ),
+            isSw: isSw,
+          );
+      _replaceTyping(layout);
     } catch (e) {
       messages.removeLast();
       messages.add(
@@ -806,7 +845,7 @@ class AiManagerController extends BaseController {
     caseSensitive: false,
   );
 
-  Future<String?> _tryInventoryQuery(String text) async {
+  Future<HostGenUiLayout?> _tryInventoryQuery(String text) async {
     final isSw = _isSw || _looksSwahili(text);
     if (!Get.isRegistered<InventoryItemLocalDataSource>()) return null;
 
@@ -821,24 +860,43 @@ class AiManagerController extends BaseController {
         "ORDER BY quantity ASC LIMIT 20",
       );
       if (rows.isEmpty) {
-        return isSw
-            ? '✅ Hakuna bidhaa zenye idadi ya chini kwa sasa.'
-            : '✅ No low-stock items at the moment — all levels look good.';
+        return HostGenUiLayout.note(
+          title: isSw ? 'Vifaa' : 'Inventory',
+          body: isSw
+              ? 'Hakuna bidhaa zenye idadi ya chini kwa sasa.'
+              : 'No low-stock items at the moment — all levels look good.',
+          actions: [
+            HostGenUiAction(
+              label: isSw ? 'Vifaa' : 'Inventory',
+              action: HostGenUiActions.openInventory,
+            ),
+          ],
+        );
       }
-      final lines = rows.map((r) {
-        final name    = r['name'] as String? ?? '';
-        final qty     = r['quantity'] as int? ?? 0;
-        final reorder = r['reorder_level'] as int? ?? 0;
-        final prop    = r['property_label'] as String? ?? '';
-        final unit    = r['apartment_unit_name'] as String? ?? '';
-        final where   = [prop, unit].where((s) => s.isNotEmpty).join(' · ');
-        return '• $name — qty $qty / reorder $reorder'
-            '${where.isNotEmpty ? '  ($where)' : ''}';
-      });
-      final header = isSw
-          ? '⚠️ Bidhaa zenye idadi ya chini (${rows.length}):\n'
-          : '⚠️ Low-stock items (${rows.length}):\n';
-      return header + lines.join('\n');
+      return HostGenUiLayout(
+        title: isSw ? 'Bidhaa chini' : 'Low stock',
+        body: isSw
+            ? 'Bidhaa ${rows.length} ziko chini ya kiwango cha kuagiza.'
+            : '${rows.length} item${rows.length == 1 ? '' : 's'} at or below the reorder level.',
+        rows: [
+          for (final r in rows)
+            HostGenUiRow(
+              title: r['name'] as String? ?? '',
+              subtitle: [
+                r['property_label'] as String? ?? '',
+                r['apartment_unit_name'] as String? ?? '',
+              ].where((s) => s.isNotEmpty).join(' · '),
+              trailing:
+                  '${r['quantity'] ?? 0} / ${r['reorder_level'] ?? 0}',
+            ),
+        ],
+        actions: [
+          HostGenUiAction(
+            label: isSw ? 'Vifaa' : 'Inventory',
+            action: HostGenUiActions.openInventory,
+          ),
+        ],
+      );
     }
 
     if (_listAllRe.hasMatch(text)) {
@@ -849,28 +907,47 @@ class AiManagerController extends BaseController {
         "FROM $t ORDER BY property_label, name LIMIT 50",
       );
       if (rows.isEmpty) {
-        return isSw
-            ? 'Bado hakuna vifaa vilivyorekodiwa.'
-            : 'No inventory items recorded yet.';
+        return HostGenUiLayout.note(
+          title: isSw ? 'Vifaa' : 'Inventory',
+          body: isSw
+              ? 'Bado hakuna vifaa vilivyorekodiwa.'
+              : 'No inventory items recorded yet.',
+          actions: [
+            HostGenUiAction(
+              label: isSw ? 'Vifaa' : 'Inventory',
+              action: HostGenUiActions.openInventory,
+            ),
+          ],
+        );
       }
-      final lines = rows.map((r) {
-        final name  = r['name'] as String? ?? '';
-        final qty   = r['quantity'] as int? ?? 0;
-        final reorder = r['reorder_level'] as int? ?? 0;
-        final low   = reorder > 0 && qty <= reorder;
-        final flag  = low ? ' ⚠️' : '';
-        final prop  = r['property_label'] as String? ?? '';
-        final unit  = r['apartment_unit_name'] as String? ?? '';
-        final where = [prop, unit].where((s) => s.isNotEmpty).join(' · ');
-        return '• $name — $qty${where.isNotEmpty ? '  ($where)' : ''}$flag';
-      });
-      final header = isSw
-          ? '📦 Orodha ya vifaa (${rows.length}):\n'
-          : '📦 Inventory list (${rows.length} items):\n';
-      final footer = rows.length == 50
-          ? (isSw ? '\n_(inaonyesha 50 za kwanza)_' : '\n_(showing first 50)_')
-          : '';
-      return header + lines.join('\n') + footer;
+      final capped = rows.length == 50;
+      return HostGenUiLayout(
+        title: isSw ? 'Orodha ya vifaa' : 'Inventory',
+        body: capped
+            ? (isSw
+                ? 'Inaonyesha vifaa 50 vya kwanza.'
+                : 'Showing the first 50 items.')
+            : (isSw
+                ? 'Vifaa ${rows.length}.'
+                : '${rows.length} item${rows.length == 1 ? '' : 's'}.'),
+        rows: [
+          for (final r in rows.take(8))
+            HostGenUiRow(
+              title: r['name'] as String? ?? '',
+              subtitle: [
+                r['property_label'] as String? ?? '',
+                r['apartment_unit_name'] as String? ?? '',
+              ].where((s) => s.isNotEmpty).join(' · '),
+              trailing: '${r['quantity'] ?? 0}',
+            ),
+        ],
+        actions: [
+          HostGenUiAction(
+            label: isSw ? 'Fungua vifaa' : 'Open inventory',
+            action: HostGenUiActions.openInventory,
+          ),
+        ],
+      );
     }
 
     return null;
@@ -999,6 +1076,199 @@ class AiManagerController extends BaseController {
       case 'restock': return 'Imejazwa';
       case 'damage':  return 'Imeharibiwa';
       default:        return 'Imerekebishwa';
+    }
+  }
+
+  void _replaceTyping(HostGenUiLayout layout) {
+    if (messages.isNotEmpty && messages.last.isTyping) {
+      messages.removeLast();
+    }
+    messages.add(
+      AiChatMessage(
+        fromAssistant: true,
+        role: _isSw ? 'Msaidizi wa AI' : 'AI Assistant',
+        time: _nowLabel(),
+        text: layout.body.isEmpty ? layout.title : layout.body,
+        surfaceId: genUi.show(layout),
+      ),
+    );
+  }
+
+  Future<({HostGenUiLayout layout, QuickActionResolution resolution})?>
+      _resolveTypedAction(String text) async {
+    final tag = (AppRepository).toString();
+    if (!Get.isRegistered<AppRepository>(tag: tag)) return null;
+    final resolution = await QuickActionIntentResolver(
+      repository: Get.find<AppRepository>(tag: tag),
+    ).resolve(text);
+    if (!resolution.isSuccess) return null;
+    final isSw = _isSw || _looksSwahili(text);
+    return (layout: _layoutForResolution(resolution, isSw), resolution: resolution);
+  }
+
+  HostGenUiLayout _layoutForResolution(
+    QuickActionResolution resolution,
+    bool isSw,
+  ) {
+    final wizard = resolution.wizardAction;
+    if (wizard != null && wizard != QuickActionIntent.unknown) {
+      final key = switch (wizard) {
+        QuickActionIntent.addProperty => HostGenUiActions.addProperty,
+        QuickActionIntent.addIncome => HostGenUiActions.addIncome,
+        QuickActionIntent.addExpense => HostGenUiActions.addExpense,
+        QuickActionIntent.addBooking => HostGenUiActions.addBooking,
+        QuickActionIntent.addTenant => HostGenUiActions.addTenant,
+        QuickActionIntent.unknown => HostGenUiActions.addProperty,
+      };
+      final label = _actionLabel(key, isSw);
+      return HostGenUiLayout.note(
+        title: label,
+        body: isSw
+            ? 'Nimefungua fomu ile ile unayoitumia kutoka ukurasa wa nyumbani.'
+            : 'Opened the same form you use from the home screen.',
+        actions: [HostGenUiAction(label: label, action: key)],
+      );
+    }
+    final route = resolution.routeName ?? '';
+    final key = _chipForRoute(route);
+    final label = _screenLabel(route, isSw);
+    return HostGenUiLayout.note(
+      title: label,
+      body: isSw ? 'Nimefungua skrini hiyo.' : 'Opened that screen.',
+      actions: key == null
+          ? const []
+          : [HostGenUiAction(label: label, action: key)],
+    );
+  }
+
+  Future<void> _performResolvedAction(QuickActionResolution resolution) async {
+    final wizard = resolution.wizardAction;
+    if (wizard != null && wizard != QuickActionIntent.unknown) {
+      final action = switch (wizard) {
+        QuickActionIntent.addProperty => QuickHomeAction.addProperty,
+        QuickActionIntent.addIncome => QuickHomeAction.addIncome,
+        QuickActionIntent.addExpense => QuickHomeAction.addExpense,
+        QuickActionIntent.addBooking => QuickHomeAction.addBooking,
+        QuickActionIntent.addTenant => QuickHomeAction.addTenant,
+        QuickActionIntent.unknown => null,
+      };
+      if (action != null) await runQuickHomeAction(action);
+      return;
+    }
+    await _openRoute(resolution.routeName);
+  }
+
+  Future<void> _onGeneratedAction(String action) async {
+    if (isReplying.value) return;
+    switch (action.trim().toUpperCase()) {
+      case HostGenUiActions.addProperty:
+        await runQuickHomeAction(QuickHomeAction.addProperty);
+      case HostGenUiActions.addIncome:
+        await runQuickHomeAction(QuickHomeAction.addIncome);
+      case HostGenUiActions.addExpense:
+        await runQuickHomeAction(QuickHomeAction.addExpense);
+      case HostGenUiActions.addBooking:
+        await runQuickHomeAction(QuickHomeAction.addBooking);
+      case HostGenUiActions.addTenant:
+        await runQuickHomeAction(QuickHomeAction.addTenant);
+      case HostGenUiActions.sendReminder:
+        final ctx = Get.context;
+        if (ctx != null) await startQuickSendReminder(ctx);
+      case HostGenUiActions.openProperties:
+        await Get.toNamed(Routes.MY_PROPERTIES);
+      case HostGenUiActions.openTenants:
+        await Get.toNamed(Routes.ALL_TENANTS);
+      case HostGenUiActions.openBookings:
+        await Get.toNamed(Routes.ALL_BOOKINGS);
+      case HostGenUiActions.openPayments:
+        await Get.toNamed(Routes.RENT_MANAGE_PAYMENTS);
+      case HostGenUiActions.openExpenses:
+        await Get.toNamed(Routes.RENT_MANAGE_EXPENSES);
+      case HostGenUiActions.openMaintenance:
+        await Get.toNamed(Routes.MAINTENANCE_TASKS);
+      case HostGenUiActions.openInventory:
+        await Get.toNamed(Routes.INVENTORY_TRACKING);
+      case HostGenUiActions.openCalendar:
+        await Get.toNamed(Routes.HOST_CALENDAR);
+      case HostGenUiActions.openReports:
+        await Get.toNamed(Routes.REPORTS_MONTHLY_INCOME);
+    }
+  }
+
+  Future<void> _openRoute(String? route) async {
+    if (route == null || route.isEmpty) return;
+    if (route == Routes.RENT_RECURRING_REMINDERS) {
+      final ctx = Get.context;
+      if (ctx != null) await startQuickSendReminder(ctx);
+      return;
+    }
+    await Get.toNamed(route);
+  }
+
+  String? _chipForRoute(String route) {
+    if (route == Routes.MY_PROPERTIES) return HostGenUiActions.openProperties;
+    if (route == Routes.ALL_TENANTS || route == Routes.TENANTS) {
+      return HostGenUiActions.openTenants;
+    }
+    if (route == Routes.ALL_BOOKINGS) return HostGenUiActions.openBookings;
+    if (route == Routes.RENT_MANAGE_PAYMENTS) return HostGenUiActions.openPayments;
+    if (route == Routes.RENT_MANAGE_EXPENSES) return HostGenUiActions.openExpenses;
+    if (route == Routes.MAINTENANCE_TASKS ||
+        route == Routes.RENT_SCHEDULE_MAINTENANCE_FORM) {
+      return HostGenUiActions.openMaintenance;
+    }
+    if (route == Routes.INVENTORY_TRACKING) return HostGenUiActions.openInventory;
+    if (route == Routes.HOST_CALENDAR) return HostGenUiActions.openCalendar;
+    if (route == Routes.REPORTS_MONTHLY_INCOME ||
+        route == Routes.FINANCIAL_OVERVIEW) {
+      return HostGenUiActions.openReports;
+    }
+    if (route == Routes.RENT_RECURRING_REMINDERS) {
+      return HostGenUiActions.sendReminder;
+    }
+    return null;
+  }
+
+  String _screenLabel(String route, bool isSw) {
+    final key = _chipForRoute(route);
+    if (key != null) return _actionLabel(key, isSw);
+    return isSw ? 'Skrini' : 'Screen';
+  }
+
+  String _actionLabel(String key, bool isSw) {
+    switch (key) {
+      case HostGenUiActions.addProperty:
+        return isSw ? 'Ongeza mali' : 'Add property';
+      case HostGenUiActions.addIncome:
+        return isSw ? 'Ongeza mapato' : 'Add income';
+      case HostGenUiActions.addExpense:
+        return isSw ? 'Ongeza matumizi' : 'Add expense';
+      case HostGenUiActions.addBooking:
+        return isSw ? 'Ongeza uhifadhi' : 'Add booking';
+      case HostGenUiActions.addTenant:
+        return isSw ? 'Ongeza mpangaji' : 'Add tenant';
+      case HostGenUiActions.sendReminder:
+        return isSw ? 'Tuma kikumbusho' : 'Send reminder';
+      case HostGenUiActions.openProperties:
+        return isSw ? 'Mali zangu' : 'My properties';
+      case HostGenUiActions.openTenants:
+        return isSw ? 'Wapangaji' : 'Tenants';
+      case HostGenUiActions.openBookings:
+        return isSw ? 'Uhifadhi' : 'Bookings';
+      case HostGenUiActions.openPayments:
+        return isSw ? 'Malipo' : 'Payments';
+      case HostGenUiActions.openExpenses:
+        return isSw ? 'Matumizi' : 'Expenses';
+      case HostGenUiActions.openMaintenance:
+        return isSw ? 'Matengenezo' : 'Maintenance';
+      case HostGenUiActions.openInventory:
+        return isSw ? 'Vifaa' : 'Inventory';
+      case HostGenUiActions.openCalendar:
+        return isSw ? 'Kalenda' : 'Calendar';
+      case HostGenUiActions.openReports:
+        return isSw ? 'Ripoti' : 'Reports';
+      default:
+        return isSw ? 'Fungua' : 'Open';
     }
   }
 

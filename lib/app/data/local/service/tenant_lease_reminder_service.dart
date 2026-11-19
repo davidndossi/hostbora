@@ -6,6 +6,7 @@ import '/app/data/local/db/tenant_local_data_source.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/data/model/send_sms_request.dart';
 import '/app/data/repository/app_repository.dart';
+import '../../service/analytics_service.dart';
 
 /// Sends one-month-prior lease-end reminders to tenants via WhatsApp/SMS gateway.
 class TenantLeaseReminderService extends GetxService {
@@ -74,6 +75,7 @@ class TenantLeaseReminderService extends GetxService {
 
         try {
           var delivered = false;
+          var channel = 'whatsapp';
           final wa = await _repository.sendWhatsApp(
             SendSmsRequest(phoneNumber: phone, message: msg),
           );
@@ -84,9 +86,15 @@ class TenantLeaseReminderService extends GetxService {
               SendSmsRequest(phoneNumber: phone, message: msg),
             );
             delivered = sms.responseCode == '0';
+            channel = 'sms';
           }
           if (delivered) {
             await _preferenceManager.setBool(stampKey, true);
+            analytics?.logReminderSent(
+              channel: channel,
+              automated: true,
+              reminderType: 'lease_expiry',
+            );
           }
         } catch (_) {
           // Retry next periodic run.

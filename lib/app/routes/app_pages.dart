@@ -46,6 +46,12 @@ import '../modules/settings/bindings/settings_binding.dart';
 import '../modules/settings/views/settings_view.dart';
 import '../modules/challenges_rewards/bindings/challenges_rewards_binding.dart';
 import '../modules/challenges_rewards/views/challenges_rewards_view.dart';
+import '../modules/my_network/bindings/my_network_binding.dart';
+import '../modules/my_network/views/my_network_view.dart';
+import '../modules/property_manager_directory/bindings/property_manager_directory_binding.dart';
+import '../modules/property_manager_directory/bindings/property_manager_profile_binding.dart';
+import '../modules/property_manager_directory/views/property_manager_directory_view.dart';
+import '../modules/property_manager_directory/views/property_manager_profile_view.dart';
 import '../modules/help_center/bindings/help_center_binding.dart';
 import '../modules/help_center/views/help_center_view.dart';
 import '../modules/help_center/views/help_guide_detail_view.dart';
@@ -61,6 +67,8 @@ import '../modules/privacy/bindings/privacy_binding.dart';
 import '../modules/privacy/views/privacy_view.dart';
 import '../modules/create_host_account/bindings/create_host_account_binding.dart';
 import '../modules/create_host_account/views/create_host_account_view.dart';
+import '../modules/first_property/bindings/first_property_binding.dart';
+import '../modules/first_property/views/first_property_view.dart';
 import '../modules/welcome_back/bindings/welcome_back_binding.dart';
 import '../modules/welcome_back/views/welcome_back_view.dart';
 import '../modules/reset_password/bindings/reset_password_binding.dart';
@@ -204,6 +212,10 @@ import '../modules/rent/define_tenant_charges/bindings/rent_define_tenant_charge
     as split_tenant_charges_binding;
 import '../modules/rent/define_tenant_charges/views/rent_define_tenant_charges_view.dart'
     as split_tenant_charges_view;
+import '../modules/rent/apartment_reports/bindings/rent_apartment_reports_binding.dart'
+    as split_apartment_reports_binding;
+import '../modules/rent/apartment_reports/views/rent_apartment_reports_view.dart'
+    as split_apartment_reports_view;
 import '../modules/rent/tenant_residency_payment_tracker/bindings/rent_tenant_residency_payment_tracker_binding.dart'
     as split_tenant_residency_binding;
 import '../modules/rent/tenant_residency_payment_tracker/views/rent_tenant_residency_payment_tracker_view.dart'
@@ -312,6 +324,21 @@ class AppPages {
       binding: ChallengesRewardsBinding(),
     ),
     GetPage(
+      name: _Paths.MY_NETWORK,
+      page: () => MyNetworkView(),
+      binding: MyNetworkBinding(),
+    ),
+    GetPage(
+      name: _Paths.PROPERTY_MANAGERS,
+      page: () => PropertyManagerDirectoryView(),
+      binding: PropertyManagerDirectoryBinding(),
+    ),
+    GetPage(
+      name: _Paths.PROPERTY_MANAGER_PROFILE,
+      page: () => PropertyManagerProfileView(),
+      binding: PropertyManagerProfileBinding(),
+    ),
+    GetPage(
       name: _Paths.HELP_GUIDE_DETAIL,
       page: () => HelpGuideDetailView(),
       binding: HelpGuideDetailBinding(),
@@ -372,6 +399,11 @@ class AppPages {
       binding: SalesAgentDashboardBinding(),
     ),
     GetPage(
+      name: _Paths.SALES_AGENT_HOME,
+      page: () => SalesAgentDashboardView(),
+      binding: SalesAgentDashboardBinding(),
+    ),
+    GetPage(
       name: _Paths.SUBSCRIPTION,
       page: () => SubscriptionView(),
       binding: SubscriptionBinding(),
@@ -400,6 +432,11 @@ class AppPages {
       name: _Paths.CREATE_HOST_ACCOUNT,
       page: () => CreateHostAccountView(),
       binding: CreateHostAccountBinding(),
+    ),
+    GetPage(
+      name: _Paths.FIRST_PROPERTY,
+      page: () => FirstPropertyView(),
+      binding: FirstPropertyBinding(),
     ),
     GetPage(
       name: _Paths.WELCOME_BACK,
@@ -723,6 +760,11 @@ class AppPages {
       name: _Paths.RENT_DEFINE_TENANT_CHARGES,
       page: () => split_tenant_charges_view.RentDefineTenantChargesView(),
       binding: split_tenant_charges_binding.RentDefineTenantChargesBinding(),
+    ),
+    GetPage(
+      name: _Paths.RENT_APARTMENT_REPORTS,
+      page: () => split_apartment_reports_view.RentApartmentReportsView(),
+      binding: split_apartment_reports_binding.RentApartmentReportsBinding(),
     ),
     GetPage(
       name: _Paths.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,

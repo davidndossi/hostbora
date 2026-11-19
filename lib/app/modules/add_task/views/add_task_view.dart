@@ -9,6 +9,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
+import '../../../core/widget/sticky_form_actions.dart';
 import '../controllers/add_task_controller.dart';
 
 class AddTaskView extends BaseView<AddTaskController> {
@@ -51,8 +52,8 @@ class AddTaskView extends BaseView<AddTaskController> {
         ? context.tokens.elevatedSurface
         : AppColors.designInputBorder;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Form(
         key: controller.formKey,
         child: Column(
@@ -106,6 +107,7 @@ class AddTaskView extends BaseView<AddTaskController> {
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.titleController,
+              textCapitalization: TextCapitalization.sentences,
               style: TextStyle(color: valueColor),
               decoration: _decoration(
                 context,
@@ -134,6 +136,8 @@ class AddTaskView extends BaseView<AddTaskController> {
             TextFormField(
               controller: controller.descriptionController,
               maxLines: 3,
+              keyboardType: TextInputType.multiline,
+              textCapitalization: TextCapitalization.sentences,
               style: TextStyle(color: valueColor),
               decoration: _decoration(
                 context,
@@ -230,7 +234,7 @@ class AddTaskView extends BaseView<AddTaskController> {
                       if (controller.dueDate.value != null)
                         IconButton(
                           onPressed: controller.clearDueDate,
-                          icon: const Icon(Icons.close, size: 20),
+                          icon: const Icon(Icons.close_outlined, size: 20),
                           style: IconButton.styleFrom(
                             foregroundColor: AppColors.textColorSecondary,
                             padding: const EdgeInsets.all(4),
@@ -242,17 +246,24 @@ class AddTaskView extends BaseView<AddTaskController> {
                 ),
               );
             }),
-            const SizedBox(height: 32),
-            Obx(
-              () => LoadingButton(
-                label: _t(context, en: 'Add Task', sw: 'Ongeza Kazi'),
-                onPressed: controller.submit,
-                isLoading: controller.saving.value,
-              ),
-            ),
           ],
         ),
       ),
+    );
+
+    return Column(
+      children: [
+        Expanded(child: content),
+        StickyFormActions(
+          primary: Obx(
+            () => LoadingButton(
+              label: _t(context, en: 'Add task', sw: 'Ongeza kazi'),
+              onPressed: controller.submit,
+              isLoading: controller.saving.value,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -281,7 +292,7 @@ class AddTaskView extends BaseView<AddTaskController> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designAccent, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),

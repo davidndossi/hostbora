@@ -3,18 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:get_storage/get_storage.dart';
-
-import '../../../data/local/db/app_local_database.dart';
 import '../../all_bookings/controllers/all_bookings_controller.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../financial_overview/controllers/financial_overview_controller.dart';
 import '../../home/controllers/home_controller.dart';
 import '../../host_calendar/controllers/host_calendar_controller.dart';
 import '../../listing_details/controllers/listing_details_controller.dart';
+import '../../main/controllers/bottom_nav_controller.dart';
+import '../../main/controllers/main_controller.dart';
+import '../../my_properties/controllers/my_properties_controller.dart';
 import '../../rent/expected_payment_schedule/controllers/rent_expected_payment_schedule_controller.dart';
 import '../../rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart';
 import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
+import '../../../data/local/service/local_account_data_reset.dart';
+import '../../../data/local/service/session_service.dart';
+import '../../../data/local/service/local_notification_scheduler_service.dart';
 import '../../../data/local/service/tenant_lease_reminder_service.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/host_score.dart';
@@ -41,6 +44,9 @@ class SettingsController extends BaseController {
   final token = ''.obs;
   final account = ''.obs;
   final username = ''.obs;
+  final accountName = ''.obs;
+  final accountEmail = ''.obs;
+  final accountPhone = ''.obs;
   final deviceId = ''.obs;
   final userId = ''.obs;
   final isAdmin = false.obs;
@@ -67,7 +73,7 @@ class SettingsController extends BaseController {
   var receiveCommunityUpdates = false.obs;
   final tenantReminderTemplate = ''.obs;
   final runningLeaseReminderNow = false.obs;
-  final appLockTimeoutSeconds = 15.obs;
+  final appLockTimeoutSeconds = PreferenceManager.defaultAppLockTimeoutSeconds.obs;
   final hostScore = Rxn<HostScore>();
   final hostScoreLoading = false.obs;
 
@@ -106,11 +112,23 @@ class SettingsController extends BaseController {
     deviceId(await _preferenceManager.getString(PreferenceManager.keyDeviceId));
     roles(await _preferenceManager.getStringList(PreferenceManager.keyRoles));
     language(await _preferenceManager.getString(PreferenceManager.keyLang));
-    User user = await _preferenceManager.getUser();
-    userId(user.id);
-    isAdmin(user.isAdmin);
+    User? user;
+    try {
+      user = await _preferenceManager.getUser();
+    } catch (_) {
+      user = null;
+    }
+    _applyAccountProfile(user);
+    userId(user?.id);
+    final userRoles = user?.roles ?? const <String>[];
+    final mergedRoles = userRoles.isNotEmpty ? userRoles : roles.toList();
+    if (userRoles.isNotEmpty) roles(mergedRoles);
+    isAdmin(
+      (user?.isAdmin ?? false) ||
+          mergedRoles.any((r) => r.toLowerCase() == 'admin'),
+    );
     isSalesAgent(
-      roles.any((r) => r.toLowerCase() == 'sales_agent'),
+      mergedRoles.any((r) => r.toLowerCase() == 'sales_agent'),
     );
     isPortfolioManagerSession(
       await _preferenceManager.getBool(
@@ -120,6 +138,18 @@ class SettingsController extends BaseController {
     );
     loadSettings();
     loadHostScore();
+  }
+
+  void _applyAccountProfile(User? user) {
+    final name = (user?.fullName ?? '').trim();
+    final storedName = deviceName.value.trim();
+    accountName(name.isNotEmpty ? name : storedName);
+
+    accountEmail((user?.email ?? '').trim());
+
+    final phone = (user?.msisdn ?? '').trim();
+    final storedPhone = username.value.trim();
+    accountPhone(phone.isNotEmpty ? phone : storedPhone);
   }
 
   Future<void> loadHostScore() async {
@@ -354,11 +384,11 @@ class SettingsController extends BaseController {
     );
     final savedTimeout = await _preferenceManager.getInt(
       PreferenceManager.keyAppLockTimeoutSeconds,
-      defaultValue: 15,
+      defaultValue: PreferenceManager.defaultAppLockTimeoutSeconds,
     );
     appLockTimeoutSeconds.value = appLockTimeoutOptions.contains(savedTimeout)
         ? savedTimeout
-        : 15;
+        : PreferenceManager.defaultAppLockTimeoutSeconds;
     if (Get.isRegistered<CurrencyService>()) {
       await Get.find<CurrencyService>().refreshRatesFromRemote();
     }
@@ -392,9 +422,12 @@ class SettingsController extends BaseController {
   Future<void> promptClearOfflineLocalData() async {
     final isSw = Get.locale?.languageCode == 'sw';
     final title = isSw ? 'Futa data yote ya ndani?' : 'Clear all offline data?';
+    // Says what survives as well as what goes. Without the second paragraph
+    // "all other offline data… cannot be undone" reads as a factory reset,
+    // and hosts expect to land back on onboarding. Use Reset app for that.
     final body = isSw
-        ? 'Hii inafuta mali, mapato, matumizi, wapangaji, foleni za usawazishi, hati za vault, historia ya wageni, kumbukumbu za noti, na data yote iliyohifadhiwa kwenye simu. Huwezi kurudisha.'
-        : 'This permanently removes all properties, income, expenses, tenants, sync queues, vault documents, guest history, booking overrides, moodboards, entry logs, access codes, and all other offline data stored on this device. This cannot be undone.';
+        ? 'Hii inafuta rekodi zilizohifadhiwa kwenye simu hii: mali, mapato, matumizi, wapangaji, foleni za usawazishi, hati za vault, historia ya wageni, kumbukumbu za noti, na misimbo ya kuingia. Huwezi kurudisha.\n\nHaifuti: utaendelea kuwa umeingia, na PIN, lugha na mapendeleo yako yatabaki. Kwa kuanza upya kabisa, tumia Rudisha app kama mpya.'
+        : 'This permanently removes the records stored on this device: properties, income, expenses, tenants, sync queues, vault documents, guest history, booking overrides, moodboards, entry logs and access codes. This cannot be undone.\n\nIt does not sign you out, and your PIN, language and other preferences stay as they are. To start over completely, use Reset app instead.';
     final confirmLabel = isSw ? 'Futa Yote' : 'Erase All';
     final cancelLabel = isSw ? 'Ghairi' : 'Cancel';
 
@@ -422,16 +455,10 @@ class SettingsController extends BaseController {
 
     await runBusy(() async {
       try {
-        // 1. Wipe all SQLite tables (properties, income, expenses, tenants,
-        //    staff, sync queue, maintenance, loyalty, estimates, exchange rates…).
-        await AppLocalDatabase.deleteAllRows();
-
-        // 2. Wipe every GetStorage key (pending queues, vault docs/dirs,
-        //    entry logs, booking overrides, moodboards, access codes, ledger
-        //    docs, recent access, draft listings, etc.).
-        //    Note: login credentials live in FlutterSecureStorage (PreferenceManager)
-        //    and are NOT affected by GetStorage().erase().
-        await GetStorage().erase();
+        // Same path as Reset app: drop the DB file, not just its rows.
+        // DELETE FROM left the open handle (and the leftover
+        // host_bora_local.db) looking like the wipe had done nothing.
+        await LocalAccountDataReset.wipe();
 
         // 3. Reload every live controller so their Rx observables reflect
         //    the now-empty database immediately (no stale values on screen).
@@ -446,10 +473,123 @@ class SettingsController extends BaseController {
     });
   }
 
+  /// Returns the device to a just-installed state and relaunches at onboarding.
+  ///
+  /// Distinct from [promptClearOfflineLocalData], which deliberately keeps the
+  /// sign-in session and every app preference. That is why clearing offline
+  /// data never brought onboarding back: the gate is `seen_onboarding`, which
+  /// lives in secure storage alongside the auth token and is untouched by a
+  /// records-only wipe.
+  ///
+  /// Signs the account out of this device as a consequence, not a side effect
+  /// — a reset that left a live token would not be a fresh install.
+  Future<void> promptResetApp() async {
+    final isSw = Get.locale?.languageCode == 'sw';
+    final ok = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(isSw ? 'Rudisha app kama mpya?' : 'Reset app?'),
+        content: Text(
+          isSw
+              ? 'Hii inafuta kila kitu kwenye simu hii: mali, mapato, matumizi, wapangaji, hati, PIN yako, mapendeleo yako, na utakutolewa kwenye akaunti. App itaanza upya kama mpya.\n\nAkaunti yako ya mtandaoni haiguswi — unaweza kuingia tena na data yako ya seva itapakiwa.'
+              : 'This erases everything on this device: properties, income, expenses, tenants, documents, your PIN, your preferences, and it signs you out. The app restarts as if freshly installed.\n\nYour online account is not deleted — you can sign back in and your server data will sync down again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(
+              isSw ? 'Ghairi' : 'Cancel',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Get.theme.colorScheme.error,
+            ),
+            onPressed: () => Get.back(result: true),
+            child: Text(
+              isSw ? 'Rudisha Upya' : 'Reset App',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+    if (ok != true) return;
+
+    // Only the wipe runs inside runBusy. Navigating away from Settings
+    // disposes this controller (it is a fenix lazyPut on the Settings route),
+    // and runBusy's `finally` writes to `isBusy` — on a disposed Rx that
+    // throws. So the data work finishes first, then the app moves.
+    final wiped = await runBusy<bool>(() async {
+      try {
+        // Reminders are queued with the OS, not in our tables, so they have
+        // to be dropped explicitly or they fire for deleted records.
+        if (Get.isRegistered<LocalNotificationSchedulerService>()) {
+          await Get.find<LocalNotificationSchedulerService>().cancelAll();
+        }
+
+        // SQLite rows + every GetStorage key.
+        await LocalAccountDataReset.wipe();
+
+        // Before touching storage, so the in-memory copies go too. Permanent
+        // services survive Get.offAllNamed, and one still holding a cached
+        // user would have the app half signed-in until the next cold start.
+        if (Get.isRegistered<SessionService>()) {
+          await Get.find<SessionService>().clearFullSession();
+        }
+
+        // The part a records-only wipe skips: secure storage, which holds the
+        // token, the user object, the PIN and `seen_onboarding`. Clearing it
+        // is what actually makes the next launch look like a first launch.
+        await _preferenceManager.clear();
+        return true;
+      } catch (e) {
+        showErrorMessage(e.toString());
+        return false;
+      }
+    });
+    if (wiped != true) return;
+
+    await Get.offAllNamed(Routes.ONBOARDING);
+    _disposeAccountScopedControllers();
+  }
+
+  /// Drops the controllers that outlive a route so a reset cannot leave the
+  /// previous account's data on screen.
+  ///
+  /// These three are registered `permanent: true` in [MainBinding], which
+  /// means `Get.offAllNamed` does not dispose them — and because the binding
+  /// guards two of them with `isRegistered`, signing in again reuses the same
+  /// instances and never reloads. The host sees their old properties against
+  /// an empty database, which reads as the reset having done nothing.
+  ///
+  /// Deleted rather than refreshed: the app is on its way back to onboarding,
+  /// so the right state is no state. The next sign-in runs the binding again
+  /// and builds them from whatever the database holds then. `force` is
+  /// required because GetX will not delete a permanent instance otherwise.
+  ///
+  /// Called after navigating away, so nothing is still subscribed to them.
+  /// The fenix controllers are left alone: they are tied to routes the
+  /// navigation above has already torn down.
+  void _disposeAccountScopedControllers() {
+    Get.delete<MyPropertiesController>(force: true);
+    Get.delete<MainController>(force: true);
+    Get.delete<BottomNavController>(force: true);
+  }
+
   /// Calls refreshIfRegistered() on every controller that holds cached data,
   /// so the UI reflects the empty database straight away.
+  ///
+  /// Missing one of these does not look like a stale cache to the host; it
+  /// looks like the wipe silently failed, because the screen still lists the
+  /// rows that are no longer in the database.
   static Future<void> _refreshAllRegisteredControllers() async {
     await Future.wait([
+      // Registered `permanent: true`, so unlike the fenix controllers below it
+      // is never disposed with its route and will hold a deleted property
+      // list indefinitely.
+      MyPropertiesController.refreshIfRegistered(),
       HomeController.refreshIfRegistered(),
       DashboardController.refreshIfRegistered(),
       AllBookingsController.refreshIfRegistered(),

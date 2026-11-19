@@ -39,6 +39,7 @@ class RentStaffRecord {
     required this.createdAtMs,
     this.paymentType = RentStaffPayFormat.monthly,
     this.amountValue = 0,
+    this.phone = '',
   });
 
   final int id;
@@ -50,6 +51,7 @@ class RentStaffRecord {
   final int createdAtMs;
   final String paymentType;
   final double amountValue;
+  final String phone;
 
   String get displayAmountLine {
     if (amountValue > 0) {
@@ -68,6 +70,7 @@ class RentStaffRecord {
       createdAtMs: m['created_at_ms'] as int? ?? 0,
       paymentType: m['payment_type'] as String? ?? RentStaffPayFormat.monthly,
       amountValue: (m['amount_value'] as num?)?.toDouble() ?? 0,
+      phone: m['phone'] as String? ?? '',
     );
   }
 }
@@ -75,16 +78,23 @@ class RentStaffRecord {
 class RentStaffLocalDataSource {
   static const _table = AppLocalDatabase.rentStaffTable;
 
-  Database? _db;
+  Future<Database> get database => AppLocalDatabase.database;
 
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await _open();
-    return _db!;
-  }
-
-  Future<Database> _open() async {
-    return AppLocalDatabase.database;
+  /// Normalizes TZ mobile numbers to `0XXXXXXXXX` for duplicate checks.
+  static String? normalizePhone(String raw) {
+    var digits = raw
+        .trim()
+        .replaceAll(RegExp(r'[\s\-()]'), '')
+        .replaceFirst(RegExp(r'^\+'), '');
+    if (digits.startsWith('255') && digits.length >= 12) {
+      digits = '0${digits.substring(3)}';
+    }
+    digits = digits.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 9 && RegExp(r'^[678]').hasMatch(digits)) {
+      digits = '0$digits';
+    }
+    if (!RegExp(r'^0[678]\d{8}$').hasMatch(digits)) return null;
+    return digits;
   }
 
   Future<int> insert({
@@ -93,8 +103,10 @@ class RentStaffLocalDataSource {
     required String payDayLabel,
     required String paymentType,
     required double amountValue,
+    String phone = '',
   }) async {
     final db = await database;
+    final normalized = normalizePhone(phone) ?? phone.trim();
     return db.insert(_table, {
       'name': name,
       'job_title': jobTitle,
@@ -103,6 +115,7 @@ class RentStaffLocalDataSource {
       'created_at_ms': DateTime.now().millisecondsSinceEpoch,
       'payment_type': paymentType,
       'amount_value': amountValue,
+      'phone': normalized,
     });
   }
 
@@ -124,6 +137,37 @@ class RentStaffLocalDataSource {
     return RentStaffRecord.fromMap(maps.first);
   }
 
+  /// Finds staff by normalized phone. Returns the first match.
+  Future<RentStaffRecord?> findByPhone(
+    String phone, {
+    int? excludeId,
+  }) async {
+    final normalized = normalizePhone(phone) ?? phone.trim();
+    if (normalized.isEmpty) return null;
+    final rows = await getAllNewestFirst();
+    for (final row in rows) {
+      if (excludeId != null && row.id == excludeId) continue;
+      final existing = normalizePhone(row.phone) ?? row.phone.trim();
+      if (existing.isNotEmpty && existing == normalized) return row;
+    }
+    return null;
+  }
+
+  /// Case-insensitive exact name match (for legacy rows without phone).
+  Future<RentStaffRecord?> findByNameIgnoreCase(
+    String name, {
+    int? excludeId,
+  }) async {
+    final key = name.trim().toLowerCase();
+    if (key.isEmpty) return null;
+    final rows = await getAllNewestFirst();
+    for (final row in rows) {
+      if (excludeId != null && row.id == excludeId) continue;
+      if (row.name.trim().toLowerCase() == key) return row;
+    }
+    return null;
+  }
+
   Future<void> updateById({
     required int id,
     required String name,
@@ -131,17 +175,22 @@ class RentStaffLocalDataSource {
     required String payDayLabel,
     required String paymentType,
     required double amountValue,
+    String? phone,
   }) async {
     final db = await database;
+    final map = <String, Object?>{
+      'name': name,
+      'job_title': jobTitle,
+      'pay_day_label': payDayLabel,
+      'payment_type': paymentType,
+      'amount_value': amountValue,
+    };
+    if (phone != null) {
+      map['phone'] = normalizePhone(phone) ?? phone.trim();
+    }
     await db.update(
       _table,
-      {
-        'name': name,
-        'job_title': jobTitle,
-        'pay_day_label': payDayLabel,
-        'payment_type': paymentType,
-        'amount_value': amountValue,
-      },
+      map,
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -169,6 +218,7 @@ class RentStaffLocalDataSource {
       'created_at_ms': record.createdAtMs,
       'payment_type': record.paymentType,
       'amount_value': record.amountValue,
+      'phone': record.phone,
     };
     final backend = backendStaffId?.trim() ?? '';
     if (backend.isNotEmpty) {
@@ -226,9 +276,14 @@ class RentStaffLocalDataSource {
 
   Future<void> upsertFromRemote(StaffRemoteUpsert remote) async {
     if (remote.name.trim().isEmpty) return;
+    final remotePhone =
+        normalizePhone(remote.phone) ?? remote.phone.trim();
     RentStaffRecord? existing;
     if (remote.backendId.isNotEmpty) {
       existing = await getByBackendId(remote.backendId);
+    }
+    if (existing == null && remotePhone.isNotEmpty) {
+      existing = await findByPhone(remotePhone);
     }
     if (existing == null) {
       final rows = await getAllNewestFirst();
@@ -248,6 +303,7 @@ class RentStaffLocalDataSource {
         payDayLabel: remote.payDayLabel,
         paymentType: remote.paymentType,
         amountValue: remote.amountValue,
+        phone: remotePhone.isNotEmpty ? remotePhone : existing.phone,
       );
       if (remote.backendId.isNotEmpty) {
         await saveBackendId(existing.id, remote.backendId);
@@ -260,6 +316,7 @@ class RentStaffLocalDataSource {
       payDayLabel: remote.payDayLabel,
       paymentType: remote.paymentType,
       amountValue: remote.amountValue,
+      phone: remotePhone,
     );
     if (remote.backendId.isNotEmpty) {
       await saveBackendId(localId, remote.backendId);

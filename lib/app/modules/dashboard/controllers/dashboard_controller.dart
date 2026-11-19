@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/booking_api_response.dart';
 import '../../../core/utils/getx_instance_probe.dart';
+import '../../../core/utils/month_rent_collection.dart';
 import '../../../core/utils/rent_portfolio_metrics.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
@@ -29,7 +30,10 @@ import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_resi
 
 class DashboardController extends BaseController {
 
-  final isLoading = true.obs;
+  final isLoading = false.obs;
+  /// Thin top bar while a refresh runs after the first finance paint.
+  final refreshing = false.obs;
+  final hasLoadedOnce = false.obs;
   // final isMember = false.obs;
   // final isLeader = false.obs;
   // final isAdmin = false.obs;
@@ -113,6 +117,18 @@ class DashboardController extends BaseController {
   final netProfitUp = true.obs;
 
   // Performance trends – scaled for fixed chart axis (dashboard_view)
+  /// Unscaled money for the redesigned dashboard (this calendar month).
+  final monthIncomeValue = 0.0.obs;
+  final monthExpenseValue = 0.0.obs;
+  final monthNetValue = 0.0.obs;
+
+  /// Income per week of the month, this month vs last month (raw money).
+  final weeklyIncomeCurrent = <double>[0, 0, 0, 0].obs;
+  final weeklyIncomePrevious = <double>[0, 0, 0, 0].obs;
+
+  /// Income trend tab: false = by week, true = by month.
+  final trendMonthly = false.obs;
+
   final currentTrendValues = <double>[0, 0, 0, 0].obs;
   final previousTrendValues = <double>[0, 0, 0, 0].obs;
   final currentExpenseTrendValues = <double>[0, 0, 0, 0].obs;
@@ -141,20 +157,32 @@ class DashboardController extends BaseController {
   final _occupancyPercent = 0.obs;
   final _activeLeases = 0.obs;
   final _totalArrears = 0.0.obs;
+  /// Calendar month of the most recently recorded payment, if any.
+  final lastPaymentMonth = Rxn<DateTime>();
 
   List<double> get chartIncome => _chartIncome;
   List<double> get chartExpense => _chartExpense;
 
   CurrencyService get _currency => Get.find<CurrencyService>();
 
-  String get netProfitLabel =>
-      _currency.formatBase((_incomeTotal.value - _expenseTotal.value).round());
+  String get netProfitLabel => netProfit.value;
   String get totalIncomeLabel => _currency.formatBase(_incomeTotal.value.round());
   String get expensesLabel => _currency.formatBase(_expenseTotal.value.round());
   String get profitTrendLabel {
     final p = _profitTrendPercent.value;
     final sign = p > 0 ? '+' : '';
     return '$sign${p.toStringAsFixed(1)}%';
+  }
+
+  String? lastPaymentMonthLabel(Locale locale) {
+    final month = lastPaymentMonth.value;
+    if (month == null) return null;
+    final loc = locale.languageCode == 'sw' ? 'sw' : 'en';
+    try {
+      return DateFormat('MMMM', loc).format(month);
+    } catch (_) {
+      return DateFormat('MMMM', 'en').format(month);
+    }
   }
 
   String get monthlyIncomeLabel =>
@@ -194,103 +222,52 @@ class DashboardController extends BaseController {
     }
   }
 
-  Future<void> refreshDashboard() async {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final weekStart = today.subtract(const Duration(days: 6));
-
-    final incomeRows = await _incomeLocal.getAllNewestFirst();
-    final expenseRows = await _expenseLocal.getAllNewestFirst();
-
-    var incomeTotal = 0.0;
-    var expenseTotal = 0.0;
-    final weekIncome = List<double>.filled(7, 0);
-    final weekExpense = List<double>.filled(7, 0);
-    var thisMonthIncome = 0.0;
-    var thisMonthExpense = 0.0;
-    var lastMonthIncome = 0.0;
-    var lastMonthExpense = 0.0;
-
-    final thisMonthStart = DateTime(now.year, now.month, 1);
-    final lastMonthStart = DateTime(now.year, now.month - 1, 1);
-    final thisMonthEnd = DateTime(now.year, now.month + 1, 1);
-
-    for (final row in incomeRows) {
-      final d = _safeDate(row.datePaidIso, row.createdAtMs);
-      incomeTotal += row.amountValue;
-      if (!d.isBefore(weekStart) && !d.isAfter(today)) {
-        weekIncome[differenceInDays(weekStart, d)] += row.amountValue;
-      }
-      if (!d.isBefore(thisMonthStart) && d.isBefore(thisMonthEnd)) {
-        thisMonthIncome += row.amountValue;
-      } else if (!d.isBefore(lastMonthStart) && d.isBefore(thisMonthStart)) {
-        lastMonthIncome += row.amountValue;
-      }
-    }
-
-    for (final row in expenseRows) {
-      final d = _safeDate(row.datePaidIso, row.createdAtMs);
-      expenseTotal += row.amountValue;
-      if (!d.isBefore(weekStart) && !d.isAfter(today)) {
-        weekExpense[differenceInDays(weekStart, d)] += row.amountValue;
-      }
-      if (!d.isBefore(thisMonthStart) && d.isBefore(thisMonthEnd)) {
-        thisMonthExpense += row.amountValue;
-      } else if (!d.isBefore(lastMonthStart) && d.isBefore(thisMonthStart)) {
-        lastMonthExpense += row.amountValue;
-      }
-    }
-
-    final thisNet = thisMonthIncome - thisMonthExpense;
-    final lastNet = lastMonthIncome - lastMonthExpense;
-    final trend = lastNet.abs() < 0.01 ? (thisNet == 0 ? 0.0 : 100.0) : ((thisNet - lastNet) / lastNet.abs()) * 100.0;
-
-    _incomeTotal.value = incomeTotal;
-    _expenseTotal.value = expenseTotal;
-    _chartIncome.assignAll(weekIncome);
-    _chartExpense.assignAll(weekExpense);
-    _profitTrendPercent.value = trend;
-
-    final userId = (await _preferenceManager.getUser()).id ?? '';
-    final propertyRows = await _propertyLocal.fetchAll(userId: userId);
-    final tenants = await _tenantLocal.getAllNewestFirst();
-    final portfolio = await RentPortfolioMetricsCalculator.compute(
-      properties: propertyRows.toList(),
-      tenants: tenants,
-      incomeRows: incomeRows,
-      now: now,
-    );
-    _monthlyIncome.value = portfolio.monthlyIncome;
-    _occupancyPercent.value = portfolio.occupancyPercent;
-    _activeLeases.value = portfolio.activeLeases;
-    _totalArrears.value = portfolio.totalArrears;
-  }
+  Future<void> refreshDashboard() => loadDashboard(quiet: true);
 
   Future<void> loadDashboard({bool quiet = false}) async {
-    if (!quiet) isLoading.value = true;
+    if (!quiet) {
+      if (hasLoadedOnce.value) {
+        refreshing.value = true;
+      } else {
+        isLoading.value = true;
+      }
+    }
     try {
-      await _loadBnbOverviewStats();
+      // Local finance metrics first so Finances can paint without waiting on
+      // bookings API (Dio 60s timeout).
+      await _loadLocalFinanceMetrics();
+      hasLoadedOnce.value = true;
+      isLoading.value = false;
 
+      await _loadBnbOverviewStats();
+    } catch (_) {
+      // keep default/placeholder values
+    } finally {
+      isLoading.value = false;
+      refreshing.value = false;
+      hasLoadedOnce.value = true;
+    }
+  }
+
+  Future<void> _loadLocalFinanceMetrics() async {
       // Fetch ALL income and expenses across every workspace
       final incomes = await _incomeLocal.getAllNewestFirst();
       final expenses = await _expenseLocal.getAllNewestFirst();
+      var tenants = <TenantRecord>[];
+      try {
+        tenants = await _tenantLocal.getAllNewestFirst();
+      } catch (_) {}
 
       final now = DateTime.now();
       final thisMonthStart = DateTime(now.year, now.month, 1);
+      lastPaymentMonth.value = _latestPaymentMonth(incomes);
       final nextMonthStart = DateTime(now.year, now.month + 1, 1);
       final lastMonthStart = DateTime(now.year, now.month - 1, 1);
+      final today = DateTime(now.year, now.month, now.day);
+      final weekStart = today.subtract(const Duration(days: 6));
 
       final daysThisMonth = nextMonthStart.difference(thisMonthStart).inDays;
       final daysLastMonth = thisMonthStart.difference(lastMonthStart).inDays;
-
-      double sumIncomeBetween(DateTime start, DateTime end) {
-        var s = 0.0;
-        for (final r in incomes) {
-          final d = r.paidLocalCalendarOrCreated();
-          if (!d.isBefore(start) && d.isBefore(end)) s += r.amountValue;
-        }
-        return s;
-      }
 
       double sumExpenseBetween(DateTime start, DateTime end) {
         var s = 0.0;
@@ -301,8 +278,23 @@ class DashboardController extends BaseController {
         return s;
       }
 
-      final revThis = sumIncomeBetween(thisMonthStart, nextMonthStart);
-      final revLast = sumIncomeBetween(lastMonthStart, thisMonthStart);
+      // This-month revenue is recognized rent (prepaid allocated to the
+      // lease month) plus unmatched cash dated in the month — same formula
+      // Home uses for "collected". Cash-dated June prepaid is not November 0.
+      final thisMonth = MonthRentCollection.fromRecords(
+        tenants: tenants,
+        incomes: incomes,
+        now: now,
+      );
+      final lastMonth = MonthRentCollection.fromRecords(
+        tenants: tenants,
+        incomes: incomes,
+        now: lastMonthStart,
+      );
+      // Finance income = rent recognized for the month + cash not tied to a
+      // tenant (it is still money received, just not rent collection).
+      final revThis = thisMonth.totalIncome;
+      final revLast = lastMonth.totalIncome;
       final expThis = sumExpenseBetween(thisMonthStart, nextMonthStart);
       final expLast = sumExpenseBetween(lastMonthStart, thisMonthStart);
 
@@ -338,18 +330,25 @@ class DashboardController extends BaseController {
           _pctChange(avgExpDailyThis, avgExpDailyLast);
       avgDailyExpenseUp.value = avgExpDailyThis >= avgExpDailyLast;
 
-      final curIncomeQuarters = _quarterlySumsInMonth(
+      var curIncomeQuarters = _quarterlySumsInMonth(
         incomes,
         thisMonthStart,
         daysThisMonth,
         _dayIncome,
       );
-      final prevIncomeQuarters = _quarterlySumsInMonth(
+      var prevIncomeQuarters = _quarterlySumsInMonth(
         incomes,
         lastMonthStart,
         daysLastMonth,
         _dayIncome,
       );
+      curIncomeQuarters = _spreadIfEmpty(curIncomeQuarters, revThis);
+      prevIncomeQuarters = _spreadIfEmpty(prevIncomeQuarters, revLast);
+      monthIncomeValue.value = revThis;
+      monthExpenseValue.value = expThis;
+      monthNetValue.value = profitThis;
+      weeklyIncomeCurrent.assignAll(curIncomeQuarters);
+      weeklyIncomePrevious.assignAll(prevIncomeQuarters);
       _assignScaledTrends(
         curIncomeQuarters,
         prevIncomeQuarters,
@@ -383,31 +382,54 @@ class DashboardController extends BaseController {
         final m = DateTime(now.year, now.month - i, 1);
         final mNext = DateTime(m.year, m.month + 1, 1);
         labels.add(DateFormat('MMM').format(m).toUpperCase());
-        monthlyA.add(sumIncomeBetween(m, mNext));
+        monthlyA.add(
+          MonthRentCollection.fromRecords(
+            tenants: tenants,
+            incomes: incomes,
+            now: m,
+          ).totalIncome,
+        );
         monthlyB.add(sumExpenseBetween(m, mNext));
       }
+      // The current month must match the hero/summary figures exactly.
+      if (monthlyA.isNotEmpty) monthlyA[monthlyA.length - 1] = revThis;
       monthlyLabels.assignAll(labels);
       monthlyValuesA.assignAll(monthlyA);
       monthlyValuesB.assignAll(monthlyB);
 
-      // ── All-time totals (all workspaces) ────────────────────────────────
+      // Income tile is all-time cash. Expenses tile and Monthly Net Profit
+      // stay this calendar month (hero uses [netProfit]).
       _incomeTotal.value =
           incomes.fold<double>(0, (a, r) => a + r.amountValue);
-      _expenseTotal.value =
-          expenses.fold<double>(0, (a, r) => a + r.amountValue);
+      _expenseTotal.value = expThis;
 
-      final thisMonthInc = sumIncomeBetween(thisMonthStart, nextMonthStart);
-      final lastMonthInc = sumIncomeBetween(lastMonthStart, thisMonthStart);
-      final trend = lastMonthInc.abs() < 0.01
-          ? (thisMonthInc == 0 ? 0.0 : 100.0)
-          : ((thisMonthInc - lastMonthInc) / lastMonthInc.abs()) * 100.0;
+      final weekIncome = List<double>.filled(7, 0);
+      final weekExpense = List<double>.filled(7, 0);
+      for (final row in incomes) {
+        final paid = row.paidLocalCalendarOrCreated();
+        final d = DateTime(paid.year, paid.month, paid.day);
+        if (!d.isBefore(weekStart) && !d.isAfter(today)) {
+          weekIncome[differenceInDays(weekStart, d)] += row.amountValue;
+        }
+      }
+      for (final row in expenses) {
+        final d = _expenseCalendarDay(row);
+        if (!d.isBefore(weekStart) && !d.isAfter(today)) {
+          weekExpense[differenceInDays(weekStart, d)] += row.amountValue;
+        }
+      }
+      _chartIncome.assignAll(weekIncome);
+      _chartExpense.assignAll(weekExpense);
+
+      final trend = revLast.abs() < 0.01
+          ? (revThis == 0 ? 0.0 : 100.0)
+          : ((revThis - revLast) / revLast.abs()) * 100.0;
       _profitTrendPercent.value = trend;
 
       // ── Portfolio metrics (all workspaces: rent + BnB + both) ───────────
       try {
         final userId = (await _preferenceManager.getUser()).id ?? '';
         final propertyRows = await _propertyLocal.fetchAll(userId: userId);
-        final tenants = await _tenantLocal.getAllNewestFirst();
         final portfolio = await RentPortfolioMetricsCalculator.compute(
           properties: propertyRows,
           tenants: tenants,
@@ -419,11 +441,6 @@ class DashboardController extends BaseController {
         _activeLeases.value = portfolio.activeLeases;
         _totalArrears.value = portfolio.totalArrears;
       } catch (_) {}
-    } catch (_) {
-      // keep default/placeholder values
-    } finally {
-      if (!quiet) isLoading.value = false;
-    }
   }
 
   DateTime _expenseCalendarDay(ExpenseRecord r) {
@@ -477,6 +494,18 @@ class DashboardController extends BaseController {
     return sums;
   }
 
+  /// Prepaid rent is dated in an earlier month, so weekly cash buckets for
+  /// this month can be empty even when recognized revenue is not. Spread the
+  /// recognized amount so the trend chart matches Total Revenue.
+  List<double> _spreadIfEmpty(List<double> quarters, double recognized) {
+    if (recognized <= 0) return quarters;
+    for (final v in quarters) {
+      if (v > 0) return quarters;
+    }
+    final slice = recognized / 4;
+    return [slice, slice, slice, slice];
+  }
+
   void _assignScaledTrends(
     List<double> current,
     List<double> previous,
@@ -503,6 +532,18 @@ class DashboardController extends BaseController {
     while (outPrevious.length < 4) {
       outPrevious.add(0);
     }
+  }
+
+  DateTime? _latestPaymentMonth(List<IncomeRecord> incomes) {
+    DateTime? latest;
+    for (final row in incomes) {
+      if (row.amountValue <= 0) continue;
+      final paid = row.paidLocalCalendarOrCreated();
+      final day = DateTime(paid.year, paid.month, paid.day);
+      if (latest == null || day.isAfter(latest)) latest = day;
+    }
+    if (latest == null) return null;
+    return DateTime(latest.year, latest.month);
   }
 
   String _pctChange(double current, double previous) {
@@ -541,7 +582,9 @@ class DashboardController extends BaseController {
     var unitsTotal = 0;
 
     try {
-      final res = await _repository.getAllBookings();
+      final res = await _repository.getAllBookings().timeout(
+        const Duration(seconds: 10),
+      );
       if (BookingApiResponse.isSuccess(res.responseCode)) {
         for (final m in BookingApiResponse.parseBookingsList(res.data)) {
           final item = merge.fromApiMap(m);
@@ -682,16 +725,6 @@ class DashboardController extends BaseController {
     final s = DateTime(start.year, start.month, start.day);
     final e = DateTime(end.year, end.month, end.day);
     return e.difference(s).inDays.clamp(0, 6);
-  }
-
-  DateTime _safeDate(String iso, int createdAtMs) {
-    try {
-      final parsed = DateTime.parse(iso);
-      return DateTime(parsed.year, parsed.month, parsed.day);
-    } catch (_) {
-      final fromMs = DateTime.fromMillisecondsSinceEpoch(createdAtMs);
-      return DateTime(fromMs.year, fromMs.month, fromMs.day);
-    }
   }
 
 }

@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
+import '../../../core/utils/sync_freshness.dart';
 import 'app_local_database.dart';
 
 class ExpenseRecord {
@@ -17,6 +18,7 @@ class ExpenseRecord {
     required this.inputAmountValue,
     required this.createdAtMs,
     this.backendExpenseId = '',
+    this.updatedAtMs = 0,
   });
 
   final int id;
@@ -39,6 +41,9 @@ class ExpenseRecord {
   /// UUID returned by the backend after a successful sync; empty if not yet synced.
   final String backendExpenseId;
 
+  /// Last local or applied remote edit. `0` means "use [createdAtMs]".
+  final int updatedAtMs;
+
   factory ExpenseRecord.fromMap(Map<String, Object?> m) {
     return ExpenseRecord(
       id: m['id']! as int,
@@ -54,6 +59,7 @@ class ExpenseRecord {
       inputAmountValue: (m['input_amount_value'] as num?)?.toDouble() ?? 0,
       createdAtMs: m['created_at_ms'] as int? ?? 0,
       backendExpenseId: m['backend_expense_id'] as String? ?? '',
+      updatedAtMs: (m['updated_at_ms'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -86,13 +92,7 @@ class ExpenseRecord {
 class ExpenseLocalDataSource {
   static const _table = AppLocalDatabase.expenseTable;
 
-  Database? _db;
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
-  }
+  Future<Database> get database => AppLocalDatabase.database;
 
   static String _normalizeWorkspace(String w) =>
       w.trim().toLowerCase() == 'bnb' ? 'bnb' : 'rent';
@@ -110,6 +110,7 @@ class ExpenseLocalDataSource {
     double inputAmountValue = 0,
   }) async {
     final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
     return db.insert(_table, {
       'tenant_name': tenantName,
       'amount_value': amountValue,
@@ -125,7 +126,8 @@ class ExpenseLocalDataSource {
       'apartment': apartment,
       'apartment_unit': apartmentUnit,
       'workspace_type': _normalizeWorkspace(workspaceType),
-      'created_at_ms': DateTime.now().millisecondsSinceEpoch,
+      'created_at_ms': now,
+      'updated_at_ms': now,
     });
   }
 
@@ -172,6 +174,7 @@ class ExpenseLocalDataSource {
         'apartment': apartment,
         'apartment_unit': apartmentUnit,
         'workspace_type': _normalizeWorkspace(workspaceType),
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
       },
       where: 'id = ?',
       whereArgs: [id],
@@ -226,5 +229,127 @@ class ExpenseLocalDataSource {
       orderBy: 'created_at_ms DESC',
     );
     return maps.map(ExpenseRecord.fromMap).toList();
+  }
+
+  /// Merges a server expense. The phone row is kept when it was edited later.
+  Future<RemoteRowMerge<ExpenseRecord>> upsertFromRemote({
+    required String backendExpenseId,
+    required String tenantName,
+    required double amountValue,
+    required String datePaidIso,
+    required String category,
+    required String notes,
+    required String apartment,
+    required String workspaceType,
+    required String currencyCode,
+    required int remoteUpdatedAtMs,
+  }) async {
+    final backendId = backendExpenseId.trim();
+    final rows = await getAllNewestFirst();
+    ExpenseRecord? existing;
+    if (backendId.isNotEmpty) {
+      for (final row in rows) {
+        if (row.backendExpenseId.trim() == backendId) {
+          existing = row;
+          break;
+        }
+      }
+    }
+    existing ??= _matchExpense(
+      rows,
+      amountValue: amountValue,
+      datePaidIso: datePaidIso,
+      category: category,
+      tenantName: tenantName,
+    );
+    if (existing != null &&
+        SyncFreshness.phoneIsNewer(
+          localUpdatedMs: existing.updatedAtMs,
+          localCreatedMs: existing.createdAtMs,
+          remoteUpdatedMs: remoteUpdatedAtMs,
+        )) {
+      if (backendId.isNotEmpty && existing.backendExpenseId.trim().isEmpty) {
+        await saveBackendExpenseId(localId: existing.id, backendId: backendId);
+        existing = await getById(existing.id) ?? existing;
+      }
+      return RemoteRowMerge(record: existing, keptLocal: true);
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final appliedUpdated = remoteUpdatedAtMs > 0
+        ? remoteUpdatedAtMs
+        : (existing != null
+            ? (existing.updatedAtMs > 0
+                ? existing.updatedAtMs
+                : existing.createdAtMs)
+            : now);
+    final db = await database;
+    final data = <String, Object?>{
+      'tenant_name': tenantName.trim().isNotEmpty
+          ? tenantName.trim()
+          : (existing?.tenantName ?? ''),
+      'amount_value': amountValue > 0 ? amountValue : (existing?.amountValue ?? 0),
+      'currency_code': currencyCode.trim().isNotEmpty
+          ? currencyCode.trim().toUpperCase()
+          : (existing?.currencyCode ?? 'TZS'),
+      'input_amount_value': amountValue > 0
+          ? amountValue
+          : (existing?.inputAmountValue ?? 0),
+      'date_paid_iso': datePaidIso.trim().isNotEmpty
+          ? datePaidIso.trim()
+          : (existing?.datePaidIso ?? ''),
+      'category': category.trim().isNotEmpty
+          ? category.trim()
+          : (existing?.category ?? ''),
+      'notes': notes.trim().isNotEmpty ? notes.trim() : (existing?.notes ?? ''),
+      'apartment': apartment.trim().isNotEmpty
+          ? apartment.trim()
+          : (existing?.apartment ?? ''),
+      'apartment_unit': existing?.apartmentUnit ?? '',
+      'workspace_type': workspaceType.trim().isNotEmpty
+          ? _normalizeWorkspace(workspaceType)
+          : (existing?.workspaceType ?? 'rent'),
+      'backend_expense_id': backendId.isNotEmpty
+          ? backendId
+          : (existing?.backendExpenseId ?? ''),
+      'created_at_ms': existing?.createdAtMs ?? now,
+      'updated_at_ms': appliedUpdated,
+    };
+    if (existing != null) {
+      await db.update(_table, data, where: 'id = ?', whereArgs: [existing.id]);
+      final saved = await getById(existing.id);
+      return RemoteRowMerge(record: saved ?? existing, keptLocal: false);
+    }
+    final id = await db.insert(_table, data);
+    final saved = await getById(id);
+    return RemoteRowMerge(record: saved!, keptLocal: false);
+  }
+
+  ExpenseRecord? _matchExpense(
+    List<ExpenseRecord> rows, {
+    required double amountValue,
+    required String datePaidIso,
+    required String category,
+    required String tenantName,
+  }) {
+    final day = datePaidIso.trim().length >= 10
+        ? datePaidIso.trim().substring(0, 10)
+        : datePaidIso.trim();
+    final name = tenantName.trim().toLowerCase();
+    final cat = category.trim().toLowerCase();
+    for (final row in rows) {
+      if (row.backendExpenseId.trim().isNotEmpty) continue;
+      if ((row.amountValue - amountValue).abs() > 0.01) continue;
+      final rowDay = row.datePaidIso.trim().length >= 10
+          ? row.datePaidIso.trim().substring(0, 10)
+          : row.datePaidIso.trim();
+      if (day.isNotEmpty && rowDay != day) continue;
+      if (name.isNotEmpty && row.tenantName.trim().toLowerCase() != name) {
+        continue;
+      }
+      if (cat.isNotEmpty && row.category.trim().toLowerCase() != cat) continue;
+      return row;
+    }
+    return null;
   }
 }

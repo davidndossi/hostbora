@@ -20,7 +20,7 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
         IconButton(
           tooltip: appLocalization.designMoodboardOpenHomeDesigns,
           onPressed: controller.openHomeDesignsWeb,
-          icon: const Icon(Icons.open_in_new_rounded),
+          icon: const Icon(Icons.open_in_new_outlined),
         ),
       ],
     );
@@ -38,7 +38,7 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
         onPressed: controller.createNewMoodboard,
         backgroundColor: AppColors.colorPrimary,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_outlined),
         label: Text(appLocalization.designMoodboardsCreateBoard),
       ),
     );
@@ -124,7 +124,7 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
                   ),
                 ),
                 Icon(
-                  Icons.chevron_right,
+                  Icons.chevron_right_outlined,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ],
@@ -199,7 +199,7 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
         Center(
           child: FilledButton.icon(
             onPressed: controller.createNewMoodboard,
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add_outlined),
             label: Text(appLocalization.designMoodboardsCreateBoard),
           ),
         ),
@@ -227,7 +227,7 @@ class DesignMoodboardsView extends BaseView<DesignMoodboardsController> {
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: controller.reloadBoards,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh_outlined),
               label: Text(appLocalization.designMoodboardRetry),
             ),
           ],

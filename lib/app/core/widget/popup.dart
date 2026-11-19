@@ -49,7 +49,7 @@ class Popup extends StatelessWidget {
                   Text(message.title ?? message.status.title),
                   trailing: IconButton(
                       onPressed: () => dismiss(context),
-                      icon: const Icon(Icons.close_rounded)),
+                      icon: const Icon(Icons.close_outlined)),
                 );
                 return MouseRegion(
                   onEnter: !message.expandable
@@ -171,13 +171,13 @@ extension _FlashStatusExt on FlashStatus {
   IconData get icon {
     switch (this) {
       case FlashStatus.tips:
-        return Icons.tips_and_updates_rounded;
+        return Icons.tips_and_updates_outlined;
       case FlashStatus.successful:
-        return Icons.check_rounded;
+        return Icons.check_outlined;
       case FlashStatus.error:
-        return Icons.clear;
+        return Icons.clear_outlined;
       case FlashStatus.warning:
-        return Icons.warning_rounded;
+        return Icons.warning_outlined;
       case FlashStatus.custom:
         return Icons.circle;
     }

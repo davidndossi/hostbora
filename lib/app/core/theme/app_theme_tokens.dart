@@ -43,8 +43,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     border: AppColors.designInputBorder,
     skeletonBase: Color(0xFFE8EAED),
     skeletonHighlight: Color(0xFFF4F5F7),
-    success: AppColors.paaYanguSuccess,
-    warning: AppColors.paaYanguWarm,
+    success: AppColors.colorSuccess,
+    warning: AppColors.colorWarning,
     accent: AppColors.colorPrimary,
   );
 
@@ -58,8 +58,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     border: Color(0xFF3A3A3C),
     skeletonBase: Color(0xFF3A3A3C),
     skeletonHighlight: Color(0xFF48484A),
-    success: AppColors.paaYanguSuccess,
-    warning: AppColors.paaYanguWarm,
+    success: AppColors.colorSuccess,
+    warning: AppColors.colorWarning,
     accent: Color(0xFF5EC9C3),
   );
 

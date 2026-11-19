@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/access/plan_agents.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../core/base/feedback_extensions.dart';
 import '../../../core/utils/util.dart';
 import '../../../core/utils/property_listing_image_assigner.dart';
+import '../../../core/utils/property_remote_rent.dart';
 import '../../../core/utils/property_name_rules.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -19,12 +21,14 @@ import '../../../data/local/draft_listing_store.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../data/local/service/property_remote_create.dart';
 import '../../../data/model/add_listing_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/service/nominatim_service.dart';
 import '../../../routes/app_pages.dart';
 import '../../../core/values/property_unit_floor.dart';
 import '../models/apartment_unit_draft.dart';
+import '../../../data/service/analytics_service.dart';
 
 class AddListingController extends BaseController {
   AddListingController()
@@ -57,7 +61,7 @@ class AddListingController extends BaseController {
 
   final propertyType = 'Apartment'.obs;
   final rentFrequency = 'Per Day'.obs;
-  final minRentalDuration = '2 Days'.obs;
+  final minRentalDuration = ApartmentUnitDraft.minDurationBnb.obs;
   final listingMode = 'both'.obs;
   final propertyTypeOptions = const [
     'Apartment',
@@ -68,12 +72,14 @@ class AddListingController extends BaseController {
     'Other',
   ];
   final listingModeOptions = const ['bnb', 'rent', 'both'];
-  final minRentalDurationOptions = const [
-    '1 Day',
-    '2 Days',
-    '1 Week',
-    '1 Month',
-  ];
+  List<String> get minRentalDurationOptions => listingMode.value == 'rent'
+      ? const [ApartmentUnitDraft.minDurationRent]
+      : const [
+          ApartmentUnitDraft.minDurationBnb,
+          '2 Days',
+          '1 Week',
+          ApartmentUnitDraft.minDurationRent,
+        ];
 
   static const int minFloorCount = 1;
   static const int maxFloorCount = 200;
@@ -134,7 +140,9 @@ class AddListingController extends BaseController {
     rentFrequency.value = freq;
   }
 
-  final selectedPropertyType = Rx<String?>(null);
+  /// Pre-selected so the dropdown agrees with [_effectivePropertyType], which
+  /// already falls back to [propertyType] ('Apartment') on a fresh form.
+  final selectedPropertyType = Rx<String?>('Apartment');
 
   final selectedCurrency = CurrencyService.defaultBaseCurrency.obs;
 
@@ -165,6 +173,9 @@ class AddListingController extends BaseController {
   void updateListingMode(String? value) {
     final mode = _normalizeListingMode(value ?? '');
     listingMode.value = mode;
+    minRentalDuration.value = ApartmentUnitDraft.minDurationForMode(
+      mode == 'both' ? 'bnb' : mode,
+    );
     if (mode != 'both') {
       draftUnitMode.value = mode;
       _syncDraftRentFrequencyFromMode(mode);
@@ -228,14 +239,7 @@ class AddListingController extends BaseController {
     }
   }
 
-  final propertyTypes = [
-    'Apartment',
-    'House',
-    'Villa',
-    'Cabin',
-    'Studio',
-    'Other',
-  ];
+  // final propertyTypes = propertyTypeOptions.obs;
 
   /// Step 2: photos per room. Keys: livingRoom, bedroom, kitchen, bathroom. Value: list of file paths.
   final roomPhotos = <String, List<String>>{
@@ -427,7 +431,7 @@ class AddListingController extends BaseController {
 
   void goBack() {
     if (currentStep.value > 1) {
-      currentStep.value--;
+      currentStep.value = 1;
     } else {
       if (fromFirstLogin) {
         Get.offAllNamed(Routes.MAIN, arguments: {'initialMenu': 'home'});
@@ -528,35 +532,91 @@ class AddListingController extends BaseController {
     return null;
   }
 
+  /// Step 1 of the full-screen Add Property form. Validates property details,
+  /// then opens the unit step.
+  void continueToUnitDetails() {
+    final formState = formKey.currentState;
+    if (formState != null && !formState.validate()) return;
+    if (propertyLocationController.text.trim().isEmpty) {
+      Get.snackbar('Error', 'Please enter a property location');
+      return;
+    }
+    if ((selectedPropertyType.value ?? '').trim().isEmpty) {
+      Get.snackbar('Error', 'Please select a property type');
+      return;
+    }
+    currentStep.value = 2;
+  }
+
+  /// Step 2 saves the unit entered on this screen, then the property.
+  Future<void> saveFromUnitStep() async {
+    final name = draftUnitNameController.text.trim();
+    final rent = draftUnitRentController.text.trim();
+    final draftStarted = name.isNotEmpty || rent.isNotEmpty;
+    if (apartmentUnits.isEmpty || draftStarted) {
+      if (!addApartmentUnit()) return;
+    }
+    if (rentAmountController.text.trim().isEmpty && apartmentUnits.isNotEmpty) {
+      rentAmountController.text = apartmentUnits.first.unitRent;
+    }
+    await saveProperty();
+  }
+
   /// When [skipRentAmountRequirement] is true, the standalone rent-amount
   /// requirement is bypassed (used by the condensed quick-add wizard, which
   /// does not collect a rent amount at property-creation time).
-  Future<void> saveProperty({bool skipRentAmountRequirement = false}) async {
+  ///
+  /// [skipUnitRequirement] lets an Apartment save with no units yet. The
+  /// first-property step after sign-up uses this: the host gets a property to
+  /// own immediately and adds units later from My Properties, where the unit
+  /// rows are rewritten wholesale anyway.
+  ///
+  /// Set [popOnSuccess] to false when the caller owns navigation (a full
+  /// screen rather than the Add Property route pushed on top of a stack).
+  /// Returns true only when a property was written.
+  Future<bool> saveProperty({
+    bool skipRentAmountRequirement = false,
+    bool skipUnitRequirement = false,
+    bool popOnSuccess = true,
+    String analyticsSource = 'add_listing',
+  }) async {
     // Only run FormState validation when a Form is mounted (full Add Listing
     // screen). The quick-add wizard has no Form(key: formKey), so
     // formKey.currentState is null — treating that as failure used to make
     // Submit return immediately with no loading state and no error.
     final formState = formKey.currentState;
-    if (formState != null && !formState.validate()) return;
+    if (formState != null && !formState.validate()) return false;
+    if (!await PlanAccess.canAddProperty()) return false;
 
     final location = propertyLocationController.text.trim();
     if (location.isEmpty) {
       Get.snackbar('Error', 'Please enter a property location');
-      return;
+      return false;
     }
-    if (isApartmentProperty && apartmentUnits.isEmpty) {
+
+    // If the ADD UNIT form is filled but not yet added to the list, commit it
+    // (same as Edit Listing / Rent tab "Save changes").
+    final draftName = draftUnitNameController.text.trim();
+    final draftRent = draftUnitRentController.text.trim();
+    if (isApartmentProperty &&
+        draftName.isNotEmpty &&
+        draftRent.isNotEmpty) {
+      addApartmentUnit();
+    }
+
+    if (isApartmentProperty && apartmentUnits.isEmpty && !skipUnitRequirement) {
       Get.snackbar('Error', 'Add at least one apartment unit');
-      return;
+      return false;
     }
     if (!hideListingRentAmount && !skipRentAmountRequirement) {
       final rentRaw = rentAmountController.text.trim().replaceAll(',', '');
       final rentValue = double.tryParse(rentRaw);
       if (rentValue == null || rentValue <= 0) {
         Get.snackbar('Error', 'Please enter a valid rent amount');
-        return;
+        return false;
       }
     }
-    await runBusy(() async {
+    final saved = await runBusy(() async {
       try {
         final original = _editingOriginal;
         final unitMaps = _apartmentUnitMapsForSave();
@@ -608,7 +668,7 @@ class AddListingController extends BaseController {
           await syncPropertyUnitsForListingSave(
             unitLocal: _unitLocal,
             propertyRef: original.propertyRef,
-            isApartment: isApartmentProperty,
+            isApartment: unitMaps.isNotEmpty,
             apartmentUnitMaps: unitMaps,
             minRentalDuration: minRentalDuration.value,
             listingRentFrequency: rentFrequency.value,
@@ -619,8 +679,9 @@ class AddListingController extends BaseController {
             listingMode: listingMode.value,
             listingRentCurrency: selectedCurrency.value,
           );
-          Get.back(result: true);
+          if (popOnSuccess) Get.back(result: true);
           showSuccessWithHaptic('Property updated on this device');
+          return true;
         } else {
           final propertyRef = 'local_${DateTime.now().millisecondsSinceEpoch}';
           final coverPath = PropertyListingImageAssigner.coverPathForSave(
@@ -670,7 +731,7 @@ class AddListingController extends BaseController {
           await syncPropertyUnitsForListingSave(
             unitLocal: _unitLocal,
             propertyRef: propertyRef,
-            isApartment: isApartmentProperty,
+            isApartment: unitMaps.isNotEmpty,
             apartmentUnitMaps: unitMaps,
             minRentalDuration: minRentalDuration.value,
             listingRentFrequency: rentFrequency.value,
@@ -681,14 +742,24 @@ class AddListingController extends BaseController {
             listingMode: listingMode.value,
             listingRentCurrency: selectedCurrency.value,
           );
-          Get.back(result: true);
+          analytics?.logPropertyAdded(
+            workspace: listingMode.value,
+            propertyType: _effectivePropertyType,
+            units: _listedUnitCount(),
+            source: analyticsSource,
+          );
+          if (popOnSuccess) Get.back(result: true);
           showSuccessWithHaptic('Property saved on this device');
+          return true;
         }
       } catch (e, st) {
         logger.e('saveProperty $e $st');
         Get.snackbar('Error', 'Could not save property');
+        return false;
       }
     });
+    // runBusy returns null when a save is already in flight.
+    return saved ?? false;
   }
 
   /// Fire-and-forget: attempt backend creation; fall back to offline queue.
@@ -708,6 +779,11 @@ class AddListingController extends BaseController {
     required int floorCount,
     required String coverPhotoPath,
   }) {
+    final rent = PropertyRemoteRent.amount(
+      unitCount: units,
+      listingRentAmount: rentAmount,
+      unitsJson: unitsJson,
+    );
     final payload = {
       'property_ref': propertyRef,
       'location': location,
@@ -716,34 +792,35 @@ class AddListingController extends BaseController {
       'tenants': 0,
       'units': units,
       'owner_user_id': ownerUserId,
-      'ownerUserId': ownerUserId,
       'workspace_type': workspaceType,
       'created_at_ms': createdAtMs,
-      'rent_amount': rentAmount,
-      'rent_frequency': rentFrequency,
+      'rent_amount': rent,
+      'rent_frequency': PropertyRemoteRent.frequency(
+        unitCount: units,
+        listingRentFrequency: rentFrequency,
+        unitsJson: unitsJson,
+        rentAmount: rent,
+      ),
       'min_rental_duration': minRentalDuration,
       'units_json': unitsJson,
       'floor_count': floorCount,
       'cover_photo_path': coverPhotoPath,
     };
     Future.microtask(() async {
+      final ok = await PropertyRemoteCreate.once(
+        repository: _repository,
+        payload: payload,
+      );
+      if (ok) return;
       try {
-        final res = await _repository.createProperty(payload);
-        final ok = res.responseCode == '0' ||
-            res.responseCode == '200' ||
-            res.responseCode == '201';
-        if (!ok) throw Exception(res.message ?? 'createProperty failed');
-      } catch (e) {
-        try {
-          await _syncQueue.enqueue(
-            entityType: 'property',
-            operation: 'create',
-            payloadJson: jsonEncode(payload),
-            dedupeKey: 'property:create:$propertyRef',
-          );
-          await _syncWorker.runNow(maxItems: 5);
-        } catch (_) {}
-      }
+        await _syncQueue.enqueue(
+          entityType: 'property',
+          operation: 'create',
+          payloadJson: jsonEncode(payload),
+          dedupeKey: 'property:create:$propertyRef',
+        );
+        await _syncWorker.runNow(maxItems: 5);
+      } catch (_) {}
     });
   }
 
@@ -761,6 +838,11 @@ class AddListingController extends BaseController {
     required String unitsJson,
     required int floorCount,
   }) {
+    final rent = PropertyRemoteRent.amount(
+      unitCount: units,
+      listingRentAmount: rentAmount,
+      unitsJson: unitsJson,
+    );
     final payload = {
       'property_ref': propertyRef,
       'location': location,
@@ -768,8 +850,13 @@ class AddListingController extends BaseController {
       'type': type,
       'units': units,
       'workspace_type': workspaceType,
-      'rent_amount': rentAmount,
-      'rent_frequency': rentFrequency,
+      'rent_amount': rent,
+      'rent_frequency': PropertyRemoteRent.frequency(
+        unitCount: units,
+        listingRentFrequency: rentFrequency,
+        unitsJson: unitsJson,
+        rentAmount: rent,
+      ),
       'min_rental_duration': minRentalDuration,
       'units_json': unitsJson,
       'floor_count': floorCount,
@@ -795,25 +882,26 @@ class AddListingController extends BaseController {
     });
   }
 
-  String _newApartmentUnitId() =>
-      'u_${DateTime.now().microsecondsSinceEpoch}_${apartmentUnits.length}';
+  String _newApartmentUnitId({int? floor}) =>
+      ApartmentUnitDraft.newRef(floor: floor);
 
   /// Ensures every unit has a persistent [ApartmentUnitDraft.unitId] in JSON.
   void _ensureApartmentUnitIds() {
-    if (!isApartmentProperty || apartmentUnits.isEmpty) return;
+    if (apartmentUnits.isEmpty) return;
     final next = <ApartmentUnitDraft>[];
     var changed = false;
     for (final u in apartmentUnits) {
       if (u.unitId.trim().isEmpty) {
         next.add(
           ApartmentUnitDraft(
-            unitId: _newApartmentUnitId(),
+            unitId: _newApartmentUnitId(floor: u.unitFloor),
             unitName: u.unitName,
             unitRent: u.unitRent,
             unitRentFrequency: u.unitRentFrequency,
             unitFloor: u.unitFloor,
             operationMode: _unitModeForSave(u),
             unitDescription: u.unitDescription,
+            unitRentCurrency: u.unitRentCurrency,
           ),
         );
         changed = true;
@@ -824,23 +912,24 @@ class AddListingController extends BaseController {
     if (changed) apartmentUnits.assignAll(next);
   }
 
-  void addApartmentUnit() {
+  bool addApartmentUnit() {
     final name = draftUnitNameController.text.trim();
     final rent = draftUnitRentController.text.trim();
     if (name.isEmpty || rent.isEmpty) {
       Get.snackbar('Error', 'Unit name and rent are required');
-      return;
+      return false;
+    }
+    if (!PlanAccess.canAddUnit(currentUnitCount: apartmentUnits.length)) {
+      return false;
     }
     apartmentUnits.add(
       ApartmentUnitDraft(
-        unitId: _newApartmentUnitId(),
+        unitId: _newApartmentUnitId(floor: draftUnitFloor.value),
         unitName: name,
         unitRent: rent,
         unitRentFrequency: draftUnitRentFrequency.value,
         unitFloor: draftUnitFloor.value,
-        operationMode: listingMode.value == 'both'
-            ? _normalizeUnitMode(draftUnitMode.value)
-            : _normalizeListingMode(listingMode.value),
+        operationMode: _normalizeUnitMode(draftUnitMode.value),
         unitDescription: draftUnitDescriptionController.text.trim(),
         unitRentCurrency: selectedCurrency.value,
       ),
@@ -851,6 +940,7 @@ class AddListingController extends BaseController {
     draftUnitFloor.value = PropertyUnitFloor.defaultIndex;
     draftUnitMode.value = listingMode.value == 'rent' ? 'rent' : 'bnb';
     _syncDraftRentFrequencyFromMode(draftUnitMode.value);
+    return true;
   }
 
   void updateDraftUnitFloor(int? value) {
@@ -872,7 +962,7 @@ class AddListingController extends BaseController {
   }
 
   List<Map<String, dynamic>> _apartmentUnitMapsForSave() {
-    if (!isApartmentProperty || apartmentUnits.isEmpty) {
+    if (apartmentUnits.isEmpty) {
       return const [];
     }
     _ensureApartmentUnitIds();
@@ -882,9 +972,7 @@ class AddListingController extends BaseController {
   }
 
   int _listedUnitCount() {
-    if (isApartmentProperty && apartmentUnits.isNotEmpty) {
-      return apartmentUnits.length;
-    }
+    if (apartmentUnits.isNotEmpty) return apartmentUnits.length;
     return 1;
   }
 
@@ -923,9 +1011,14 @@ class AddListingController extends BaseController {
     }
   }
 
+  /// Set by callers that drive this controller headlessly (the first-property
+  /// step after sign-up). They populate the fields themselves, so resuming an
+  /// unrelated Add Property draft would overwrite them from under the save.
+  bool suppressDraftResume = false;
+
   /// When not in edit mode, if a draft exists show a dialog to resume or start fresh.
   Future<void> _checkAndOfferResumeDraft() async {
-    if (!_draftStore.hasDraft) {
+    if (suppressDraftResume || !_draftStore.hasDraft) {
       loadingListing.value = false;
       return;
     }
@@ -1028,7 +1121,7 @@ class AddListingController extends BaseController {
 
       Map<String, dynamic>? remoteMap;
       try {
-        final res = await _repository.getListing(_listingId!);
+        final res = await _repository.getProperty(_listingId!);
         final ok =
             res.responseCode == '0' ||
             res.responseCode == '200' ||
@@ -1079,8 +1172,8 @@ class AddListingController extends BaseController {
     if (data is Map && data['data'] is Map) {
       return Map<String, dynamic>.from(data['data'] as Map);
     }
-    if (data is Map && data['listing'] is Map) {
-      return Map<String, dynamic>.from(data['listing'] as Map);
+    if (data is Map && data['property'] is Map) {
+      return Map<String, dynamic>.from(data['property'] as Map);
     }
     return null;
   }
@@ -1104,6 +1197,11 @@ class AddListingController extends BaseController {
     }
     if (_minDurLockedFromLocal) {
       minRentalDuration.value = _coerceMinRentalDuration(r.minRentalDuration);
+    }
+    if (listingMode.value == 'rent') {
+      minRentalDuration.value = ApartmentUnitDraft.minDurationRent;
+    } else if (minRentalDuration.value.trim().isEmpty) {
+      minRentalDuration.value = ApartmentUnitDraft.minDurationBnb;
     }
     floorCount.value = r.floorCount.clamp(minFloorCount, maxFloorCount);
     _loadApartmentUnitsFromJson(r.unitsJson);
@@ -1156,13 +1254,13 @@ class AddListingController extends BaseController {
   void _applyPropertyTypeSelection(String rawType) {
     final t = rawType.trim();
     if (t.isEmpty) return;
-    for (final o in propertyTypes) {
-      if (o.toLowerCase() == t.toLowerCase()) {
-        selectedPropertyType.value = o;
-        propertyType.value = o;
-        return;
-      }
-    }
+    // for (final o in propertyTypes) {
+    //   if (o.toLowerCase() == t.toLowerCase()) {
+    //     selectedPropertyType.value = o;
+    //     propertyType.value = o;
+    //     return;
+    //   }
+    // }
     for (final o in propertyTypeOptions) {
       if (o.toLowerCase() == t.toLowerCase()) {
         final mapped = _mapLegacyPropertyTypeToFormOption(o);
@@ -1182,7 +1280,7 @@ class AddListingController extends BaseController {
       case 'Storage':
         return 'Other';
       default:
-        return propertyTypes.contains(legacy) ? legacy : 'Other';
+        return propertyTypeOptions.contains(legacy) ? legacy : 'Other';
     }
   }
 
@@ -1205,39 +1303,7 @@ class AddListingController extends BaseController {
     } catch (_) {}
   }
 
-  void _loadApartmentUnitsFromList(List<dynamic> rows) {
-    final list = <ApartmentUnitDraft>[];
-    for (final e in rows) {
-      if (e is Map<String, dynamic>) {
-        list.add(ApartmentUnitDraft.fromJson(e));
-      } else if (e is Map) {
-        list.add(ApartmentUnitDraft.fromJson(Map<String, dynamic>.from(e)));
-      }
-    }
-    if (list.isEmpty) return;
-    apartmentUnits.assignAll(list);
-  }
-
-  String? _readStr(Map<String, dynamic> m, List<String> keys) {
-    for (final k in keys) {
-      final v = m[k];
-      if (v == null) continue;
-      final s = v.toString().trim();
-      if (s.isNotEmpty) return s;
-    }
-    return null;
-  }
-
-  String _formatRentFromDynamic(dynamic n) {
-    if (n is num) {
-      final d = n.toDouble();
-      if (d == d.roundToDouble()) return d.toInt().toString();
-      return d.toString();
-    }
-    return n.toString().trim();
-  }
-
-  /// Fills rent-first form fields from API/snake_case maps (and BnB-style keys where useful).
+  /// Fills form fields from the properties table columns only.
   void _mergeRentFieldsFromListingMap(
     Map<String, dynamic> m, {
     required bool respectLocalLocks,
@@ -1248,13 +1314,8 @@ class AddListingController extends BaseController {
     bool allowType() => !respectLocalLocks || !_propertyTypeLockedFromLocal;
     bool allowUnits() => !respectLocalLocks || !_unitsLockedFromLocal;
 
-    final loc = _readStr(m, [
-      'propertyLocation',
-      'streetAddress',
-      'location',
-      'propertyLocationText',
-    ]);
-    if (loc != null) {
+    final loc = PropertyRecord.remoteLocation(m);
+    if (loc.isNotEmpty) {
       if (!respectLocalLocks ||
           propertyLocationController.text.trim().isEmpty) {
         propertyLocationController.text = loc;
@@ -1264,70 +1325,55 @@ class AddListingController extends BaseController {
       }
     }
 
-    final name = _readStr(m, [
-      'propertyName',
-      'property_name',
-      'title',
-      'name',
-    ]);
-    if (name != null &&
+    final name = PropertyRecord.remoteName(m);
+    if (name.isNotEmpty &&
         (!respectLocalLocks || propertyNameController.text.trim().isEmpty)) {
       propertyNameController.text = name;
     }
 
-    final type = _readStr(m, ['propertyType', 'property_type', 'type']);
-    if (type != null && allowType()) {
+    final workspace = PropertyRecord.workspaceFromApiMap(m);
+    if (workspace != null) {
+      listingMode.value = _normalizeListingMode(workspace);
+    }
+
+    final type = PropertyRecord.remoteType(m);
+    if (type.isNotEmpty && allowType()) {
       _applyPropertyTypeSelection(type);
     }
 
     if (allowRentAmount()) {
-      final rentStr = _readStr(m, ['rentAmount', 'monthlyRent', 'rent']);
-      if (rentStr != null) {
+      final rentStr = PropertyRecord.remoteRentAmount(m);
+      if (rentStr.isNotEmpty) {
         rentAmountController.text = rentStr;
-      } else {
-        final n = m['rentAmount'] ?? m['monthlyRent'] ?? m['baseNightlyRate'];
-        if (n != null && n.toString().trim().isNotEmpty) {
-          rentAmountController.text = _formatRentFromDynamic(n);
-        }
       }
     }
 
-    final freq = _readStr(m, ['rentFrequency', 'rent_frequency']);
-    if (freq != null && allowRentFreq()) {
+    final freq = PropertyRecord.remoteRentFrequency(m);
+    if (freq.isNotEmpty && allowRentFreq()) {
       rentFrequency.value = _coerceRentFrequency(freq);
     }
 
-    final minD = _readStr(m, [
-      'minRentalDuration',
-      'min_rental_duration',
-      'minimumStay',
-    ]);
-    if (minD != null && allowMinDur()) {
+    final minD = PropertyRecord.remoteMinDuration(m);
+    if (minD.isNotEmpty && allowMinDur()) {
       minRentalDuration.value = _coerceMinRentalDuration(minD);
     }
 
     if (allowUnits()) {
-      final uj = _readStr(m, ['unitsJson', 'units_json']);
-      if (uj != null && uj.isNotEmpty) {
+      final uj = PropertyRecord.remoteUnitsJson(m);
+      if (uj.isNotEmpty) {
         _loadApartmentUnitsFromJson(uj);
-      } else {
-        final units = m['units'] ?? m['apartmentUnits'];
-        if (units is List && units.isNotEmpty) {
-          _loadApartmentUnitsFromList(units);
-        }
       }
     }
   }
 
   void _prefillFromMap(Map<String, dynamic> data) {
-    final name = data['propertyName'] as String?;
-    if (name != null && name.isNotEmpty) propertyNameController.text = name;
-    final type = data['propertyType'] as String?;
-    if (type != null && type.isNotEmpty) selectedPropertyType.value = type;
-    final mode =
-        data['listingMode'] ?? data['workspaceType'] ?? data['workspace_type'];
+    final name = PropertyRecord.remoteName(data);
+    if (name.isNotEmpty) propertyNameController.text = name;
+    final type = PropertyRecord.remoteType(data);
+    if (type.isNotEmpty) selectedPropertyType.value = type;
+    final mode = PropertyRecord.workspaceFromApiMap(data);
     if (mode != null) {
-      listingMode.value = _normalizeListingMode(mode.toString());
+      listingMode.value = _normalizeListingMode(mode);
     }
     final address = data['streetAddress'] as String?;
     if (address != null && address.isNotEmpty) {

@@ -10,6 +10,7 @@ import '../../../core/widget/currency_dropdown_field.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
+import '../../../core/widget/sticky_form_actions.dart';
 import '../controllers/add_tenant_form_controller.dart';
 
 class AddTenantFormView extends BaseView<AddTenantFormController> {
@@ -63,8 +64,8 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
   Widget body(BuildContext context) {
     final c = FormSurfaceColors.of(context);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
       child: Form(
         key: controller.formKey,
         child: Column(
@@ -101,12 +102,25 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                     _isSw ? 'KITENGO CHA GHOROFA' : 'APARTMENT UNIT',
                     style: _labelStyle(c),
                   ),
+                  if (controller.replacingOccupiedUnit.value) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _isSw
+                          ? 'Vitengo vyote vina mpangaji. Kuhifadhi kutabadilisha mpangaji wa kitengo ulichochagua.'
+                          : 'All units are occupied. Saving replaces the tenant on the unit you select.',
+                      style: TextStyle(fontSize: 13, height: 1.35, color: c.secondary),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   _whiteDropdown<String>(
                     colors: c,
                     value: value,
                     options: keys,
-                    hintText: _isSw ? 'Chagua kitengo' : 'Select unit',
+                    hintText: controller.replacingOccupiedUnit.value
+                        ? (_isSw
+                            ? 'Chagua kitengo cha kubadilisha'
+                            : 'Select unit to replace')
+                        : (_isSw ? 'Chagua kitengo' : 'Select unit'),
                     labelForOption: controller.unitDisplayLabel,
                     onChanged: controller.setSelectedUnitKey,
                   ),
@@ -357,32 +371,36 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Obx(
+        ],
+        ),
+      ),
+    );
+
+    // Cancel was a second full-width button under Save, which read as an
+    // equal choice. Demoted to a text link so the pair has one clear primary.
+    return Column(
+      children: [
+        Expanded(child: content),
+        StickyFormActions(
+          primary: Obx(
             () => LoadingButton(
-              label: _isSw ? 'HIFADHI MPANGAJI' : 'SAVE TENANT',
+              label: controller.replacingOccupiedUnit.value
+                  ? (_isSw ? 'Badilisha mpangaji' : 'Replace tenant')
+                  : (_isSw ? 'Hifadhi mpangaji' : 'Save tenant'),
               onPressed: controller.saveTenant,
               isLoading: controller.saving.value,
             ),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => Get.back(),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: c.secondary,
-                backgroundColor: c.isDark ? c.fill : c.chipUnselectedBg,
-                side: BorderSide.none,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(_isSw ? 'GHAIRI' : 'CANCEL', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          secondary: TextButton(
+            onPressed: () => Get.back(),
+            style: TextButton.styleFrom(foregroundColor: c.secondary),
+            child: Text(
+              _isSw ? 'Ghairi' : 'Cancel',
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
             ),
           ),
-        ],
         ),
-      ),
+      ],
     );
   }
 
@@ -465,7 +483,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
                           ),
                         ),
                         Icon(
-                          Icons.expand_more_rounded,
+                          Icons.expand_more_outlined,
                           color: colors.secondary,
                         ),
                       ],
@@ -561,7 +579,7 @@ class AddTenantFormView extends BaseView<AddTenantFormController> {
         placeholder,
         style: TextStyle(color: colors.hint, fontSize: 15),
       ),
-      icon: Icon(Icons.expand_more_rounded, color: colors.secondary),
+      icon: Icon(Icons.expand_more_outlined, color: colors.secondary),
       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: colors.headline),
       decoration: InputDecoration(
         filled: true,

@@ -141,7 +141,7 @@ class RentUtilityUsageGraphView extends RentBaseView<RentUtilityUsageGraphContro
                               child: Text(
                                 label,
                                 style: TextStyle(
-                                  fontSize: 9,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: u.muted,
                                 ),
@@ -199,7 +199,7 @@ class RentUtilityUsageGraphView extends RentBaseView<RentUtilityUsageGraphContro
               child: Row(
                 children: [
                   Icon(
-                    controller.isLuku ? Icons.bolt_rounded : Icons.water_drop_rounded,
+                    controller.isLuku ? Icons.bolt_outlined : Icons.water_drop_outlined,
                     color: _GraphUi.forest,
                     size: 22,
                   ),

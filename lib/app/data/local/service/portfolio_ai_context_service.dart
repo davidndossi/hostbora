@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../../model/check_in_item.dart';
 import '../../repository/app_repository.dart';
@@ -16,6 +13,8 @@ import '../db/rent_scheduled_maintenance_local_data_source.dart';
 import '../db/tenant_local_data_source.dart';
 import '../preference/preference_manager.dart';
 import 'portfolio_ai_context.dart';
+import 'portfolio_ai_context_assembler.dart';
+import 'portfolio_ai_remote_overlay.dart';
 import 'workspace_context_service.dart';
 
 class PortfolioAiContextService extends GetxService {
@@ -30,6 +29,7 @@ class PortfolioAiContextService extends GetxService {
     required AppRepository repository,
     BnbBookingPendingLoader? pendingBookingLoader,
     PendingBookingsStore? pendingBookingsStore,
+    PortfolioAiRemoteOverlayLoader? remoteOverlayLoader,
   })  : _propertyLocal = propertyLocal,
         _tenantLocal = tenantLocal,
         _incomeLocal = incomeLocal,
@@ -42,7 +42,9 @@ class PortfolioAiContextService extends GetxService {
             BnbBookingPendingLoader(
               syncQueue: Get.find<OfflineSyncQueueLocalDataSource>(),
             ),
-        _pendingStore = pendingBookingsStore ?? PendingBookingsStore();
+        _pendingStore = pendingBookingsStore ?? PendingBookingsStore(),
+        _remoteOverlayLoader =
+            remoteOverlayLoader ?? PortfolioAiRemoteOverlayLoader(repository);
 
   final PropertyLocalDataSource _propertyLocal;
   final TenantLocalDataSource _tenantLocal;
@@ -54,144 +56,81 @@ class PortfolioAiContextService extends GetxService {
   final AppRepository _repository;
   final BnbBookingPendingLoader _pendingBookingLoader;
   final PendingBookingsStore _pendingStore;
-
-  static final _monthFmt = DateFormat('MMMM yyyy');
+  final PortfolioAiRemoteOverlayLoader _remoteOverlayLoader;
 
   Future<PortfolioAiContext> build() async {
     final ws = await _workspaceContext.getWorkspaceType();
     final userId = ((await _preferenceManager.getUser()).id ?? '').trim();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final monthStart = DateTime(now.year, now.month, 1);
-    final monthEnd = DateTime(now.year, now.month + 1, 1);
-    final threshold30 = today.add(const Duration(days: 30));
+    final allWorkspaces = ws.isEmpty || ws == 'all';
 
-    final properties = await _propertyLocal.getAllVisibleNewestFirst(
+    final propertiesF = _propertyLocal.getAllVisibleNewestFirst(
       userId: userId,
       workspaceType: ws,
     );
+    final incomesF = allWorkspaces
+        ? _incomeLocal.getAllNewestFirst()
+        : _incomeLocal.getAllNewestFirst(workspaceType: ws);
+    final expensesF = allWorkspaces
+        ? _expenseLocal.getAllNewestFirst()
+        : _expenseLocal.getAllNewestFirst(workspaceType: ws);
+    final tenantsF = allWorkspaces
+        ? _tenantLocal.getAllNewestFirst()
+        : _tenantLocal.getAllNewestFirstByWorkspace(ws);
+    final bookingsF = ws == 'bnb'
+        ? _loadActiveBnbBookings(userId: userId)
+        : Future<List<CheckInItem>>.value(const []);
+    final maintenanceF = ws == 'rent'
+        ? _maintenanceCount()
+        : Future<int>.value(0);
 
-    var totalUnits = 0;
-    final names = <String>[];
-    for (final p in properties) {
-      totalUnits += _unitCountForProperty(p);
-      final label = _propertyLabel(p);
-      if (label.isNotEmpty) names.add(label);
-    }
-    if (totalUnits <= 0 && properties.isNotEmpty) {
-      totalUnits = properties.length;
-    }
+    final properties = await propertiesF;
+    final incomes = await incomesF;
+    final expenses = await expensesF;
+    final tenants = await tenantsF;
+    final bookings = await bookingsF;
+    final maintenance = await maintenanceF;
 
-    final incomes =
-        await _incomeLocal.getAllNewestFirst(workspaceType: ws);
-    final expenses =
-        await _expenseLocal.getAllNewestFirst(workspaceType: ws);
+    final overlay = await _loadOverlay(incomes: incomes, expenses: expenses);
 
-    var monthIncome = 0.0;
-    var monthExpenses = 0.0;
-    for (final r in incomes) {
-      final d = r.paidLocalCalendarOrCreated();
-      if (!d.isBefore(monthStart) && d.isBefore(monthEnd)) {
-        monthIncome += r.amountValue;
-      }
-    }
-    for (final r in expenses) {
-      final d = r.paidLocalCalendarOrCreated();
-      if (!d.isBefore(monthStart) && d.isBefore(monthEnd)) {
-        monthExpenses += r.amountValue;
-      }
-    }
-
-    final tenants = await _tenantLocal.getAllNewestFirstByWorkspace(ws);
-    var activeTenants = 0;
-    var leasesExpiring = 0;
-    var arrearsCount = 0;
-    var arrearsTotal = 0.0;
-    var occupiedUnits = 0;
-
-    for (final t in tenants) {
-      final start = _parseDay(t.leaseStartIso);
-      final end = _parseDay(t.leaseEndIso) ??
-          DateTime(now.year + 50, 12, 31);
-      final active = start != null &&
-          !start.isAfter(today) &&
-          !end.isBefore(today);
-      if (active) {
-        activeTenants++;
-        occupiedUnits++;
-      }
-      if (end.isAfter(today) || end.isAtSameMomentAs(today)) {
-        if (!end.isAfter(threshold30)) leasesExpiring++;
-      }
-
-      final spentMonths = _monthsBetween(start ?? today, today).clamp(0, 240);
-      final totalMonths = _monthsBetween(
-        start ?? today,
-        end,
-      ).clamp(1, 240);
-      final totalAmount = t.rentAmountValue * totalMonths;
-      final paid = _sumIncomeForTenant(t, incomes);
-      final expected =
-          (t.rentAmountValue * spentMonths).clamp(0, totalAmount);
-      final gap = (expected - paid).clamp(0, double.infinity);
-      if (gap > 0.01 && active) {
-        arrearsCount++;
-        arrearsTotal += gap;
-      }
-    }
-
-    var activeBookings = 0;
-    var checkInsToday = 0;
-    var checkOutsToday = 0;
-
-    if (ws == 'bnb') {
-      final bookings = await _loadActiveBnbBookings(userId: userId);
-      for (final b in bookings) {
-        final ci = _parseDay(b.checkInIso);
-        final co = _parseDay(b.checkOutIso);
-        if (ci == null || co == null) continue;
-        if (_stayOverlapsDay(ci, co, today)) activeBookings++;
-        if (ci == today) checkInsToday++;
-        if (co == today) checkOutsToday++;
-      }
-      if (totalUnits > 0) {
-        occupiedUnits = activeBookings.clamp(0, totalUnits);
-      } else {
-        occupiedUnits = activeBookings;
-      }
-    }
-
-    final occupancy = totalUnits > 0
-        ? ((occupiedUnits / totalUnits) * 100).clamp(0.0, 100.0)
-        : (activeTenants > 0 ? 100.0 : 0.0);
-
-    var maintenance = 0;
-    if (ws == 'rent') {
-      try {
-        maintenance = (await _maintenanceLocal.getAllNewestFirst()).length;
-      } catch (_) {}
-    }
-
-    return PortfolioAiContext(
+    return PortfolioAiContextAssembler.assemble(
       workspace: ws,
-      monthLabel: _monthFmt.format(now),
-      propertyCount: properties.length,
-      totalUnits: totalUnits,
-      occupiedUnits: occupiedUnits,
-      occupancyPercent: occupancy,
-      activeTenants: activeTenants,
-      monthIncome: monthIncome,
-      monthExpenses: monthExpenses,
-      monthNet: monthIncome - monthExpenses,
-      arrearsTenantCount: arrearsCount,
-      arrearsTotal: arrearsTotal,
-      leasesExpiring30Days: leasesExpiring,
-      activeBookingsToday: activeBookings,
-      checkInsToday: checkInsToday,
-      checkOutsToday: checkOutsToday,
+      properties: properties,
+      tenants: tenants,
+      incomes: [...incomes, ...overlay.extraIncomes],
+      expenses: [...expenses, ...overlay.extraExpenses],
+      bookings: bookings,
       maintenanceTasks: maintenance,
-      propertyNames: names.take(8).toList(),
+      remoteActiveBookings: overlay.remoteActiveBookings,
+      includedRemote: !overlay.isEmpty,
     );
+  }
+
+  Future<PortfolioAiRemoteOverlay> _loadOverlay({
+    required List<IncomeRecord> incomes,
+    required List<ExpenseRecord> expenses,
+  }) async {
+    try {
+      return await _remoteOverlayLoader.load(
+        localPaymentIds: {
+          for (final r in incomes)
+            if (r.backendPaymentId.trim().isNotEmpty) r.backendPaymentId.trim(),
+        },
+        localExpenseIds: {
+          for (final r in expenses)
+            if (r.backendExpenseId.trim().isNotEmpty) r.backendExpenseId.trim(),
+        },
+      );
+    } catch (_) {
+      return const PortfolioAiRemoteOverlay();
+    }
+  }
+
+  Future<int> _maintenanceCount() async {
+    try {
+      return (await _maintenanceLocal.getAllNewestFirst()).length;
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<List<CheckInItem>> _loadActiveBnbBookings({required String userId}) async {
@@ -227,87 +166,5 @@ class PortfolioAiContextService extends GetxService {
     } catch (_) {}
 
     return merged.values.toList();
-  }
-
-  static int _unitCountForProperty(PropertyRecord r) {
-    if (r.unitsJson.trim().isNotEmpty) {
-      try {
-        final decoded = jsonDecode(r.unitsJson);
-        if (decoded is List && decoded.isNotEmpty) return decoded.length;
-      } catch (_) {}
-    }
-    final u = r.units;
-    return u > 0 ? u : 1;
-  }
-
-  static String _propertyLabel(PropertyRecord r) {
-    final suite = r.propertyName.trim();
-    final loc = r.propertyLocation.trim();
-    if (suite.isNotEmpty && loc.isNotEmpty) return '$loc · $suite';
-    return suite.isNotEmpty ? suite : loc;
-  }
-
-  static DateTime? _parseDay(String raw) {
-    final t = raw.trim();
-    if (t.isEmpty) return null;
-    if (t.length >= 10 && t[4] == '-' && t[7] == '-') {
-      final y = int.tryParse(t.substring(0, 4));
-      final m = int.tryParse(t.substring(5, 7));
-      final d = int.tryParse(t.substring(8, 10));
-      if (y != null &&
-          m != null &&
-          d != null &&
-          m >= 1 &&
-          m <= 12 &&
-          d >= 1 &&
-          d <= 31) {
-        return DateTime(y, m, d);
-      }
-    }
-    final p = DateTime.tryParse(t);
-    if (p == null) return null;
-    return DateTime(p.year, p.month, p.day);
-  }
-
-  static bool _stayOverlapsDay(DateTime checkIn, DateTime checkOut, DateTime day) {
-    return !checkIn.isAfter(day) && checkOut.isAfter(day);
-  }
-
-  static int _monthsBetween(DateTime start, DateTime end) {
-    var months = (end.year - start.year) * 12 + (end.month - start.month);
-    if (end.day < start.day) months -= 1;
-    return months < 0 ? 0 : months;
-  }
-
-  static double _sumIncomeForTenant(
-    TenantRecord tenant,
-    List<IncomeRecord> incomeRows,
-  ) {
-    var sum = 0.0;
-    for (final row in incomeRows) {
-      if (_incomeRowMatchesTenant(row, tenant)) sum += row.amountValue;
-    }
-    return sum;
-  }
-
-  static bool _incomeRowMatchesTenant(IncomeRecord income, TenantRecord tenant) {
-    if (income.tenantName.trim().toLowerCase() !=
-        tenant.tenantName.trim().toLowerCase()) {
-      return false;
-    }
-    final tenantRef = tenant.propertyRef.trim();
-    final incomeRef = income.propertyRef.trim();
-    if (tenantRef.isNotEmpty &&
-        incomeRef.isNotEmpty &&
-        tenantRef != incomeRef) {
-      return false;
-    }
-    final pl = tenant.propertyLabel.trim().toLowerCase();
-    if (pl.isEmpty) return true;
-    final ap = income.apartment.trim().toLowerCase();
-    final unit = income.apartmentUnit.trim().toLowerCase();
-    final notes = income.notes.trim().toLowerCase();
-    final blob = '$ap $unit $notes'.trim();
-    return blob.contains(pl) || pl.contains(ap) || ap == pl;
   }
 }

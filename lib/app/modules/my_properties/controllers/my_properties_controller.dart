@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -41,7 +43,25 @@ class MyPropertiesController extends BaseController {
   static const List<String?> _filterStatuses = [null, 'ACTIVE', 'DRAFT', 'ARCHIVED'];
 
   final properties = <PropertyListing>[].obs;
+  /// True only for the first paint when there is nothing to show yet.
   final loading = false.obs;
+  /// Subtle top indicator while remote sync/merge runs after local paint.
+  final refreshing = false.obs;
+
+  /// Bumped on each [loadProperties] so a slower older request cannot overwrite
+  /// a newer filter selection.
+  int _loadSeq = 0;
+
+  /// Cap remote work so My Properties never sits on Dio's 60s timeout.
+  static const Duration _remoteTimeout = Duration(seconds: 10);
+
+  Future<T?> _withTimeout<T>(Future<T> future) async {
+    try {
+      return await future.timeout(_remoteTimeout);
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Properties after applying workspaceModeFilter on top of the status filter.
   List<PropertyListing> get displayProperties {
@@ -67,7 +87,12 @@ class MyPropertiesController extends BaseController {
   }
 
   void setWorkspaceFilter(String ws) {
-    workspaceModeFilter.value = ws.toLowerCase();
+    final next = ws.trim().toLowerCase();
+    workspaceModeFilter.value =
+        next == 'bnb' || next == 'rent' ? next : '';
+    // The list reads this filter through [displayProperties]. Refresh so the
+    // cards follow the chip even when the filter observable is missed.
+    properties.refresh();
   }
 
   /// Immediately drops matching cards from the in-memory list (before reload).
@@ -89,25 +114,59 @@ class MyPropertiesController extends BaseController {
     Get.find<MyPropertiesController>().removePropertyFromList(ids);
   }
 
-  /// Fetches properties from service by current filter (All / Active / Drafts / Archive).
+  /// Fetches properties: paints local cache first, then merges remote in background.
   Future<void> loadProperties() async {
-    loading.value = true;
+    final seq = ++_loadSeq;
     final status = _filterStatuses[selectedFilterIndex.value];
     final deleted = _deleted.load();
+    final showBlockingLoader = properties.isEmpty;
+    if (showBlockingLoader) {
+      loading.value = true;
+    } else {
+      refreshing.value = true;
+    }
+
     try {
-      if (Get.isRegistered<RemoteAccountSyncService>()) {
-        await Get.find<RemoteAccountSyncService>().syncPropertiesFromRemote();
-      }
+      // 1) Local first — UI can render immediately.
       final localList = await _loadLocalListings(status: status);
-      final res = await _repository.getMyListings(status: status);
+      if (seq != _loadSeq) return;
+      properties.assignAll(
+        localList.where((p) => !deleted.contains(p.id)).toList(),
+      );
+      loading.value = false;
+      refreshing.value = true;
+
+      // 2) Remote sync + properties (short timeout; never block the shell).
+      if (Get.isRegistered<RemoteAccountSyncService>()) {
+        try {
+          await Get.find<RemoteAccountSyncService>()
+              .syncPropertiesFromRemote()
+              .timeout(_remoteTimeout);
+        } catch (_) {}
+      }
+      if (seq != _loadSeq) return;
+
+      // Re-read local after sync so unit counts / new rows are fresh.
+      final localAfterSync = await _loadLocalListings(status: status);
+      if (seq != _loadSeq) return;
+
+      final res = await _withTimeout(_repository.getMyProperties());
+      if (seq != _loadSeq) return;
+      if (res == null) {
+        properties.assignAll(
+          localAfterSync.where((p) => !deleted.contains(p.id)).toList(),
+        );
+        return;
+      }
+
       final data = res.data;
       List<dynamic> rawList = [];
       if (data is List) {
         rawList = data;
+      } else if (data is Map && data['properties'] is List) {
+        rawList = data['properties'] as List;
       } else if (data is Map && data['content'] is List) {
         rawList = data['content'] as List;
-      } else if (data is Map && data['listings'] is List) {
-        rawList = data['listings'] as List;
       }
       var maps = rawList.whereType<Map<String, dynamic>>().toList();
       if (status != null && status.isNotEmpty) {
@@ -116,13 +175,12 @@ class MyPropertiesController extends BaseController {
           return s == status;
         }).toList();
       }
-      final remoteList = (await Future.wait(
-              maps.map(_listingFromMap),
-            ))
+      final remoteList = (await Future.wait(maps.map(_listingFromMap)))
           .where((e) => e.id.isNotEmpty && !deleted.contains(e.id))
           .toList();
+      if (seq != _loadSeq) return;
       properties.assignAll(
-        _mergeListings(localList, remoteList)
+        _mergeListings(localAfterSync, remoteList)
             .where((p) => !deleted.contains(p.id))
             .where((p) {
               if (status == null || status.isEmpty) return true;
@@ -131,14 +189,22 @@ class MyPropertiesController extends BaseController {
             .toList(),
       );
     } catch (e) {
-      // Fall back to local rows so screen stays useful offline / API failure.
-      final localList = await _loadLocalListings(status: status);
-      properties.assignAll(
-        localList.where((p) => !deleted.contains(p.id)).toList(),
-      );
-      Get.snackbar('Error', 'Could not load properties');
+      if (seq != _loadSeq) return;
+      if (properties.isEmpty) {
+        try {
+          final localList = await _loadLocalListings(status: status);
+          if (seq != _loadSeq) return;
+          properties.assignAll(
+            localList.where((p) => !deleted.contains(p.id)).toList(),
+          );
+        } catch (_) {}
+        Get.snackbar('Error', 'Could not load properties');
+      }
     } finally {
-      loading.value = false;
+      if (seq == _loadSeq) {
+        loading.value = false;
+        refreshing.value = false;
+      }
     }
   }
 
@@ -219,12 +285,15 @@ class MyPropertiesController extends BaseController {
       }
       byId[item.id] = PropertyListing(
         id: item.id,
-        title: item.title,
+        title: _preferTitle(item.title, existing.title),
         rating: item.rating,
-        location: item.location,
-        activeTenants: item.activeTenants,
-        unitSlots: item.unitSlots > 0 ? item.unitSlots : existing.unitSlots,
-        mode: item.mode,
+        location: item.location.trim().isNotEmpty
+            ? item.location
+            : existing.location,
+        // Local unit count wins — remote lags after offline add/remove.
+        activeTenants: existing.activeTenants,
+        unitSlots: existing.unitSlots > 0 ? existing.unitSlots : item.unitSlots,
+        mode: existing.mode.isNotEmpty ? existing.mode : item.mode,
         isFavorite: item.isFavorite,
         imageUrl: item.imageUrl.isNotEmpty ? item.imageUrl : existing.imageUrl,
         // Local lifecycle (Draft/Archive) wins: the API often omits status or
@@ -238,30 +307,15 @@ class MyPropertiesController extends BaseController {
   }
 
   Future<PropertyListing> _listingFromMap(Map<String, dynamic> m) async {
-    final id = m['id']?.toString() ?? m['listingId']?.toString() ?? '';
-    final title =
-        m['propertyName']?.toString() ?? m['title']?.toString() ?? 'Property';
-    final rating = (m['rating'] as num?)?.toDouble() ?? 0.0;
-    final location =
-        m['propertyLocation']?.toString() ?? m['location']?.toString() ?? '';
+    final id = PropertyRecord.remoteRef(m);
+    var title = PropertyRecord.remoteName(m);
+    var location = PropertyRecord.remoteLocation(m);
     final tenants = await _tenantLocal.countByPropertyRef(id);
     final remoteUnits = (m['units'] as num?)?.toInt() ?? 0;
-    final remoteUnitsJson =
-        (m['units_json'] ?? m['unitsJson'] ?? '').toString();
-    var mode = _normalizeListingMode(
-      m['workspaceType'] ?? m['listingMode'] ?? m['operationMode'],
-    );
-    var imageUrl = m['coverPhotoUrl']?.toString() ??
-        m['coverPhoto']?.toString() ??
-        m['imageUrl']?.toString() ??
-        '';
-    imageUrl = imageUrl.trim();
-    final rawStatus = m['status']?.toString() ?? m['listingStatus']?.toString();
-    final hasRemoteStatus =
-        rawStatus != null && rawStatus.trim().isNotEmpty;
-    var status = hasRemoteStatus
-        ? PropertyRecord.normalizeListingStatus(rawStatus)
-        : PropertyRecord.listingStatusActive;
+    final remoteUnitsJson = PropertyRecord.remoteUnitsJson(m);
+    var mode = PropertyRecord.workspaceFromApiMap(m) ?? '';
+    var imageUrl = PropertyRecord.remoteCoverPhoto(m);
+    var status = PropertyRecord.listingStatusActive;
     int? localRowId;
     var units = remoteUnits;
     if (units <= 0 && remoteUnitsJson.trim().isNotEmpty) {
@@ -270,11 +324,21 @@ class MyPropertiesController extends BaseController {
     final localRow = id.isEmpty ? null : await _local.findByHubId(id);
     if (localRow != null) {
       localRowId = localRow.id;
-      mode = _normalizeListingMode(localRow.workspaceType);
-      // Prefer local structured count when remote payload is thin.
+      if (mode.isEmpty) {
+        mode = _normalizeListingMode(localRow.workspaceType);
+      }
+      if (localRow.propertyName.trim().isNotEmpty) {
+        title = localRow.propertyName.trim();
+      }
+      if (location.isEmpty && localRow.propertyLocation.trim().isNotEmpty) {
+        location = localRow.propertyLocation.trim();
+      }
+      // Prefer local structured count when present — remote lags after unit adds.
       final localUnits = PropertyUnitCount.of(localRow);
-      if (units <= 0 && localUnits > 0) {
+      if (localUnits > 0) {
         units = localUnits;
+      } else if (units <= 0) {
+        units = 0;
       }
       if (imageUrl.isEmpty) {
         imageUrl = PropertyListingImageAssigner.resolveDisplayPath(
@@ -289,10 +353,11 @@ class MyPropertiesController extends BaseController {
       imageUrl =
           PropertyListingImageAssigner.assignForProperty(propertyRef: id);
     }
+    if (mode.isEmpty) mode = 'rent';
     return PropertyListing(
       id: id,
-      title: title,
-      rating: rating,
+      title: title.isNotEmpty ? title : 'Property',
+      rating: 0,
       location: location,
       activeTenants: tenants,
       unitSlots: units,
@@ -300,16 +365,25 @@ class MyPropertiesController extends BaseController {
       isFavorite: false,
       imageUrl: imageUrl,
       status: status,
-      statusSource: hasRemoteStatus ? 'remote' : 'local',
+      statusSource: 'local',
       localRowId: localRowId,
     );
   }
 
+  static String _preferTitle(String remote, String local) {
+    final r = remote.trim();
+    final l = local.trim();
+    bool generic(String s) => s.isEmpty || s.toLowerCase() == 'property';
+    if (generic(r) && !generic(l)) return l;
+    if (!generic(r)) return r;
+    return l.isNotEmpty ? l : 'Property';
+  }
+
   static String _normalizeListingMode(dynamic raw) {
-    final value = raw?.toString().trim().toLowerCase() ?? '';
-    if (value == 'rent') return 'rent';
-    if (value == 'both') return 'both';
-    return 'bnb';
+    return PropertyRecord.normalizeWorkspaceType(
+      raw?.toString(),
+      fallback: 'rent',
+    );
   }
 
   void selectFilter(int index) {
@@ -479,7 +553,7 @@ class MyPropertiesController extends BaseController {
   }
 
   Future<void> manageProperty(PropertyListing p) async {
-    final result = await Get.toNamed(
+    await Get.toNamed(
       Routes.LISTING_DETAILS,
       arguments: {
         'property_id': p.id,
@@ -488,9 +562,10 @@ class MyPropertiesController extends BaseController {
         'property_image': p.imageUrl,
       },
     );
-    if (result == true) {
-      await loadProperties();
-    }
+    // Always reload — unit count / tenants may have changed while away.
+    await loadProperties();
+    // Don't block My Properties on Home's network refresh.
+    unawaited(HomeController.refreshIfRegistered());
   }
 
   Future<void> addProperty() async {

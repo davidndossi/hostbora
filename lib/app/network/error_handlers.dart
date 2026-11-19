@@ -71,10 +71,20 @@ Exception _parseDioErrorResponse(DioException dioError) {
     serverMessage = serverMessage ?? 'Something went wrong. Please try again later.';
   }
 
+  String messageOrFallback(String? serverMessage, String fallback) {
+    final message = serverMessage?.trim() ?? '';
+    if (message.isEmpty || message == 'Something went wrong. Please try again later.') {
+      return fallback;
+    }
+    return message;
+  }
+
   switch (statusCode) {
     //case to define http
     case HttpStatus.serviceUnavailable:
-      return ServiceUnavailableException('Service Temporarily Unavailable');
+      return ServiceUnavailableException(
+        messageOrFallback(serverMessage, 'Service Temporarily Unavailable'),
+      );
     case HttpStatus.notFound:
       return NotFoundException(serverMessage ?? '', status ?? '');
     case HttpStatus.unauthorized:
@@ -82,7 +92,12 @@ Exception _parseDioErrorResponse(DioException dioError) {
     case HttpStatus.forbidden:
       return UnauthorizedException('Access token expired, please login...');
     case HttpStatus.internalServerError:
-      return ServiceUnavailableException('Service not available... Please try again later!');
+      return ServiceUnavailableException(
+        messageOrFallback(
+          serverMessage,
+          'Service not available. Please try again.',
+        ),
+      );
     default:
       return ApiException(
           httpCode: statusCode,

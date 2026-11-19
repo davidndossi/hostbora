@@ -4,13 +4,13 @@ import '../../../../core/base/base_controller.dart';
 import '../../../../core/utils/property_break_even_metrics.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
-import '../../../../data/local/db/rent_property_estimate_local_data_source.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/db/rent_property_estimate_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
-import '../../rent_real_data_controller_mixin.dart';
+import '../../../../routes/app_pages.dart';
 
-class RentPropertyRoiAnalysisController extends BaseController
-    with RentRealDataControllerMixin {
+/// ROI for a single property passed via `propertyRef` / `propertyLabel`.
+class RentPropertyRoiAnalysisController extends BaseController {
   RentPropertyRoiAnalysisController()
       : _estimateLocal = Get.find<RentPropertyEstimateLocalDataSource>(),
         _propertyLocal = Get.find<PropertyLocalDataSource>(),
@@ -27,42 +27,82 @@ class RentPropertyRoiAnalysisController extends BaseController
   final selectedPropertyLabel = ''.obs;
   final selectedPropertyRef = ''.obs;
   final estimate = Rxn<RentPropertyEstimateRecord>();
-  final portfolio = <PropertyRecord>[].obs;
-  final trendRangeIndex = 2.obs; // reserved for future granularity
+  final loading = false.obs;
   final propertyIncomeTotal = 0.0.obs;
   final propertyMaintenanceTotal = 0.0.obs;
+  final propertyExpenseTotal = 0.0.obs;
+
+  bool get _isSw => Get.locale?.languageCode == 'sw';
+
+  String get displayPropertyTitle {
+    final label = selectedPropertyLabel.value.trim();
+    if (label.isNotEmpty) return label;
+    final ref = selectedPropertyRef.value.trim();
+    return ref.isEmpty ? (_isSw ? 'Mali' : 'Property') : ref;
+  }
 
   @override
   void onReady() {
     super.onReady();
     selectedPropertyRef.value = (Get.parameters['propertyRef'] ?? '').trim();
     selectedPropertyLabel.value = (Get.parameters['propertyLabel'] ?? '').trim();
+    final args = Get.arguments;
+    if (args is Map) {
+      if (selectedPropertyRef.value.isEmpty) {
+        selectedPropertyRef.value =
+            (args['propertyRef'] ?? '').toString().trim();
+      }
+      if (selectedPropertyLabel.value.isEmpty) {
+        selectedPropertyLabel.value =
+            (args['propertyLabel'] ?? args['propertyTitle'] ?? '')
+                .toString()
+                .trim();
+      }
+    }
     loadAll();
   }
 
   Future<void> loadAll() async {
-    await loadRealDataSnapshot();
-    await _loadEstimate();
-    await _loadPortfolio();
-    await _loadPropertyScopedTotals();
-  }
-
-  Future<void> _loadEstimate() async {
-    if (selectedPropertyRef.value.isNotEmpty) {
-      estimate.value = await _estimateLocal.findByPropertyRef(selectedPropertyRef.value);
-    } else {
-      estimate.value = null;
+    loading.value = true;
+    try {
+      await _resolvePropertyLabelIfNeeded();
+      await _loadEstimate();
+      await _loadPropertyScopedTotals();
+    } finally {
+      loading.value = false;
     }
   }
 
-  Future<void> _loadPortfolio() async {
-    final rows = await _propertyLocal.getAllNewestFirst();
-    portfolio.assignAll(rows.take(8).toList());
+  Future<void> _resolvePropertyLabelIfNeeded() async {
+    if (selectedPropertyLabel.value.trim().isNotEmpty) return;
+    final ref = selectedPropertyRef.value.trim();
+    if (ref.isEmpty) return;
+    final all = await _propertyLocal.getAllNewestFirst();
+    for (final p in all) {
+      final pref = p.propertyRef.trim();
+      final local = 'local_${p.id}';
+      if (pref != ref && local != ref) continue;
+      final loc = p.propertyLocation.trim();
+      final name = p.propertyName.trim();
+      selectedPropertyLabel.value = loc.isNotEmpty
+          ? (name.isNotEmpty ? '$loc · $name' : loc)
+          : (name.isNotEmpty ? name : ref);
+      return;
+    }
+  }
+
+  Future<void> _loadEstimate() async {
+    final ref = selectedPropertyRef.value.trim();
+    if (ref.isEmpty) {
+      estimate.value = null;
+      return;
+    }
+    estimate.value = await _estimateLocal.findByPropertyRef(ref);
   }
 
   bool get hasEstimate => estimate.value != null;
 
-  /// Purchase + renovation for the selected property estimate (principal deployed).
+  /// Purchase + renovation for the selected property.
   double get principalInvestment {
     final e = estimate.value;
     if (e == null) return 0;
@@ -72,15 +112,6 @@ class RentPropertyRoiAnalysisController extends BaseController
   double get acquisitionCost => estimate.value?.purchaseCost ?? 0;
 
   double get renovationCommitted => estimate.value?.renovationCost ?? 0;
-
-  /// Renovation “utilized” — heuristic: share of portfolio expenses when estimate exists.
-  double renovationUtilized(double expenseTotal) {
-    if (renovationCommitted <= 0) return 0;
-    final cap = renovationCommitted;
-    final guess = expenseTotal * 0.22;
-    if (guess > cap) return cap;
-    return guess;
-  }
 
   double get estimatedAnnualNet {
     final e = estimate.value;
@@ -94,92 +125,55 @@ class RentPropertyRoiAnalysisController extends BaseController
     return (estimatedAnnualNet / inv) * 100;
   }
 
-  double yieldToDatePercent(double incomeTotal) {
+  double get yieldToDatePercent {
     final p = principalInvestment;
     if (p <= 0) return 0;
-    return (incomeTotal / p) * 100;
-  }
-
-  String? roiLabelForProperty(PropertyRecord p) {
-    if (hasEstimate &&
-        p.propertyRef.trim().isNotEmpty &&
-        p.propertyRef.trim() == selectedPropertyRef.value.trim()) {
-      return '${estimatedRoiPercent.toStringAsFixed(1)}%';
-    }
-    return null;
-  }
-
-  void setTrendRange(int index) {
-    trendRangeIndex.value = index.clamp(0, 2);
-  }
-
-  /// Quarterly splits for chart (fiscal display); smooths [totalIncome] across Q1–Q4.
-  List<double> quarterlyIncomeSeries(double totalIncome) {
-    if (totalIncome <= 0) return [0, 0, 0, 0];
-    final q = totalIncome / 4;
-    return [
-      q * 0.88,
-      q * 1.05,
-      q * 0.97,
-      q * 1.10,
-    ];
-  }
-
-  List<double> quarterlyInvestmentSeries(double principal) {
-    if (principal <= 0) return [0, 0, 0, 0];
-    final q = principal / 4;
-    return [q, q, q, q];
-  }
-
-  /// Estimated annual maintenance / operating budget from estimate.
-  double get maintenanceEstimateAnnual {
-    final e = estimate.value;
-    if (e == null) return 0;
-    return e.expectedMonthlyExpense * 12;
-  }
-
-  /// Maintenance slice for charts — estimate wins, else actual maintenance spend.
-  double get maintenanceCostForChart {
-    if (maintenanceEstimateAnnual > 0) return maintenanceEstimateAnnual;
-    return propertyMaintenanceTotal.value;
+    return (propertyIncomeTotal.value / p) * 100;
   }
 
   double get incomeForProperty => propertyIncomeTotal.value;
 
+  double get maintenanceActual => propertyMaintenanceTotal.value;
+
+  /// Prefer estimate annual expense; fall back to actual maintenance spend.
+  double get maintenanceForChart {
+    final e = estimate.value;
+    if (e != null && e.expectedMonthlyExpense > 0) {
+      return e.expectedMonthlyExpense * 12;
+    }
+    return maintenanceActual;
+  }
+
   double get monthlyNetForBreakEven {
     final e = estimate.value;
     if (e == null) return 0;
-    final monthsObserved = _monthsWithIncomeObserved();
-    final monthlyActual =
-        monthsObserved > 0 ? propertyIncomeTotal.value / monthsObserved : 0.0;
+    final income = propertyIncomeTotal.value;
+    final monthlyActual = income > 0 ? income / 12 : 0.0;
     final monthlyIncome =
         monthlyActual > 0 ? monthlyActual : e.expectedMonthlyIncome;
     final monthlyExpense = e.expectedMonthlyExpense > 0
         ? e.expectedMonthlyExpense
-        : (propertyMaintenanceTotal.value / 12).clamp(0, double.infinity);
+        : (maintenanceActual / 12).clamp(0, double.infinity);
     return monthlyIncome - monthlyExpense;
   }
 
   String get breakEvenLabel {
     final principal = principalInvestment;
-    final maintenance = maintenanceCostForChart;
+    final maintenance = maintenanceForChart;
     final totalCost = principal + (maintenance > 0 ? maintenance : 0);
     return PropertyBreakEvenMetrics.formatBreakEven(
       principalCost: totalCost > 0 ? totalCost : principal,
       monthlyNetIncome: monthlyNetForBreakEven,
       incomeGeneratedToDate: propertyIncomeTotal.value,
-      isSw: Get.locale?.languageCode == 'sw',
+      isSw: _isSw,
     );
   }
 
-  bool get showPrincipalVsIncomeChart =>
-      hasEstimate && (principalInvestment > 0 || maintenanceEstimateAnnual > 0);
-
-  int _monthsWithIncomeObserved() {
-    final ref = selectedPropertyRef.value.trim();
-    if (ref.isEmpty) return 0;
-    return 12;
-  }
+  bool get showCostVsIncomeChart =>
+      hasEstimate &&
+      (principalInvestment > 0 ||
+          maintenanceForChart > 0 ||
+          incomeForProperty > 0);
 
   Future<void> _loadPropertyScopedTotals() async {
     final ref = selectedPropertyRef.value.trim();
@@ -187,6 +181,7 @@ class RentPropertyRoiAnalysisController extends BaseController
     if (ref.isEmpty && label.isEmpty) {
       propertyIncomeTotal.value = 0;
       propertyMaintenanceTotal.value = 0;
+      propertyExpenseTotal.value = 0;
       return;
     }
 
@@ -196,7 +191,8 @@ class RentPropertyRoiAnalysisController extends BaseController
             workspaceType: 'rent',
           )
         : await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
-    final expenseRows = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
+    final expenseRows =
+        await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
     final tenants = await _tenantLocal.getAllNewestFirst();
 
     var income = 0.0;
@@ -210,16 +206,20 @@ class RentPropertyRoiAnalysisController extends BaseController
           if (_incomeMatchesTenant(row, t)) income += row.amountValue;
         }
       }
-      if (income <= 0 && ref.isEmpty) {
-        income = incomeRows.fold<double>(0, (s, r) => s + r.amountValue);
-      }
     }
 
     var maintenance = 0.0;
+    var allExpense = 0.0;
     for (final row in expenseRows) {
-      if (!_expenseMatchesProperty(row, ref: ref, label: label, tenants: tenants)) {
+      if (!_expenseMatchesProperty(
+        row,
+        ref: ref,
+        label: label,
+        tenants: tenants,
+      )) {
         continue;
       }
+      allExpense += row.amountValue;
       final cat = row.category.trim().toLowerCase();
       if (cat.contains('maint') ||
           cat.contains('repair') ||
@@ -231,6 +231,7 @@ class RentPropertyRoiAnalysisController extends BaseController
 
     propertyIncomeTotal.value = income;
     propertyMaintenanceTotal.value = maintenance;
+    propertyExpenseTotal.value = allExpense;
   }
 
   bool _tenantMatchesScope(
@@ -241,7 +242,9 @@ class RentPropertyRoiAnalysisController extends BaseController
     if (ref.isNotEmpty && t.propertyRef.trim() == ref) return true;
     final pl = t.propertyLabel.trim();
     if (label.isNotEmpty && pl == label) return true;
-    if (ref.isNotEmpty && pl.toLowerCase().contains(ref.toLowerCase())) return true;
+    if (ref.isNotEmpty && pl.toLowerCase().contains(ref.toLowerCase())) {
+      return true;
+    }
     return false;
   }
 
@@ -294,5 +297,25 @@ class RentPropertyRoiAnalysisController extends BaseController
     final notes = expense.notes.trim().toLowerCase();
     final blob = '$ap $unit $notes'.trim();
     return blob.contains(pl) || pl.contains(ap) || ap == pl;
+  }
+
+  Future<void> openEstimateForm() async {
+    final ref = selectedPropertyRef.value.trim();
+    if (ref.isEmpty) {
+      showErrorMessage(
+        _isSw
+            ? 'Hakuna kitambulisho cha mali.'
+            : 'No property reference available.',
+      );
+      return;
+    }
+    final result = await Get.toNamed(
+      Routes.RENT_PROPERTY_ROI_ESTIMATE_FORM,
+      parameters: {
+        'propertyRef': ref,
+        'propertyLabel': selectedPropertyLabel.value,
+      },
+    );
+    if (result == true) await loadAll();
   }
 }

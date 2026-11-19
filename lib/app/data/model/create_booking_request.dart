@@ -9,6 +9,7 @@ class CreateBookingRequest {
     this.numberOfGuests = 1,
     this.notes,
     this.guestPhoneNumber,
+    this.idempotencyKey,
   });
 
   final String listingId;
@@ -23,6 +24,8 @@ class CreateBookingRequest {
   final String? notes;
   /// Guest phone number (e.g. for push-to-pay). Optional.
   final String? guestPhoneNumber;
+  /// Offline-queue dedupe key; sent as body + Idempotency-Key header.
+  final String? idempotencyKey;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -35,6 +38,8 @@ class CreateBookingRequest {
       if (notes != null && notes!.isNotEmpty) 'notes': notes,
       if (guestPhoneNumber != null && guestPhoneNumber!.trim().isNotEmpty)
         'guestPhoneNumber': guestPhoneNumber!.trim(),
+      if (idempotencyKey != null && idempotencyKey!.isNotEmpty)
+        'idempotencyKey': idempotencyKey,
     };
   }
 
@@ -48,6 +53,7 @@ class CreateBookingRequest {
       numberOfGuests: (json['numberOfGuests'] as num?)?.toInt() ?? 1,
       notes: json['notes'] as String?,
       guestPhoneNumber: json['guestPhoneNumber'] as String?,
+      idempotencyKey: json['idempotencyKey'] as String?,
     );
   }
 }

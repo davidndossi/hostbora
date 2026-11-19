@@ -15,7 +15,6 @@ import '../../../core/widget/hub_insight_banner.dart';
 import '../../../core/widget/managing_for_banner.dart';
 import '../../../core/widget/property_listing_image.dart';
 import '/app/core/base/base_view.dart';
-import '../../../core/widget/skeleton_presets.dart';
 import '../../../core/widget/sync_status_chip.dart';
 import '../../../core/models/item_sync_status.dart';
 import '../../../data/local/db/income_local_data_source.dart';
@@ -24,7 +23,9 @@ import '../../../data/local/service/currency_service.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../controllers/home_controller.dart';
-import '../../challenges_rewards/widgets/challenges_home_banner.dart';
+import '../widgets/home_summary_card.dart';
+import '../widgets/overdue_people_card.dart';
+import '../widgets/plan_expiry_banner.dart';
 import 'home_guest_quick_actions_sheet.dart';
 
 // ignore: must_be_immutable
@@ -47,10 +48,12 @@ class HomeView extends BaseView<HomeController> {
   Widget body(BuildContext context) {
     return SafeArea(
       child: Obx(() {
-        if (controller.homeInitialLoading.value) {
-          return const HomeScreenSkeleton();
-        }
-        if (!controller.hasAnyProperty.value) {
+        // Wait only for presence to resolve before flipping to empty state —
+        // never gate the whole Home on every API finishing.
+        final showEmpty =
+            !controller.presenceLoading.value &&
+            !controller.hasAnyProperty.value;
+        if (showEmpty) {
           return RefreshIndicator(
             onRefresh: () => controller.loadHomeData(refresh: true),
             child: LayoutBuilder(
@@ -74,29 +77,32 @@ class HomeView extends BaseView<HomeController> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // First because it is the only banner with a deadline.
+                  const PlanExpiryBanner(),
                   const ManagingForBanner(),
                   const SizedBox(height: 8),
-                  const ChallengesHomeBanner(),
-                  const SizedBox(height: 12),
+                  _buildHomeSummaryCard(context),
                   if (controller.showWorkspaceFilterChips) ...[
                     _buildWorkspaceFilter(context),
                     const SizedBox(height: 16),
                   ],
                   _buildTodayBlock(context),
-                  const SizedBox(height: 20),
                   if (firstWeek) ...[
                     _buildFirstWeekStarter(context),
-                    const SizedBox(height: 20),
-                    _buildCreateCta(context),
+                    OverduePeopleHomeSection(controller: controller),
+                    // const SizedBox(height: 20),
+                    // _buildCreateCta(context),
                     const SizedBox(height: 100),
                   ] else ...[
+                    _buildQuickCreateStrip(context),
                     _buildSnapshotBlock(context),
+                    OverduePeopleHomeSection(controller: controller),
                     const SizedBox(height: 16),
                     _buildRecentPaymentsBlock(context),
                     const SizedBox(height: 12),
                     const HubInsightBanner(compact: true, dismissible: true),
-                    const SizedBox(height: 8),
-                    if (_staffCanCreate()) _buildCreateCta(context),
+                    // const SizedBox(height: 8),
+                    // if (_staffCanCreate()) _buildCreateCta(context),
                     const SizedBox(height: 20),
                     _buildGoToBlock(context),
                     const SizedBox(height: 100),
@@ -108,6 +114,21 @@ class HomeView extends BaseView<HomeController> {
           ),
         );
       }),
+    );
+  }
+
+  /// Compact spinner used while a Home section's API data is still loading.
+  Widget _sectionLoadingBody({double height = 120}) {
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      ),
     );
   }
 
@@ -124,7 +145,7 @@ class HomeView extends BaseView<HomeController> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        icon: const Icon(Icons.add_outlined, color: Colors.white),
         label: Text(
           _t(context, 'Create', 'Unda'),
           style: const TextStyle(
@@ -144,45 +165,98 @@ class HomeView extends BaseView<HomeController> {
     final primaryLabel = showBnb && !showRent
         ? _t(context, 'Add Booking', 'Ongeza Uhifadhi')
         : showRent && !showBnb
-            ? _t(context, 'Add Tenant', 'Ongeza Mpangaji')
-            : _t(context, 'Add Booking or Tenant', 'Ongeza Uhifadhi au Mpangaji');
+        ? _t(context, 'Add Tenant', 'Ongeza Mpangaji')
+        : _t(context, 'Add Booking or Tenant', 'Ongeza Uhifadhi au Mpangaji');
     final primaryIcon = showBnb && !showRent
         ? Icons.event_available_outlined
         : Icons.person_add_alt_1_outlined;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionTitle(context, 'Get started', 'Anza'),
-        const SizedBox(height: 4),
-        Text(
-          _t(
-            context,
-            'Three steps to put Host Bora to work this week.',
-            'Hatua tatu kuanza kutumia Host Bora wiki hii.',
-          ),
-          style: TextStyle(fontSize: 12, color: context.tokens.textSecondary),
-        ),
-        const SizedBox(height: 12),
-        _QuickActionTile(
-          materialIcon: primaryIcon,
-          label: primaryLabel,
-          onTap: controller.openPrimaryCreateAction,
-        ),
-        const SizedBox(height: 12),
-        _QuickActionTile(
-          materialIcon: Icons.payments_outlined,
-          label: _t(context, 'Record Payment', 'Rekodi Malipo'),
-          onTap: controller.addPayment,
-        ),
-        const SizedBox(height: 12),
-        _QuickActionTile(
-          materialIcon: Icons.apartment_outlined,
-          label: _t(context, 'Open Properties', 'Fungua Mali'),
+    // The copy has always promised three steps; these are the three, with the
+    // state the host has actually reached. All three values are already in
+    // memory from loadHomeData, so tracking them costs no extra query.
+    return Obx(() {
+      final occupantAdded =
+          controller.rentTenantsCount.value > 0 ||
+          controller.bnbBookingsCount.value > 0;
+      final paymentRecorded = controller.hasRecordedPayment.value;
+      // Reaching this stage at all requires a property, so the run never
+      // starts empty — the host has already banked one step.
+      final steps = <_SetupStep>[
+        _SetupStep(
+          icon: Icons.apartment_outlined,
+          label: _t(context, 'Property added', 'Mali imeongezwa'),
+          done: true,
           onTap: controller.openPropertiesTab,
         ),
-      ],
-    );
+        _SetupStep(
+          icon: primaryIcon,
+          label: primaryLabel,
+          done: occupantAdded,
+          onTap: controller.openPrimaryCreateAction,
+        ),
+        _SetupStep(
+          icon: Icons.payments_outlined,
+          label: _t(context, 'Record Payment', 'Rekodi Malipo'),
+          done: paymentRecorded,
+          onTap: controller.addPayment,
+        ),
+      ];
+      final done = steps.where((s) => s.done).length;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: _sectionTitle(context, 'Get started', 'Anza')),
+              Text(
+                _t(
+                  context,
+                  '$done of ${steps.length} done',
+                  '$done kati ya ${steps.length}',
+                ),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: context.tokens.accent,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _t(
+              context,
+              'Three steps to put Host Bora to work this week.',
+              'Hatua tatu kuanza kutumia Host Bora wiki hii.',
+            ),
+            style: TextStyle(fontSize: 12, color: context.tokens.textSecondary),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: done / steps.length),
+              duration: const Duration(milliseconds: 420),
+              curve: Curves.easeOutCubic,
+              builder: (_, value, _) => LinearProgressIndicator(
+                value: value,
+                minHeight: 6,
+                backgroundColor: context.tokens.border,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  context.tokens.accent,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          for (final step in steps) ...[
+            _SetupStepTile(step: step),
+            const SizedBox(height: 10),
+          ],
+        ],
+      );
+    });
   }
 
   Widget _buildWorkspaceFilter(BuildContext context) {
@@ -207,8 +281,8 @@ class HomeView extends BaseView<HomeController> {
                 color: isSelected
                     ? color
                     : (c.isDark
-                        ? theme.colorScheme.outlineVariant
-                        : const Color(0xFFDDE1E7)),
+                          ? theme.colorScheme.outlineVariant
+                          : const Color(0xFFDDE1E7)),
               ),
             ),
             child: Text(
@@ -219,8 +293,8 @@ class HomeView extends BaseView<HomeController> {
                 color: isSelected
                     ? Colors.white
                     : (c.isDark
-                        ? theme.colorScheme.onSurfaceVariant
-                        : const Color(0xFF64748B)),
+                          ? theme.colorScheme.onSurfaceVariant
+                          : const Color(0xFF64748B)),
               ),
             ),
           ),
@@ -229,7 +303,7 @@ class HomeView extends BaseView<HomeController> {
 
       return Row(
         children: [
-          chip(isSw ? 'Zote' : 'All', 'all', AppColors.designAccent),
+          chip(isSw ? 'Zote' : 'All', 'all', AppColors.colorPrimary),
           const SizedBox(width: 8),
           chip('BnB', 'bnb', const Color(0xFF0D7377)),
           const SizedBox(width: 8),
@@ -270,6 +344,17 @@ class HomeView extends BaseView<HomeController> {
   /// Block 1 — what needs attention today (compact alerts, expand on tap).
   Widget _buildTodayBlock(BuildContext context) {
     return Obx(() {
+      if (controller.todaySectionLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionTitle(context, 'Today', 'Leo'),
+            const SizedBox(height: 10),
+            _sectionLoadingBody(height: 100),
+          ],
+        );
+      }
+
       final showBnb = controller.showBnbHomeContent;
       final showRent = controller.showRentHomeContent;
       final checkIns = showBnb ? controller.checkInsToday.length : 0;
@@ -283,8 +368,11 @@ class HomeView extends BaseView<HomeController> {
       final showPayments = accessOk(StaffPermissions.viewPayments);
       final collectionLow =
           showPayments &&
-          showRent && controller.collectionRate.value > 0 && controller.collectionRate.value < 70;
-      final hasAlerts = (showBookings && (checkIns > 0 || checkOuts > 0 || upcoming > 0)) ||
+          showRent &&
+          controller.collectionRate.value > 0 &&
+          controller.collectionRate.value < 70;
+      final hasAlerts =
+          (showBookings && (checkIns > 0 || checkOuts > 0 || upcoming > 0)) ||
           collectionLow ||
           (showTasks && maintenanceCount > 0);
 
@@ -304,7 +392,7 @@ class HomeView extends BaseView<HomeController> {
           else ...[
             if (showBookings && checkOuts > 0)
               _TodayAlertTile(
-                icon: Icons.logout_rounded,
+                icon: Icons.logout_outlined,
                 title: _t(context, 'Check-outs today', 'Wanatoka leo'),
                 count: checkOuts,
                 expanded: controller.todayExpandedKey.value == 'checkout',
@@ -322,7 +410,7 @@ class HomeView extends BaseView<HomeController> {
             if (showBookings && checkIns > 0) ...[
               const SizedBox(height: 8),
               _TodayAlertTile(
-                icon: Icons.login_rounded,
+                icon: Icons.login_outlined,
                 title: _t(context, 'Check-ins today', 'Wanaoingia leo'),
                 count: checkIns,
                 expanded: controller.todayExpandedKey.value == 'checkin',
@@ -341,8 +429,12 @@ class HomeView extends BaseView<HomeController> {
             if (showBookings && upcoming > 0) ...[
               const SizedBox(height: 8),
               _TodayAlertTile(
-                icon: Icons.event_available_rounded,
-                title: _t(context, 'Upcoming check-ins', 'Wanaoingia hivi karibuni'),
+                icon: Icons.event_available_outlined,
+                title: _t(
+                  context,
+                  'Upcoming check-ins',
+                  'Wanaoingia hivi karibuni',
+                ),
                 count: upcoming,
                 expanded: controller.todayExpandedKey.value == 'upcoming',
                 onTap: () => controller.toggleTodayDetail('upcoming'),
@@ -414,22 +506,108 @@ class HomeView extends BaseView<HomeController> {
     });
   }
 
+  /// Horizontal create actions shown just above Summary.
+  Widget _buildQuickCreateStrip(BuildContext context) {
+    final showRent = controller.showRentHomeContent;
+    final showBnb = controller.showBnbHomeContent;
+    final items = <_QuickCreateChipData>[
+      if (_staffAllows(StaffPermissions.recordPayment))
+        _QuickCreateChipData(
+          icon: Icons.arrow_downward_outlined,
+          label: _t(context, '+ Income', '+ Mapato'),
+          onTap: controller.quickAddIncome,
+        ),
+      if (_staffAllows(StaffPermissions.manageExpenses))
+        _QuickCreateChipData(
+          icon: Icons.receipt_long_outlined,
+          label: _t(context, '+ Expense', '+ Matumizi'),
+          onTap: controller.quickAddExpense,
+        ),
+      if (showRent && _staffAllows(StaffPermissions.manageTenants))
+        _QuickCreateChipData(
+          icon: Icons.person_add_alt_1_outlined,
+          label: _t(context, '+ Tenant', '+ Mpangaji'),
+          onTap: controller.quickAddTenant,
+        ),
+      if (showRent && _staffAllows(StaffPermissions.messageGuest))
+        _QuickCreateChipData(
+          icon: Icons.notifications_active_outlined,
+          label: _t(context, 'Send Reminder', 'Tuma Kikumbusho'),
+          onTap: () => controller.quickSendReminder(context),
+        ),
+      if (_staffAllows(StaffPermissions.editProperties))
+        _QuickCreateChipData(
+          icon: Icons.home_work_outlined,
+          label: _t(context, '+ Property', '+ Mali'),
+          onTap: controller.quickAddProperty,
+        ),
+      if (showBnb && _staffAllows(StaffPermissions.manageBookings))
+        _QuickCreateChipData(
+          icon: Icons.calendar_today_outlined,
+          label: _t(context, '+ Booking', '+ Uhifadhi'),
+          onTap: controller.quickAddBooking,
+        ),
+    ];
+    if (items.isEmpty) return const SizedBox(height: 20);
+
+    final theme = Theme.of(context);
+    final surface = FormSurfaceColors.of(context);
+    final outlineBackground = surface.isDark
+        ? theme.colorScheme.surfaceContainerHigh
+        : Colors.white;
+    final outlineBorder = surface.isDark
+        ? theme.colorScheme.outlineVariant
+        : const Color(0xFFE4E7EC);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (var i = 0; i < items.length; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              _QuickCreateChip(
+                data: items[i],
+                filled: i == 0,
+                outlineBackground: outlineBackground,
+                outlineBorder: outlineBorder,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Block 2 — 3–4 key numbers for the selected workspace.
   Widget _buildSnapshotBlock(BuildContext context) {
     final isSw = Localizations.localeOf(context).languageCode == 'sw';
     return Obx(() {
+      if (controller.snapshotSectionLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionTitle(context, 'Summary', 'Muhtasari'),
+            const SizedBox(height: 10),
+            _sectionLoadingBody(height: 140),
+          ],
+        );
+      }
+
       final showBnb = controller.showBnbHomeContent;
       final showRent = controller.showRentHomeContent;
       final showProperties = _staffAllows(StaffPermissions.viewProperties);
       final showBookings = _staffAllows(StaffPermissions.viewBookings);
       final showTenants = _staffAllows(StaffPermissions.viewTenants);
-      final showMoney = _staffAllows(StaffPermissions.viewPayments) ||
+      final showMoney =
+          _staffAllows(StaffPermissions.viewPayments) ||
           _staffAllows(StaffPermissions.viewReports);
       final hasCards = showBnb && showRent
           ? showProperties || showTenants || showMoney
           : showBnb
-              ? showBookings || showMoney || showProperties
-              : showTenants || showProperties || showMoney;
+          ? showBookings || showMoney || showProperties
+          : showTenants || showProperties || showMoney;
       if (!hasCards && !_staffAllows(StaffPermissions.viewReports)) {
         return const SizedBox.shrink();
       }
@@ -441,17 +619,17 @@ class HomeView extends BaseView<HomeController> {
             children: [
               Expanded(child: _sectionTitle(context, 'Summary', 'Muhtasari')),
               if (_staffAllows(StaffPermissions.viewReports))
-              TextButton(
-                onPressed: controller.viewTrends,
-                child: Text(
-                  _t(context, 'View trends', 'Angalia mwelekeo'),
-                  style: TextStyle(
-                    color: AppColors.colorPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                TextButton(
+                  onPressed: controller.viewTrends,
+                  child: Text(
+                    _t(context, 'View trends', 'Angalia mwelekeo'),
+                    style: TextStyle(
+                      color: AppColors.colorPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -503,16 +681,6 @@ class HomeView extends BaseView<HomeController> {
                     ),
                 ],
               ),
-            if (showTenants || showMoney) const SizedBox(height: 12),
-            if (showMoney)
-            _MonthIncomeCard(
-              title: isSw ? 'Mapato ya mwezi' : 'Income this month',
-              expectedLabel: isSw ? 'Inayotarajiwa' : 'Expected',
-              collectedLabel: isSw ? 'Iliyokusanywa' : 'Collected',
-              expectedValue: controller.expectedIncomeLabel.value,
-              collectedValue: controller.collectedIncomeLabel.value,
-              onTap: controller.openTodayRevenue,
-            ),
           ] else if (showBnb) ...[
             if (showBookings || showMoney)
               Row(
@@ -546,7 +714,9 @@ class HomeView extends BaseView<HomeController> {
                     child: _BnbOverviewCard(
                       title: isSw ? 'Ukaaji wa BnB' : 'BnB Occupancy',
                       value: '${controller.bnbOccupancyRate.value}%',
-                      subtitle: isSw ? 'Wiki hii' : 'This week',
+                      subtitle: isSw
+                          ? 'Vyumba vilivyokaliwa'
+                          : 'Units occupied',
                       onTap: controller.openBnbProperties,
                     ),
                   ),
@@ -580,7 +750,9 @@ class HomeView extends BaseView<HomeController> {
                       child: _BnbOverviewCard(
                         title: isSw ? 'Ukaaji wa Rent' : 'Rent Occupancy',
                         value: '${controller.rentOccupancyRate.value}%',
-                        subtitle: isSw ? 'Vyumbo vilivyokaliwa' : 'Units occupied',
+                        subtitle: isSw
+                            ? 'Vyumbo vilivyokaliwa'
+                            : 'Units occupied',
                         onTap: controller.openRentProperties,
                       ),
                     ),
@@ -588,27 +760,33 @@ class HomeView extends BaseView<HomeController> {
               ),
             if (showMoney) const SizedBox(height: 12),
             if (showMoney)
-            _CollectionRateCard(
-              title: isSw ? 'Ukusanyaji wa Kodi' : 'Collection',
-              rate: controller.collectionRate.value,
-              tenantCount: controller.rentTenantsCount.value,
-              subtitle: isSw
-                  ? 'Kodi iliyokusanywa mwezi huu'
-                  : 'Rent collected this month',
-              onTap: controller.openTodayRevenue,
-            ),
-            if (showMoney) const SizedBox(height: 12),
-            if (showMoney)
-            _MonthIncomeCard(
-              title: isSw ? 'Mapato ya mwezi' : 'Income this month',
-              expectedLabel: isSw ? 'Inayotarajiwa' : 'Expected',
-              collectedLabel: isSw ? 'Iliyokusanywa' : 'Collected',
-              expectedValue: controller.expectedIncomeLabel.value,
-              collectedValue: controller.collectedIncomeLabel.value,
-              onTap: controller.openTodayRevenue,
-            ),
+              _CollectionRateCard(
+                title: isSw ? 'Ukusanyaji wa Kodi' : 'Collection',
+                rate: controller.collectionRate.value,
+                tenantCount: controller.rentTenantsCount.value,
+                subtitle: isSw
+                    ? 'Kodi iliyokusanywa mwezi huu'
+                    : 'Rent collected this month',
+                onTap: controller.openTodayRevenue,
+              ),
           ],
         ],
+      );
+    });
+  }
+
+  /// Primary-color money summary pinned at the top of Home.
+  Widget _buildHomeSummaryCard(BuildContext context) {
+    final showMoney =
+        _staffAllows(StaffPermissions.viewPayments) ||
+        _staffAllows(StaffPermissions.viewReports);
+    if (!showMoney) return const SizedBox.shrink();
+    return Obx(() {
+      final bnbOnly =
+          controller.showBnbHomeContent && !controller.showRentHomeContent;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: HomeSummaryCard(controller: controller, bnbOnly: bnbOnly),
       );
     });
   }
@@ -621,6 +799,20 @@ class HomeView extends BaseView<HomeController> {
       if (!_staffAllows(StaffPermissions.viewPayments)) {
         return const SizedBox.shrink();
       }
+      if (controller.recentPaymentsSectionLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionTitle(
+              context,
+              'Recent payments',
+              'Malipo ya hivi karibuni',
+            ),
+            const SizedBox(height: 8),
+            _sectionLoadingBody(height: 88),
+          ],
+        );
+      }
       final payments = controller.visibleRecentPayments;
       if (payments.isEmpty) return const SizedBox.shrink();
 
@@ -630,7 +822,11 @@ class HomeView extends BaseView<HomeController> {
           Row(
             children: [
               Expanded(
-                child: _sectionTitle(context, 'Recent payments', 'Malipo ya hivi karibuni'),
+                child: _sectionTitle(
+                  context,
+                  'Recent payments',
+                  'Malipo ya hivi karibuni',
+                ),
               ),
               TextButton(
                 onPressed: controller.openAllRecentPayments,
@@ -661,8 +857,8 @@ class HomeView extends BaseView<HomeController> {
       final peopleLabel = showBnb && !showRent
           ? _t(context, 'Guests', 'Wageni')
           : showRent && !showBnb
-              ? _t(context, 'Tenants', 'Wapangaji')
-              : _t(context, 'Tenants & Guests', 'Wapangaji na Wageni');
+          ? _t(context, 'Tenants', 'Wapangaji')
+          : _t(context, 'Tenants & Guests', 'Wapangaji na Wageni');
 
       final tiles = <Widget>[
         if (_staffAllows(StaffPermissions.viewBookings))
@@ -674,7 +870,7 @@ class HomeView extends BaseView<HomeController> {
         if (_staffAllows(StaffPermissions.viewTenants) ||
             _staffAllows(StaffPermissions.viewBookings))
           _QuickActionTile(
-            materialIcon: Icons.people_outline_rounded,
+            materialIcon: Icons.people_outline,
             label: peopleLabel,
             onTap: controller.openPeople,
           ),
@@ -703,10 +899,7 @@ class HomeView extends BaseView<HomeController> {
               'Shortcuts — use Create above to add records',
               'Njia za haraka — tumia Unda hapo juu kuongeza',
             ),
-            style: TextStyle(
-              fontSize: 12,
-              color: context.tokens.textSecondary,
-            ),
+            style: TextStyle(fontSize: 12, color: context.tokens.textSecondary),
           ),
           const SizedBox(height: 10),
           GridView.count(
@@ -721,19 +914,19 @@ class HomeView extends BaseView<HomeController> {
           ),
           const SizedBox(height: 4),
           if (_staffAllows(StaffPermissions.viewReports))
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: controller.viewTrends,
-              child: Text(
-                _t(
-                  context,
-                  'View finances & reports →',
-                  'Angalia fedha na ripoti →',
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: controller.viewTrends,
+                child: Text(
+                  _t(
+                    context,
+                    'View finances & reports →',
+                    'Angalia fedha na ripoti →',
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       );
     });
@@ -756,7 +949,7 @@ class HomeView extends BaseView<HomeController> {
               ),
               alignment: Alignment.center,
               child: const Icon(
-                Icons.add_home_work_rounded,
+                Icons.add_home_work_outlined,
                 size: 44,
                 color: AppColors.colorPrimary,
               ),
@@ -801,7 +994,7 @@ class HomeView extends BaseView<HomeController> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: const Icon(Icons.add, color: Colors.white),
+                icon: const Icon(Icons.add_outlined, color: Colors.white),
                 label: Text(
                   _t(context, 'Add Property', 'Ongeza Mali'),
                   style: const TextStyle(
@@ -1027,7 +1220,10 @@ class _TodayAlertTile extends StatelessWidget {
               ),
               if (count != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.colorPrimary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
@@ -1044,8 +1240,8 @@ class _TodayAlertTile extends StatelessWidget {
               if (count != null) const SizedBox(width: 4),
               Icon(
                 expanded
-                    ? Icons.expand_less_rounded
-                    : Icons.chevron_right_rounded,
+                    ? Icons.expand_less_outlined
+                    : Icons.chevron_right_outlined,
                 color: c.isDark
                     ? AppColors.textColorSecondary
                     : const Color(0xFF94A3B8),
@@ -1075,7 +1271,7 @@ class _CheckInCard extends StatelessWidget {
     return Container(
       height: height,
       width: width,
-      color: AppColors.lightGreyColor,
+      color: AppColors.designInputBorder,
       child: const Icon(
         Icons.image_not_supported,
         color: AppColors.textColorSecondary,
@@ -1123,7 +1319,7 @@ class _CheckInCard extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 14,
-                          backgroundColor: AppColors.lightGreyColor,
+                          backgroundColor: AppColors.designInputBorder,
                           backgroundImage: item.guestAvatarUrl.isNotEmpty
                               ? NetworkImage(item.guestAvatarUrl)
                               : null,
@@ -1166,15 +1362,15 @@ class _CheckInCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .error
-                                  .withValues(alpha: 0.12),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.error.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              AppLocalizations.of(context)!
-                                  .bookingCancelledLabel,
+                              AppLocalizations.of(
+                                context,
+                              )!.bookingCancelledLabel,
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
@@ -1218,6 +1414,149 @@ class _CheckInCard extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickCreateChipData {
+  const _QuickCreateChipData({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
+class _QuickCreateChip extends StatelessWidget {
+  const _QuickCreateChip({
+    required this.data,
+    required this.filled,
+    required this.outlineBackground,
+    required this.outlineBorder,
+  });
+
+  final _QuickCreateChipData data;
+  final bool filled;
+  final Color outlineBackground;
+  final Color outlineBorder;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = filled ? Colors.white : AppColors.colorPrimary;
+    return Material(
+      color: filled ? AppColors.colorPrimary : outlineBackground,
+      borderRadius: BorderRadius.circular(100),
+      child: InkWell(
+        onTap: data.onTap,
+        borderRadius: BorderRadius.circular(100),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(100),
+            border: filled ? null : Border.all(color: outlineBorder),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(data.icon, size: 18, color: foreground),
+              const SizedBox(width: 6),
+              Text(
+                data.label,
+                style: TextStyle(
+                  color: foreground,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SetupStep {
+  const _SetupStep({
+    required this.icon,
+    required this.label,
+    required this.done,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool done;
+  final VoidCallback onTap;
+}
+
+/// One row of the Get started run. A finished step stays visible and stays
+/// tappable: hiding it would shrink the list and make the progress bar the
+/// only evidence of what was accomplished.
+class _SetupStepTile extends StatelessWidget {
+  const _SetupStepTile({required this.step});
+
+  final _SetupStep step;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final accent = tokens.accent;
+    final color = step.done ? tokens.textSecondary : tokens.textPrimary;
+
+    return Material(
+      color: Theme.of(context).cardColor,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: step.onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          child: Row(
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: step.done ? accent : Colors.transparent,
+                  border: step.done
+                      ? null
+                      : Border.all(color: tokens.border, width: 1.5),
+                ),
+                child: step.done
+                    ? const Icon(
+                        Icons.check_outlined,
+                        size: 16,
+                        color: Colors.white,
+                      )
+                    : Icon(step.icon, size: 14, color: tokens.textSecondary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  step.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: step.done ? FontWeight.w500 : FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ),
+              if (!step.done)
+                Icon(
+                  Icons.chevron_right_outlined,
+                  size: 20,
+                  color: tokens.textSecondary,
+                ),
             ],
           ),
         ),
@@ -1324,126 +1663,6 @@ class _QuickActionTile extends StatelessWidget {
   }
 }
 
-class _MonthIncomeCard extends StatelessWidget {
-  const _MonthIncomeCard({
-    required this.title,
-    required this.expectedLabel,
-    required this.collectedLabel,
-    required this.expectedValue,
-    required this.collectedValue,
-    this.onTap,
-  });
-
-  final String title;
-  final String expectedLabel;
-  final String collectedLabel;
-  final String expectedValue;
-  final String collectedValue;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = FormSurfaceColors.of(context);
-    final card = Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(AppValues.radius_12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: c.isDark ? Colors.white70 : AppColors.textColorSecondary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      expectedLabel,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: c.hint,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      expectedValue,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: c.headline,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 36,
-                color: c.isDark ? Colors.white12 : const Color(0xFFE8ECF0),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        collectedLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: c.hint,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        collectedValue,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.colorPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-    if (onTap == null) return card;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppValues.radius_12),
-      child: card,
-    );
-  }
-}
-
 class _RecentPaymentsList extends StatelessWidget {
   const _RecentPaymentsList({required this.payments});
 
@@ -1480,8 +1699,8 @@ class _RecentPaymentsList extends StatelessWidget {
                         Text(
                           payments[i].tenantName.trim().isEmpty
                               ? (payments[i].apartment.trim().isEmpty
-                                  ? '—'
-                                  : payments[i].apartment.trim())
+                                    ? '—'
+                                    : payments[i].apartment.trim())
                               : payments[i].tenantName.trim(),
                           style: TextStyle(
                             fontSize: 14,
@@ -1611,7 +1830,7 @@ class _UpcomingMaintenanceList extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   const Icon(
-                    Icons.chevron_right_rounded,
+                    Icons.chevron_right_outlined,
                     size: 18,
                     color: AppColors.colorPrimary,
                   ),
@@ -1761,7 +1980,9 @@ class _CollectionRateCard extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.1,
-                    color: isDark ? Colors.white54 : AppColors.textColorSecondary,
+                    color: isDark
+                        ? Colors.white54
+                        : AppColors.textColorSecondary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -1769,7 +1990,7 @@ class _CollectionRateCard extends StatelessWidget {
                   '$rate%',
                   style: TextStyle(
                     fontSize: 28,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: cs.onSurface,
                     height: 1.1,
                   ),
@@ -1845,17 +2066,23 @@ class _CollectionRateCard extends StatelessWidget {
                       '$rate%',
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: cs.onSurface,
                         height: 1,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      rate >= 80 ? 'healthy' : rate >= 50 ? 'fair' : 'low',
+                      rate >= 80
+                          ? 'healthy'
+                          : rate >= 50
+                          ? 'fair'
+                          : 'low',
                       style: TextStyle(
-                        fontSize: 9,
-                        color: isDark ? Colors.white54 : AppColors.textColorSecondary,
+                        fontSize: 10,
+                        color: isDark
+                            ? Colors.white54
+                            : AppColors.textColorSecondary,
                       ),
                     ),
                   ],

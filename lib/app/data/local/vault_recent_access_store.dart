@@ -86,6 +86,65 @@ class VaultRecentAccessStore {
     );
   }
 
+  /// Removes recent document rows matching any [names] or [localPath].
+  Future<List<VaultRecentAccessEntry>> removeDocumentsNamed(
+    String displayName, {
+    String? localPath,
+    Set<String> alsoNames = const {},
+  }) async {
+    final names = <String>{
+      displayName.trim().toLowerCase(),
+      ...alsoNames.map((name) => name.trim().toLowerCase()),
+    }..removeWhere((name) => name.isEmpty);
+    final path = localPath?.trim() ?? '';
+    if (names.isEmpty && path.isEmpty) return [];
+    final all = loadAll();
+    final removed = all.where((entry) {
+      if (entry.targetType != VaultRecentTargetType.document) return false;
+      if (path.isNotEmpty && (entry.localPath?.trim() ?? '') == path) {
+        return true;
+      }
+      return names.contains(entry.displayName.trim().toLowerCase());
+    }).toList();
+    if (removed.isEmpty) return [];
+    final removedIds = removed.map((entry) => entry.id).toSet();
+    final kept = all.where((entry) => !removedIds.contains(entry.id)).toList();
+    await _box.write(_key, kept.map((entry) => entry.toJson()).toList());
+    return removed;
+  }
+
+  Future<void> removeByIds(Set<String> ids) async {
+    if (ids.isEmpty) return;
+    final all = loadAll();
+    final kept = all.where((entry) => !ids.contains(entry.id)).toList();
+    if (kept.length == all.length) return;
+    await _box.write(_key, kept.map((entry) => entry.toJson()).toList());
+  }
+
+  Future<void> renameDocumentsNamed(String fromName, String toName) async {
+    final target = fromName.trim().toLowerCase();
+    final next = toName.trim();
+    if (target.isEmpty || next.isEmpty || target == next.toLowerCase()) return;
+    final all = loadAll();
+    var changed = false;
+    final updated = all.map((entry) {
+      if (entry.targetType != VaultRecentTargetType.document) return entry;
+      if (entry.displayName.trim().toLowerCase() != target) return entry;
+      changed = true;
+      return VaultRecentAccessEntry(
+        id: entry.id,
+        targetType: entry.targetType,
+        targetId: entry.targetId,
+        displayName: next,
+        lastAccessedAtMs: entry.lastAccessedAtMs,
+        directoryId: entry.directoryId,
+        localPath: entry.localPath,
+      );
+    }).toList();
+    if (!changed) return;
+    await _box.write(_key, updated.map((e) => e.toJson()).toList());
+  }
+
   Future<void> recordDocument({
     required String documentId,
     required String displayName,

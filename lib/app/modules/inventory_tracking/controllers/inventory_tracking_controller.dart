@@ -11,6 +11,8 @@ import 'package:share_plus/share_plus.dart';
 
 import '/app/core/base/base_controller.dart';
 import '/app/data/local/db/inventory_item_local_data_source.dart';
+import '/app/data/local/preference/preference_manager.dart';
+import '/app/data/local/service/local_account_data_reset.dart';
 import '/app/data/local/db/inventory_movement_local_data_source.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
 import '/app/data/local/service/offline_sync_worker_service.dart';
@@ -18,6 +20,7 @@ import '/app/data/model/inventory_item_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/app/routes/app_pages.dart';
 import '/l10n/app_localizations.dart';
+import '../../../data/service/analytics_service.dart';
 
 class InventoryUnitOption {
   const InventoryUnitOption({
@@ -96,6 +99,13 @@ class InventoryTrackingController extends BaseController {
   Future<void> loadAll() async {
     loading.value = true;
     try {
+      if (Get.isRegistered<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      )) {
+        await LocalAccountDataReset.alignToUser(
+          Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
+        );
+      }
       await _mergeRemoteItems();
       await _reloadLocal();
     } finally {
@@ -270,6 +280,11 @@ class InventoryTrackingController extends BaseController {
         shareOrigin: shareOrigin,
       );
       if (result.status == ShareResultStatus.success) {
+        analytics?.logReportExported(
+          format: 'csv',
+          reportType: 'inventory_list',
+          module: 'inventory',
+        );
         showSuccessMessage(
           _l10n?.inventoryFileSharedSuccessfully ??
               (_isSw

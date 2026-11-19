@@ -7,6 +7,7 @@ import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/model/subscription_status.dart';
 import '../../../data/service/subscription_service.dart';
 import '../../../routes/app_pages.dart';
+import '../../../data/service/analytics_service.dart';
 
 class SubscriptionController extends BaseController {
   SubscriptionController()
@@ -24,7 +25,16 @@ class SubscriptionController extends BaseController {
   @override
   void onInit() {
     super.onInit();
-    _guardManagers();
+    // The guard can bounce portfolio managers straight back out, so the plan
+    // view is only reported once we know the screen is actually theirs to see.
+    _guardManagers().then((_) {
+      if (blockedForManager.value) return;
+      analytics?.logPlanViewed(
+        currentPlan: currentStatus.plan,
+        isActive: currentStatus.isActive,
+        source: Get.previousRoute,
+      );
+    });
     if (_subscriptionService.usesAppleIap) {
       _subscriptionService.reloadAppleProducts();
     }

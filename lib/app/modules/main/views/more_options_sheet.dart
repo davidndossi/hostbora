@@ -110,7 +110,7 @@ class MoreOptionsSheet extends StatelessWidget {
                             ),
                           ),
                           Icon(
-                            Icons.add_rounded,
+                            Icons.add_outlined,
                             size: 18,
                             color: Colors.grey.shade500,
                           ),
@@ -157,19 +157,19 @@ class MoreOptionsSheet extends StatelessWidget {
       ),
       _MoreOption(
         label: _t('Add Income', 'Ongeza Mapato'),
-        icon: Icons.attach_money_rounded,
+        icon: Icons.attach_money_outlined,
         iconBg: const Color(0xFFB8F1D7),
         route: Routes.RECORD_PAYMENT,
       ),
       _MoreOption(
         label: _t('Add Expenses', 'Ongeza Matumizi'),
-        icon: Icons.trending_up_rounded,
+        icon: Icons.trending_up_outlined,
         iconBg: const Color(0xFFF5CABC),
         route: Routes.ADD_EXPENSE,
       ),
       _MoreOption(
         label: _t('Help Center', 'Kituo cha Msaada'),
-        icon: Icons.help_outline_rounded,
+        icon: Icons.help_outline,
         iconBg: const Color(0xFFBCE784),
         route: Routes.HELP_CENTER,
       ),
@@ -205,13 +205,13 @@ class MoreOptionsSheet extends StatelessWidget {
       ),
       _MoreOption(
         label: _t('Offers', 'Ofa'),
-        icon: Icons.stars_rounded,
+        icon: Icons.stars_outlined,
         iconBg: const Color(0xFFEEE298),
         route: Routes.RENT_ACTIVE_LOYALTY_PROGRAMS,
       ),
       _MoreOption(
         label: _t('Guest history', 'Historia ya Wageni'),
-        icon: Icons.people_outline_rounded,
+        icon: Icons.people_outline,
         iconBg: const Color(0xFFB8F1D7),
         route: Routes.GUEST_HISTORY,
       ),

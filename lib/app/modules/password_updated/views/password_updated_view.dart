@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/base/base_view.dart';
+import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../controllers/password_updated_controller.dart';
 
 // Figma design colors for this screen
 const _colorBackground = Color(0xFFF8F7F4);
-const _colorSuccessGreen = Color(0xFF1E885B);
+const _colorSuccessGreen = AppColors.colorSuccess;
 const _colorHeadline = Color(0xFF2E3331);
 const _colorBodyText = Color(0xFF7C8281);
 const _colorPlaceholderBox = Color(0xFFE3F2F1);
@@ -174,7 +175,7 @@ class PasswordUpdatedView extends BaseView<PasswordUpdatedController> {
               ),
             ],
           ),
-          child: const Icon(Icons.check_rounded, size: 48, color: Colors.white),
+          child: const Icon(Icons.check_outlined, size: 48, color: Colors.white),
         ),
       ],
     );
@@ -201,7 +202,7 @@ class PasswordUpdatedView extends BaseView<PasswordUpdatedController> {
       ),
       child: Center(
         child: Icon(
-          Icons.lock_rounded,
+          Icons.lock_outlined,
           size: 56,
           color: (isDark ? theme.colorScheme.primary : _colorSuccessGreen)
               .withValues(alpha: 0.5),

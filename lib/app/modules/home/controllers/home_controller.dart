@@ -1,13 +1,20 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/access/plan_agents.dart';
 import '../../../core/service/launch_prompt_gate.dart';
 import '../../../core/utils/booking_api_response.dart';
 import '../../../core/utils/bnb_property_listing.dart';
+import '../../../core/utils/expected_month_rent.dart';
 import '../../../core/utils/getx_instance_probe.dart';
+import '../../../core/utils/overdue_occupants.dart';
+import '../../../core/utils/tenant_rent_billing.dart';
+import '../../../core/utils/unlinked_payments.dart';
 import '../../../core/utils/property_unit_count.dart';
 import '../../../core/values/text_styles.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
@@ -15,20 +22,22 @@ import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/rent_scheduled_maintenance_local_data_source.dart';
 import '../../../data/local/bnb_booking_merge.dart';
+import '../../../data/local/db/synced_entity_store.dart';
 import '../../../data/local/bnb_booking_overrides_store.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/deleted_properties_store.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
-import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/local/service/currency_service.dart';
+import '../../../data/local/service/lease_income_extension.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../host_calendar/controllers/host_calendar_controller.dart';
+import '../../rent/tenant_ledger_occupancy/utils/tenant_ledger_finance.dart';
 import '../../main/controllers/main_controller.dart';
 import '../../main/model/menu_code.dart';
 import '../../main/widgets/nav_tab_spotlight_overlay.dart';
@@ -78,13 +87,21 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   final checkInsToday = <CheckInItem>[].obs;
   final checkOutsToday = <CheckInItem>[].obs;
 
-  /// True only before the first successful [loadHomeData] (skeleton, not full-screen spinner).
-  final homeInitialLoading = true.obs;
+  /// True only before the first successful [loadHomeData] (legacy; Home now
+  /// shows the shell immediately and uses per-section loaders instead).
+  final homeInitialLoading = false.obs;
 
   /// Pull-to-refresh indicator on BnB home.
   final homeRefreshing = false.obs;
 
   final homeHasLoaded = false.obs;
+
+  /// Per-section loaders — Home shell renders immediately; each block spins
+  /// until its own data arrives.
+  final todaySectionLoading = true.obs;
+  final snapshotSectionLoading = true.obs;
+  final recentPaymentsSectionLoading = true.obs;
+  final presenceLoading = true.obs;
 
   /// True once we know the account has at least one property. Defaults to
   /// true so returning users never see an empty-state flash while this
@@ -105,13 +122,11 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   /// BnB income per day (TZS), indexed 0 = Monday … 6 = Sunday.
   final weeklyRevenue = <double>[0, 0, 0, 0, 0, 0, 0].obs;
 
-  /// Daily occupancy % (0–100): occupied unit-nights ÷ available unit-nights.
-  final weeklyOccupancyPercent = <double>[0, 0, 0, 0, 0, 0, 0].obs;
-
   final bnbBookingsCount = 0.obs;
   final bnbGuestsCount = 0.obs;
   final bnbTodayRevenue = RxString(CurrencyService.zeroLabel());
   final bnbUnitsCount = 0.obs;
+
   /// Average daily occupancy % for the current week (0–100).
   final bnbOccupancyRate = 0.obs;
 
@@ -120,10 +135,13 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   /// Total rentable units across both BnB and Rent (sum of units per property).
   final totalUnitsCount = 0.obs;
+
   /// % of rent units currently occupied by an active tenant.
   final rentOccupancyRate = 0.obs;
+
   /// Number of active rent tenants (lease not yet expired).
   final rentTenantsCount = 0.obs;
+
   /// % of expected monthly rent that has been collected this month.
   final collectionRate = 0.obs;
 
@@ -133,8 +151,34 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   /// Collected income for the current calendar month (formatted, base currency).
   final collectedIncomeLabel = RxString(CurrencyService.zeroLabel());
 
+  /// Raw base-currency amounts behind the labels above (Home summary card).
+  final expectedIncomeValue = 0.0.obs;
+  final collectedIncomeValue = 0.0.obs;
+
+  /// Tenants billed this month, and how many of them have paid it in full.
+  final billedTenantsCount = 0.obs;
+  final paidTenantsCount = 0.obs;
+
+  /// Income paid this month that no tenant owns (not part of rent collection).
+  final otherIncomeValue = 0.0.obs;
+
+  /// Rent payments of any date that are not linked to a tenant.
+  final unlinkedPaymentsCount = 0.obs;
+
+  /// BnB income received this calendar month (base currency).
+  final bnbRevenueValue = 0.0.obs;
+
+  /// Masks the Home summary card amounts; persisted across launches.
+  final hideHomeAmounts = false.obs;
+
   /// Newest income rows (unfiltered); use [visibleRecentPayments] for UI.
   final recentPayments = <IncomeRecord>[].obs;
+
+  /// Combined overdue rent tenants and unpaid BnB guests.
+  final overdueOccupants = <OverdueOccupant>[].obs;
+
+  /// True when any income row exists, including dates outside Free-plan history.
+  final hasRecordedPayment = false.obs;
 
   /// Maintenance scheduled from today through the next 7 days.
   final upcomingMaintenance = <RentScheduledMaintenanceRecord>[].obs;
@@ -162,7 +206,27 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void onInit() {
     super.onInit();
     unawaited(_initHomeWorkspaceFilter());
+    unawaited(_initHideHomeAmounts());
     loadHomeData();
+  }
+
+  Future<void> _initHideHomeAmounts() async {
+    try {
+      hideHomeAmounts.value = await _preferenceManager.getBool(
+        PreferenceManager.keyHomeHideAmounts,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> toggleHideHomeAmounts() async {
+    final next = !hideHomeAmounts.value;
+    hideHomeAmounts.value = next;
+    try {
+      await _preferenceManager.setBool(
+        PreferenceManager.keyHomeHideAmounts,
+        next,
+      );
+    } catch (_) {}
   }
 
   Future<void> _initHomeWorkspaceFilter() async {
@@ -173,13 +237,13 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       );
       if (saved == 'all' || saved == 'bnb' || saved == 'rent') {
         homeWorkspaceFilter.value = saved;
-        return;
       }
-      // Default to the user's preferred workspace (not "all") to reduce noise.
-      if (Get.isRegistered<WorkspaceContextService>()) {
-        final ws = await Get.find<WorkspaceContextService>().getWorkspaceType();
-        homeWorkspaceFilter.value = ws == 'rent' ? 'rent' : 'bnb';
-      }
+      // No saved choice keeps the field's own default of `all`. This used to
+      // fall back to the workspace preference, which nothing in onboarding
+      // ever set — so it resolved to `bnb` and silently hid a long-term
+      // landlord's rent data behind a chip they had never touched. Showing
+      // everything is only noisier for hosts who genuinely run both, and
+      // those are exactly the hosts who get the chips to narrow it.
     } catch (_) {}
   }
 
@@ -217,6 +281,19 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     if (role == 'bnb') return false;
     final f = homeWorkspaceFilter.value;
     return f == 'all' || f == 'rent';
+  }
+
+  /// Overdue people for the current home workspace filter.
+  List<OverdueOccupant> get visibleOverdueOccupants {
+    final showBnb = showBnbHomeContent;
+    final showRent = showRentHomeContent;
+    Iterable<OverdueOccupant> rows = overdueOccupants;
+    if (showBnb && !showRent) {
+      rows = rows.where((r) => r.isBnb);
+    } else if (showRent && !showBnb) {
+      rows = rows.where((r) => !r.isBnb);
+    }
+    return rows.toList();
   }
 
   /// Up to 5 recent payments for the current home workspace filter.
@@ -285,12 +362,23 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   }
 
   void toggleTodayDetail(String key) {
-    todayExpandedKey.value =
-        todayExpandedKey.value == key ? null : key;
+    todayExpandedKey.value = todayExpandedKey.value == key ? null : key;
   }
 
   Future<void>? _loadHomeInFlight;
   DateTime? _lastHomeLoadAt;
+
+  /// Cap for Home API calls — Dio's global 60s timeout left Home skeleton
+  /// stuck for a minute+ when the network was slow or endpoints hung.
+  static const Duration _homeNetworkTimeout = Duration(seconds: 10);
+
+  Future<T?> _homeApi<T>(Future<T> future) async {
+    try {
+      return await future.timeout(_homeNetworkTimeout);
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Loads home data.
   ///
@@ -315,9 +403,13 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
     if (refresh) {
       homeRefreshing.value = true;
-    } else if (!homeHasLoaded.value) {
-      homeInitialLoading.value = true;
     }
+    // Always show the Home shell; sections spin individually.
+    homeInitialLoading.value = false;
+    todaySectionLoading.value = true;
+    snapshotSectionLoading.value = true;
+    recentPaymentsSectionLoading.value = true;
+    presenceLoading.value = true;
 
     final future = _runLoadHomeData(refresh: refresh);
     _loadHomeInFlight = future;
@@ -332,15 +424,13 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   Future<void> _runLoadHomeData({required bool refresh}) async {
     try {
+      // Each section clears its own spinner when ready so the UI updates
+      // progressively instead of waiting for the slowest API.
       await Future.wait([
-        _loadOverview(),
-        _loadBookingLists(),
-        _loadBnbOverviewStats(),
-        _loadRentOverviewStats(),
-        _loadRecentPayments(),
-        _loadUpcomingMaintenance(),
-        _loadPropertyPresence(),
-        _loadPortfolioRole(),
+        _loadTodaySection(),
+        _loadSnapshotSection(),
+        _loadRecentPaymentsSection(),
+        _loadPresenceSection(),
       ]);
       await _resolveExperienceStage();
       _lastHomeLoadAt = DateTime.now();
@@ -349,6 +439,10 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         showErrorMessage(e.toString());
       }
     } finally {
+      todaySectionLoading.value = false;
+      snapshotSectionLoading.value = false;
+      recentPaymentsSectionLoading.value = false;
+      presenceLoading.value = false;
       homeInitialLoading.value = false;
       homeRefreshing.value = false;
       homeHasLoaded.value = true;
@@ -358,12 +452,69 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     }
   }
 
+  Future<void> _loadTodaySection() async {
+    try {
+      await Future.wait([_loadBookingLists(), _loadUpcomingMaintenance()]);
+    } finally {
+      todaySectionLoading.value = false;
+    }
+  }
+
+  Future<void> _loadSnapshotSection() async {
+    try {
+      await Future.wait([
+        _loadOverview(),
+        _loadBnbOverviewStats(),
+        _loadRentOverviewStats(),
+        _loadPortfolioRole(),
+        _loadOverdueOccupants(),
+      ]);
+      await _syncPortfolioTenantStats();
+    } finally {
+      snapshotSectionLoading.value = false;
+      unawaited(_loadPaidTenantStats());
+      unawaited(_loadUnlinkedPayments());
+    }
+  }
+
+  Future<void> _loadRecentPaymentsSection() async {
+    try {
+      await _loadRecentPayments();
+    } finally {
+      recentPaymentsSectionLoading.value = false;
+    }
+  }
+
+  Future<void> _loadPresenceSection() async {
+    try {
+      await _loadPropertyPresence();
+    } finally {
+      presenceLoading.value = false;
+    }
+  }
+
   Future<void> _resolveExperienceStage() async {
     if (!hasAnyProperty.value) {
       homeExperienceStage.value = HomeExperienceStage.noProperties;
       return;
     }
     try {
+      final occupantAdded =
+          rentTenantsCount.value > 0 || bnbBookingsCount.value > 0;
+      final setupComplete = occupantAdded && hasRecordedPayment.value;
+      if (setupComplete) {
+        await _preferenceManager.setBool(
+          PreferenceManager.keyHomeGetStartedComplete,
+          true,
+        );
+      }
+      final alreadyFinished = await _preferenceManager.getBool(
+        PreferenceManager.keyHomeGetStartedComplete,
+      );
+      if (setupComplete || alreadyFinished) {
+        homeExperienceStage.value = HomeExperienceStage.established;
+        return;
+      }
       var firstMs = await _preferenceManager.getInt(
         PreferenceManager.keyFirstPropertyAtMs,
         defaultValue: 0,
@@ -411,8 +562,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       final role = hasBnb && hasRent
           ? 'both'
           : hasRent && !hasBnb
-              ? 'rent'
-              : 'bnb';
+          ? 'rent'
+          : 'bnb';
       homePortfolioRole.value = role;
       if (role == 'bnb' || role == 'rent') {
         homeWorkspaceFilter.value = role;
@@ -430,7 +581,8 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   }) async {
     final deadline = DateTime.now().add(maxWait);
     while (true) {
-      final isFree = Get.currentRoute == Routes.MAIN &&
+      final isFree =
+          Get.currentRoute == Routes.MAIN &&
           !(Get.isDialogOpen ?? false) &&
           !(Get.isBottomSheetOpen ?? false);
       if (isFree) return true;
@@ -487,12 +639,12 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     var remoteRevenueLabel = CurrencyService.zeroLabel();
     String? remoteBookingsChange;
     try {
-      final res = await _repository.getHomeOverview();
-      if (res.responseCode == '0' && res.data != null) {
+      final res = await _homeApi(_repository.getHomeOverview());
+      if (res != null && res.responseCode == '0' && res.data != null) {
         final d = res.data! as Map<String, dynamic>;
         remoteActive = (d['activeBookings'] as num?)?.toInt() ?? 0;
-        remoteRevenueLabel = (d['monthlyRevenue'] as String?) ??
-            CurrencyService.zeroLabel();
+        remoteRevenueLabel =
+            (d['monthlyRevenue'] as String?) ?? CurrencyService.zeroLabel();
         remoteBookingsChange = (d['bookingsChange'] as String?)?.trim();
       }
     } catch (_) {}
@@ -561,6 +713,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
     final combinedMonthly = bnbLocalIncomeThisMonth;
     final combinedPrev = bnbLocalIncomePrevMonth;
+    bnbRevenueValue.value = combinedMonthly;
 
     activeBookings.value = localActive > remoteActive
         ? localActive
@@ -585,8 +738,11 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   /// Monday 00:00 of the current calendar week (local).
   static DateTime _currentWeekMondayStart() {
     final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
   }
 
   /// Same property set My Properties uses: visible to the logged-in user,
@@ -622,6 +778,22 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     return byRef;
   }
 
+  static Future<void> _fillBookingsFromPhoneCache(
+    BnbBookingMerge merge,
+    Map<String, CheckInItem> merged,
+  ) async {
+    try {
+      final cached = await SyncedEntityStore().load(
+        SyncedEntityStore.bookingType,
+      );
+      for (final row in cached) {
+        if (row.payload.isEmpty) continue;
+        final item = merge.fromApiMap(row.payload);
+        merged.putIfAbsent(item.bookingKey, () => item);
+      }
+    } catch (_) {}
+  }
+
   static bool _isActiveBnbBooking(CheckInItem item) {
     if (item.isInactive) return false;
     final co = DateTime.tryParse(item.checkOutIso.trim());
@@ -640,9 +812,11 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     final merged = <String, CheckInItem>{};
     var unitsTotal = 0;
 
+    var loadedFromNetwork = false;
     try {
-      final res = await _repository.getAllBookings();
-      if (BookingApiResponse.isSuccess(res.responseCode)) {
+      final res = await _homeApi(_repository.getAllBookings());
+      if (res != null && BookingApiResponse.isSuccess(res.responseCode)) {
+        loadedFromNetwork = true;
         for (final m in BookingApiResponse.parseBookingsList(res.data)) {
           final item = merge.fromApiMap(m);
           if (item.isCancelled) continue;
@@ -650,6 +824,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         }
       }
     } catch (_) {}
+    if (!loadedFromNetwork) {
+      await _fillBookingsFromPhoneCache(merge, merged);
+    }
 
     try {
       final properties = await _propertyLocal.getAllByWorkspace(
@@ -702,38 +879,48 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         }
       }
     } catch (_) {}
-    bnbTodayRevenue.value =
-        Get.find<CurrencyService>().formatBase(todaySum.round());
+    bnbTodayRevenue.value = Get.find<CurrencyService>().formatBase(
+      todaySum.round(),
+    );
 
     _assignWeeklyRevenue(incomes, weekStart);
+  }
 
-    // Occupancy denominator = total rentable units across visible properties.
-    final allTenants = await _bnbTenantLocal.getAllNewestFirst();
-    var allUnitsTotal = 0;
+  /// Tenant count and occupancy for the Home summary, using the same rows
+  /// My Properties shows on each listing (every workspace, not only rent).
+  Future<void> _syncPortfolioTenantStats() async {
     try {
       final byRef = await _visiblePropertiesByRef();
-      allUnitsTotal = byRef.values.fold<int>(
-        0,
-        (sum, p) => sum + PropertyUnitCount.of(p),
-      );
+      var tenants = 0;
+      var units = 0;
+      var occupied = 0;
+      for (final entry in byRef.entries) {
+        final unitCount = PropertyUnitCount.of(entry.value);
+        final count = await _bnbTenantLocal.countByPropertyRef(entry.key);
+        tenants += count;
+        units += unitCount;
+        if (unitCount > 0 && count > 0) {
+          occupied += count > unitCount ? unitCount : count;
+        }
+      }
+      totalPropertiesCount.value = byRef.length;
+      totalUnitsCount.value = units;
+      rentTenantsCount.value = tenants;
+      final percent = units <= 0
+          ? 0
+          : ((occupied / units) * 100).round().clamp(0, 100);
+      rentOccupancyRate.value = percent;
+      bnbOccupancyRate.value = percent;
     } catch (_) {}
-    _assignWeeklyOccupancy(allTenants, allUnitsTotal, weekStart);
-
-    final occ = weeklyOccupancyPercent;
-    if (occ.isEmpty) {
-      bnbOccupancyRate.value = 0;
-    } else {
-      bnbOccupancyRate.value =
-          (occ.fold<double>(0, (a, b) => a + b) / occ.length).round().clamp(0, 100);
-    }
   }
 
   Future<void> _loadRentOverviewStats() async {
     try {
       final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
       final monthStart = DateTime(now.year, now.month, 1);
       final nextMonthStart = DateTime(now.year, now.month + 1, 1);
+
+      await LeaseIncomeExtension.applyMissed();
 
       // Match My Properties: visible rows for this user, deduped by propertyRef.
       final byRef = await _visiblePropertiesByRef();
@@ -750,101 +937,137 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         }
       }
 
-      final rentRefs = <String>{};
-      for (final e in byRef.entries) {
-        final ws = e.value.workspaceType.trim().toLowerCase();
-        if (ws == 'rent' || ws == 'both' || ws.isEmpty) {
-          rentRefs.add(e.key);
-        }
-      }
-
       totalPropertiesCount.value = byRef.length;
       totalUnitsCount.value = byRef.values.fold<int>(
         0,
         (sum, p) => sum + PropertyUnitCount.of(p),
       );
-      final rentUnitsTotal = byRef.entries
-          .where((e) => rentRefs.contains(e.key))
-          .fold<int>(0, (sum, e) => sum + PropertyUnitCount.of(e.value));
 
-      // ── All active tenants (rent + BnB guests) ───────────────────────────
-      final allTenants = await _bnbTenantLocal.getAllNewestFirst();
-      final activeTenants = allTenants.where((t) {
-        final raw = t.leaseEndIso.trim();
-        if (raw.isEmpty) return true; // open-ended
-        final end = DateTime.tryParse(raw);
-        if (end == null) return true;
-        return !DateTime(end.year, end.month, end.day).isBefore(today);
-      }).toList();
+      final allTenants = await _tenantsOnVisibleProperties(byRef);
 
-      // Count covers both rent tenants and BnB guests.
-      rentTenantsCount.value = activeTenants.length;
-
-      // Occupancy: distinct occupied unit slots / total rent units
-      if (rentUnitsTotal > 0) {
-        final occupiedUnitIds = <String>{};
-        for (final t in activeTenants) {
-          final uid = t.apartmentUnitId.trim();
-          if (uid.isNotEmpty) {
-            occupiedUnitIds.add('${t.propertyRef}::$uid');
-          } else {
-            // Tenant without a unit ID still occupies one slot
-            occupiedUnitIds.add('${t.propertyRef}::tenant_${t.id}');
-          }
-        }
-        rentOccupancyRate.value =
-            ((occupiedUnitIds.length / rentUnitsTotal) * 100)
-                .round()
-                .clamp(0, 100);
-      } else {
-        rentOccupancyRate.value = 0;
-      }
-
-      // ── Collection rate ──────────────────────────────────────────────────
-      // Expected = sum of each active tenant's income attributable to this
-      // calendar month, accounting for per-night (BnB) vs monthly (rent) rates.
+      // Rent tenants contribute this month's contract rent. Each BnB unit
+      // contributes its nightly rate, in base currency, times the days in
+      // this month.
       var expectedIncome = 0.0;
-      final monthDays = nextMonthStart.difference(monthStart).inDays;
       final cs = Get.find<CurrencyService>();
-      final baseCurrency = cs.baseCurrency.value.trim().toUpperCase();
-      for (final t in activeTenants) {
-        var tenantMonthly = _expectedMonthlyAmount(
+      final days = ExpectedMonthRent.daysInMonth(monthStart);
+      final coveredTenantIds = <int>{};
+      for (final property in byRef.values) {
+        final bnbUnits = ExpectedMonthRent.bnbUnitsOf(
+          property,
+          daysInMonth: days,
+        );
+        final coverAll =
+            bnbUnits.isNotEmpty &&
+            ExpectedMonthRent.bnbUnitsCoverAllTenants(property);
+        for (final unit in bnbUnits) {
+          var nightly = unit.nightlyAmount;
+          var currency = unit.currency;
+          for (final tenant in allTenants) {
+            if (!ExpectedMonthRent.tenantOnProperty(tenant, property)) continue;
+            final onThisUnit =
+                unit.matchesTenant(tenant) ||
+                (bnbUnits.length == 1 && unit.unitId == 'main');
+            if (onThisUnit || coverAll) coveredTenantIds.add(tenant.id);
+            if (!onThisUnit || nightly > 0 || tenant.rentAmountValue <= 0) {
+              continue;
+            }
+            nightly =
+                ExpectedMonthRent.nightlyFrom(
+                  tenant.rentAmountValue,
+                  tenant.rentFrequency,
+                  days,
+                ) ??
+                tenant.rentAmountValue;
+            currency = tenant.rentCurrency;
+          }
+          if (nightly <= 0) continue;
+          final nightlyBase = cs.toBaseAmount(
+            inputAmount: nightly,
+            inputCurrency: currency.trim().isEmpty
+                ? cs.baseCurrency.value
+                : currency,
+          );
+          expectedIncome += nightlyBase * days;
+        }
+      }
+      for (final t in allTenants) {
+        if (coveredTenantIds.contains(t.id)) continue;
+        var tenantMonthly = ExpectedMonthRent.of(
           t,
           monthStart: monthStart,
           nextMonthStart: nextMonthStart,
-          monthDays: monthDays,
         );
-        // Convert contract currency to base if different.
-        final tenantCurrency = t.rentCurrency.trim().toUpperCase();
-        if (tenantCurrency.isNotEmpty && tenantCurrency != baseCurrency) {
-          final rate = cs.sellingRateFor(tenantCurrency) ?? 0;
-          if (rate > 0) tenantMonthly *= rate;
+        if (tenantMonthly <= 0) {
+          tenantMonthly = _unitRentForTenant(t, byRef);
         }
+        final tenantCurrency = t.rentCurrency.trim().toUpperCase();
+        tenantMonthly = cs.toBaseAmount(
+          inputAmount: tenantMonthly,
+          inputCurrency: tenantCurrency.isEmpty
+              ? cs.baseCurrency.value
+              : tenantCurrency,
+        );
         expectedIncome += tenantMonthly;
       }
 
-      // Collected = income recorded this calendar month
+      // Collected = prepaid rent allocated to this month, plus unmatched
+      // income whose paid date falls in this calendar month (BnB / misc).
       var collectedIncome = 0.0;
+      var otherIncome = 0.0;
       try {
         final rentIncomes = await _incomeLocal.getAllNewestFirst();
+        final matchedIds = <int>{};
+        for (final t in allTenants) {
+          final rate = _baseRentFor(t, byRef, cs);
+          var paidTotal = 0.0;
+          for (final r in rentIncomes) {
+            if (!TenantLedgerFinance.incomeMatchesTenant(r, t)) continue;
+            paidTotal += r.amountValue;
+            if (r.id > 0) matchedIds.add(r.id);
+          }
+          collectedIncome += TenantRentBilling.collectedInCalendarMonth(
+            rentAmountValue: rate,
+            rentFrequency: t.rentFrequency,
+            leaseStartIso: t.leaseStartIso,
+            leaseEndIso: t.leaseEndIso,
+            paidTotal: paidTotal,
+            monthStart: monthStart,
+            nextMonthStart: nextMonthStart,
+          );
+        }
         for (final r in rentIncomes) {
-          final parsed = DateTime.tryParse(r.datePaidIso.trim());
-          if (parsed == null) continue;
-          final d = DateTime(parsed.year, parsed.month, parsed.day);
-          if (!d.isBefore(monthStart) && d.isBefore(nextMonthStart)) {
-            collectedIncome += r.amountValue;
+          if (matchedIds.contains(r.id)) continue;
+          final d = r.paidLocalCalendarOrCreated();
+          final day = DateTime(d.year, d.month, d.day);
+          if (!day.isBefore(monthStart) && day.isBefore(nextMonthStart)) {
+            // A payment no tenant owns can't be allocated to months, so it is
+            // reported as other income instead of inflating rent collected.
+            // BnB income is per booking and still counts.
+            if (UnlinkedPayments.countsTowardCollection(r)) {
+              collectedIncome += r.amountValue;
+            } else {
+              otherIncome += r.amountValue;
+            }
           }
         }
       } catch (_) {}
 
-      if (expectedIncome > 0) {
-        collectionRate.value =
-            ((collectedIncome / expectedIncome) * 100).round().clamp(0, 999);
-      } else {
+      if (collectedIncome <= 0) {
         collectionRate.value = 0;
+      } else if (expectedIncome <= 0) {
+        // Income is on the books and nothing is still expected.
+        collectionRate.value = 100;
+      } else {
+        collectionRate.value = ((collectedIncome / expectedIncome) * 100)
+            .round()
+            .clamp(0, 100);
       }
       expectedIncomeLabel.value = cs.formatBaseShort(expectedIncome);
       collectedIncomeLabel.value = cs.formatBaseShort(collectedIncome);
+      expectedIncomeValue.value = expectedIncome;
+      collectedIncomeValue.value = collectedIncome;
+      otherIncomeValue.value = otherIncome;
     } catch (_) {
       totalPropertiesCount.value = 0;
       totalUnitsCount.value = 0;
@@ -853,14 +1076,150 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
       collectionRate.value = 0;
       expectedIncomeLabel.value = CurrencyService.zeroLabel();
       collectedIncomeLabel.value = CurrencyService.zeroLabel();
+      expectedIncomeValue.value = 0;
+      collectedIncomeValue.value = 0;
+      otherIncomeValue.value = 0;
+    }
+  }
+
+  /// Tenant's monthly rent in the base currency (unit rent when the tenant
+  /// row has none).
+  double _baseRentFor(
+    TenantRecord t,
+    Map<String, PropertyRecord> byRef,
+    CurrencyService cs,
+  ) {
+    var rate = t.rentAmountValue;
+    if (rate <= 0) rate = _unitRentForTenant(t, byRef);
+    final currency = t.rentCurrency.trim().toUpperCase();
+    return cs.toBaseAmount(
+      inputAmount: rate,
+      inputCurrency: currency.isEmpty ? cs.baseCurrency.value : currency,
+    );
+  }
+
+  int _unlinkedRun = 0;
+
+  /// Count of rent payments with no tenant, for the Home "link payments"
+  /// prompt. Background task like [_loadPaidTenantStats]; never blocks Home.
+  Future<void> _loadUnlinkedPayments() async {
+    final run = ++_unlinkedRun;
+    try {
+      final tenants = await _bnbTenantLocal.getAllNewestFirst();
+      final incomes = await _incomeLocal.getAllNewestFirst();
+      final unlinked = await UnlinkedPayments.find(
+        tenants: tenants,
+        incomes: incomes,
+      );
+      if (run != _unlinkedRun) return;
+      unlinkedPaymentsCount.value = unlinked.length;
+    } catch (_) {
+      // Prompt is optional; keep whatever was shown before.
+    }
+  }
+
+  int _paidStatsRun = 0;
+
+  /// "X of Y paid" for the Home summary pill. Runs after the card has already
+  /// rendered, yields to the UI while it works, and never blocks Home loading;
+  /// the pill simply appears when this finishes. Until then the previous
+  /// result (if any) stays on screen so a refresh does not flicker.
+  Future<void> _loadPaidTenantStats() async {
+    final run = ++_paidStatsRun;
+    try {
+      final now = DateTime.now();
+      final monthStart = DateTime(now.year, now.month, 1);
+      final nextMonthStart = DateTime(now.year, now.month + 1, 1);
+      final cs = Get.find<CurrencyService>();
+      final byRef = await _visiblePropertiesByRef();
+      final tenants = await _tenantsOnVisibleProperties(byRef);
+      final incomes = await _incomeLocal.getAllNewestFirst();
+
+      var billed = 0;
+      var paid = 0;
+      var visited = 0;
+      for (final t in tenants) {
+        // A newer refresh superseded this run.
+        if (run != _paidStatsRun) return;
+        // Tenant x income matching is quadratic; give frames back regularly.
+        if (++visited % 15 == 0) await Future<void>.delayed(Duration.zero);
+
+        final rate = _baseRentFor(t, byRef, cs);
+        final due = TenantRentBilling.revenueInCalendarMonth(
+          rentAmountValue: rate,
+          rentFrequency: t.rentFrequency,
+          leaseStartIso: t.leaseStartIso,
+          leaseEndIso: t.leaseEndIso,
+          monthStart: monthStart,
+          nextMonthStart: nextMonthStart,
+        );
+        if (due <= 0) continue;
+        var paidTotal = 0.0;
+        for (final r in incomes) {
+          if (TenantLedgerFinance.incomeMatchesTenant(r, t)) {
+            paidTotal += r.amountValue;
+          }
+        }
+        final collected = TenantRentBilling.collectedInCalendarMonth(
+          rentAmountValue: rate,
+          rentFrequency: t.rentFrequency,
+          leaseStartIso: t.leaseStartIso,
+          leaseEndIso: t.leaseEndIso,
+          paidTotal: paidTotal,
+          monthStart: monthStart,
+          nextMonthStart: nextMonthStart,
+        );
+        billed++;
+        if (collected >= due - 0.5) paid++;
+      }
+      if (run != _paidStatsRun) return;
+      billedTenantsCount.value = billed;
+      paidTenantsCount.value = paid;
+    } catch (_) {
+      // Pill is optional; keep whatever was shown before.
+    }
+  }
+
+  Future<void> _loadOverdueOccupants() async {
+    try {
+      final rentTenants = await _bnbTenantLocal.getAllNewestFirstByWorkspace(
+        'rent',
+      );
+      final bnbTenants = await _bnbTenantLocal.getAllNewestFirstByWorkspace(
+        'bnb',
+      );
+      final incomes = await _incomeLocal.getAllNewestFirst();
+      final properties = await _propertyLocal.getAllNewestFirst();
+      overdueOccupants.assignAll(
+        OverdueOccupants.fromRecords(
+          rentTenants: rentTenants,
+          bnbTenants: bnbTenants,
+          incomes: incomes,
+          properties: properties,
+        ),
+      );
+    } catch (_) {
+      overdueOccupants.clear();
     }
   }
 
   Future<void> _loadRecentPayments() async {
     try {
       final rows = await _incomeLocal.getAllNewestFirst();
-      recentPayments.assignAll(rows.take(20).toList());
+      hasRecordedPayment.value = rows.isNotEmpty;
+      recentPayments.assignAll(
+        rows
+            .where((row) {
+              final paid = row.paidLocalCalendarOrCreated();
+              return PlanAccess.isInPlanHistory(
+                DateTime(paid.year, paid.month, paid.day),
+              );
+            })
+            .take(20)
+            .toList(),
+      );
     } catch (_) {
+      hasRecordedPayment.value = false;
       recentPayments.clear();
     }
   }
@@ -879,9 +1238,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         if (day.isBefore(today) || day.isAfter(end)) continue;
         upcoming.add(r);
       }
-      upcoming.sort(
-        (a, b) => a.scheduledDateIso.compareTo(b.scheduledDateIso),
-      );
+      upcoming.sort((a, b) => a.scheduledDateIso.compareTo(b.scheduledDateIso));
       upcomingMaintenance.assignAll(upcoming);
     } catch (_) {
       upcomingMaintenance.clear();
@@ -907,72 +1264,58 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     return ls.isBefore(we) && le.isAfter(ws);
   }
 
-  /// Returns the portion of [t]'s income that is expected within the calendar
-  /// month [monthStart, nextMonthStart).
-  ///
-  /// - BnB / per-night tenants: rate × nights of their stay that fall in month.
-  /// - Monthly tenants: full [rentAmountValue] if their lease covers any part of
-  ///   the month.
-  /// - Weekly tenants: (rate / 7) × days of overlap (≈ weekly pro-rata).
-  /// - Yearly tenants: (rate / 365) × days of overlap.
-  static double _expectedMonthlyAmount(
-    TenantRecord t, {
-    required DateTime monthStart,
-    required DateTime nextMonthStart,
-    required int monthDays,
-  }) {
-    if (t.rentAmountValue <= 0) return 0;
-
-    final freq = t.rentFrequency.trim().toLowerCase();
-    final isPerNight = freq.contains('night');
-    final isWeekly = freq.contains('week');
-    final isYearly = freq.contains('year') || freq.contains('annual');
-
-    // For per-night & weekly/yearly, compute overlap days with current month.
-    if (isPerNight || isWeekly || isYearly) {
-      final start = _parseCalendarDay(t.leaseStartIso.trim());
-      if (start == null) return 0;
-
-      // Clamp stay start to month start.
-      final overlapStart =
-          start.isBefore(monthStart) ? monthStart : start;
-
-      // Lease end: open-ended leases run to end of month.
-      DateTime overlapEnd;
-      final endRaw = t.leaseEndIso.trim();
-      if (endRaw.isEmpty) {
-        overlapEnd = nextMonthStart;
-      } else {
-        final end = _parseCalendarDay(endRaw);
-        if (end == null) {
-          overlapEnd = nextMonthStart;
-        } else {
-          // End is inclusive: add 1 day so "before nextMonthStart" works.
-          final endPlusOne = end.add(const Duration(days: 1));
-          overlapEnd =
-              endPlusOne.isBefore(nextMonthStart) ? endPlusOne : nextMonthStart;
-        }
+  Future<List<TenantRecord>> _tenantsOnVisibleProperties(
+    Map<String, PropertyRecord> byRef,
+  ) async {
+    final byId = <int, TenantRecord>{};
+    for (final key in byRef.keys) {
+      for (final tenant in await _bnbTenantLocal.listByPropertyRef(key)) {
+        byId[tenant.id] = tenant;
       }
-
-      final overlapDays = overlapEnd.difference(overlapStart).inDays;
-      if (overlapDays <= 0) return 0;
-
-      if (isPerNight) return t.rentAmountValue * overlapDays;
-      if (isWeekly) return (t.rentAmountValue / 7) * overlapDays;
-      // yearly
-      return (t.rentAmountValue / 365) * overlapDays;
     }
+    return byId.values.toList();
+  }
 
-    // Monthly (default): count the full amount if lease overlaps this month.
-    final start = _parseCalendarDay(t.leaseStartIso.trim());
-    if (start == null) return t.rentAmountValue; // no start → assume active
-    if (!start.isBefore(nextMonthStart)) return 0; // hasn't started yet
-    final endRaw = t.leaseEndIso.trim();
-    if (endRaw.isEmpty) return t.rentAmountValue;
-    final end = _parseCalendarDay(endRaw);
-    if (end == null) return t.rentAmountValue;
-    if (!end.isBefore(monthStart)) return t.rentAmountValue; // overlaps month
-    return 0; // ended before this month
+  /// Unit contract rent when the tenant row has no amount of its own.
+  double _unitRentForTenant(
+    TenantRecord tenant,
+    Map<String, PropertyRecord> byRef,
+  ) {
+    for (final property in byRef.values) {
+      final raw = property.unitsJson.trim();
+      if (raw.isEmpty) continue;
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is! List) continue;
+        for (final entry in decoded.whereType<Map>()) {
+          final unitId = (entry['unitId'] ?? entry['id'] ?? '')
+              .toString()
+              .trim();
+          final unitName = (entry['unitName'] ?? entry['name'] ?? '')
+              .toString()
+              .trim();
+          final tenantUnitId = tenant.apartmentUnitId.trim();
+          final tenantUnitName = tenant.unitLabel.trim();
+          final idMatches =
+              tenantUnitId.isNotEmpty &&
+              unitId.isNotEmpty &&
+              tenantUnitId == unitId;
+          final nameMatches =
+              tenantUnitName.isNotEmpty &&
+              unitName.isNotEmpty &&
+              tenantUnitName.toLowerCase() == unitName.toLowerCase();
+          if (!idMatches && !nameMatches) continue;
+          final rent = double.tryParse(
+            (entry['unitRent'] ?? entry['rent'] ?? '')
+                .toString()
+                .replaceAll(',', '')
+                .trim(),
+          );
+          if (rent != null && rent > 0) return rent;
+        }
+      } catch (_) {}
+    }
+    return 0;
   }
 
   String _formatMoMPercent(double current, double previous) {
@@ -1050,14 +1393,20 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     final merged = <String, CheckInItem>{};
     var properties = <PropertyRecord>[];
 
+    var loadedFromNetwork = false;
     try {
-      final res = await _repository.getUpcomingBookings();
-      final data = res.data;
+      final res = await _homeApi(_repository.getUpcomingBookings());
+      final data = res?.data;
       List<dynamic> rows = const [];
-      if (res.responseCode == '0' && data is Map && data['bookings'] is List) {
+      if (res != null &&
+          res.responseCode == '0' &&
+          data is Map &&
+          data['bookings'] is List) {
         rows = data['bookings'] as List;
-      } else if (res.responseCode == '0' && data is List) {
+        loadedFromNetwork = true;
+      } else if (res != null && res.responseCode == '0' && data is List) {
         rows = data;
+        loadedFromNetwork = true;
       }
       for (final e in rows.whereType<Map>()) {
         final item = merge.fromApiMap(Map<String, dynamic>.from(e));
@@ -1066,6 +1415,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
         merged[item.bookingKey] = item;
       }
     } catch (_) {}
+    if (!loadedFromNetwork) {
+      await _fillBookingsFromPhoneCache(merge, merged);
+    }
 
     try {
       properties = await _propertyLocal.getAllVisibleNewestFirst(
@@ -1178,17 +1530,55 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   void openProperties() => Get.toNamed(Routes.MY_PROPERTIES);
 
-  void openBnbProperties() => Get.toNamed(
-        Routes.MY_PROPERTIES,
-        arguments: {'workspaceFilter': 'bnb'},
-      );
+  void openBnbProperties() =>
+      Get.toNamed(Routes.MY_PROPERTIES, arguments: {'workspaceFilter': 'bnb'});
 
-  void openRentProperties() => Get.toNamed(
-        Routes.MY_PROPERTIES,
-        arguments: {'workspaceFilter': 'rent'},
-      );
+  void openRentProperties() =>
+      Get.toNamed(Routes.MY_PROPERTIES, arguments: {'workspaceFilter': 'rent'});
 
   void openAllTenants() => openPeople();
+
+  static const overdueHomePreviewCount = 3;
+
+  List<OverdueOccupant> get overdueHomePreview =>
+      visibleOverdueOccupants.take(overdueHomePreviewCount).toList();
+
+  void openOverdueOccupant(OverdueOccupant row) {
+    Get.toNamed(
+      Routes.RENT_TENANT_LEDGER_OCCUPANCY,
+      parameters: {
+        'id': '${row.tenantId}',
+        'name': row.name,
+        'property': row.propertyLabel,
+        'ws': row.isBnb ? 'bnb' : 'rent',
+        if (row.propertyRef.isNotEmpty) 'propertyRef': row.propertyRef,
+      },
+      arguments: {'ws': row.isBnb ? 'bnb' : 'rent'},
+    );
+  }
+
+  Future<void> whatsappOverdueOccupant(OverdueOccupant row) async {
+    final digits = row.phoneNumber.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Hakuna namba ya simu'
+            : 'Phone number not available',
+      );
+      return;
+    }
+    final phone = digits.startsWith('0') && digits.length >= 10
+        ? '255${digits.substring(1)}'
+        : digits;
+    final uri = Uri.parse('https://wa.me/$phone');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'WhatsApp haikufunguka.'
+            : 'Could not open WhatsApp.',
+      );
+    }
+  }
 
   void aiInsights() =>
       Get.toNamed(Routes.AI_INSIGHTS, arguments: const {'source': 'insights'});
@@ -1210,9 +1600,9 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   }
 
   void openTodayRevenue() => Get.toNamed(
-        Routes.RENT_MANAGE_PAYMENTS,
-        arguments: {'ws': _paymentsWorkspaceArg()},
-      );
+    Routes.RENT_MANAGE_PAYMENTS,
+    arguments: {'ws': _paymentsWorkspaceArg()},
+  );
 
   /// Full payment list matching the home Recent payments section.
   void openAllRecentPayments() {
@@ -1242,51 +1632,33 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     weeklyRevenue.assignAll(totals);
   }
 
-  /// Occupancy per calendar day: for each Mon–Sun day,
-  /// `occupiedUnits / totalUnits * 100`, capped at 100.
-  ///
-  /// A unit is **occupied** on a given day when it has a tenant whose lease
-  /// period covers that day (`leaseStart ≤ day ≤ leaseEnd`).  Open-ended
-  /// leases (empty `leaseEndIso`) are treated as still active.
-  ///
-  /// Distinct `propertyRef::unitId` keys are used so a unit shared by
-  /// overlapping tenants is only counted once per day.
-  void _assignWeeklyOccupancy(
-      Iterable<TenantRecord> tenants,
-      int totalUnits,
-      DateTime weekStart,
-      ) {
-    final pct = List<double>.filled(7, 0);
-    if (totalUnits <= 0) {
-      weeklyOccupancyPercent.assignAll(pct);
-      return;
+  Future<void> quickAddProperty() =>
+      _runHomeQuickCreate(QuickHomeAction.addProperty);
+
+  Future<void> quickAddTenant() =>
+      _runHomeQuickCreate(QuickHomeAction.addTenant);
+
+  Future<void> quickAddIncome() =>
+      _runHomeQuickCreate(QuickHomeAction.addIncome);
+
+  Future<void> quickAddExpense() =>
+      _runHomeQuickCreate(QuickHomeAction.addExpense);
+
+  Future<void> quickAddBooking() =>
+      _runHomeQuickCreate(QuickHomeAction.addBooking);
+
+  Future<void> quickSendReminder(BuildContext context) async {
+    final saved = await startQuickSendReminder(context);
+    if (saved == true) {
+      await loadHomeData(refresh: true);
     }
-    for (var i = 0; i < 7; i++) {
-      final day = weekStart.add(Duration(days: i));
-      final occupiedKeys = <String>{};
-      for (final t in tenants) {
-        if (!_tenantOccupiesCalendarDay(t, day)) continue;
-        final uid = t.apartmentUnitId.trim();
-        final key = uid.isNotEmpty
-            ? '${t.propertyRef}::$uid'
-            : '${t.propertyRef}::tenant_${t.id}';
-        occupiedKeys.add(key);
-      }
-      pct[i] = ((occupiedKeys.length / totalUnits) * 100).clamp(0.0, 100.0);
-    }
-    weeklyOccupancyPercent.assignAll(pct);
   }
 
-  /// Returns true when [t]'s lease period covers [day] (inclusive on both ends).
-  static bool _tenantOccupiesCalendarDay(TenantRecord t, DateTime day) {
-    final start = _parseCalendarDay(t.leaseStartIso.trim());
-    if (start == null) return false; // no start date → skip
-    if (day.isBefore(start)) return false;
-    final endRaw = t.leaseEndIso.trim();
-    if (endRaw.isEmpty) return true; // open-ended lease
-    final end = _parseCalendarDay(endRaw);
-    if (end == null) return true; // unparseable end → treat as open-ended
-    return !day.isAfter(end); // inclusive end
+  Future<void> _runHomeQuickCreate(QuickHomeAction action) async {
+    final saved = await runQuickHomeAction(action);
+    if (saved == true) {
+      await loadHomeData(refresh: true);
+    }
   }
 
   Future<void> addExpense() async {
@@ -1337,10 +1709,10 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   void _restampCancelledFromOverrides() {
     final overrides = BnbBookingOverridesStore();
     bool cancelled(CheckInItem i) => overrides.isCancelledForAny([
-          i.bookingKey,
-          if ((i.bookingId ?? '').trim().isNotEmpty) i.bookingId!.trim(),
-          i.guestCheckInKey,
-        ]);
+      i.bookingKey,
+      if ((i.bookingId ?? '').trim().isNotEmpty) i.bookingId!.trim(),
+      i.guestCheckInKey,
+    ]);
 
     List<CheckInItem> patch(List<CheckInItem> list) => list
         .map(
@@ -1376,38 +1748,30 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
   /// (offline, timeout, error response) — never merely because the remote
   /// payload didn't match one of the known shapes with data in it.
   ///
-  /// IMPORTANT: the app has two independent property data models on the
-  /// backend — `/api/listings` (Listing entity) and `/api/properties`
-  /// (Property entity, written by AddListingController.saveProperty(), which
-  /// is what the Add Property form and quick-add wizard actually call). Both
-  /// must be checked or accounts whose properties only exist in one table
-  /// would incorrectly see the "Add first property" empty state.
+  /// Local is checked first; the remote probe uses a short Home-specific
+  /// timeout against `/api/properties`.
   Future<bool> _hasAtLeastOneProperty() async {
-    bool? listingsEmpty;
-    bool? propertiesEmpty;
-
-    try {
-      final res = await _repository.getMyListings();
-      final remoteHasListings = _extractHasListings(res.data);
+    final localRows = await _propertyLocal.getAllVisibleNewestFirst(
+      userId: '',
+      workspaceType: '',
+    );
+    if (localRows.isNotEmpty) {
       if (kDebugMode) {
         debugPrint(
-          '[HasAnyProperty] /api/listings responseCode=${res.responseCode} '
-          'dataType=${res.data.runtimeType} '
-          'dataPreview=${_previewData(res.data)} '
-          'remoteHasListings=$remoteHasListings',
+          '[HasAnyProperty] local cache has ${localRows.length} row(s)',
         );
       }
-      if (remoteHasListings) return true;
-      listingsEmpty = true;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[HasAnyProperty] /api/listings call threw: $e');
-      }
-      // Network/parse failure — inconclusive, may fall back to local below.
+      return true;
     }
 
     try {
-      final res = await _repository.getMyProperties();
+      final res = await _homeApi(_repository.getMyProperties());
+      if (res == null) {
+        if (kDebugMode) {
+          debugPrint('[HasAnyProperty] /api/properties timed out / failed');
+        }
+        return false;
+      }
       final remoteHasProperties = _extractHasProperties(res.data);
       if (kDebugMode) {
         debugPrint(
@@ -1417,33 +1781,13 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
           'remoteHasProperties=$remoteHasProperties',
         );
       }
-      if (remoteHasProperties) return true;
-      propertiesEmpty = true;
+      return remoteHasProperties;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[HasAnyProperty] /api/properties call threw: $e');
       }
-    }
-
-    if (listingsEmpty == true && propertiesEmpty == true) {
-      // Both remote sources answered successfully and explicitly report
-      // zero properties — trust them rather than a possibly-stale local cache.
       return false;
     }
-
-    // At least one remote source was inconclusive (threw) — fall back to
-    // the local cache rather than risk a false "no properties" empty state.
-    final localRows = await _propertyLocal.getAllVisibleNewestFirst(
-      userId: '',
-      workspaceType: '',
-    );
-    if (kDebugMode) {
-      debugPrint(
-        '[HasAnyProperty] falling back to local cache: '
-        '${localRows.length} row(s)',
-      );
-    }
-    return localRows.isNotEmpty;
   }
 
   String _previewData(dynamic data) {
@@ -1451,24 +1795,15 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
     return s.length > 300 ? '${s.substring(0, 300)}…' : s;
   }
 
-  bool _extractHasListings(dynamic data) {
-    if (data is List) return data.isNotEmpty;
-    if (data is Map) {
-      final content = data['content'];
-      if (content is List && content.isNotEmpty) return true;
-      final listings = data['listings'];
-      if (listings is List && listings.isNotEmpty) return true;
-    }
-    return false;
-  }
+  bool _extractHasProperties(dynamic data) => _extractHasPropertyPayload(data);
 
-  bool _extractHasProperties(dynamic data) {
+  bool _extractHasPropertyPayload(dynamic data) {
     if (data is List) return data.isNotEmpty;
     if (data is Map) {
-      final properties = data['properties'];
-      if (properties is List && properties.isNotEmpty) return true;
-      final content = data['content'];
-      if (content is List && content.isNotEmpty) return true;
+      for (final key in ['properties', 'content', 'items', 'data']) {
+        final nested = data[key];
+        if (nested is List && nested.isNotEmpty) return true;
+      }
     }
     return false;
   }
@@ -1506,10 +1841,7 @@ class HomeController extends BaseController with GetTickerProviderStateMixin {
 
   static Future<void> refreshIfRegistered() async {
     if (!GetxInstanceProbe.isAlive<HomeController>()) return;
-    await Get.find<HomeController>().loadHomeData(
-      refresh: true,
-      force: true,
-    );
+    await Get.find<HomeController>().loadHomeData(refresh: true, force: true);
   }
 
   /// Immediately marks matching Today cards as cancelled (badge flip) before

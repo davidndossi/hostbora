@@ -245,7 +245,7 @@ class AdminGrowthMetricsView extends BaseView<AdminGrowthMetricsController> {
                 ),
                 Icon(
                   onTrack ? Icons.check_circle : Icons.timelapse,
-                  color: onTrack ? AppColors.paaYanguSuccess : AppColors.paaYanguWarm,
+                  color: onTrack ? AppColors.colorSuccess : AppColors.colorWarning,
                 ),
               ],
             ),
@@ -254,7 +254,7 @@ class AdminGrowthMetricsView extends BaseView<AdminGrowthMetricsController> {
               value,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.designAccent,
+                    color: AppColors.colorPrimary,
                   ),
             ),
             const SizedBox(height: 4),

@@ -6,6 +6,7 @@ class RecordPaymentRequest {
     this.bookingId,
     required this.paymentDate,
     required this.status,
+    this.idempotencyKey,
   });
 
   final double amount;
@@ -15,6 +16,8 @@ class RecordPaymentRequest {
   final String paymentDate;
   /// 'PAID' or 'PENDING'
   final String status;
+  /// Offline-queue dedupe key; sent as body + Idempotency-Key header.
+  final String? idempotencyKey;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -23,6 +26,8 @@ class RecordPaymentRequest {
       if (bookingId != null && bookingId!.isNotEmpty) 'bookingId': bookingId,
       'paymentDate': paymentDate,
       'status': status,
+      if (idempotencyKey != null && idempotencyKey!.isNotEmpty)
+        'idempotencyKey': idempotencyKey,
     };
   }
 
@@ -33,6 +38,7 @@ class RecordPaymentRequest {
       bookingId: json['bookingId'] as String?,
       paymentDate: json['paymentDate'] as String? ?? '',
       status: json['status'] as String? ?? 'PAID',
+      idempotencyKey: json['idempotencyKey'] as String?,
     );
   }
 }

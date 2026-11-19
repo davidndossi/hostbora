@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="sw">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HostBora — Sales agent field guide</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="https://www.hostbora.co.tz/agents/" />
+    <link rel="icon" href="../assets/ui/logo-mark-a.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #145c54;
+        --ink-2: #1c3d38;
+        --muted: #5c726c;
+        --line: #d7e4df;
+        --paper: #f6f8f8;
+        --card: #ffffff;
+        --teal: #1c6e64;
+        --teal-2: #2fa5b7;
+        --gold: #c9a227;
+        --warn: #9a4a1c;
+        --ok: #1b7a4a;
+        --shadow: 0 10px 30px rgba(20, 92, 84, 0.08);
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, sans-serif;
+        color: var(--ink-2);
+        background: var(--paper);
+        line-height: 1.5;
+      }
+      .top {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: #0a343b;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 20px;
+      }
+      .top img { width: 36px; height: 36px; background: #fff; border-radius: 8px; }
+      .top h1 { font-size: 15px; margin: 0; font-weight: 600; }
+      .top p { margin: 0; font-size: 12px; opacity: 0.75; }
+      .top .grow { flex: 1; }
+      .lang, .print {
+        border: 1px solid rgba(255,255,255,.25);
+        background: transparent;
+        color: #fff;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 80px; }
+      .hero {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 28px;
+        box-shadow: var(--shadow);
+        margin-bottom: 22px;
+      }
+      .kicker {
+        color: var(--teal);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin: 0 0 8px;
+      }
+      h2 { font-size: 26px; line-height: 1.2; margin: 0 0 10px; }
+      .lead { font-size: 17px; color: var(--ink-2); margin: 0 0 16px; }
+      .pitch {
+        background: #e8f4f1;
+        border-left: 4px solid var(--teal);
+        padding: 14px 16px;
+        border-radius: 0 12px 12px 0;
+        font-size: 16px;
+      }
+      nav.toc {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin: 18px 0 0;
+      }
+      nav.toc a {
+        color: var(--teal);
+        text-decoration: none;
+        background: #f3faf8;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      section.card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 26px;
+        margin: 16px 0;
+      }
+      h3 { margin: 0 0 12px; font-size: 20px; }
+      h4 { margin: 18px 0 8px; font-size: 15px; color: var(--teal); }
+      p, li { font-size: 15px; }
+      ul, ol { padding-left: 1.2em; }
+      .grid-3, .grid-2 {
+        display: grid;
+        gap: 12px;
+      }
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .grid-2 { grid-template-columns: repeat(2, 1fr); }
+      .mini {
+        background: var(--paper);
+        border-radius: 14px;
+        padding: 14px;
+        border: 1px solid var(--line);
+      }
+      .mini strong { display: block; margin-bottom: 4px; }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th, td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+      .tag {
+        display: inline-block;
+        background: #e8f4f1;
+        color: var(--teal);
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .do { color: var(--ok); }
+      .dont { color: var(--warn); }
+      .callout {
+        background: #fff8e8;
+        border: 1px solid #ead9a6;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+      .step {
+        display: grid;
+        grid-template-columns: 36px 1fr;
+        gap: 10px;
+        margin: 10px 0;
+      }
+      .num {
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        background: var(--teal);
+        color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700;
+      }
+      footer {
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+        margin-top: 28px;
+      }
+      @media (max-width: 720px) {
+        .grid-3, .grid-2, nav.toc { grid-template-columns: 1fr; }
+        .top h1 { font-size: 13px; }
+      }
+      @media print {
+        .top .print, .lang { display: none; }
+        .top { position: static; }
+        section.card, .hero { break-inside: avoid; box-shadow: none; }
+        body { background: #fff; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <img src="../assets/host_bora_logo.webp" alt="HostBora" />
+      <div class="grow">
+        <h1 data-i="title">Mwongozo wa mawakala wa HostBora</h1>
+        <p data-i="subtitle">Kujiamini uwanjani unapowasajili wateja</p>
+      </div>
+      <button class="lang" type="button" id="langBtn">English</button>
+      <button class="print" type="button" onclick="window.print()">Print</button>
+    </div>
+
+    <div class="wrap">
+      <header class="hero">
+        <p class="kicker" data-i="kicker">Mwongozo wa uwanja</p>
+        <h2 data-i="heroTitle">HostBora ni nini, inatumikaje, na unavyosajili mteja.</h2>
+        <p class="lead" data-i="heroLead">
+          Hii ni kadi yako ya mfukoni kabla ya kutembelea mwenye nyumba, msimamizi, au mwenyeji wa BnB.
+          Soma kwa Kiswahili au English, kisha tumia sentensi moja, onyesho la dakika 5, na kiungo chako cha mwaliko.
+        </p>
+        <div class="pitch" data-i="pitch">
+          “HostBora ni app moja ya kusimamia nyumba za kodi na BnB Tanzania. Unarekodi wapangaji, wageni, malipo kwa TZS, na unaona mali ipi inaleta pesa — hata mtandao ukiwa dhaifu.”
+        </div>
+        <nav class="toc">
+          <a href="#what" data-i="toc1">1. Bidhaa ni nini</a>
+          <a href="#who" data-i="toc2">2. Unazungumza na nani</a>
+          <a href="#app" data-i="toc3">3. Jinsi app inavyotumika</a>
+          <a href="#plans" data-i="toc4">4. Mipango na bei</a>
+          <a href="#signup" data-i="toc5">5. Jinsi mteja anavyojiunga</a>
+          <a href="#demo" data-i="toc6">6. Onyesho la dakika 5</a>
+          <a href="#field" data-i="toc7">7. Mazungumzo uwanjani</a>
+          <a href="#earn" data-i="toc8">8. Unavyopata kamisheni</a>
+          <a href="#rules" data-i="toc9">9. Kanuni</a>
+        </nav>
+      </header>
+
+      <section class="card" id="what">
+        <h3 data-i="s1t">1. HostBora ni nini</h3>
+        <p data-i="s1p">
+          HostBora ni programu ya simu (Android na iPhone) iliyotengenezwa Dar es Salaam na Artbel Technologies.
+          Inaunganisha <strong>upangaji wa muda mrefu (kodi)</strong> na <strong>ukaribishaji wa muda mfupi (BnB)</strong> katika app moja.
+        </p>
+        <div class="grid-2">
+          <div class="mini">
+            <strong data-i="s1a">Inatatua nini</strong>
+            <span data-i="s1av">Daftari, Excel, na WhatsApp zikitawanyika. Mwenye nyumba hasahau nani amelipa, nani anadaiwa, na mali ipi inapoteza pesa.</span>
+          </div>
+          <div class="mini">
+            <strong data-i="s1b">Kwa nini ni ya Tanzania</strong>
+            <span data-i="s1bv">Lugha: Kiswahili na English. Fedha: TZS. Malipo: simu (M-Pesa, Mixx, Airtel Money). Inafanya kazi nje ya mtandao, kisha inasawazisha.</span>
+          </div>
+        </div>
+        <h4 data-i="s1c">Maeneo mawili ya kazi</h4>
+        <div class="grid-2">
+          <div class="mini">
+            <span class="tag">BnB</span>
+            <strong data-i="s1d">Muda mfupi</strong>
+            <span data-i="s1dv">Nafasi, kalenda, check-in/out, malipo ya wageni, kazi za usafi.</span>
+          </div>
+          <div class="mini">
+            <span class="tag">Kodi / Rent</span>
+            <strong data-i="s1e">Muda mrefu</strong>
+            <span data-i="s1ev">Wapangaji, kodi ya mwezi, deni (wanaodaiwa), mikataba, makusanyo.</span>
+          </div>
+        </div>
+        <p data-i="s1f">Mteja anaweza kuendesha BnB, kodi, au zote mbili kwenye akaunti moja.</p>
+      </section>
+
+      <section class="card" id="who">
+        <h3 data-i="s2t">2. Unazungumza na nani</h3>
+        <div class="grid-3">
+          <div class="mini">
+            <strong data-i="s2a">Wamiliki</strong>
+            <span data-i="s2av">Wana nyumba 1 au zaidi. Wanataka kuona kodi iliyoingia na nani hajalipa.</span>
+          </div>
+          <div class="mini">
+            <strong data-i="s2b">Wasimamizi</strong>
+            <span data-i="s2bv">Wanaendesha majengo kwa niaba ya wamiliki. Wanahitaji ripoti na wafanyakazi (Pro).</span>
+          </div>
+          <div class="mini">
+            <strong data-i="s2c">Wenyeji wa BnB</strong>
+            <span data-i="s2cv">Airbnb/booking. Wanataka kalenda, wageni, na mapato ya usiku kando na kodi ya mwezi.</span>
+          </div>
+        </div>
+        <div class="callout" data-i="s2n">
+          Usipoteze muda na mtu asiye na nyumba, mwenyeji, au jukumu la kukusanya kodi. Lenga watu wanaoshikilia pesa au wanaoripoti kwa mmiliki.
+        </div>
+      </section>
+
+      <section class="card" id="app">
+        <h3 data-i="s3t">3. Jinsi app inavyotumika (unavyoeleza mteja)</h3>
+        <p data-i="s3p">Vichupo vikuu baada ya kuingia:</p>
+        <table>
+          <thead>
+            <tr>
+              <th data-i="s3h1">Kichupo</th>
+              <th data-i="s3h2">Kinasema nini</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td data-i="s3r1a">Nyumbani</td><td data-i="s3r1b">Picha ya leo: mapato, nafasi, kuingia/kutoka, wanaodaiwa, kitufe cha Unda.</td></tr>
+            <tr><td data-i="s3r2a">Mali</td><td data-i="s3r2b">Orodha ya majengo. Gonga Simamia kuona vyumba, wapangaji, na vitendo.</td></tr>
+            <tr><td data-i="s3r3a">Fedha</td><td data-i="s3r3b">Mapato dhidi ya matumizi, faida, deni.</td></tr>
+            <tr><td data-i="s3r4a">Huduma</td><td data-i="s3r4b">Kazi za matengenezo.</td></tr>
+            <tr><td data-i="s3r5a">Zaidi</td><td data-i="s3r5b">Msaada, kalenda, ripoti, mtandao, mipangilio.</td></tr>
+          </tbody>
+        </table>
+        <h4 data-i="s3q">Kazi za kila siku unazoweza kuonyesha</h4>
+        <ul>
+          <li data-i="s3l1">Ongeza mali (BnB, Kodi, au zote) na vyumba.</li>
+          <li data-i="s3l2">Sajili mpangaji au uhifadhi wa mgeni.</li>
+          <li data-i="s3l3">Rekodi malipo — TZS au sarafu nyingine.</li>
+          <li data-i="s3l4">Rekodi matumizi (mafuta, usafi, fundi).</li>
+          <li data-i="s3l5">Tazama nani hajalipa (Wanaodaiwa).</li>
+          <li data-i="s3l6">Pakua Excel / tuma ripoti WhatsApp (mipango inayostahili).</li>
+        </ul>
+        <p data-i="s3h">Mteja akisahau, mwambie afungue <strong>Zaidi → Msaada</strong>. Kuna miongozo ya BnB na Kodi ndani ya app.</p>
+      </section>
+
+      <section class="card" id="plans">
+        <h3 data-i="s4t">4. Mipango na bei (TZS / mwezi)</h3>
+        <p data-i="s4p">Anza bila malipo kwa mali ndogo. Mteja analipa anapohitaji mali zaidi au zana za timu. Inajirudia kila mwezi; anaweza kughairi.</p>
+        <table>
+          <thead>
+            <tr>
+              <th data-i="s4h1">Mpango</th>
+              <th data-i="s4h2">Bei</th>
+              <th data-i="s4h3">Kwa nani</th>
+              <th data-i="s4h4">Kinachofunguka</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Free</td>
+              <td>0</td>
+              <td data-i="s4f1">Kujaribu</td>
+              <td data-i="s4f2">Mali 1, vyumba 2, historia ya mwezi huu tu.</td>
+            </tr>
+            <tr>
+              <td>Starter</td>
+              <td>19,000</td>
+              <td data-i="s4s1">Mwenyeji peke yake</td>
+              <td data-i="s4s2">Hadi mali 3. BnB au kodi. Malipo, matumizi, vikumbusho, ripoti za msingi.</td>
+            </tr>
+            <tr>
+              <td>Pro</td>
+              <td>49,000</td>
+              <td data-i="s4p1">Portifolio inayokua / timu ndogo</td>
+              <td data-i="s4p2">Hadi mali 10. Wafanyakazi, kalenda, hifadhi ya nyaraka, ripoti za juu, SMS/WhatsApp (add-on).</td>
+            </tr>
+            <tr>
+              <td>Ultra</td>
+              <td>99,000</td>
+              <td data-i="s4u1">Waendeshaji wakubwa</td>
+              <td data-i="s4u2">Mali bila kikomo. Kufuli mahiri, kumbukumbu za kuingia, AI Manager, zana za ubunifu, msaada wa kipaumbele.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout" data-i="s4n">
+          Usiahidi Ultra (kufuli mahiri, AI) kwa mteja wa Starter. Sema ukweli: wanaweza kuanza Free/Starter, kisha kupanda wanapokua.
+        </div>
+      </section>
+
+      <section class="card" id="signup">
+        <h3 data-i="s5t">5. Jinsi mteja anavyojiunga — lazima watumie msimbo wako</h3>
+        <p data-i="s5p">Kamisheni inakuja tu kama akaunti imeunganishwa nawe wakati wa usajili. Njia salama ni kiungo chako, QR, au msimbo.</p>
+        <div class="step"><div class="num">1</div><div data-i="s5s1"><strong>Fungua Dashibodi ya wakala</strong> kwenye app yako. Nakili msimbo, tuma WhatsApp, au onyesha QR.</div></div>
+        <div class="step"><div class="num">2</div><div data-i="s5s2"><strong>Mteja anafungua kiungo</strong> <code>https://hostbora.co.tz/r/MSIMBO</code> au anaweka msimbo wakati wa kujisajili.</div></div>
+        <div class="step"><div class="num">3</div><div data-i="s5s3"><strong>Pakua app</strong> — Google Play (<code>tz.co.artbel.paa_yangu</code>) au App Store (Host Bora). Tovuti: www.hostbora.co.tz</div></div>
+        <div class="step"><div class="num">4</div><div data-i="s5s4"><strong>Jisajili</strong> kwa jina na namba ya Tanzania. Watapata namba 4 kwa SMS. Kisha wanalipa mpango kwa prompt ya simu kwenye namba yao.</div></div>
+        <div class="step"><div class="num">5</div><div data-i="s5s5"><strong>Weka PIN</strong>, ongeza mali ya kwanza, rekodi malipo ya kwanza pamoja nao ikiwezekana.</div></div>
+        <div class="callout" data-i="s5n">
+          Malipo ya mpango yanakwenda kwenye simu ya MTEJA, si yako. Usikusanye pesa taslimu kwa niaba ya HostBora. Usajili bila malipo = hakuna kamisheni bado.
+        </div>
+      </section>
+
+      <section class="card" id="demo">
+        <h3 data-i="s6t">6. Onyesho la dakika 5 (tumia akaunti yako ya demo)</h3>
+        <ol>
+          <li data-i="s6l1"><strong>Nyumbani</strong> — “Hapa unaona pesa na nani anadaiwa, leo.”</li>
+          <li data-i="s6l2"><strong>Ongeza mali</strong> — chagua BnB au Kodi, weka jina la jengo, ongeza chumba kimoja.</li>
+          <li data-i="s6l3"><strong>Ongeza mpangaji au nafasi</strong> — jina, chumba, kodi/bei.</li>
+          <li data-i="s6l4"><strong>Rekodi malipo</strong> — kiasi TZS. Onyesha kinaingia Fedha.</li>
+          <li data-i="s6l5"><strong>Wanaodaiwa / Fedha</strong> — “Hapa ndipo unapoacha kufuatilia kwenye daftari.”</li>
+        </ol>
+        <p data-i="s6p">Ukiwa na dakika zaidi: kalenda (BnB), Excel, au LUKU. Acha wao waguse simu — kujiamini kunakuja wanapobonyeza wenyewe.</p>
+      </section>
+
+      <section class="card" id="field">
+        <h3 data-i="s7t">7. Mazungumzo uwanjani</h3>
+        <h4 data-i="s7a">Fungua hivi</h4>
+        <ul>
+          <li data-i="s7a1">“Mnasimamiaje kodi au wageni sasa — daftari, Excel, au WhatsApp?”</li>
+          <li data-i="s7a2">“Mna nyumba ngapi? BnB, kodi, au zote?”</li>
+          <li data-i="s7a3">“Nionyeshe kwa dakika 5 jinsi HostBora inavyoweka hayo kwenye simu.”</li>
+        </ul>
+        <h4 data-i="s7b">Majibu ya pingamizi</h4>
+        <table>
+          <thead><tr><th data-i="s7h1">Wanasema</th><th data-i="s7h2">Wewe unasema</th></tr></thead>
+          <tbody>
+            <tr><td data-i="s7o1a">“Nina Excel.”</td><td data-i="s7o1b">Vizuri — HostBora inapakua Excel. Tofauti: vikumbusho, deni, na picha ya leo bila kufungua laptop.</td></tr>
+            <tr><td data-i="s7o2a">“Mtandao mbaya.”</td><td data-i="s7o2b">Unaweza kurekodi nje ya mtandao; inasawazisha unaporudi.</td></tr>
+            <tr><td data-i="s7o3a">“Ni ghali.”</td><td data-i="s7o3b">Starter ni 19,000/mwezi. Kiasi kidogo kuliko kodi moja iliyosahaulika. Anza Free.</td></tr>
+            <tr><td data-i="s7o4a">“Mtunza nyumba anafanya.”</td><td data-i="s7o4b">Anaweza kutumia app. Pro ina wafanyakazi na kazi. Mmiliki bado anaona pesa.</td></tr>
+            <tr><td data-i="s7o5a">“Nina nyumba moja tu.”</td><td data-i="s7o5b">Free inatosha kujaribu. Starter inafaa unapoongeza.</td></tr>
+            <tr><td data-i="s7o6a">“Nitafikiri.”</td><td data-i="s7o6b">Sawa. Acha kiungo chako + QR. Piga simu kesho kusaidia usajili pamoja.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" id="earn">
+        <h3 data-i="s8t">8. Unavyopata kamisheni</h3>
+        <p data-i="s8p">Chaguo-msingi (wasifu “Default”): <strong>20% ya malipo ya kwanza</strong> ya usajili, kisha <strong>10% ya upyaaji</strong> hadi miezi 12. Inahesabiwa tu baada ya malipo halisi (hali ya usajili = active).</p>
+        <table>
+          <thead>
+            <tr>
+              <th data-i="s8h1">Mpango</th>
+              <th data-i="s8h2">Malipo ya mteja</th>
+              <th data-i="s8h3">Mwezi 1 (20%)</th>
+              <th data-i="s8h4">Upyaaji (10%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Starter</td><td>19,000</td><td>3,800</td><td>1,900</td></tr>
+            <tr><td>Pro</td><td>49,000</td><td>9,800</td><td>4,900</td></tr>
+            <tr><td>Ultra</td><td>99,000</td><td>19,800</td><td>9,900</td></tr>
+          </tbody>
+        </table>
+        <p data-i="s8n">Dashibodi yako inaonyesha walioalikwa, waliojisajili, walio hai, kamisheni ya mwezi, na kamisheni yote. Mteja asipolipa, haionekani kama kamisheni.</p>
+      </section>
+
+      <section class="card" id="rules">
+        <h3 data-i="s9t">9. Kanuni — fanya / usifanye</h3>
+        <div class="grid-2">
+          <div class="mini">
+            <strong class="do" data-i="s9d">Fanya</strong>
+            <ul>
+              <li data-i="s9d1">Tumia kiungo, QR, au msimbo wako kila wakati.</li>
+              <li data-i="s9d2">Mteja ajisajili kwa namba yake mwenyewe.</li>
+              <li data-i="s9d3">Malipo ya mpango kwa prompt ya simu yao.</li>
+              <li data-i="s9d4">Kaa nao hadi mali ya kwanza na PIN.</li>
+              <li data-i="s9d5">Sema bei na vikomo vya mpango kwa usahihi.</li>
+            </ul>
+          </div>
+          <div class="mini">
+            <strong class="dont" data-i="s9n">Usifanye</strong>
+            <ul>
+              <li data-i="s9n1">Kusanya pesa taslimu ya usajili wa HostBora.</li>
+              <li data-i="s9n2">Kuahidi kufuli mahiri / AI kwenye Starter.</li>
+              <li data-i="s9n3">Kujisajili kwa namba yako badala yao.</li>
+              <li data-i="s9n4">Kushiriki PIN au OTP ya mteja.</li>
+              <li data-i="s9n5">Kuwacha wajisajili bila msimbo — kamisheni inapotea.</li>
+            </ul>
+          </div>
+        </div>
+        <h4 data-i="s9c">Checklist kabla ya kutoka ofisini</h4>
+        <ul>
+          <li data-i="s9c1">App imesasishwa, nimeingia kama wakala, naona msimbo wangu.</li>
+          <li data-i="s9c2">Nimejaribu WhatsApp invite na QR.</li>
+          <li data-i="s9c3">Nina akaunti ya demo yenye mali moja tayari.</li>
+          <li data-i="s9c4">Najua bei tatu: 19k / 49k / 99k.</li>
+          <li data-i="s9c5">Nina namba ya msaada: support@hostbora.co.tz · www.hostbora.co.tz</li>
+        </ul>
+      </section>
+
+      <footer>
+        HostBora · Artbel Technologies, Dar es Salaam · Field guide for sales agents · 2026
+      </footer>
+    </div>
+
+    <script>
+      const I = {
+        sw: {
+          title: "Mwongozo wa mawakala wa HostBora",
+          subtitle: "Kujiamini uwanjani unapowasajili wateja",
+          kicker: "Mwongozo wa uwanja",
+          heroTitle: "HostBora ni nini, inatumikaje, na unavyosajili mteja.",
+          heroLead:
+            "Hii ni kadi yako ya mfukoni kabla ya kutembelea mwenye nyumba, msimamizi, au mwenyeji wa BnB. Soma kwa Kiswahili au English, kisha tumia sentensi moja, onyesho la dakika 5, na kiungo chako cha mwaliko.",
+          pitch:
+            "“HostBora ni app moja ya kusimamia nyumba za kodi na BnB Tanzania. Unarekodi wapangaji, wageni, malipo kwa TZS, na unaona mali ipi inaleta pesa — hata mtandao ukiwa dhaifu.”",
+          toc1: "1. Bidhaa ni nini",
+          toc2: "2. Unazungumza na nani",
+          toc3: "3. Jinsi app inavyotumika",
+          toc4: "4. Mipango na bei",
+          toc5: "5. Jinsi mteja anavyojiunga",
+          toc6: "6. Onyesho la dakika 5",
+          toc7: "7. Mazungumzo uwanjani",
+          toc8: "8. Unavyopata kamisheni",
+          toc9: "9. Kanuni",
+          s1t: "1. HostBora ni nini",
+          s1p: "HostBora ni programu ya simu (Android na iPhone) iliyotengenezwa Dar es Salaam na Artbel Technologies. Inaunganisha upangaji wa muda mrefu (kodi) na ukaribishaji wa muda mfupi (BnB) katika app moja.",
+          s1a: "Inatatua nini",
+          s1av: "Daftari, Excel, na WhatsApp zikitawanyika. Mwenye nyumba hasahau nani amelipa, nani anadaiwa, na mali ipi inapoteza pesa.",
+          s1b: "Kwa nini ni ya Tanzania",
+          s1bv: "Lugha: Kiswahili na English. Fedha: TZS. Malipo: simu (M-Pesa, Mixx, Airtel Money). Inafanya kazi nje ya mtandao, kisha inasawazisha.",
+          s1c: "Maeneo mawili ya kazi",
+          s1d: "Muda mfupi",
+          s1dv: "Nafasi, kalenda, check-in/out, malipo ya wageni, kazi za usafi.",
+          s1e: "Muda mrefu",
+          s1ev: "Wapangaji, kodi ya mwezi, deni (wanaodaiwa), mikataba, makusanyo.",
+          s1f: "Mteja anaweza kuendesha BnB, kodi, au zote mbili kwenye akaunti moja.",
+          s2t: "2. Unazungumza na nani",
+          s2a: "Wamiliki",
+          s2av: "Wana nyumba 1 au zaidi. Wanataka kuona kodi iliyoingia na nani hajalipa.",
+          s2b: "Wasimamizi",
+          s2bv: "Wanaendesha majengo kwa niaba ya wamiliki. Wanahitaji ripoti na wafanyakazi (Pro).",
+          s2c: "Wenyeji wa BnB",
+          s2cv: "Airbnb/booking. Wanataka kalenda, wageni, na mapato ya usiku kando na kodi ya mwezi.",
+          s2n: "Usipoteze muda na mtu asiye na nyumba, mwenyeji, au jukumu la kukusanya kodi. Lenga watu wanaoshikilia pesa au wanaoripoti kwa mmiliki.",
+          s3t: "3. Jinsi app inavyotumika (unavyoeleza mteja)",
+          s3p: "Vichupo vikuu baada ya kuingia:",
+          s3h1: "Kichupo",
+          s3h2: "Kinasema nini",
+          s3r1a: "Nyumbani",
+          s3r1b: "Picha ya leo: mapato, nafasi, kuingia/kutoka, wanaodaiwa, kitufe cha Unda.",
+          s3r2a: "Mali",
+          s3r2b: "Orodha ya majengo. Gonga Simamia kuona vyumba, wapangaji, na vitendo.",
+          s3r3a: "Fedha",
+          s3r3b: "Mapato dhidi ya matumizi, faida, deni.",
+          s3r4a: "Huduma",
+          s3r4b: "Kazi za matengenezo.",
+          s3r5a: "Zaidi",
+          s3r5b: "Msaada, kalenda, ripoti, mtandao, mipangilio.",
+          s3q: "Kazi za kila siku unazoweza kuonyesha",
+          s3l1: "Ongeza mali (BnB, Kodi, au zote) na vyumba.",
+          s3l2: "Sajili mpangaji au uhifadhi wa mgeni.",
+          s3l3: "Rekodi malipo — TZS au sarafu nyingine.",
+          s3l4: "Rekodi matumizi (mafuta, usafi, fundi).",
+          s3l5: "Tazama nani hajalipa (Wanaodaiwa).",
+          s3l6: "Pakua Excel / tuma ripoti WhatsApp (mipango inayostahili).",
+          s3h: "Mteja akisahau, mwambie afungue Zaidi → Msaada. Kuna miongozo ya BnB na Kodi ndani ya app.",
+          s4t: "4. Mipango na bei (TZS / mwezi)",
+          s4p: "Anza bila malipo kwa mali ndogo. Mteja analipa anapohitaji mali zaidi au zana za timu. Inajirudia kila mwezi; anaweza kughairi.",
+          s4h1: "Mpango",
+          s4h2: "Bei",
+          s4h3: "Kwa nani",
+          s4h4: "Kinachofunguka",
+          s4f1: "Kujaribu",
+          s4f2: "Mali 1, vyumba 2, historia ya mwezi huu tu.",
+          s4s1: "Mwenyeji peke yake",
+          s4s2: "Hadi mali 3. BnB au kodi. Malipo, matumizi, vikumbusho, ripoti za msingi.",
+          s4p1: "Portifolio inayokua / timu ndogo",
+          s4p2: "Hadi mali 10. Wafanyakazi, kalenda, hifadhi ya nyaraka, ripoti za juu, SMS/WhatsApp (add-on).",
+          s4u1: "Waendeshaji wakubwa",
+          s4u2: "Mali bila kikomo. Kufuli mahiri, kumbukumbu za kuingia, AI Manager, zana za ubunifu, msaada wa kipaumbele.",
+          s4n: "Usiahidi Ultra (kufuli mahiri, AI) kwa mteja wa Starter. Sema ukweli: wanaweza kuanza Free/Starter, kisha kupanda wanapokua.",
+          s5t: "5. Jinsi mteja anavyojiunga — lazima watumie msimbo wako",
+          s5p: "Kamisheni inakuja tu kama akaunti imeunganishwa nawe wakati wa usajili. Njia salama ni kiungo chako, QR, au msimbo.",
+          s5s1: "Fungua Dashibodi ya wakala kwenye app yako. Nakili msimbo, tuma WhatsApp, au onyesha QR.",
+          s5s2: "Mteja anafungua kiungo https://hostbora.co.tz/r/MSIMBO au anaweka msimbo wakati wa kujisajili.",
+          s5s3: "Pakua app — Google Play (tz.co.artbel.paa_yangu) au App Store (Host Bora). Tovuti: www.hostbora.co.tz",
+          s5s4: "Jisajili kwa jina na namba ya Tanzania. Watapata namba 4 kwa SMS. Kisha wanalipa mpango kwa prompt ya simu kwenye namba yao.",
+          s5s5: "Weka PIN, ongeza mali ya kwanza, rekodi malipo ya kwanza pamoja nao ikiwezekana.",
+          s5n: "Malipo ya mpango yanakwenda kwenye simu ya MTEJA, si yako. Usikusanye pesa taslimu kwa niaba ya HostBora. Usajili bila malipo = hakuna kamisheni bado.",
+          s6t: "6. Onyesho la dakika 5 (tumia akaunti yako ya demo)",
+          s6l1: "Nyumbani — “Hapa unaona pesa na nani anadaiwa, leo.”",
+          s6l2: "Ongeza mali — chagua BnB au Kodi, weka jina la jengo, ongeza chumba kimoja.",
+          s6l3: "Ongeza mpangaji au nafasi — jina, chumba, kodi/bei.",
+          s6l4: "Rekodi malipo — kiasi TZS. Onyesha kinaingia Fedha.",
+          s6l5: "Wanaodaiwa / Fedha — “Hapa ndipo unapoacha kufuatilia kwenye daftari.”",
+          s6p: "Ukiwa na dakika zaidi: kalenda (BnB), Excel, au LUKU. Acha wao waguse simu — kujiamini kunakuja wanapobonyeza wenyewe.",
+          s7t: "7. Mazungumzo uwanjani",
+          s7a: "Fungua hivi",
+          s7a1: "“Mnasimamiaje kodi au wageni sasa — daftari, Excel, au WhatsApp?”",
+          s7a2: "“Mna nyumba ngapi? BnB, kodi, au zote?”",
+          s7a3: "“Nionyeshe kwa dakika 5 jinsi HostBora inavyoweka hayo kwenye simu.”",
+          s7b: "Majibu ya pingamizi",
+          s7h1: "Wanasema",
+          s7h2: "Wewe unasema",
+          s7o1a: "“Nina Excel.”",
+          s7o1b: "Vizuri — HostBora inapakua Excel. Tofauti: vikumbusho, deni, na picha ya leo bila kufungua laptop.",
+          s7o2a: "“Mtandao mbaya.”",
+          s7o2b: "Unaweza kurekodi nje ya mtandao; inasawazisha unaporudi.",
+          s7o3a: "“Ni ghali.”",
+          s7o3b: "Starter ni 19,000/mwezi. Kiasi kidogo kuliko kodi moja iliyosahaulika. Anza Free.",
+          s7o4a: "“Mtunza nyumba anafanya.”",
+          s7o4b: "Anaweza kutumia app. Pro ina wafanyakazi na kazi. Mmiliki bado anaona pesa.",
+          s7o5a: "“Nina nyumba moja tu.”",
+          s7o5b: "Free inatosha kujaribu. Starter inafaa unapoongeza.",
+          s7o6a: "“Nitafikiri.”",
+          s7o6b: "Sawa. Acha kiungo chako + QR. Piga simu kesho kusaidia usajili pamoja.",
+          s8t: "8. Unavyopata kamisheni",
+          s8p: "Chaguo-msingi (wasifu “Default”): 20% ya malipo ya kwanza ya usajili, kisha 10% ya upyaaji hadi miezi 12. Inahesabiwa tu baada ya malipo halisi (hali = active).",
+          s8h1: "Mpango",
+          s8h2: "Malipo ya mteja",
+          s8h3: "Mwezi 1 (20%)",
+          s8h4: "Upyaaji (10%)",
+          s8n: "Dashibodi yako inaonyesha walioalikwa, waliojisajili, walio hai, kamisheni ya mwezi, na kamisheni yote. Mteja asipolipa, haionekani kama kamisheni.",
+          s9t: "9. Kanuni — fanya / usifanye",
+          s9d: "Fanya",
+          s9d1: "Tumia kiungo, QR, au msimbo wako kila wakati.",
+          s9d2: "Mteja ajisajili kwa namba yake mwenyewe.",
+          s9d3: "Malipo ya mpango kwa prompt ya simu yao.",
+          s9d4: "Kaa nao hadi mali ya kwanza na PIN.",
+          s9d5: "Sema bei na vikomo vya mpango kwa usahihi.",
+          s9n: "Usifanye",
+          s9n1: "Kusanya pesa taslimu ya usajili wa HostBora.",
+          s9n2: "Kuahidi kufuli mahiri / AI kwenye Starter.",
+          s9n3: "Kujisajili kwa namba yako badala yao.",
+          s9n4: "Kushiriki PIN au OTP ya mteja.",
+          s9n5: "Kuwacha wajisajili bila msimbo — kamisheni inapotea.",
+          s9c: "Checklist kabla ya kutoka ofisini",
+          s9c1: "App imesasishwa, nimeingia kama wakala, naona msimbo wangu.",
+          s9c2: "Nimejaribu WhatsApp invite na QR.",
+          s9c3: "Nina akaunti ya demo yenye mali moja tayari.",
+          s9c4: "Najua bei tatu: 19k / 49k / 99k.",
+          s9c5: "Nina namba ya msaada: support@hostbora.co.tz · www.hostbora.co.tz",
+        },
+        en: {
+          title: "HostBora sales agent field guide",
+          subtitle: "Be confident in the field when recruiting customers",
+          kicker: "Field playbook",
+          heroTitle: "What HostBora is, how to use it, and how you sign a customer.",
+          heroLead:
+            "This is your pocket brief before you visit a landlord, property manager, or BnB host. Read it in English or Kiswahili, then use one sentence, a 5-minute demo, and your invite link.",
+          pitch:
+            "“HostBora is one app for rental buildings and BnBs in Tanzania. You record tenants, guests, and TZS payments, and you see which property makes money — even when the network is weak.”",
+          toc1: "1. What the product is",
+          toc2: "2. Who you talk to",
+          toc3: "3. How the app is used",
+          toc4: "4. Plans and prices",
+          toc5: "5. How a customer joins",
+          toc6: "6. 5-minute demo",
+          toc7: "7. Field conversation",
+          toc8: "8. How you earn",
+          toc9: "9. Rules",
+          s1t: "1. What HostBora is",
+          s1p: "HostBora is a phone app (Android and iPhone) built in Dar es Salaam by Artbel Technologies. It puts long-term rent and short-stay BnB in one app.",
+          s1a: "The problem",
+          s1av: "Notebooks, Excel, and WhatsApp scattered. Owners forget who paid, who owes, and which property is losing money.",
+          s1b: "Why it fits Tanzania",
+          s1bv: "Kiswahili and English. TZS. Mobile money (M-Pesa, Mixx, Airtel Money). Works offline, then syncs.",
+          s1c: "Two workspaces",
+          s1d: "Short stay",
+          s1dv: "Bookings, calendar, check-in/out, guest payments, cleaning tasks.",
+          s1e: "Long-term rent",
+          s1ev: "Tenants, monthly rent, arrears, contracts, collections.",
+          s1f: "A customer can run BnB, rent, or both on one account.",
+          s2t: "2. Who you talk to",
+          s2a: "Landlords",
+          s2av: "One or more houses. They want rent in and who has not paid.",
+          s2b: "Property managers",
+          s2bv: "They run buildings for owners. They need reports and staff (Pro).",
+          s2c: "BnB hosts",
+          s2cv: "Airbnb/booking. They want a calendar, guests, and nightly income beside monthly rent.",
+          s2n: "Do not spend time with someone who does not own, host, or collect rent. Target people who hold the money or report to the owner.",
+          s3t: "3. How the app is used (how you explain it)",
+          s3p: "Main tabs after sign-in:",
+          s3h1: "Tab",
+          s3h2: "What it is for",
+          s3r1a: "Home",
+          s3r1b: "Today’s picture: money, bookings, arrivals, who owes, Create.",
+          s3r2a: "Properties",
+          s3r2b: "All buildings. Tap Manage for units, tenants, and actions.",
+          s3r3a: "Finances",
+          s3r3b: "Income vs expenses, profit, arrears.",
+          s3r4a: "Services",
+          s3r4b: "Maintenance jobs.",
+          s3r5a: "More",
+          s3r5b: "Help, calendar, reports, network, settings.",
+          s3q: "Daily jobs you can show",
+          s3l1: "Add a property (BnB, Rent, or both) and units.",
+          s3l2: "Add a tenant or a guest booking.",
+          s3l3: "Record a payment — TZS or another currency.",
+          s3l4: "Record an expense (fuel, cleaning, fundi).",
+          s3l5: "See who has not paid (overdue list).",
+          s3l6: "Export Excel / WhatsApp reports (on plans that include them).",
+          s3h: "If they forget later: More → Help. BnB and Rent guides live in the app.",
+          s4t: "4. Plans and prices (TZS / month)",
+          s4p: "Start free on a small portfolio. They pay when they need more properties or team tools. Renews monthly; they can cancel.",
+          s4h1: "Plan",
+          s4h2: "Price",
+          s4h3: "Who it is for",
+          s4h4: "What they get",
+          s4f1: "Trying it",
+          s4f2: "1 property, 2 units, current month of history only.",
+          s4s1: "Solo host",
+          s4s2: "Up to 3 properties. BnB or rent. Payments, expenses, reminders, basic reports.",
+          s4p1: "Growing portfolio / small team",
+          s4p2: "Up to 10 properties. Staff, calendar, document vault, advanced reports, SMS/WhatsApp add-on.",
+          s4u1: "Larger operators",
+          s4u2: "Unlimited properties. Smart locks, entry logs, AI Manager, design tools, priority support.",
+          s4n: "Do not promise Ultra (smart locks, AI) on Starter. Tell the truth: start Free/Starter, upgrade when they grow.",
+          s5t: "5. How a customer joins — they must use your code",
+          s5p: "You only earn if the account is attached to you at registration. Safest path: your link, QR, or code.",
+          s5s1: "Open the sales-agent dashboard in your app. Copy the code, send WhatsApp, or show the QR.",
+          s5s2: "The customer opens https://hostbora.co.tz/r/CODE or types the code during sign-up.",
+          s5s3: "Install the app — Google Play (tz.co.artbel.paa_yangu) or App Store (Host Bora). Website: www.hostbora.co.tz",
+          s5s4: "Register with name and a Tanzanian number. They get a 4-digit SMS. Then they pay the plan via a prompt on their phone.",
+          s5s5: "Set a PIN, add the first property, and record the first payment with them if you can.",
+          s5n: "Plan payment goes to the CUSTOMER’s phone, not yours. Do not collect cash for HostBora. Sign-up without payment = no commission yet.",
+          s6t: "6. 5-minute demo (use your demo account)",
+          s6l1: "Home — “Here you see money and who owes, today.”",
+          s6l2: "Add a property — BnB or Rent, building name, one unit.",
+          s6l3: "Add a tenant or booking — name, unit, rent/rate.",
+          s6l4: "Record a payment — TZS amount. Show it landing in Finances.",
+          s6l5: "Overdue / Finances — “This is where you stop chasing a notebook.”",
+          s6p: "If you have extra minutes: calendar (BnB), Excel, or LUKU. Let them tap the phone — confidence comes when they press.",
+          s7t: "7. Field conversation",
+          s7a: "Open like this",
+          s7a1: "“How do you track rent or guests today — notebook, Excel, or WhatsApp?”",
+          s7a2: "“How many buildings? BnB, rent, or both?”",
+          s7a3: "“Give me 5 minutes to show that on the phone.”",
+          s7b: "Objection replies",
+          s7h1: "They say",
+          s7h2: "You say",
+          s7o1a: "“I use Excel.”",
+          s7o1b: "Good — HostBora exports Excel. Extra: reminders, arrears, and today’s picture without a laptop.",
+          s7o2a: "“Network is bad.”",
+          s7o2b: "You can record offline; it syncs when you are back.",
+          s7o3a: "“Too expensive.”",
+          s7o3b: "Starter is 19,000/month — less than one missed rent. Start Free.",
+          s7o4a: "“The caretaker does it.”",
+          s7o4b: "They can use the app. Pro has staff and tasks. The owner still sees the money.",
+          s7o5a: "“I only have one house.”",
+          s7o5b: "Free is enough to try. Starter fits when they add more.",
+          s7o6a: "“I’ll think about it.”",
+          s7o6b: "Fine. Leave your link + QR. Call tomorrow and register together.",
+          s8t: "8. How you earn",
+          s8p: "Default profile: 20% of the first paid subscription month, then 10% on renewals for up to 12 months. Counted only after a real payment (status = active).",
+          s8h1: "Plan",
+          s8h2: "Customer pays",
+          s8h3: "Month 1 (20%)",
+          s8h4: "Renewal (10%)",
+          s8n: "Your dashboard shows invited, registered, active, this month’s commission, and lifetime commission. If they do not pay, it is not commission.",
+          s9t: "9. Rules — do / don’t",
+          s9d: "Do",
+          s9d1: "Always use your link, QR, or code.",
+          s9d2: "The customer registers on their own number.",
+          s9d3: "Plan payment via their phone prompt.",
+          s9d4: "Stay until first property and PIN.",
+          s9d5: "Quote plan prices and limits accurately.",
+          s9n: "Don’t",
+          s9n1: "Collect cash for a HostBora subscription.",
+          s9n2: "Promise smart locks / AI on Starter.",
+          s9n3: "Register on your number instead of theirs.",
+          s9n4: "Share the customer’s PIN or OTP.",
+          s9n5: "Let them sign up without your code — you lose the commission.",
+          s9c: "Checklist before you leave the office",
+          s9c1: "App updated, signed in as agent, I can see my code.",
+          s9c2: "I tested WhatsApp invite and QR.",
+          s9c3: "I have a demo account with one property ready.",
+          s9c4: "I know the three prices: 19k / 49k / 99k.",
+          s9c5: "I have support: support@hostbora.co.tz · www.hostbora.co.tz",
+        },
+      };
+
+      let lang = localStorage.getItem("hb-agent-guide-lang") || "sw";
+      const btn = document.getElementById("langBtn");
+
+      function apply(next) {
+        lang = next;
+        localStorage.setItem("hb-agent-guide-lang", lang);
+        document.documentElement.lang = lang;
+        const pack = I[lang];
+        document.querySelectorAll("[data-i]").forEach((el) => {
+          const key = el.getAttribute("data-i");
+          if (pack[key]) el.textContent = pack[key];
+        });
+        btn.textContent = lang === "sw" ? "English" : "Kiswahili";
+      }
+
+      btn.addEventListener("click", () => apply(lang === "sw" ? "en" : "sw"));
+      apply(lang);
+    </script>
+  </body>
+</html>

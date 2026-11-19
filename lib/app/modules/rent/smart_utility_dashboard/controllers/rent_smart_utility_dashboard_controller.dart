@@ -105,12 +105,12 @@ class RentSmartUtilityDashboardController extends BaseController {
             : 'legacy_${p.id}';
         propertyRef.value = ref;
         if (loc.isNotEmpty) {
-          unitLabel.value = 'UNIT · ${loc.toUpperCase()}';
+          unitLabel.value = loc.toUpperCase();
           propertyLabel.value = loc;
         }
         final suite = p.apartmentSuite.trim();
         if (suite.isNotEmpty) {
-          unitLabel.value = 'UNIT · ${suite.toUpperCase()}';
+          unitLabel.value = suite.toUpperCase();
           propertyLabel.value = suite.isEmpty ? propertyLabel.value : suite;
         }
         _loadPropertyUnits(p.unitsJson);
@@ -173,9 +173,20 @@ class RentSmartUtilityDashboardController extends BaseController {
   }
 
   void _buildActivityFeed(List<RentUtilityTopUpRecord> topUps) {
-    final items = <UtilityActivityItem>[];
+    activities.assignAll(_mapTopUpsToActivity(topUps, limit: 10));
+  }
 
-    for (final t in topUps.take(10)) {
+  void _buildActivityFromExpenses(List<ExpenseRecord> utilityExpenses) {
+    activities.assignAll(_mapExpensesToActivity(utilityExpenses, limit: 6));
+  }
+
+  List<UtilityActivityItem> _mapTopUpsToActivity(
+    List<RentUtilityTopUpRecord> topUps, {
+    int? limit,
+  }) {
+    final source = limit == null ? topUps : topUps.take(limit);
+    final items = <UtilityActivityItem>[];
+    for (final t in source) {
       final date = DateTime.tryParse(t.dateIso);
       final dateLabel = date == null ? '' : DateFormat('dd/MM').format(date);
       final provider = t.provider.trim().isEmpty
@@ -209,14 +220,17 @@ class RentSmartUtilityDashboardController extends BaseController {
         );
       }
     }
-
-    activities.assignAll(items);
+    return items;
   }
 
-  void _buildActivityFromExpenses(List<ExpenseRecord> utilityExpenses) {
+  List<UtilityActivityItem> _mapExpensesToActivity(
+    List<ExpenseRecord> utilityExpenses, {
+    int? limit,
+  }) {
+    final source =
+        limit == null ? utilityExpenses : utilityExpenses.take(limit);
     final items = <UtilityActivityItem>[];
-
-    for (final e in utilityExpenses.take(6)) {
+    for (final e in source) {
       final date = DateTime.tryParse(e.datePaidIso);
       final dateLabel = date == null ? '' : DateFormat('dd/MM').format(date);
       final combined = (e.notes + e.category).toLowerCase();
@@ -248,8 +262,37 @@ class RentSmartUtilityDashboardController extends BaseController {
         );
       }
     }
+    return items;
+  }
 
-    activities.assignAll(items);
+  /// Full history for the View All sheet (no preview limit).
+  Future<List<UtilityActivityItem>> loadFullActivityHistory() async {
+    final allTopUps = await _topUpLocal.getAllNewestFirst();
+    final unitId = selectedUnitId.value.trim();
+    var topUps = unitId.isEmpty
+        ? allTopUps
+        : allTopUps.where((t) => t.unitId.trim() == unitId).toList();
+
+    final ref = propertyRef.value.trim();
+    if (ref.isNotEmpty) {
+      topUps = topUps
+          .where(
+            (t) =>
+                t.propertyRef.trim().isEmpty || t.propertyRef.trim() == ref,
+          )
+          .toList();
+    }
+
+    final fromTopUps = _mapTopUpsToActivity(topUps);
+    if (fromTopUps.isNotEmpty) return fromTopUps;
+
+    final expenses = await _expenseLocal.getAllNewestFirst(
+      workspaceType: 'rent',
+    );
+    final utilityExpenses = expenses
+        .where((e) => e.category.trim() == 'Utilities')
+        .toList();
+    return _mapExpensesToActivity(utilityExpenses);
   }
 
   void _updateWeeklyTrend(List<RentUtilityTopUpRecord> topUps) {
@@ -578,12 +621,6 @@ class RentSmartUtilityDashboardController extends BaseController {
       if (unitId.isNotEmpty) 'unitId': unitId,
       if (unitName.isNotEmpty) 'unitName': unitName,
     };
-  }
-
-  void onViewAllActivity() {
-    showSuccessMessage(
-      _isSw ? 'Inapakia historia kamili' : 'Loading full utility history',
-    );
   }
 
   void openLukuUsageGraph() {

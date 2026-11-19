@@ -5,6 +5,7 @@ import '../../../core/base/base_view.dart';
 import '../../../core/theme/app_theme_tokens.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/widget/custom_app_bar.dart';
+import '../../../core/access/plan_agents.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/more_controller.dart';
 
@@ -51,13 +52,23 @@ class MoreView extends BaseView<MoreController> {
   List<_MoreLink> _links() {
     return [
       _MoreLink(
+        _t('My Network', 'Mtandao wangu'),
+        Icons.hub_outlined,
+        Routes.MY_NETWORK,
+      ),
+      _MoreLink(
+        _t('Property Managers', 'Wasimamizi'),
+        Icons.manage_accounts_outlined,
+        Routes.PROPERTY_MANAGERS,
+      ),
+      _MoreLink(
         _t('Challenges', 'Changamoto'),
         Icons.emoji_events_outlined,
         Routes.CHALLENGES_REWARDS,
       ),
       _MoreLink(
         _t('Help center', 'Kituo cha Msaada'),
-        Icons.help_outline_rounded,
+        Icons.help_outline,
         Routes.HELP_CENTER,
       ),
       _MoreLink(
@@ -88,7 +99,7 @@ class MoreView extends BaseView<MoreController> {
       // ),
       _MoreLink(
         _t('Offers', 'Ofa'),
-        Icons.stars_rounded,
+        Icons.stars_outlined,
         Routes.RENT_ACTIVE_LOYALTY_PROGRAMS,
       ),
       _MoreLink(
@@ -98,13 +109,8 @@ class MoreView extends BaseView<MoreController> {
       ),
       _MoreLink(
         _t('Guest history', 'Historia ya Wageni'),
-        Icons.people_outline_rounded,
+        Icons.people_outline,
         Routes.GUEST_HISTORY,
-      ),
-      _MoreLink(
-        _t('Design studio', 'Studio ya ubunifu'),
-        Icons.palette_outlined,
-        Routes.INTERIOR_DESIGN_STUDIO,
       ),
       _MoreLink(
         appLocalization.sendFeedback,
@@ -150,7 +156,13 @@ class MoreView extends BaseView<MoreController> {
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => Get.toNamed(link.route, arguments: link.arguments),
+          onTap: () {
+            if (!PlanAccess.allowsRoute(link.route)) {
+              PlanAccess.denyRoute(link.route);
+              return;
+            }
+            Get.toNamed(link.route, arguments: link.arguments);
+          },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             child: Column(

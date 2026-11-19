@@ -32,7 +32,7 @@ class HelpGuideDetailView extends BaseView<HelpGuideDetailController> {
         children: [
           Text(
             guide.title(controller.isSw),
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
@@ -56,7 +56,7 @@ class HelpGuideDetailView extends BaseView<HelpGuideDetailController> {
           const SizedBox(height: 24),
           Text(
             _t('Steps', 'Hatua'),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           ...List.generate(guide.steps.length, (i) {
@@ -116,7 +116,7 @@ class _StepTile extends StatelessWidget {
                     '$index',
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: done ? Colors.white : Colors.black87,
                     ),
                   ),
@@ -147,7 +147,7 @@ class _StepTile extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: onOpen,
-                  icon: const Icon(Icons.open_in_new, size: 16),
+                  icon: const Icon(Icons.open_in_new_outlined, size: 16),
                   label: Text(isSw ? 'Fungua skrini' : 'Open screen'),
                 ),
               ),

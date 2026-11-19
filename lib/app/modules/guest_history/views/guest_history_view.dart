@@ -67,7 +67,7 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
                 fontSize: 14,
               ),
               prefixIcon: Icon(
-                Icons.search,
+                Icons.search_outlined,
                 size: 20,
                 color: c.hint,
               ),
@@ -76,7 +76,7 @@ class GuestHistoryView extends GetView<GuestHistoryController> {
                   : IconButton(
                       tooltip: _t(en: 'Clear', sw: 'Futa'),
                       icon: Icon(
-                        Icons.clear,
+                        Icons.clear_outlined,
                         size: 20,
                         color: c.hint,
                       ),

@@ -17,7 +17,10 @@ class GeneralResponse {
 
   bool get isSuccess {
     final code = responseCode;
-    return code == '0' || code == '200' || code == '201';
+    return code == '0' ||
+        code == '00' ||
+        code == '200' ||
+        code == '201';
   }
 
   Map<String, dynamic> toJson() {

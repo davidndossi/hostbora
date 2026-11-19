@@ -24,7 +24,7 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
       actions: [
         IconButton(
           onPressed: controller.close,
-          icon: const Icon(Icons.close, size: 24),
+          icon: const Icon(Icons.close_outlined, size: 24),
           color: AppColors.textColorPrimary,
         ),
       ],
@@ -164,7 +164,7 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
           width: double.infinity,
           height: 220,
           decoration: BoxDecoration(
-            color: AppColors.lightGreyColor.withValues(alpha: 0.5),
+            color: AppColors.designInputBorder.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(AppValues.radius_12),
           ),
           child: Icon(
@@ -199,7 +199,7 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textColorWhite,
+                    color: AppColors.colorWhite,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -226,7 +226,7 @@ class ListingPublishedView extends BaseView<ListingPublishedController> {
                 ),
               ],
             ),
-            child: Icon(Icons.check, size: 26, color: AppColors.colorPrimary),
+            child: Icon(Icons.check_outlined, size: 26, color: AppColors.colorPrimary),
           ),
         ),
       ],

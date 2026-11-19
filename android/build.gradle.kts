@@ -1,18 +1,32 @@
 allprojects {
     repositories {
-        // Tuya / ThingClips Home SDK (required by tuya_home_sdk_flutter).
-        // thingsmart AARs are on commercial + releases repos (see plugin example).
-        maven {
-            url = uri("https://maven-other.tuya.com/repository/maven-commercial-releases/")
-        }
-        maven {
-            url = uri("https://maven-other.tuya.com/repository/maven-releases/")
-        }
-        maven {
-            url = uri("https://maven-other.tuya.com/repository/maven-public/")
-        }
         google()
         mavenCentral()
+        // Tuya / ThingClips Home SDK (required by tuya_home_sdk_flutter).
+        // Restrict these repos to Tuya groups so Gradle does not query them
+        // for Facebook SoLoader metadata (tuya_home_sdk_flutter uses 0.10.4+).
+        listOf(
+            "https://maven-other.tuya.com/repository/maven-commercial-releases/",
+            "https://maven-other.tuya.com/repository/maven-releases/",
+            "https://maven-other.tuya.com/repository/maven-public/",
+        ).forEach { repoUrl ->
+            maven {
+                url = uri(repoUrl)
+                content {
+                    includeGroupByRegex("com\\.thingclips.*")
+                    includeGroupByRegex("com\\.tuya.*")
+                }
+            }
+        }
+    }
+
+    configurations.configureEach {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "com.facebook.soloader" && requested.name == "soloader") {
+                useVersion("0.10.4")
+                because("Replace Tuya plugin's dynamic 0.10.4+ so Maven Central can resolve it")
+            }
+        }
     }
 }
 

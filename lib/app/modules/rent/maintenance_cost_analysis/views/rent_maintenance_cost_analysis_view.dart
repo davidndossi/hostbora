@@ -102,7 +102,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
               style: TextStyle(
                 fontSize: 12,
                 letterSpacing: 1.3,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: u.muted,
               ),
             ),
@@ -158,14 +158,13 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
   //         child: Text(
   //           _isSw ? 'Muhtasari wa Fedha' : 'Financial Overview',
   //           style: TextStyle(
-  //             fontFamily: 'serif',
   //             fontSize: 20,
   //             fontWeight: FontWeight.w700,
   //             color: u.onSurface,
   //           ),
   //         ),
   //       ),
-  //       Icon(Icons.query_stats_rounded, color: u.muted, size: 24),
+  //       Icon(Icons.query_stats_outlined, color: u.muted, size: 24),
   //     ],
   //   );
   // }
@@ -205,9 +204,8 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
           Text(
             _fmt(total),
             style: const TextStyle(
-              fontFamily: 'serif',
               fontSize: 32,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: _McaUi.teal,
             ),
           ),
@@ -216,7 +214,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
             Row(
               children: [
                 Icon(
-                  Icons.north_east_rounded,
+                  Icons.north_east_outlined,
                   size: 16,
                   color: Colors.red.shade400,
                 ),
@@ -260,9 +258,8 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
                 child: Text(
                   _isSw ? 'Aina za Gharama' : 'Expense Categorization',
                   style: TextStyle(
-                    fontFamily: 'serif',
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: u.onSurface,
                   ),
                 ),
@@ -306,7 +303,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
           child: Text(
             _isSw ? 'AINA' : 'CATEGORY',
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               letterSpacing: 0.8,
               fontWeight: FontWeight.w700,
               color: u.muted,
@@ -319,7 +316,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
             _isSw ? 'MAKADIRIO' : 'ESTIMATED',
             textAlign: TextAlign.right,
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               letterSpacing: 0.8,
               fontWeight: FontWeight.w700,
               color: u.muted,
@@ -332,7 +329,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
             _isSw ? 'HALISI' : 'ACTUAL',
             textAlign: TextAlign.right,
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               letterSpacing: 0.8,
               fontWeight: FontWeight.w700,
               color: u.muted,
@@ -345,7 +342,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
             _isSw ? 'TOFAUTI' : 'VARIANCE',
             textAlign: TextAlign.right,
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               letterSpacing: 0.8,
               fontWeight: FontWeight.w700,
               color: u.muted,
@@ -411,7 +408,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
             textAlign: TextAlign.right,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: varColor,
             ),
           ),
@@ -432,19 +429,19 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
         return CircleAvatar(
           radius: 14,
           backgroundColor: const Color(0xFF795548).withValues(alpha: 0.12),
-          child: const Icon(Icons.apartment_rounded, size: 16, color: Color(0xFF795548)),
+          child: const Icon(Icons.apartment_outlined, size: 16, color: Color(0xFF795548)),
         );
       case 'utilities':
         return CircleAvatar(
           radius: 14,
           backgroundColor: const Color(0xFF1976D2).withValues(alpha: 0.12),
-          child: const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF1976D2)),
+          child: const Icon(Icons.bolt_outlined, size: 16, color: Color(0xFF1976D2)),
         );
       case 'staff':
         return CircleAvatar(
           radius: 14,
           backgroundColor: const Color(0xFF263238).withValues(alpha: 0.08),
-          child: const Icon(Icons.work_outline_rounded, size: 16, color: Color(0xFF263238)),
+          child: const Icon(Icons.work_outline, size: 16, color: Color(0xFF263238)),
         );
       default:
         return CircleAvatar(
@@ -481,7 +478,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
                   color: Colors.white,
                   fontSize: 11,
                   letterSpacing: 1.2,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -490,10 +487,9 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
           Text(
             liq > 0 ? _fmt(liq) : '—',
             style: const TextStyle(
-              fontFamily: 'serif',
               color: Colors.white,
               fontSize: 30,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
@@ -521,7 +517,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -573,7 +569,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 1,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: u.muted,
             ),
           ),
@@ -594,7 +590,6 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
                     Text(
                       title,
                       style: TextStyle(
-                        fontFamily: 'serif',
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: u.onSurface,
@@ -658,9 +653,8 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
           Text(
             _isSw ? 'Mwenendo wa Matengenezo' : 'Maintenance Trend',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 20,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: u.onSurface,
             ),
           ),
@@ -697,7 +691,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
                       reservedSize: 36,
                       getTitlesWidget: (v, m) => Text(
                         v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}k' : v.toInt().toString(),
-                        style: TextStyle(fontSize: 9, color: u.muted),
+                        style: TextStyle(fontSize: 10, color: u.muted),
                       ),
                     ),
                   ),
@@ -713,7 +707,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
                             labels[i].toUpperCase(),
-                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: u.muted),
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: u.muted),
                           ),
                         );
                       },
@@ -884,7 +878,7 @@ class RentMaintenanceCostAnalysisView extends RentBaseView<RentMaintenanceCostAn
             _isSw ? labelSw : labelEn,
             style: TextStyle(
               fontSize: 10,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               letterSpacing: 0.6,
               color: selected ? _McaUi.forest : u.muted,
             ),

@@ -170,7 +170,7 @@ class ReportsView extends BaseView<ReportsController> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Icon(
-                      Icons.arrow_forward,
+                      Icons.arrow_forward_outlined,
                       size: 16,
                       color: tokens.textMuted,
                     ),
@@ -302,7 +302,7 @@ class ReportsView extends BaseView<ReportsController> {
                   context,
                   label: _t(context, 'Average', 'Wastani'),
                   value: '${avg.toStringAsFixed(0)}%',
-                  icon: Icons.trending_up_rounded,
+                  icon: Icons.trending_up_outlined,
                   tint: AppColors.colorPrimary,
                 ),
               ),
@@ -312,7 +312,7 @@ class ReportsView extends BaseView<ReportsController> {
                   context,
                   label: _t(context, 'Peak', 'Kilele'),
                   value: '${peak.toStringAsFixed(0)}%',
-                  icon: Icons.insights_rounded,
+                  icon: Icons.insights_outlined,
                   tint: const Color(0xFF5D9CEC),
                 ),
               ),
@@ -489,7 +489,7 @@ class ReportsView extends BaseView<ReportsController> {
         child: DropdownButton<String?>(
           isExpanded: true,
           value: controller.selectedPropertyRef.value,
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: tokens.textMuted),
+          icon: Icon(Icons.keyboard_arrow_down_outlined, color: tokens.textMuted),
           dropdownColor: FormSurfaceColors.of(context).dropdownBg,
           items: [
             DropdownMenuItem<String?>(
@@ -529,7 +529,7 @@ class ReportsView extends BaseView<ReportsController> {
                   context,
                   label: appLocalization.reportsRevenueSeries,
                   value: controller.formatTzs(controller.totalRevenue),
-                  icon: Icons.south_west_rounded,
+                  icon: Icons.south_west_outlined,
                   tint: AppColors.colorPrimary,
                 ),
               ),
@@ -539,7 +539,7 @@ class ReportsView extends BaseView<ReportsController> {
                   context,
                   label: appLocalization.reportsExpenseSeries,
                   value: controller.formatTzs(controller.totalExpense),
-                  icon: Icons.north_east_rounded,
+                  icon: Icons.north_east_outlined,
                   tint: AppColors.colorOrange,
                 ),
               ),
@@ -551,7 +551,7 @@ class ReportsView extends BaseView<ReportsController> {
             label: appLocalization.reportsNetSeries,
             value: controller.formatTzs(net),
             icon: Icons.account_balance_wallet_outlined,
-            tint: net >= 0 ? AppColors.paaYanguSuccess : AppColors.errorColor,
+            tint: net >= 0 ? AppColors.colorSuccess : AppColors.errorColor,
           ),
           if (!hasExp) ...[
             const SizedBox(height: 12),
@@ -649,7 +649,7 @@ class ReportsView extends BaseView<ReportsController> {
                                       getTitlesWidget: (v, m) => Text(
                                         _compactMoney(v),
                                         style: TextStyle(
-                                          fontSize: 9,
+                                          fontSize: 10,
                                           color: context.tokens.textMuted,
                                         ),
                                       ),
@@ -813,8 +813,8 @@ class ReportsView extends BaseView<ReportsController> {
             context,
             label: appLocalization.reportsExpenseSeries,
             value: controller.formatTzs(controller.totalExpense),
-            icon: Icons.pie_chart_outline_rounded,
-            tint: AppColors.paaYanguWarm,
+            icon: Icons.pie_chart_outline,
+            tint: AppColors.colorWarning,
           ),
           const SizedBox(height: 14),
           _chartCard(
@@ -921,7 +921,7 @@ class ReportsView extends BaseView<ReportsController> {
                                       BarChartRodData(
                                         toY: amounts[i],
                                         width: 18,
-                                        color: AppColors.paaYanguWarm,
+                                        color: AppColors.colorWarning,
                                         borderRadius:
                                             const BorderRadius.vertical(
                                           top: Radius.circular(5),
@@ -951,7 +951,7 @@ class ReportsView extends BaseView<ReportsController> {
                                   width: 8,
                                   height: 8,
                                   decoration: const BoxDecoration(
-                                    color: AppColors.paaYanguWarm,
+                                    color: AppColors.colorWarning,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -1054,7 +1054,7 @@ class ReportsView extends BaseView<ReportsController> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: tokens.textPrimary,
                   ),
                 ),
@@ -1141,7 +1141,7 @@ class ReportsView extends BaseView<ReportsController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            Icons.info_outline_rounded,
+            Icons.info_outline,
             size: 16,
             color: context.tokens.textSecondary,
           ),
@@ -1167,7 +1167,7 @@ class ReportsView extends BaseView<ReportsController> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.insert_chart_outlined_rounded,
+            Icons.insert_chart_outlined_outlined,
             size: 36,
             color: context.tokens.textMuted,
           ),

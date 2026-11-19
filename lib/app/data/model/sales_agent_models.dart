@@ -58,9 +58,13 @@ class ReferredCustomerRow {
     required this.customerUserId,
     required this.customerPhone,
     required this.customerName,
+    required this.customerEmail,
     required this.plan,
     required this.subscriptionStatus,
     required this.paidMonthsCount,
+    required this.monthsCovered,
+    required this.amountPaidTzs,
+    required this.paymentMode,
     required this.registeredAtMs,
     required this.active,
   });
@@ -68,20 +72,34 @@ class ReferredCustomerRow {
   final String customerUserId;
   final String customerPhone;
   final String customerName;
+  final String customerEmail;
   final String plan;
   final String subscriptionStatus;
   final int paidMonthsCount;
+  final int monthsCovered;
+  final int amountPaidTzs;
+  final String paymentMode;
   final int registeredAtMs;
   final bool active;
 
+  String get displayName =>
+      customerName.trim().isEmpty ? customerPhone : customerName;
+
   factory ReferredCustomerRow.fromJson(Map<String, dynamic> json) {
+    final paidMonths =
+        int.tryParse(json['paidMonthsCount']?.toString() ?? '') ?? 0;
     return ReferredCustomerRow(
       customerUserId: json['customerUserId']?.toString() ?? '',
       customerPhone: json['customerPhone']?.toString() ?? '',
       customerName: json['customerName']?.toString() ?? '',
+      customerEmail: json['customerEmail']?.toString() ?? '',
       plan: json['plan']?.toString() ?? 'none',
       subscriptionStatus: json['subscriptionStatus']?.toString() ?? '',
-      paidMonthsCount: int.tryParse(json['paidMonthsCount']?.toString() ?? '') ?? 0,
+      paidMonthsCount: paidMonths,
+      monthsCovered:
+          int.tryParse(json['monthsCovered']?.toString() ?? '') ?? paidMonths,
+      amountPaidTzs: int.tryParse(json['amountPaidTzs']?.toString() ?? '') ?? 0,
+      paymentMode: json['paymentMode']?.toString() ?? '',
       registeredAtMs: int.tryParse(json['registeredAtMs']?.toString() ?? '') ?? 0,
       active: json['active'] == true,
     );
@@ -134,6 +152,7 @@ class SalesAgentDashboard {
     required this.activeSubscribers,
     required this.paidSubscribers,
     required this.byTier,
+    required this.amountCollectedTzs,
     required this.commissionThisMonthTzs,
     required this.commissionApprovedTzs,
     required this.periodMonth,
@@ -150,6 +169,7 @@ class SalesAgentDashboard {
   final int activeSubscribers;
   final int paidSubscribers;
   final Map<String, int> byTier;
+  final int amountCollectedTzs;
   final int commissionThisMonthTzs;
   final int commissionApprovedTzs;
   final String periodMonth;
@@ -190,6 +210,8 @@ class SalesAgentDashboard {
       activeSubscribers: activeSubs,
       paidSubscribers: int.tryParse(json['paidSubscribers']?.toString() ?? '') ?? 0,
       byTier: tiers,
+      amountCollectedTzs:
+          int.tryParse(json['amountCollectedTzs']?.toString() ?? '') ?? 0,
       commissionThisMonthTzs:
           int.tryParse(json['commissionThisMonthTzs']?.toString() ?? '') ?? 0,
       commissionApprovedTzs:

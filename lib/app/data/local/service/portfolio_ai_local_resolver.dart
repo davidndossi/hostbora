@@ -37,10 +37,27 @@ abstract class PortfolioAiLocalResolver {
       'ukodishaji',
       'vyeo',
       'units occupied',
+      'linganisha',
+      'compare occup',
     ])) {
       return PortfolioAiLocalAnswer(
         matched: true,
         text: _occupancyAnswer(ctx, formatMoney, isSw),
+      );
+    }
+
+    if (_matches(q, const [
+      'collection',
+      'expected',
+      'collection rate',
+      'kodi inayotarajiwa',
+      'ukusanyaji',
+      'nimekusanya',
+      'kodi iliyolipwa',
+    ])) {
+      return PortfolioAiLocalAnswer(
+        matched: true,
+        text: _collectionAnswer(ctx, formatMoney, isSw),
       );
     }
 
@@ -50,9 +67,6 @@ abstract class PortfolioAiLocalResolver {
       'earnings',
       'mapato',
       'monthly income',
-      'collection',
-      'kodi iliyolipwa',
-      'nimekusanya',
       'malipo ya mwezi',
     ]) &&
         !_matches(q, const ['expense', 'profit', 'net', 'gharama'])) {
@@ -205,22 +219,40 @@ abstract class PortfolioAiLocalResolver {
     bool isSw,
   ) {
     final pct = ctx.occupancyPercent.toStringAsFixed(1);
+    final buf = StringBuffer();
     if (ctx.isBnb) {
       if (isSw) {
-        return 'Ukodishaji wa leo: $pct% (${ctx.occupiedUnits} kati ya ${ctx.totalUnits} vitengo). '
-            'Uhifadhi hai leo: ${ctx.activeBookingsToday}. '
-            'Mapato ya ${ctx.monthLabel}: ${formatMoney(ctx.monthIncome.round())}.';
+        buf.write(
+          'Ukodishaji wa leo: $pct% (${ctx.occupiedUnits} kati ya ${ctx.totalUnits} vitengo). '
+          'Uhifadhi hai leo: ${ctx.activeBookingsToday}.',
+        );
+      } else {
+        buf.write(
+          'Current occupancy: $pct% (${ctx.occupiedUnits} of ${ctx.totalUnits} units). '
+          'Active stays today: ${ctx.activeBookingsToday}.',
+        );
       }
-      return 'Current occupancy: $pct% (${ctx.occupiedUnits} of ${ctx.totalUnits} units). '
-          'Active stays today: ${ctx.activeBookingsToday}. '
-          '${ctx.monthLabel} income: ${formatMoney(ctx.monthIncome.round())}.';
+    } else if (isSw) {
+      buf.write(
+        'Ukodishaji wa sasa: $pct% (${ctx.occupiedUnits} kati ya ${ctx.totalUnits} vitengo). '
+        'Wapangaji hai: ${ctx.activeTenants}.',
+      );
+    } else {
+      buf.write(
+        'Current occupancy: $pct% (${ctx.occupiedUnits} of ${ctx.totalUnits} units). '
+        'Active tenants: ${ctx.activeTenants}.',
+      );
     }
-    if (isSw) {
-      return 'Ukodishaji wa sasa: $pct% (${ctx.occupiedUnits} kati ya ${ctx.totalUnits} vitengo). '
-          'Wapangaji hai: ${ctx.activeTenants}.';
+    if (ctx.properties.length >= 2) {
+      buf.write(isSw ? '\nKwa mali:' : '\nBy property:');
+      for (final p in ctx.properties.take(6)) {
+        buf.write(
+          '\n• ${p.name}: ${p.occupancyPercent.toStringAsFixed(0)}% '
+          '(${p.occupied}/${p.units})',
+        );
+      }
     }
-    return 'Current occupancy: $pct% (${ctx.occupiedUnits} of ${ctx.totalUnits} units). '
-        'Active tenants: ${ctx.activeTenants}.';
+    return buf.toString();
   }
 
   static String _incomeAnswer(
@@ -228,12 +260,45 @@ abstract class PortfolioAiLocalResolver {
     String Function(num) formatMoney,
     bool isSw,
   ) {
+    final vs = ctx.prevMonthLabel.isEmpty
+        ? ''
+        : isSw
+            ? ' ${ctx.prevMonthLabel}: ${formatMoney(ctx.prevMonthIncome.round())}.'
+            : ' ${ctx.prevMonthLabel}: ${formatMoney(ctx.prevMonthIncome.round())}.';
     if (isSw) {
       return 'Mapato ya ${ctx.monthLabel}: ${formatMoney(ctx.monthIncome.round())} '
-          '(${ctx.propertyCount} mali, ${ctx.workspace == 'rent' ? 'kodi' : 'BnB'}).';
+          '(${ctx.propertyCount} mali).$vs';
     }
     return '${ctx.monthLabel} income: ${formatMoney(ctx.monthIncome.round())} '
-        'across ${ctx.propertyCount} propert${ctx.propertyCount == 1 ? 'y' : 'ies'} (${ctx.workspace}).';
+        'across ${ctx.propertyCount} propert${ctx.propertyCount == 1 ? 'y' : 'ies'}.$vs';
+  }
+
+  static String _collectionAnswer(
+    PortfolioAiContext ctx,
+    String Function(num) formatMoney,
+    bool isSw,
+  ) {
+    final rate = ctx.collectionRatePercent.toStringAsFixed(0);
+    final buf = StringBuffer();
+    if (isSw) {
+      buf.write(
+        'Ukusanyaji ${ctx.monthLabel}: ${formatMoney(ctx.monthIncome.round())} '
+        'kati ya ${formatMoney(ctx.monthExpected.round())} inayotarajiwa ($rate%).',
+      );
+    } else {
+      buf.write(
+        '${ctx.monthLabel} collection: ${formatMoney(ctx.monthIncome.round())} '
+        'of ${formatMoney(ctx.monthExpected.round())} expected ($rate%).',
+      );
+    }
+    if (ctx.arrearsRows.isNotEmpty) {
+      buf.write(isSw ? '\nWanaodaiwa:' : '\nStill owed:');
+      for (final row in ctx.arrearsRows.take(5)) {
+        buf.write('\n• ${row.name} — ${formatMoney(row.amount.round())}');
+        if (row.place.isNotEmpty) buf.write(' (${row.place})');
+      }
+    }
+    return buf.toString();
   }
 
   static String _expenseAnswer(
@@ -241,10 +306,29 @@ abstract class PortfolioAiLocalResolver {
     String Function(num) formatMoney,
     bool isSw,
   ) {
+    final buf = StringBuffer();
     if (isSw) {
-      return 'Matumizi ya ${ctx.monthLabel}: ${formatMoney(ctx.monthExpenses.round())}.';
+      buf.write('Matumizi ya ${ctx.monthLabel}: ${formatMoney(ctx.monthExpenses.round())}.');
+      if (ctx.prevMonthLabel.isNotEmpty) {
+        buf.write(
+          ' ${ctx.prevMonthLabel}: ${formatMoney(ctx.prevMonthExpenses.round())}.',
+        );
+      }
+    } else {
+      buf.write('${ctx.monthLabel} expenses: ${formatMoney(ctx.monthExpenses.round())}.');
+      if (ctx.prevMonthLabel.isNotEmpty) {
+        buf.write(
+          ' ${ctx.prevMonthLabel}: ${formatMoney(ctx.prevMonthExpenses.round())}.',
+        );
+      }
     }
-    return '${ctx.monthLabel} expenses: ${formatMoney(ctx.monthExpenses.round())}.';
+    if (ctx.expenseCategories.isNotEmpty) {
+      buf.write(isSw ? '\nKwa aina:' : '\nBy category:');
+      for (final b in ctx.expenseCategories.take(5)) {
+        buf.write('\n• ${b.category}: ${formatMoney(b.amount.round())}');
+      }
+    }
+    return buf.toString();
   }
 
   static String _profitAnswer(
@@ -276,13 +360,23 @@ abstract class PortfolioAiLocalResolver {
           ? 'Hakuna wapangaji wenye deni lililoonekana kwa data iliyopo.'
           : 'No tenants with outstanding arrears in your current data.';
     }
+    final buf = StringBuffer();
     if (isSw) {
-      return 'Wapangaji ${ctx.arrearsTenantCount} wana deni linalokadiriwa '
-          '${formatMoney(ctx.arrearsTotal.round())} (kulingana na malipo yaliyorekodiwa).';
+      buf.write(
+        'Wapangaji ${ctx.arrearsTenantCount} wana deni linalokadiriwa '
+        '${formatMoney(ctx.arrearsTotal.round())}.',
+      );
+    } else {
+      buf.write(
+        '${ctx.arrearsTenantCount} tenant${ctx.arrearsTenantCount == 1 ? '' : 's'} '
+        'with about ${formatMoney(ctx.arrearsTotal.round())} in arrears.',
+      );
     }
-    return '${ctx.arrearsTenantCount} tenant${ctx.arrearsTenantCount == 1 ? '' : 's'} '
-        'with about ${formatMoney(ctx.arrearsTotal.round())} in arrears '
-        '(based on recorded payments vs expected rent).';
+    for (final row in ctx.arrearsRows.take(5)) {
+      buf.write('\n• ${row.name}: ${formatMoney(row.amount.round())}');
+      if (row.place.isNotEmpty) buf.write(' — ${row.place}');
+    }
+    return buf.toString();
   }
 
   static String _leaseExpiryAnswer(PortfolioAiContext ctx, bool isSw) {
@@ -351,6 +445,8 @@ abstract class PortfolioAiLocalResolver {
           '• Mapato: ${formatMoney(ctx.monthIncome.round())}\n'
           '• Matumizi: ${formatMoney(ctx.monthExpenses.round())}\n'
           '• Faida: ${formatMoney(ctx.monthNet.round())}\n'
+          '• Ukusanyaji: ${ctx.collectionRatePercent.toStringAsFixed(0)}% '
+          '(${formatMoney(ctx.monthExpected.round())} inayotarajiwa)\n'
           '• Deni (wapangaji): ${ctx.arrearsTenantCount} · '
           '${formatMoney(ctx.arrearsTotal.round())}\n'
           '• Mikataba inayoisha (30d): ${ctx.leasesExpiring30Days}';
@@ -361,6 +457,8 @@ abstract class PortfolioAiLocalResolver {
         '• Income: ${formatMoney(ctx.monthIncome.round())}\n'
         '• Expenses: ${formatMoney(ctx.monthExpenses.round())}\n'
         '• Net: ${formatMoney(ctx.monthNet.round())}\n'
+        '• Collection: ${ctx.collectionRatePercent.toStringAsFixed(0)}% '
+        'of ${formatMoney(ctx.monthExpected.round())} expected\n'
         '• Arrears: ${ctx.arrearsTenantCount} tenants · '
         '${formatMoney(ctx.arrearsTotal.round())}\n'
         '• Leases expiring (30d): ${ctx.leasesExpiring30Days}';

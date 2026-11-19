@@ -2,11 +2,13 @@ import 'dart:convert';
 
 import 'package:get/get.dart';
 
+import '../../../core/utils/property_remote_rent.dart';
 import '../../../modules/add_listing/models/apartment_unit_draft.dart';
 import '../db/offline_sync_queue_local_data_source.dart';
 import '../db/property_local_data_source.dart';
 import '../preference/preference_manager.dart';
 import '../service/offline_sync_worker_service.dart';
+import '../../service/analytics_service.dart';
 
 /// Multi-turn conversational flow for adding a new property or a unit to an
 /// existing property, entirely inside the AI Manager chat.
@@ -296,7 +298,7 @@ class AiPropertyFlow {
 
     // Commit this unit draft
     _units.add(ApartmentUnitDraft(
-      unitId: 'u_${DateTime.now().microsecondsSinceEpoch}_${_units.length}',
+      unitId: ApartmentUnitDraft.newRef(),
       unitName: _currentUnitName!,
       unitRent: _currentUnitRent,
       unitRentFrequency: _currentUnitFrequency,
@@ -442,11 +444,18 @@ class AiPropertyFlow {
         createdAtMs: nowMs,
         rentAmount: _isApartment ? '' : _rentAmount,
         rentFrequency: _isApartment ? '' : _rentFrequency,
-        minRentalDuration: '1 Day',
+        minRentalDuration: ApartmentUnitDraft.minDurationForMode(workspaceType),
         unitsJson: unitsJson,
         floorCount: 1,
         coverPhotoPath: '',
       ),
+    );
+
+    analytics?.logPropertyAdded(
+      workspace: workspaceType,
+      propertyType: propType,
+      units: _isApartment ? _units.length : 1,
+      source: 'ai_flow',
     );
 
     // Queue for backend sync
@@ -460,9 +469,23 @@ class AiPropertyFlow {
         'units': _isApartment ? _units.length : 1,
         'workspace_type': workspaceType,
         'created_at_ms': nowMs,
-        'rent_amount': _isApartment ? '' : _rentAmount,
-        'rent_frequency': _isApartment ? '' : _rentFrequency,
-        'min_rental_duration': '1 Day',
+        'rent_amount': PropertyRemoteRent.amount(
+          unitCount: _isApartment ? _units.length : 1,
+          listingRentAmount: _isApartment ? '' : _rentAmount,
+          unitsJson: unitsJson,
+        ),
+        'rent_frequency': PropertyRemoteRent.frequency(
+          unitCount: _isApartment ? _units.length : 1,
+          listingRentFrequency: _isApartment ? '' : _rentFrequency,
+          unitsJson: unitsJson,
+          rentAmount: PropertyRemoteRent.amount(
+            unitCount: _isApartment ? _units.length : 1,
+            listingRentAmount: _isApartment ? '' : _rentAmount,
+            unitsJson: unitsJson,
+          ),
+        ),
+        'min_rental_duration':
+            ApartmentUnitDraft.minDurationForMode(workspaceType),
         'units_json': unitsJson,
         'floor_count': 1,
         'owner_user_id': ownerUserId,
@@ -550,10 +573,23 @@ class AiPropertyFlow {
     await propLocal.update(updated);
 
     if (syncQueue != null && syncWorker != null) {
+      final rent = PropertyRemoteRent.amount(
+        unitCount: existing.length,
+        listingRentAmount: prop.rentAmount,
+        unitsJson: newUnitsJson,
+      );
       final payload = {
         'property_ref': prop.propertyRef,
         'units_json': newUnitsJson,
         'units': existing.length,
+        'tenants': prop.tenants,
+        'rent_amount': rent,
+        'rent_frequency': PropertyRemoteRent.frequency(
+          unitCount: existing.length,
+          listingRentFrequency: prop.rentFrequency,
+          unitsJson: newUnitsJson,
+          rentAmount: rent,
+        ),
       };
       await syncQueue.enqueue(
         entityType: 'property',

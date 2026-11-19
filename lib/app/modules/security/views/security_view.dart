@@ -48,7 +48,7 @@ class SecurityView extends BaseView<SecurityController> {
             const Divider(height: 1),
             Obx(
               () => _SettingsRow(
-                icon: Icons.grid_view_rounded,
+                icon: Icons.grid_view_outlined,
                 iconColor: AppColors.colorPrimary,
                 title: appLocalization.pinCode,
                 trailing: Text(
@@ -68,7 +68,7 @@ class SecurityView extends BaseView<SecurityController> {
           _buildSection(appLocalization.accessControl, [
             Obx(
               () => _SettingsRow(
-                icon: Icons.face_rounded,
+                icon: Icons.face_outlined,
                 iconColor: AppColors.colorPrimary,
                 title: _t(context, en: 'FaceID/TouchID', sw: 'FaceID/TouchID'),
                 subtitle: appLocalization.fastLoginVerification,
@@ -101,7 +101,7 @@ class SecurityView extends BaseView<SecurityController> {
           //         ),
           //         const SizedBox(width: 4),
           //         Icon(
-          //           Icons.chevron_right,
+          //           Icons.chevron_right_outlined,
           //           color: FormSurfaceColors.of(context).isDark ? Colors.white : _bodyText,
           //           size: 22,
           //         ),
@@ -118,13 +118,13 @@ class SecurityView extends BaseView<SecurityController> {
           _buildSection(appLocalization.accountSection, [
             _SettingsRow(
               icon: Icons.delete_outline,
-              iconColor: AppColors.paaYanguAlert,
+              iconColor: AppColors.colorAlert,
               title: appLocalization.deleteAccount,
-              titleColor: AppColors.paaYanguAlert,
+              titleColor: AppColors.colorAlert,
               subtitle: appLocalization.deleteAccountSubtitle,
               trailing: const Icon(
-                Icons.chevron_right,
-                color: AppColors.paaYanguAlert,
+                Icons.chevron_right_outlined,
+                color: AppColors.colorAlert,
                 size: 22,
               ),
               onTap: controller.confirmDeleteAccount,
@@ -296,7 +296,7 @@ class _SettingsRow extends StatelessWidget {
             ...[trailing].whereType<Widget>(),
             if (onTap != null && trailing == null)
               Icon(
-                Icons.chevron_right,
+                Icons.chevron_right_outlined,
                 color: c.isDark ? Colors.white : _bodyText,
                 size: 22,
               ),

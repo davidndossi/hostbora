@@ -146,7 +146,7 @@ class _ChecklistSheetState extends State<_ChecklistSheet> {
           ),
           Row(
             children: [
-              Icon(Icons.checklist_rounded,
+              Icon(Icons.checklist_outlined,
                   color: AppColors.colorPrimary, size: 22),
               const SizedBox(width: 8),
               Expanded(
@@ -154,7 +154,7 @@ class _ChecklistSheetState extends State<_ChecklistSheet> {
                   _isSw ? 'Ukaguzi wa Checkout' : 'Checkout checklist',
                   style: TextStyle(
                     fontSize: 17,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: u.headline,
                   ),
                 ),

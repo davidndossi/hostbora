@@ -1334,6 +1334,20 @@ class AppLocalizationsSw extends AppLocalizations {
   String get rentAddTenantIncomePromptLater => 'Baadaye';
 
   @override
+  String get bnbIncomeAddGuestPromptTitle => 'Mapato yamehifadhiwa';
+
+  @override
+  String bnbIncomeAddGuestPromptBody(String place) {
+    return 'Hakuna mgeni aliyeandikwa kwa $place bado. Ongeza mgeni sasa?';
+  }
+
+  @override
+  String get bnbIncomeAddGuestPromptAdd => 'Ongeza mgeni';
+
+  @override
+  String get bnbIncomeAddGuestPromptLater => 'Baadaye';
+
+  @override
   String get loginSecurity => 'USALAMA WA KUINGIA';
 
   @override
@@ -1733,7 +1747,7 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get aboutIntro =>
-      'HostBora inawasaidia wenye nyumba na wamiliki wa mali kuendesha makazi ya muda mfupi na kodi za muda mrefu katika programu moja. Badilisha kati ya sehemu za BnB na Rent wakati wowote.';
+      'Simamia makazi ya muda mfupi na kodi za muda mrefu katika programu moja. Badilisha kati ya sehemu za BnB na Rent wakati wowote.';
 
   @override
   String get aboutBnbFeatures =>

@@ -155,7 +155,7 @@ class RentMyPropertiesHubView extends RentBaseView<RentMyPropertiesHubController
   //         padding: const EdgeInsets.symmetric(vertical: 14),
   //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
   //       ),
-  //       icon: const Icon(Icons.add, size: 22),
+  //       icon: const Icon(Icons.add_outlined, size: 22),
   //       label: Text(
   //         _isSw ? 'Mjengo Mpya' : 'New Property',
   //         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
@@ -526,7 +526,6 @@ class _ManagementPropertyCard extends StatelessWidget {
                 Text(
                   row.title,
                   style: const TextStyle(
-                    // fontFamily: _HubTheme.serif,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     // color: _HubTheme.navy,
@@ -537,7 +536,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                        Icons.person_outline_rounded, size: 18,
+                        Icons.person_outline, size: 18,
                         // color: _HubTheme.muted.withValues(alpha: 0.9)
                     ),
                     const SizedBox(width: 6),
@@ -557,7 +556,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                     isSw ? 'Kitengo' : 'Unit',
                     style: TextStyle(
                       fontSize: 10,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -641,7 +640,7 @@ class _ManagementPropertyCard extends StatelessWidget {
                   isSw ? 'Vitendo vya haraka' : 'Quick actions',
                   style: TextStyle(
                     fontSize: 10,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
                     // color: _HubTheme.muted.withValues(alpha: 0.85),
                   ),
@@ -684,8 +683,8 @@ class _ManagementPropertyCard extends StatelessWidget {
             child: Text(
               row.propertyTypeLabel.replaceAll('_', ' '),
               style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w800,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0.8,
                 color: isDark ? Colors.white : const Color(0xFF4B5563),
               ),
@@ -768,7 +767,7 @@ class _ManagementPropertyCard extends StatelessWidget {
         //     Expanded(
         //       child: cell(
         //         isSw ? 'Uchanganuzi' : 'Analytics',
-        //         Icons.bar_chart_rounded,
+        //         Icons.bar_chart_outlined,
         //         const Color(0xFF6B7280),
         //         onAnalytics,
         //       ),

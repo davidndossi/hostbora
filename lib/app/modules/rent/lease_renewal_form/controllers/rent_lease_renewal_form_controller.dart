@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../rent_real_data_controller_mixin.dart';
@@ -42,6 +44,49 @@ class RentLeaseRenewalFormController extends BaseController
     final prop = Get.parameters['property']?.trim() ?? '';
     if (name.isNotEmpty) tenantNameController.text = name;
     if (prop.isNotEmpty) propertyLineController.text = prop;
+    // A renewal almost always extends by a year from today; the route carries
+    // no current lease end date to offset from.
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    newLeaseStart.value = start;
+    newLeaseEnd.value = DateTime(start.year + 1, start.month, start.day);
+    unawaited(_seedFromCurrentLease(name: name, propertyLabel: prop));
+  }
+
+  /// A renewal carries the existing rent forward unless the host changes it,
+  /// so the current figures are the right starting point. Left blank when the
+  /// tenant cannot be resolved rather than guessed at.
+  Future<void> _seedFromCurrentLease({
+    required String name,
+    required String propertyLabel,
+  }) async {
+    if (name.isEmpty || propertyLabel.isEmpty) return;
+    if (!Get.isRegistered<TenantLocalDataSource>()) return;
+    try {
+      final tenant = await Get.find<TenantLocalDataSource>()
+          .findByNameAndProperty(tenantName: name, propertyLabel: propertyLabel);
+      if (tenant == null) return;
+
+      if (rentAmountController.text.trim().isEmpty &&
+          tenant.rentAmountValue > 0) {
+        rentAmountController.text = tenant.rentAmountValue.toStringAsFixed(0);
+      }
+      final matched = _matchFrequency(tenant.rentFrequency);
+      if (matched != null) rentFrequency.value = matched;
+    } catch (_) {
+      // Seeding is a convenience; the form still opens without it.
+    }
+  }
+
+  /// Maps a stored tenant frequency onto this form's three options. Anything
+  /// that does not map — per night, weekly — leaves the default alone, since
+  /// this form cannot represent it.
+  static String? _matchFrequency(String raw) {
+    final f = raw.trim().toLowerCase();
+    if (f.contains('month')) return 'Monthly';
+    if (f.contains('quarter')) return 'Quarterly';
+    if (f.contains('year') || f.contains('annual')) return 'Annually';
+    return null;
   }
 
   @override

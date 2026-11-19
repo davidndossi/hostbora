@@ -211,7 +211,7 @@ class _UpdateSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.system_update_rounded,
+                  Icons.system_update_outlined,
                   color: cs.primary,
                   size: 26,
                 ),
@@ -281,7 +281,7 @@ class _UpdateSheet extends StatelessWidget {
                 flex: 2,
                 child: ElevatedButton.icon(
                   onPressed: onUpdate,
-                  icon: const Icon(Icons.download_rounded, size: 18),
+                  icon: const Icon(Icons.download_outlined, size: 18),
                   label: const Text('Update Now'),
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(46),

@@ -16,13 +16,13 @@ class SubscriptionView extends BaseView<SubscriptionController> {
   PreferredSizeWidget? appBar(BuildContext context) => CustomAppBar(
         appBarTitleText: 'HostBora Plans',
         isCentered: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
-            onPressed: controller.refresh,
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.refresh_outlined),
+        //     tooltip: 'Refresh',
+        //     onPressed: controller.refresh,
+        //   ),
+        // ],
       );
 
   @override
@@ -79,7 +79,11 @@ class SubscriptionView extends BaseView<SubscriptionController> {
                 ],
 
                 // ── Plan cards ────────────────────────────────────────
-                ...hostBoraPlanInfos.map((plan) => _PlanCard(
+                // Most expensive first. Reading cheapest-first anchors every
+                // later price against the smallest number, so Pro lands as
+                // "2.5x Starter" instead of "half of Ultra" — the same figure
+                // judged against a different neighbour.
+                ...hostBoraPlanInfos.reversed.map((plan) => _PlanCard(
                       info: plan,
                       isCurrentPlan: sub.isActive && sub.plan == plan.key,
                       priceOverride: controller.priceLabel(plan.key),
@@ -88,6 +92,11 @@ class SubscriptionView extends BaseView<SubscriptionController> {
                           ? null
                           : () => controller.subscribe(plan.key),
                     )),
+
+                // The plan most hosts are actually on, stated plainly at the
+                // bottom. Without it the paid tiers are compared only to each
+                // other and the cost of staying put is never shown.
+                _FreeBaselineCard(isCurrentPlan: !sub.isActive),
 
                 const SizedBox(height: AppValues.spacing_20),
 
@@ -159,7 +168,7 @@ class _StatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTrial = sub.isTrial as bool;
-    final color = isTrial ? AppColors.colorYellow : AppColors.colorSuccessGreen;
+    final color = isTrial ? AppColors.colorYellow : AppColors.colorSuccess;
     final icon  = isTrial ? Icons.timer_outlined : Icons.check_circle_outline;
     final label = isTrial
         ? 'Free trial · ${sub.daysLeft} days left'
@@ -263,7 +272,6 @@ class _PlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme  = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accent = isCurrentPlan ? AppColors.colorPrimary : AppColors.textColorSecondary;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppValues.padding),
@@ -337,7 +345,7 @@ class _PlanCard extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
                     children: [
-                      Icon(Icons.check, size: 16, color: AppColors.colorPrimary),
+                      Icon(Icons.check_outlined, size: 16, color: AppColors.colorPrimary),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(f, style: const TextStyle(fontSize: 13)),
@@ -381,6 +389,101 @@ class _PlanCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// The Free tier, shown as a baseline rather than an offer.
+///
+/// Deliberately not a sellable card: there is no Subscribe button, no
+/// elevation, and the rows are the caps themselves rather than ticked
+/// features. Its only job is to give the paid cards above something honest to
+/// be measured against — a host on Free can see the limits they are living
+/// with written down, which the page previously never showed anywhere.
+class _FreeBaselineCard extends StatelessWidget {
+  const _FreeBaselineCard({required this.isCurrentPlan});
+
+  final bool isCurrentPlan;
+
+  static const _limits = <String>[
+    '1 property only',
+    'Up to 2 units in that property',
+    'This month\'s records only — older history stays hidden',
+    'No reports, exports, documents or staff tools',
+    'No SMS or WhatsApp rent reminders',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final muted = isDark
+        ? theme.colorScheme.onSurfaceVariant
+        : AppColors.textColorSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppValues.padding),
+      child: Container(
+        padding: const EdgeInsets.all(AppValues.padding),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppValues.radius),
+          border: Border.all(color: muted.withValues(alpha: 0.35)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Free',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: muted,
+                  ),
+                ),
+                if (isCurrentPlan) ...[
+                  const SizedBox(width: 8),
+                  _Badge(label: 'Your Plan', color: AppColors.textColorSecondary),
+                ],
+                const Spacer(),
+                Text(
+                  'No cost',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: muted,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'What you have without a subscription.',
+              style: TextStyle(fontSize: 13, color: muted),
+            ),
+            const Divider(height: AppValues.spacing_20),
+            ..._limits.map(
+              (limit) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Icon(Icons.remove_outlined, size: 16, color: muted),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        limit,
+                        style: TextStyle(fontSize: 13, color: muted),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -58,9 +58,8 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
                 ? 'Karibu tena,\n${controller.hostDisplayName.value}'
                 : 'Welcome back,\n${controller.hostDisplayName.value}',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 22,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               height: 0.95,
               color: c.isDark ? Colors.white : const Color(0xFF111827),
             ),
@@ -102,7 +101,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
           // Center(
           //   child: OutlinedButton.icon(
           //     onPressed: controller.onMonitorNewTenant,
-          //     icon: const Icon(Icons.add_circle_outline_rounded),
+          //     icon: const Icon(Icons.add_circle_outline),
           //     label: Text(_isSw ? 'Fuatilia Wapangaji Wote' : 'MONITOR ALL TENANTS'),
           //   ),
           // ),
@@ -110,7 +109,6 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
           Text(
             _isSw ? 'Muhtasari wa Estate' : 'Estate Overview',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: c.isDark ? Colors.white : const Color(0xFF111827),
@@ -216,7 +214,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
           Text(
             value,
             style: TextStyle(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               fontSize: 17,
               color: c.isDark ? Colors.white : null,
             ),
@@ -234,7 +232,6 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
           child: Text(
             _isSw ? 'Dharura: Malipo ya Sehemu' : 'Urgent: Partial Payments',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: c.isDark ? Colors.white : const Color(0xFF111827),
@@ -287,7 +284,6 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
                     Text(
                       item.tenant,
                       style: TextStyle(
-                        fontFamily: 'serif',
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                         color: c.isDark ? Colors.white : const Color(0xFF111827),
@@ -399,8 +395,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
               'Optimize Cash Flow',
               style: TextStyle(
                 color: Colors.white,
-                fontFamily: 'serif',
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 fontSize: 24,
               ),
             ),
@@ -495,7 +490,7 @@ class RentHostDashboardPaymentAlertsView extends RentBaseView<RentHostDashboardP
               color: const Color(0xFFDFF4EF),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Icon(Icons.credit_score_rounded, size: 14, color: Color(0xFF0A5C5C)),
+            child: const Icon(Icons.credit_score_outlined, size: 14, color: Color(0xFF0A5C5C)),
           ),
           const SizedBox(width: 8),
           Expanded(

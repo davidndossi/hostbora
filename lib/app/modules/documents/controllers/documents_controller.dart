@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -8,10 +9,13 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../core/utils/haptic_feedback_util.dart';
 import '../../../core/widget/undo_snackbar.dart';
+import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
+import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/local/vault_directories_store.dart';
 import '../../../data/local/vault_documents_store.dart';
 import '../../../data/local/vault_recent_access_store.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../network/exceptions/not_found_exception.dart';
 import '../../../routes/app_pages.dart';
 import '../vault_route_args.dart';
 import '../widgets/vault_documents_search_sheet.dart';
@@ -48,16 +52,22 @@ class DocumentsController extends BaseController {
     VaultDocumentsStore? vaultStore,
     VaultRecentAccessStore? recentStore,
     VaultDirectoriesStore? directoriesStore,
+    OfflineSyncQueueLocalDataSource? syncQueue,
+    OfflineSyncWorkerService? syncWorker,
   })  : _repository = repository ??
             Get.find<AppRepository>(tag: (AppRepository).toString()),
         _vaultStore = vaultStore ?? VaultDocumentsStore(),
         _recentStore = recentStore ?? VaultRecentAccessStore(),
-        _directoriesStore = directoriesStore ?? VaultDirectoriesStore();
+        _directoriesStore = directoriesStore ?? VaultDirectoriesStore(),
+        _syncQueue = syncQueue ?? Get.find<OfflineSyncQueueLocalDataSource>(),
+        _syncWorker = syncWorker ?? Get.find<OfflineSyncWorkerService>();
 
   final AppRepository _repository;
   final VaultDocumentsStore _vaultStore;
   final VaultRecentAccessStore _recentStore;
   final VaultDirectoriesStore _directoriesStore;
+  final OfflineSyncQueueLocalDataSource _syncQueue;
+  final OfflineSyncWorkerService _syncWorker;
 
   String? directoryId;
   String? directoryName;
@@ -110,7 +120,9 @@ class DocumentsController extends BaseController {
     loading.value = true;
     try {
       if (recentOnly) {
-        documents.assignAll(_itemsFromRecentAccess(includeDirectories: true));
+        documents.assignAll(
+          _present(_itemsFromRecentAccess(includeDirectories: true)),
+        );
         return;
       }
       final local = _localDocumentsFor(
@@ -122,10 +134,14 @@ class DocumentsController extends BaseController {
       final recent = isListingAll
           ? _itemsFromRecentAccess(includeDirectories: false)
           : const <DocumentItem>[];
-      documents.assignAll(_mergeDocuments([local, remote, recent]));
+      documents.assignAll(
+        _present(_mergeDocuments([local, remote, recent])),
+      );
     } catch (_) {
       if (recentOnly) {
-        documents.assignAll(_itemsFromRecentAccess(includeDirectories: true));
+        documents.assignAll(
+          _present(_itemsFromRecentAccess(includeDirectories: true)),
+        );
         return;
       }
       final fallback = <DocumentItem>[
@@ -136,7 +152,7 @@ class DocumentsController extends BaseController {
         ),
         if (isListingAll) ..._itemsFromRecentAccess(includeDirectories: false),
       ];
-      documents.assignAll(_mergeDocuments([fallback]));
+      documents.assignAll(_present(_mergeDocuments([fallback])));
     } finally {
       loading.value = false;
     }
@@ -233,7 +249,8 @@ class DocumentsController extends BaseController {
         continue;
       }
       final path = entry.localPath?.trim();
-      if (path != null && path.isNotEmpty && File(path).existsSync()) {
+      if (path != null && path.isNotEmpty) {
+        if (!File(path).existsSync()) continue;
         items.add(
           DocumentItem(
             name: entry.displayName,
@@ -246,8 +263,6 @@ class DocumentsController extends BaseController {
         );
         continue;
       }
-      // Still surface recently opened docs that are only known by name so
-      // View All never looks emptier than the Recently Accessed strip.
       if (entry.displayName.trim().isEmpty) continue;
       items.add(
         DocumentItem(
@@ -260,6 +275,38 @@ class DocumentsController extends BaseController {
       );
     }
     return items;
+  }
+
+  List<DocumentItem> _present(List<DocumentItem> items) {
+    return _withoutRemoved(_withDisplayNames(items));
+  }
+
+  List<DocumentItem> _withDisplayNames(List<DocumentItem> items) {
+    return items.map((item) {
+      if (item.isDirectory) return item;
+      final resolved = _vaultStore.resolveDisplayName(item.name);
+      if (resolved == item.name) return item;
+      return DocumentItem(
+        name: resolved,
+        size: item.size,
+        synced: item.synced,
+        fileType: item.fileType,
+        localPath: item.localPath,
+        directoryId: item.directoryId,
+      );
+    }).toList();
+  }
+
+  List<DocumentItem> _withoutRemoved(List<DocumentItem> items) {
+    final hidden = _vaultStore.removedNames();
+    if (hidden.isEmpty) return items;
+    return items
+        .where(
+          (item) =>
+              item.isDirectory ||
+              !hidden.contains(item.name.trim().toLowerCase()),
+        )
+        .toList();
   }
 
   static List<DocumentItem> _mergeDocuments(List<List<DocumentItem>> batches) {
@@ -362,6 +409,295 @@ class DocumentsController extends BaseController {
     selectedFilter.value = filter;
   }
 
+  Future<void> editDocumentName(DocumentItem item) async {
+    if (item.isDirectory) return;
+    final isSw = Get.locale?.languageCode == 'sw';
+    final field = TextEditingController(text: item.name);
+    final saved = await Get.dialog<String>(
+      AlertDialog(
+        title: Text(isSw ? 'Hariri jina la hati' : 'Edit document name'),
+        content: TextField(
+          controller: field,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: isSw ? 'Jina la hati' : 'Document name',
+          ),
+          onSubmitted: (value) => Get.back(result: value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: Get.back,
+            child: Text(appLocalization.cancel),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: field.text.trim()),
+            child: Text(appLocalization.save),
+          ),
+        ],
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => field.dispose());
+    final next = saved?.trim() ?? '';
+    if (next.isEmpty || next.toLowerCase() == item.name.trim().toLowerCase()) {
+      return;
+    }
+    await _vaultStore.renameDisplayName(fromName: item.name, toName: next);
+    await _recentStore.renameDocumentsNamed(item.name, next);
+    final key = item.name.trim().toLowerCase();
+    final index = documents.indexWhere(
+      (d) => !d.isDirectory && d.name.trim().toLowerCase() == key,
+    );
+    if (index < 0) return;
+    final current = documents[index];
+    documents[index] = DocumentItem(
+      name: next,
+      size: current.size,
+      synced: current.synced,
+      fileType: current.fileType,
+      localPath: current.localPath,
+      directoryId: current.directoryId,
+    );
+    hapticPrimaryConfirm();
+    await _syncDocumentRename(
+      directoryId: _syncDirectoryId(item),
+      fromName: item.name,
+      toName: next,
+      localPath: item.localPath,
+    );
+  }
+
+  Future<void> _removeDocumentFromList(DocumentItem item) async {
+    final name = item.name.trim();
+    if (name.isEmpty || item.isDirectory) return;
+    final key = name.toLowerCase();
+    final index = documents.indexWhere(
+      (d) => !d.isDirectory && d.name.trim().toLowerCase() == key,
+    );
+
+    final aliases = _vaultStore.namesResolvingTo(name);
+    for (final alias in aliases) {
+      await _vaultStore.hideName(alias);
+    }
+    await _vaultStore.hideName(name);
+    final removedStored = <StoredVaultDocument>[];
+    for (final alias in {name, ...aliases}) {
+      removedStored.addAll(await _vaultStore.removeByFileName(alias));
+    }
+    final removedRecent = await _recentStore.removeDocumentsNamed(
+      name,
+      localPath: item.localPath,
+      alsoNames: aliases,
+    );
+    documents.removeWhere(
+      (d) => !d.isDirectory && d.name.trim().toLowerCase() == key,
+    );
+    hapticPrimaryConfirm();
+    await _syncDocumentDelete(
+      directoryId: _syncDirectoryId(item, stored: removedStored),
+      fileNames: {
+        name,
+        ...removedStored.map((doc) => doc.fileName),
+      },
+      localPath: item.localPath,
+      stored: removedStored,
+    );
+
+    final ctx = Get.context;
+    if (ctx == null || !ctx.mounted) return;
+    UndoSnackBar.show(
+      ctx,
+      message: 'Document removed from list',
+      onUndo: () {
+        _restoreRemovedDocument(
+          item: item,
+          index: index,
+          stored: removedStored,
+          recent: removedRecent,
+        );
+      },
+    );
+  }
+
+  Future<void> _restoreRemovedDocument({
+    required DocumentItem item,
+    required int index,
+    required List<StoredVaultDocument> stored,
+    required List<VaultRecentAccessEntry> recent,
+  }) async {
+    final aliases = _vaultStore.namesResolvingTo(item.name);
+    for (final alias in aliases) {
+      await _vaultStore.unhideName(alias);
+    }
+    await _vaultStore.unhideName(item.name);
+    for (final doc in stored) {
+      await _vaultStore.add(doc);
+    }
+    for (final entry in recent) {
+      await _recentStore.recordDocument(
+        documentId: entry.targetId,
+        displayName: entry.displayName,
+        directoryId: entry.directoryId,
+        localPath: entry.localPath,
+      );
+    }
+    final key = item.name.trim().toLowerCase();
+    final alreadyShown = documents.any(
+      (d) => !d.isDirectory && d.name.trim().toLowerCase() == key,
+    );
+    if (alreadyShown) return;
+    if (index >= 0 && index <= documents.length) {
+      documents.insert(index, item);
+    } else {
+      documents.add(item);
+    }
+    if (stored.isEmpty) {
+      await _syncDocumentCreate(
+        directoryId: _syncDirectoryId(item),
+        fileName: item.name,
+        localPath: item.localPath ?? '',
+      );
+      return;
+    }
+    for (final doc in stored) {
+      await _syncQueue.deleteByDedupeKey(
+        _deleteDedupeKey(doc.directoryId, doc.fileName),
+      );
+      await _syncDocumentCreate(
+        directoryId: doc.directoryId,
+        fileName: doc.fileName,
+        localPath: doc.localPath,
+        localId: doc.id,
+      );
+    }
+  }
+
+  String _syncDirectoryId(
+    DocumentItem item, {
+    List<StoredVaultDocument> stored = const [],
+  }) {
+    for (final doc in stored) {
+      final id = doc.directoryId.trim();
+      if (id.isNotEmpty && id != VaultRouteArgs.allDirectoriesId) return id;
+    }
+    final id = item.directoryId?.trim() ?? '';
+    if (id.isEmpty || id == VaultRouteArgs.allDirectoriesId) return 'general';
+    return id;
+  }
+
+  bool _syncOk(String? code) {
+    return code == '0' ||
+        code == '200' ||
+        code == '201' ||
+        code == '204';
+  }
+
+  Future<void> _syncDocumentRename({
+    required String directoryId,
+    required String fromName,
+    required String toName,
+    String? localPath,
+  }) async {
+    final payload = <String, dynamic>{
+      'directoryId': directoryId,
+      'fileName': fromName,
+      'newFileName': toName,
+      'localPath': localPath ?? '',
+      'notes': '',
+    };
+    try {
+      final res = await _repository.updateVaultDocument(payload);
+      if (!_syncOk(res.responseCode)) {
+        throw Exception(res.message ?? 'API error');
+      }
+    } on NotFoundException {
+      await _syncDocumentCreate(
+        directoryId: directoryId,
+        fileName: toName,
+        localPath: localPath ?? '',
+      );
+    } catch (_) {
+      await _syncQueue.enqueue(
+        entityType: 'document',
+        operation: 'update',
+        payloadJson: jsonEncode(payload),
+        dedupeKey:
+            'document:update:$directoryId:${fromName.toLowerCase()}:${toName.toLowerCase()}',
+      );
+      _syncWorker.runNow();
+    }
+  }
+
+  Future<void> _syncDocumentDelete({
+    required String directoryId,
+    required Set<String> fileNames,
+    String? localPath,
+    required List<StoredVaultDocument> stored,
+  }) async {
+    for (final doc in stored) {
+      await _syncQueue.deleteByDedupeKey('document:create:${doc.id}');
+    }
+    final names = fileNames.map((name) => name.trim()).where((name) => name.isNotEmpty);
+    for (final fileName in names) {
+      final payload = <String, dynamic>{
+        'directoryId': directoryId,
+        'fileName': fileName,
+        'localPath': localPath ?? '',
+      };
+      try {
+        final res = await _repository.deleteVaultDocument(
+          directoryId: directoryId,
+          fileName: fileName,
+        );
+        if (!_syncOk(res.responseCode) && res.responseCode != '404') {
+          throw Exception(res.message ?? 'API error');
+        }
+      } on NotFoundException {
+        continue;
+      } catch (_) {
+        await _syncQueue.enqueue(
+          entityType: 'document',
+          operation: 'delete',
+          payloadJson: jsonEncode(payload),
+          dedupeKey: _deleteDedupeKey(directoryId, fileName),
+        );
+        _syncWorker.runNow();
+      }
+    }
+  }
+
+  Future<void> _syncDocumentCreate({
+    required String directoryId,
+    required String fileName,
+    required String localPath,
+    String? localId,
+  }) async {
+    final payload = <String, dynamic>{
+      'directoryId': directoryId,
+      'fileName': fileName,
+      'localPath': localPath,
+      'notes': '',
+    };
+    try {
+      final res = await _repository.uploadVaultDocument(payload);
+      if (!_syncOk(res.responseCode)) {
+        throw Exception(res.message ?? 'API error');
+      }
+    } catch (_) {
+      await _syncQueue.enqueue(
+        entityType: 'document',
+        operation: 'create',
+        payloadJson: jsonEncode(payload),
+        dedupeKey: 'document:create:${localId ?? fileName.toLowerCase()}',
+      );
+      _syncWorker.runNow();
+    }
+  }
+
+  String _deleteDedupeKey(String directoryId, String fileName) {
+    return 'document:delete:$directoryId:${fileName.trim().toLowerCase()}';
+  }
+
   void openDocumentOptions(DocumentItem item) {
     if (item.isDirectory) {
       _openRecentDirectory(item);
@@ -375,12 +711,24 @@ class DocumentsController extends BaseController {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  leading: const Icon(Icons.open_in_new),
+                  leading: const Icon(Icons.open_in_new_outlined),
                   title: const Text('Open'),
                   onTap: () async {
                     Get.back();
                     await Future<void>.delayed(const Duration(milliseconds: 120));
                     await _openDocument(item);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.drive_file_rename_outline),
+                  title: Text(
+                    Get.locale?.languageCode == 'sw'
+                        ? 'Hariri jina'
+                        : 'Edit name',
+                  ),
+                  onTap: () {
+                    Get.back();
+                    editDocumentName(item);
                   },
                 ),
                 ListTile(
@@ -399,29 +747,12 @@ class DocumentsController extends BaseController {
                   leading: const Icon(Icons.delete_outline),
                   title: const Text('Remove from list'),
                   onTap: () {
-                    final index = documents.indexOf(item);
                     Get.back();
-                    if (index < 0) return;
-                    documents.removeAt(index);
-                    hapticPrimaryConfirm();
-                    final ctx = Get.context;
-                    if (ctx != null && ctx.mounted) {
-                      UndoSnackBar.show(
-                        ctx,
-                        message: 'Document removed from list',
-                        onUndo: () {
-                          if (index <= documents.length) {
-                            documents.insert(index, item);
-                          } else {
-                            documents.add(item);
-                          }
-                        },
-                      );
-                    }
+                    _removeDocumentFromList(item);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.close),
+                  leading: const Icon(Icons.close_outlined),
                   title: Text(appLocalization.cancel),
                   onTap: Get.back,
                 ),

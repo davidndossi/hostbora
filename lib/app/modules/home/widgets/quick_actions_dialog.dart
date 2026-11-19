@@ -7,9 +7,11 @@ import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/service/quick_action_intent_resolver.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import 'quick_add_booking_sheet.dart';
 import 'quick_add_expense_wizard.dart';
 import 'quick_add_income_wizard.dart';
 import 'quick_add_property_wizard.dart';
+import 'quick_add_tenant_sheet.dart';
 
 /// The five concrete actions the home quick-actions dialog can trigger,
 /// either by direct tap or resolved from free text via AI ("Other").
@@ -67,10 +69,7 @@ Future<void> showQuickActionsDialog({
   required Future<void> Function() onDataChanged,
   String portfolioRole = 'both',
 }) =>
-    showCreateMenu(
-      onDataChanged: onDataChanged,
-      portfolioRole: portfolioRole,
-    );
+    showCreateMenu(onDataChanged: onDataChanged, portfolioRole: portfolioRole);
 
 bool _quickActionAllowed(QuickHomeAction action) {
   if (!Get.isRegistered<StaffAccessStore>()) return true;
@@ -91,6 +90,71 @@ bool _quickActionAllowed(QuickHomeAction action) {
   }
 }
 
+/// Same path as the quick-actions "Send Reminder" item: if there are no
+/// tenants, offer to add one; otherwise open recurring reminders.
+Future<bool?> startQuickSendReminder(BuildContext context) async {
+  var hasTenants = false;
+  try {
+    final tenants = await Get.find<TenantLocalDataSource>().getAllNewestFirst();
+    hasTenants = tenants.isNotEmpty;
+  } catch (_) {
+    hasTenants = false;
+  }
+  if (!context.mounted) return false;
+  if (!hasTenants) {
+    final addTenant = await showNoTenantsForReminderDialog(context);
+    if (addTenant == true) {
+      return runQuickHomeAction(QuickHomeAction.addTenant);
+    }
+    return false;
+  }
+  return runQuickHomeAction(QuickHomeAction.sendReminder);
+}
+
+Future<bool> showNoTenantsForReminderDialog(BuildContext context) async {
+  final c = FormSurfaceColors.of(context);
+  final isSw = Get.locale?.languageCode == 'sw';
+  final addTenant = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: c.card,
+      title: Text(isSw ? 'Hakuna Wapangaji' : 'No Tenants Yet'),
+      content: Text(
+        isSw
+            ? 'Ongeza mpangaji kwanza ili kutuma ukumbusho wa WhatsApp.'
+            : 'Add at least one tenant before you can send a reminder.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(
+            isSw ? 'Ghairi' : 'Cancel',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(
+            isSw ? 'Ongeza Mpangaji' : 'Add Tenant',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+      ],
+    ),
+  );
+  return addTenant == true;
+}
+
+Future<bool?> runQuickHomeAction(QuickHomeAction action) {
+  if (!_quickActionAllowed(action)) {
+    if (Get.isRegistered<StaffAccessStore>()) {
+      Get.find<StaffAccessStore>().showDenied();
+    }
+    return Future.value(false);
+  }
+  return _runQuickAction(action);
+}
+
 Future<bool?> _runQuickAction(QuickHomeAction action) {
   switch (action) {
     case QuickHomeAction.addProperty:
@@ -100,13 +164,13 @@ Future<bool?> _runQuickAction(QuickHomeAction action) {
     case QuickHomeAction.addExpense:
       return showQuickAddExpenseWizard();
     case QuickHomeAction.addBooking:
-      return Get.toNamed(Routes.ADD_NEW_BOOKING)?.then((r) => r == true) ??
-          Future.value(false);
+      return showQuickAddBookingSheet();
     case QuickHomeAction.addTenant:
-      return Get.toNamed(Routes.ADD_NEW_TENANT)?.then((r) => r == true) ??
-          Future.value(false);
+      return showQuickAddTenantSheet();
     case QuickHomeAction.sendReminder:
-      return Get.toNamed(Routes.RENT_RECURRING_REMINDERS)?.then((r) => r == true) ??
+      return Get.toNamed(
+            Routes.RENT_RECURRING_REMINDERS,
+          )?.then((r) => r == true) ??
           Future.value(false);
   }
 }
@@ -170,8 +234,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
     return r == 'rent' || r == 'both' || r == 'all';
   }
 
-  String _t(String en, String sw) =>
-      Get.locale?.languageCode == 'sw' ? sw : en;
+  String _t(String en, String sw) => Get.locale?.languageCode == 'sw' ? sw : en;
 
   @override
   void dispose() {
@@ -299,7 +362,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
   //           ),
   //           IconButton(
   //             onPressed: () => Get.back(),
-  //             icon: Icon(Icons.close_rounded, color: c.hint),
+  //             icon: Icon(Icons.close_outlined, color: c.hint),
   //           ),
   //         ],
   //       ),
@@ -346,7 +409,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
   //       ),
   //       _optionTile(
   //         context,
-  //         icon: Icons.chat_bubble_outline_rounded,
+  //         icon: Icons.chat_bubble_outline,
   //         label: 'Other (Specify)',
   //         onTap: () => setState(() => _showOtherInput = true),
   //       ),
@@ -376,7 +439,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
-                  Icons.add_rounded,
+                  Icons.add_outlined,
                   size: 20,
                   color: theme.colorScheme.primary,
                 ),
@@ -414,7 +477,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
                     color: c.hint.withOpacity(0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.close_rounded, size: 16, color: c.hint),
+                  child: Icon(Icons.close_outlined, size: 16, color: c.hint),
                 ),
               ),
             ],
@@ -439,27 +502,37 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
         const SizedBox(height: 6),
 
         if (_allow(StaffPermissions.editProperties))
-        _optionTile(context,
-          icon: Icons.home_work_outlined,
-          label: _t('Add Property', 'Ongeza Mali'),
-          subtitle: _t('Register a new property', 'Sajili mali mpya'),
-          iconColor: const Color(0xFF6C63FF),
-          onTap: () => Get.back(
-            result: const _OtherActionOutcome.wizard(QuickHomeAction.addProperty),
+          _optionTile(
+            context,
+            icon: Icons.home_work_outlined,
+            label: _t('Add Property', 'Ongeza Mali'),
+            subtitle: _t('Register a new property', 'Sajili mali mpya'),
+            iconColor: const Color(0xFF6C63FF),
+            onTap: () => Get.back(
+              result: const _OtherActionOutcome.wizard(
+                QuickHomeAction.addProperty,
+              ),
+            ),
           ),
-        ),
         if (_showRentActions && _allow(StaffPermissions.manageTenants))
-          _optionTile(context,
+          _optionTile(
+            context,
             icon: Icons.person_add_alt_outlined,
             label: _t('Add Tenant', 'Ongeza Mpangaji'),
-            subtitle: _t('Assign tenant to a unit', 'Weka mpangaji kwenye chumba'),
+            subtitle: _t(
+              'Assign tenant to a unit',
+              'Weka mpangaji kwenye chumba',
+            ),
             iconColor: const Color(0xFF00BFA5),
             onTap: () => Get.back(
-              result: const _OtherActionOutcome.wizard(QuickHomeAction.addTenant),
+              result: const _OtherActionOutcome.wizard(
+                QuickHomeAction.addTenant,
+              ),
             ),
           ),
         if (_showRentActions && _allow(StaffPermissions.messageGuest))
-          _optionTile(context,
+          _optionTile(
+            context,
             icon: Icons.notifications_active_outlined,
             label: _t('Send Reminder', 'Tuma Kikumbusho'),
             subtitle: _t(
@@ -486,33 +559,45 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
         const SizedBox(height: 6),
 
         if (_allow(StaffPermissions.recordPayment))
-        _optionTile(context,
-          icon: Icons.payments_outlined,
-          label: _t('Add Income', 'Ongeza Mapato'),
-          subtitle: _t('Record a payment received', 'Rekodi malipo yaliyopokelewa'),
-          iconColor: const Color(0xFF2E7D32),
-          onTap: () => Get.back(
-            result: const _OtherActionOutcome.wizard(QuickHomeAction.addIncome),
+          _optionTile(
+            context,
+            icon: Icons.payments_outlined,
+            label: _t('Add Income', 'Ongeza Mapato'),
+            subtitle: _t(
+              'Record a payment received',
+              'Rekodi malipo yaliyopokelewa',
+            ),
+            iconColor: const Color(0xFF2E7D32),
+            onTap: () => Get.back(
+              result: const _OtherActionOutcome.wizard(
+                QuickHomeAction.addIncome,
+              ),
+            ),
           ),
-        ),
         if (_allow(StaffPermissions.manageExpenses))
-        _optionTile(context,
-          icon: Icons.receipt_long_outlined,
-          label: _t('Add Expense', 'Ongeza Matumizi'),
-          subtitle: _t('Log a cost or bill', 'Rekodi gharama au bili'),
-          iconColor: const Color(0xFFE53935),
-          onTap: () => Get.back(
-            result: const _OtherActionOutcome.wizard(QuickHomeAction.addExpense),
+          _optionTile(
+            context,
+            icon: Icons.receipt_long_outlined,
+            label: _t('Add Expense', 'Ongeza Matumizi'),
+            subtitle: _t('Log a cost or bill', 'Rekodi gharama au bili'),
+            iconColor: const Color(0xFFE53935),
+            onTap: () => Get.back(
+              result: const _OtherActionOutcome.wizard(
+                QuickHomeAction.addExpense,
+              ),
+            ),
           ),
-        ),
         if (_showBnbActions && _allow(StaffPermissions.manageBookings))
-          _optionTile(context,
+          _optionTile(
+            context,
             icon: Icons.event_available_outlined,
             label: _t('Add Booking', 'Ongeza Uhifadhi'),
             subtitle: _t('Schedule a reservation', 'Panga uhifadhi'),
             iconColor: const Color(0xFFF57C00),
             onTap: () => Get.back(
-              result: const _OtherActionOutcome.wizard(QuickHomeAction.addBooking),
+              result: const _OtherActionOutcome.wizard(
+                QuickHomeAction.addBooking,
+              ),
             ),
           ),
 
@@ -530,7 +615,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.chat_bubble_outline_rounded, size: 16, color: c.hint),
+                  Icon(Icons.chat_bubble_outline, size: 16, color: c.hint),
                   const SizedBox(width: 10),
                   Text(
                     _t(
@@ -544,7 +629,11 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
                     ),
                   ),
                   const Spacer(),
-                  Icon(Icons.arrow_forward_ios_rounded, size: 12, color: c.hint.withOpacity(0.5)),
+                  Icon(
+                    Icons.arrow_forward_ios_outlined,
+                    size: 12,
+                    color: c.hint.withOpacity(0.5),
+                  ),
                 ],
               ),
             ),
@@ -556,120 +645,95 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
   }
 
   Future<void> _handleSendReminderTap(BuildContext context) async {
+    var hasTenants = false;
     try {
-      final tenants =
-          await Get.find<TenantLocalDataSource>().getAllNewestFirst();
-      if (!mounted) return;
-      if (tenants.isEmpty) {
-        await _showNoTenantsPrompt(context);
-        return;
-      }
-      Get.back(
-        result: const _OtherActionOutcome.wizard(QuickHomeAction.sendReminder),
-      );
+      final tenants = await Get.find<TenantLocalDataSource>()
+          .getAllNewestFirst();
+      hasTenants = tenants.isNotEmpty;
     } catch (_) {
-      if (!mounted) return;
-      await _showNoTenantsPrompt(context);
+      hasTenants = false;
     }
-  }
-
-  Future<void> _showNoTenantsPrompt(BuildContext context) async {
-    final c = FormSurfaceColors.of(context);
-    final isSw = Get.locale?.languageCode == 'sw';
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: c.card,
-        title: Text(isSw ? 'Hakuna Wapangaji' : 'No Tenants Yet'),
-        content: Text(
-          isSw
-              ? 'Ongeza mpangaji kwanza ili kutuma ukumbusho wa WhatsApp.'
-              : 'Add at least one tenant before you can send a reminder.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(isSw ? 'Ghairi' : 'Cancel', style: TextStyle(fontSize: 14)),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Get.back(
-                result: const _OtherActionOutcome.wizard(QuickHomeAction.addTenant),
-              );
-            },
-            child: Text(isSw ? 'Ongeza Mpangaji' : 'Add Tenant', style: TextStyle(fontSize: 14)),
-          ),
-        ],
-      ),
+    if (!mounted) return;
+    if (!hasTenants) {
+      final addTenant = await showNoTenantsForReminderDialog(context);
+      if (!mounted) return;
+      if (addTenant) {
+        Get.back(
+          result: const _OtherActionOutcome.wizard(QuickHomeAction.addTenant),
+        );
+      }
+      return;
+    }
+    Get.back(
+      result: const _OtherActionOutcome.wizard(QuickHomeAction.sendReminder),
     );
   }
 
-// ── Updated option tile ─────────────────────────────────────────────────────
-//   Widget _optionTile(
-//       BuildContext context, {
-//         required IconData icon,
-//         required String label,
-//         required VoidCallback onTap,
-//         String? subtitle,
-//         Color iconColor = const Color(0xFF6C63FF),
-//       }) {
-//     final c = FormSurfaceColors.of(context);
-//     return InkWell(
-//       onTap: onTap,
-//       child: Padding(
-//         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-//         child: Row(
-//           children: [
-//             Container(
-//               width: 42,
-//               height: 42,
-//               decoration: BoxDecoration(
-//                 color: iconColor.withOpacity(0.10),
-//                 borderRadius: BorderRadius.circular(12),
-//               ),
-//               child: Icon(icon, size: 20, color: iconColor),
-//             ),
-//             const SizedBox(width: 14),
-//             Expanded(
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text(
-//                     label,
-//                     style: TextStyle(
-//                       fontSize: 14,
-//                       fontWeight: FontWeight.w600,
-//                       color: c.headline,
-//                     ),
-//                   ),
-//                   if (subtitle != null)
-//                     Text(
-//                       subtitle,
-//                       style: TextStyle(
-//                         fontSize: 12,
-//                         color: c.hint,
-//                         fontWeight: FontWeight.w400,
-//                       ),
-//                     ),
-//                 ],
-//               ),
-//             ),
-//             Icon(Icons.chevron_right_rounded, size: 18, color: c.hint.withOpacity(0.4)),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
+  // ── Updated option tile ─────────────────────────────────────────────────────
+  //   Widget _optionTile(
+  //       BuildContext context, {
+  //         required IconData icon,
+  //         required String label,
+  //         required VoidCallback onTap,
+  //         String? subtitle,
+  //         Color iconColor = const Color(0xFF6C63FF),
+  //       }) {
+  //     final c = FormSurfaceColors.of(context);
+  //     return InkWell(
+  //       onTap: onTap,
+  //       child: Padding(
+  //         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+  //         child: Row(
+  //           children: [
+  //             Container(
+  //               width: 42,
+  //               height: 42,
+  //               decoration: BoxDecoration(
+  //                 color: iconColor.withOpacity(0.10),
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               child: Icon(icon, size: 20, color: iconColor),
+  //             ),
+  //             const SizedBox(width: 14),
+  //             Expanded(
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   Text(
+  //                     label,
+  //                     style: TextStyle(
+  //                       fontSize: 14,
+  //                       fontWeight: FontWeight.w600,
+  //                       color: c.headline,
+  //                     ),
+  //                   ),
+  //                   if (subtitle != null)
+  //                     Text(
+  //                       subtitle,
+  //                       style: TextStyle(
+  //                         fontSize: 12,
+  //                         color: c.hint,
+  //                         fontWeight: FontWeight.w400,
+  //                       ),
+  //                     ),
+  //                 ],
+  //               ),
+  //             ),
+  //             Icon(Icons.chevron_right_outlined, size: 18, color: c.hint.withOpacity(0.4)),
+  //           ],
+  //         ),
+  //       ),
+  //     );
+  //   }
 
   Widget _optionTile(
-      BuildContext context, {
-        required IconData icon,
-        required String label,
-        required VoidCallback onTap,
-        String? subtitle,
-        Color? iconColor,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    String? subtitle,
+    Color? iconColor,
+  }) {
     final c = FormSurfaceColors.of(context);
     final resolvedIconColor = iconColor ?? c.tokens.accent;
 
@@ -722,7 +786,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
               ),
               const SizedBox(width: 8),
               Icon(
-                Icons.chevron_right_rounded,
+                Icons.chevron_right_outlined,
                 size: 18,
                 color: c.hint.withOpacity(0.4),
               ),
@@ -767,7 +831,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
   //               ),
   //             ),
   //           ),
-  //           Icon(Icons.chevron_right_rounded, color: c.hint),
+  //           Icon(Icons.chevron_right_outlined, color: c.hint),
   //         ],
   //       ),
   //     ),
@@ -788,7 +852,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
                 _showOtherInput = false;
                 _error = null;
               }),
-              icon: Icon(Icons.arrow_back_rounded, color: c.headline),
+              icon: Icon(Icons.arrow_back_outlined, color: c.headline),
             ),
             Expanded(
               child: Text(
@@ -802,7 +866,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
             ),
             IconButton(
               onPressed: () => Get.back(),
-              icon: Icon(Icons.close_rounded, color: c.hint),
+              icon: Icon(Icons.close_outlined, color: c.hint),
             ),
           ],
         ),
@@ -833,7 +897,10 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
           const SizedBox(height: 10),
           Text(
             _error!,
-            style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
         const SizedBox(height: 16),
@@ -843,13 +910,18 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> {
             onPressed: _resolving ? null : _handleOtherSubmit,
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: _resolving
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : Text(
                     _t('Submit', 'Wasilisha'),

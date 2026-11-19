@@ -98,7 +98,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
           _isSw ? 'TAARIFA YA KIFEDHA' : 'FINANCIAL STATEMENT',
           style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             letterSpacing: 1.3,
             color: u.muted,
           ),
@@ -113,14 +113,13 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                 Text(
                   controller.monthTitle(isSw: _isSw),
                   style: TextStyle(
-                    fontFamily: 'serif',
                     fontSize: 26,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: u.onSurface,
                   ),
                 ),
                 const SizedBox(width: 6),
-                Icon(Icons.keyboard_arrow_down_rounded, color: u.muted, size: 28),
+                Icon(Icons.keyboard_arrow_down_outlined, color: u.muted, size: 28),
               ],
             ),
           ),
@@ -147,7 +146,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
               _isSw ? 'MUHTASARI WA FAIDA HALISI' : 'NET PROFIT SUMMARY',
               style: TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
                 color: _PlUi.lightTeal.withValues(alpha: 0.95),
               ),
@@ -161,7 +160,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                     controller.formatTsh(controller.netProfit.value),
                     style: const TextStyle(
                       fontSize: 28,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white,
                       height: 1.1,
                     ),
@@ -211,7 +210,6 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                   child: Text(
                     _isSw ? 'Muhtasari wa mapato' : 'Revenue Breakdown',
                     style: TextStyle(
-                      fontFamily: 'serif',
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: u.onSurface,
@@ -261,7 +259,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                   _isSw ? 'JUMLA YA MAPATO' : 'TOTAL REVENUE',
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
                     color: u.muted,
                   ),
@@ -270,7 +268,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                   controller.formatTsh(controller.totalRevenue.value),
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: u.forestOnBg,
                   ),
                 ),
@@ -357,7 +355,6 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                 Text(
                   _isSw ? 'Muhtasari wa gharama' : 'Expense Breakdown',
                   style: TextStyle(
-                    fontFamily: 'serif',
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: u.onSurface,
@@ -403,7 +400,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                   _isSw ? 'JUMLA YA GHARAMA' : 'TOTAL EXPENSES',
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
                     color: u.muted,
                   ),
@@ -412,7 +409,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                   controller.formatTsh(controller.totalExpenses.value),
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: _PlUi.expenseRed,
                   ),
                 ),
@@ -499,7 +496,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                 _isSw ? 'UWIANO WA UFAHAMILIVU' : 'EFFICIENCY RATIO',
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 1.2,
                   color: u.muted,
                 ),
@@ -527,7 +524,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             height: 1.2,
                             color: u.onSurface,
                           ),
@@ -572,7 +569,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
           text,
           style: const TextStyle(
             fontSize: 10,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             letterSpacing: 0.5,
           ),
         ),
@@ -602,7 +599,7 @@ class RentMonthlyPlSummaryView extends RentBaseView<RentMonthlyPlSummaryControll
                   _isSw ? 'MAARIFA YA AI' : 'AI INSIGHTS',
                   style: const TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
                     color: Colors.white,
                   ),

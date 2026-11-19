@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
 
+import '../../../core/utils/sync_freshness.dart';
 import 'app_local_database.dart';
 
 /// Local property row in [AppLocalDatabase.propertiesTable].
@@ -23,6 +26,7 @@ class PropertyRecord {
     this.floorCount = 1,
     this.coverPhotoPath = '',
     this.listingStatus = listingStatusActive,
+    this.updatedAtMs = 0,
   });
 
   static const listingStatusActive = 'ACTIVE';
@@ -51,8 +55,70 @@ class PropertyRecord {
   /// Listing lifecycle: [listingStatusActive], [listingStatusDraft], or [listingStatusArchived].
   final String listingStatus;
 
+  /// Last local or applied remote edit. `0` means "use [createdAtMs]".
+  final int updatedAtMs;
+
   /// Rent “apartment suite” field — same as [propertyName] in local schema.
   String get apartmentSuite => propertyName;
+
+  /// Property workspace comes from `workspace_type` only.
+  /// Unit fields (`listingMode`, `operationMode`) default to bnb and must
+  /// not overwrite a rent property during remote sync.
+  static String normalizeWorkspaceType(String? raw, {String fallback = ''}) {
+    final value = raw?.toString().trim().toLowerCase() ?? '';
+    if (value == 'rent' || value == 'bnb' || value == 'both') return value;
+    return fallback;
+  }
+
+  static String? workspaceFromApiMap(Map<String, dynamic> m) {
+    for (final key in ['workspace_type', 'workspaceType']) {
+      final value = normalizeWorkspaceType(m[key]?.toString());
+      if (value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  /// Reads a properties-table value. Keys are the SQL column and its
+  /// Jackson camelCase only — no listings-table aliases.
+  static String remoteText(Map<String, dynamic> m, List<String> keys) {
+    for (final key in keys) {
+      final value = m[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
+  }
+
+  static String remoteName(Map<String, dynamic> m) =>
+      remoteText(m, const ['name']);
+
+  static String remoteLocation(Map<String, dynamic> m) =>
+      remoteText(m, const ['location']);
+
+  static String remoteType(Map<String, dynamic> m) =>
+      remoteText(m, const ['type']);
+
+  static String remoteRef(Map<String, dynamic> m) =>
+      remoteText(m, const ['property_ref', 'propertyRef']);
+
+  static String remoteOwner(Map<String, dynamic> m) =>
+      remoteText(m, const ['owner_user_id', 'ownerUserId']);
+
+  static String remoteRentAmount(Map<String, dynamic> m) =>
+      remoteText(m, const ['rent_amount', 'rentAmount']);
+
+  static String remoteRentFrequency(Map<String, dynamic> m) =>
+      remoteText(m, const ['rent_frequency', 'rentFrequency']);
+
+  static String remoteMinDuration(Map<String, dynamic> m) =>
+      remoteText(m, const ['min_rental_duration', 'minRentalDuration']);
+
+  static String remoteCoverPhoto(Map<String, dynamic> m) =>
+      remoteText(m, const ['cover_photo_path', 'coverPhotoPath']);
+
+  static String remoteUnitsJson(Map<String, dynamic> m) =>
+      remoteText(m, const ['units_json', 'unitsJson']);
 
   static String normalizeListingStatus(String? raw) {
     final s = (raw ?? '').trim().toUpperCase();
@@ -80,6 +146,7 @@ class PropertyRecord {
       floorCount: (m['floor_count'] as num?)?.toInt() ?? 1,
       coverPhotoPath: m['cover_photo_path'] as String? ?? '',
       listingStatus: normalizeListingStatus(m['listing_status'] as String?),
+      updatedAtMs: (m['updated_at_ms'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -120,6 +187,7 @@ class PropertyRecord {
     int? floorCount,
     String? coverPhotoPath,
     String? listingStatus,
+    int? updatedAtMs,
   }) {
     return PropertyRecord(
       id: id ?? this.id,
@@ -141,6 +209,7 @@ class PropertyRecord {
       listingStatus: listingStatus != null
           ? normalizeListingStatus(listingStatus)
           : this.listingStatus,
+      updatedAtMs: updatedAtMs ?? this.updatedAtMs,
     );
   }
 }
@@ -149,27 +218,51 @@ class PropertyLocalDataSource {
   static const _table = AppLocalDatabase.propertiesTable;
   static const _defaultChunkSize = 200;
 
-  Database? _db;
+  static final List<void Function()> _onChanged = <void Function()>[];
 
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
+  static void addOnChangedListener(void Function() listener) {
+    _onChanged.add(listener);
   }
+
+  static void removeOnChangedListener(void Function() listener) {
+    _onChanged.remove(listener);
+  }
+
+  /// Notifies badge / list listeners after local property rows change.
+  static void notifyChanged() {
+    final listeners = List<void Function()>.from(_onChanged);
+    for (final listener in listeners) {
+      listener();
+    }
+  }
+
+  Future<Database> get database => AppLocalDatabase.database;
 
   Future<int> insert(PropertyRecord row) async {
     final db = await database;
-    return db.insert(_table, row.toInsertMap());
+    final map = row.toInsertMap();
+    map['updated_at_ms'] = row.updatedAtMs > 0
+        ? row.updatedAtMs
+        : (row.createdAtMs > 0
+              ? row.createdAtMs
+              : DateTime.now().millisecondsSinceEpoch);
+    final id = await db.insert(_table, map);
+    notifyChanged();
+    return id;
   }
 
-  Future<int> update(PropertyRecord row) async {
+  Future<int> update(PropertyRecord row, {int? updatedAtMs}) async {
     final db = await database;
-    return db.update(
+    final map = row.toInsertMap();
+    map['updated_at_ms'] = updatedAtMs ?? DateTime.now().millisecondsSinceEpoch;
+    final n = await db.update(
       _table,
-      row.toInsertMap(),
+      map,
       where: 'id = ?',
       whereArgs: [row.id],
     );
+    notifyChanged();
+    return n;
   }
 
   Future<PropertyRecord?> getById(int id) async {
@@ -218,20 +311,47 @@ class PropertyLocalDataSource {
   Future<List<PropertyRecord>> fetchAll({required String userId}) async {
     final db = await database;
     if (userId.trim().isEmpty) {
-      final maps = await db.query(
-        _table,
-        orderBy: 'created_at_ms DESC',
-      );
+      final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
       return maps.map(PropertyRecord.fromMap).toList();
     }
     final maps = await db.query(
       _table,
-      where:
-      '(owner_user_id = ? OR owner_user_id = "")',
+      where: 'owner_user_id = ?',
       whereArgs: [userId],
       orderBy: 'created_at_ms DESC',
     );
     return maps.map(PropertyRecord.fromMap).toList();
+  }
+
+  /// Owner + member properties across every workspace. Cheap COUNT for the
+  /// bottom-nav badge; does not load rows.
+  Future<int> countVisibleForUser(String userId) async {
+    final db = await database;
+    final uid = userId.trim();
+    if (uid.isEmpty) {
+      final rows = await db.rawQuery('SELECT COUNT(*) AS c FROM $_table');
+      return Sqflite.firstIntValue(rows) ?? 0;
+    }
+    final rows = await db.rawQuery(
+      '''
+      SELECT COUNT(*) AS c
+      FROM $_table p
+      WHERE (
+        p.owner_user_id = ?
+        OR EXISTS (
+          SELECT 1
+          FROM ${AppLocalDatabase.propertyMembersTable} m
+          WHERE m.property_ref = CASE
+            WHEN p.property_ref IS NULL OR p.property_ref = '' THEN 'legacy_' || p.id
+            ELSE p.property_ref
+          END
+          AND m.user_id = ?
+        )
+      )
+      ''',
+      [uid, uid],
+    );
+    return Sqflite.firstIntValue(rows) ?? 0;
   }
 
   Future<List<PropertyRecord>> getAllNewestFirst() async {
@@ -291,7 +411,7 @@ class PropertyLocalDataSource {
     final maps = await db.query(
       _table,
       where:
-          '(workspace_type = ? OR workspace_type = ? OR workspace_type = "") AND (owner_user_id = ? OR owner_user_id = "")',
+          '(workspace_type = ? OR workspace_type = ? OR workspace_type = "") AND owner_user_id = ?',
       whereArgs: [workspaceType, 'both', userId],
       orderBy: 'created_at_ms DESC',
     );
@@ -348,7 +468,6 @@ class PropertyLocalDataSource {
         FROM $_table p
         WHERE (
           p.owner_user_id = ?
-          OR p.owner_user_id = ''
           OR EXISTS (
             SELECT 1
             FROM ${AppLocalDatabase.propertyMembersTable} m
@@ -374,7 +493,6 @@ class PropertyLocalDataSource {
       WHERE (p.workspace_type = ? OR p.workspace_type = ? OR p.workspace_type = '')
         AND (
           p.owner_user_id = ?
-          OR p.owner_user_id = ''
           OR EXISTS (
             SELECT 1
             FROM ${AppLocalDatabase.propertyMembersTable} m
@@ -389,16 +507,7 @@ class PropertyLocalDataSource {
       ORDER BY p.created_at_ms DESC
       LIMIT ? OFFSET ?
       ''',
-      [
-        ws,
-        'both',
-        userId,
-        userId,
-        ws,
-        'both',
-        safeLimit,
-        safeOffset,
-      ],
+      [ws, 'both', userId, userId, ws, 'both', safeLimit, safeOffset],
     );
     return maps.map(PropertyRecord.fromMap).toList();
   }
@@ -429,6 +538,7 @@ class PropertyLocalDataSource {
   Future<void> deleteById(int id) async {
     final db = await database;
     await db.delete(_table, where: 'id = ?', whereArgs: [id]);
+    notifyChanged();
   }
 
   Future<PropertyRecord> upsertFromRemote(PropertyRecord row) async {
@@ -438,39 +548,62 @@ class PropertyLocalDataSource {
       existing = await getByPropertyRef(ref);
     }
     if (existing != null) {
+      if (SyncFreshness.phoneIsNewer(
+        localUpdatedMs: existing.updatedAtMs,
+        localCreatedMs: existing.createdAtMs,
+        remoteUpdatedMs: row.updatedAtMs,
+      )) {
+        return existing;
+      }
+      final remoteJson = row.unitsJson.trim();
+      final localJson = existing.unitsJson.trim();
+      // An empty server units payload must not wipe units that exist only
+      // on the phone. A non-empty server payload replaces them when the
+      // server copy is the newer edit.
+      final keepLocalUnits = remoteJson.isEmpty && localJson.isNotEmpty;
+      final appliedUpdated = row.updatedAtMs > 0
+          ? row.updatedAtMs
+          : (existing.updatedAtMs > 0
+                ? existing.updatedAtMs
+                : existing.createdAtMs);
+
       final merged = PropertyRecord(
         id: existing.id,
         propertyName: row.propertyName.isNotEmpty
             ? row.propertyName
             : existing.propertyName,
-        propertyType:
-            row.propertyType.isNotEmpty ? row.propertyType : existing.propertyType,
+        propertyType: row.propertyType.isNotEmpty
+            ? row.propertyType
+            : existing.propertyType,
         propertyLocation: row.propertyLocation.isNotEmpty
             ? row.propertyLocation
             : existing.propertyLocation,
         propertyRef: ref.isNotEmpty ? ref : existing.propertyRef,
         tenants: row.tenants > 0 ? row.tenants : existing.tenants,
-        // Trust remote unit count when provided. If remote asserts units but
-        // sends empty unitsJson, clear stale local JSON so counters stay aligned.
-        units: row.units > 0 ? row.units : existing.units,
+        units: keepLocalUnits
+            ? (existing.units > 0
+                  ? existing.units
+                  : _countUnitsInJson(localJson))
+            : (row.units > 0 ? row.units : existing.units),
         ownerUserId: row.ownerUserId.isNotEmpty
             ? row.ownerUserId
             : existing.ownerUserId,
         workspaceType: row.workspaceType.isNotEmpty
             ? row.workspaceType
             : existing.workspaceType,
-        createdAtMs: row.createdAtMs > 0 ? row.createdAtMs : existing.createdAtMs,
-        rentAmount:
-            row.rentAmount.isNotEmpty ? row.rentAmount : existing.rentAmount,
+        createdAtMs: row.createdAtMs > 0
+            ? row.createdAtMs
+            : existing.createdAtMs,
+        rentAmount: row.rentAmount.isNotEmpty
+            ? row.rentAmount
+            : existing.rentAmount,
         rentFrequency: row.rentFrequency.isNotEmpty
             ? row.rentFrequency
             : existing.rentFrequency,
         minRentalDuration: row.minRentalDuration.isNotEmpty
             ? row.minRentalDuration
             : existing.minRentalDuration,
-        unitsJson: row.unitsJson.isNotEmpty
-            ? row.unitsJson
-            : (row.units > 0 ? '' : existing.unitsJson),
+        unitsJson: keepLocalUnits ? existing.unitsJson : row.unitsJson,
         floorCount: row.floorCount > 0 ? row.floorCount : existing.floorCount,
         coverPhotoPath: row.coverPhotoPath.isNotEmpty
             ? row.coverPhotoPath
@@ -478,21 +611,25 @@ class PropertyLocalDataSource {
         listingStatus: row.listingStatus.trim().isEmpty
             ? existing.listingStatus
             : PropertyRecord.normalizeListingStatus(row.listingStatus),
+        updatedAtMs: appliedUpdated,
       );
-      await update(merged);
+      await update(merged, updatedAtMs: appliedUpdated);
       return merged;
     }
-    final newId = await insert(row);
+    final toInsert = row.workspaceType.trim().isEmpty
+        ? row.copyWith(workspaceType: 'rent')
+        : row;
+    final newId = await insert(toInsert);
     return PropertyRecord(
       id: newId,
-      propertyName: row.propertyName,
+      propertyName: toInsert.propertyName,
       propertyType: row.propertyType,
       propertyLocation: row.propertyLocation,
       propertyRef: row.propertyRef,
       tenants: row.tenants,
       units: row.units,
       ownerUserId: row.ownerUserId,
-      workspaceType: row.workspaceType,
+      workspaceType: toInsert.workspaceType,
       createdAtMs: row.createdAtMs,
       rentAmount: row.rentAmount,
       rentFrequency: row.rentFrequency,
@@ -501,6 +638,7 @@ class PropertyLocalDataSource {
       floorCount: row.floorCount,
       coverPhotoPath: row.coverPhotoPath,
       listingStatus: row.listingStatus,
+      updatedAtMs: row.updatedAtMs > 0 ? row.updatedAtMs : row.createdAtMs,
     );
   }
 
@@ -511,10 +649,14 @@ class PropertyLocalDataSource {
     final db = await database;
     await db.update(
       _table,
-      {'listing_status': PropertyRecord.normalizeListingStatus(listingStatus)},
+      {
+        'listing_status': PropertyRecord.normalizeListingStatus(listingStatus),
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
+    notifyChanged();
   }
 
   Future<PropertyRecord?> updateListingStatusByRef({
@@ -526,5 +668,28 @@ class PropertyLocalDataSource {
     final updated = existing.copyWith(listingStatus: listingStatus);
     await update(updated);
     return updated;
+  }
+
+  /// Count named units in a units_json payload (avoids importing PropertyUnitCount).
+  static int _countUnitsInJson(String? raw) {
+    final text = raw?.trim() ?? '';
+    if (text.isEmpty || text == '[]' || text == 'null') return 0;
+    try {
+      final decoded = jsonDecode(text);
+      if (decoded is! List) return 0;
+      var count = 0;
+      for (final item in decoded) {
+        if (item is Map) {
+          final name = (item['unitName'] ?? item['name'] ?? '')
+              .toString()
+              .trim();
+          if (name.isEmpty) continue;
+        }
+        count++;
+      }
+      return count;
+    } catch (_) {
+      return 0;
+    }
   }
 }

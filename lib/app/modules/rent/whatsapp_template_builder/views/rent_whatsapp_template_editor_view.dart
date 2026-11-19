@@ -222,7 +222,7 @@ class _RentWhatsappTemplateEditorViewState
         text.toUpperCase(),
         style: const TextStyle(
           fontSize: 11,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
           color: RentTheme.muted,
         ),
@@ -253,7 +253,7 @@ class _RentWhatsappTemplateEditorViewState
           controller: _nameCtrl,
           decoration: _decoration(
             hint: 'rent_reminder_polite',
-            prefixIcon: const Icon(Icons.tag_rounded, size: 18),
+            prefixIcon: const Icon(Icons.tag_outlined, size: 18),
           ),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
@@ -373,7 +373,7 @@ class _RentWhatsappTemplateEditorViewState
         Row(
           children: [
             FilledButton.tonalIcon(
-              icon: const Icon(Icons.data_object_rounded, size: 16),
+              icon: const Icon(Icons.data_object_outlined, size: 16),
               label: Text(
                 _isSw
                     ? 'Ongeza {{${_sampleCtrls.length + 1}}}'
@@ -393,7 +393,7 @@ class _RentWhatsappTemplateEditorViewState
             _isSw ? 'Mifano ya vigezo' : 'Sample values',
             style: const TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               letterSpacing: 0.6,
               color: RentTheme.muted,
             ),
@@ -459,7 +459,7 @@ class _RentWhatsappTemplateEditorViewState
         ],
         if (_buttons.length < 3)
           OutlinedButton.icon(
-            icon: const Icon(Icons.add_rounded, size: 18),
+            icon: const Icon(Icons.add_outlined, size: 18),
             onPressed: _addButton,
             label: Text(_isSw ? 'Ongeza kitufe' : 'Add button'),
             style: OutlinedButton.styleFrom(
@@ -513,7 +513,7 @@ class _RentWhatsappTemplateEditorViewState
                 onPressed: () {
                   setState(() => _buttons.removeAt(index));
                 },
-                icon: const Icon(Icons.delete_outline_rounded,
+                icon: const Icon(Icons.delete_outline,
                     color: Colors.red),
               ),
             ],
@@ -540,7 +540,7 @@ class _RentWhatsappTemplateEditorViewState
               decoration: _decoration(
                 hint: 'https://example.com/bill',
                 dense: true,
-                prefixIcon: const Icon(Icons.link_rounded, size: 18),
+                prefixIcon: const Icon(Icons.link_outlined, size: 18),
               ),
               onChanged: (v) => _buttons[index] = WaTemplateButton(
                 type: b.type,
@@ -558,7 +558,7 @@ class _RentWhatsappTemplateEditorViewState
               decoration: _decoration(
                 hint: '+255...',
                 dense: true,
-                prefixIcon: const Icon(Icons.phone_rounded, size: 18),
+                prefixIcon: const Icon(Icons.phone_outlined, size: 18),
               ),
               onChanged: (v) => _buttons[index] = WaTemplateButton(
                 type: b.type,
@@ -609,7 +609,7 @@ class _RentWhatsappTemplateEditorViewState
         children: [
           Row(
             children: [
-              const Icon(Icons.phone_iphone_rounded,
+              const Icon(Icons.phone_iphone_outlined,
                   size: 16, color: RentTheme.conciergeTeal),
               const SizedBox(width: 6),
               Text(
@@ -617,7 +617,7 @@ class _RentWhatsappTemplateEditorViewState
                 style: const TextStyle(
                   fontSize: 10,
                   letterSpacing: 0.8,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: RentTheme.conciergeTeal,
                 ),
               ),
@@ -638,7 +638,7 @@ class _RentWhatsappTemplateEditorViewState
                   Text(
                     header,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       fontSize: 14,
                       color: Color(0xFF111827),
                     ),
@@ -710,7 +710,7 @@ class _RentWhatsappTemplateEditorViewState
               child: OutlinedButton.icon(
                 onPressed: _saving ? null : _saveDraft,
                 icon: const Icon(Icons.save_outlined, size: 18),
-                label: Text(_isSw ? 'HIFADHI RASIMU' : 'SAVE DRAFT'),
+                label: Text(_isSw ? 'Hifadhi rasimu' : 'Save draft'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: RentTheme.teal,
                   side: const BorderSide(color: RentTheme.teal),
@@ -731,7 +731,7 @@ class _RentWhatsappTemplateEditorViewState
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : const Icon(Icons.send_rounded, size: 18),
+                    : const Icon(Icons.send_outlined, size: 18),
                 label:
                     Text(_isSw ? 'TUMA' : 'SUBMIT'),
                 style: FilledButton.styleFrom(
@@ -756,7 +756,7 @@ class _RentWhatsappTemplateEditorViewState
           style: const TextStyle(
             fontSize: 11,
             letterSpacing: 0.6,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: RentTheme.muted,
           ),
         ),

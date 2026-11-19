@@ -91,7 +91,7 @@ class CurrencyDropdownField extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.swap_horiz_rounded, size: 16, color: hintColor),
+                Icon(Icons.swap_horiz_outlined, size: 16, color: hintColor),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(

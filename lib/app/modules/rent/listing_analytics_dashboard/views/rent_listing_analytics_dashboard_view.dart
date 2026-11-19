@@ -90,7 +90,7 @@ class RentListingAnalyticsDashboardView
               _isSw ? 'PERFORMANCE OVERVIEW' : 'PERFORMANCE OVERVIEW',
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 1.3,
                 color: u.muted,
               ),
@@ -99,7 +99,6 @@ class RentListingAnalyticsDashboardView
             // Text(
             //   controller.listingTitleFromRoute,
             //   style: TextStyle(
-            //     fontFamily: 'serif',
             //     fontSize: 38,
             //     fontWeight: FontWeight.w700,
             //     height: 1.0,
@@ -168,7 +167,7 @@ class RentListingAnalyticsDashboardView
               style: TextStyle(color: u.onSurface, fontSize: 13),
             ),
           ),
-          Icon(Icons.keyboard_arrow_down_rounded, color: u.muted),
+          Icon(Icons.keyboard_arrow_down_outlined, color: u.muted),
         ],
       ),
     );
@@ -206,9 +205,8 @@ class RentListingAnalyticsDashboardView
           Text(
             '${occupancyRate.toStringAsFixed(1)}%',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 44,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               height: 0.9,
               color: u.onSurface,
             ),
@@ -245,7 +243,7 @@ class RentListingAnalyticsDashboardView
                 ),
               ),
               const Spacer(),
-              Icon(Icons.auto_graph_rounded,
+              Icon(Icons.auto_graph_outlined,
                   size: 16, color: Colors.white.withValues(alpha: 0.85)),
             ],
           ),
@@ -258,7 +256,7 @@ class RentListingAnalyticsDashboardView
                   text: _money.format(revenue.round()),
                   style: const TextStyle(
                     fontSize: 34,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     height: 1,
                   ),
                 ),
@@ -314,7 +312,7 @@ class RentListingAnalyticsDashboardView
                 child: const Text(
                   'Stable',
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 10,
                     color: Color(0xFF7B311A),
                     fontWeight: FontWeight.w700,
                   ),
@@ -331,7 +329,7 @@ class RentListingAnalyticsDashboardView
                   text: _money.format(avgDailyRate.round()),
                   style: const TextStyle(
                     fontSize: 40,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     height: 1,
                   ),
                 ),
@@ -360,9 +358,8 @@ class RentListingAnalyticsDashboardView
           Text(
             _isSw ? 'Revenue Dynamics' : 'Revenue Dynamics',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 24,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: u.onSurface,
             ),
           ),
@@ -461,7 +458,7 @@ class RentListingAnalyticsDashboardView
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     (i >= 0 && i < xs.length) ? xs[i] : '',
-                    style: TextStyle(fontSize: 9, color: u.muted),
+                    style: TextStyle(fontSize: 10, color: u.muted),
                   ),
                 );
               },
@@ -511,9 +508,8 @@ class RentListingAnalyticsDashboardView
           Text(
             _isSw ? 'Booking Channels' : 'Booking Channels',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 22,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: u.onSurface,
             ),
           ),
@@ -565,7 +561,7 @@ class RentListingAnalyticsDashboardView
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline_rounded, color: u.accentLabel, size: 16),
+                Icon(Icons.info_outline, color: u.accentLabel, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -592,9 +588,8 @@ class RentListingAnalyticsDashboardView
           Text(
             _isSw ? 'Top Performing Months' : 'Top Performing Months',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 22,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: u.onSurface,
             ),
           ),
@@ -646,9 +641,8 @@ class RentListingAnalyticsDashboardView
           Text(
             _isSw ? 'Predictive Occupancy' : 'Predictive Occupancy',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 21,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: u.onSurface,
             ),
           ),

@@ -8,6 +8,7 @@ import '../../../core/utils/thousand_separator.dart';
 import '../../../core/widget/currency_dropdown_field.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
+import '../../../core/widget/sticky_form_actions.dart';
 import '../controllers/add_expense_controller.dart';
 
 class AddExpenseView extends BaseView<AddExpenseController> {
@@ -65,7 +66,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
       color: c.headline,
     );
 
-    return SingleChildScrollView(
+    final content = SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
       child: Form(
         key: controller.formKey,
@@ -106,7 +107,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                           ),
                           dropdownColor: c.dropdownBg,
                           icon: Icon(
-                            Icons.expand_more_rounded,
+                            Icons.expand_more_outlined,
                             color: c.secondary,
                           ),
                           decoration: InputDecoration(
@@ -183,7 +184,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                             ),
                             dropdownColor: c.dropdownBg,
                             icon: Icon(
-                              Icons.expand_more_rounded,
+                              Icons.expand_more_outlined,
                               color: c.secondary,
                             ),
                             decoration: const InputDecoration(
@@ -295,7 +296,7 @@ class AddExpenseView extends BaseView<AddExpenseController> {
                     controller.datePaidController,
                     hint: 'dd/MM/yyyy',
                     keyboardType: TextInputType.datetime,
-                    suffix: Icons.calendar_month_rounded,
+                    suffix: Icons.calendar_month_outlined,
                     readOnly: true,
                     onTap: () => _pickTransactionDate(context),
                     validator: controller.validateDatePaid,
@@ -319,17 +320,6 @@ class AddExpenseView extends BaseView<AddExpenseController> {
               ),
             ),
             const SizedBox(height: 12),
-            Obx(
-              () => LoadingButton(
-                label: controller.isEditMode
-                    ? (_isSw ? 'Sasisha Gharama' : 'Update Expense')
-                    : (_isSw ? 'Rekodi Muamala' : 'Record Transaction'),
-                icon: Icons.receipt_long_outlined,
-                onPressed: controller.saveExpenseOffline,
-                isLoading: controller.isBusy.value,
-              ),
-            ),
-            const SizedBox(height: 14),
             _expenseCard(
               colors: c,
               child: Column(
@@ -371,6 +361,25 @@ class AddExpenseView extends BaseView<AddExpenseController> {
           ],
         ),
       ),
+    );
+
+    // Save was sitting mid-scroll, above the monthly context card.
+    return Column(
+      children: [
+        Expanded(child: content),
+        StickyFormActions(
+          primary: Obx(
+            () => LoadingButton(
+              label: controller.isEditMode
+                  ? (_isSw ? 'Sasisha Gharama' : 'Update Expense')
+                  : (_isSw ? 'Rekodi Muamala' : 'Record Transaction'),
+              icon: Icons.receipt_long_outlined,
+              onPressed: controller.saveExpenseOffline,
+              isLoading: controller.isBusy.value,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -497,7 +506,7 @@ class _StatBlock extends StatelessWidget {
           label,
           style: TextStyle(
             color: labelColor,
-            fontSize: 8,
+            fontSize: 10,
             letterSpacing: 1.2,
             fontWeight: FontWeight.w700,
           ),
@@ -507,7 +516,7 @@ class _StatBlock extends StatelessWidget {
           value,
           style: TextStyle(
             fontSize: 11.5,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: (value == 'Healthy' || value == 'Nzuri')
                 ? colors.tokens.accent
                 : valueMuted,

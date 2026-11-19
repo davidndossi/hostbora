@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../core/base/feedback_extensions.dart';
 import '../../../core/widget/undo_snackbar.dart';
+import '../../../data/local/db/synced_entity_store.dart';
 import '../../../data/model/calendar_subscription.dart';
 import '../../../data/model/calendar_sync_request.dart';
 import '../../../data/model/create_calendar_subscription_request.dart';
@@ -26,10 +27,15 @@ class CalendarSyncController extends BaseController {
   final importUrlController = TextEditingController();
   final importLabelController = TextEditingController();
 
-  String get listingId =>
-      (Get.arguments is Map)
-          ? ((Get.arguments as Map)['listing_id'] ?? '').toString().trim()
-          : '';
+  String get listingId {
+    if (Get.arguments is! Map) return '';
+    final args = Get.arguments as Map;
+    for (final key in ['listing_id', 'listingId', 'propertyRef', 'property_ref']) {
+      final value = (args[key] ?? '').toString().trim();
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
 
   String get listingName =>
       (Get.arguments is Map)
@@ -61,6 +67,16 @@ class CalendarSyncController extends BaseController {
       return;
     }
     loading.value = true;
+    try {
+      final cached = await SyncedEntityStore().load(SyncedEntityStore.calendarType);
+      final forListing = cached
+          .where((row) =>
+              (row.payload['listingId'] ?? '').toString().trim() == listingId)
+          .map((row) => CalendarSubscription.fromJson(row.payload))
+          .where((sub) => sub.id.isNotEmpty)
+          .toList();
+      if (forListing.isNotEmpty) subscriptions.assignAll(forListing);
+    } catch (_) {}
     await callDataService(
       _repository.getCalendarSubscriptions(listingId),
       onSuccess: (GeneralResponse res) {

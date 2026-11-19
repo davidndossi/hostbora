@@ -6,10 +6,16 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/constants/ui_preference_keys.dart';
+import '../../../core/utils/form_recall.dart';
 import '../../../core/utils/haptic_feedback_util.dart';
+import '../../../core/utils/bnb_stay_billing.dart';
+import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/property_unit_local_data_source.dart';
+import '../../../data/local/db/tenant_local_data_source.dart';
+import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../data/model/create_booking_request.dart';
@@ -23,7 +29,7 @@ import '../../guest_access_codes/controllers/guest_access_codes_controller.dart'
 import '../../home/controllers/home_controller.dart';
 import '../../host_calendar/controllers/host_calendar_controller.dart';
 
-/// Lightweight listing for property dropdown (from GET /api/listings).
+/// Lightweight property for the booking dropdown (from local `properties`).
 class ListingItem {
   ListingItem({
     required this.id,
@@ -33,7 +39,7 @@ class ListingItem {
   final String id;
   final String propertyName;
 
-  /// Listing-level capacity from API (`maxGuests`). 0 = unknown.
+  /// Unit-level capacity when known. 0 = unknown.
   final int maxGuests;
 }
 
@@ -50,7 +56,7 @@ class BookingUnitItem {
   final int maxGuests;
 }
 
-class AddNewBookingController extends BaseController {
+class AddNewBookingController extends BaseController with FormRecallMixin {
   static const _chunkSize = 200;
 
   AddNewBookingController()
@@ -81,6 +87,7 @@ class AddNewBookingController extends BaseController {
   final listingsLoading = false.obs;
   final selectedListingId = Rx<String?>(null);
   final propertyUnits = <BookingUnitItem>[].obs;
+  final _freeUnitsByListingId = <String, List<BookingUnitItem>>{};
   final selectedUnitId = Rx<String?>(null);
   final checkInDate = Rx<DateTime?>(null);
   final checkOutDate = Rx<DateTime?>(null);
@@ -131,6 +138,30 @@ class AddNewBookingController extends BaseController {
           : 'Select date';
 
   @override
+  void onInit() {
+    super.onInit();
+    _seedDefaults();
+  }
+
+  /// Seeds the one-night stay starting today that [pickCheckOut] already treats
+  /// as the common case, and makes the implicit single guest visible. Both
+  /// dates are otherwise blank and fail validation on save.
+  void _seedDefaults() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+
+    checkInDate.value = today;
+    checkInDateController.text = DateFormat(_dateFormat).format(today);
+    checkOutDate.value = tomorrow;
+    checkOutDateController.text = DateFormat(_dateFormat).format(tomorrow);
+
+    if (numberOfGuestsController.text.trim().isEmpty) {
+      numberOfGuestsController.text = '1';
+    }
+  }
+
+  @override
   void onReady() {
     super.onReady();
     loadListings();
@@ -152,84 +183,55 @@ class AddNewBookingController extends BaseController {
       final localRows = await _propertyLocal.getAllNewestFirstChunked(
         chunkSize: _chunkSize,
       );
-      final localItems = localRows
-          .map(
-            (r) => ListingItem(
-              id: r.propertyRef.trim().isNotEmpty ? r.propertyRef.trim() : 'local_${r.id}',
-              propertyName: r.propertyName.trim().isNotEmpty
-                  ? r.propertyName.trim()
-                  : (r.propertyLocation.trim().isNotEmpty ? r.propertyLocation.trim() : 'Property'),
-            ),
-          )
-          .where((e) => e.id.isNotEmpty)
-          .toList();
+      final occupied = await _loadOccupiedStays();
+      final tenants = await _loadActiveTenants();
+      final items = <ListingItem>[];
+      _freeUnitsByListingId.clear();
 
-      final res = await _repository.getMyListings();
-      final data = res.data;
-      final merged = <String, ListingItem>{
-        for (final item in localItems) item.id: item,
-      };
-      if (data is List) {
-        final remoteItems = data
-            .map((e) {
-              if (e is! Map) return null;
-              final m = Map<String, dynamic>.from(e);
-              final id = (m['id'] ?? '').toString();
-              if (id.isEmpty) return null;
-              final maxGuests = (m['maxGuests'] as num?)?.toInt() ??
-                  (m['max_guests'] as num?)?.toInt() ??
-                  0;
-              return ListingItem(
-                id: id,
-                propertyName: (m['propertyName'] ?? m['id'] ?? 'Property')
-                    .toString(),
-                maxGuests: maxGuests > 0 ? maxGuests : 0,
-              );
-            })
-            .whereType<ListingItem>();
-        for (final item in remoteItems) {
-          final existing = merged[item.id];
-          merged[item.id] = ListingItem(
-            id: item.id,
-            propertyName: item.propertyName.isNotEmpty
-                ? item.propertyName
-                : (existing?.propertyName ?? 'Property'),
-            maxGuests: item.maxGuests > 0
-                ? item.maxGuests
-                : (existing?.maxGuests ?? 0),
-          );
-        }
+      for (final property in localRows) {
+        final id = property.propertyRef.trim().isNotEmpty
+            ? property.propertyRef.trim()
+            : 'local_${property.id}';
+        if (id.isEmpty) continue;
+        final freeUnits = await _freeBnbUnits(
+          property: property,
+          listingId: id,
+          occupied: occupied,
+          tenants: tenants,
+        );
+        if (freeUnits.isEmpty) continue;
+        _freeUnitsByListingId[id] = freeUnits;
+        items.add(
+          ListingItem(
+            id: id,
+            propertyName: property.propertyName.trim().isNotEmpty
+                ? property.propertyName.trim()
+                : (property.propertyLocation.trim().isNotEmpty
+                    ? property.propertyLocation.trim()
+                    : 'Property'),
+          ),
+        );
       }
-      listings.assignAll(merged.values.toList());
-      if (listings.isNotEmpty && selectedListingId.value == null) {
-        selectedListingId.value = listings.first.id;
+
+      listings.assignAll(items);
+      final selected = selectedListingId.value;
+      if (selected == null || !items.any((item) => item.id == selected)) {
+        // Opens on the listing the host booked against last. A booking is
+        // cheap to re-point, so falling through to the first keeps the
+        // picker usable rather than empty.
+        final recalled = await recallChoice(
+          key: UiPreferenceKeys.addBookingListing,
+          options: items.map((item) => item.id),
+          fallback: RecallFallback.firstOption,
+        );
+        selectedListingId.value = recalled.isEmpty ? null : recalled;
       }
       await _loadUnitsForListing(selectedListingId.value);
     } catch (e) {
-      try {
-        final localRows = await _propertyLocal.getAllNewestFirstChunked(
-          chunkSize: _chunkSize,
-        );
-        listings.assignAll(
-          localRows
-              .map(
-                (r) => ListingItem(
-                  id: r.propertyRef.trim().isNotEmpty ? r.propertyRef.trim() : 'local_${r.id}',
-                  propertyName: r.propertyName.trim().isNotEmpty
-                      ? r.propertyName.trim()
-                      : (r.propertyLocation.trim().isNotEmpty ? r.propertyLocation.trim() : 'Property'),
-                ),
-              )
-              .where((e) => e.id.isNotEmpty)
-              .toList(),
-        );
-        if (listings.isNotEmpty && selectedListingId.value == null) {
-          selectedListingId.value = listings.first.id;
-        }
-        await _loadUnitsForListing(selectedListingId.value);
-      } catch (_) {
-        Get.snackbar('Error', 'Could not load properties: $e');
-      }
+      listings.clear();
+      propertyUnits.clear();
+      selectedListingId.value = null;
+      Get.snackbar('Error', 'Could not load properties: $e');
     } finally {
       listingsLoading.value = false;
     }
@@ -249,62 +251,290 @@ class AddNewBookingController extends BaseController {
     selectedUnitId.value = null;
     if (id.isEmpty) return;
 
-    final units = <BookingUnitItem>[];
+    final cached = _freeUnitsByListingId[id];
+    if (cached != null) {
+      propertyUnits.assignAll(cached);
+      if (cached.length == 1) selectedUnitId.value = cached.first.id;
+      return;
+    }
+
     try {
-      final unitRows = await _propertyUnitLocal.getAllByPropertyRefNewestFirstChunked(
-        propertyRef: id,
+      final localRows = await _propertyLocal.getAllNewestFirstChunked(
         chunkSize: _chunkSize,
       );
-      for (final row in unitRows) {
+      final property = localRows.firstWhereOrNull(
+        (r) => r.propertyRef.trim() == id || 'local_${r.id}' == id,
+      );
+      if (property == null) return;
+      final units = await _freeBnbUnits(
+        property: property,
+        listingId: id,
+        occupied: await _loadOccupiedStays(),
+        tenants: await _loadActiveTenants(),
+      );
+      _freeUnitsByListingId[id] = units;
+      propertyUnits.assignAll(units);
+      if (units.length == 1) selectedUnitId.value = units.first.id;
+    } catch (_) {}
+  }
+
+  Future<List<BookingUnitItem>> _freeBnbUnits({
+    required PropertyRecord property,
+    required String listingId,
+    required _OccupiedStays occupied,
+    required List<TenantRecord> tenants,
+  }) async {
+    final workspace = property.workspaceType.trim().toLowerCase();
+    final candidates = <_BnbUnitCandidate>[];
+
+    final refs = <String>{
+      listingId,
+      if (property.propertyRef.trim().isNotEmpty) property.propertyRef.trim(),
+      'local_${property.id}',
+      'legacy_${property.id}',
+    };
+    final seen = <String>{};
+    for (final ref in refs) {
+      if (ref.trim().isEmpty) continue;
+      final rows = await _propertyUnitLocal.getAllByPropertyRefNewestFirstChunked(
+        propertyRef: ref,
+        chunkSize: _chunkSize,
+      );
+      for (final row in rows) {
         final unitName = row.unitName.trim();
         if (unitName.isEmpty) continue;
-        units.add(
-          BookingUnitItem(
-            id: row.propertyUnitRef.trim().isNotEmpty
-                ? row.propertyUnitRef.trim()
-                : '${row.id}',
+        if (!_isBnbUnit(row.operationMode, workspace)) continue;
+        final unitId = row.propertyUnitRef.trim().isNotEmpty
+            ? row.propertyUnitRef.trim()
+            : '${row.id}';
+        if (!seen.add(unitId.toLowerCase())) continue;
+        candidates.add(
+          _BnbUnitCandidate(
+            id: unitId,
             unitName: unitName,
             maxGuests: row.maxGuests > 0 ? row.maxGuests : 0,
+            status: row.status,
           ),
         );
       }
+    }
 
-      if (units.isEmpty) {
-        final localRows = await _propertyLocal.getAllNewestFirstChunked(
-          chunkSize: _chunkSize,
-        );
-        final target = localRows.firstWhereOrNull(
-          (r) => r.propertyRef.trim() == id || 'local_${r.id}' == id,
-        );
-        if (target != null && target.unitsJson.trim().isNotEmpty) {
-          final decoded = jsonDecode(target.unitsJson);
-          if (decoded is List) {
-            for (final e in decoded.whereType<Map>()) {
-              final m = Map<String, dynamic>.from(e);
-              final unitName =
-                  (m['unitName'] ?? m['name'] ?? '').toString().trim();
-              if (unitName.isEmpty) continue;
-              final unitId = (m['unitId'] ?? '').toString().trim();
-              final maxGuests = (m['maxGuests'] as num?)?.toInt() ??
-                  (m['max_guests'] as num?)?.toInt() ??
-                  0;
-              units.add(
-                BookingUnitItem(
-                  id: unitId.isNotEmpty ? unitId : '__n:$unitName',
-                  unitName: unitName,
-                  maxGuests: maxGuests > 0 ? maxGuests : 0,
-                ),
-              );
-            }
+    if (candidates.isEmpty && property.unitsJson.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(property.unitsJson);
+        if (decoded is List) {
+          for (final e in decoded.whereType<Map>()) {
+            final m = Map<String, dynamic>.from(e);
+            final unitName = (m['unitName'] ?? '').toString().trim();
+            if (unitName.isEmpty) continue;
+            final mode = (m['operationMode'] ?? '').toString();
+            if (!_isBnbUnit(mode, workspace)) continue;
+            final unitId = (m['unitId'] ?? '').toString().trim();
+            final id = unitId.isNotEmpty ? unitId : '__n:$unitName';
+            if (!seen.add(id.toLowerCase())) continue;
+            candidates.add(
+              _BnbUnitCandidate(
+                id: id,
+                unitName: unitName,
+              ),
+            );
           }
         }
+      } catch (_) {}
+    }
+
+    if (candidates.isEmpty && _propertyOffersBnb(workspace)) {
+      final label = property.apartmentSuite.trim().isNotEmpty
+          ? property.apartmentSuite.trim()
+          : (property.propertyName.trim().isNotEmpty
+              ? property.propertyName.trim()
+              : property.propertyLocation.trim());
+      if (label.isNotEmpty) {
+        candidates.add(
+          _BnbUnitCandidate(
+            id: _wholePropertyUnitId,
+            unitName: label,
+            status: '',
+          ),
+        );
+      }
+    }
+
+    final propertyTenants = tenants.where((t) => _tenantOnProperty(t, property, listingId));
+    final listingIds = refs;
+    final onlyUnit = candidates.length == 1;
+    final free = <BookingUnitItem>[];
+    for (final unit in candidates) {
+      if (_isOccupiedUnit(
+        unit: unit,
+        listingIds: listingIds,
+        occupied: occupied,
+        tenants: propertyTenants,
+        onlyUnitOnProperty: onlyUnit,
+      )) {
+        continue;
+      }
+      free.add(
+        BookingUnitItem(
+          id: unit.id,
+          unitName: unit.unitName,
+          maxGuests: unit.maxGuests,
+        ),
+      );
+    }
+    return free;
+  }
+
+  bool _propertyOffersBnb(String workspace) {
+    return workspace.isEmpty || workspace == 'bnb' || workspace == 'both';
+  }
+
+  bool _isBnbUnit(String operationMode, String workspace) {
+    final mode = operationMode.trim().toLowerCase();
+    if (mode == 'rent') return false;
+    if (workspace == 'rent') return mode == 'bnb' || mode == 'both';
+    return mode.isEmpty || mode == 'bnb' || mode == 'both';
+  }
+
+  bool _tenantOnProperty(TenantRecord tenant, PropertyRecord property, String listingId) {
+    final ref = tenant.propertyRef.trim();
+    if (ref.isNotEmpty &&
+        (ref == listingId ||
+            ref == property.propertyRef.trim() ||
+            ref == 'local_${property.id}' ||
+            ref == 'legacy_${property.id}')) {
+      return true;
+    }
+    final label = tenant.propertyLabel.trim().toLowerCase();
+    final name = property.propertyName.trim().toLowerCase();
+    return label.isNotEmpty && name.isNotEmpty && label == name;
+  }
+
+  bool _isOccupiedUnit({
+    required _BnbUnitCandidate unit,
+    required Set<String> listingIds,
+    required _OccupiedStays occupied,
+    required Iterable<TenantRecord> tenants,
+    required bool onlyUnitOnProperty,
+  }) {
+    final status = unit.status.trim().toLowerCase();
+    if (status == 'occupied' || status.contains('occupied')) return true;
+    if (occupied.matchesUnit(
+      listingIds: listingIds,
+      unitId: unit.id == _wholePropertyUnitId ? '' : unit.id,
+      unitName: unit.unitName,
+      onlyUnitOnProperty: onlyUnitOnProperty,
+    )) {
+      return true;
+    }
+    final today = BnbStayBilling.dateOnly(DateTime.now());
+    for (final tenant in tenants) {
+      final unitId = tenant.apartmentUnitId.trim();
+      final unitName = tenant.unitLabel.trim();
+      final matches = unit.id == _wholePropertyUnitId ||
+          (unitId.isNotEmpty && unitId == unit.id) ||
+          (unitName.isNotEmpty &&
+              unitName.toLowerCase() == unit.unitName.toLowerCase()) ||
+          (onlyUnitOnProperty && unitId.isEmpty && unitName.isEmpty);
+      if (!matches) continue;
+      final start = DateTime.tryParse(tenant.leaseStartIso.trim()) ??
+          DateTime.fromMillisecondsSinceEpoch(tenant.createdAtMs);
+      final end = DateTime.tryParse(tenant.leaseEndIso.trim());
+      if (end == null) return true;
+      if (BnbStayBilling.dayInStay(today, start, end)) return true;
+    }
+    return false;
+  }
+
+  Future<List<TenantRecord>> _loadActiveTenants() async {
+    try {
+      if (!Get.isRegistered<TenantLocalDataSource>()) return const [];
+      return Get.find<TenantLocalDataSource>().getActiveTenants();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<_OccupiedStays> _loadOccupiedStays() async {
+    final stays = _OccupiedStays();
+    final today = BnbStayBilling.dateOnly(DateTime.now());
+    final merge = BnbBookingMerge(pending: PendingBookingsStore());
+
+    void consider({
+      required String listingId,
+      required String checkInIso,
+      required String checkOutIso,
+      required bool inactive,
+      String? unitRef,
+    }) {
+      if (inactive || listingId.trim().isEmpty) return;
+      final checkIn = DateTime.tryParse(checkInIso.trim());
+      final checkOut = DateTime.tryParse(checkOutIso.trim());
+      if (checkIn == null || checkOut == null) return;
+      if (!BnbStayBilling.dayInStay(today, checkIn, checkOut)) return;
+      stays.add(
+        listingId: listingId.trim(),
+        unitRef: unitRef?.trim() ?? '',
+      );
+    }
+
+    try {
+      final res = await _repository.getAllBookings();
+      final data = res.data;
+      List<dynamic> rows = const [];
+      if (data is Map && data['bookings'] is List) {
+        rows = data['bookings'] as List;
+      } else if (data is List) {
+        rows = data;
+      }
+      for (final e in rows.whereType<Map>()) {
+        final m = Map<String, dynamic>.from(e);
+        final item = merge.fromApiMap(m);
+        consider(
+          listingId: item.listingId ?? '',
+          checkInIso: item.checkInIso,
+          checkOutIso: item.checkOutIso,
+          inactive: item.isInactive,
+          unitRef: _unitRefFromBookingMap(m),
+        );
       }
     } catch (_) {}
 
-    propertyUnits.assignAll(units);
-    if (units.length == 1) {
-      selectedUnitId.value = units.first.id;
+    try {
+      for (final raw in PendingBookingsStore().load()) {
+        final m = Map<String, dynamic>.from(raw);
+        consider(
+          listingId: (m['listingId'] ?? '').toString(),
+          checkInIso: (m['checkIn'] ?? '').toString(),
+          checkOutIso: (m['checkOut'] ?? '').toString(),
+          inactive: false,
+          unitRef: _unitRefFromBookingMap(m),
+        );
+      }
+    } catch (_) {}
+
+    return stays;
+  }
+
+  String? _unitRefFromBookingMap(Map<String, dynamic> m) {
+    for (final key in [
+      'unitId',
+      'propertyUnitRef',
+      'unitRef',
+      'roomId',
+      'apartmentUnitId',
+      'unitName',
+    ]) {
+      final value = (m[key] ?? '').toString().trim();
+      if (value.isNotEmpty) return value;
     }
+    return null;
+  }
+
+  String? _bookingUnitId(String? raw) {
+    final id = raw?.trim() ?? '';
+    if (id.isEmpty || id == _wholePropertyUnitId) return null;
+    return id;
   }
 
   void selectUnit(String? unitId) {
@@ -469,21 +699,25 @@ class AddNewBookingController extends BaseController {
     if (listingId == null || listingId.isEmpty) return;
     if (checkInDate.value == null || checkOutDate.value == null) return;
     if (saving.value) return;
+    rememberChoice(UiPreferenceKeys.addBookingListing, listingId);
 
     final guestPhone = guestPhoneController.text.trim();
+    final guestName = guestNameController.text.trim();
+    final checkIn = DateFormat(_isoDateFormat).format(checkInDate.value!);
+    final checkOut = DateFormat(_isoDateFormat).format(checkOutDate.value!);
     final request = CreateBookingRequest(
       listingId: listingId,
-      unitId: (selectedUnitId.value != null && selectedUnitId.value!.trim().isNotEmpty)
-          ? selectedUnitId.value!.trim()
-          : null,
-      guestName: guestNameController.text.trim(),
-      checkIn: DateFormat(_isoDateFormat).format(checkInDate.value!),
-      checkOut: DateFormat(_isoDateFormat).format(checkOutDate.value!),
+      unitId: _bookingUnitId(selectedUnitId.value),
+      guestName: guestName,
+      checkIn: checkIn,
+      checkOut: checkOut,
       numberOfGuests: int.tryParse(numberOfGuestsController.text.trim()) ?? 1,
       notes: notesController.text.trim().isEmpty
           ? null
           : notesController.text.trim(),
       guestPhoneNumber: guestPhone.isEmpty ? null : guestPhone,
+      idempotencyKey:
+          'booking:create:$listingId:$checkIn:$checkOut:${guestName.toLowerCase()}',
     );
 
     saving.value = true;
@@ -512,6 +746,8 @@ class AddNewBookingController extends BaseController {
           entityType: 'booking',
           operation: 'create',
           payloadJson: jsonEncode(request.toJson()),
+          dedupeKey: request.idempotencyKey ??
+              'booking:create:$listingId:$checkIn:$checkOut:${guestName.toLowerCase()}',
         );
         await _syncWorker.runNow(maxItems: 20);
       }
@@ -607,6 +843,8 @@ class AddNewBookingController extends BaseController {
     }
   }
 
+  static const _wholePropertyUnitId = '__whole_property__';
+
   @override
   void onClose() {
     guestNameController.dispose();
@@ -617,5 +855,51 @@ class AddNewBookingController extends BaseController {
     checkInDateController.dispose();
     checkOutDateController.dispose();
     super.onClose();
+  }
+}
+
+class _BnbUnitCandidate {
+  const _BnbUnitCandidate({
+    required this.id,
+    required this.unitName,
+    this.maxGuests = 0,
+    this.status = '',
+  });
+
+  final String id;
+  final String unitName;
+  final int maxGuests;
+  final String status;
+}
+
+class _OccupiedStays {
+  final _hits = <({String listingId, String unitRef})>[];
+
+  void add({required String listingId, required String unitRef}) {
+    final id = listingId.trim();
+    if (id.isEmpty) return;
+    _hits.add((listingId: id, unitRef: unitRef.trim()));
+  }
+
+  bool matchesUnit({
+    required Set<String> listingIds,
+    required String unitId,
+    required String unitName,
+    required bool onlyUnitOnProperty,
+  }) {
+    final ids = listingIds.map((e) => e.trim()).where((e) => e.isNotEmpty).toSet();
+    if (ids.isEmpty) return false;
+    final name = unitName.trim().toLowerCase();
+    for (final hit in _hits) {
+      if (!ids.contains(hit.listingId)) continue;
+      final ref = hit.unitRef;
+      if (ref.isEmpty) {
+        if (onlyUnitOnProperty) return true;
+        continue;
+      }
+      if (unitId.isNotEmpty && ref == unitId) return true;
+      if (name.isNotEmpty && ref.toLowerCase() == name) return true;
+    }
+    return false;
   }
 }

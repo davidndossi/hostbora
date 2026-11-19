@@ -81,7 +81,7 @@ class _PropertyFinancialTrendChartsState
           style: TextStyle(
             fontSize: 10,
             letterSpacing: 1.2,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: u.muted,
           ),
         ),
@@ -136,7 +136,7 @@ class _PropertyFinancialTrendChartsState
                       isDense: true,
                       underline: const SizedBox(),
                       icon: Icon(
-                        Icons.keyboard_arrow_down_rounded,
+                        Icons.keyboard_arrow_down_outlined,
                         size: 16,
                         color: u.muted,
                       ),
@@ -412,7 +412,7 @@ class _PropertyFinancialTrendChartsState
           interval: top / 4,
           getTitlesWidget: (v, _) => Text(
             _formatAxis(v),
-            style: TextStyle(fontSize: 9, color: u.muted),
+            style: TextStyle(fontSize: 10, color: u.muted),
           ),
         ),
       ),
@@ -429,7 +429,7 @@ class _PropertyFinancialTrendChartsState
               child: Text(
                 labels[i],
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
                   color: u.muted,
                 ),

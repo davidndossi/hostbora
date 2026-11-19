@@ -121,6 +121,18 @@ FIREBASE_DEBUG=1 SMOKE=1 ./firebase_app_testing/run-tests.sh
 | `12-reports-subscription.yaml` | Reports hub, subscription plans |
 | `13-settings-support-legal.yaml` | Settings, help, legal, feedback |
 | `14-home-quick-actions.yaml` | Home "What would you like to do?" dialog, quick-add wizards, AI "Other (Specify)" routing |
+| `15-network-managers-rewards.yaml` | My Network, property manager directory/profile, challenges & rewards |
+| `16-inventory-reports-more.yaml` | More Options sheet, inventory tracking/form, apartment reports export |
+| `17-add-document.yaml` | Add Document form, folder, sources, preview, save, Pro gate |
+| `crud-test-cases.md` | Per-module round-trip, validation, duplicate, and foreign-key checks for phone and remote stores |
+
+## Cursor QA agent
+
+For a full correctness pass (matrix + gates + report), invoke the project skill:
+
+`.cursor/skills/host-bora-qa/SKILL.md`
+
+Ask Cursor: "Run Host Bora QA" / "test every functionality" — it will follow the skill, feature matrix, and these suites.
 
 ## Agent limitations
 

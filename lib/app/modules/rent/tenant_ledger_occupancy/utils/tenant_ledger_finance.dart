@@ -8,6 +8,10 @@ class TenantLedgerFinance {
   TenantLedgerFinance._();
 
   static const tenantIdNotePrefix = 'tenantId:';
+  static final _tenantIdNotePattern = RegExp(
+    r'(?:^|[^\d])tenantId:(\d+)(?!\d)',
+    multiLine: true,
+  );
 
   static DateTime? parseIsoDate(String raw) {
     if (raw.trim().isEmpty) return null;
@@ -20,8 +24,14 @@ class TenantLedgerFinance {
   }
 
   static int monthsBetween(DateTime start, DateTime end) {
-    var months = (end.year - start.year) * 12 + (end.month - start.month);
-    if (end.day < start.day) months -= 1;
+    final a = DateTime(start.year, start.month, start.day);
+    final b = DateTime(end.year, end.month, end.day);
+    if (b.isBefore(a)) return 0;
+    // End date is inclusive: 1 Jul–31 Dec is 6 months, not 5.
+    final exclusiveEnd = b.add(const Duration(days: 1));
+    var months =
+        (exclusiveEnd.year - a.year) * 12 + (exclusiveEnd.month - a.month);
+    if (exclusiveEnd.day < a.day) months -= 1;
     return months < 0 ? 0 : months;
   }
 
@@ -153,53 +163,57 @@ class TenantLedgerFinance {
     return 'partial';
   }
 
-  static bool incomeMatchesTenant(IncomeRecord r, TenantRecord t) {
-    final idTag = '$tenantIdNotePrefix${t.id}';
-    if (r.notes.contains(idTag)) return true;
-
-    final incomeTenant = r.tenantName.trim().toLowerCase();
-    final tenantName = t.tenantName.trim().toLowerCase();
-    final tenantMatches = incomeTenant.isNotEmpty && incomeTenant == tenantName;
-    if (incomeTenant.isNotEmpty && !tenantMatches) return false;
-
-    final tenantRef = t.propertyRef.trim();
-    final incomeRef = r.propertyRef.trim();
-    final refMatches =
-        tenantRef.isNotEmpty && incomeRef.isNotEmpty && tenantRef == incomeRef;
-    if (tenantRef.isNotEmpty && incomeRef.isNotEmpty && !refMatches) {
-      return false;
+  static bool notesLinkTenant(String notes, int tenantId) {
+    if (tenantId <= 0) return false;
+    for (final match in _tenantIdNotePattern.allMatches(notes)) {
+      if (int.tryParse(match.group(1) ?? '') == tenantId) return true;
     }
-
-    final unitMatches = _incomeRowMatchesTenantUnit(r, t);
-    if (refMatches && (tenantMatches || unitMatches)) return true;
-    if (tenantMatches && unitMatches) return true;
-    if (tenantMatches && _incomeRowMatchesTenantProperty(r, t)) return true;
-    return !tenantMatches &&
-        unitMatches &&
-        _incomeRowMatchesTenantProperty(r, t);
-  }
-
-  static bool _incomeRowMatchesTenantUnit(IncomeRecord r, TenantRecord t) {
-    final tenantUnitId = t.apartmentUnitId.trim().toLowerCase();
-    final tenantUnit = t.unitLabel.trim().toLowerCase();
-    final incomeUnit = r.apartmentUnit.trim().toLowerCase();
-    final notes = r.notes.trim().toLowerCase();
-    if (tenantUnitId.isNotEmpty && incomeUnit == tenantUnitId) return true;
-    if (tenantUnit.isNotEmpty && incomeUnit == tenantUnit) return true;
-    if (tenantUnit.isNotEmpty && notes.contains(tenantUnit)) return true;
     return false;
   }
 
-  static bool _incomeRowMatchesTenantProperty(IncomeRecord r, TenantRecord t) {
-    final pl = t.propertyLabel.trim().toLowerCase();
-    if (pl.isEmpty) return true;
-    final ap = r.apartment.trim().toLowerCase();
-    final unit = r.apartmentUnit.trim().toLowerCase();
-    final notes = r.notes.trim().toLowerCase();
-    final blob = '$ap $unit $notes'.trim();
-    return blob.contains(pl) ||
-        (ap.isNotEmpty && pl.contains(ap)) ||
-        (unit.isNotEmpty && pl.contains(unit));
+  /// Keeps local `tenantId:` tags when a remote payment overwrites notes.
+  static String mergeNotesKeepingTenantIds(String incoming, String existing) {
+    var merged = incoming;
+    for (final match in _tenantIdNotePattern.allMatches(existing)) {
+      final id = int.tryParse(match.group(1) ?? '');
+      if (id == null || id <= 0) continue;
+      merged = appendTenantIdNote(merged, id);
+    }
+    return merged;
+  }
+
+  static bool incomeMatchesTenant(IncomeRecord r, TenantRecord t) {
+    if (t.id <= 0) return false;
+    if (r.tenantId > 0) return r.tenantId == t.id;
+    if (notesLinkTenant(r.notes, t.id)) return true;
+    return _incomeMatchesTenantPlace(r, t);
+  }
+
+  /// Legacy payments often have [IncomeRecord.tenantId] 0 and no `tenantId:`
+  /// note. Match them only when the tenant name agrees **and** the listing
+  /// (propertyRef, or property + unit labels) agrees — never by name alone.
+  static bool _incomeMatchesTenantPlace(IncomeRecord r, TenantRecord t) {
+    final name = t.tenantName.trim().toLowerCase();
+    final rName = r.tenantName.trim().toLowerCase();
+    if (name.isEmpty || rName != name) return false;
+
+    final tRef = t.propertyRef.trim();
+    final rRef = r.propertyRef.trim();
+    if (tRef.isNotEmpty && rRef.isNotEmpty) return tRef == rRef;
+
+    final unit = t.unitLabel.trim().toLowerCase();
+    final rUnit = r.apartmentUnit.trim().toLowerCase();
+    final label = t.propertyLabel.trim().toLowerCase();
+    final apt = r.apartment.trim().toLowerCase();
+    final unitOk = unit.isNotEmpty && rUnit.isNotEmpty && unit == rUnit;
+    final placeOk = label.isNotEmpty &&
+        apt.isNotEmpty &&
+        (apt == label || apt.contains(label) || label.contains(apt));
+    if (unitOk && (placeOk || apt.isEmpty || label.isEmpty)) return true;
+    if (placeOk && (unit.isEmpty || rUnit.isEmpty || unit == rUnit)) {
+      return true;
+    }
+    return false;
   }
 
   static String appendTenantIdNote(String notes, int tenantId) {

@@ -127,7 +127,7 @@ class QuickWizardBody extends StatelessWidget {
           ),
           IconButton(
             onPressed: isSubmitting ? null : onClose,
-            icon: Icon(Icons.close_rounded, color: c.hint),
+            icon: Icon(Icons.close_outlined, color: c.hint),
           ),
         ],
       ),
@@ -142,10 +142,7 @@ class QuickWizardBody extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 220),
-        child: KeyedSubtree(
-          key: ValueKey(stepIndex),
-          child: stepContent,
-        ),
+        child: KeyedSubtree(key: ValueKey(stepIndex), child: stepContent),
       ),
     );
 
@@ -174,7 +171,10 @@ class QuickWizardBody extends StatelessWidget {
                 ),
                 child: Text(
                   'Previous',
-                  style: TextStyle(color: c.headline, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: c.headline,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -192,7 +192,10 @@ class QuickWizardBody extends StatelessWidget {
                   ),
                   child: Text(
                     skipLabel ?? 'Skip',
-                    style: TextStyle(color: c.secondary, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: c.secondary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -249,8 +252,10 @@ class QuickWizardBody extends StatelessWidget {
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final viewportHeight =
-            (constraints.maxHeight - keyboardInset).clamp(0.0, constraints.maxHeight);
+        final viewportHeight = (constraints.maxHeight - keyboardInset).clamp(
+          0.0,
+          constraints.maxHeight,
+        );
         return Column(
           children: [
             SizedBox(
@@ -264,7 +269,12 @@ class QuickWizardBody extends StatelessWidget {
                     children: [
                       Column(
                         mainAxisSize: MainAxisSize.min,
-                        children: [header, dots, const SizedBox(height: 8), content],
+                        children: [
+                          header,
+                          dots,
+                          const SizedBox(height: 8),
+                          content,
+                        ],
                       ),
                       footer,
                     ],

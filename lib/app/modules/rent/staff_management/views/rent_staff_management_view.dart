@@ -12,6 +12,7 @@ import '../../widgets/rent_ui.dart';
 import '../controllers/rent_staff_management_controller.dart';
 import '../utils/rent_staff_pay_format.dart';
 import '../widgets/staff_access_editor.dart';
+import '../widgets/staff_option_sheet_field.dart';
 
 class _StaffUi {
   _StaffUi(this.context);
@@ -85,6 +86,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
         return const DefaultScreenSkeleton();
       }
       return SingleChildScrollView(
+        primary: false,
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +95,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               _isSw ? 'Usajili wa Wafanyakazi' : 'Staff Registry',
               style: TextStyle(
                 fontSize: 24,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 letterSpacing: 1.3,
                 color: u.onSurface,
               ),
@@ -152,7 +154,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                   Icon(
                     editing
                         ? Icons.edit_outlined
-                        : Icons.person_add_alt_1_rounded,
+                        : Icons.person_add_alt_1_outlined,
                     color: u.brandTeal.withValues(alpha: 0.95),
                     size: 22,
                   ),
@@ -163,7 +165,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                           ? (_isSw ? 'Hariri Mfanyakazi' : 'Edit Staff Member')
                           : (_isSw ? 'Mfanyakazi Mpya' : 'New Staff Member'),
                       style: TextStyle(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         fontSize: 16,
                         color: u.onSurface,
                       ),
@@ -225,26 +227,24 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
             _capsLabel(u, 'Pay type'),
             const SizedBox(height: 8),
             Obx(
-              () => DropdownButtonFormField<String>(
-                key: ValueKey(
-                  'pay-${controller.editingStaffId.value}-${controller.paymentType.value}',
-                ),
-                initialValue: RentStaffPayFormat.paymentTypeLabels.containsKey(controller.paymentType.value)
+              () => StaffOptionSheetField(
+                key: ValueKey('pay-${controller.editingStaffId.value}'),
+                value: RentStaffPayFormat.paymentTypeLabels
+                        .containsKey(controller.paymentType.value)
                     ? controller.paymentType.value
                     : RentStaffPayFormat.monthly,
                 decoration: _dropdownDeco(u),
-                dropdownColor: u.card,
-                style: TextStyle(color: u.onSurface, fontWeight: FontWeight.w500, fontSize: 15),
-                icon: Icon(Icons.expand_more_rounded, color: u.onSurface),
-                items: RentStaffPayFormat.paymentTypeLabels.entries
-                    .map(
-                      (e) => DropdownMenuItem<String>(
-                        value: e.key,
-                        child: Text(e.value),
-                      ),
-                    )
-                    .toList(),
-                onChanged: controller.updatePaymentType,
+                style: TextStyle(
+                  color: u.onSurface,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 15,
+                ),
+                sheetTitle: _isSw ? 'Aina ya malipo' : 'Pay type',
+                options: [
+                  for (final entry in RentStaffPayFormat.paymentTypeLabels.entries)
+                    StaffSheetOption(value: entry.key, label: entry.value),
+                ],
+                onChanged: (value) => controller.updatePaymentType(value),
               ),
             ),
             const SizedBox(height: 14),
@@ -306,28 +306,28 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               () {
                 final role = controller.selectedPrimaryRole.value;
                 final opts = RentStaffManagementController.primaryRoleOptions;
-                return DropdownButtonFormField<String>(
-                  key: ValueKey(
-                    'role-${controller.editingStaffId.value}-$role',
-                  ),
-                  initialValue: role.isEmpty ? null : (opts.contains(role) ? role : null),
+                return StaffOptionSheetField(
+                  key: ValueKey('role-${controller.editingStaffId.value}'),
+                  value: role.isEmpty || !opts.contains(role) ? null : role,
                   decoration: _dropdownDeco(u),
-                  dropdownColor: u.card,
-                  style: TextStyle(color: u.onSurface, fontWeight: FontWeight.w500, fontSize: 15),
-                  icon: Icon(Icons.expand_more_rounded, color: u.onSurface),
-                  hint: Text(
-                    _isSw ? 'Chagua jukumu...' : 'Select a role...',
-                    style: TextStyle(color: u.muted),
+                  style: TextStyle(
+                    color: u.onSurface,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
                   ),
-                  isExpanded: true,
+                  hint: _isSw ? 'Chagua jukumu...' : 'Select a role...',
+                  sheetTitle: _isSw ? 'Chagua jukumu' : 'Select a role',
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: (value) => (value == null || value.isEmpty)
-                      ? (_isSw ? 'Chagua jukumu la msingi' : 'Select a primary role')
+                      ? (_isSw
+                          ? 'Chagua jukumu la msingi'
+                          : 'Select a primary role')
                       : null,
-                  items: opts
-                      .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: controller.updatePrimaryRole,
+                  options: [
+                    for (final option in opts)
+                      StaffSheetOption(value: option, label: option),
+                  ],
+                  onChanged: (value) => controller.updatePrimaryRole(value),
                 );
               },
             ),
@@ -369,7 +369,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                             : 'Register staff member'),
                     style: const TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 0.6,
                     ),
                   ),
@@ -420,13 +420,13 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                         style: TextStyle(
                           fontSize: 10,
                           letterSpacing: 1.4,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: Colors.white.withValues(alpha: 0.85),
                         ),
                       ),
                     ),
                     Icon(
-                      Icons.chevron_right_rounded,
+                      Icons.chevron_right_outlined,
                       color: Colors.white.withValues(alpha: 0.85),
                       size: 22,
                     ),
@@ -437,7 +437,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                   RentStaffPayFormat.formatPayrollTotal(total),
                   style: const TextStyle(
                     fontSize: 28,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
                 ),
@@ -480,11 +480,12 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
   Widget _activeTeamHeader(_StaffUi u) {
     return Obx(
       () => Row(
+        key: controller.activeTeamSectionKey,
         children: [
           Expanded(
             child: Text(
               _isSw ? 'Timu Hai ya Huduma' : 'Active Service Team',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: u.onSurface),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: u.onSurface),
             ),
           ),
           Text(
@@ -492,7 +493,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
             style: TextStyle(
               fontSize: 11,
               letterSpacing: 0.8,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: u.muted,
             ),
           ),
@@ -550,7 +551,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
           child: Text(
             m.name.isNotEmpty ? m.name[0].toUpperCase() : '?',
             style: TextStyle(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: u.brandTeal.withValues(alpha: 0.95),
               fontSize: 18,
             ),
@@ -597,7 +598,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
               ],
             ),
             PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, color: u.muted),
+              icon: Icon(Icons.more_vert_outlined, color: u.muted),
               padding: EdgeInsets.zero,
               color: u.card,
               onSelected: (value) {
@@ -639,7 +640,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                 Text(
                   _isSw ? 'Kumbukumbu ya Uzingatiaji' : 'Compliance Note',
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     fontSize: 14,
                     color: u.complianceTitle,
                   ),
@@ -680,7 +681,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
                 Text(
                   _isSw ? 'Mishahara Inayokuja' : 'Upcoming Payroll',
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     fontSize: 14,
                     color: u.brandTeal.withValues(alpha: 0.98),
                   ),
@@ -706,7 +707,7 @@ class RentStaffManagementView extends RentBaseView<RentStaffManagementController
       style: TextStyle(
         fontSize: 10,
         letterSpacing: 1.1,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         color: u.labelCaps,
       ),
     );

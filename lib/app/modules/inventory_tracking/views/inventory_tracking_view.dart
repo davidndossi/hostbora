@@ -71,7 +71,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
             Text(
               isSw ? 'Ingiza CSV' : 'Import from CSV',
               style: const TextStyle(
-                  fontSize: 17, fontWeight: FontWeight.w800),
+                  fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
@@ -98,7 +98,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
     return FloatingActionButton.extended(
       onPressed: controller.onAddItem,
       backgroundColor: AppColors.colorPrimary,
-      icon: const Icon(Icons.add_rounded, color: Colors.white),
+      icon: const Icon(Icons.add_outlined, color: Colors.white),
       label: Text(
         _isSw ? 'Ongeza' : 'Add',
         style: const TextStyle(
@@ -178,7 +178,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                   u,
                   label: _isSw ? 'Bidhaa chini' : 'Low stock',
                   value: '${controller.lowStockCount.value}',
-                  icon: Icons.warning_amber_rounded,
+                  icon: Icons.warning_amber_outlined,
                   accent: controller.lowStockCount.value > 0
                       ? const Color(0xFFD97706)
                       : null,
@@ -189,7 +189,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                   u,
                   label: _isSw ? 'Mabadiliko' : 'Recent changes',
                   value: '${controller.recentlyChangedCount.value}',
-                  icon: Icons.history_rounded,
+                  icon: Icons.history_outlined,
                 ),
               ),
             ],
@@ -215,7 +215,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
           value,
           style: TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             color: u.headline,
           ),
         ),
@@ -385,7 +385,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                         item.name,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: u.headline,
                         ),
                       ),
@@ -404,7 +404,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(
-                              Icons.warning_amber_rounded,
+                              Icons.warning_amber_outlined,
                               size: 12,
                               color: Color(0xFFD97706),
                             ),
@@ -456,7 +456,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                             '${item.quantity}',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: low
                                   ? const Color(0xFFD97706)
                                   : u.headline,
@@ -473,7 +473,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                     ),
                     TextButton.icon(
                       onPressed: () => _openAdjustSheet(context, u, item),
-                      icon: const Icon(Icons.tune_rounded, size: 16),
+                      icon: const Icon(Icons.tune_outlined, size: 16),
                       label: Text(_isSw ? 'Rekebisha' : 'Adjust',
                           style: const TextStyle(fontSize: 12)),
                       style: TextButton.styleFrom(
@@ -598,7 +598,7 @@ class InventoryTrackingView extends RentBaseView<InventoryTrackingController> {
                             _isSw ? 'Rekebisha bidhaa' : 'Adjust stock',
                             style: TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: u.headline,
                             ),
                           ),
@@ -940,7 +940,7 @@ class _HistorySheet extends StatelessWidget {
                       item.name,
                       style: TextStyle(
                         fontSize: 17,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: u.headline,
                       ),
                     ),
@@ -965,7 +965,7 @@ class _HistorySheet extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.warning_amber_rounded,
+                      const Icon(Icons.warning_amber_outlined,
                           size: 12, color: _amber),
                       const SizedBox(width: 3),
                       const Text(
@@ -1002,7 +1002,7 @@ class _HistorySheet extends StatelessWidget {
                   '${item.quantity}',
                   style: TextStyle(
                     fontSize: 17,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: item.isLowStock ? _amber : u.headline,
                   ),
                 ),
@@ -1083,11 +1083,11 @@ class _HistorySheet extends StatelessWidget {
       case 'add':
       case 'restock':
         typeColor = _green;
-        typeIcon = Icons.add_circle_outline_rounded;
+        typeIcon = Icons.add_circle_outline;
         break;
       case 'use':
         typeColor = _blue;
-        typeIcon = Icons.remove_circle_outline_rounded;
+        typeIcon = Icons.remove_circle_outline;
         break;
       case 'damage':
         typeColor = _red;
@@ -1096,8 +1096,8 @@ class _HistorySheet extends StatelessWidget {
       default:
         typeColor = isPositive ? _green : _amber;
         typeIcon = isPositive
-            ? Icons.arrow_upward_rounded
-            : Icons.arrow_downward_rounded;
+            ? Icons.arrow_upward_outlined
+            : Icons.arrow_downward_outlined;
     }
 
     final dt = DateTime.fromMillisecondsSinceEpoch(m.createdAtMs);
@@ -1153,7 +1153,7 @@ class _HistorySheet extends StatelessWidget {
             '${isPositive ? '+' : ''}${m.quantityDelta}',
             style: TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: typeColor,
             ),
           ),

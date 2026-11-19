@@ -11,7 +11,9 @@ import '../../../data/service/app_review_service.dart';
 import '../../../data/local/service/lease_expiry_reminder_prompt_service.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/remote/remote_data_source.dart';
+import '../../../core/access/sales_agent_session.dart';
 import '../../../core/access/staff_access.dart';
+import '../../../data/local/preference/preference_manager.dart';
 import '../../../routes/app_pages.dart';
 import '../../my_properties/controllers/my_properties_controller.dart';
 import '/app/core/base/base_controller.dart';
@@ -55,7 +57,11 @@ class MainController extends BaseController with WidgetsBindingObserver {
     // so RemoteDataSource is available. Delay slightly so the UI paints first.
     // Soft prompts are sequenced so at most one appears (see LaunchPromptGate).
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_redirectAgentOnlyIfNeeded());
       _refreshSessionIfNeeded();
+      if (Get.isRegistered<AppLocaleController>()) {
+        unawaited(Get.find<AppLocaleController>().syncWithAccount());
+      }
       // Let Home paint before kicking remote sync (heavy UI refresh cascade).
       Future.delayed(const Duration(seconds: 3), triggerRemoteAccountSync);
       // Force-update can always show; soft update waits longer (see AppUpdateService)
@@ -63,6 +69,21 @@ class MainController extends BaseController with WidgetsBindingObserver {
       _checkForUpdate();
       Future.delayed(const Duration(seconds: 2), _runSoftLaunchPrompts);
     });
+  }
+
+  Future<void> _redirectAgentOnlyIfNeeded() async {
+    if (!Get.isRegistered<PreferenceManager>(
+      tag: (PreferenceManager).toString(),
+    )) {
+      return;
+    }
+    final prefs = Get.find<PreferenceManager>(
+      tag: (PreferenceManager).toString(),
+    );
+    final route = await SalesAgentSession.homeRoute(prefs);
+    if (route == Routes.SALES_AGENT_HOME && Get.currentRoute != route) {
+      Get.offAllNamed(route);
+    }
   }
 
   /// Lease decision first (actionable), then store review — only one may show.
@@ -208,9 +229,12 @@ class MainController extends BaseController with WidgetsBindingObserver {
 
   Future<void> addTask() async {
     final result = await Get.toNamed(Routes.ADD_TASK);
-    if (result == true && Get.isRegistered<MaintenanceTasksController>()) {
-      Get.find<MaintenanceTasksController>().loadTasks();
+    if (result == null || !Get.isRegistered<MaintenanceTasksController>()) {
+      return;
     }
+    final tasks = Get.find<MaintenanceTasksController>();
+    tasks.applyAddTaskResult(result);
+    await tasks.loadTasks();
   }
 
   Future<void> addProperty() async {

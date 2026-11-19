@@ -1,6 +1,20 @@
 (function () {
   // WhatsApp: 255789287509 — keep in sync with support_controller.dart (supportWhatsAppE164)
 
+  const referralMatch = location.pathname.match(/^\/r\/([^/]+)\/?$/);
+  if (referralMatch && referralMatch[1] !== '*') {
+    const code = decodeURIComponent(referralMatch[1]);
+    const bar = document.createElement('div');
+    bar.setAttribute('role', 'status');
+    bar.style.cssText =
+      'background:#1C6E64;color:#fff;text-align:center;padding:12px 16px;font:600 15px/1.4 "Inter Tight",Inter,system-ui,sans-serif';
+    bar.textContent =
+      'Referral code ' +
+      code +
+      '. Download HostBora and enter this code when you create your account.';
+    document.body.prepend(bar);
+  }
+
   const menuBtn = document.getElementById('menuBtn');
   const nav = document.getElementById('nav');
 
@@ -204,5 +218,28 @@
         contactBtn.textContent = contactT('contact.submit');
       }
     });
+  }
+
+  function syncHeroStageScale() {
+    const stage = document.querySelector('.hero-stage');
+    if (!stage) return;
+    const width = stage.clientWidth;
+    if (!width) return;
+    stage.style.setProperty('--hero-scale', String(width / 1880));
+  }
+
+  function bindHeroStageScale() {
+    syncHeroStageScale();
+    window.addEventListener('resize', syncHeroStageScale);
+    if (typeof ResizeObserver === 'function') {
+      const heroStage = document.querySelector('.hero-stage');
+      if (heroStage) new ResizeObserver(syncHeroStageScale).observe(heroStage);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindHeroStageScale);
+  } else {
+    bindHeroStageScale();
   }
 })();

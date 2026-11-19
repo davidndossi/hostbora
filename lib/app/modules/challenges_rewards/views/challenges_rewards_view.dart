@@ -54,6 +54,15 @@ class ChallengesRewardsView extends BaseView<ChallengesRewardsController> {
             ),
             const SizedBox(height: 8),
             ...data.earn.map((item) => _earnRow(theme, item)),
+            if (data.achievements.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text(
+                _t('Achievements', 'Mafanikio'),
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              ...data.achievements.map((item) => _achievementRow(theme, item)),
+            ],
             if (!data.academyCompleted) ...[
               const SizedBox(height: 8),
               OutlinedButton(
@@ -79,7 +88,7 @@ class ChallengesRewardsView extends BaseView<ChallengesRewardsController> {
 
   Widget _balanceCard(ThemeData theme, RewardsDashboard data) {
     return Card(
-      color: AppColors.designAccent,
+      color: AppColors.colorPrimary,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -132,7 +141,7 @@ class ChallengesRewardsView extends BaseView<ChallengesRewardsController> {
                 value: (challenge.pct / 100).clamp(0.0, 1.0),
                 minHeight: 10,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                color: AppColors.designAccent,
+                color: AppColors.colorPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -159,6 +168,25 @@ class ChallengesRewardsView extends BaseView<ChallengesRewardsController> {
     return '${challenge.pct}%';
   }
 
+  Widget _achievementRow(ThemeData theme, RewardAchievement item) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(
+        item.unlocked ? Icons.emoji_events : Icons.emoji_events_outlined,
+        color: item.unlocked ? AppColors.colorPrimary : theme.colorScheme.onSurfaceVariant,
+      ),
+      title: Text(item.title),
+      subtitle: Text(item.description),
+      trailing: Text(
+        item.unlocked ? _t('Unlocked', 'Imefunguliwa') : _t('Locked', 'Imefungwa'),
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: item.unlocked ? AppColors.colorPrimary : theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
   Widget _earnRow(ThemeData theme, RewardEarnItem item) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -166,7 +194,7 @@ class ChallengesRewardsView extends BaseView<ChallengesRewardsController> {
       trailing: Text(
         item.claimed ? _t('Claimed', 'Imechukuliwa') : '+${item.points}',
         style: theme.textTheme.titleSmall?.copyWith(
-          color: item.claimed ? theme.colorScheme.onSurfaceVariant : AppColors.designAccent,
+          color: item.claimed ? theme.colorScheme.onSurfaceVariant : AppColors.colorPrimary,
           fontWeight: FontWeight.w700,
         ),
       ),

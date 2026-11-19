@@ -87,7 +87,7 @@ Widget rentMetricTile({
                 value,
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: RentTheme.navy,
                   height: 1.1,
                 ),

@@ -1,0 +1,139 @@
+# Add Document (`/add-document`)
+# Entry: More → Documents (Property Vault) → + button.
+# The documents-list "Upload Document" button opens the scanner, not this form.
+# Document vault is a Pro feature. On Free/Starter an upgrade sheet is correct.
+tests:
+  - displayName: Open Add Document from Property Vault
+    id: add-document-form
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open the Add Document form from Property Vault
+        hint: >
+          More tab → Documents (opens Property Vault). Tap the round + button
+          at the bottom. Do not use Upload Document inside a folder — that
+          opens the scanner. If an upgrade sheet for Document vault appears,
+          stop; that account is not Pro.
+        finalScreenAssertion: >
+          Add Document screen shows Document name (optional), Save to folder,
+          Scan Document, Upload from Gallery, Upload File, and a disabled
+          Add Document button. No PREVIEW section is visible.
+
+  - displayName: Add Document folder dropdown lists vault folders
+    id: add-document-folder
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Change the folder the document would be saved into
+        hint: >
+          Open Add Document from Property Vault +. Tap Save to folder.
+          Legal Documents is the default. Choose Tax Records, then open the
+          dropdown again and choose Property Manuals. Do not pick a file.
+        finalScreenAssertion: >
+          The folder field shows Property Manuals, the Add Document button
+          stays disabled, and the screen is still Add Document.
+
+  - displayName: Document name alone does not enable save
+    id: add-document-name-does-not-save
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Type a document name without choosing a file
+        hint: >
+          On Add Document, type Lease agreement 2026 into Document name
+          (optional). Do not tap Scan, Gallery, or Upload File.
+        finalScreenAssertion: >
+          The typed name remains in the field, no PREVIEW section appears,
+          and the Add Document button stays disabled.
+
+  - displayName: Cancel gallery pick returns to Add Document
+    id: add-document-gallery-cancel
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open the gallery picker from Add Document and cancel it
+        hint: >
+          Tap Upload from Gallery. If a photo permission dialog appears,
+          allow it. Then dismiss or cancel the system photo picker without
+          choosing an image. Do not leave the app on the picker.
+        finalScreenAssertion: >
+          Add Document is visible again, there is no PREVIEW, and the
+          Add Document button is still disabled.
+
+  - displayName: Cancel file pick returns to Add Document
+    id: add-document-file-cancel
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open the device file picker from Add Document and cancel it
+        hint: >
+          Tap Upload File. Dismiss the system file picker without choosing
+          a file. If a permission dialog blocks the picker, allow it and
+          then cancel the picker.
+        finalScreenAssertion: >
+          Add Document is visible again, there is no PREVIEW, and the
+          Add Document button is still disabled.
+
+  - displayName: Scan from Add Document returns to the form
+    id: add-document-scan-back
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open the scanner from Add Document, then go back
+        hint: >
+          Tap Scan Document. Grant camera permission if asked. Do not
+          capture a page. Press the system or app back control once.
+        finalScreenAssertion: >
+          The scanner or a camera permission prompt was shown, and one
+          back returns to Add Document with the save button still disabled.
+          The screen is not blank.
+
+  - displayName: Staged file shows preview and enables save
+    id: add-document-staged-preview
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Choose one image or file and confirm the preview before saving
+        hint: >
+          On Add Document leave Document name empty, then tap Upload from
+          Gallery or Upload File and choose one existing image or PDF.
+          Do not tap Add Document yet. If the system picker cannot be
+          completed, stop and report this case blocked — a cancelled picker
+          is not a failure of the form.
+        finalScreenAssertion: >
+          PREVIEW is visible with the chosen file name and a Remove button.
+          Document name was filled from the file name without its extension.
+          The Add Document button is enabled.
+
+  - displayName: Remove staged file disables save again
+    id: add-document-remove-staged
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Stage a file, then remove it
+        hint: >
+          Choose one gallery image or file so PREVIEW appears. Tap Remove.
+          If the picker cannot be completed, report blocked.
+        finalScreenAssertion: >
+          PREVIEW is gone and the Add Document button is disabled again.
+          The Add Document screen is still open.
+
+  - displayName: Save staged document into the selected folder
+    id: add-document-save
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Save one uploaded document into Tax Records
+        hint: >
+          On Add Document set Save to folder to Tax Records. Choose one
+          image or PDF. Optionally set Document name to QA vault note.
+          Tap the enabled Add Document button. If the picker cannot be
+          completed, report blocked and do not invent a saved file.
+        finalScreenAssertion: >
+          A Document saved message appears and the app returns to Property
+          Vault. Opening the Tax Records folder shows the new document.
+
+  - displayName: Document vault upgrade gate
+    id: add-document-plan-gate
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Confirm who can open Add Document
+        hint: >
+          More → Documents. Document vault requires Pro. Free and Starter
+          should see an upgrade sheet for Document vault instead of the
+          vault. Pro and Ultra should reach Property Vault and the + button
+          should open Add Document.
+        finalScreenAssertion: >
+          Either an upgrade sheet for Document vault is visible, or the
+          Add Document form is visible. The app does not open a blank screen.

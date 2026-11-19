@@ -120,7 +120,7 @@ class UnitOccupancyView extends BaseView<UnitOccupancyController> {
         const SizedBox(width: 8),
         FilledButton.icon(
           onPressed: controller.reloadOccupancy,
-          icon: const Icon(Icons.refresh_rounded, size: 18, color: Colors.white),
+          icon: const Icon(Icons.refresh_outlined, size: 18, color: Colors.white),
           label: Text(
             l10n.unitOccupancyRefresh,
             style: const TextStyle(
@@ -197,7 +197,7 @@ class UnitOccupancyView extends BaseView<UnitOccupancyController> {
                       building.toUpperCase(),
                       style: const TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: Color(0xFF2563EB),
                         letterSpacing: 0.4,
                       ),
@@ -283,7 +283,7 @@ class UnitOccupancyView extends BaseView<UnitOccupancyController> {
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 22,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 height: 1.05,
               ),
             ),
@@ -295,7 +295,7 @@ class UnitOccupancyView extends BaseView<UnitOccupancyController> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.92),
-                fontSize: 9.5,
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.6,
                 height: 1.15,

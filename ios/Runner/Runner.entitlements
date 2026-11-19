@@ -5,6 +5,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:hostbora.co.tz</string>
+		<string>applinks:www.hostbora.co.tz</string>
 	</array>
 </dict>
 </plist>

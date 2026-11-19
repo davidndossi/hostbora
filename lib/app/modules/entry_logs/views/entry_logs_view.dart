@@ -30,7 +30,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
       scrolledUnderElevation: 0,
       leading: IconButton(
         onPressed: () => Get.back(),
-        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+        icon: const Icon(Icons.arrow_back_ios_new_outlined, size: 20),
         color: Theme.of(context).colorScheme.onSurface,
       ),
       title: Column(
@@ -69,7 +69,7 @@ class EntryLogsView extends BaseView<EntryLogsController> {
             padding: const EdgeInsets.only(right: 8),
             child: TextButton.icon(
               onPressed: controller.refresh,
-              icon: const Icon(Icons.refresh, size: 18, color: _teal),
+              icon: const Icon(Icons.refresh_outlined, size: 18, color: _teal),
               label: Text(
                 '${_t(context, en: 'SYNCED', sw: 'IMESAWAZISHWA')} ${controller.lastSynced.value.toUpperCase()}',
                 style: const TextStyle(
@@ -360,8 +360,8 @@ class _LogEntryCard extends StatelessWidget {
       EntryLogIconType.key => (Icons.key, AppColors.textColorSecondary),
       EntryLogIconType.keypad => (Icons.dialpad, AppColors.textColorSecondary),
       EntryLogIconType.warning => (
-        Icons.warning_amber_rounded,
-        AppColors.paaYanguAlert,
+        Icons.warning_amber_outlined,
+        AppColors.colorAlert,
       ),
     };
     return Icon(icon, size: 24, color: color);
@@ -371,7 +371,7 @@ class _LogEntryCard extends StatelessWidget {
     final (String label, Color color) = switch (item.status) {
       EntryLogStatus.success => (
         Get.locale?.languageCode == 'sw' ? 'IMEFAULU' : 'SUCCESS',
-        AppColors.colorSuccessGreen,
+        AppColors.colorSuccess,
       ),
       EntryLogStatus.completed => (
         Get.locale?.languageCode == 'sw' ? 'IMEKAMILIKA' : 'COMPLETED',
@@ -383,7 +383,7 @@ class _LogEntryCard extends StatelessWidget {
       ),
       EntryLogStatus.alert => (
         Get.locale?.languageCode == 'sw' ? 'TAHADHARI' : 'ALERT',
-        AppColors.paaYanguAlert,
+        AppColors.colorAlert,
       ),
     };
     return Container(

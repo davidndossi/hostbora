@@ -28,8 +28,11 @@ tests:
     prerequisiteTestCaseId: host-login
     steps:
       - goal: Open Add Document manual upload screen
-        hint: From documents list use Add Document or upload button.
-        finalScreenAssertion: Add document form with title and file picker is visible
+        hint: >
+          More → Documents opens Property Vault. Tap the + button.
+          Upload Document inside a folder opens the scanner, not this form.
+          Full Add Document cases are in 17-add-document.yaml.
+        finalScreenAssertion: Add document form with title, folder, and Scan, Gallery, and Upload File options is visible
 
   - displayName: Open refine scan screen navigation
     id: vault-refine-scan-nav

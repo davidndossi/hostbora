@@ -103,7 +103,7 @@ class FeedbackView extends BaseView<FeedbackController> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: c.headline,
             ),
           ),
@@ -225,7 +225,7 @@ class FeedbackView extends BaseView<FeedbackController> {
         c,
         accent,
         hint: l10n.feedbackEmailHint,
-        prefix: Icons.mail_outline_rounded,
+        prefix: Icons.mail_outline,
       ),
     );
   }
@@ -296,7 +296,7 @@ class FeedbackView extends BaseView<FeedbackController> {
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.send_rounded, size: 18),
+                    : const Icon(Icons.send_outlined, size: 18),
                 label: Text(
                   l10n.feedbackSubmitButton,
                   style: const TextStyle(
@@ -324,7 +324,7 @@ class FeedbackView extends BaseView<FeedbackController> {
       text,
       style: TextStyle(
         fontSize: 16,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         color: color,
       ),
     );

@@ -290,7 +290,16 @@ class StaffAccessStore extends GetxService {
 class StaffAccessNavigatorObserver extends NavigatorObserver {
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    final name = route.settings.name;
+    _enforce(route);
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    _enforce(newRoute);
+  }
+
+  void _enforce(Route<dynamic>? route) {
+    final name = route?.settings.name;
     if (name == null || !Get.isRegistered<StaffAccessStore>()) return;
     final store = Get.find<StaffAccessStore>();
     if (store.allowsRoute(name)) return;
@@ -340,6 +349,8 @@ const _routePermission = <String, String>{
   Routes.ADD_TASK: StaffPermissions.manageTasks,
   Routes.EDIT_TASK: StaffPermissions.manageTasks,
   Routes.ALL_TENANTS: StaffPermissions.viewTenants,
+  Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER: StaffPermissions.viewTenants,
+  Routes.RENT_TENANT_LEDGER_OCCUPANCY: StaffPermissions.viewTenants,
   Routes.ADD_NEW_TENANT: StaffPermissions.manageTenants,
   Routes.SEND_SMS: StaffPermissions.messageGuest,
   Routes.RENT_CONCIERGE_INBOX: StaffPermissions.messageGuest,

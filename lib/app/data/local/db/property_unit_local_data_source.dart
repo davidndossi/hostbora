@@ -19,6 +19,7 @@ class PropertyUnitRecord {
     required this.notes,
     required this.createdAtMs,
     this.rentCurrency = 'TZS',
+    this.updatedAtMs = 0,
   });
 
   final int id;
@@ -35,6 +36,9 @@ class PropertyUnitRecord {
   final String operationMode;
   final String notes;
   final int createdAtMs;
+
+  /// Last local or applied remote edit. `0` means "use [createdAtMs]".
+  final int updatedAtMs;
 
   /// ISO 4217 currency code for [rentAmount]. Defaults to base currency (TZS).
   /// Always store the original contract currency; convert at display time.
@@ -59,6 +63,7 @@ class PropertyUnitRecord {
       notes: m['notes'] as String? ?? '',
       createdAtMs: m['created_at_ms'] as int? ?? 0,
       rentCurrency: _normCurrency(m['rent_currency'] as String?),
+      updatedAtMs: (m['updated_at_ms'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -94,26 +99,59 @@ class PropertyUnitLocalDataSource {
   static const _table = AppLocalDatabase.propertyUnitsTable;
   static const _defaultChunkSize = 200;
 
-  Database? _db;
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
-  }
+  Future<Database> get database => AppLocalDatabase.database;
 
   Future<int> insert(PropertyUnitRecord row) async {
     final db = await database;
-    return db.insert(_table, row.toInsertMap());
+    final map = row.toInsertMap();
+    map['updated_at_ms'] = row.updatedAtMs > 0
+        ? row.updatedAtMs
+        : (row.createdAtMs > 0
+            ? row.createdAtMs
+            : DateTime.now().millisecondsSinceEpoch);
+    return db.insert(_table, map);
   }
 
   Future<int> update(PropertyUnitRecord row) async {
     final db = await database;
     return db.update(
       _table,
-      {...row.toInsertMap(), 'id': row.id},
+      {
+        ...row.toInsertMap(),
+        'id': row.id,
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
+      },
       where: 'id = ?',
       whereArgs: [row.id],
+    );
+  }
+
+  /// Newest edit time among units for [propertyRef], using created time when
+  /// a row has never been edited.
+  Future<int> maxUpdatedAtForProperty(String propertyRef) async {
+    final ref = propertyRef.trim();
+    if (ref.isEmpty) return 0;
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT MAX(CASE WHEN updated_at_ms > 0 THEN updated_at_ms ELSE created_at_ms END) AS m '
+      'FROM $_table WHERE property_ref = ?',
+      [ref],
+    );
+    return (rows.first['m'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<void> stampUpdatedAtForProperty(
+    String propertyRef,
+    int updatedAtMs,
+  ) async {
+    final ref = propertyRef.trim();
+    if (ref.isEmpty || updatedAtMs <= 0) return;
+    final db = await database;
+    await db.update(
+      _table,
+      {'updated_at_ms': updatedAtMs},
+      where: 'property_ref = ?',
+      whereArgs: [ref],
     );
   }
 

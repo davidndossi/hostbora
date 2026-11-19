@@ -323,7 +323,7 @@ class RentMonthlyPlSummaryController extends BaseController
         labelKey: 'staff',
         label: isSw ? 'Mishahara ya wafanyakazi' : 'Staff Salaries',
         amount: expenseStaff.value,
-        icon: Icons.people_outline_rounded,
+        icon: Icons.people_outline,
       ),
       PlExpenseLineVm(
         labelKey: 'maint',

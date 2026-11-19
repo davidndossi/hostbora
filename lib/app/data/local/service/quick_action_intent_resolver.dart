@@ -188,8 +188,8 @@ class QuickActionIntentResolver {
       'maintenance cost analysis',
     ),
     'RENT_FINANCIAL_COMPARISON': _RouteEntry(
-      Routes.RENT_FINANCIAL_COMPARISON,
-      'financial comparison across periods or properties',
+      Routes.RENT_MONTHLY_PL_SUMMARY,
+      'monthly profit and loss (financial comparison)',
     ),
     'RENT_STAFF_MANAGEMENT': _RouteEntry(
       Routes.RENT_STAFF_MANAGEMENT,
@@ -225,12 +225,12 @@ class QuickActionIntentResolver {
       'concierge / tenant messages inbox',
     ),
     'RENT_LOYALTY_THRESHOLDS': _RouteEntry(
-      Routes.RENT_LOYALTY_THRESHOLDS,
-      'configure loyalty program thresholds',
+      Routes.RENT_DEFINE_LOYALTY_OFFERS,
+      'define tenant loyalty offers and thresholds',
     ),
     'RENT_ESTATE_MANAGER_DASHBOARD': _RouteEntry(
-      Routes.RENT_ESTATE_MANAGER_DASHBOARD,
-      'estate manager dashboard',
+      Routes.PROPERTY_MANAGERS,
+      'property / estate manager directory',
     ),
     'RENT_LISTING_ACTIVITY_LOG': _RouteEntry(
       Routes.RENT_LISTING_ACTIVITY_LOG,

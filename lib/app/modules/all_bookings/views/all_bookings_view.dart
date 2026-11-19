@@ -39,6 +39,23 @@ class AllBookingsView extends BaseView<AllBookingsController> {
   }
 
   @override
+  Widget? floatingActionButton() {
+    return Obx(() {
+      if (!controller.canAddBooking) return const SizedBox.shrink();
+      return FloatingActionButton(
+        tooltip: _t(Get.context!, en: 'Add booking', sw: 'Ongeza uhifadhi'),
+        onPressed: controller.addBooking,
+        backgroundColor: AppColors.colorPrimary,
+        child: const Icon(Icons.add_outlined, color: Colors.white, size: 28),
+      );
+    });
+  }
+
+  @override
+  FloatingActionButtonLocation floatingActionButtonLocation() =>
+      FloatingActionButtonLocation.endFloat;
+
+  @override
   Widget body(BuildContext context) {
     return Obx(() {
       if (controller.initialLoading.value) {
@@ -132,7 +149,7 @@ class _BookingCard extends StatelessWidget {
               width: 120,
               child: item.imageUrl.isEmpty
                   ? Container(
-                      color: AppColors.lightGreyColor,
+                      color: AppColors.designInputBorder,
                       child: Icon(
                         Icons.image_not_supported,
                         color: subTextColor,
@@ -144,7 +161,7 @@ class _BookingCard extends StatelessWidget {
                       width: 120,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        color: AppColors.lightGreyColor,
+                        color: AppColors.designInputBorder,
                         child: Icon(
                           Icons.image_not_supported,
                           color: subTextColor,
@@ -162,7 +179,7 @@ class _BookingCard extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 14,
-                          backgroundColor: AppColors.lightGreyColor,
+                          backgroundColor: AppColors.designInputBorder,
                           backgroundImage: item.guestAvatarUrl.isNotEmpty
                               ? NetworkImage(item.guestAvatarUrl)
                               : null,
@@ -296,7 +313,7 @@ class _BookingCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 12, top: 12),
               child: Icon(
-                Icons.chevron_right,
+                Icons.chevron_right_outlined,
                 color: subTextColor,
               ),
             ),

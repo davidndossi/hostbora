@@ -20,14 +20,14 @@ class Notification {
   }
 
   Notification.fromJson(dynamic json) {
-    _id = json['id'];
-    _initiator = json['initiator'];
-    _recipient = json['recipient'];
-    _type = json['type'];
-    _delivered = json['delivered'];
-    _msg = json['msg'];
-    _title = json['title'];
-    _subtitle = json['subtitle'];
+    _id = json['id']?.toString();
+    _initiator = json['initiator']?.toString();
+    _recipient = json['recipient']?.toString();
+    _type = json['type']?.toString();
+    _delivered = json['delivered'] == true || json['read'] == true;
+    _msg = (json['msg'] ?? json['body'])?.toString();
+    _title = json['title']?.toString();
+    _subtitle = json['subtitle']?.toString();
   }
 
   String? _id;
@@ -67,6 +67,10 @@ class Notification {
   String? get msg => _msg;
   String? get title => _title;
   String? get subtitle => _subtitle;
+  bool get isReceipt {
+    final value = (_type ?? '').toUpperCase();
+    return value == 'RECEIPT' || value == 'APP';
+  }
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};

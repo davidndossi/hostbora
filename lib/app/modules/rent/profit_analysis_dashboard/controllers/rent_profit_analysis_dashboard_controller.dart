@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/expense_local_data_source.dart';
+import '../../../../data/local/db/income_local_data_source.dart';
 import '../../rent_real_data_controller_mixin.dart';
 
 class RentProfitExpenseLine {
@@ -19,10 +20,16 @@ class RentProfitExpenseLine {
 class RentProfitAnalysisDashboardController extends BaseController
     with RentRealDataControllerMixin {
   RentProfitAnalysisDashboardController()
-      : _expenseLocal = Get.find<ExpenseLocalDataSource>();
+      : _expenseLocal = Get.find<ExpenseLocalDataSource>(),
+        _incomeLocal = Get.find<IncomeLocalDataSource>();
 
   final ExpenseLocalDataSource _expenseLocal;
+  final IncomeLocalDataSource _incomeLocal;
   final expenses = <ExpenseRecord>[].obs;
+  final incomes = <IncomeRecord>[].obs;
+
+  /// Calendar year used for the Target/Actual monthly chart.
+  int get chartYear => DateTime.now().year;
 
   @override
   void onReady() {
@@ -34,48 +41,108 @@ class RentProfitAnalysisDashboardController extends BaseController
     await Future.wait([
       loadRealDataSnapshot(),
       _loadExpenses(),
+      _loadIncomes(),
     ]);
   }
 
   Future<void> _loadExpenses() async {
-    expenses.value = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
+    final rent = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
+    final bnb = await _expenseLocal.getAllNewestFirst(workspaceType: 'bnb');
+    expenses.value = [...rent, ...bnb];
   }
 
+  Future<void> _loadIncomes() async {
+    final rent = await _incomeLocal.getAllNewestFirst(workspaceType: 'rent');
+    final bnb = await _incomeLocal.getAllNewestFirst(workspaceType: 'bnb');
+    incomes.value = [...rent, ...bnb];
+  }
+
+  bool _isSuddenCost(ExpenseRecord e) {
+    final c = e.category.trim().toLowerCase();
+    return c == 'maintenance' ||
+        c.contains('repair') ||
+        c.contains('emergency') ||
+        c.contains('sudden');
+  }
+
+  /// Profit if income is kept and sudden maintenance/costs are excluded.
   double get targetProfit {
-    final d = realData.value;
-    if (d == null) return 0;
-    return d.incomeTotal * 0.25;
+    final income = incomes.fold<double>(0, (a, b) => a + b.amountValue);
+    final planned = expenses
+        .where((e) => !_isSuddenCost(e))
+        .fold<double>(0, (a, b) => a + b.amountValue);
+    return income - planned;
   }
 
-  double get actualProfit => realData.value?.netProfit ?? 0;
+  /// Profit after deducting all expenses.
+  double get actualProfit {
+    final income = incomes.fold<double>(0, (a, b) => a + b.amountValue);
+    final all = expenses.fold<double>(0, (a, b) => a + b.amountValue);
+    return income - all;
+  }
 
   double get deviationAmount => actualProfit - targetProfit;
 
   double get deviationPercentVsTarget {
-    final target = targetProfit;
+    final target = targetProfit.abs();
     if (target <= 0) return 0;
     return (deviationAmount.abs() / target) * 100;
   }
 
-  List<double> targetTrendBars() {
-    final t = targetProfit;
-    if (t <= 0) return [0, 0, 0, 0, 0, 0];
-    final m = t / 6;
-    return [m * 0.92, m * 0.94, m * 0.98, m * 0.95, m * 1.00, m * 1.04];
+  List<double> _monthlyIncomeForYear(int year) {
+    final out = List<double>.filled(12, 0);
+    for (final r in incomes) {
+      final d = r.paidLocalCalendarOrCreated();
+      if (d.year != year) continue;
+      out[d.month - 1] += r.amountValue;
+    }
+    return out;
   }
 
+  List<double> _monthlyExpenseForYear(int year, {required bool suddenOnly}) {
+    final out = List<double>.filled(12, 0);
+    for (final e in expenses) {
+      final d = e.paidLocalCalendarOrCreated();
+      if (d.year != year) continue;
+      final sudden = _isSuddenCost(e);
+      if (suddenOnly && !sudden) continue;
+      if (!suddenOnly && sudden) continue;
+      out[d.month - 1] += e.amountValue;
+    }
+    return out;
+  }
+
+  List<double> _monthlyAllExpenseForYear(int year) {
+    final out = List<double>.filled(12, 0);
+    for (final e in expenses) {
+      final d = e.paidLocalCalendarOrCreated();
+      if (d.year != year) continue;
+      out[d.month - 1] += e.amountValue;
+    }
+    return out;
+  }
+
+  /// Target profit per month for [chartYear] (income − planned costs).
+  List<double> targetTrendBars() {
+    final year = chartYear;
+    final income = _monthlyIncomeForYear(year);
+    final planned = _monthlyExpenseForYear(year, suddenOnly: false);
+    return List.generate(12, (i) => income[i] - planned[i]);
+  }
+
+  /// Actual profit per month for [chartYear] (income − all expenses).
   List<double> actualTrendBars() {
-    final a = actualProfit;
-    if (a <= 0) return [0, 0, 0, 0, 0, 0];
-    final m = a / 6;
-    return [m * 0.76, m * 0.83, m * 0.88, m * 0.79, m * 0.91, m * 0.97];
+    final year = chartYear;
+    final income = _monthlyIncomeForYear(year);
+    final all = _monthlyAllExpenseForYear(year);
+    return List.generate(12, (i) => income[i] - all[i]);
   }
 
   List<RentProfitExpenseLine> get topExpenseLines {
     final rows = [...expenses];
     rows.sort((a, b) => b.amountValue.compareTo(a.amountValue));
     return rows.take(5).map((e) {
-      final ratio = e.category.trim() == 'Maintenance' ? 0.84 : 0.9;
+      final ratio = _isSuddenCost(e) ? 0.5 : 0.9;
       return RentProfitExpenseLine(record: e, estimated: e.amountValue * ratio);
     }).toList();
   }
@@ -83,10 +150,10 @@ class RentProfitAnalysisDashboardController extends BaseController
   int get revivingItemsCount => topExpenseLines.where((e) => e.variance > 0).length;
 
   double get maintenanceSharePercent {
-    final total = realData.value?.expenseTotal ?? 0;
+    final total = expenses.fold<double>(0, (a, b) => a + b.amountValue);
     if (total <= 0) return 0;
     final maintenance = expenses
-        .where((e) => e.category.trim() == 'Maintenance')
+        .where(_isSuddenCost)
         .fold<double>(0, (a, b) => a + b.amountValue);
     return (maintenance / total) * 100;
   }

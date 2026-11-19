@@ -66,7 +66,7 @@ class RentScheduleMaintenanceFormView extends RentBaseView<RentScheduleMaintenan
                     ),
                     dropdownColor: c.dropdownBg,
                     decoration: _dropdownDecoration(c),
-                    icon: Icon(Icons.expand_more_rounded, color: c.secondary),
+                    icon: Icon(Icons.expand_more_outlined, color: c.secondary),
                     items: controller.propertyOptions
                         .map(
                           (e) => DropdownMenuItem(
@@ -121,7 +121,7 @@ class RentScheduleMaintenanceFormView extends RentBaseView<RentScheduleMaintenan
                       ),
                       dropdownColor: c.dropdownBg,
                       decoration: _dropdownDecoration(c),
-                      icon: Icon(Icons.expand_more_rounded, color: c.secondary),
+                      icon: Icon(Icons.expand_more_outlined, color: c.secondary),
                       items: [
                         DropdownMenuItem<String?>(
                           value: null,
@@ -164,7 +164,7 @@ class RentScheduleMaintenanceFormView extends RentBaseView<RentScheduleMaintenan
                 ),
                 dropdownColor: c.dropdownBg,
                 decoration: _dropdownDecoration(c),
-                icon: Icon(Icons.expand_more_rounded, color: c.secondary),
+                icon: Icon(Icons.expand_more_outlined, color: c.secondary),
                 items: controller.categoryOptions
                     .map(
                       (e) => DropdownMenuItem(
@@ -234,7 +234,7 @@ class RentScheduleMaintenanceFormView extends RentBaseView<RentScheduleMaintenan
                 label: _isSw ? 'Panga kazi' : 'Schedule task',
                 onPressed: controller.scheduleTask,
                 isLoading: controller.saving.value,
-                icon: Icons.event_available_rounded,
+                icon: Icons.event_available_outlined,
                 minimumSize: const Size.fromHeight(54),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _teal,
@@ -244,7 +244,7 @@ class RentScheduleMaintenanceFormView extends RentBaseView<RentScheduleMaintenan
                     borderRadius: BorderRadius.circular(14),
                   ),
                   textStyle: const TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     fontSize: 16,
                     letterSpacing: 0.3,
                   ),
@@ -352,7 +352,7 @@ class RentScheduleMaintenanceFormView extends RentBaseView<RentScheduleMaintenan
       style: TextStyle(
         fontSize: 10,
         letterSpacing: 1.15,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         color: colors.sectionLabel,
       ),
     );

@@ -47,7 +47,7 @@ class AppleIapProducts {
     final id = productId.trim();
     if (id.isEmpty) return id;
     final lower = id.toLowerCase();
-    return _typoAliases[lower] ?? lower.replaceAll('monthalty', 'monthly');
+    return _typoAliases[lower] ?? lower;
   }
 
   static String productIdForPlan(String plan) {

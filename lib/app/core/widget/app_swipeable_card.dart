@@ -59,7 +59,7 @@ class AppSwipeableCard extends StatelessWidget {
       secondaryBackground: hasEnd
           ? _SwipeBg(
               alignment: Alignment.centerRight,
-              color: endColor ?? AppColors.paaYanguSuccess.withValues(alpha: 0.9),
+              color: endColor ?? AppColors.colorSuccess.withValues(alpha: 0.9),
               icon: endIcon,
               label: endLabel ?? '',
             )

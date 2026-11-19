@@ -4,8 +4,10 @@ import 'package:get/get.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/theme/form_surface_colors.dart';
+import '../../../core/utils/property_listing_image_assigner.dart';
 import '../../../core/utils/property_name_rules.dart';
 import '../../../core/utils/thousand_separator.dart';
+import '../../../core/widget/property_listing_image.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/property_unit_floor.dart';
 import '../../../core/values/app_values.dart';
@@ -125,16 +127,12 @@ class EditListingView extends BaseView<EditListingController> {
                       validator: controller.validatePropertyName,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                     ),
-                    if (controller.showUnitsEditor)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          Divider(height: 1, color: c.divider),
-                          const SizedBox(height: 18),
-                          _buildUnitsSection(context),
-                        ],
-                      ),
+                    const SizedBox(height: 20),
+                    _buildCoverSection(context),
+                    const SizedBox(height: 20),
+                    Divider(height: 1, color: c.divider),
+                    const SizedBox(height: 18),
+                    _buildUnitsSection(context),
                     const SizedBox(height: 28),
                   ],
                 ),
@@ -167,24 +165,164 @@ class EditListingView extends BaseView<EditListingController> {
     );
   }
 
+  Widget _buildCoverSection(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel(context, _t(context, en: 'COVER PHOTO', sw: 'PICHA KUU')),
+        const SizedBox(height: 8),
+        Obx(
+          () => ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              height: 160,
+              width: double.infinity,
+              child: PropertyListingImage(
+                imagePath: controller.coverPhotoPath.value,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _showCoverSourceSheet(context),
+            icon: Icon(Icons.photo_camera_outlined, size: 20, color: c.headline),
+            label: Text(
+              _t(context, en: 'Change photo', sw: 'Badilisha picha'),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: c.headline,
+              side: BorderSide(color: c.border),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          _t(context, en: 'DEFAULT PHOTOS', sw: 'PICHA ZA MSINGI'),
+          style: TextStyle(
+            fontSize: 10,
+            letterSpacing: 1.2,
+            fontWeight: FontWeight.w700,
+            color: c.hint,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 64,
+          child: Obx(
+            () {
+              final selected = controller.coverPhotoPath.value.trim();
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: PropertyListingImageAssigner.lrAssetPaths.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final path = PropertyListingImageAssigner.lrAssetPaths[index];
+                  final isSelected = selected == path;
+                  return GestureDetector(
+                    onTap: () => controller.selectCoverPhoto(path),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      width: 64,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : c.border,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: PropertyListingImage(
+                          imagePath: path,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showCoverSourceSheet(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.photo_library_outlined, color: c.headline),
+                title: Text(
+                  _t(context, en: 'Choose from gallery', sw: 'Chagua kutoka gallery'),
+                  style: TextStyle(color: c.headline, fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  controller.pickCoverPhoto(fromGallery: true);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_camera_outlined, color: c.headline),
+                title: Text(
+                  _t(context, en: 'Take a photo', sw: 'Piga picha'),
+                  style: TextStyle(color: c.headline, fontWeight: FontWeight.w600),
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  controller.pickCoverPhoto(fromGallery: false);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildUnitsSection(BuildContext context) {
     final c = FormSurfaceColors.of(context);
     final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel(context, _t(context, en: 'APARTMENT UNITS', sw: 'VYUMBA / UNITI')),
+        _buildLabel(context, _t(context, en: 'UNITS', sw: 'UNITI')),
         const SizedBox(height: 8),
         Obx(
-          () => Column(
-            children: List.generate(
-              controller.apartmentUnits.length,
-              (i) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _addedUnitTile(context, i),
+          () {
+            if (controller.omitStoredUnitList.value) {
+              return const SizedBox.shrink();
+            }
+            return Column(
+              children: List.generate(
+                controller.apartmentUnits.length,
+                (i) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _addedUnitTile(context, i),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
         const SizedBox(height: 8),
         Text(
@@ -280,7 +418,7 @@ class EditListingView extends BaseView<EditListingController> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: c.secondary,
+                      color: c.headline,
                     ),
                   ),
                   hintText: '0.00',
@@ -366,7 +504,7 @@ class EditListingView extends BaseView<EditListingController> {
     return DropdownButtonFormField<int>(
       initialValue: floor,
       isExpanded: true,
-      icon: Icon(Icons.expand_more, color: c.secondary),
+      icon: Icon(Icons.expand_more_outlined, color: c.secondary),
       style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: c.headline),
       decoration: InputDecoration(
         filled: true,
@@ -441,7 +579,7 @@ class EditListingView extends BaseView<EditListingController> {
           ),
           IconButton(
             onPressed: () => controller.removeApartmentUnit(index),
-            icon: Icon(Icons.close_rounded, color: c.hint),
+            icon: Icon(Icons.close_outlined, color: c.hint),
             tooltip: _t(context, en: 'Remove unit', sw: 'Ondoa uniti'),
             visualDensity: VisualDensity.compact,
           ),
@@ -560,7 +698,7 @@ class EditListingView extends BaseView<EditListingController> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designAccent, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),

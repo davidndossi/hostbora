@@ -35,7 +35,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.designSecondaryText,
+                      color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.textColorPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -113,7 +113,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.designAccent,
+                          color: AppColors.colorPrimary,
                         ),
                       ),
                     ),
@@ -144,9 +144,9 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.check_circle_rounded,
+                Icons.check_circle_outlined,
                 size: 48,
-                color: AppColors.designAccent,
+                color: AppColors.colorPrimary,
               ),
             ),
             const SizedBox(height: 24),
@@ -155,7 +155,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
-                color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.designSecondaryText,
+                color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.textColorPrimary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -175,7 +175,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               child: ElevatedButton(
                 onPressed: controller.continueToApp,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.designAccent,
+                  backgroundColor: AppColors.colorPrimary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -208,8 +208,8 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                 ? const SizedBox(width: 48, height: 48)
                 : IconButton(
                     onPressed: controller.close,
-                    icon: const Icon(Icons.close),
-                    color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.designSecondaryText,
+                    icon: const Icon(Icons.close_outlined),
+                    color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.textColorPrimary,
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.transparent,
                     ),
@@ -221,7 +221,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.designAccent,
+                  color: AppColors.colorPrimary,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -244,13 +244,13 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: AppColors.designAccent,
+              color: AppColors.colorPrimary,
               width: 2,
             ),
             color: FormSurfaceColors.of(context).inputFill,
             boxShadow: [
               BoxShadow(
-                color: AppColors.designAccent.withValues(alpha: 0.12),
+                color: AppColors.colorPrimary.withValues(alpha: 0.12),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -260,14 +260,14 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               ? const Padding(
                   padding: EdgeInsets.all(32),
                   child: CircularProgressIndicator(
-                    color: AppColors.designAccent,
+                    color: AppColors.colorPrimary,
                     strokeWidth: 2,
                   ),
                 )
               : Icon(
                   icon,
                   size: 72,
-                  color: AppColors.designAccent,
+                  color: AppColors.colorPrimary,
                 ),
         ),
       );
@@ -287,9 +287,9 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
             height: 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: filled ? AppColors.designAccent : Colors.transparent,
+              color: filled ? AppColors.colorPrimary : Colors.transparent,
               border: Border.all(
-                color: AppColors.designAccent,
+                color: AppColors.colorPrimary,
                 width: 1.5,
               ),
             ),
@@ -361,7 +361,7 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.designSecondaryText,
+                color: FormSurfaceColors.of(context).isDark ? Colors.white : AppColors.textColorPrimary,
               ),
             ),
           ),
@@ -382,12 +382,12 @@ class WelcomeBackView extends BaseView<WelcomeBackController> {
           width: 56,
           height: 56,
           // decoration: const BoxDecoration(
-          //   color: AppColors.designAccent,
+          //   color: AppColors.colorPrimary,
           //   shape: BoxShape.circle,
           // ),
           child: Icon(
             Icons.backspace_outlined,
-            color: FormSurfaceColors.of(context).isDark ? Colors.white70 : AppColors.designAccent,
+            color: FormSurfaceColors.of(context).isDark ? Colors.white70 : AppColors.colorPrimary,
             size: 20,
           ),
         ),

@@ -19,6 +19,7 @@ import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/pending_bookings_store.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../data/service/analytics_service.dart';
 
 /// Period preset for BnB reports (local calendar).
 enum ReportsPeriodKind { weekly, monthly, yearly, custom }
@@ -260,7 +261,7 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
   Future<void> _loadBookingsAndUnits() async {
     final merged = <String, CheckInItem>{};
     try {
-      final res = await _repository.getAllBookings();
+      final res = await _repository.getAllBookings(size: 200);
       final data = res.data;
       List<dynamic> rows = const [];
       if (res.responseCode == '0' && data is Map && data['bookings'] is List) {
@@ -552,23 +553,42 @@ class ReportsController extends BaseController with GetTickerProviderStateMixin 
   final exporting = false.obs;
 
   Future<void> exportPdf([BuildContext? context]) =>
-      _runExport(context, _doExportPdf);
+      _runExport(context, _doExportPdf, 'pdf');
 
   Future<void> exportCsv([BuildContext? context]) =>
-      _runExport(context, _doExportCsv);
+      _runExport(context, _doExportCsv, 'csv');
 
   Future<void> exportExcel([BuildContext? context]) =>
-      _runExport(context, _doExportExcel);
+      _runExport(context, _doExportExcel, 'excel');
+
+  /// Language-independent name for the tab being exported, so the analytics
+  /// dimension stays stable across EN/SW.
+  String _exportSlug(int tab) {
+    switch (tab) {
+      case 0:
+        return 'occupancy';
+      case 1:
+        return 'financial';
+      default:
+        return 'expenses';
+    }
+  }
 
   Future<void> _runExport(
     BuildContext? context,
     Future<void> Function(Rect? shareOrigin) action,
+    String format,
   ) async {
     if (exporting.value) return;
     exporting.value = true;
     final shareOrigin = _shareOrigin(context);
     try {
       await action(shareOrigin);
+      analytics?.logReportExported(
+        format: format,
+        reportType: _exportSlug(tabController.index),
+        module: 'reports',
+      );
       showSuccessMessage(appLocalization.reportsExportDone);
     } catch (e, st) {
       logger.e('Report export failed: $e\n$st');

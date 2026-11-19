@@ -77,7 +77,7 @@ class PropertyVaultController extends BaseController {
         await _tryMergeDirectoriesFromApi();
         _allDirectories = await _buildDirectoryItems();
         _applySearchFilter();
-        _refreshRecent();
+        await _refreshRecent();
       } catch (e) {
         loadError.value = e.toString();
         updatePageState(PageState.FAILED);
@@ -136,14 +136,17 @@ class PropertyVaultController extends BaseController {
   Future<List<VaultDirectoryItem>> _buildDirectoryItems() async {
     final defs = _directoriesStore.loadDirectories();
     final isSw = Get.locale?.languageCode == 'sw';
+    final hidden = _documentsStore.removedNames();
     final remoteCounts = await _remoteDocumentCounts(
       defs.map((d) => d.id).toList(),
+      hidden,
     );
 
     return defs.map((def) {
       final localDocs = _documentsStore
           .loadForDirectory(def.id)
           .where((d) => d.localPath.isNotEmpty && File(d.localPath).existsSync())
+          .where((d) => !hidden.contains(d.fileName.trim().toLowerCase()))
           .toList();
       DateTime? latest;
       for (final doc in localDocs) {
@@ -156,7 +159,8 @@ class PropertyVaultController extends BaseController {
           .where(
             (e) =>
                 e.targetType == VaultRecentTargetType.document &&
-                (e.directoryId ?? '') == def.id,
+                (e.directoryId ?? '') == def.id &&
+                !hidden.contains(e.displayName.trim().toLowerCase()),
           )
           .length;
       final remoteCount = remoteCounts[def.id] ?? 0;
@@ -176,13 +180,19 @@ class PropertyVaultController extends BaseController {
     }).toList();
   }
 
-  Future<Map<String, int>> _remoteDocumentCounts(List<String> dirIds) async {
+  Future<Map<String, int>> _remoteDocumentCounts(
+    List<String> dirIds,
+    Set<String> hiddenNames,
+  ) async {
     if (dirIds.isEmpty) return {};
     final entries = await Future.wait(
       dirIds.map((id) async {
         try {
           final res = await _repository.getVaultDocuments(id);
-          return MapEntry(id, _countDocumentsInResponse(res.data, id));
+          return MapEntry(
+            id,
+            _countDocumentsInResponse(res.data, hiddenNames),
+          );
         } catch (_) {
           return MapEntry(id, 0);
         }
@@ -191,7 +201,10 @@ class PropertyVaultController extends BaseController {
     return Map<String, int>.fromEntries(entries);
   }
 
-  static int _countDocumentsInResponse(dynamic data, String dirId) {
+  static int _countDocumentsInResponse(
+    dynamic data,
+    Set<String> hiddenNames,
+  ) {
     List<dynamic> rawList = [];
     if (data is List) {
       rawList = data.where((e) {
@@ -215,19 +228,67 @@ class PropertyVaultController extends BaseController {
         rawList = map['content'] as List;
       }
     }
-    return rawList.length;
+    return rawList.where((e) {
+      if (e is! Map) return true;
+      final m = Map<String, dynamic>.from(e);
+      final name = (m['name']?.toString() ?? m['fileName']?.toString() ?? '')
+          .trim()
+          .toLowerCase();
+      return name.isEmpty || !hiddenNames.contains(name);
+    }).length;
   }
 
-  void _refreshRecent() {
-    final top = _recentStore.loadTop(limit: VaultRecentAccessStore.homeLimit);
+  Future<void> _refreshRecent() async {
+    final hidden = _documentsStore.removedNames();
+    final all = _recentStore.loadAll();
+    final staleIds = all
+        .where((entry) => _isStaleRecentDocument(entry, hidden))
+        .map((entry) => entry.id)
+        .toSet();
+    if (staleIds.isNotEmpty) {
+      await _recentStore.removeByIds(staleIds);
+    }
+    final top = _recentStore
+        .loadAll()
+        .where((entry) => !staleIds.contains(entry.id))
+        .take(VaultRecentAccessStore.homeLimit)
+        .map((entry) {
+          if (entry.targetType != VaultRecentTargetType.document) return entry;
+          final resolved = _documentsStore.resolveDisplayName(entry.displayName);
+          if (resolved == entry.displayName) return entry;
+          return VaultRecentAccessEntry(
+            id: entry.id,
+            targetType: entry.targetType,
+            targetId: entry.targetId,
+            displayName: resolved,
+            lastAccessedAtMs: entry.lastAccessedAtMs,
+            directoryId: entry.directoryId,
+            localPath: entry.localPath,
+          );
+        })
+        .toList();
     recentlyAccessed.assignAll(
       top.map(
-        (e) => RecentDocumentItem(
-          entry: e,
-          timeAgo: _formatTimeAgo(e.lastAccessedAtMs),
+        (entry) => RecentDocumentItem(
+          entry: entry,
+          timeAgo: _formatTimeAgo(entry.lastAccessedAtMs),
         ),
       ),
     );
+  }
+
+  bool _isStaleRecentDocument(
+    VaultRecentAccessEntry entry,
+    Set<String> hidden,
+  ) {
+    if (entry.targetType != VaultRecentTargetType.document) return false;
+    final raw = entry.displayName.trim().toLowerCase();
+    final resolved =
+        _documentsStore.resolveDisplayName(entry.displayName).trim().toLowerCase();
+    if (hidden.contains(raw) || hidden.contains(resolved)) return true;
+    final path = entry.localPath?.trim();
+    if (path != null && path.isNotEmpty && !File(path).existsSync()) return true;
+    return false;
   }
 
   static String _formatTimeAgo(int timestampMs) {
@@ -285,7 +346,7 @@ class PropertyVaultController extends BaseController {
             ? 'Zilizofikiwa hivi karibuni'
             : 'Recently accessed',
       ).toMap(),
-    );
+    )?.then((_) => loadVault());
   }
 
   Future<void> openDirectory(VaultDirectoryItem dir) async {
@@ -293,7 +354,7 @@ class PropertyVaultController extends BaseController {
       directoryId: dir.directoryId,
       displayName: dir.name,
     );
-    _refreshRecent();
+    await _refreshRecent();
     if (Get.isRegistered<DocumentsController>()) {
       Get.delete<DocumentsController>(force: true);
     }
@@ -333,7 +394,7 @@ class PropertyVaultController extends BaseController {
           directoryId: entry.targetId,
           directoryName: entry.displayName,
         ).toMap(),
-      );
+      )?.then((_) => loadVault());
       return;
     }
     final dirId = entry.directoryId ?? 'general';
@@ -350,7 +411,7 @@ class PropertyVaultController extends BaseController {
         directoryId: dirId,
         directoryName: dirName,
       ).toMap(),
-    );
+    )?.then((_) => loadVault());
   }
 
   void onFabTap() {

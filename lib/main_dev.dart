@@ -14,7 +14,7 @@ import '/flavors/environment.dart';
 import 'app/data/local/service/storage_service.dart';
 import 'app/data/local/service/lease_reminder_workmanager.dart';
 import 'app/data/service/apple_iap_service.dart';
-import 'app/routes/app_pages.dart';
+import 'app/data/service/fcm_token_service.dart';
 import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
@@ -106,12 +106,10 @@ void showAlert(RemoteMessage message) {
           actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
-              onPressed: () =>
-                  Get.offAndToNamed(Routes.HOME,
-                      arguments: {
-                        'service': title,
-                        'receiptBody': content
-                      }),
+              onPressed: () {
+                Get.back(closeOverlays: true);
+                FcmTokenService.openInboxFromPush(message);
+              },
               child: const Text('View'),
             ),
             TextButton(
@@ -171,6 +169,7 @@ void requestUserPermission() async {
       }
 
       final token = await messaging.getToken();
+      await FcmTokenService.persist(token);
       if (kDebugMode) {
         print('FCM Token: $token');
       }
@@ -180,7 +179,9 @@ void requestUserPermission() async {
       }
     }
   }
-  messaging.onTokenRefresh.listen((newToken) {
+  messaging.onTokenRefresh.listen((newToken) async {
+    await FcmTokenService.persist(newToken);
+    await FcmTokenService.registerWithBackend();
     if (kDebugMode) {
       print('Token: $newToken');
     }
@@ -227,8 +228,10 @@ void main() async {
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging.onMessage.listen((event) => showAlert(event));
-  FirebaseMessaging.onMessageOpenedApp.listen((event) =>
-      showFlutterNotification(event));
+  FirebaseMessaging.onMessageOpenedApp.listen((event) {
+    showFlutterNotification(event);
+    FcmTokenService.openInboxFromPush(event);
+  });
 
   await GetStorage.init();
   await Get.putAsync(() => StorageService().init());

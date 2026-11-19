@@ -26,7 +26,11 @@ class PlanInfo {
 
   String get priceFormatted {
     if (Get.isRegistered<CurrencyService>()) {
-      return '${Get.find<CurrencyService>().formatBase(price)}/mo';
+      return Get.find<CurrencyService>().formatMoneyInBase(
+        amount: price.toDouble(),
+        fromCurrency: 'TZS',
+        suffix: '/mo',
+      );
     }
     final sym = CurrencyService.symbolFor(CurrencyService.defaultBaseCurrency);
     final s = price.toString();
@@ -47,9 +51,11 @@ const List<PlanInfo> hostBoraPlanInfos = [
     tagline: 'For solo hosts getting organised.',
     features: [
       'Up to 3 properties',
-      'BnB + Rent workspaces',
-      'Payments, expenses & reminders',
-      'Basic reports',
+      'BnB and Rent, bookings, and calendar',
+      'Tenants, income, expenses, and reminders',
+      'Home occupancy and collection',
+      'Your own maintenance tasks',
+      'Guest history and rewards',
     ],
   ),
   PlanInfo(
@@ -59,9 +65,11 @@ const List<PlanInfo> hostBoraPlanInfos = [
     tagline: 'For growing portfolios and small teams.',
     features: [
       'Up to 10 properties',
-      'Staff, tasks & calendar sync',
-      'Document vault & advanced reports',
-      'SMS / WhatsApp messaging',
+      'Staff, task assignment, and payroll',
+      'Calendar sync, SMS, and WhatsApp',
+      'Document vault, scanner, and inventory',
+      'Profit, ROI, and apartment reports',
+      'Loyalty, concierge, and manager network',
     ],
     isPopular: true,
   ),
@@ -71,9 +79,11 @@ const List<PlanInfo> hostBoraPlanInfos = [
     price: 99000,
     tagline: 'For operators and property managers at scale.',
     features: [
-      'Unlimited properties',
-      'Smart locks & entry logs',
-      'AI Manager & design studio',
+      'Unlimited properties and staff',
+      'Everything in Pro',
+      'Smart locks and entry logs',
+      'AI Manager and AI pricing',
+      'Interior design studio',
       'Priority support',
     ],
   ),
@@ -128,7 +138,13 @@ class SubscriptionService extends GetxService {
         }
       }
     } catch (_) {
-      // Fail silently — keep previous state or loading sentinel.
+      if (status.value.status == 'loading') {
+        status.value = const SubscriptionStatus(
+          id: '',
+          plan: 'none',
+          status: 'none',
+        );
+      }
     }
   }
 
@@ -173,8 +189,21 @@ class SubscriptionService extends GetxService {
     await refresh();
   }
 
-  /// App Store localized price label for [plan], if loaded.
-  String? applePriceForPlan(String plan) => _appleIap?.storePriceForPlan(plan);
+  /// App Store price for [plan], converted into the user's base currency.
+  String? applePriceForPlan(String plan) {
+    final iap = _appleIap;
+    if (iap == null) return null;
+    final id = AppleIapProducts.productIdForPlan(plan);
+    iap.products.length;
+    final details = iap.products[id];
+    if (details == null) return null;
+    if (!Get.isRegistered<CurrencyService>()) return '${details.price}/mo';
+    return Get.find<CurrencyService>().formatMoneyInBase(
+      amount: details.rawPrice,
+      fromCurrency: details.currencyCode,
+      suffix: '/mo',
+    );
+  }
 
   bool get appleProductsLoading => _appleIap?.loadingProducts.value ?? false;
 

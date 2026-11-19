@@ -145,7 +145,7 @@ class RentSchedulePaymentReminderView
                 TextSpan(
                   text: "${controller.displayTenantName}'s",
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: c.primaryText,
                   ),
                 ),
@@ -153,7 +153,7 @@ class RentSchedulePaymentReminderView
                 TextSpan(
                   text: controller.formattedBalance,
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: c.primaryText,
                   ),
                 ),
@@ -243,7 +243,7 @@ class RentSchedulePaymentReminderView
                 // const SizedBox(height: 8),
                 _channelRow(
                   c: c,
-                  icon: Icons.chat_bubble_outline_rounded,
+                  icon: Icons.chat_bubble_outline,
                   label: _isSw ? 'Ukumbusho wa WhatsApp' : 'WhatsApp Reminder',
                   value: controller.whatsappEnabled.value,
                   onChanged: (v) => controller.whatsappEnabled.value = v,
@@ -359,7 +359,7 @@ class RentSchedulePaymentReminderView
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _showAddTemplateDialog(isWhatsapp: true),
-                  icon: const Icon(Icons.add_rounded, size: 16),
+                  icon: const Icon(Icons.add_outlined, size: 16),
                   label: Text(_isSw ? 'WhatsApp Mpya' : 'New WhatsApp'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _ReminderPalette.teal,
@@ -374,7 +374,7 @@ class RentSchedulePaymentReminderView
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _showAddTemplateDialog(isWhatsapp: false),
-                  icon: const Icon(Icons.add_rounded, size: 16),
+                  icon: const Icon(Icons.add_outlined, size: 16),
                   label: const Text('New SMS'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _ReminderPalette.teal,
@@ -408,8 +408,8 @@ class RentSchedulePaymentReminderView
                   child: Text(
                     _isSw ? 'UJUMBE RASIMU' : 'DRAFT MESSAGE',
                     style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 0.6,
                       color: Colors.white,
                     ),
@@ -443,7 +443,7 @@ class RentSchedulePaymentReminderView
                 ? 'Unaweza kutumia viashiria: {tenantName}, {balance}, {property}, {dueDate}.'
                 : 'You can use placeholders: {tenantName}, {balance}, {property}, {dueDate}.',
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
               color: c.mutedText,
@@ -529,7 +529,7 @@ class RentSchedulePaymentReminderView
         child: Text(
           _isSw ? 'PANGA UKUMBUSHO' : 'SCHEDULE REMINDER',
           style: TextStyle(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             fontSize: 14,
             letterSpacing: 0.6,
           ),

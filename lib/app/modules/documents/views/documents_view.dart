@@ -39,11 +39,11 @@ class DocumentsView extends BaseView<DocumentsController> {
       actions: [
         IconButton(
           onPressed: controller.openSearch,
-          icon: const Icon(Icons.search),
+          icon: const Icon(Icons.search_outlined),
           style: IconButton.styleFrom(
             backgroundColor: c.isDark
                 ? Colors.white.withValues(alpha: 0.14)
-                : AppColors.lightGreyColor.withValues(alpha: 0.5),
+                : AppColors.designInputBorder.withValues(alpha: 0.5),
             foregroundColor: Theme.of(context).colorScheme.onSurface,
           ),
         ),
@@ -134,7 +134,7 @@ class DocumentsView extends BaseView<DocumentsController> {
               isSelected:
                   controller.selectedFilter.value == DocumentFilter.urgent,
               leadingIcon: Icons.circle,
-              leadingIconColor: AppColors.paaYanguAlert,
+              leadingIconColor: AppColors.colorAlert,
               leadingIconSize: 8,
               onTap: () => controller.selectFilter(DocumentFilter.urgent),
             ),
@@ -397,7 +397,7 @@ class _DocumentCard extends StatelessWidget {
           if (onOptionsTap != null)
             IconButton(
               onPressed: onOptionsTap,
-              icon: const Icon(Icons.more_vert),
+              icon: const Icon(Icons.more_vert_outlined),
               color: c.secondary,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

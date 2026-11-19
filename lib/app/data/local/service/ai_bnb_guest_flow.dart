@@ -10,6 +10,7 @@ import '../db/offline_sync_queue_local_data_source.dart';
 import '../db/property_local_data_source.dart';
 import '../db/tenant_local_data_source.dart';
 import '../service/offline_sync_worker_service.dart';
+import '../service/remote_account_sync_service.dart';
 import '../../../modules/add_listing/models/apartment_unit_draft.dart';
 
 /// Conversational AI flow for BnB guest management:
@@ -344,6 +345,7 @@ class AiBnbGuestFlow {
       leaseEndIso: _checkOutIso,
       rentCurrency: currency,
     );
+    RemoteAccountSyncService.publishTenantCountFor(prop.propertyRef);
 
     unawaited(eventLocal?.insert(
       tenantLocalId: localId,
@@ -367,6 +369,8 @@ class AiBnbGuestFlow {
       'phone': _phone,
       'email': '',
       'propertyRef': prop.propertyRef,
+      'property_name': propLabel,
+      'propertyName': propLabel,
       'unitId': unitId,
       'unitName': unitLabel,
       'leaseStart': _checkInIso,
@@ -432,6 +436,7 @@ class AiBnbGuestFlow {
       endedAtIso: _actualCheckOutIso,
       endedAtMs: endMs,
     );
+    RemoteAccountSyncService.publishTenantCountFor(g.propertyRef);
 
     unawaited(eventLocal?.insert(
       tenantLocalId: g.id,

@@ -110,6 +110,11 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> getSettingsPreferences() {
+    return _remoteSource.getSettingsPreferences();
+  }
+
+  @override
   Future<GeneralResponse> getUsers(String searchValue) {
     return _remoteSource.getUsers(searchValue);
   }
@@ -127,6 +132,11 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> getUserNotificationsCount(String userId) {
     return _remoteSource.getUserNotificationsCount(userId);
+  }
+
+  @override
+  Future<GeneralResponse> saveFirebaseToken(String token) {
+    return _remoteSource.saveFirebaseToken(token);
   }
 
   @override
@@ -162,6 +172,39 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> getRewards() {
     return _remoteSource.getRewards();
+  }
+
+  @override
+  Future<GeneralResponse> getMyNetwork() {
+    return _remoteSource.getMyNetwork();
+  }
+
+  @override
+  Future<GeneralResponse> getPropertyManagers({
+    String? location,
+    String? propertyType,
+    String? properties,
+  }) {
+    return _remoteSource.getPropertyManagers(
+      location: location,
+      propertyType: propertyType,
+      properties: properties,
+    );
+  }
+
+  @override
+  Future<GeneralResponse> getPropertyManager(String id) {
+    return _remoteSource.getPropertyManager(id);
+  }
+
+  @override
+  Future<GeneralResponse> contactPropertyManager(String id, String channel) {
+    return _remoteSource.contactPropertyManager(id, channel);
+  }
+
+  @override
+  Future<GeneralResponse> recordHostInvite() {
+    return _remoteSource.recordHostInvite();
   }
 
   @override
@@ -231,10 +274,6 @@ class AppRepositoryImpl implements AppRepository {
     );
   }
 
-  @override
-  Future<GeneralResponse> getMyListings({String? status}) {
-    return _remoteSource.getMyListings(status: status);
-  }
 
   @override
   Future<GeneralResponse> getMyProperties() {
@@ -280,8 +319,8 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
-  Future<GeneralResponse> getListing(String listingId) {
-    return _remoteSource.getListing(listingId);
+  Future<GeneralResponse> getProperty(String propertyId) {
+    return _remoteSource.getProperty(propertyId);
   }
 
   @override
@@ -325,6 +364,19 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> updatePayment(
+    String paymentId,
+    Map<String, dynamic> body,
+  ) {
+    return _remoteSource.updatePayment(paymentId, body);
+  }
+
+  @override
+  Future<GeneralResponse> getPayments() {
+    return _remoteSource.getPayments();
+  }
+
+  @override
   Future<GeneralResponse> deletePayment(String paymentId) {
     return _remoteSource.deletePayment(paymentId);
   }
@@ -345,18 +397,23 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> getExpenses() {
+    return _remoteSource.getExpenses();
+  }
+
+  @override
   Future<GeneralResponse> getHomeOverview() {
     return _remoteSource.getHomeOverview();
   }
 
   @override
-  Future<GeneralResponse> getUpcomingBookings() {
-    return _remoteSource.getUpcomingBookings();
+  Future<GeneralResponse> getUpcomingBookings({int page = 0, int size = 50}) {
+    return _remoteSource.getUpcomingBookings(page: page, size: size);
   }
 
   @override
-  Future<GeneralResponse> getAllBookings() {
-    return _remoteSource.getAllBookings();
+  Future<GeneralResponse> getAllBookings({int page = 0, int size = 50}) {
+    return _remoteSource.getAllBookings(page: page, size: size);
   }
 
   @override
@@ -452,6 +509,22 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body) {
     return _remoteSource.uploadVaultDocument(body);
+  }
+
+  @override
+  Future<GeneralResponse> updateVaultDocument(Map<String, dynamic> body) {
+    return _remoteSource.updateVaultDocument(body);
+  }
+
+  @override
+  Future<GeneralResponse> deleteVaultDocument({
+    required String directoryId,
+    required String fileName,
+  }) {
+    return _remoteSource.deleteVaultDocument(
+      directoryId: directoryId,
+      fileName: fileName,
+    );
   }
 
   @override
@@ -592,6 +665,11 @@ class AppRepositoryImpl implements AppRepository {
   }
 
   @override
+  Future<GeneralResponse> deletePropertyUnit(String propertyRef, String unitId) {
+    return _remoteSource.deletePropertyUnit(propertyRef, unitId);
+  }
+
+  @override
   Future<GeneralResponse> deleteProperty(int id) {
     return _remoteSource.deleteProperty(id);
   }
@@ -694,6 +772,20 @@ class AppRepositoryImpl implements AppRepository {
   @override
   Future<GeneralResponse> recordSalesAgentInvite() =>
       _remoteSource.recordSalesAgentInvite();
+
+  @override
+  Future<GeneralResponse> pushSalesAgentPay(
+    String customerUserId,
+    Map<String, dynamic> body,
+  ) =>
+      _remoteSource.pushSalesAgentPay(customerUserId, body);
+
+  @override
+  Future<GeneralResponse> sendSalesAgentReceipt(
+    String customerUserId,
+    Map<String, dynamic> body,
+  ) =>
+      _remoteSource.sendSalesAgentReceipt(customerUserId, body);
 
   @override
   Future<GeneralResponse> listSalesAgents() => _remoteSource.listSalesAgents();

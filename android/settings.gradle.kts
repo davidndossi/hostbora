@@ -25,3 +25,11 @@ plugins {
 }
 
 include(":app")
+
+// audioplayers_android 5.3.0 calls kotlin { } without applying the Kotlin plugin.
+// Apply it before that build script is evaluated so the extension exists.
+gradle.beforeProject {
+    if (name == "audioplayers_android") {
+        pluginManager.apply("org.jetbrains.kotlin.android")
+    }
+}

@@ -191,8 +191,13 @@ class RentPortfolioMetricsCalculator {
   }
 
   static int _monthsBetween(DateTime start, DateTime end) {
-    var months = (end.year - start.year) * 12 + (end.month - start.month);
-    if (end.day < start.day) months -= 1;
+    final a = DateTime(start.year, start.month, start.day);
+    final b = DateTime(end.year, end.month, end.day);
+    if (b.isBefore(a)) return 0;
+    final exclusiveEnd = b.add(const Duration(days: 1));
+    var months =
+        (exclusiveEnd.year - a.year) * 12 + (exclusiveEnd.month - a.month);
+    if (exclusiveEnd.day < a.day) months -= 1;
     return months < 0 ? 0 : months;
   }
 }

@@ -134,7 +134,7 @@ class EditTaskView extends BaseView<EditTaskController> {
                       if (controller.dueDate.value != null)
                         IconButton(
                           onPressed: controller.clearDueDate,
-                          icon: const Icon(Icons.close, size: 20),
+                          icon: const Icon(Icons.close_outlined, size: 20),
                           style: IconButton.styleFrom(
                             foregroundColor: AppColors.textColorSecondary,
                             padding: const EdgeInsets.all(4),
@@ -183,7 +183,7 @@ class EditTaskView extends BaseView<EditTaskController> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designAccent, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),

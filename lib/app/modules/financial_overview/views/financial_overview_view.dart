@@ -205,7 +205,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _legendDot(AppColors.designAccent),
+                        _legendDot(AppColors.colorPrimary),
                         const SizedBox(width: 6),
                         Text(
                           _t(context, 'CURRENT', 'SASA'),
@@ -305,14 +305,14 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   LineChartBarData(
                     spots: currentSpots,
                     isCurved: true,
-                    color: AppColors.designAccent,
+                    color: AppColors.colorPrimary,
                     barWidth: 2.5,
                     dotData: FlDotData(
                       show: true,
                       getDotPainter: (spot, percent, data, index) =>
                           FlDotCirclePainter(
                             radius: 4,
-                            color: AppColors.designAccent,
+                            color: AppColors.colorPrimary,
                             strokeWidth: 2,
                             strokeColor: FormSurfaceColors.of(context).isDark
                                 ? const Color(0xFF1F1F1F)
@@ -438,7 +438,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
             BarChartRodData(
               fromY: 0,
               toY: v,
-              color: AppColors.designAccent.withValues(alpha: 0.6),
+              color: AppColors.colorPrimary.withValues(alpha: 0.6),
               width: 20,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
             ),
@@ -579,7 +579,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   label: _t(context, 'Occupancy', 'Ukaaji'),
                   value: controller.occupancyLabel,
                   valueColor: incomeColor,
-                  icon: Icons.pie_chart_outline_rounded,
+                  icon: Icons.pie_chart_outline,
                   onTap: controller.openTenancyInsights,
                 ),
               ),
@@ -607,7 +607,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   label: _t(context, 'Arrears', 'Deni'),
                   value: controller.totalArrearsLabel,
                   valueColor: arrearsColor,
-                  icon: Icons.warning_amber_rounded,
+                  icon: Icons.warning_amber_outlined,
                   onTap: controller.openTenancyInsights,
                 ),
               ),
@@ -657,9 +657,9 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 10,
                   letterSpacing: 0.8,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: FormSurfaceColors.of(context).hint,
                 ),
               ),
@@ -673,7 +673,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                   softWrap: false,
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: valueColor,
                     height: 1.1,
                   ),
@@ -712,7 +712,7 @@ class FinancialOverviewView extends BaseView<FinancialOverviewController> {
                     ),
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: context.tokens.accent),
+                Icon(Icons.chevron_right_outlined, color: context.tokens.accent),
               ],
             ),
           ),
@@ -740,7 +740,7 @@ class _SegmentButton extends StatelessWidget {
     final c = FormSurfaceColors.of(context);
     return Material(
       color: isSelected
-          ? AppColors.designAccent
+          ? AppColors.colorPrimary
           : (c.isDark ? const Color(0xFF1F1F1F) : AppColors.colorWhite),
       borderRadius: BorderRadius.circular(AppValues.radius_6),
       child: InkWell(
@@ -809,8 +809,8 @@ class _MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = FormSurfaceColors.of(context);
     final changeColor = isPositive
-        ? AppColors.colorSuccessGreen
-        : AppColors.paaYanguAlert;
+        ? AppColors.colorSuccess
+        : AppColors.colorAlert;
     return Container(
       width: fullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(16),
@@ -857,7 +857,7 @@ class _MetricCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                isPositive ? Icons.trending_up : Icons.trending_down,
+                isPositive ? Icons.trending_up_outlined : Icons.trending_down_outlined,
                 size: 16,
                 color: changeColor,
               ),

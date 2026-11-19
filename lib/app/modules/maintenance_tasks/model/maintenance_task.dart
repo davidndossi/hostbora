@@ -1,3 +1,4 @@
+import '../../../core/utils/sync_freshness.dart';
 import '../../../data/model/add_task_request.dart';
 
 enum TaskPriority { high, medium, low }
@@ -15,6 +16,9 @@ class MaintenanceTask {
   final bool isCompleted;
   final DateTime? completedAt;
 
+  /// Server edit time. `0` when the payload did not include one.
+  final int remoteUpdatedAtMs;
+
   const MaintenanceTask({
     required this.id,
     required this.title,
@@ -25,6 +29,7 @@ class MaintenanceTask {
     this.dueDate,
     this.isCompleted = false,
     this.completedAt,
+    this.remoteUpdatedAtMs = 0,
   });
 
   MaintenanceTask copyWith({
@@ -37,6 +42,7 @@ class MaintenanceTask {
     DateTime? dueDate,
     bool? isCompleted,
     DateTime? completedAt,
+    int? remoteUpdatedAtMs,
   }) {
     return MaintenanceTask(
       id: id ?? this.id,
@@ -48,11 +54,17 @@ class MaintenanceTask {
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: completedAt ?? this.completedAt,
+      remoteUpdatedAtMs: remoteUpdatedAtMs ?? this.remoteUpdatedAtMs,
     );
   }
 
   /// Builds a PUT body that preserves current task fields (avoids clearing assignee/due date).
-  AddTaskRequest toUpdateRequest({String? assigneeOverride, String? dueDateOverride}) {
+  AddTaskRequest toUpdateRequest({
+    String? assigneeOverride,
+    String? dueDateOverride,
+    String? assigneePhone,
+    String? staffId,
+  }) {
     String? dueIso = dueDateOverride;
     if (dueIso == null && dueDate != null) {
       final d = dueDate!;
@@ -69,6 +81,8 @@ class MaintenanceTask {
       description: description.trim().isEmpty ? null : description.trim(),
       dueDate: dueIso,
       assignee: assigneeValue,
+      assigneePhone: assigneePhone,
+      staffId: staffId,
       completed: isCompleted,
       status: apiStatus,
     );
@@ -133,7 +147,8 @@ class MaintenanceTask {
       completedAt = DateTime.fromMillisecondsSinceEpoch(cm);
     }
 
-    final isCompleted = raw['isCompleted'] == true;
+    final isCompleted =
+        raw['isCompleted'] == true || status == TaskStatus.completed;
     if (status == TaskStatus.pending &&
         !isCompleted &&
         _hasAssignee(assignee)) {
@@ -146,7 +161,7 @@ class MaintenanceTask {
       assignee: assignee,
       description: description,
       priority: priority,
-      status: status,
+      status: isCompleted ? TaskStatus.completed : status,
       dueDate: dueDate,
       isCompleted: isCompleted,
       completedAt: completedAt,
@@ -155,7 +170,9 @@ class MaintenanceTask {
 
   /// Parses one task object from GET list/detail or nested API payloads.
   factory MaintenanceTask.fromApiMap(Map<String, dynamic> m) {
-    final completed = _readBool(m['completed']);
+    final completedFlag = _readBool(m['completed']) ||
+        _readBool(m['isCompleted']) ||
+        _readBool(m['done']);
     final statusStr = (m['status'] ?? '')
         .toString()
         .trim()
@@ -163,7 +180,7 @@ class MaintenanceTask {
         .replaceAll(' ', '_')
         .replaceAll('-', '_');
     TaskStatus status;
-    if (completed ||
+    if (completedFlag ||
         statusStr == 'COMPLETED' ||
         statusStr == 'DONE' ||
         statusStr == 'COMPLETE') {
@@ -194,8 +211,9 @@ class MaintenanceTask {
     if (priorityStr == 'HIGH') priority = TaskPriority.high;
     if (priorityStr == 'LOW') priority = TaskPriority.low;
 
-    final rawAssignee =
-        (m['assignee'] ?? m['assignedTo'] ?? '').toString().trim();
+    final rawAssignee = _readAssignee(
+      m['assignee'] ?? m['assignedTo'] ?? m['assigneeName'] ?? m['staffName'],
+    );
     final assignee = rawAssignee.isEmpty || rawAssignee.toLowerCase() == 'null'
         ? 'Unassigned'
         : rawAssignee;
@@ -203,6 +221,8 @@ class MaintenanceTask {
     if (status == TaskStatus.pending && _hasAssignee(assignee)) {
       status = TaskStatus.inProgress;
     }
+
+    final isCompleted = completedFlag || status == TaskStatus.completed;
 
     return MaintenanceTask(
       id: m['taskId']?.toString() ?? m['id']?.toString() ?? '',
@@ -213,9 +233,23 @@ class MaintenanceTask {
       priority: priority,
       status: status,
       dueDate: due,
-      isCompleted: completed,
+      isCompleted: isCompleted,
       completedAt: completedAt,
+      remoteUpdatedAtMs: SyncFreshness.fromMap(m),
     );
+  }
+
+  static String _readAssignee(dynamic raw) {
+    if (raw is Map) {
+      return (raw['name'] ??
+              raw['fullName'] ??
+              raw['assignee'] ??
+              raw['phone'] ??
+              '')
+          .toString()
+          .trim();
+    }
+    return raw?.toString().trim() ?? '';
   }
 
   static bool _readBool(dynamic value) {

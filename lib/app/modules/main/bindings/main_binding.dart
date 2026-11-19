@@ -24,10 +24,15 @@ class MainBinding extends Bindings {
     Get.lazyPut<OtherController>(() => OtherController(), fenix: true);
     Get.lazyPut<HomeController>(() => HomeController(), fenix: true);
     Get.lazyPut<DashboardController>(() => DashboardController(), fenix: true);
-    Get.lazyPut<MyPropertiesController>(
-      () => MyPropertiesController(),
-      fenix: true,
-    );
+    // Permanent: this page stays in the tab stack. A fenix recreate left the
+    // mode chips subscribed to a disposed filter, so All / BnB / Rent never
+    // changed the highlight.
+    if (!Get.isRegistered<MyPropertiesController>()) {
+      Get.put<MyPropertiesController>(
+        MyPropertiesController(),
+        permanent: true,
+      );
+    }
     Get.lazyPut<MaintenanceTasksController>(
       () => MaintenanceTasksController(),
       fenix: true,

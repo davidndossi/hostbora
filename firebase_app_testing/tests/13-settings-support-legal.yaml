@@ -3,9 +3,9 @@ tests:
     id: settings-open
     prerequisiteTestCaseId: host-login
     steps:
-      - goal: Open Settings from bottom More tab or profile area
-        hint: More tab last section or gear icon.
-        finalScreenAssertion: Settings screen with language currency and theme options is visible
+      - goal: Open Settings from the Home app-bar overflow or More tab
+        hint: On Home tap the ⋮ menu in the app bar and choose Settings. Settings is a restyled grouped-card screen with Host Bora teal, language, currency, theme, and a host-score ring. Admin-only tiles (WhatsApp credentials, Growth Metrics, Sales Agents) stay hidden for a normal host.
+        finalScreenAssertion: Settings screen with grouped cards for language currency and theme is visible
 
   - displayName: Change app language
     id: settings-language
@@ -20,8 +20,8 @@ tests:
     prerequisiteTestCaseId: host-login
     steps:
       - goal: From Settings open Security section
-        hint: Security row in settings list.
-        finalScreenAssertion: Security options for PIN and password are visible
+        hint: Security row in the settings list. Login is OTP-only so there is no Change Password. PIN 1234 is the test PIN.
+        finalScreenAssertion: Security options for PIN (set, change, or disable) are visible without a password form
 
   - displayName: Open help center
     id: help-center

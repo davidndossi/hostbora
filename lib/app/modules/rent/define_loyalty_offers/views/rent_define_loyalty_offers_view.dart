@@ -71,7 +71,7 @@ class RentDefineLoyaltyOffersView
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.stars_rounded, color: accent, size: 22),
+                          Icon(Icons.stars_outlined, color: accent, size: 22),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -85,7 +85,7 @@ class RentDefineLoyaltyOffersView
                               ),
                             ),
                           ),
-                          Icon(Icons.chevron_right_rounded, color: accent),
+                          Icon(Icons.chevron_right_outlined, color: accent),
                         ],
                       ),
                     ),
@@ -213,7 +213,7 @@ class RentDefineLoyaltyOffersView
         children: [
           Row(
             children: [
-              Icon(Icons.edit_note_rounded, color: accent, size: 26),
+              Icon(Icons.edit_note_outlined, color: accent, size: 26),
               const SizedBox(width: 8),
               Text(
                 _isSw ? 'Vizingiti vya Ofa' : 'Offer Thresholds',
@@ -274,7 +274,7 @@ class RentDefineLoyaltyOffersView
         children: [
           Row(
             children: [
-              Icon(Icons.card_giftcard_rounded, color: accent, size: 24),
+              Icon(Icons.card_giftcard_outlined, color: accent, size: 24),
               const SizedBox(width: 8),
               Text(
                 _isSw ? 'Aina ya Ofa' : 'Offer Type',

@@ -9,7 +9,7 @@ import '../../../core/widget/custom_app_bar.dart';
 import '../controllers/smart_access_controller.dart';
 
 const _accessTeal = Color(0xFF0A6A69);
-const _connectedGreen = Color(0xFF6CC76B);
+const _comingSoonAmber = Color(0xFFE5A500);
 const _screenBg = Color(0xFFF5F5F5);
 
 class SmartAccessView extends BaseView<SmartAccessController> {
@@ -60,7 +60,7 @@ class SmartAccessView extends BaseView<SmartAccessController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: _connectedGreen.withValues(alpha: 0.2),
+        color: _comingSoonAmber.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
       ),
       child: Row(
@@ -70,17 +70,17 @@ class SmartAccessView extends BaseView<SmartAccessController> {
             width: 8,
             height: 8,
             decoration: const BoxDecoration(
-              color: _connectedGreen,
+              color: _comingSoonAmber,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            _t(context, en: 'CONNECTED', sw: 'IMEUNGANISHWA'),
+            _t(context, en: 'COMING SOON', sw: 'INAKUJA'),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: c.isDark ? theme.colorScheme.primary : _connectedGreen,
+              color: c.isDark ? theme.colorScheme.primary : _comingSoonAmber,
             ),
           ),
         ],

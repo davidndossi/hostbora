@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/access/sales_agent_session.dart';
 import '../../../core/base/base_controller.dart';
+import '../../../core/locale/app_locale_controller.dart';
+import '../../../core/utils/auth_messages.dart';
 import '../../../core/utils/util.dart';
 import '../../../core/widget/otp_channel_sheet.dart';
 import '../../../data/local/preference/preference_manager.dart';
@@ -11,11 +14,11 @@ import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/local/service/session_service.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/service/app_review_service.dart';
-import '../../../data/model/general_response.dart';
 import '../../../data/model/login_otp_request.dart';
 import '../../../data/model/login_response.dart';
 import '../../../data/repository/app_repository.dart';
-import '../../../network/exceptions/api_exception.dart';
+import '../../../network/exceptions/base_exception.dart';
+import '../../../network/exceptions/not_found_exception.dart';
 import '../../../routes/app_pages.dart';
 
 class AuthController extends BaseController {
@@ -36,7 +39,15 @@ class AuthController extends BaseController {
     }
     return raw;
   }
-  final authFormKey = GlobalKey<FormState>();
+  /// Static so the key outlives fenix recreation of this controller.
+  ///
+  /// As an instance field it was replaced every time GetX rebuilt the
+  /// controller, while the already-mounted [Form] in AuthView kept the old
+  /// one — so the new key pointed at no element and `currentState` was null.
+  /// There is only ever one AuthView mounted, so one key for it is correct;
+  /// and because the controller is a Get singleton, every AuthView already
+  /// shared this key before it was made static.
+  static final authFormKey = GlobalKey<FormState>();
 
   final Rx<LoginResponse> _loginResponse = LoginResponse().obs;
   LoginResponse get loginResponse => _loginResponse.value;
@@ -78,9 +89,32 @@ class AuthController extends BaseController {
 
   /// Passwordless login: validate phone → pick channel → request OTP → OTP screen.
   Future<void> continueWithOtp() async {
-    if (!authFormKey.currentState!.validate()) return;
+    // [authFormKey] is recreated when fenix rebuilds this controller, so the
+    // mounted Form can still be holding the previous key and `currentState`
+    // is legitimately null — the same hazard the field notes above describe
+    // for [msisdnController]. A `!` here turned that into a crash inside the
+    // tap handler.
+    //
+    // Validating through the Form is still preferred, because that is what
+    // paints the inline error under the field. When it is unavailable, apply
+    // the identical rule to the raw text so a bad number is still refused
+    // rather than sent, and report it where the user can see it.
+    final typed = msisdnController.text.trim();
+    final formState = authFormKey.currentState;
+    if (formState != null) {
+      if (!formState.validate()) return;
+    } else {
+      final problem = validator(typed);
+      if (problem != null) {
+        errorText.value = problem;
+        return;
+      }
+    }
+    // Nothing else clears this, so a message set on the fallback path above
+    // would otherwise outlive the number that caused it.
+    errorText.value = null;
 
-    msisdn(msisdnController.text.trim());
+    msisdn(typed);
     final phone = msisdn.value;
 
     final pinEnabled = await _preferenceManager.getBool(
@@ -100,7 +134,7 @@ class AuthController extends BaseController {
 
     // Returning users with PIN may skip server sign-in when offline.
     if (!online && !isFirstLogin && hasValidPin) {
-      await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace();
+      Get.offAllNamed(await SalesAgentSession.homeRoute(_preferenceManager));
       Get.snackbar(
         _t('Offline', 'Nje ya mtandao'),
         _t(
@@ -112,54 +146,104 @@ class AuthController extends BaseController {
       return;
     }
 
+    var emailAvailable = false;
+    try {
+      final options = await _repository.requestLoginOtp(
+        LoginOtpRequest(msisdn: phone, channel: 'OPTIONS'),
+      );
+      final data = options.data;
+      if (data is Map) {
+        emailAvailable = data['hasEmail'] == true;
+      }
+    } catch (_) {
+      emailAvailable = false;
+    }
+
     final ctx = Get.context;
     if (ctx == null) return;
-
     final channel = await showOtpChannelSheet(
       ctx,
       isSw: Get.locale?.languageCode == 'sw',
-      emailAvailable: true,
+      emailAvailable: emailAvailable,
+      phone: phone,
     );
     if (channel == null) return;
 
     await getFirebaseToken();
-    callDataService<GeneralResponse>(
-      _repository.requestLoginOtp(
-        LoginOtpRequest(msisdn: phone, channel: channel),
-      ),
-      onStart: () => isLoading(true),
-      onComplete: () => isLoading(false),
-      onError: (e) {
-        if (e is ApiException && e.message.isNotEmpty) {
-          showErrorMessage(_loginAccessMessage(e.message));
-        } else {
-          showErrorMessage(_t('Could not send OTP', 'Imeshindikana kutuma OTP'));
+    isLoading(true);
+    try {
+      final res = await _repository
+          .requestLoginOtp(
+            LoginOtpRequest(msisdn: phone, channel: channel),
+          )
+          .timeout(const Duration(seconds: 25));
+      if (res.responseCode != '0' && res.responseCode != null) {
+        if (isMissingAccountError(res.message) ||
+            isRemovedStaffError(res.message) ||
+            await RemovedStaffPhones.contains(phone)) {
+          await _clearLeftoverDeletedSession();
         }
-      },
-      onSuccess: (res) async {
-        if (res.responseCode != '0' && res.responseCode != null) {
-          showErrorMessage(
-            _loginAccessMessage(
-              res.message ??
-                  _t('Could not send OTP', 'Imeshindikana kutuma OTP'),
-            ),
-          );
-          return;
-        }
-        await _preferenceManager.setString(
-          PreferenceManager.keyUsername,
-          phone,
-        );
-        Get.toNamed(
-          Routes.OTP,
-          arguments: {
-            'msisdn': phone,
-            'flow': 'login',
-            'channel': channel,
-          },
-        );
-      },
-    );
+        showErrorMessage(await _loginFailureCopy(res.message, phone));
+        return;
+      }
+      await RemovedStaffPhones.forget(phone);
+      await _preferenceManager.setString(
+        PreferenceManager.keyUsername,
+        phone,
+      );
+      Get.toNamed(
+        Routes.OTP,
+        arguments: {
+          'msisdn': phone,
+          'flow': 'login',
+          'channel': channel,
+        },
+      );
+    } on NotFoundException catch (e) {
+      await _clearLeftoverDeletedSession();
+      showErrorMessage(await _loginFailureCopy(e.message, phone, notFound: true));
+    } on BaseException catch (e) {
+      if (isMissingAccountError(e.message) ||
+          isRemovedStaffError(e.message) ||
+          await RemovedStaffPhones.contains(phone)) {
+        await _clearLeftoverDeletedSession();
+      }
+      showErrorMessage(await _loginFailureCopy(e.message, phone));
+    } on TimeoutException {
+      showErrorMessage(await _loginFailureCopy(null, phone));
+    } catch (_) {
+      showErrorMessage(await _loginFailureCopy(null, phone));
+    } finally {
+      isLoading(false);
+    }
+  }
+
+  Future<void> _clearLeftoverDeletedSession() async {
+    if (Get.isRegistered<SessionService>()) {
+      await Get.find<SessionService>().clearFullSession();
+    } else {
+      await _preferenceManager.clearSession();
+    }
+    await _preferenceManager.setBool(PreferenceManager.keyPinEnabled, false);
+    await _preferenceManager.setString(PreferenceManager.keyPinCode, '');
+    await _preferenceManager.setBool(PreferenceManager.keyFaceIdEnabled, false);
+    await _preferenceManager.setBool(PreferenceManager.keyFirstLogin, true);
+    hasPinEnabled.value = false;
+  }
+
+  Future<String> _loginFailureCopy(
+    String? raw,
+    String phone, {
+    bool notFound = false,
+  }) async {
+    final removed = isRemovedStaffError(raw) ||
+        await RemovedStaffPhones.contains(phone);
+    if (removed) return removedStaffLoginMessage();
+    if (notFound || isMissingAccountError(raw)) return missingAccountLoginMessage();
+    if (raw != null && raw.trim().isNotEmpty) {
+      return _loginAccessMessage(raw);
+    }
+    return _t('Could not send OTP', 'Imeshindikana kutuma OTP');
   }
 
   Future<void> getFirebaseToken() async {
@@ -181,6 +265,7 @@ class AuthController extends BaseController {
         res.message == 'verify_code' ||
         (res.token != null && res.token!.isNotEmpty)) {
       await Get.find<SessionService>().saveFromLogin(res);
+      await _syncAccountLanguage();
       await _preferenceManager.setString(
         PreferenceManager.keyUsername,
         loginResponse.user?.msisdn ?? msisdn.value,
@@ -207,19 +292,26 @@ class AuthController extends BaseController {
         );
         final hasValidPin = hasPinEnabled && storedPin.length == 4;
 
-        if (!hasValidPin) {
+        // A missing local PIN on an account that has one on the server is an
+        // authentication step, not setup: this device has to prove it knows
+        // the PIN already chosen elsewhere, so that gate stays. Creating a
+        // first PIN does not, and is deferred to the launch router.
+        final needsRemotePinConfirmation =
+            !hasValidPin && await _hasRemotePinSet();
+
+        if (needsRemotePinConfirmation) {
           triggerRemoteAccountSync();
-          final hasRemotePin = await _hasRemotePinSet();
           Get.offAllNamed(
             Routes.CHANGE_PIN,
             arguments: {
               WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,
-              if (hasRemotePin) 'confirm_remote_pin': true,
+              'confirm_remote_pin': true,
             },
           );
         } else {
           triggerRemoteAccountSync();
-          await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
+          Get.offAllNamed(
+            await SalesAgentSession.homeRoute(_preferenceManager),
             arguments: {
               'from_password_login': true, // unlocks Welcome Back "Continue" UX
               'from_otp_login': true,
@@ -244,6 +336,13 @@ class AuthController extends BaseController {
       logger.w('getPinStatus failed (non-blocking): $e');
       return false;
     }
+  }
+
+  Future<void> _syncAccountLanguage() async {
+    if (!Get.isRegistered<AppLocaleController>()) return;
+    try {
+      await Get.find<AppLocaleController>().syncWithAccount();
+    } catch (_) {}
   }
 
   String? validator(String? value) {

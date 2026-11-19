@@ -7,14 +7,19 @@ import '../l10n/app_localizations.dart';
 import '/app/bindings/initial_binding.dart';
 import '/app/core/locale/app_locale_controller.dart';
 import '/app/core/theme/app_theme_tokens.dart';
+import '/app/core/theme/app_typography.dart';
 import '/app/core/theme/theme_controller.dart';
 import '/app/core/values/app_colors.dart';
 import '/app/core/values/app_values.dart';
 import '/app/routes/app_pages.dart';
 import '/flavors/build_config.dart';
 import '/flavors/env_config.dart';
+import '/flavors/environment.dart';
 import 'core/base/app_lifecycle_manager.dart';
+import 'core/utils/referral_link.dart';
 import 'core/access/staff_access.dart';
+import 'core/access/plan_agents.dart';
+import 'core/access/sales_agent_session.dart';
 import 'data/local/preference/preference_manager.dart';
 import 'data/local/preference/preference_manager_impl.dart';
 import 'data/local/service/session_service.dart';
@@ -26,13 +31,16 @@ class MainApp extends StatefulWidget {
   State<MainApp> createState() => _MainAppState();
 }
 
-class _MainAppState extends State<MainApp> {
+class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late AppLifecycleManager _lifecycleManager;
   late final AppLocaleController _localeController;
 
   bool _isLoggedIn = false;
   bool _hasValidPin = false;
   bool _shouldShowWelcomeBack = false;
+  bool _pendingFirstProperty = false;
+  bool _hasFirstProperty = false;
+  bool _isAgentOnly = false;
   bool _hasSeenOnboarding = true; // default true so we don't block on first run
   bool _loading = true;
 
@@ -41,6 +49,7 @@ class _MainAppState extends State<MainApp> {
     tag: (PreferenceManager).toString(),
   );
   final _staffRouteObserver = StaffAccessNavigatorObserver();
+  final _planRouteObserver = PlanAccessNavigatorObserver();
   late final StaffAccessStore _staffAccess = Get.put(
     StaffAccessStore(_preferenceManager),
     permanent: true,
@@ -56,7 +65,8 @@ class _MainAppState extends State<MainApp> {
   }
 
   static const _bootstrapTimeout = Duration(seconds: 10);
-  static const _defaultAppLockTimeoutSeconds = 300;
+  static const _defaultAppLockTimeoutSeconds =
+      PreferenceManager.defaultAppLockTimeoutSeconds;
 
   Future<void> _bootstrap() async {
     try {
@@ -82,6 +92,15 @@ class _MainAppState extends State<MainApp> {
         _preferenceManager
             .getInt(PreferenceManager.keyAppBackgroundedAtMs, defaultValue: 0)
             .timeout(_bootstrapTimeout),
+        _preferenceManager
+            .getBool(
+              PreferenceManager.keyPendingFirstProperty,
+              defaultValue: false,
+            )
+            .timeout(_bootstrapTimeout),
+        _preferenceManager
+            .getInt(PreferenceManager.keyFirstPropertyAtMs, defaultValue: 0)
+            .timeout(_bootstrapTimeout),
       ]);
       final loggedIn = results[0] as bool;
       final hasSeenOnboarding = results[1] as bool;
@@ -91,7 +110,9 @@ class _MainAppState extends State<MainApp> {
         // back false (storage-layer issue) vs. some other startup branch
         // routing to Routes.ONBOARDING despite a true flag.
         debugPrint(
-          '[Bootstrap] seen_onboarding=$hasSeenOnboarding loggedIn=$loggedIn',
+          '[Bootstrap] seen_onboarding=$hasSeenOnboarding loggedIn=$loggedIn '
+          'env=${BuildConfig.instance.environment} '
+          'baseUrl=${_envConfig.baseUrl}',
         );
       }
       final pinEnabled = results[2];
@@ -99,12 +120,24 @@ class _MainAppState extends State<MainApp> {
       final hasValidPin = (pinEnabled as bool) && pinCode.length == 4;
       final appLockTimeoutSeconds = results[4] as int;
       final backgroundedAtMs = results[5] as int;
+      final pendingFirstProperty = results[6] as bool;
+      // Stamped by Home the first time it loads with a property on it, so a
+      // non-zero value means this host has data worth locking.
+      final hasFirstProperty = (results[7] as int) > 0;
       final shouldShowWelcomeBack =
           hasValidPin &&
           _hasSelectedAppLockTimeoutElapsed(
             backgroundedAtMs: backgroundedAtMs,
             timeoutSeconds: appLockTimeoutSeconds,
           );
+      var isAgentOnly = false;
+      if (loggedIn) {
+        try {
+          isAgentOnly =
+              await SalesAgentSession.homeRoute(_preferenceManager) ==
+                  Routes.SALES_AGENT_HOME;
+        } catch (_) {}
+      }
 
       if (!mounted) return;
 
@@ -113,6 +146,9 @@ class _MainAppState extends State<MainApp> {
         _hasSeenOnboarding = hasSeenOnboarding;
         _hasValidPin = hasValidPin;
         _shouldShowWelcomeBack = shouldShowWelcomeBack;
+        _pendingFirstProperty = pendingFirstProperty;
+        _hasFirstProperty = hasFirstProperty;
+        _isAgentOnly = isAgentOnly;
         _loading = false;
       });
 
@@ -153,18 +189,56 @@ class _MainAppState extends State<MainApp> {
     return elapsedMs >= normalizedTimeout * 1000;
   }
 
+  /// iOS has one scheme and one bundle id for every Dart entrypoint, so the
+  /// home-screen name cannot tell you which backend is live. This ribbon can.
+  ///
+  /// Absent on production builds. On development it names the host so a
+  /// `main_dev` run that is actually still talking to
+  /// `hostbora.co.tz` is visible without opening the debugger.
+  Widget _developmentBanner(BuildContext context, Widget? child) {
+    final page = child ?? const SizedBox.shrink();
+    if (BuildConfig.instance.environment != Environment.DEVELOPMENT) {
+      return page;
+    }
+    // final host = Uri.tryParse(_envConfig.baseUrl)?.host ?? _envConfig.baseUrl;
+    return Banner(
+      message: 'Dev',
+      location: BannerLocation.topEnd,
+      color: const Color(0xFF1C6E64),
+      child: page,
+    );
+  }
+
   String _initialRoute() {
+    if (_isLoggedIn) {
+      if (_isAgentOnly) return Routes.SALES_AGENT_HOME;
+      // A sign-up interrupted before the host added or skipped their first
+      // property resumes there; the step clears the flag either way, so this
+      // can only appear once.
+      if (_pendingFirstProperty) return Routes.FIRST_PROPERTY;
+      // The PIN is asked for once there is something behind it. It used to be
+      // demanded during sign-up, which fitted a lock to an empty database and
+      // put one more screen between a new host and the product. It stays
+      // available in Settings for anyone who wants it sooner.
+      if (!_hasValidPin && _hasFirstProperty) return Routes.CHANGE_PIN;
+      return Routes.MAIN;
+    }
+    if (SignInLinks.pending) return AppPages.auth;
     if (!_hasSeenOnboarding) return Routes.ONBOARDING;
     if (_shouldShowWelcomeBack) return Routes.WELCOME_BACK;
-    if (_isLoggedIn) {
-      return _hasValidPin ? Routes.MAIN : Routes.CHANGE_PIN;
-    }
+    if (ReferralLinks.pendingCode != null) return Routes.CREATE_HOST_ACCOUNT;
     return AppPages.auth;
   }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final launchUri = Uri.tryParse(
+      WidgetsBinding.instance.platformDispatcher.defaultRouteName,
+    );
+    ReferralLinks.capture(launchUri);
+    SignInLinks.capture(launchUri);
 
     _lifecycleManager = AppLifecycleManager(context);
     _lifecycleManager.startObserving();
@@ -282,7 +356,8 @@ class _MainAppState extends State<MainApp> {
           theme: _lightTheme(),
           darkTheme: _darkTheme(),
           debugShowCheckedModeBanner: false,
-          navigatorObservers: [_staffRouteObserver],
+          builder: _developmentBanner,
+          navigatorObservers: [_staffRouteObserver, _planRouteObserver],
         );
       },
     );
@@ -302,7 +377,7 @@ class _MainAppState extends State<MainApp> {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.colorPrimary,
-          foregroundColor: AppColors.textColorWhite,
+          foregroundColor: AppColors.colorWhite,
           minimumSize: const Size.fromHeight(AppValues.formButtonHeight),
           textStyle: _buttonTextStyle,
           shape: RoundedRectangleBorder(
@@ -346,8 +421,9 @@ class _MainAppState extends State<MainApp> {
         ),
         labelStyle: const TextStyle(color: AppColors.designPlaceholder),
       ),
-      textTheme: const TextTheme(
-        labelLarge: TextStyle(
+      // System font (no fontFamily) + one type scale; see AppTypography.
+      textTheme: AppTypography.textTheme(
+        labelLarge: const TextStyle(
           color: Colors.white,
           fontSize: 20.0,
           fontWeight: FontWeight.bold,
@@ -363,10 +439,8 @@ class _MainAppState extends State<MainApp> {
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.appBarTextColor,
-          fontFamily: 'Roboto',
         ),
       ),
-      fontFamily: 'Roboto',
       extensions: const [AppThemeTokens.light],
     );
   }
@@ -446,7 +520,7 @@ class _MainAppState extends State<MainApp> {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.colorPrimary,
-          foregroundColor: AppColors.textColorWhite,
+          foregroundColor: AppColors.colorWhite,
           minimumSize: const Size.fromHeight(AppValues.formButtonHeight),
           textStyle: _buttonTextStyle,
           shape: RoundedRectangleBorder(
@@ -470,12 +544,19 @@ class _MainAppState extends State<MainApp> {
           horizontal: 16,
           vertical: 14,
         ),
+        // Explicit — default dark hintColor is often too faint on filled fields.
+        hintStyle: const TextStyle(
+          color: Color(0xFFC7C7CC),
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
+        labelStyle: const TextStyle(color: Color(0xFF8E8E93)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppValues.radius_6),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppValues.radius_6),
-          borderSide: const BorderSide(color: Color(0xFF3A3A3C)),
+          borderSide: const BorderSide(color: Color(0xFF48484A)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -488,7 +569,6 @@ class _MainAppState extends State<MainApp> {
           borderRadius: BorderRadius.circular(AppValues.radius_6),
           borderSide: const BorderSide(color: AppColors.errorColor),
         ),
-        labelStyle: const TextStyle(color: Color(0xFF8E8E93)),
       ),
       appBarTheme: const AppBarTheme(
         systemOverlayStyle: SystemUiOverlayStyle(
@@ -499,17 +579,33 @@ class _MainAppState extends State<MainApp> {
         titleTextStyle: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: AppColors.textColorWhite,
-          fontFamily: 'Roboto',
+          color: AppColors.colorWhite,
         ),
       ),
-      fontFamily: 'Roboto',
+      textTheme: AppTypography.textTheme(),
       extensions: const [AppThemeTokens.dark],
     );
   }
 
   @override
+  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+    ReferralLinks.capture(routeInformation.uri);
+    SignInLinks.capture(routeInformation.uri);
+    if (_loading || _isLoggedIn) return false;
+    if (SignInLinks.pending) {
+      if (Get.currentRoute == Routes.AUTH) return true;
+      Get.offAllNamed(Routes.AUTH);
+      return true;
+    }
+    if (ReferralLinks.pendingCode == null) return false;
+    if (Get.currentRoute == Routes.CREATE_HOST_ACCOUNT) return true;
+    Get.toNamed(Routes.CREATE_HOST_ACCOUNT);
+    return true;
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _lifecycleManager.stopObserving();
     super.dispose();
   }

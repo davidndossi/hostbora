@@ -66,7 +66,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.check_rounded,
+              Icons.check_outlined,
               size: 40,
               color: u.dark ? const Color(0xFF80CBC4) : _ShareUi.tealDark,
             ),
@@ -76,9 +76,8 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
             _isSw ? 'Mkataba Umehuishwa kwa Mafanikio' : 'Lease Renewed Successfully',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 26,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               height: 1.2,
               color: u.onSurface,
             ),
@@ -132,9 +131,8 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
             child: Text(
               _isSw ? 'Tuma kwa Mpangaji' : 'Send to Tenant',
               style: TextStyle(
-                fontFamily: 'serif',
                 fontSize: 20,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: u.onSurface,
               ),
             ),
@@ -190,7 +188,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
               child: Text(
                 _isSw ? 'Imekamilika' : 'Done',
                 style: const TextStyle(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),
               ),
@@ -203,7 +201,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
               _isSw ? 'RUDI KWENYE KITOVU CHA MIKATABA' : 'RETURN TO CONTRACT HUB',
               style: TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
                 color: u.muted,
               ),
@@ -237,8 +235,8 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
               Text(
                 'CONFIDENTIAL',
                 style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 1.0,
                   color: faint,
                 ),
@@ -271,8 +269,8 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
                     Text(
                       'LESSOR SIGNATURE',
                       style: TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 0.6,
                         color: faint,
                       ),
@@ -336,7 +334,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
                   color: Colors.white24,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 24),
+                child: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -347,7 +345,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
                       _isSw ? 'Shiriki kupitia WhatsApp' : 'Share via WhatsApp',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
                     ),
@@ -391,7 +389,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
                   color: u.dark ? const Color(0xFF48484A) : Colors.white,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.mail_outline_rounded, color: _ShareUi.teal, size: 24),
+                child: Icon(Icons.mail_outline, color: _ShareUi.teal, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -402,7 +400,7 @@ class RentShareRenewedLeaseView extends RentBaseView<RentShareRenewedLeaseContro
                       _isSw ? 'Tuma kwa barua pepe' : 'Send via Email',
                       style: TextStyle(
                         color: u.dark ? const Color(0xFF80CBC4) : _ShareUi.tealDark,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
                     ),

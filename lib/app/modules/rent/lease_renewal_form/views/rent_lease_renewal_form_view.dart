@@ -90,7 +90,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
                   const SizedBox(height: 18),
                   _sectionCard(
                     context,
-                    icon: Icons.person_outline_rounded,
+                    icon: Icons.person_outline,
                     title: _isSw ? 'Taarifa za mpangaji' : 'Tenant information',
                     children: [
                       _fieldLabel(context, _isSw ? 'JINA LA MPANGAJI' : 'TENANT NAME'),
@@ -184,7 +184,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
                       child: Text(
                         _isSw ? 'WASILISHA UHUISHAJI' : 'SUBMIT RENEWAL',
                         style: const TextStyle(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           fontSize: 15,
                           letterSpacing: 0.6,
                         ),
@@ -233,7 +233,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
           _isSw ? 'UHESHIMI WA MKATABA' : 'LEASE RENEWAL',
           style: TextStyle(
             fontSize: 10,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             letterSpacing: 1.3,
             color: u.muted,
           ),
@@ -242,9 +242,8 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
         Text(
           _isSw ? 'Panua au sasisha mkataba' : 'Extend or update the lease',
           style: TextStyle(
-            fontFamily: 'serif',
             fontSize: 26,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             height: 1.15,
             color: u.onSurface,
           ),
@@ -329,7 +328,6 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontFamily: 'serif',
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       height: 1.2,
@@ -354,7 +352,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
       style: TextStyle(
         fontSize: 10,
         letterSpacing: 1.15,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         color: u.muted,
       ),
     );
@@ -484,7 +482,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
                     ),
                   ),
                 ),
-                Icon(Icons.expand_more_rounded, color: u.muted),
+                Icon(Icons.expand_more_outlined, color: u.muted),
               ],
             ),
           ),
@@ -525,7 +523,7 @@ class RentLeaseRenewalFormView extends RentBaseView<RentLeaseRenewalFormControll
           child: DropdownButton<String>(
             value: controller.rentFrequency.value,
             isExpanded: true,
-            icon: Icon(Icons.expand_more_rounded, color: u.muted),
+            icon: Icon(Icons.expand_more_outlined, color: u.muted),
             dropdownColor: u.card,
             style: TextStyle(
               fontSize: 15,

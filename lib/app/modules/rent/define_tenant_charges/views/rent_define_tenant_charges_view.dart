@@ -141,7 +141,7 @@ class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesCo
                 fontSize: 15,
                 color: u.onSurface,
               ),
-              icon: Icon(Icons.expand_more_rounded, color: u.onSurface),
+              icon: Icon(Icons.expand_more_outlined, color: u.onSurface),
               items: RentDefineTenantChargesController.chargeTypeOptions
                   .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
@@ -244,7 +244,7 @@ class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesCo
               ),
               child: Text(
                 _isSw ? 'Hifadhi Tozo' : 'Save Charge',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
             ),
           ),
@@ -253,7 +253,7 @@ class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesCo
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () => controller.submitCharge(addAnother: true),
-              icon: Icon(Icons.add, size: 20, color: u.brandTeal),
+              icon: Icon(Icons.add_outlined, size: 20, color: u.brandTeal),
               label: Text(
                 _isSw ? 'Ongeza Nyingine' : 'Add Another',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: u.brandTeal),
@@ -315,8 +315,8 @@ class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesCo
                 _isSw ? 'MALI ILIYOCHAGULIWA' : 'SELECTED PROPERTY',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 0.6,
                 ),
               ),
@@ -446,7 +446,7 @@ class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesCo
           Text(
             c.amountFormatted,
             style: TextStyle(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               fontSize: 14,
               color: u.onSurface,
             ),
@@ -472,13 +472,13 @@ class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesCo
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline_rounded, size: 18, color: u.brandTeal.withValues(alpha: 0.95)),
+              Icon(Icons.info_outline, size: 18, color: u.brandTeal.withValues(alpha: 0.95)),
               const SizedBox(width: 8),
               Text(
                 'EDITORIAL INSIGHT',
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 1.1,
                   color: u.brandTeal,
                 ),
@@ -493,7 +493,7 @@ class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesCo
                 const TextSpan(text: 'Most high-end properties in Dar es Salaam require a '),
                 TextSpan(
                   text: '3-month security deposit',
-                  style: TextStyle(fontWeight: FontWeight.w800, color: u.onSurface),
+                  style: TextStyle(fontWeight: FontWeight.w700, color: u.onSurface),
                 ),
                 const TextSpan(
                   text: ' as standard. Ensure your utility fees cover both water and basic maintenance.',
@@ -512,7 +512,7 @@ class RentDefineTenantChargesView extends RentBaseView<RentDefineTenantChargesCo
       style: TextStyle(
         fontSize: 10,
         letterSpacing: 1.1,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         color: u.labelCaps,
       ),
     );

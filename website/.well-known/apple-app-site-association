@@ -1,0 +1,28 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "BQ3C6YX428.tz.co.artbel.paayangu.paaYangu",
+        "paths": ["/r/*", "/app/signin", "/app/signin/*"]
+      },
+      {
+        "appIDs": ["BQ3C6YX428.tz.co.artbel.paayangu.paaYangu"],
+        "components": [
+          {
+            "/": "/r/*",
+            "comment": "Host Bora referral links"
+          },
+          {
+            "/": "/app/signin",
+            "comment": "Open Host Bora on Sign in"
+          },
+          {
+            "/": "/app/signin/*",
+            "comment": "Open Host Bora on Sign in"
+          }
+        ]
+      }
+    ]
+  }
+}

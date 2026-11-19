@@ -46,13 +46,7 @@ class RentPropertyEstimateRecord {
 class RentPropertyEstimateLocalDataSource {
   static const _table = AppLocalDatabase.rentPropertyEstimateTable;
 
-  Database? _db;
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
-  }
+  Future<Database> get database => AppLocalDatabase.database;
 
   Future<void> upsert({
     required String propertyRef,

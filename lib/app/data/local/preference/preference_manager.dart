@@ -8,6 +8,11 @@ abstract class PreferenceManager {
   static const keyRefreshExpiryTime = 'refresh_expiry_time';
   static const keyFirstLogin = 'first_login';
   static const keyUsername = 'username';
+
+  /// User id that owns the on-device SQLite and GetStorage data.
+  /// Logout keeps this so the same person can sign back in offline.
+  /// Account deletion and a different sign-in clear it with the data.
+  static const keyLocalDataOwnerUserId = 'local_data_owner_user_id';
   static const keyFullName = 'full_name';
   static const keyDeviceId = 'device_id';
   static const keyRoles = 'roles';
@@ -21,15 +26,34 @@ abstract class PreferenceManager {
   static const keyPinLockedUntilMs = 'pin_locked_until_ms';
   static const keyFaceIdEnabled = 'face_id_enabled';
   static const keyAppLockTimeoutSeconds = 'app_lock_timeout_seconds';
+
+  /// Default app-lock idle timeout. Settings, bootstrap, and lifecycle must share this.
+  static const defaultAppLockTimeoutSeconds = 300;
   static const keyAppBackgroundedAtMs = 'app_backgrounded_at_ms';
   static const keyHasSeenPropertiesTabSpotlight =
       'has_seen_properties_tab_spotlight';
 
   /// Home workspace chip: `all` | `bnb` | `rent`.
   static const keyHomeWorkspaceFilter = 'home_workspace_filter';
+  static const keyHomeHideAmounts = 'home_hide_amounts';
 
   /// First time this device saw at least one property (for Home first-week stage).
   static const keyFirstPropertyAtMs = 'first_property_at_ms';
+
+  /// Set once Home Get started (property + occupant + payment) is finished.
+  static const keyHomeGetStartedComplete = 'home_get_started_complete';
+
+  /// Set once the `first_payment_recorded` analytics milestone has been sent,
+  /// so the activation event is only ever reported once per install.
+  static const keyFirstPaymentLogged = 'first_payment_logged';
+
+  /// True between a successful sign-up and the host either adding or skipping
+  /// their first property. Survives the PIN screen, which sits between the two.
+  static const keyPendingFirstProperty = 'pending_first_property';
+
+  /// First name captured during sign-up, used to pre-fill the first property
+  /// as "{name}'s Apartment" before any profile sync has run.
+  static const keySignupFirstName = 'signup_first_name';
 
   static const keyHasSeenPropertiesCoachMark = 'has_seen_properties_coach_mark';
   static const keyHasSeenFinancesCoachMark = 'has_seen_finances_coach_mark';
@@ -48,6 +72,14 @@ abstract class PreferenceManager {
 
   /// JSON map of taskId → {assignee, status} when the API list omits them.
   static const keyTaskAssignmentOverrides = 'task_assignment_overrides';
+
+  /// Full task snapshots keyed by id, including the staff phone, so a staff
+  /// login can show assignments the task API does not return for that user.
+  static const keyAssignedTaskInbox = 'assigned_task_inbox_v1';
+
+  /// Income row ids whose amount has already been added onto a lease end.
+  static const keyLeaseExtensionAppliedIncome =
+      'lease_extension_applied_income_v1';
 
   Future<String> getString(String key, {String defaultValue = ''});
 

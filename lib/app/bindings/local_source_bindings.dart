@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'dart:convert';
 
+import '../network/exceptions/not_found_exception.dart';
+
 import '../core/service/launch_prompt_gate.dart';
 import '../data/local/db/property_local_data_source.dart';
 import '../data/local/db/property_unit_local_data_source.dart';
@@ -47,12 +49,15 @@ import '/app/data/local/service/offline_sync_worker_service.dart';
 import '/app/data/local/service/portfolio_ai_context_service.dart';
 import '/app/data/local/service/portfolio_ai_hybrid_service.dart';
 import '/app/data/local/service/rent_real_data_snapshot_service.dart';
+import '/app/data/local/service/plan_expiry_warning_service.dart';
 import '/app/data/local/service/property_break_even_notification_service.dart';
 import '/app/data/local/service/rent_notification_rules_service.dart';
 import '/app/data/local/service/reminder_types_service.dart';
 import '/app/data/local/service/recurring_reminder_dispatch_service.dart';
 import '/app/data/local/service/scheduled_sms_dispatch_service.dart';
 import '/app/data/local/service/lease_expiry_reminder_prompt_service.dart';
+import '/app/data/local/service/property_count_store.dart';
+import '/app/data/local/service/property_remote_create.dart';
 import '/app/data/local/service/remote_account_sync_service.dart';
 import '/app/data/local/service/bnb_messaging_contacts_service.dart';
 import '/app/data/local/service/scheduled_whatsapp_dispatch_service.dart';
@@ -133,6 +138,9 @@ class LocalSourceBindings implements Bindings {
       () => PropertyLocalDataSource(),
       fenix: true,
     );
+    if (!Get.isRegistered<PropertyCountStore>()) {
+      Get.put<PropertyCountStore>(PropertyCountStore(), permanent: true);
+    }
     Get.lazyPut<PropertyUnitLocalDataSource>(
       () => PropertyUnitLocalDataSource(),
       fenix: true,
@@ -309,6 +317,16 @@ class LocalSourceBindings implements Bindings {
       ),
       permanent: true,
     );
+    Get.put<PlanExpiryWarningService>(
+      PlanExpiryWarningService(
+        preferenceManager: Get.find<PreferenceManager>(
+          tag: (PreferenceManager).toString(),
+        ),
+        notificationScheduler: Get.find<LocalNotificationSchedulerService>(),
+        notificationLogLocal: Get.find<RentNotificationLogLocalDataSource>(),
+      ),
+      permanent: true,
+    );
     Get.put<RentNotificationRulesService>(
       RentNotificationRulesService(
         tenantLocal: Get.find<TenantLocalDataSource>(),
@@ -368,7 +386,8 @@ class LocalSourceBindings implements Bindings {
             workspaceType: map['workspaceType'] as String?,
           ),
         );
-        final saved = res.responseCode == '0' ||
+        final saved =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!saved) throw Exception(res.message ?? 'sync failed');
@@ -378,10 +397,9 @@ class LocalSourceBindings implements Bindings {
               Get.find<RentScheduledMaintenanceLocalDataSource>();
           await maintenanceLocal.updateSyncStatus(localId, 'synced');
           final backendId = (res.data is Map)
-              ? ((res.data as Map)['maintenanceId'] ??
-                      (res.data as Map)['id'])
-                  ?.toString() ??
-                  ''
+              ? ((res.data as Map)['maintenanceId'] ?? (res.data as Map)['id'])
+                        ?.toString() ??
+                    ''
               : '';
           if (backendId.isNotEmpty) {
             await maintenanceLocal.saveBackendTaskId(
@@ -417,7 +435,8 @@ class LocalSourceBindings implements Bindings {
             currency: map['currency'] as String?,
           ),
         );
-        final saved = res.responseCode == '0' ||
+        final saved =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!saved) throw Exception(res.message ?? 'sync failed');
@@ -427,8 +446,8 @@ class LocalSourceBindings implements Bindings {
           await itemLocal.updateSyncStatus(localId, 'synced');
           final backendId = (res.data is Map)
               ? ((res.data as Map)['itemId'] ?? (res.data as Map)['id'])
-                  ?.toString() ??
-                  ''
+                        ?.toString() ??
+                    ''
               : '';
           if (backendId.isNotEmpty) {
             await itemLocal.saveBackendItemId(
@@ -469,14 +488,17 @@ class LocalSourceBindings implements Bindings {
             currency: map['currency'] as String?,
           ),
         );
-        final saved = res.responseCode == '0' ||
+        final saved =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!saved) throw Exception(res.message ?? 'sync failed');
         final localId = map['localId'] as int?;
         if (localId != null) {
-          await Get.find<InventoryItemLocalDataSource>()
-              .updateSyncStatus(localId, 'synced');
+          await Get.find<InventoryItemLocalDataSource>().updateSyncStatus(
+            localId,
+            'synced',
+          );
         }
       },
     );
@@ -509,7 +531,8 @@ class LocalSourceBindings implements Bindings {
             notes: map['notes'] as String?,
           ),
         );
-        final saved = res.responseCode == '0' ||
+        final saved =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!saved) throw Exception(res.message ?? 'sync failed');
@@ -519,8 +542,8 @@ class LocalSourceBindings implements Bindings {
           await movementLocal.updateSyncStatus(localMovementId, 'synced');
           final backendId = (res.data is Map)
               ? ((res.data as Map)['movementId'] ?? (res.data as Map)['id'])
-                  ?.toString() ??
-                  ''
+                        ?.toString() ??
+                    ''
               : '';
           if (backendId.isNotEmpty) {
             await movementLocal.saveBackendMovementId(
@@ -609,7 +632,11 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.createBooking(
-          CreateBookingRequest.fromJson(map),
+          CreateBookingRequest.fromJson({
+            ...map,
+            'idempotencyKey':
+                map['idempotencyKey'] ?? item.dedupeKey,
+          }),
         );
         final ok =
             res.responseCode == null ||
@@ -693,7 +720,11 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.recordPayment(
-          RecordPaymentRequest.fromJson(map),
+          RecordPaymentRequest.fromJson({
+            ...map,
+            'idempotencyKey':
+                map['idempotencyKey'] ?? item.dedupeKey,
+          }),
         );
         final ok =
             res.responseCode == null ||
@@ -714,6 +745,27 @@ class LocalSourceBindings implements Bindings {
             backendId: backendId,
           );
         }
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'payment',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final backendId = (map['backendPaymentId'] as String?)?.trim() ?? '';
+        if (backendId.isEmpty) {
+          throw Exception('Missing backendPaymentId in payment:update payload');
+        }
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.updatePayment(backendId, map);
+        final ok =
+            res.responseCode == null ||
+            res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201';
+        if (!ok) throw Exception(res.message ?? 'Payment update sync failed');
       },
     );
     syncWorker.registerHandler(
@@ -754,7 +806,8 @@ class LocalSourceBindings implements Bindings {
       handler: (item) async {
         final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
         final backendId = map['backendExpenseId'] as String? ?? '';
-        if (backendId.isEmpty) throw Exception('Missing backendExpenseId in expense:update payload');
+        if (backendId.isEmpty)
+          throw Exception('Missing backendExpenseId in expense:update payload');
         final repository = Get.find<AppRepository>(
           tag: (AppRepository).toString(),
         );
@@ -824,9 +877,12 @@ class LocalSourceBindings implements Bindings {
           propertyRef: map['propertyRef'] as String?,
           workspaceType: map['workspaceType'] as String?,
           assignee: map['assignee'] as String?,
+          assigneePhone: map['assigneePhone'] as String?,
+          staffId: (map['staffId'] ?? map['assigneeStaffId']) as String?,
         );
         final res = await repository.addTask(req);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Task sync failed');
@@ -850,9 +906,14 @@ class LocalSourceBindings implements Bindings {
           propertyRef: map['propertyRef'] as String?,
           workspaceType: map['workspaceType'] as String?,
           assignee: map['assignee'] as String?,
+          assigneePhone: map['assigneePhone'] as String?,
+          staffId: (map['staffId'] ?? map['assigneeStaffId']) as String?,
+          completed: map['completed'] is bool ? map['completed'] as bool : null,
+          status: map['status'] as String?,
         );
         final res = await repository.updateTask(taskId, req);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Task update sync failed');
@@ -877,8 +938,9 @@ class LocalSourceBindings implements Bindings {
         final roomPhotoPaths = <String, List<String>>{};
         for (final e in roomPhotoPathsRaw.entries) {
           if (e.value is List) {
-            roomPhotoPaths[e.key] =
-                (e.value as List).map((v) => v.toString()).toList();
+            roomPhotoPaths[e.key] = (e.value as List)
+                .map((v) => v.toString())
+                .toList();
           }
         }
         final coverPath = (map['coverPhotoPath'] ?? '').toString().trim();
@@ -888,7 +950,8 @@ class LocalSourceBindings implements Bindings {
           roomPhotoPaths,
           coverPhotoPath: coverPath.isEmpty ? null : coverPath,
         );
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Listing update sync failed');
@@ -907,10 +970,10 @@ class LocalSourceBindings implements Bindings {
         final repository = Get.find<AppRepository>(
           tag: (AppRepository).toString(),
         );
-        final unitData =
-            (map['unit'] as Map?)?.cast<String, dynamic>() ?? map;
+        final unitData = (map['unit'] as Map?)?.cast<String, dynamic>() ?? map;
         final res = await repository.updateUnit(listingId, unitId, unitData);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Unit update sync failed');
@@ -925,10 +988,12 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.saveWhatsAppTemplateDraft(map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
-        if (!ok) throw Exception(res.message ?? 'WA template submit sync failed');
+        if (!ok)
+          throw Exception(res.message ?? 'WA template submit sync failed');
       },
     );
     syncWorker.registerHandler(
@@ -940,7 +1005,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.createTenant(map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -965,10 +1031,21 @@ class LocalSourceBindings implements Bindings {
         final repository = Get.find<AppRepository>(
           tag: (AppRepository).toString(),
         );
-        final id = (map['id'] as String?) ?? '';
-        if (id.isEmpty) throw Exception('Missing id in tenant:update payload');
-        final res = await repository.updateTenant(id, map);
-        final ok = res.responseCode == '0' ||
+        var id = (map['id'] as String?)?.trim() ?? '';
+        final localId = (map['localTenantId'] as num?)?.toInt();
+        if (id.isEmpty && localId != null && localId > 0) {
+          final row = await Get.find<TenantLocalDataSource>().findById(localId);
+          id = row?.backendTenantId.trim() ?? '';
+        }
+        if (id.isEmpty) {
+          throw Exception('Missing id in tenant:update payload');
+        }
+        final body = Map<String, dynamic>.from(map)
+          ..remove('localTenantId')
+          ..['id'] = id;
+        final res = await repository.updateTenant(id, body);
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -983,10 +1060,58 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.uploadVaultDocument(map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'document',
+      operation: 'update',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final res = await repository.updateVaultDocument(map);
+        final ok =
+            res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201' ||
+            res.responseCode == '204';
+        if (!ok) throw Exception(res.message ?? 'Sync failed');
+      },
+    );
+    syncWorker.registerHandler(
+      entityType: 'document',
+      operation: 'delete',
+      handler: (item) async {
+        final map = jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final repository = Get.find<AppRepository>(
+          tag: (AppRepository).toString(),
+        );
+        final directoryId = map['directoryId']?.toString() ?? '';
+        final fileName = map['fileName']?.toString() ?? '';
+        if (directoryId.isEmpty || fileName.isEmpty) {
+          throw Exception('Missing document identity in delete payload');
+        }
+        try {
+          final res = await repository.deleteVaultDocument(
+            directoryId: directoryId,
+            fileName: fileName,
+          );
+          final ok =
+              res.responseCode == '0' ||
+              res.responseCode == '200' ||
+              res.responseCode == '201' ||
+              res.responseCode == '204' ||
+              res.responseCode == '404';
+          if (!ok) throw Exception(res.message ?? 'Sync failed');
+        } on NotFoundException {
+          return;
+        }
       },
     );
     syncWorker.registerHandler(
@@ -999,7 +1124,8 @@ class LocalSourceBindings implements Bindings {
         );
         final req = StaffRequest.fromSyncMap(map);
         final res = await repository.createStaff(req.toApiJson());
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1017,7 +1143,8 @@ class LocalSourceBindings implements Bindings {
         final id = req.id ?? (map['id'] as String?) ?? '';
         if (id.isEmpty) throw Exception('Missing id in staff:update payload');
         final res = await repository.updateStaff(id, req.toApiJson());
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1034,7 +1161,8 @@ class LocalSourceBindings implements Bindings {
         final id = (map['id'] as String?) ?? '';
         if (id.isEmpty) throw Exception('Missing id in staff:delete payload');
         final res = await repository.deleteStaff(id);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1049,7 +1177,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.createLoyaltyOffer(map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1064,7 +1193,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.createTenantCharge(map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1079,7 +1209,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.renewLease(map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1094,7 +1225,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.saveEstimate(map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1109,9 +1241,11 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final id = (map['id'] as String?) ?? '';
-        if (id.isEmpty) throw Exception('Missing id in estimate:update payload');
+        if (id.isEmpty)
+          throw Exception('Missing id in estimate:update payload');
         final res = await repository.updateEstimate(id, map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1126,7 +1260,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.addUtilityTopUp(map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1141,7 +1276,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.saveWhatsAppTemplateDraft(map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1156,9 +1292,11 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final id = (map['id'] as String?) ?? '';
-        if (id.isEmpty) throw Exception('Missing id in wa_template:update payload');
+        if (id.isEmpty)
+          throw Exception('Missing id in wa_template:update payload');
         final res = await repository.updateWhatsAppTemplateDraft(id, map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'Sync failed');
@@ -1173,11 +1311,11 @@ class LocalSourceBindings implements Bindings {
         final repository = Get.find<AppRepository>(
           tag: (AppRepository).toString(),
         );
-        final res = await repository.createProperty(map);
-        final ok = res.responseCode == '0' ||
-            res.responseCode == '200' ||
-            res.responseCode == '201';
-        if (!ok) throw Exception(res.message ?? 'property:create sync failed');
+        final ok = await PropertyRemoteCreate.once(
+          repository: repository,
+          payload: map,
+        );
+        if (!ok) throw Exception('property:create sync failed');
       },
     );
 
@@ -1195,7 +1333,8 @@ class LocalSourceBindings implements Bindings {
           throw Exception('Missing property_ref in property:update payload');
         }
         final res = await repository.updatePropertyByRef(propertyRef, map);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'property:update sync failed');
@@ -1214,7 +1353,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.deleteExpense(backendId);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'expense:delete sync failed');
@@ -1233,7 +1373,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.deletePayment(paymentId);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'payment:delete sync failed');
@@ -1252,7 +1393,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.deleteTenant(id);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'tenant:delete sync failed');
@@ -1271,7 +1413,8 @@ class LocalSourceBindings implements Bindings {
           tag: (AppRepository).toString(),
         );
         final res = await repository.deleteTask(taskId);
-        final ok = res.responseCode == '0' ||
+        final ok =
+            res.responseCode == '0' ||
             res.responseCode == '200' ||
             res.responseCode == '201';
         if (!ok) throw Exception(res.message ?? 'task:delete sync failed');

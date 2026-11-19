@@ -19,7 +19,10 @@ abstract class PortfolioAiHubInsight {
     required bool isSw,
     required String Function(num amount) formatMoney,
   }) {
-    if (ctx.isRent) {
+    if (ctx.isBnb) {
+      return _bnb(ctx, isSw: isSw, formatMoney: formatMoney);
+    }
+    if (ctx.isRent || ctx.activeTenants > 0) {
       return _rent(ctx, isSw: isSw, formatMoney: formatMoney);
     }
     return _bnb(ctx, isSw: isSw, formatMoney: formatMoney);

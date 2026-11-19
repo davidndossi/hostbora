@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import 'help_center_catalog.dart';
 import 'help_center_models.dart';
+import 'help_navigation_helper.dart';
 import '../../modules/help_center/widgets/guided_tour_overlay.dart';
 
 /// Runs multi-step guided tours: navigates to screens and shows coach overlays.
@@ -41,16 +42,7 @@ class GuidedTourService extends GetxService {
     final step = guide.steps[index];
 
     if (step.route != null && step.route!.isNotEmpty) {
-      final params = step.routeParameters ?? {};
-      final args = step.routeArguments;
-      // Do NOT await — Get.toNamed's Future completes on pop, not on push.
-      // Fire-and-forget so we can show the overlay after the transition settles.
-      if (args != null) {
-        Get.toNamed(step.route!, parameters: params, arguments: args);
-      } else {
-        Get.toNamed(step.route!, parameters: params);
-      }
-      // Wait for the push animation to finish before attaching the overlay.
+      await HelpNavigationHelper.openStep(step);
       await Future<void>.delayed(const Duration(milliseconds: 500));
     }
 

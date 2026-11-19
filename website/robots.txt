@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /agents/
 
 Sitemap: https://hostbora.co.tz/sitemap.xml

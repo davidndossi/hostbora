@@ -107,11 +107,11 @@ class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgra
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: const Icon(Icons.add, size: 22),
+                icon: const Icon(Icons.add_outlined, size: 22),
                 label: Text(
                   _isSw ? 'UNDA OFA MPYA' : 'CREATE NEW OFFER',
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
                     fontSize: 13,
                   ),
@@ -299,7 +299,7 @@ class RentActiveLoyaltyProgramsView extends RentBaseView<RentActiveLoyaltyProgra
             label,
             style: TextStyle(
               fontSize: 10,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
               color: u.muted,
             ),

@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import '../../../data/local/service/property_count_store.dart';
+
 class BottomNavController extends GetxController {
   final _selectedIndexController = 0.obs;
 
@@ -20,4 +22,12 @@ class BottomNavController extends GetxController {
   /// Anchors the "Properties" bottom-nav tile so guidance overlays (e.g. the
   /// first-time spotlight) can locate it on screen.
   final GlobalKey propertiesTabKey = GlobalKey();
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (Get.isRegistered<PropertyCountStore>()) {
+      Get.find<PropertyCountStore>().scheduleRefresh();
+    }
+  }
 }

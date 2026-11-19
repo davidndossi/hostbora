@@ -38,8 +38,6 @@ class _LedgerUi {
   Color get alertAccent =>
       dark ? const Color(0xFFFFAB91) : const Color(0xFF5C4033);
 
-  Color get imagePlaceholder => _tokens.elevatedSurface;
-
   Color get financialCardBg => teal;
 
   List<BoxShadow> get cardShadow => [
@@ -57,27 +55,11 @@ class RentTenantLedgerOccupancyView
   RentTenantLedgerOccupancyView({super.key});
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
-  /// 1-based month of tenancy (e.g. after 4 full month boundaries → 5th month).
-  static String _englishOrdinalMonth(int n) {
-    final v = n.clamp(1, 999);
-    if (v % 100 >= 11 && v % 100 <= 13) return '${v}th';
-    switch (v % 10) {
-      case 1:
-        return '${v}st';
-      case 2:
-        return '${v}nd';
-      case 3:
-        return '${v}rd';
-      default:
-        return '${v}th';
-    }
-  }
-
   @override
   PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(
-    _isSw ? 'Daftari la Mpangaji' : 'Tenant Ledger',
+    _isSw ? 'Mpangaji' : 'Tenant',
     leading: IconButton(
-      icon: const Icon(Icons.arrow_back),
+      icon: const Icon(Icons.arrow_back_outlined),
       onPressed: controller.goBackToTenancyInsights,
     ),
   );
@@ -87,81 +69,452 @@ class RentTenantLedgerOccupancyView
     final u = _LedgerUi(context);
     final currency = Get.find<CurrencyService>();
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) controller.goBackToTenancyInsights();
-      },
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _isSw ? 'Muhtasari' : 'Ledger overview',
-              style: TextStyle(
-                fontSize: 10,
-                letterSpacing: 1.4,
-                fontWeight: FontWeight.w800,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Obx(
-              () => Text(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Text(
+          //   _isSw ? 'Muhtasari' : 'Ledger overview',
+          //   style: TextStyle(
+          //     fontSize: 10,
+          //     letterSpacing: 1.4,
+          //     fontWeight: FontWeight.w800,
+          //     color: Colors.grey.shade600,
+          //   ),
+          // ),
+          // Above the fold, in the order a host actually needs it: who this
+          // is, whether they are paid up, what they owe, and how to reach
+          // them. The old order opened with a 28px name, a full-width Edit
+          // button and a prose paragraph, so the balance — the reason for
+          // opening a ledger — sat below the first screen. Edit is now a
+          // text button on the details card: it is maintenance, not
+          // information, and belongs next to the fields it changes.
+          const SizedBox(height: 4),
+          Obx(() => _identityHeader(u)),
+          const SizedBox(height: 14),
+          Obx(() => _balanceSummary(u, currency)),
+          const SizedBox(height: 12),
+          Obx(() => _contactRow(u)),
+          const SizedBox(height: 20),
+          Obx(() => _tenantDetailsCard(u)),
+          const SizedBox(height: 14),
+          Obx(() => _tenancyCard(u)),
+          const SizedBox(height: 14),
+          Obx(() => _financialBreakdownCard(u, currency)),
+          const SizedBox(height: 14),
+          Obx(() => _lastInvoiceCard(u, currency)),
+          const SizedBox(height: 22),
+          Obx(() => _paymentHistorySection(u, currency)),
+          const SizedBox(height: 22),
+          Obx(() => _expenseHistorySection(u, currency)),
+          const SizedBox(height: 22),
+          Obx(() => _documentsSection(u)),
+          const SizedBox(height: 22),
+          _actionSection(u),
+        ],
+      ),
+    );
+  }
+
+  /// Name, unit and payment status in one block.
+  ///
+  /// The status pill sits beside the name rather than in its own labelled
+  /// section further down, because "who" and "are they paid" are read
+  /// together and were previously separated by about a screen of height.
+  Widget _identityHeader(_LedgerUi u) {
+    final status = controller.ledgerPaymentStatus;
+    final accent = _paymentStatusAccent(u, status);
+    final bg = _paymentStatusAlertBg(u, status);
+    final unit = controller.tenantUnitLabel;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
                 controller.displayTenantName,
                 style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  height: 1.15,
                   color: u.onSurface,
                 ),
               ),
+              const SizedBox(height: 4),
+              Text(
+                unit.isEmpty
+                    ? controller.propertyShortPhrase
+                    : '$unit · ${controller.propertyShortPhrase}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.3,
+                  color: u.onSurfaceSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: accent.withValues(alpha: 0.35)),
+          ),
+          child: Text(
+            controller.ledgerPaymentStatusHeadline,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+              color: accent,
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The figure the screen exists to answer, stated once and large.
+  ///
+  /// Shows outstanding when there is one and paid-to-date when there is not,
+  /// rather than printing "Outstanding 0" — which is true but makes the host
+  /// read a number to learn there is nothing to read.
+  Widget _balanceSummary(_LedgerUi u, CurrencyService currency) {
+    final outstanding = controller.remainingBalanceTsh;
+    final settled = outstanding <= 0;
+    final status = controller.ledgerPaymentStatus;
+    final accent = settled
+        ? _paymentStatusAccent(u, LedgerPaymentStatus.fullyPaid)
+        : _paymentStatusAccent(u, status);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: u.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: u.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            settled
+                ? (_isSw ? 'JUMLA ILIYOLIPWA' : 'PAID TO DATE')
+                : (_isSw ? 'SALIO LINALODAIWA' : 'OUTSTANDING'),
+            style: TextStyle(
+              fontSize: 10,
+              letterSpacing: 1.1,
+              fontWeight: FontWeight.w700,
+              color: u.labelMuted,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            currency.formatBase(
+              settled ? controller.totalPaidTsh : outstanding,
+            ),
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w600,
+              height: 1.05,
+              color: accent,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _isSw
+                ? 'Imelipwa ${currency.formatBase(controller.totalPaidTsh)} kati ya ${currency.formatBase(controller.totalDueTsh)} · ${controller.currentStayLabel}'
+                : '${currency.formatBase(controller.totalPaidTsh)} paid of ${currency.formatBase(controller.totalDueTsh)} · ${controller.currentStayLabel}',
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.35,
+              color: u.onSurfaceSecondary,
+            ),
+          ),
+          if (!settled) ...[
             const SizedBox(height: 12),
-            Obx(() => _overviewParagraph(u)),
-            const SizedBox(height: 16),
-            Obx(() => _statusAlert(u)),
-            const SizedBox(height: 20),
-            Obx(() => _tenancyCard(u)),
-            const SizedBox(height: 14),
-            Obx(() => _financialBreakdownCard(u, currency)),
-            const SizedBox(height: 22),
-            Obx(() => _paymentHistorySection(u, currency)),
-            const SizedBox(height: 22),
-            Obx(() => _documentsSection(u)),
-            const SizedBox(height: 22),
-            _actionSection(u),
-            const SizedBox(height: 22),
-            _residenceProfileCard(u),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: controller.openRecordPayment,
+                icon: const Icon(Icons.payments_outlined, size: 18),
+                label: Text(
+                  _isSw ? 'Rekodi malipo' : 'Record payment',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: _LedgerUi.teal,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
           ],
+        ],
+      ),
+    );
+  }
+
+  /// Call, message and WhatsApp, reachable without scrolling.
+  ///
+  /// Returns nothing at all when no number is stored: three dead buttons
+  /// would imply the contact exists and the app is failing to use it.
+  Widget _contactRow(_LedgerUi u) {
+    if (!controller.tenantHasPhone) return const SizedBox.shrink();
+
+    return Row(
+      children: [
+        Expanded(
+          child: _contactAction(
+            u,
+            icon: Icons.call_outlined,
+            label: _isSw ? 'Piga simu' : 'Call',
+            onTap: controller.callTenant,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _contactAction(
+            u,
+            icon: Icons.sms_outlined,
+            label: _isSw ? 'SMS' : 'Message',
+            onTap: controller.openSendSmsShortcut,
+          ),
+        ),
+        if (controller.tenantHasWhatsapp) ...[
+          const SizedBox(width: 8),
+          Expanded(
+            child: _contactAction(
+              u,
+              icon: Icons.chat_outlined,
+              label: 'WhatsApp',
+              onTap: controller.whatsappTenant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _contactAction(
+    _LedgerUi u, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final accent = u.dark ? const Color(0xFF80CBC4) : _LedgerUi.teal;
+    return Material(
+      color: accent.withValues(alpha: u.dark ? 0.18 : 0.08),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          child: Column(
+            children: [
+              Icon(icon, size: 20, color: accent),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: accent,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _overviewParagraph(_LedgerUi u) {
-    final bold = controller.propertyShortPhrase;
-    final tenancyMonth = (controller.currentStayMonths + 1).clamp(1, 999);
-    final tail = _isSw
-        ? '. Kwa sasa anaingia mwezi wa $tenancyMonth wa upangaji.'
-        : '. Currently entering the ${_englishOrdinalMonth(tenancyMonth)} month of tenancy.';
-    return RichText(
-      text: TextSpan(
-        style: TextStyle(
-          fontSize: 14,
-          height: 1.45,
-          color: u.onSurfaceSecondary,
+  /// The tenant's own particulars — previously absent from this screen
+  /// entirely. The bottom of the page carried a stock photo captioned
+  /// "Premium Tenant" and a hardcoded city instead, which told the host
+  /// nothing about the person whose ledger they had opened.
+  ///
+  /// Rows are omitted when the underlying field is empty, so the card never
+  /// shows a dash that could be mistaken for stored data.
+  ///
+  /// Deliberately holds only the person's own particulars. Rent, rate and
+  /// lease dates live in [_tenancyCard] directly below — repeating them here
+  /// would state the same fact twice from two different getters, which is how
+  /// two figures end up disagreeing after one of them is changed.
+  Widget _tenantDetailsCard(_LedgerUi u) {
+    final phone = controller.tenantPhone;
+    final email = controller.tenantEmail;
+    final gender = controller.tenantGender;
+    final unit = controller.tenantUnitLabel;
+
+    final rows = <Widget>[
+      if (phone.isNotEmpty)
+        _detailRow(
+          u,
+          icon: Icons.phone_outlined,
+          label: _isSw ? 'Simu' : 'Phone',
+          value: controller.tenantHasWhatsapp ? '$phone  ·  WhatsApp' : phone,
+          onTap: controller.copyTenantPhone,
+          trailing: Icons.copy_outlined,
         ),
-        children: [
-          TextSpan(text: _isSw ? 'Mpangaji ' : 'Tenant at '),
-          TextSpan(
-            text: bold,
-            style: TextStyle(fontWeight: FontWeight.w800, color: u.onSurface),
+      if (email.isNotEmpty)
+        _detailRow(
+          u,
+          icon: Icons.mail_outline,
+          label: _isSw ? 'Barua pepe' : 'Email',
+          value: email,
+        ),
+      if (unit.isNotEmpty)
+        _detailRow(
+          u,
+          icon: Icons.meeting_room_outlined,
+          label: _isSw ? 'Chumba' : 'Unit',
+          value: unit,
+        ),
+      if (gender.isNotEmpty)
+        _detailRow(
+          u,
+          icon: Icons.person_outline,
+          label: _isSw ? 'Jinsia' : 'Gender',
+          value: gender,
+        ),
+      // Nothing on file at all. Says so and points at Edit, rather than
+      // rendering a titled card with an empty body.
+      if (phone.isEmpty && email.isEmpty && unit.isEmpty && gender.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 4, bottom: 12),
+          child: Text(
+            _isSw
+                ? 'Hakuna maelezo ya mawasiliano yaliyohifadhiwa. Gusa Hariri ili kuongeza simu au barua pepe.'
+                : 'No contact details on file. Tap Edit to add a phone number or email.',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: u.onSurfaceSecondary,
+            ),
           ),
-          TextSpan(text: tail),
+        ),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      decoration: BoxDecoration(
+        color: u.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: u.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _isSw ? 'MAELEZO YA MPANGAJI' : 'TENANT DETAILS',
+                  style: TextStyle(
+                    fontSize: 10,
+                    letterSpacing: 1.1,
+                    fontWeight: FontWeight.w700,
+                    color: u.labelMuted,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: controller.openEditLeaseTermsDialog,
+                icon: const Icon(Icons.edit_outlined, size: 15),
+                style: TextButton.styleFrom(
+                  foregroundColor: u.dark
+                      ? const Color(0xFF80CBC4)
+                      : _LedgerUi.teal,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 32),
+                  visualDensity: VisualDensity.compact,
+                ),
+                label: Text(
+                  _isSw ? 'Hariri' : 'Edit',
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ...rows,
         ],
       ),
+    );
+  }
+
+  Widget _detailRow(
+    _LedgerUi u, {
+    required IconData icon,
+    required String label,
+    required String value,
+    VoidCallback? onTap,
+    IconData? trailing,
+  }) {
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        children: [
+          Icon(icon, size: 17, color: u.labelMuted),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: u.onSurfaceSecondary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: u.onSurface,
+              ),
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            Icon(trailing, size: 15, color: u.labelMuted),
+          ],
+        ],
+      ),
+    );
+
+    if (onTap == null) return row;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: row,
     );
   }
 
@@ -187,54 +540,6 @@ class RentTenantLedgerOccupancyView
     }
   }
 
-  Widget _statusAlert(_LedgerUi u) {
-    final s = controller.ledgerPaymentStatus;
-    final accent = _paymentStatusAccent(u, s);
-    final bg = _paymentStatusAlertBg(u, s);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          _isSw ? 'Hali ya Sasa' : 'Current Status',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: u.labelMuted,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(12),
-            border: u.dark
-                ? Border.all(color: accent.withValues(alpha: 0.35))
-                : null,
-          ),
-          child: Row(
-            children: [
-              Container(width: 10, height: 10, color: accent),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  controller.ledgerPaymentStatusHeadline,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.9,
-                    color: accent,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _tenancyCard(_LedgerUi u) {
     return Container(
       width: double.infinity,
@@ -254,7 +559,7 @@ class RentTenantLedgerOccupancyView
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(
-                Icons.calendar_month_rounded,
+                Icons.calendar_month_outlined,
                 color: u.dark
                     ? const Color(0xFF80CBC4)
                     : _LedgerUi.teal.withValues(alpha: 0.9),
@@ -265,7 +570,7 @@ class RentTenantLedgerOccupancyView
                 style: TextStyle(
                   fontSize: 10,
                   letterSpacing: 1.2,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: u.labelMuted,
                 ),
               ),
@@ -281,7 +586,7 @@ class RentTenantLedgerOccupancyView
             controller.currentStayLabel,
             style: TextStyle(
               fontSize: 26,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: u.onSurface,
             ),
           ),
@@ -301,6 +606,91 @@ class RentTenantLedgerOccupancyView
               color: u.onSurfaceSecondary,
             ),
           ),
+          const SizedBox(height: 14),
+          Divider(height: 1, color: u.border.withValues(alpha: 0.8)),
+          const SizedBox(height: 12),
+          Text(
+            controller.rateCaption,
+            style: TextStyle(fontSize: 12, color: u.onSurfaceSecondary),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            controller.rateLabel,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: u.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _lastInvoiceCard(_LedgerUi u, CurrencyService currency) {
+    final invoice = controller.lastRentInvoice;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: u.card,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: u.cardShadow,
+        border: Border.all(color: u.border.withValues(alpha: 0.7)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _isSw ? 'Ankara ya mwisho ya kodi' : 'Last rent invoice',
+            style: TextStyle(
+              fontSize: 10,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w700,
+              color: u.labelMuted,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (invoice == null)
+            Text(
+              _isSw
+                  ? 'Hakuna ankara iliyotengenezwa bado.'
+                  : 'No invoice generated yet.',
+              style: TextStyle(fontSize: 14, color: u.onSurfaceSecondary),
+            )
+          else ...[
+            Text(
+              invoice.title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: u.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              currency.formatBase(invoice.amountTsh),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: u.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${invoice.summary} · ${controller.lastInvoiceDateLabel(invoice)}',
+              style: TextStyle(fontSize: 12, color: u.labelMuted),
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => controller.openDocument(invoice),
+                icon: const Icon(Icons.open_in_new_outlined, size: 18),
+                label: Text(_isSw ? 'Fungua' : 'Open'),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -331,7 +721,7 @@ class RentTenantLedgerOccupancyView
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 1.3,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: Colors.white.withValues(alpha: 0.85),
             ),
           ),
@@ -348,7 +738,7 @@ class RentTenantLedgerOccupancyView
             currency.formatBase(controller.remainingBalanceTsh),
             style: const TextStyle(
               fontSize: 30,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: Colors.white,
             ),
           ),
@@ -408,6 +798,76 @@ class RentTenantLedgerOccupancyView
     );
   }
 
+  Widget _expenseHistorySection(_LedgerUi u, CurrencyService currency) {
+    final rows = controller.expenseHistory;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _isSw ? 'Orodha ya gharama' : 'Expenses',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            color: u.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (rows.isEmpty)
+          Text(
+            _isSw
+                ? 'Hakuna gharama zilizohusishwa na mpangaji/mali hii.'
+                : 'No expenses linked to this tenant/property yet.',
+            style: TextStyle(fontSize: 14, color: u.onSurfaceSecondary),
+          )
+        else
+          ...rows.map(
+            (e) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: u.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: u.border),
+                boxShadow: u.cardShadow,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          e.item,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color: u.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${e.category} · ${e.dateLabel}',
+                          style: TextStyle(fontSize: 12, color: u.labelMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    currency.formatBase(e.amountTsh),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: u.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _paymentHistorySection(_LedgerUi u, CurrencyService currency) {
     final rows = controller.paymentHistory;
     return Column(
@@ -416,7 +876,7 @@ class RentTenantLedgerOccupancyView
         Text(
           _isSw ? 'Malipo yaliyofanywa' : 'Payments made',
           style: TextStyle(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             fontSize: 16,
             color: u.onSurface,
           ),
@@ -424,7 +884,9 @@ class RentTenantLedgerOccupancyView
         const SizedBox(height: 8),
         if (rows.isEmpty)
           Text(
-            _isSw ? 'Hakuna malipo yaliyorekodiwa bado.' : 'No payments recorded yet.',
+            _isSw
+                ? 'Hakuna malipo yaliyorekodiwa bado.'
+                : 'No payments recorded yet.',
             style: TextStyle(fontSize: 14, color: u.onSurfaceSecondary),
           )
         else
@@ -447,7 +909,7 @@ class RentTenantLedgerOccupancyView
                         Text(
                           currency.formatBase(p.amountTsh),
                           style: TextStyle(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             fontSize: 15,
                             color: u.onSurface,
                           ),
@@ -481,7 +943,7 @@ class RentTenantLedgerOccupancyView
         Text(
           _isSw ? 'Ankara na risiti' : 'Invoices & receipts',
           style: TextStyle(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             fontSize: 16,
             color: u.onSurface,
           ),
@@ -508,7 +970,9 @@ class RentTenantLedgerOccupancyView
               child: Row(
                 children: [
                   Icon(
-                    isInvoice ? Icons.request_quote_outlined : Icons.receipt_outlined,
+                    isInvoice
+                        ? Icons.request_quote_outlined
+                        : Icons.receipt_outlined,
                     color: _LedgerUi.teal,
                   ),
                   const SizedBox(width: 10),
@@ -532,14 +996,16 @@ class RentTenantLedgerOccupancyView
                   ),
                   IconButton(
                     onPressed: () => controller.openDocument(d),
-                    icon: const Icon(Icons.open_in_new, size: 20),
+                    icon: const Icon(Icons.open_in_new_outlined, size: 20),
                   ),
                   IconButton(
-                    onPressed: () => controller.shareDocument(d, viaWhatsApp: true),
+                    onPressed: () =>
+                        controller.shareDocument(d, viaWhatsApp: true),
                     icon: const Icon(Icons.chat_outlined, size: 20),
                   ),
                   IconButton(
-                    onPressed: () => controller.shareDocument(d, viaWhatsApp: false),
+                    onPressed: () =>
+                        controller.shareDocument(d, viaWhatsApp: false),
                     icon: const Icon(Icons.email_outlined, size: 20),
                   ),
                 ],
@@ -557,7 +1023,7 @@ class RentTenantLedgerOccupancyView
         Text(
           _isSw ? 'Hatua inayopendekezwa' : 'Immediate Action Recommended',
           style: TextStyle(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             fontSize: 16,
             color: u.onSurface,
           ),
@@ -573,31 +1039,10 @@ class RentTenantLedgerOccupancyView
             ),
           ),
         ),
+        // Record payment is not repeated here. It now sits on the balance
+        // card above, next to the figure it settles, which is both earlier in
+        // the page and the only place it appears.
         const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: controller.openRecordPayment,
-            icon: const Icon(Icons.payments_outlined, size: 22),
-            label: Text(
-              _isSw ? 'Rekodi malipo' : 'Record payment',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-              ),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: _LedgerUi.teal,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
@@ -606,7 +1051,10 @@ class RentTenantLedgerOccupancyView
                 icon: const Icon(Icons.request_quote_outlined, size: 18),
                 label: Text(
                   _isSw ? 'Ankara' : 'Invoice',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -617,7 +1065,10 @@ class RentTenantLedgerOccupancyView
                 icon: const Icon(Icons.receipt_outlined, size: 18),
                 label: Text(
                   _isSw ? 'Risiti' : 'Receipt',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -632,7 +1083,10 @@ class RentTenantLedgerOccupancyView
                 icon: const Icon(Icons.chat_outlined, size: 18),
                 label: Text(
                   'WhatsApp',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -643,7 +1097,10 @@ class RentTenantLedgerOccupancyView
                 icon: const Icon(Icons.email_outlined, size: 18),
                 label: Text(
                   _isSw ? 'Barua pepe' : 'Email',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -659,7 +1116,7 @@ class RentTenantLedgerOccupancyView
               'Set payment reminder',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
               ),
             ),
@@ -681,7 +1138,7 @@ class RentTenantLedgerOccupancyView
             icon: const Icon(Icons.sms_outlined, size: 20),
             label: Text(
               _isSw ? 'Tuma SMS / WhatsApp' : 'Send SMS / WhatsApp',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: u.dark
@@ -785,10 +1242,10 @@ class RentTenantLedgerOccupancyView
                       onPressed: controller.pickAndUploadSignedContract,
                       icon: const Icon(Icons.upload_file, size: 18),
                       label: Text(
-                        _isSw ? 'Pakia PDF/Word' : 'Upload PDF/Word',
+                        _isSw ? 'PDF, Word, au picha' : 'PDF, Word, or image',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -801,32 +1258,12 @@ class RentTenantLedgerOccupancyView
                     ),
                     OutlinedButton.icon(
                       onPressed: controller.openSignedContract,
-                      icon: const Icon(Icons.open_in_new, size: 18),
+                      icon: const Icon(Icons.open_in_new_outlined, size: 18),
                       label: Text(
                         _isSw ? 'Fungua' : 'Open',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: u.dark
-                            ? const Color(0xFF80CBC4)
-                            : _LedgerUi.teal,
-                        side: BorderSide(color: u.border),
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: controller.openEditLeaseTermsDialog,
-                      icon: const Icon(Icons.edit_calendar_outlined, size: 18),
-                      label: Text(
-                        _isSw
-                            ? 'Hariri masharti ya mkataba'
-                            : 'Edit lease terms',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -844,109 +1281,6 @@ class RentTenantLedgerOccupancyView
           ),
         ),
       ],
-    );
-  }
-
-  Widget _residenceProfileCard(_LedgerUi u) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Stack(
-        children: [
-          SizedBox(
-            height: 220,
-            width: double.infinity,
-            child: Image.asset(
-              'images/luxury_room_view.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: u.imagePlaceholder,
-                child: Icon(
-                  Icons.apartment,
-                  size: 56,
-                  color: u.onSurface.withValues(alpha: 0.5),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.05),
-                    Colors.black.withValues(alpha: 0.65),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Residence profile',
-                  style: TextStyle(
-                    fontSize: 10,
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white.withValues(alpha: 0.85),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Obx(
-                  () => Text(
-                    controller.displayPropertyFull,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 18,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      RentTenantLedgerOccupancyController.residencyCity,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.92),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.verified_user_outlined,
-                      size: 18,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _isSw ? 'Mpangaji wa Hadhi' : 'Premium Tenant',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.92),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

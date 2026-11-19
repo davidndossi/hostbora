@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 
 import '../../../core/base/base_controller.dart';
+import '../../../core/utils/month_rent_collection.dart';
+import '../../../data/local/db/income_local_data_source.dart';
+import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/model/rewards_dashboard.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
@@ -26,7 +29,9 @@ class ChallengesRewardsController extends BaseController {
       final response = await _repository.getRewards();
       final data = response.data;
       if (response.isSuccess && data is Map) {
-        dashboard(RewardsDashboard.fromJson(Map<String, dynamic>.from(data)));
+        dashboard(await _withLocalCollection(
+          RewardsDashboard.fromJson(Map<String, dynamic>.from(data)),
+        ));
       }
     } catch (e) {
       showErrorMessage(
@@ -43,7 +48,9 @@ class ChallengesRewardsController extends BaseController {
       final response = await _repository.completeAcademy();
       final data = response.data;
       if (response.isSuccess && data is Map) {
-        dashboard(RewardsDashboard.fromJson(Map<String, dynamic>.from(data)));
+        dashboard(await _withLocalCollection(
+          RewardsDashboard.fromJson(Map<String, dynamic>.from(data)),
+        ));
         showSuccessMessage(
           isSw ? 'Academy imekamilika. +HB Points' : 'Academy completed. HB Points added.',
         );
@@ -73,7 +80,9 @@ class ChallengesRewardsController extends BaseController {
       if (response.isSuccess && data is Map) {
         final nested = data['dashboard'];
         if (nested is Map) {
-          dashboard(RewardsDashboard.fromJson(Map<String, dynamic>.from(nested)));
+          dashboard(await _withLocalCollection(
+            RewardsDashboard.fromJson(Map<String, dynamic>.from(nested)),
+          ));
         } else {
           await load();
         }
@@ -91,5 +100,22 @@ class ChallengesRewardsController extends BaseController {
 
   void openAcademy() {
     Get.toNamed(Routes.HELP_CENTER);
+  }
+
+  Future<RewardsDashboard> _withLocalCollection(RewardsDashboard data) async {
+    try {
+      if (!Get.isRegistered<TenantLocalDataSource>() ||
+          !Get.isRegistered<IncomeLocalDataSource>()) {
+        return data;
+      }
+      final tenants = await Get.find<TenantLocalDataSource>().getAllNewestFirst();
+      final incomes = await Get.find<IncomeLocalDataSource>().getAllNewestFirst();
+      return MonthRentCollection.fromRecords(
+        tenants: tenants,
+        incomes: incomes,
+      ).applyTo(data);
+    } catch (_) {
+      return data;
+    }
   }
 }

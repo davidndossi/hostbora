@@ -3,14 +3,14 @@ tests:
     id: onboarding-bnb-workspace
     steps:
       - goal: Complete first-run onboarding and select BnB workspace
-        hint: Swipe through intro slides if shown. Choose BnB or short-stays workspace and continue.
+        hint: Swipe through intro slides if shown. Choose BnB or short-stays workspace and continue. Onboarding only appears when seen_onboarding is false (fresh install or after Reset).
         finalScreenAssertion: Create Host Account or Login screen is visible
 
   - displayName: Register new host account
     id: host-register-account
     steps:
       - goal: Open Create Host Account from Login and fill registration form
-        hint: Tap Create Host Account. Enter full name, valid email, Tanzanian phone 0[678] plus 8 digits, password at least 8 characters. Submit sign up.
+        hint: Tap Create Host Account. Enter full name, optional email, Tanzanian phone 0[678] plus 8 digits. There is no password field — login is OTP-only. Submit sign up.
         finalScreenAssertion: OTP verification screen asking for a 4-digit code is visible
 
   - displayName: Verify registration OTP

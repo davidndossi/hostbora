@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:get/get.dart';
 
 import '../../../core/access/staff_access.dart';
+import '../../../network/exceptions/unauthorize_exception.dart';
 import '../../model/login_response.dart';
 import '../../repository/app_repository.dart';
+import '../../service/fcm_token_service.dart';
 import '../preference/preference_manager.dart';
+import 'local_account_data_reset.dart';
 
 /// Keeps users signed in with long-lived refresh tokens (login-once UX).
 class SessionService extends GetxService {
@@ -39,13 +42,15 @@ class SessionService extends GetxService {
       PreferenceManager.keyRefreshToken,
       defaultValue: '',
     );
+    if (refreshToken.isEmpty) return false;
     final refreshExpiry = await pref.getString(
       PreferenceManager.keyRefreshExpiryTime,
       defaultValue: '',
     );
-    if (refreshToken.isEmpty || refreshExpiry.isEmpty) return false;
+    // Token without a stored expiry is still usable (older app builds).
+    if (refreshExpiry.isEmpty) return true;
     final expiryMs = DateTime.tryParse(refreshExpiry)?.millisecondsSinceEpoch;
-    if (expiryMs == null) return false;
+    if (expiryMs == null) return true;
     return DateTime.now().millisecondsSinceEpoch <= expiryMs;
   }
 
@@ -96,20 +101,29 @@ class SessionService extends GetxService {
       }
       await saveFromLogin(response);
       return true;
+    } on UnauthorizedException {
+      // Server rejected the refresh token. Drop it so later calls do not
+      // keep posting the same dead token.
+      await clearFullSession();
+      return false;
     } catch (_) {
       return false;
     }
   }
 
   Future<void> saveFromLogin(LoginResponse response) async {
-    final expiresIn = response.expiresIn ?? 0;
-    if (response.token != null && expiresIn > 0) {
+    final accessToken = response.token;
+    if (accessToken != null && accessToken.isNotEmpty) {
+      final expiresIn =
+          (response.expiresIn != null && response.expiresIn! > 0)
+              ? response.expiresIn!
+              : _defaultAccessTtlMinutes;
       final expiryTime = DateTime.now()
           .add(Duration(minutes: expiresIn))
           .toIso8601String();
       await _preferenceManager.setString(
         PreferenceManager.keyToken,
-        response.token!,
+        accessToken,
       );
       await _preferenceManager.setString(
         PreferenceManager.keyExpiryTime,
@@ -118,12 +132,9 @@ class SessionService extends GetxService {
     }
 
     final refreshToken = response.refreshToken;
-    final refreshExpiresIn = response.refreshExpiresIn ?? 0;
-    if (refreshToken != null &&
-        refreshToken.isNotEmpty &&
-        refreshExpiresIn > 0) {
+    if (refreshToken != null && refreshToken.isNotEmpty) {
       final refreshExpiry = DateTime.now()
-          .add(Duration(minutes: refreshExpiresIn))
+          .add(_refreshTtl(response.refreshExpiresIn))
           .toIso8601String();
       await _preferenceManager.setString(
         PreferenceManager.keyRefreshToken,
@@ -136,6 +147,13 @@ class SessionService extends GetxService {
     }
 
     if (response.user != null) {
+      final nextUserId = response.user?.id?.trim() ?? '';
+      if (nextUserId.isNotEmpty) {
+        await LocalAccountDataReset.alignToUser(
+          _preferenceManager,
+          userId: nextUserId,
+        );
+      }
       await _preferenceManager.setUser('user', response.user);
       if (response.user?.msisdn != null) {
         await _preferenceManager.setString(
@@ -167,6 +185,7 @@ class SessionService extends GetxService {
         'propertyScope': response.propertyScope,
       });
     }
+    FcmTokenService.registerWithBackend();
   }
 
   Future<void> clearFullSession() async {
@@ -174,5 +193,15 @@ class SessionService extends GetxService {
     if (Get.isRegistered<StaffAccessStore>()) {
       await Get.find<StaffAccessStore>().applyUnrestricted();
     }
+  }
+
+  /// Access token lifetime in minutes. Matches `jwt-security.expiration-time` (90 days).
+  static const _defaultAccessTtlMinutes = 90 * 24 * 60;
+
+  /// API sends minutes (`90 * 24 * 60`). Some builds sent days (`90`).
+  static Duration _refreshTtl(int? raw) {
+    if (raw == null || raw <= 0) return const Duration(days: 90);
+    if (raw < 24 * 60) return Duration(days: raw);
+    return Duration(minutes: raw);
   }
 }

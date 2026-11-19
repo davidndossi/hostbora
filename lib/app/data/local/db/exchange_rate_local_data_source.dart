@@ -6,13 +6,7 @@ import 'app_local_database.dart';
 class ExchangeRateLocalDataSource {
   static const _table = AppLocalDatabase.exchangeRatesTable;
 
-  Database? _db;
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
-  }
+  Future<Database> get database => AppLocalDatabase.database;
 
   Future<void> replaceAll(List<ExchangeRate> rates) async {
     final db = await database;

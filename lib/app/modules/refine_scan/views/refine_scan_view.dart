@@ -345,9 +345,9 @@ class RefineScanView extends BaseView<RefineScanController> {
               return ElevatedButton(
                 onPressed: enabled ? controller.saveToVault : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.designAccent,
+                  backgroundColor: AppColors.colorPrimary,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: AppColors.designAccent.withValues(
+                  disabledBackgroundColor: AppColors.colorPrimary.withValues(
                     alpha: 0.4,
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -528,7 +528,7 @@ class _CropFramePainter extends CustomPainter {
       dim,
     );
     final border = Paint()
-      ..color = AppColors.designAccent
+      ..color = AppColors.colorPrimary
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawRRect(
@@ -585,7 +585,7 @@ class _CornerHandle extends StatelessWidget {
               height: size,
               decoration: BoxDecoration(
                 color: AppColors.colorWhite,
-                border: Border.all(color: AppColors.designAccent, width: 2),
+                border: Border.all(color: AppColors.colorPrimary, width: 2),
               ),
             ),
           ),
@@ -621,18 +621,18 @@ class _AdjustButton extends StatelessWidget {
           ? theme.colorScheme.onSurface.withValues(alpha: 0.38)
           : AppColors.textColorPrimary.withValues(alpha: 0.38);
     } else if (isActive) {
-      fg = c.isDark ? const Color(0xFF5ECFBF) : AppColors.designAccent;
+      fg = c.isDark ? const Color(0xFF5ECFBF) : AppColors.colorPrimary;
     } else {
       fg = c.isDark ? theme.colorScheme.onSurface : AppColors.textColorPrimary;
     }
     final Color bg;
     if (isActive) {
-      bg = (c.isDark ? const Color(0xFF5ECFBF) : AppColors.designAccent)
+      bg = (c.isDark ? const Color(0xFF5ECFBF) : AppColors.colorPrimary)
           .withValues(alpha: c.isDark ? 0.22 : 0.12);
     } else if (c.isDark) {
       bg = theme.colorScheme.surfaceContainerHigh;
     } else {
-      bg = AppColors.lightGreyColor.withValues(alpha: 0.4);
+      bg = AppColors.designInputBorder.withValues(alpha: 0.4);
     }
     final borderColor = c.isDark
         ? (isActive

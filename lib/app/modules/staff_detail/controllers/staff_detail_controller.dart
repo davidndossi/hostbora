@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/access/staff_access.dart';
+import '../../../core/utils/auth_messages.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../data/model/staff_request.dart';
 import '../../rent/staff_management/widgets/staff_access_editor.dart';
@@ -15,6 +16,8 @@ import '../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../maintenance_tasks/assigned_task_inbox.dart';
+import '../../maintenance_tasks/task_assignment_store.dart';
 import '../../team_and_staff/controllers/team_and_staff_controller.dart';
 
 class StaffDetailController extends BaseController {
@@ -97,6 +100,11 @@ class StaffDetailController extends BaseController {
           role.value = job.isEmpty ? member.role : job;
           payLine.value = record.displayAmountLine;
           joinedLabel.value = _formatJoined(record.createdAtMs);
+          final recordPhone = record.phone.trim();
+          if (recordPhone.isNotEmpty) {
+            _phone = recordPhone;
+            phone.value = recordPhone;
+          }
         }
       } else if (member.id.isEmpty) {
         joinedLabel.value = '';
@@ -131,15 +139,40 @@ class StaffDetailController extends BaseController {
 
     try {
       final res = await _repository.getTasks();
-      if (res.responseCode != '0' || res.data == null) return;
-      final maps = _extractTaskMaps(res.data);
+      final maps = res.isSuccess && res.data != null
+          ? _extractTaskMaps(res.data)
+          : <Map<String, dynamic>>[];
       final matched = <Map<String, dynamic>>[];
+      final seen = <String>{};
       for (final m in maps) {
-        final assignee =
+        final id = (m['taskId'] ?? m['id'] ?? '').toString();
+        var assignee =
             (m['assignee'] ?? m['assignedTo'] ?? '').toString().trim();
-        if (_assigneeMatchesStaff(assignee, staffName)) {
-          matched.add(m);
+        if (assignee.isEmpty || assignee.toLowerCase() == 'unassigned') {
+          assignee = await TaskAssignmentStore.assigneeFor(id);
         }
+        if (_assigneeMatchesStaff(assignee, staffName)) {
+          matched.add({...m, 'assignee': assignee, 'title': m['title'] ?? m['name']});
+          if (id.isNotEmpty) seen.add(id);
+        }
+      }
+      final inbox = await AssignedTaskInbox.forStaff(
+        name: staffName,
+        phone: _phone,
+      );
+      for (final task in inbox) {
+        if (seen.contains(task.id)) continue;
+        matched.add({
+          'id': task.id,
+          'title': task.title,
+          'assignee': task.assignee,
+          'status': task.isCompleted ? 'COMPLETED' : 'PENDING',
+          'completed': task.isCompleted,
+          if (task.dueDate != null)
+            'dueDate': task.dueDate!.toIso8601String(),
+          if (task.completedAt != null)
+            'completedAt': task.completedAt!.toIso8601String(),
+        });
       }
       totalTasks.value = matched.length;
 
@@ -464,6 +497,7 @@ class StaffDetailController extends BaseController {
     await runDestructiveWithUndo(
       message: appLocalization.staffDetailRemovedSuccess,
       action: () async {
+        await RemovedStaffPhones.remember(snapshot.phone);
         await _staffLocal.deleteById(id);
         try {
           final res = await _repository.deleteStaff(apiStaffId);
@@ -480,6 +514,7 @@ class StaffDetailController extends BaseController {
         Get.back(result: true);
       },
       onUndo: () async {
+        await RemovedStaffPhones.forget(snapshot.phone);
         await _syncQueue.deleteByDedupeKey('staff:delete:$apiStaffId');
         await _staffLocal.restore(snapshot, backendStaffId: backendStaffId);
       },

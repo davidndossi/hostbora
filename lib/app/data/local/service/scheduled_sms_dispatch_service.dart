@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../model/send_sms_request.dart';
 import '../../repository/app_repository.dart';
 import '../db/scheduled_sms_local_data_source.dart';
+import '../../service/analytics_service.dart';
 
 /// Fires scheduled SMS API sends when their time is due.
 class ScheduledSmsDispatchService extends GetxService {
@@ -45,6 +46,11 @@ class ScheduledSmsDispatchService extends GetxService {
           );
           if (res.responseCode == '0') {
             await _local.markSent(row.id);
+            analytics?.logReminderSent(
+              channel: 'sms',
+              automated: true,
+              reminderType: 'scheduled_queue',
+            );
           }
         } catch (_) {
           // Retry on next tick.

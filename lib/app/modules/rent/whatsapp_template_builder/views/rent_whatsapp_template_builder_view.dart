@@ -28,8 +28,8 @@ class RentWhatsappTemplateBuilderView
     return FloatingActionButton.extended(
       backgroundColor: RentTheme.conciergeTeal,
       foregroundColor: Colors.white,
-      icon: const Icon(Icons.add_rounded),
-      label: Text(_isSw ? 'KIOLEZO KIPYA' : 'NEW TEMPLATE', style: TextStyle(fontSize: 14)),
+      icon: const Icon(Icons.add_outlined),
+      label: Text(_isSw ? 'Kiolezo kipya' : 'New template', style: TextStyle(fontSize: 14)),
       onPressed: () => _openEditor(),
     );
   }
@@ -90,7 +90,7 @@ class RentWhatsappTemplateBuilderView
               color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.chat_rounded, color: Colors.white),
+            child: const Icon(Icons.chat_outlined, color: Colors.white),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -102,7 +102,7 @@ class RentWhatsappTemplateBuilderView
                       ? 'Jenga violezo vilivyoidhinishwa'
                       : 'Build approval-ready templates',
                   style: const TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     fontSize: 15,
                     color: Colors.white,
                   ),
@@ -224,7 +224,7 @@ class RentWhatsappTemplateBuilderView
                 '${t.count}',
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: isActive ? Colors.white : t.color,
                 ),
               ),
@@ -261,7 +261,7 @@ class RentWhatsappTemplateBuilderView
       ),
       child: Column(
         children: [
-          const Icon(Icons.chat_bubble_outline_rounded,
+          const Icon(Icons.chat_bubble_outline,
               size: 44, color: RentTheme.teal),
           const SizedBox(height: 12),
           Text(
@@ -316,7 +316,7 @@ class RentWhatsappTemplateBuilderView
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: titleColor,
                       ),
                       maxLines: 1,
@@ -372,7 +372,7 @@ class RentWhatsappTemplateBuilderView
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded,
+                      const Icon(Icons.error_outline,
                           size: 16, color: Color(0xFFDC2626)),
                       const SizedBox(width: 6),
                       Expanded(
@@ -413,7 +413,7 @@ class RentWhatsappTemplateBuilderView
             _localizedStatus(status),
             style: TextStyle(
               fontSize: 10,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: config.fg,
               letterSpacing: 0.3,
             ),
@@ -427,25 +427,25 @@ class RentWhatsappTemplateBuilderView
     switch (status) {
       case WaTemplateStatus.draft:
         return const _StatusBadgeConfig(
-          Icons.edit_note_rounded,
+          Icons.edit_note_outlined,
           Color(0xFFE5E7EB),
           Color(0xFF374151),
         );
       case WaTemplateStatus.submitted:
         return const _StatusBadgeConfig(
-          Icons.hourglass_bottom_rounded,
+          Icons.hourglass_bottom_outlined,
           Color(0xFFFEF3C7),
           Color(0xFF92400E),
         );
       case WaTemplateStatus.approved:
         return const _StatusBadgeConfig(
-          Icons.verified_rounded,
+          Icons.verified_outlined,
           Color(0xFFDCFCE7),
           Color(0xFF166534),
         );
       case WaTemplateStatus.rejected:
         return const _StatusBadgeConfig(
-          Icons.block_rounded,
+          Icons.block_outlined,
           Color(0xFFFEE2E2),
           Color(0xFF991B1B),
         );
@@ -495,13 +495,13 @@ class RentWhatsappTemplateBuilderView
     IconData icon;
     switch (type) {
       case 'url':
-        icon = Icons.open_in_new_rounded;
+        icon = Icons.open_in_new_outlined;
         break;
       case 'phone_number':
-        icon = Icons.phone_rounded;
+        icon = Icons.phone_outlined;
         break;
       default:
-        icon = Icons.reply_rounded;
+        icon = Icons.reply_outlined;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
@@ -561,7 +561,7 @@ class RentWhatsappTemplateBuilderView
             ),
             const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(Icons.send_rounded, color: RentTheme.conciergeTeal),
+              leading: const Icon(Icons.send_outlined, color: RentTheme.conciergeTeal),
               title: Text(_isSw ? 'Tumia kutuma' : 'Use for sending'),
               subtitle: Text(
                 _isSw ? 'Fungua skrini ya Tuma SMS/WhatsApp na kiolezo hiki kimechaguliwa'
@@ -577,7 +577,7 @@ class RentWhatsappTemplateBuilderView
               },
             ),
             ListTile(
-              leading: const Icon(Icons.edit_rounded, color: RentTheme.teal),
+              leading: const Icon(Icons.edit_outlined, color: RentTheme.teal),
               title: Text(_isSw ? 'Hariri' : 'Edit'),
               onTap: () {
                 Navigator.pop(context);
@@ -586,7 +586,7 @@ class RentWhatsappTemplateBuilderView
             ),
             ListTile(
               leading:
-                  const Icon(Icons.copy_all_rounded, color: RentTheme.teal),
+                  const Icon(Icons.copy_all_outlined, color: RentTheme.teal),
               title: Text(_isSw ? 'Nakili' : 'Duplicate'),
               onTap: () {
                 Navigator.pop(context);
@@ -595,7 +595,7 @@ class RentWhatsappTemplateBuilderView
             ),
             if (t.status == WaTemplateStatus.submitted) ...[
               ListTile(
-                leading: const Icon(Icons.verified_rounded,
+                leading: const Icon(Icons.verified_outlined,
                     color: Color(0xFF16A34A)),
                 title: Text(
                     _isSw ? 'Alika idhini (demo)' : 'Simulate approval'),
@@ -606,7 +606,7 @@ class RentWhatsappTemplateBuilderView
               ),
               ListTile(
                 leading:
-                    const Icon(Icons.block_rounded, color: Color(0xFFDC2626)),
+                    const Icon(Icons.block_outlined, color: Color(0xFFDC2626)),
                 title: Text(
                     _isSw ? 'Alika kukataliwa (demo)' : 'Simulate rejection'),
                 onTap: () {
@@ -622,7 +622,7 @@ class RentWhatsappTemplateBuilderView
             ],
             ListTile(
               leading:
-                  const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                  const Icon(Icons.delete_outline, color: Colors.red),
               title: Text(
                 _isSw ? 'Futa' : 'Delete',
                 style: const TextStyle(color: Colors.red),

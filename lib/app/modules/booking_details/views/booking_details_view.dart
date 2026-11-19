@@ -472,7 +472,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                         builder: (btnCtx) => _headerIconButton(
                           context: btnCtx,
                           onPressed: () => controller.moreOptions(btnCtx),
-                          icon: Icons.more_horiz,
+                          icon: Icons.more_horiz_outlined,
                         ),
                       ),
                     ],
@@ -602,16 +602,16 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
                 Row(
                   children: [
                     Icon(
-                      Icons.star_rounded,
+                      Icons.star_outlined,
                       size: 18,
-                      color: AppColors.colorSuccessGreen,
+                      color: AppColors.colorSuccess,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '${controller.guestRating} (${controller.guestReviewCount} ${_t(context, en: 'reviews', sw: 'maoni')})',
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.colorSuccessGreen,
+                        color: AppColors.colorSuccess,
                       ),
                     ),
                   ],
@@ -732,7 +732,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
       final loading = controller.paymentSummaryLoading.value;
       final syncStatus = controller.paymentSyncStatus.value;
       final statusColor = paid ? AppColors.colorPrimary : const Color(0xFFE67E22);
-      final statusIcon = paid ? Icons.check : Icons.schedule;
+      final statusIcon = paid ? Icons.check_outlined : Icons.schedule;
 
       return Row(
         children: [
@@ -970,7 +970,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
       child: Row(
         children: [
           Icon(
-            Icons.logout_rounded,
+            Icons.logout_outlined,
             color: context.tokens.textSecondary,
           ),
           const SizedBox(width: 10),
@@ -1012,7 +1012,7 @@ class BookingDetailsView extends BaseView<BookingDetailsController> {
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: busy ? null : controller.confirmCheckOut,
-              icon: const Icon(Icons.logout_rounded, size: 20),
+              icon: const Icon(Icons.logout_outlined, size: 20),
               label: Text(appLocalization.checkOutGuest),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.colorPrimary,

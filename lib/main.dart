@@ -11,13 +11,10 @@ import '/app/main_app.dart';
 import '/flavors/build_config.dart';
 import '/flavors/env_config.dart';
 import '/flavors/environment.dart';
-import 'app/core/config/tuya_config.dart';
 import 'app/data/local/service/storage_service.dart';
 import 'app/data/local/service/lease_reminder_workmanager.dart';
 import 'app/data/service/apple_iap_service.dart';
-import 'app/data/service/tuya_service.dart';
-import 'app/data/service/tuya_smart_lock_service.dart';
-import 'app/routes/app_pages.dart';
+import 'app/data/service/fcm_token_service.dart';
 import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
@@ -73,8 +70,8 @@ Future<void> setupFlutterNotifications() async {
 
 void showFlutterNotification(RemoteMessage message) {
   RemoteNotification? notification = message.notification;
-  AndroidNotification? android = message.notification?.android;
-  if (notification != null && android != null) {
+  // AndroidNotification? android = message.notification?.android;
+  if (notification != null) {
     flutterLocalNotificationsPlugin.show(
       notification.hashCode,
       notification.title,
@@ -109,12 +106,10 @@ void showAlert(RemoteMessage message) {
             actionsAlignment: MainAxisAlignment.center,
             actions: [
               TextButton(
-                onPressed: () =>
-                    Get.offAndToNamed(Routes.HOME,
-                        arguments: {
-                          'service': title,
-                          'receiptBody': content
-                        }),
+                onPressed: () {
+                  Get.back(closeOverlays: true);
+                  FcmTokenService.openInboxFromPush(message);
+                },
                 child: const Text('View'),
               ),
               TextButton(
@@ -174,6 +169,7 @@ void requestUserPermission() async {
       }
 
       final token = await messaging.getToken();
+      await FcmTokenService.persist(token);
       if (kDebugMode) {
         print('FCM Token: $token');
       }
@@ -183,7 +179,9 @@ void requestUserPermission() async {
       }
     }
   }
-  messaging.onTokenRefresh.listen((newToken) {
+  messaging.onTokenRefresh.listen((newToken) async {
+    await FcmTokenService.persist(newToken);
+    await FcmTokenService.registerWithBackend();
     if (kDebugMode) {
       print('Token: $newToken');
     }
@@ -193,14 +191,9 @@ void requestUserPermission() async {
 void main() async {
   EnvConfig devConfig = EnvConfig(
     appName: 'Host Bora',
-    baseUrl: 'http://172.20.10.4:8081',
-    // baseUrl: 'http://192.168.100.4:8081',
+    baseUrl: 'http://167.86.89.92:8082',
+    // baseUrl: 'http://www.hostbora.co.tz:8082',
     shouldCollectCrashLog: true,
-    // Optional: enable Push to Pay (AzamPay) in Add Booking. Get credentials from https://developerdocs.azampay.co.tz
-    azamPayAppName: 'AHADI',
-    azamPayClientId: '216c9880-2361-499a-b252-1a4c10415c05',
-    azamPayClientSecret: 'RYEW0PbvpM1a08dCxhFr8z/mw9krKBtA74hqpkW2oaf3clWkEi0KMo92NF8/+RGRs1QJUr+RsDBGhQw0FBZ/6b8rhnbNekKTpcxHtcDhVkcJMM4gRo6JiGdeYC80pVp8fobWQF7i6rzUuBkQ0tm/2iA7RBvP2D3L+vM0NGyhtp3rPSQIXKnmvNglB4dq9a165Vc0lFJWLyv/pxd2VyxtsC14xGfNhgD+UEgXxhdOQi2PxYBLK6DoLK/c1gutDfUjrWQiwZZuYVPYWd7VERoTIDeA8DE5AMsRjzQNVTkjxi+ltVowpM38TITT5ZLtZ20neJHWtIwsZdfrA7Ne1TZC9tV46UYUy35MIjzo1TECcH9mFXN3tQigIsVzgvrr7sORhN70cyARkCa/iQCIEjc66QdIGeMvEsyDmGKP12iUMr7CT4R2CAavI9X7fBGHWSF5/eButFCsKuIjRSPMyaCf/AMPlmASQ9jj/kaPH6tviXHxv6pu5I4zO1cqgnjr8KnCAlhIqB/e9NbgPDIKT+A9odmyKgAAX3a3nQzuGOKsyAzPu4w5aEpybyocP2er3SI0AfTGHBxgQPULzEfcCU8KNbTaOEAn5XnMMB7ZGPwr63UD6oJVhHetpbeBHTSw75JiuUjouyynTqnKfoES2vy5UdnwMavGO1bg69NrQJ+PaxI=',
-    azamPaySandbox: true,
   );
 
   BuildConfig.instantiate(
@@ -235,8 +228,10 @@ void main() async {
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging.onMessage.listen((event) => showAlert(event));
-  FirebaseMessaging.onMessageOpenedApp.listen((event) =>
-      showFlutterNotification(event));
+  FirebaseMessaging.onMessageOpenedApp.listen((event) {
+    showFlutterNotification(event);
+    FcmTokenService.openInboxFromPush(event);
+  });
 
   await GetStorage.init();
   await Get.putAsync(() => StorageService().init());
@@ -244,14 +239,6 @@ void main() async {
     appName: devConfig.appName,
     baseUrl: devConfig.baseUrl,
   );
-
-  // Tuya IoT + Smart Lock: initialize when config is provided (see TUYA_INTEGRATION.md)
-  final tuyaConfig = TuyaConfig.fromEnvironment();
-  if (tuyaConfig.isEnabled) {
-    Get.put(TuyaService(config: tuyaConfig));
-    await Get.find<TuyaService>().init();
-    Get.put(TuyaSmartLockService(tuyaService: Get.find<TuyaService>()));
-  }
 
   runApp(const MainApp());
 }

@@ -97,7 +97,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       _AuthenticatedOnly(
         child: IconButton(
           tooltip: currentLang == 'sw' ? 'Zaidi' : 'More',
-          icon: Icon(Icons.more_vert, color: actionColor),
+          icon: Icon(Icons.more_vert_outlined, color: actionColor),
           onPressed: () => _showAppBarMenu(context, currentLang),
         ),
       ),
@@ -135,7 +135,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.currency_exchange_rounded),
+              leading: const Icon(Icons.currency_exchange_outlined),
               title: Text(isSw ? 'Badilisha sarafu ya msingi' : 'Change base currency'),
               subtitle: Text(
                 isSw
@@ -159,7 +159,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.help_outline_rounded),
+              leading: const Icon(Icons.help_outline),
               title: Text(isSw ? 'Kituo cha msaada' : 'Help center'),
               subtitle: Text(
                 isSw

@@ -40,32 +40,59 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
       children: [
         const ManagingForBanner(),
         // _buildFilterTabs(context),
-        _buildWorkspaceModeFilter(context),
+        const _WorkspaceModeFilter(),
         Expanded(
           child: Obx(() {
-            if (controller.loading.value) {
+            final isInitial =
+                controller.loading.value && controller.properties.isEmpty;
+            if (isInitial) {
               return const DefaultScreenSkeleton();
             }
+            // Read the filter here so this list rebuilds when the chip changes.
+            final _ = controller.workspaceModeFilter.value;
             final items = controller.displayProperties;
-            if (items.isEmpty) {
-              return _emptyState(theme, context);
-            }
-            return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-              itemCount: items.length,
-              separatorBuilder: (_, index) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final p = items[index];
-                return _PropertyCard(
-                  listing: p,
-                  onFavorite: () => controller.toggleFavorite(p),
-                  onManage: () => controller.manageProperty(p),
-                  onSetStatus: (status) =>
-                      controller.setListingStatus(p, status),
-                  onDelete: () => controller.deleteProperty(p),
-                  t: _t,
-                );
-              },
+            return Column(
+              children: [
+                if (controller.refreshing.value)
+                  const LinearProgressIndicator(minHeight: 2),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: controller.loadProperties,
+                    child: items.isEmpty
+                        ? LayoutBuilder(
+                            builder: (context, constraints) =>
+                                SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: constraints.maxHeight,
+                                ),
+                                child: _emptyState(theme, context),
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 88),
+                            itemCount: items.length,
+                            separatorBuilder: (_, index) =>
+                                const SizedBox(height: 16),
+                            itemBuilder: (context, index) {
+                              final p = items[index];
+                              return _PropertyCard(
+                                listing: p,
+                                onFavorite: () => controller.toggleFavorite(p),
+                                onManage: () => controller.manageProperty(p),
+                                onSetStatus: (status) =>
+                                    controller.setListingStatus(p, status),
+                                onDelete: () => controller.deleteProperty(p),
+                                t: _t,
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              ],
             );
           }),
         ),
@@ -73,62 +100,6 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
     );
   }
 
-  Widget _buildWorkspaceModeFilter(BuildContext context) {
-    final theme = Theme.of(context);
-    final c = FormSurfaceColors.of(context);
-    final isSw = (Get.locale?.languageCode ?? '') == 'sw';
-
-    return Obx(() {
-      final selected = controller.workspaceModeFilter.value;
-
-      Widget chip(String label, String value, Color color) {
-        final isSelected = selected == value;
-        return GestureDetector(
-          onTap: () => controller.setWorkspaceFilter(value),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? color : Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? color
-                    : (c.isDark
-                        ? theme.colorScheme.outlineVariant
-                        : const Color(0xFFDDE1E7)),
-              ),
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected
-                    ? Colors.white
-                    : (c.isDark
-                        ? theme.colorScheme.onSurfaceVariant
-                        : const Color(0xFF64748B)),
-              ),
-            ),
-          ),
-        );
-      }
-
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-        child: Row(
-          children: [
-            chip(isSw ? 'Zote' : 'All Modes', '', AppColors.designAccent),
-            const SizedBox(width: 8),
-            chip('BnB', 'bnb', const Color(0xFF0D7377)),
-            const SizedBox(width: 8),
-            chip(isSw ? 'Kodi' : 'Rent', 'rent', const Color(0xFF4F46E5)),
-          ],
-        ),
-      );
-    });
-  }
 
   // Widget _buildFilterTabs(BuildContext context) {
   //   final theme = Theme.of(context);
@@ -189,6 +160,7 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
   // }
 
   Widget _emptyState(ThemeData theme, BuildContext context) {
+    final isSw = (Get.locale?.languageCode ?? '') == 'sw';
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -220,7 +192,20 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
                 color: Colors.grey.shade600,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: controller.addProperty,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.colorPrimary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              icon: const Icon(Icons.add_home_work_outlined, size: 20),
+              label: Text(isSw ? 'Ongeza Mali' : 'Add Property'),
+            ),
           ],
         ),
       ),
@@ -261,6 +246,150 @@ class MyPropertiesView extends BaseView<MyPropertiesController> {
           sw: 'Ongeza mali ili kuanza.',
         );
     }
+  }
+}
+
+class _WorkspaceModeFilter extends StatefulWidget {
+  const _WorkspaceModeFilter();
+
+  @override
+  State<_WorkspaceModeFilter> createState() => _WorkspaceModeFilterState();
+}
+
+class _WorkspaceModeFilterState extends State<_WorkspaceModeFilter> {
+  MyPropertiesController get _controller => Get.find<MyPropertiesController>();
+  Worker? _filterWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    _filterWorker = ever<String>(_controller.workspaceModeFilter, (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _filterWorker?.dispose();
+    super.dispose();
+  }
+
+  void _select(String value) {
+    _controller.setWorkspaceFilter(value);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final c = FormSurfaceColors.of(context);
+    final isSw = (Get.locale?.languageCode ?? '') == 'sw';
+    final selected = _controller.workspaceModeFilter.value;
+
+    Widget chip(String label, String value, Color color) {
+      final isSelected = selected == value;
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _select(value),
+          borderRadius: BorderRadius.circular(20),
+          child: AnimatedContainer(
+            key: ValueKey('mode-${value.isEmpty ? 'all' : value}-$isSelected'),
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? color : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? color
+                    : (c.isDark
+                        ? theme.colorScheme.outlineVariant
+                        : const Color(0xFFDDE1E7)),
+              ),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected
+                    ? Colors.white
+                    : (c.isDark
+                        ? theme.colorScheme.onSurfaceVariant
+                        : const Color(0xFF64748B)),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  chip(
+                    isSw ? 'Zote' : 'All Modes',
+                    '',
+                    AppColors.colorPrimary,
+                  ),
+                  const SizedBox(width: 8),
+                  chip('BnB', 'bnb', const Color(0xFF0D7377)),
+                  const SizedBox(width: 8),
+                  chip(
+                    isSw ? 'Kodi' : 'Rent',
+                    'rent',
+                    const Color(0xFF4F46E5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Material(
+            color: AppColors.colorPrimary,
+            borderRadius: BorderRadius.circular(100),
+            child: InkWell(
+              onTap: _controller.addProperty,
+              borderRadius: BorderRadius.circular(100),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '+',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isSw ? 'Ongeza Mali' : 'Add Property',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -397,7 +526,7 @@ class _PropertyCard extends StatelessWidget {
                         ),
                       ],
                       icon: Icon(
-                        Icons.more_vert,
+                        Icons.more_vert_outlined,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -442,7 +571,7 @@ class _PropertyCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      Icons.person_outline_rounded,
+                      Icons.person_outline,
                       size: 18,
                       color: c.isDark
                           ? theme.colorScheme.primary
@@ -458,7 +587,7 @@ class _PropertyCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Material(
-                      color: AppColors.designAccent,
+                      color: AppColors.colorPrimary,
                       borderRadius: BorderRadius.circular(8),
                       child: InkWell(
                         onTap: onManage,
@@ -481,7 +610,7 @@ class _PropertyCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               const Icon(
-                                Icons.arrow_forward_ios,
+                                Icons.arrow_forward_ios_outlined,
                                 size: 12,
                                 color: Colors.white,
                               ),
@@ -565,14 +694,14 @@ class _ModeBadge extends StatelessWidget {
         return (
           bg: const Color(0xFF7C3AED),
           fg: Colors.white,
-          icon: Icons.swap_horiz_rounded,
+          icon: Icons.swap_horiz_outlined,
           labelEn: 'Both',
           labelSw: 'Zote',
         );
       case 'bnb':
       default:
         return (
-          bg: AppColors.colorSuccessGreen,
+          bg: AppColors.colorSuccess,
           fg: Colors.white,
           icon: Icons.house_outlined,
           labelEn: 'BnB',

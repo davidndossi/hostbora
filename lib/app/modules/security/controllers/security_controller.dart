@@ -4,6 +4,8 @@ import 'package:local_auth/local_auth.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
+import '../../../data/local/service/local_account_data_reset.dart';
+import '../../../data/local/service/session_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 
@@ -136,6 +138,27 @@ class SecurityController extends BaseController {
     await _deleteAccount();
   }
 
+  /// Drop tokens, PIN, and the cached profile so a deleted account cannot
+  /// sign back in offline or with a leftover bearer token.
+  Future<void> _clearDeletedAccountLocally() async {
+    await LocalAccountDataReset.wipe();
+    await _preferenceManager.remove(PreferenceManager.keyLocalDataOwnerUserId);
+    if (Get.isRegistered<SessionService>()) {
+      await Get.find<SessionService>().clearFullSession();
+    } else {
+      await _preferenceManager.clearSession();
+    }
+    await _preferenceManager.setBool(PreferenceManager.keyPinEnabled, false);
+    await _preferenceManager.setString(PreferenceManager.keyPinCode, '');
+    await _preferenceManager.setBool(PreferenceManager.keyFaceIdEnabled, false);
+    await _preferenceManager.setBool(PreferenceManager.keyFirstLogin, true);
+    await _preferenceManager.setInt(PreferenceManager.keyPinFailedAttempts, 0);
+    await _preferenceManager.setInt(PreferenceManager.keyPinLockedUntilMs, 0);
+    await _preferenceManager.setString(PreferenceManager.keyUsername, '');
+    await _preferenceManager.setString(PreferenceManager.keyFullName, '');
+    await _preferenceManager.remove('user');
+  }
+
   Future<void> _deleteAccount() async {
     if (isBusy.value) return;
     await runBusy(() async {
@@ -147,7 +170,7 @@ class SecurityController extends BaseController {
           );
           return;
         }
-        await _preferenceManager.clearSession();
+        await _clearDeletedAccountLocally();
         Get.offAllNamed(AppPages.auth);
       } catch (e) {
         logger.e('deleteAccount failed: $e');

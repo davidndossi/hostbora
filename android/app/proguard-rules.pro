@@ -1,12 +1,15 @@
-## Flutter wrapper
--keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.** { *; }
--keep class io.flutter.util.** { *; }
--keep class io.flutter.view.** { *; }
--keep class io.flutter.** { *; }
--keep class io.flutter.plugins.** { *; }
--keep class com.google.firebase.** { *; }
+## Flutter embedding. Names can be obfuscated; R8 must not strip plugin
+## registrants. A blanket keep on io.flutter.** left Play's obfuscation
+## score near zero.
 -dontwarn io.flutter.embedding.**
+-dontwarn io.flutter.plugin.**
+-if class * implements io.flutter.embedding.engine.plugins.FlutterPlugin
+-keep,allowshrinking,allowobfuscation class <1>
+
+# Crashlytics needs line numbers. Class and method names stay obfuscated.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
 -ignorewarnings
 
 #fastJson

@@ -65,6 +65,63 @@ class PortfolioAiHybridService extends GetxService {
     );
   }
 
+  /// Asks the model for a HostAnswer card (title, metrics, rows, actions).
+  /// The caller renders the JSON with GenUI. Falls back to plain prose.
+  Future<String> generativeUiSpec({
+    required String question,
+    required bool isSw,
+    List<Map<String, String>> conversation = const [],
+  }) async {
+    final ctx = await loadContext();
+    final history = conversation
+        .take(6)
+        .map((m) => '${m['role'] ?? 'user'}: ${m['text'] ?? ''}')
+        .join('\n');
+    final lang = isSw ? 'Swahili' : 'English';
+    final prompt = '''
+You are the portfolio assistant inside a landlord app (${ctx.workspace} workspace).
+The user may write in English, Swahili, or a mix. Write title, body, labels, and button labels in $lang.
+Reply with ONLY a JSON object, no markdown, in this shape:
+{
+  "title": "short heading",
+  "body": "1-3 sentences",
+  "metrics": [{"label": "Occupancy", "value": "80%"}],
+  "rows": [{"title": "Property name", "subtitle": "detail", "trailing": ""}],
+  "actions": [{"label": "Tenants", "action": "OPEN_TENANTS"}]
+}
+Rules:
+- Use ONLY numbers and names from the portfolio JSON. Do not invent records.
+- properties[] is occupancy and money per listing. expenseCategories[] is this month by category. arrears[] is who still owes.
+- Prefer those lists for comparison, expense analysis, and collection questions.
+- metrics: at most 6. rows: at most 8, and only when the context names them.
+- actions: at most 3, and action must be one of ADD_PROPERTY, ADD_INCOME, ADD_EXPENSE, ADD_BOOKING, ADD_TENANT, SEND_REMINDER, OPEN_PROPERTIES, OPEN_TENANTS, OPEN_BOOKINGS, OPEN_PAYMENTS, OPEN_EXPENSES, OPEN_MAINTENANCE, OPEN_INVENTORY, OPEN_CALENDAR, OPEN_REPORTS.
+- If the data is missing, say so in body and leave metrics and rows empty.
+- This card is shown in the chat in place of a plain paragraph. Make it read like the app's summary cards.
+
+Portfolio context JSON:
+${jsonEncode(ctx.toJson())}
+
+Recent messages:
+${history.isEmpty ? '(none)' : history}
+
+User question: $question
+''';
+
+    try {
+      final res = await _repository.sendAiRequest({
+        'prompt': prompt,
+        'type': 'portfolio_genui',
+        'workspace': ctx.workspace,
+      });
+      final text = _extractReplyText(res);
+      if (text.trim().isNotEmpty) return text.trim();
+    } catch (_) {}
+
+    return isSw
+        ? 'Siwezi kupata jibu kutoka kwa AI kwa sasa. Jaribu "Muhtasari wa portfolio".'
+        : 'I could not reach the AI service right now. Try "Portfolio summary" for an instant answer from your data.';
+  }
+
   Future<String> welcomeMessage({required bool isSw}) async {
     try {
       final ctx = await loadContext();

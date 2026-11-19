@@ -29,7 +29,7 @@ class TaskDetailView extends BaseView<TaskDetailController> {
       isCentered: true,
       leading: IconButton(
         icon: Icon(
-          Icons.arrow_back,
+          Icons.arrow_back_outlined,
           color: c.isDark ? Colors.white : AppColors.appBarIconColor,
         ),
         onPressed: controller.goBack,

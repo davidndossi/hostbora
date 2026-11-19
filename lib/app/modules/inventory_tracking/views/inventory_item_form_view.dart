@@ -66,7 +66,7 @@ class InventoryItemFormView extends BaseView<InventoryItemFormController> {
                 ),
                 child: IconButton(
                   icon: Icon(
-                    Icons.qr_code_scanner_rounded,
+                    Icons.qr_code_scanner_outlined,
                     color: AppColors.colorPrimary,
                   ),
                   tooltip: _isSw ? 'Changanua' : 'Scan QR / Barcode',
@@ -252,7 +252,7 @@ class InventoryItemFormView extends BaseView<InventoryItemFormController> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: c.secondary,
+                    // color: c.secondary,
                   ),
                 ),
                 hintText: '0.00',

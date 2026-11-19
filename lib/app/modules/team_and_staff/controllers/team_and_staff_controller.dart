@@ -7,6 +7,7 @@ import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../maintenance_tasks/task_assignment_store.dart';
 import '../../rent/staff_management/controllers/rent_staff_management_controller.dart';
 
 class TeamAndStaffController extends BaseController {
@@ -242,13 +243,17 @@ class TeamAndStaffController extends BaseController {
     final out = <String, int>{};
     try {
       final res = await _repository.getTasks();
-      if (res.responseCode != '0' || res.data == null) return out;
+      if (!res.isSuccess || res.data == null) return out;
       final maps = _extractTaskMaps(res.data);
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       for (final m in maps) {
-        final assignee =
+        var assignee =
             (m['assignee'] ?? m['assignedTo'] ?? '').toString().trim();
+        if (assignee.isEmpty || assignee.toLowerCase() == 'unassigned') {
+          final id = (m['taskId'] ?? m['id'] ?? '').toString();
+          assignee = await TaskAssignmentStore.assigneeFor(id);
+        }
         if (assignee.isEmpty) continue;
         final lower = assignee.toLowerCase();
         if (lower == 'unassigned') continue;

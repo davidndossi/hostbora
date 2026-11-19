@@ -1,25 +1,32 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
 import '../../../data/local/vault_directories_store.dart';
 import '../../../data/local/vault_documents_store.dart';
+import '../../../data/local/vault_recent_access_store.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
+import '../../documents/controllers/documents_controller.dart';
 import '../../documents/vault_route_args.dart';
 
 class AddDocumentController extends BaseController {
   AddDocumentController({
     VaultDirectoriesStore? directoriesStore,
     VaultDocumentsStore? documentsStore,
+    VaultRecentAccessStore? recentStore,
     ImagePicker? imagePicker,
   })  : _directoriesStore = directoriesStore ?? Get.find<VaultDirectoriesStore>(),
         _documentsStore = documentsStore ?? Get.find<VaultDocumentsStore>(),
+        _recentStore = recentStore ?? VaultRecentAccessStore(),
         _picker = imagePicker ?? ImagePicker(),
         _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
         _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
@@ -27,6 +34,7 @@ class AddDocumentController extends BaseController {
 
   final VaultDirectoriesStore _directoriesStore;
   final VaultDocumentsStore _documentsStore;
+  final VaultRecentAccessStore _recentStore;
   final ImagePicker _picker;
   final AppRepository _repository;
   final OfflineSyncQueueLocalDataSource _syncQueue;
@@ -38,6 +46,14 @@ class AddDocumentController extends BaseController {
   final directories = <VaultDirectoryDef>[].obs;
   final selectedDirectory = Rxn<VaultDirectoryDef>();
   final saving = false.obs;
+  final pendingPath = RxnString();
+  final pendingFileName = ''.obs;
+  final pendingIsImage = false.obs;
+
+  bool get hasPendingFile {
+    final path = pendingPath.value?.trim() ?? '';
+    return path.isNotEmpty;
+  }
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
@@ -94,7 +110,7 @@ class AddDocumentController extends BaseController {
     );
   }
 
-  /// Picks an image from the gallery and saves it as a local vault document.
+  /// Picks an image from the gallery and shows a preview. Saving is explicit.
   Future<void> pickFromGallery() async {
     try {
       final picked = await _picker.pickImage(
@@ -102,48 +118,92 @@ class AddDocumentController extends BaseController {
         imageQuality: 92,
       );
       if (picked == null) return;
-      await _saveDocument(picked.path);
+      _stageFile(picked.path, picked.name);
     } catch (_) {
       showErrorMessage(_isSw ? 'Haikuweza kupata picha' : 'Could not pick image');
     }
   }
 
-  /// Picks any file (falls back to gallery for simplicity; extend
-  /// with file_picker package for PDFs etc. when needed).
+  /// Picks a file from device storage and shows a preview. Saving is explicit.
   Future<void> pickFile() async {
     try {
-      final picked = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 92,
-      );
-      if (picked == null) return;
-      await _saveDocument(picked.path);
+      final picked = await FilePicker.platform.pickFiles(type: FileType.any);
+      final file = picked?.files.single;
+      final path = file?.path?.trim() ?? '';
+      if (file == null || path.isEmpty) return;
+      _stageFile(path, file.name);
     } catch (_) {
       showErrorMessage(_isSw ? 'Haikuweza kuchagua faili' : 'Could not pick file');
     }
   }
 
+  void clearPendingFile() {
+    pendingPath.value = null;
+    pendingFileName.value = '';
+    pendingIsImage.value = false;
+  }
+
+  void _stageFile(String path, String name) {
+    final fileName = name.trim().isNotEmpty ? name.trim() : path.split('/').last;
+    pendingPath.value = path;
+    pendingFileName.value = fileName;
+    pendingIsImage.value = _isImageName(fileName);
+    if (titleController.text.trim().isEmpty) {
+      titleController.text = _nameWithoutExtension(fileName);
+    }
+  }
+
+  /// Saves the staged gallery image or file.
+  Future<void> savePendingDocument() async {
+    final path = pendingPath.value?.trim() ?? '';
+    if (path.isEmpty) {
+      showErrorMessage(
+        _isSw ? 'Chagua hati kwanza' : 'Choose a document first',
+      );
+      return;
+    }
+    await _saveDocument(path);
+  }
+
   Future<void> _saveDocument(String localPath) async {
     saving.value = true;
     try {
+      final source = File(localPath);
+      if (!source.existsSync()) {
+        showErrorMessage(
+          _isSw ? 'Faili haipatikani tena' : 'That file is no longer available',
+        );
+        return;
+      }
       final dir = selectedDirectory.value;
-      final name = titleController.text.trim();
-      final fileName = name.isNotEmpty ? name : localPath.split('/').last;
-      final id = '${DateTime.now().millisecondsSinceEpoch}_${localPath.hashCode.abs()}';
+      final directoryId = dir?.id ?? 'general';
+      final fileName = _fileNameForSave(localPath);
+      final persistedPath = await _persistCopy(
+        sourcePath: localPath,
+        directoryId: directoryId,
+        fileName: fileName,
+      );
+      final id = 'local_${DateTime.now().millisecondsSinceEpoch}';
       await _documentsStore.add(
         StoredVaultDocument(
           id: id,
-          directoryId: dir?.id ?? 'general',
+          directoryId: directoryId,
           fileName: fileName,
-          localPath: localPath,
+          localPath: persistedPath,
           createdAt: DateTime.now(),
         ),
       );
+      await _recentStore.recordDocument(
+        documentId: id,
+        displayName: fileName,
+        directoryId: directoryId,
+        localPath: persistedPath,
+      );
 
       final payload = <String, dynamic>{
-        'directoryId': dir?.id ?? 'general',
+        'directoryId': directoryId,
         'fileName': fileName,
-        'localPath': localPath,
+        'localPath': persistedPath,
         'notes': '',
       };
       try {
@@ -163,12 +223,67 @@ class AddDocumentController extends BaseController {
       }
 
       showSuccessMessage(_isSw ? 'Hati imehifadhiwa' : 'Document saved');
+      if (Get.isRegistered<DocumentsController>()) {
+        await Get.find<DocumentsController>().loadDocuments();
+      }
       Get.back(result: true);
     } catch (e) {
       showErrorMessage(_isSw ? 'Haikuweza kuhifadhi' : 'Could not save document');
     } finally {
       saving.value = false;
     }
+  }
+
+  Future<String> _persistCopy({
+    required String sourcePath,
+    required String directoryId,
+    required String fileName,
+  }) async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final safeDir = directoryId.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+    final vaultDir = Directory('${appDir.path}/vault/$safeDir');
+    if (!await vaultDir.exists()) {
+      await vaultDir.create(recursive: true);
+    }
+    final ext = _extensionOf(fileName);
+    final dest = File(
+      '${vaultDir.path}/doc_${DateTime.now().millisecondsSinceEpoch}$ext',
+    );
+    await File(sourcePath).copy(dest.path);
+    return dest.path;
+  }
+
+  static String _extensionOf(String name) {
+    final dot = name.lastIndexOf('.');
+    if (dot <= 0 || dot >= name.length - 1) return '';
+    final ext = name.substring(dot).toLowerCase();
+    if (ext.length > 8) return '';
+    return ext;
+  }
+
+  String _fileNameForSave(String localPath) {
+    final typed = titleController.text.trim();
+    final original = pendingFileName.value.trim().isNotEmpty
+        ? pendingFileName.value.trim()
+        : localPath.split('/').last;
+    if (typed.isEmpty) return original;
+    if (typed.contains('.')) return typed;
+    final dot = original.lastIndexOf('.');
+    if (dot <= 0 || dot >= original.length - 1) return typed;
+    return '$typed${original.substring(dot)}';
+  }
+
+  static bool _isImageName(String name) {
+    final dot = name.lastIndexOf('.');
+    if (dot < 0 || dot >= name.length - 1) return false;
+    const images = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp'};
+    return images.contains(name.substring(dot + 1).toLowerCase());
+  }
+
+  static String _nameWithoutExtension(String name) {
+    final dot = name.lastIndexOf('.');
+    if (dot <= 0) return name;
+    return name.substring(0, dot);
   }
 
   @override

@@ -327,7 +327,7 @@ class _CheckInCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   height: 100,
-                  color: AppColors.lightGreyColor,
+                  color: AppColors.designInputBorder,
                   child: Icon(
                     Icons.image_not_supported,
                     color: c.isDark
@@ -345,7 +345,7 @@ class _CheckInCard extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 14,
-                          backgroundColor: AppColors.lightGreyColor,
+                          backgroundColor: AppColors.designInputBorder,
                           backgroundImage: item.guestAvatarUrl.isNotEmpty
                               ? NetworkImage(item.guestAvatarUrl)
                               : null,

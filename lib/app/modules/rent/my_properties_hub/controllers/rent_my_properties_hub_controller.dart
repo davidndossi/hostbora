@@ -93,7 +93,7 @@ class RentMyPropertiesHubController extends BaseController {
   //
   //     List<RentHubPropertyRow> remoteRows = [];
   //     try {
-  //       final res = await _repository.getMyListings(status: null);
+  //       final res = await _repository.getMyProperties();
   //       final data = res.data;
   //       List<dynamic> rawList = [];
   //       if (data is List) {

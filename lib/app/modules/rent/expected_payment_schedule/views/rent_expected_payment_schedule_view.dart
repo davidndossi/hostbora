@@ -127,7 +127,7 @@ class RentExpectedPaymentScheduleView
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 1.1,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: muted,
             ),
           ),
@@ -136,7 +136,7 @@ class RentExpectedPaymentScheduleView
             currency.formatBase(snap.grandTotal.round()),
             style: TextStyle(
               fontSize: 28,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: text,
             ),
           ),
@@ -209,8 +209,8 @@ class RentExpectedPaymentScheduleView
                         bold: false,
                         leading: Icon(
                           expanded
-                              ? Icons.keyboard_arrow_down
-                              : Icons.keyboard_arrow_right,
+                              ? Icons.keyboard_arrow_down_outlined
+                              : Icons.keyboard_arrow_right_outlined,
                           size: 18,
                           color: muted,
                         ),
@@ -256,7 +256,7 @@ class RentExpectedPaymentScheduleView
                 _isSw ? 'Mali' : 'Property',
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: muted,
                 ),
               ),
@@ -280,7 +280,7 @@ class RentExpectedPaymentScheduleView
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: highlight ? _teal : muted,
                 ),
               ),
@@ -295,7 +295,7 @@ class RentExpectedPaymentScheduleView
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: muted,
                 ),
               ),
@@ -335,7 +335,7 @@ class RentExpectedPaymentScheduleView
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
                       color: text,
                     ),
                   ),

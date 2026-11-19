@@ -63,8 +63,12 @@ class AppLifecycleManager with WidgetsBindingObserver {
       if (await session.isAccessTokenValid()) return;
       final refreshed = await session.ensureValidSession();
       if (!refreshed && !AppPages.isPublicAuthRoute()) {
-        await session.clearFullSession();
-        Get.offAllNamed(Routes.AUTH);
+        // A network failure keeps the stored refresh token. A rejected
+        // token is cleared in SessionService, and that must sign the user out.
+        if (!await SessionService.hasLocalSession(pref)) {
+          await session.clearFullSession();
+          Get.offAllNamed(Routes.AUTH);
+        }
       }
     } catch (_) {}
   }
@@ -132,9 +136,9 @@ class AppLifecycleManager with WidgetsBindingObserver {
   Future<int> _appLockTimeoutSeconds(PreferenceManager pref) async {
     final seconds = await pref.getInt(
       PreferenceManager.keyAppLockTimeoutSeconds,
-      defaultValue: 300,
+      defaultValue: PreferenceManager.defaultAppLockTimeoutSeconds,
     );
-    return seconds > 0 ? seconds : 300;
+    return seconds > 0 ? seconds : PreferenceManager.defaultAppLockTimeoutSeconds;
   }
 
   Future<void> _saveBackgroundedAt(DateTime pausedAt) async {

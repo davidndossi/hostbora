@@ -68,7 +68,7 @@ class SendSmsView extends BaseView<SendSmsController> {
               const SizedBox(height: 4),
               TextButton.icon(
                 onPressed: () => Get.toNamed(Routes.RENT_WHATSAPP_TEMPLATE_BUILDER),
-                icon: const Icon(Icons.add_rounded, size: 18),
+                icon: const Icon(Icons.add_outlined, size: 18),
                 label: Text(
                   _t(context, 'Create a WhatsApp template', 'Tengeneza kiolezo cha WhatsApp'),
                   style: const TextStyle(fontSize: 13),
@@ -108,7 +108,7 @@ class SendSmsView extends BaseView<SendSmsController> {
             suffixIcon: Tooltip(
               message: _t(context, 'Manage templates', 'Simamia violezo'),
               child: IconButton(
-                icon: const Icon(Icons.open_in_new, size: 18),
+                icon: const Icon(Icons.open_in_new_outlined, size: 18),
                 onPressed: () async {
                   await Get.toNamed(Routes.RENT_WHATSAPP_TEMPLATE_BUILDER);
                   controller.loadSavedMessageTemplates();
@@ -337,7 +337,7 @@ class SendSmsView extends BaseView<SendSmsController> {
                     controller: searchController,
                     decoration: InputDecoration(
                       labelText: l10n.sendSmsSearchContacts,
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: const Icon(Icons.search_outlined),
                       border: const OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -625,7 +625,7 @@ class SendSmsView extends BaseView<SendSmsController> {
               ),
               overflow: TextOverflow.ellipsis,
             ),
-            deleteIcon: locked ? null : const Icon(Icons.close, size: 18),
+            deleteIcon: locked ? null : const Icon(Icons.close_outlined, size: 18),
             onDeleted:
                 locked ? null : () => controller.setMessagingPropertyRef(null),
           ),
@@ -789,7 +789,7 @@ class SendSmsView extends BaseView<SendSmsController> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.lock_outline_rounded,
+                  Icons.lock_outline,
                   size: 48,
                   color: theme.colorScheme.primary,
                 ),

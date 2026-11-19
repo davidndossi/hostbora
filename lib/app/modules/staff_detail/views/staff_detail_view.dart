@@ -93,7 +93,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: controller.assignNewTask,
-                  icon: const Icon(Icons.add, size: 20, color: Colors.white),
+                  icon: const Icon(Icons.add_outlined, size: 20, color: Colors.white),
                   label: Text(
                     _t(context, en: 'Assign New Task', sw: 'Pangia Kazi Mpya'),
                   ),
@@ -116,7 +116,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.paaYanguAlert,
+                    color: AppColors.colorAlert,
                   ),
                 ),
               ),
@@ -177,7 +177,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
       children: [
         CircleAvatar(
           radius: 48,
-          backgroundColor: AppColors.lightGreyColor,
+          backgroundColor: AppColors.designInputBorder,
           backgroundImage: controller.member.avatarUrl.isNotEmpty
               ? NetworkImage(controller.member.avatarUrl)
               : null,
@@ -378,7 +378,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
                 ),
               ),
               Icon(
-                Icons.chevron_right,
+                Icons.chevron_right_outlined,
                 size: 20,
                 color: AppColors.textColorSecondary,
               ),
@@ -447,7 +447,7 @@ class StaffDetailView extends BaseView<StaffDetailController> {
                         Expanded(
                           child: Container(
                             width: double.infinity,
-                            color: AppColors.lightGreyColor.withValues(
+                            color: AppColors.designInputBorder.withValues(
                               alpha: 0.5,
                             ),
                             child: Icon(

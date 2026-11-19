@@ -293,7 +293,7 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
                   fontSize: 15,
                 ),
                 prefixIcon: Icon(
-                  Icons.search,
+                  Icons.search_outlined,
                   color: FormSurfaceColors.of(context).isDark
                       ? Colors.white70
                       : AppColors.designPlaceholder,
@@ -332,7 +332,7 @@ class TeamAndStaffView extends BaseView<TeamAndStaffController> {
               child: const SizedBox(
                 width: 56,
                 height: 56,
-                child: Icon(Icons.add, color: Colors.white, size: 28),
+                child: Icon(Icons.add_outlined, color: Colors.white, size: 28),
               ),
             ),
           ),
@@ -389,7 +389,7 @@ class _StaffCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: AppColors.lightGreyColor,
+                    backgroundColor: AppColors.designInputBorder,
                     backgroundImage: member.avatarUrl.isNotEmpty
                         ? NetworkImage(member.avatarUrl)
                         : null,
@@ -416,7 +416,7 @@ class _StaffCard extends StatelessWidget {
                       height: 14,
                       decoration: BoxDecoration(
                         color: member.isOnDuty
-                            ? AppColors.colorSuccessGreen
+                            ? AppColors.colorSuccess
                             : AppColors.textColorSecondary,
                         shape: BoxShape.circle,
                         border: Border.all(
@@ -457,7 +457,7 @@ class _StaffCard extends StatelessWidget {
                       children: [
                         Icon(
                           member.isHighTaskCount
-                              ? Icons.warning_amber_rounded
+                              ? Icons.warning_amber_outlined
                               : Icons.check_circle_outline,
                           size: 16,
                           color: member.isHighTaskCount
@@ -486,7 +486,7 @@ class _StaffCard extends StatelessWidget {
               //   decoration: BoxDecoration(
               //     color: member.isOnDuty
               //         ? AppColors.colorPrimaryLight
-              //         : AppColors.lightGreyColor.withOpacity(0.6),
+              //         : AppColors.designInputBorder.withOpacity(0.6),
               //     borderRadius: BorderRadius.circular(6),
               //   ),
               //   child: Text(
@@ -496,7 +496,7 @@ class _StaffCard extends StatelessWidget {
               //       fontWeight: FontWeight.w600,
               //       letterSpacing: 0.3,
               //       color: member.isOnDuty
-              //           ? AppColors.colorSuccessGreen
+              //           ? AppColors.colorSuccess
               //           : AppColors.textColorSecondary,
               //     ),
               //   ),

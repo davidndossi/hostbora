@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import '../../../core/base/base_view.dart';
 import '../../../core/theme/form_surface_colors.dart';
 import '../../../core/widget/currency_dropdown_field.dart';
+import '../../../core/widget/sticky_form_actions.dart';
+import '../../../data/local/service/currency_service.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
 import '../controllers/record_payment_controller.dart';
@@ -53,7 +55,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
 
     final content = SingleChildScrollView(
       controller: scrollController,
-      padding: EdgeInsets.fromLTRB(18, sheetMode ? 4 : 10, 18, 26),
+      padding: EdgeInsets.fromLTRB(18, sheetMode ? 4 : 10, 18, 20),
       child: Form(
         key: controller.formKey,
         child: Column(
@@ -91,7 +93,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                       color: dropdownText,
                     ),
                     dropdownColor: c.dropdownBg,
-                    icon: Icon(Icons.expand_more_rounded, color: chevronColor),
+                    icon: Icon(Icons.expand_more_outlined, color: chevronColor),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: _isSw ? 'Chagua mjengo' : 'Choose property',
@@ -145,7 +147,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                       color: dropdownText,
                     ),
                     dropdownColor: c.dropdownBg,
-                    icon: Icon(Icons.expand_more_rounded, color: chevronColor),
+                    icon: Icon(Icons.expand_more_outlined, color: chevronColor),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: _isSw ? 'Chagua kitengo' : 'Select unit',
@@ -207,7 +209,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                       ),
                       dropdownColor: c.dropdownBg,
                       icon: Icon(
-                        Icons.expand_more_rounded,
+                        Icons.expand_more_outlined,
                         color: chevronColor,
                       ),
                       decoration: InputDecoration(
@@ -241,6 +243,34 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                 inputFormatters: [controller.amountThousandsFormatter],
               ),
             ),
+            // Presets come from the lease behind the selected unit, so they
+            // only appear once a tenant has resolved. Nothing round or
+            // invented is ever offered against a field that files money.
+            Obx(() {
+              final rent = controller.expectedRent.value;
+              if (rent <= 0) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _AmountPresetChip(
+                      label: _isSw ? 'Kodi kamili' : 'Full rent',
+                      amount: rent,
+                      colors: c,
+                      onTap: () => controller.applyAmountPreset(rent),
+                    ),
+                    _AmountPresetChip(
+                      label: _isSw ? 'Nusu' : 'Half',
+                      amount: rent / 2,
+                      colors: c,
+                      onTap: () => controller.applyAmountPreset(rent / 2),
+                    ),
+                  ],
+                ),
+              );
+            }),
             const SizedBox(height: 16),
             _label(_isSw ? 'SARAFU' : 'CURRENCY', colors: c),
             CurrencyDropdownField(
@@ -330,42 +360,45 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
                 ],
               ),
             ),
-            const SizedBox(height: 30),
-            Obx(
-              () => LoadingButton(
-                label: _isSw ? 'Hifadhi Mapato' : 'Save Income',
-                icon: Icons.check,
-                onPressed: controller.saveIncomeOffline,
-                isLoading: controller.saving.value,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Align(
-              alignment: Alignment.center,
-              child: InkWell(
-                onTap: () => Get.back(),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  child: Text(
-                    _isSw ? 'Ghairi' : 'Cancel',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: c.headline,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
     );
-    return content;
+
+    // Save lives in the pinned bar below, not at the end of the scroll.
+    return Column(
+      children: [
+        Expanded(child: content),
+        StickyFormActions(
+          primary: Obx(
+            () => LoadingButton(
+              label: _isSw ? 'Hifadhi Mapato' : 'Save Income',
+              icon: Icons.check_outlined,
+              onPressed: controller.saveIncomeOffline,
+              isLoading: controller.saving.value,
+            ),
+          ),
+          secondary: InkWell(
+            onTap: () => Get.back(),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 8,
+              ),
+              child: Text(
+                _isSw ? 'Ghairi' : 'Cancel',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: c.secondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
     // return SingleChildScrollView(
     //   padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
     //   child: Form(
@@ -447,7 +480,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     //                   hint: _t(context, en: 'Select method', sw: 'Chagua njia'),
     //                 ).copyWith(
     //                   suffixIcon: Icon(
-    //                     Icons.keyboard_arrow_down,
+    //                     Icons.keyboard_arrow_down_outlined,
     //                     color: c.isDark
     //                         ? Colors.white70
     //                         : AppColors.designPlaceholder,
@@ -479,7 +512,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
     //                 ),
     //               ).copyWith(
     //                 prefixIcon: Icon(
-    //                   Icons.search,
+    //                   Icons.search_outlined,
     //                   size: 22,
     //                   color: c.isDark
     //                       ? Colors.white70
@@ -650,7 +683,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   //     ),
   //     focusedBorder: OutlineInputBorder(
   //       borderRadius: BorderRadius.circular(AppValues.radius_6),
-  //       borderSide: const BorderSide(color: AppColors.designAccent, width: 1.5),
+  //       borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
   //     ),
   //     errorBorder: OutlineInputBorder(
   //       borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -666,7 +699,7 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   //         child: _StatusChip(
   //           label: _t(context, en: 'Paid', sw: 'Imelipwa'),
   //           isSelected: controller.status.value == PaymentStatus.paid,
-  //           icon: Icons.check,
+  //           icon: Icons.check_outlined,
   //           onTap: () => controller.setStatus(PaymentStatus.paid),
   //         ),
   //       ),
@@ -726,6 +759,56 @@ class RecordPaymentView extends BaseView<RecordPaymentController> {
   //     );
   //   });
   // }
+}
+
+/// A one-tap amount derived from the tenant's lease.
+///
+/// Shows the figure as well as the label: a chip reading only "Full rent"
+/// would ask the host to trust it, where "Full rent · 400,000" lets them
+/// check it before it lands in the field.
+class _AmountPresetChip extends StatelessWidget {
+  const _AmountPresetChip({
+    required this.label,
+    required this.amount,
+    required this.colors,
+    required this.onTap,
+  });
+
+  final String label;
+  final double amount;
+  final FormSurfaceColors colors;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = colors.tokens.accent;
+    final formatted = Get.isRegistered<CurrencyService>()
+        ? Get.find<CurrencyService>().formatBase(amount)
+        : amount.toStringAsFixed(0);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(9),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: accent.withValues(alpha: 0.45)),
+          ),
+          child: Text(
+            '$label · $formatted',
+            style: TextStyle(
+              color: accent,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _CategoryChip extends StatelessWidget {
@@ -862,7 +945,7 @@ class _ImpactIcon extends StatelessWidget {
 //           ? _transactionTeal
 //           : (c.isDark
 //                 ? Colors.white.withValues(alpha: 0.12)
-//                 : AppColors.lightGreyColor.withValues(alpha: 0.4)),
+//                 : AppColors.designInputBorder.withValues(alpha: 0.4)),
 //       borderRadius: BorderRadius.circular(AppValues.radius_6),
 //       child: InkWell(
 //         onTap: onTap,

@@ -1,0 +1,33 @@
+# Network, property managers, challenges & rewards
+tests:
+  - displayName: Open My Network from More
+    id: my-network-open
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open the More tab or More Options sheet and navigate to My Network
+        hint: From the main shell tap More (or the center More Options FAB) and find My Network. Do not open Property Managers by mistake.
+        finalScreenAssertion: My Network screen is visible with a list, empty state, or loading that resolves to network content
+
+  - displayName: Open Property Manager directory
+    id: property-managers-directory
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Property Managers from More
+        hint: More grid or More Options find Property Managers / Find a manager.
+        finalScreenAssertion: Property manager directory list or empty state is visible
+
+  - displayName: Open a property manager profile
+    id: property-manager-profile
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From the Property Managers directory open the first manager profile if any exist
+        hint: Tap the first manager card. If the directory is empty, note empty state and stop as Pass for empty catalog.
+        finalScreenAssertion: Either a manager profile with name and details is visible, or the directory empty state was confirmed
+
+  - displayName: Open Challenges and Rewards
+    id: challenges-rewards-open
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Navigate to Challenges and Rewards from More or Home
+        hint: Look for Challenges, Rewards, or similar in More. Open the dashboard.
+        finalScreenAssertion: Challenges and Rewards screen with progress, challenges list, or empty rewards state is visible

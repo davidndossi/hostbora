@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../widgets/end_tenancy_sheet.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
@@ -8,16 +11,23 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/base/base_controller.dart';
+import '../../../../core/utils/thousand_separator.dart';
+import '../../../../data/local/db/expense_local_data_source.dart';
 import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/contract_update_service.dart';
+import '../../../../data/local/service/tenant_lease_remote_sync.dart';
 import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/model/send_sms_request.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../../routes/app_pages.dart';
+import '../../../all_tenants/controllers/all_tenants_controller.dart';
+import '../../../listing_details/controllers/listing_details_controller.dart';
+import '../../tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 import '../utils/tenant_ledger_document_store.dart';
 import '../utils/tenant_ledger_finance.dart';
+import '../../../../data/service/analytics_service.dart';
 
 enum LedgerPaymentStatus { fullyPaid, notPaid, partialPaid }
 
@@ -37,10 +47,25 @@ class LedgerPaymentRowVm {
   final String notes;
 }
 
+class LedgerExpenseRowVm {
+  const LedgerExpenseRowVm({
+    required this.item,
+    required this.amountTsh,
+    required this.dateLabel,
+    required this.category,
+  });
+
+  final String item;
+  final int amountTsh;
+  final String dateLabel;
+  final String category;
+}
+
 class RentTenantLedgerOccupancyController extends BaseController {
   RentTenantLedgerOccupancyController()
     : _tenantLocal = Get.find<TenantLocalDataSource>(),
       _incomeLocal = Get.find<IncomeLocalDataSource>(),
+      _expenseLocal = Get.find<ExpenseLocalDataSource>(),
       _preferenceManager = Get.find<PreferenceManager>(
         tag: (PreferenceManager).toString(),
       ),
@@ -51,11 +76,13 @@ class RentTenantLedgerOccupancyController extends BaseController {
 
   final TenantLocalDataSource _tenantLocal;
   final IncomeLocalDataSource _incomeLocal;
+  final ExpenseLocalDataSource _expenseLocal;
   final PreferenceManager _preferenceManager;
   final AppRepository _repository;
 
   final totalPaidTshRx = 0.obs;
   final paymentHistory = <LedgerPaymentRowVm>[].obs;
+  final expenseHistory = <LedgerExpenseRowVm>[].obs;
   final documentHistory = <TenantLedgerDocument>[].obs;
 
   late final TenantLedgerDocumentStore _documentStore = TenantLedgerDocumentStore(
@@ -71,9 +98,6 @@ class RentTenantLedgerOccupancyController extends BaseController {
   String _sourcePropertyTitle = '';
   String _sourcePropertyLoc = '';
   String _sourcePropertySuite = '';
-
-  /// Tracks the last synced payment status to detect the fullyPaid transition.
-  String _lastSyncedPaymentStatus = '';
 
   final customReminderController = TextEditingController();
   final amountPaidController = TextEditingController();
@@ -163,6 +187,52 @@ class RentTenantLedgerOccupancyController extends BaseController {
       ? tenantRecord.value!.rentFrequency
       : 'Per Month';
 
+  /// Rent/month or BnB rate label for the overview card.
+  String get rateLabel {
+    final amount = currentRentAmountTsh;
+    final freq = rentFrequency.trim().toLowerCase();
+    final currency = Get.find<CurrencyService>().formatBase(amount);
+    if (freq == 'per night' || freq == 'per day') {
+      return _isSw ? '$currency / usiku' : '$currency / night';
+    }
+    if (freq == 'per week') {
+      return _isSw ? '$currency / wiki' : '$currency / week';
+    }
+    if (freq == 'per year') {
+      return _isSw ? '$currency / mwaka' : '$currency / year';
+    }
+    if (freq == 'per stay') {
+      return _isSw ? '$currency / kukaa' : '$currency / stay';
+    }
+    return _isSw ? '$currency / mwezi' : '$currency / month';
+  }
+
+  String get rateCaption {
+    final freq = rentFrequency.trim().toLowerCase();
+    if (freq == 'per night' || freq == 'per day') {
+      return _isSw ? 'Kiwango cha usiku (BnB)' : 'BnB rate per night';
+    }
+    if (_sourceWorkspace == 'bnb') {
+      return _isSw ? 'Kiwango cha BnB' : 'BnB rate';
+    }
+    return _isSw ? 'Kodi kwa mwezi' : 'Rent / month';
+  }
+
+  TenantLedgerDocument? get lastRentInvoice {
+    final invoices = documentHistory
+        .where((d) => d.type == TenantLedgerDocumentType.invoice)
+        .toList();
+    if (invoices.isEmpty) return null;
+    invoices.sort((a, b) => b.createdAtMs.compareTo(a.createdAtMs));
+    return invoices.first;
+  }
+
+  String lastInvoiceDateLabel(TenantLedgerDocument doc) {
+    return DateFormat('d MMM yyyy').format(
+      DateTime.fromMillisecondsSinceEpoch(doc.createdAtMs),
+    );
+  }
+
   int get totalDueTsh {
     final rec = tenantRecord.value;
     if (rec == null) return 0;
@@ -227,6 +297,51 @@ class RentTenantLedgerOccupancyController extends BaseController {
     await _syncPaymentStatusToTenant();
   }
 
+  Future<void> _refreshExpensesForTenant() async {
+    final rec = tenantRecord.value;
+    if (rec == null) {
+      expenseHistory.clear();
+      return;
+    }
+    final rent = await _expenseLocal.getAllNewestFirst(workspaceType: 'rent');
+    final bnb = await _expenseLocal.getAllNewestFirst(workspaceType: 'bnb');
+    final rows = [...rent, ...bnb];
+    final dateFmt = DateFormat('d MMM yyyy');
+    final matched = <LedgerExpenseRowVm>[];
+    for (final e in rows) {
+      if (!_expenseMatchesTenant(e, rec)) continue;
+      final item = e.notes.trim().isNotEmpty
+          ? e.notes.trim()
+          : (e.category.trim().isNotEmpty ? e.category.trim() : 'Expense');
+      matched.add(
+        LedgerExpenseRowVm(
+          item: item,
+          amountTsh: e.amountValue.round(),
+          dateLabel: dateFmt.format(e.paidLocalCalendarOrCreated()),
+          category: e.category.trim().isEmpty ? 'Other' : e.category.trim(),
+        ),
+      );
+    }
+    expenseHistory.assignAll(matched);
+  }
+
+  bool _expenseMatchesTenant(ExpenseRecord expense, TenantRecord tenant) {
+    final tenantName = tenant.tenantName.trim().toLowerCase();
+    final expenseTenantName = expense.tenantName.trim().toLowerCase();
+    if (expenseTenantName.isNotEmpty && expenseTenantName == tenantName) {
+      return true;
+    }
+    final pl = tenant.propertyLabel.trim().toLowerCase();
+    if (pl.isEmpty) return false;
+    final ap = expense.apartment.trim().toLowerCase();
+    final unit = expense.apartmentUnit.trim().toLowerCase();
+    final notes = expense.notes.trim().toLowerCase();
+    final blob = '$ap $unit $notes'.trim();
+    return blob.contains(pl) ||
+        (ap.isNotEmpty && pl.contains(ap)) ||
+        ap == pl;
+  }
+
   Future<void> _syncPaymentStatusToTenant() async {
     final rec = tenantRecord.value;
     if (rec == null) return;
@@ -234,82 +349,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
       totalDueTsh,
       totalPaidTsh,
     );
-    final wasNotPaid = _lastSyncedPaymentStatus != 'paid';
-    _lastSyncedPaymentStatus = status;
     await _tenantLocal.updatePaymentStatus(id: rec.id, paymentStatus: status);
-
-    // Auto-send contract via WhatsApp when tenant first reaches full payment.
-    if (status == 'paid' && wasNotPaid) {
-      await _autoSendContractOnFullPayment(rec);
-    }
-  }
-
-  static const _contractSentKeyPrefix = 'contract_whatsapp_sent_v1_';
-
-  Future<void> _autoSendContractOnFullPayment(TenantRecord rec) async {
-    final sentKey = '$_contractSentKeyPrefix${rec.id}';
-    final alreadySent = await _preferenceManager.getString(
-      sentKey,
-      defaultValue: '',
-    );
-    if (alreadySent.isNotEmpty) return;
-
-    final phone = rec.phoneNumber.trim();
-    if (phone.isEmpty) return;
-
-    final contractPath = rec.contractFilePath.trim();
-    final isSw = Get.locale?.languageCode == 'sw';
-    final currency = Get.find<CurrencyService>();
-
-    final msgLines = <String>[
-      isSw ? '✅ MALIPO YAMEKAMILIKA' : '✅ FULL PAYMENT CONFIRMED',
-      '',
-      isSw
-          ? 'Mpangaji: ${rec.tenantName}'
-          : 'Tenant: ${rec.tenantName}',
-      isSw
-          ? 'Mali: ${rec.propertyLabel}'
-          : 'Property: ${rec.propertyLabel}',
-      isSw
-          ? 'Kiasi: ${currency.formatBase(rec.rentAmountValue.round())} (${rec.rentFrequency})'
-          : 'Rent: ${currency.formatBase(rec.rentAmountValue.round())} (${rec.rentFrequency})',
-      isSw
-          ? 'Mwanzo wa mkataba: ${rec.leaseStartIso}'
-          : 'Lease start: ${rec.leaseStartIso}',
-      isSw
-          ? 'Mwisho wa mkataba: ${rec.leaseEndIso}'
-          : 'Lease end: ${rec.leaseEndIso}',
-      '',
-      isSw
-          ? 'Asante kwa malipo yako. Mkataba umehusishwa.'
-          : 'Thank you for your payment. Your lease contract is attached.',
-    ];
-    final message = msgLines.join('\n');
-    final encoded = Uri.encodeComponent(message);
-    final normalizedPhone = _normalizePhone(phone);
-    final waUri = Uri.parse(
-      'https://wa.me/$normalizedPhone?text=$encoded',
-    );
-
-    try {
-      if (contractPath.isNotEmpty) {
-        // Share contract file alongside the message.
-        await Share.shareXFiles(
-          [XFile(contractPath)],
-          text: message,
-        );
-      } else if (await canLaunchUrl(waUri)) {
-        await launchUrl(waUri, mode: LaunchMode.externalApplication);
-      } else {
-        await Share.share(message);
-      }
-      await _preferenceManager.setString(
-        sentKey,
-        DateTime.now().toIso8601String(),
-      );
-    } catch (_) {
-      // Silent: ledger refresh must not fail due to share errors.
-    }
   }
 
   Future<void> _loadDocumentHistory() async {
@@ -399,6 +439,68 @@ class RentTenantLedgerOccupancyController extends BaseController {
     );
   }
 
+  // ── Tenant details ─────────────────────────────────────────────────────
+  // Read straight off the loaded record. Each returns an empty string when
+  // absent rather than a placeholder, so the details card can omit the row
+  // instead of printing a dash the host might read as a stored value.
+
+  String get tenantPhone => tenantRecord.value?.phoneNumber.trim() ?? '';
+
+  String get tenantEmail => tenantRecord.value?.email.trim() ?? '';
+
+  bool get tenantHasWhatsapp =>
+      tenantHasPhone && (tenantRecord.value?.isWhatsapp ?? false);
+
+  bool get tenantHasPhone => tenantPhone.isNotEmpty;
+
+  String get tenantGender => tenantRecord.value?.gender.trim() ?? '';
+
+  String get tenantUnitLabel => tenantRecord.value?.unitLabel.trim() ?? '';
+
+  /// Dials the tenant. Separate from [openSendSmsShortcut] because a host
+  /// chasing rent usually calls first and only texts when that fails.
+  Future<void> callTenant() async {
+    final phone = tenantPhone;
+    if (phone.isEmpty) {
+      showErrorMessage(
+        _isSw ? 'Hakuna namba ya simu' : 'Tenant phone number not available',
+      );
+      return;
+    }
+    final uri = Uri.parse('tel:$phone');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      showErrorMessage(
+        _isSw ? 'Simu haikufunguka.' : 'Could not start the call.',
+      );
+    }
+  }
+
+  /// Opens WhatsApp on the tenant's number.
+  Future<void> whatsappTenant() async {
+    final phone = tenantPhone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (phone.isEmpty) {
+      showErrorMessage(
+        _isSw ? 'Hakuna namba ya simu' : 'Tenant phone number not available',
+      );
+      return;
+    }
+    final uri = Uri.parse('https://wa.me/$phone');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      showErrorMessage(
+        _isSw ? 'WhatsApp haikufunguka.' : 'Could not open WhatsApp.',
+      );
+    }
+  }
+
+  /// Copies the tenant's phone number, for pasting into a bank or mobile
+  /// money app where a tap-to-dial link is no use.
+  Future<void> copyTenantPhone() async {
+    final phone = tenantPhone;
+    if (phone.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: phone));
+    showSuccessMessage(_isSw ? 'Namba imenakiliwa' : 'Phone number copied');
+  }
+
   Future<void> _loadTenantAndCheckPeriod() async {
     final byId = tenantId.value > 0
         ? await _tenantLocal.findById(tenantId.value)
@@ -409,6 +511,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
     );
     tenantRecord.value = byId ?? byRoute;
     await _refreshPaidTotalFromIncome();
+    await _refreshExpensesForTenant();
     await _loadDocumentHistory();
     if (isTenancyFinished) {
       await _autoSendOverdueReminderIfNeeded();
@@ -471,24 +574,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
   }
 
   void onRenewClicked() {
-    Get.toNamed(
-      Routes.RENT_TENANT_LEDGER_OCCUPANCY,
-      parameters: {
-        'name': displayTenantName,
-        'property': displayPropertyFull,
-        'ws': _sourceWorkspace,
-        if (_sourcePropertyRef.isNotEmpty) 'propertyRef': _sourcePropertyRef,
-        if (_sourcePropertyTitle.isNotEmpty)
-          'propertyTitle': _sourcePropertyTitle,
-        if (_sourcePropertyLoc.isNotEmpty) 'propertyLoc': _sourcePropertyLoc,
-        if (_sourcePropertySuite.isNotEmpty)
-          'propertySuite': _sourcePropertySuite,
-      },
-      arguments: {'ws': _sourceWorkspace},
-    );
-    Future.delayed(const Duration(milliseconds: 250), () {
-      _showRenewDialog();
-    });
+    _showRenewDialog();
   }
 
   void _showRenewDialog() {
@@ -499,6 +585,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
         content: TextField(
           controller: amountPaidController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [ThousandsSeparatorInputFormatter()],
           decoration: const InputDecoration(
             hintText: 'Enter amount',
             border: OutlineInputBorder(),
@@ -554,6 +641,36 @@ class RentTenantLedgerOccupancyController extends BaseController {
       leaseStartIso: updatedStartIso,
       leaseEndIso: updatedEndIso,
     );
+    await TenantLeaseRemoteSync.push(
+      tenant: rec,
+      leaseEndIso: updatedEndIso,
+    );
+    final currency = rec.rentCurrency.trim().isEmpty
+        ? CurrencyService.defaultBaseCurrency
+        : rec.rentCurrency.trim();
+    final baseAmount = Get.find<CurrencyService>().toBaseAmount(
+      inputAmount: amount,
+      inputCurrency: currency,
+    );
+    await _incomeLocal.insert(
+      tenantName: rec.tenantName,
+      amountValue: baseAmount,
+      datePaidIso: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      category: 'rent',
+      workspaceType: _sourceWorkspace,
+      notes: TenantLedgerFinance.appendTenantIdNote(
+        'Tenancy renewal',
+        rec.id,
+      ),
+      apartment: rec.propertyLabel,
+      apartmentUnit: rec.unitLabel.trim().isNotEmpty
+          ? rec.unitLabel.trim()
+          : rec.apartmentUnitId.trim(),
+      propertyRef: rec.propertyRef,
+      currencyCode: currency,
+      inputAmountValue: amount,
+      tenantId: rec.id,
+    );
     tenantRecord.value =
         await _tenantLocal.findByNameAndProperty(
           tenantName: rec.tenantName,
@@ -561,6 +678,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
         ) ??
         rec;
     await _refreshPaidTotalFromIncome();
+    await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
 
     await _sendUpdatedLeaseDocumentMessage(
       tenant: tenantRecord.value ?? rec,
@@ -582,7 +700,16 @@ class RentTenantLedgerOccupancyController extends BaseController {
     }
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: const ['pdf', 'doc', 'docx'],
+      allowedExtensions: const [
+        'pdf',
+        'doc',
+        'docx',
+        'jpg',
+        'jpeg',
+        'png',
+        'heic',
+        'webp',
+      ],
     );
     final file = picked?.files.single;
     final path = file?.path ?? '';
@@ -612,86 +739,163 @@ class RentTenantLedgerOccupancyController extends BaseController {
       showErrorMessage('Tenant record not found');
       return;
     }
+    final nameController = TextEditingController(text: rec.tenantName);
+    final phoneController = TextEditingController(text: rec.phoneNumber);
+    final emailController = TextEditingController(text: rec.email);
     final amountController = TextEditingController(
-      text: rec.rentAmountValue.round().toString(),
+      text: NumberFormat('#,##0.##').format(rec.rentAmountValue),
     );
     final startController = TextEditingController(text: rec.leaseStartIso);
     final endController = TextEditingController(text: rec.leaseEndIso);
 
+    void disposeFields() {
+      nameController.dispose();
+      phoneController.dispose();
+      emailController.dispose();
+      amountController.dispose();
+      startController.dispose();
+      endController.dispose();
+    }
+
     Get.dialog(
       AlertDialog(
-        title: const Text('Edit lease terms'),
-        content: Column(
+        title: Text(_isSw ? 'Hariri mpangaji' : 'Edit tenant'),
+        content: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            TextField(
+              controller: nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: _isSw ? 'Jina' : 'Name',
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: _isSw ? 'Simu' : 'Phone',
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: _isSw ? 'Barua pepe' : 'Email',
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
             TextField(
               controller: amountController,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              decoration: const InputDecoration(
-                labelText: 'Rent amount',
-                border: OutlineInputBorder(),
+              inputFormatters: [ThousandsSeparatorInputFormatter()],
+              decoration: InputDecoration(
+                labelText: _isSw ? 'Kiasi cha kodi' : 'Rent amount',
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: startController,
-              decoration: const InputDecoration(
-                labelText: 'Lease start (yyyy-MM-dd)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: _isSw
+                    ? 'Mwanzo wa mkataba (yyyy-MM-dd)'
+                    : 'Lease start (yyyy-MM-dd)',
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: endController,
-              decoration: const InputDecoration(
-                labelText: 'Lease end (yyyy-MM-dd)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: _isSw
+                    ? 'Mwisho wa mkataba (yyyy-MM-dd)'
+                    : 'Lease end (yyyy-MM-dd)',
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () {
-              amountController.dispose();
-              startController.dispose();
-              endController.dispose();
+              disposeFields();
               Get.back();
             },
-            child: const Text('Cancel'),
+            child: Text(_isSw ? 'Ghairi' : 'Cancel'),
           ),
           FilledButton(
             onPressed: () async {
+              final name = nameController.text.trim();
+              final phone = phoneController.text.trim();
+              final email = emailController.text.trim();
               final amount = double.tryParse(
                 amountController.text.trim().replaceAll(',', ''),
               );
               final start = _parseIsoDate(startController.text.trim());
               final end = _parseIsoDate(endController.text.trim());
+              if (name.isEmpty) {
+                showErrorMessage(_isSw ? 'Weka jina' : 'Enter a name');
+                return;
+              }
+              if (email.isNotEmpty && !email.contains('@')) {
+                showErrorMessage(
+                  _isSw ? 'Weka barua pepe sahihi' : 'Enter a valid email',
+                );
+                return;
+              }
               if (amount == null || amount <= 0) {
-                showErrorMessage('Enter valid rent amount');
+                showErrorMessage(
+                  _isSw ? 'Weka kiasi sahihi cha kodi' : 'Enter valid rent amount',
+                );
                 return;
               }
               if (start == null || end == null || !end.isAfter(start)) {
-                showErrorMessage('Enter valid lease dates');
+                showErrorMessage(
+                  _isSw
+                      ? 'Weka tarehe sahihi za mkataba'
+                      : 'Enter valid lease dates',
+                );
                 return;
               }
-              await _tenantLocal.updateLeaseTerms(
+              final endIso = DateFormat('yyyy-MM-dd').format(end);
+              await _tenantLocal.updateTenantDetails(
                 id: rec.id,
+                tenantName: name,
+                phoneNumber: phone,
+                email: email,
                 rentAmountValue: amount,
                 leaseStartIso: DateFormat('yyyy-MM-dd').format(start),
-                leaseEndIso: DateFormat('yyyy-MM-dd').format(end),
+                leaseEndIso: endIso,
               );
+              tenantName.value = name;
               tenantRecord.value = await _tenantLocal.findById(rec.id) ?? rec;
+              final saved = tenantRecord.value;
+              if (saved != null) {
+                await TenantLeaseRemoteSync.push(
+                  tenant: saved,
+                  leaseEndIso: saved.leaseEndIso,
+                );
+              }
               await _refreshPaidTotalFromIncome();
-              amountController.dispose();
-              startController.dispose();
-              endController.dispose();
+              unawaited(AllTenantsController.refreshIfRegistered());
+              unawaited(ListingDetailsController.refreshIfRegistered());
+              disposeFields();
               Get.back();
-              showSuccessMessage('Lease terms updated');
+              showSuccessMessage(
+                _isSw ? 'Mpangaji amesasishwa' : 'Tenant updated',
+              );
             },
-            child: const Text('Save'),
+            child: Text(_isSw ? 'Hifadhi' : 'Save'),
           ),
         ],
       ),
@@ -707,24 +911,7 @@ class RentTenantLedgerOccupancyController extends BaseController {
       await _sendReminder(_resolveTemplate(template.trim()));
       return;
     }
-    Get.toNamed(
-      Routes.RENT_TENANT_LEDGER_OCCUPANCY,
-      parameters: {
-        'name': displayTenantName,
-        'property': displayPropertyFull,
-        'ws': _sourceWorkspace,
-        if (_sourcePropertyRef.isNotEmpty) 'propertyRef': _sourcePropertyRef,
-        if (_sourcePropertyTitle.isNotEmpty)
-          'propertyTitle': _sourcePropertyTitle,
-        if (_sourcePropertyLoc.isNotEmpty) 'propertyLoc': _sourcePropertyLoc,
-        if (_sourcePropertySuite.isNotEmpty)
-          'propertySuite': _sourcePropertySuite,
-      },
-      arguments: {'ws': _sourceWorkspace},
-    );
-    Future.delayed(const Duration(milliseconds: 250), () {
-      _showCustomReminderDialog();
-    });
+    _showCustomReminderDialog();
   }
 
   void _showCustomReminderDialog() {
@@ -768,6 +955,11 @@ class RentTenantLedgerOccupancyController extends BaseController {
     try {
       await _repository.sendSms(
         SendSmsRequest(phoneNumber: phone, message: message),
+      );
+      analytics?.logReminderSent(
+        channel: 'sms',
+        automated: false,
+        reminderType: 'tenant_ledger',
       );
       if (Get.isDialogOpen ?? false) Get.back();
       showSuccessMessage('Reminder sent to tenant');

@@ -21,7 +21,7 @@ class OtpView extends BaseView<OtpController> {
       // (registration / reset-password use offAllNamed).
       leading: IconButton(
         tooltip: isSw ? 'Rudi nyuma' : 'Back',
-        icon: const Icon(Icons.arrow_back),
+        icon: const Icon(Icons.arrow_back_outlined),
         onPressed: controller.goBack,
       ),
     );
@@ -66,60 +66,63 @@ class OtpView extends BaseView<OtpController> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
-                  SizedBox(
-                    width: 250,
-                    child: PinCodeTextField(
-                      appContext: context,
-                      pastedTextStyle: const TextStyle(
-                        color: AppColors.textColorPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      length: 4,
-                      obscureText: false,
-                      animationType: AnimationType.fade,
-                      validator: (v) {
-                        if (v!.length < 4) {
-                          return appLocalization.requiredDigits;
-                        }
-                        return null;
-                      },
-                      pinTheme: PinTheme(
-                        shape: PinCodeFieldShape.underline,
-                        selectedColor: AppColors.colorPrimary,
-                        activeFillColor: isDark
+                  AutofillGroup(
+                    child: SizedBox(
+                      width: 250,
+                      child: PinCodeTextField(
+                        appContext: context,
+                        pastedTextStyle: const TextStyle(
+                          color: AppColors.textColorPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        length: 4,
+                        obscureText: false,
+                        animationType: AnimationType.fade,
+                        enablePinAutofill: true,
+                        autoDisposeControllers: false,
+                        validator: (v) {
+                          if (v!.length < 4) {
+                            return appLocalization.requiredDigits;
+                          }
+                          return null;
+                        },
+                        pinTheme: PinTheme(
+                          shape: PinCodeFieldShape.underline,
+                          selectedColor: AppColors.colorPrimary,
+                          activeFillColor: isDark
+                              ? theme.colorScheme.onSurface
+                              : Colors.black,
+                          inactiveColor: isDark
+                              ? theme.colorScheme.onSurfaceVariant
+                              : Colors.black54,
+                        ),
+                        animationDuration: const Duration(milliseconds: 300),
+                        textStyle: TextStyle(
+                          fontSize: 20,
+                          height: 1.6,
+                          color: isDark
+                              ? theme.colorScheme.onSurface
+                              : Colors.black,
+                        ),
+                        cursorColor: isDark
                             ? theme.colorScheme.onSurface
                             : Colors.black,
-                        inactiveColor: isDark
-                            ? theme.colorScheme.onSurfaceVariant
-                            : Colors.black54,
+                        backgroundColor: Colors.transparent,
+                        enableActiveFill: false,
+                        errorAnimationController: controller.errorController,
+                        controller: controller.otpController,
+                        keyboardType: TextInputType.number,
+                        onCompleted: controller.onOtpCompleted,
+                        onChanged: (value) {
+                          controller.otp(value);
+                        },
+                        beforeTextPaste: (text) {
+                          // Allow paste / SMS autofill of digits only.
+                          final digits =
+                              text?.replaceAll(RegExp(r'\D'), '') ?? '';
+                          return digits.length >= 4;
+                        },
                       ),
-                      animationDuration: const Duration(milliseconds: 300),
-                      textStyle: TextStyle(
-                        fontSize: 20,
-                        height: 1.6,
-                        color: isDark
-                            ? theme.colorScheme.onSurface
-                            : Colors.black,
-                      ),
-                      cursorColor: isDark
-                          ? theme.colorScheme.onSurface
-                          : Colors.black,
-                      backgroundColor: Colors.transparent,
-                      enableActiveFill: false,
-                      errorAnimationController: controller.errorController,
-                      controller: controller.otpController,
-                      keyboardType: TextInputType.number,
-                      onCompleted: (v) {
-                        debugPrint(v);
-                      },
-                      onChanged: (value) {
-                        controller.otp(value);
-                      },
-                      beforeTextPaste: (text) {
-                        debugPrint('Allowing to paste $text');
-                        return true;
-                      },
-                      onTap: () => {},
                     ),
                   ),
                   const SizedBox(height: 20),

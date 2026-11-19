@@ -5,6 +5,7 @@ import '../../../../core/values/app_colors.dart';
 import '../controllers/rent_staff_management_controller.dart';
 import 'staff_access_editor.dart';
 import '../utils/rent_staff_pay_format.dart';
+import 'staff_option_sheet_field.dart';
 
 /// Modal edit form for a staff member — always visible when Edit is tapped.
 Future<bool?> showStaffEditSheet({
@@ -165,13 +166,13 @@ class _StaffEditSheetBodyState extends State<_StaffEditSheetBody> {
                         child: Text(
                           _t('Edit staff member', 'Hariri mfanyakazi'),
                           style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
                       IconButton(
                         onPressed: () => Get.back(result: false),
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close_outlined),
                       ),
                     ],
                   ),
@@ -207,23 +208,22 @@ class _StaffEditSheetBodyState extends State<_StaffEditSheetBody> {
                           validator: widget.controller.validateFullName,
                         ),
                         const SizedBox(height: 14),
-                        DropdownButtonFormField<String>(
-                          initialValue: _paymentType,
+                        StaffOptionSheetField(
+                          value: _paymentType,
                           decoration: InputDecoration(
                             labelText: _t('Pay type', 'Aina ya malipo'),
                             border: const OutlineInputBorder(),
                           ),
-                          items: RentStaffPayFormat.paymentTypeLabels.entries
-                              .map(
-                                (e) => DropdownMenuItem(
-                                  value: e.key,
-                                  child: Text(e.value),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _paymentType = v);
-                          },
+                          sheetTitle: _t('Pay type', 'Aina ya malipo'),
+                          options: [
+                            for (final entry
+                                in RentStaffPayFormat.paymentTypeLabels.entries)
+                              StaffSheetOption(
+                                value: entry.key,
+                                label: entry.value,
+                              ),
+                          ],
+                          onChanged: (v) => setState(() => _paymentType = v),
                         ),
                         const SizedBox(height: 14),
                         TextFormField(
@@ -249,23 +249,19 @@ class _StaffEditSheetBodyState extends State<_StaffEditSheetBody> {
                           validator: widget.controller.validatePayDate,
                         ),
                         const SizedBox(height: 14),
-                        DropdownButtonFormField<String>(
-                          initialValue: _role.isEmpty ? null : _role,
+                        StaffOptionSheetField(
+                          value: _role.isEmpty ? null : _role,
                           decoration: InputDecoration(
                             labelText: _t('Primary role', 'Jukumu la msingi'),
                             border: const OutlineInputBorder(),
                           ),
-                          items: roles
-                              .map(
-                                (e) => DropdownMenuItem(
-                                  value: e,
-                                  child: Text(e),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _role = v);
-                          },
+                          hint: _t('Select a role...', 'Chagua jukumu...'),
+                          sheetTitle: _t('Select a role', 'Chagua jukumu'),
+                          options: [
+                            for (final role in roles)
+                              StaffSheetOption(value: role, label: role),
+                          ],
+                          onChanged: (v) => setState(() => _role = v),
                           validator: (v) => (v == null || v.isEmpty)
                               ? _t(
                                   'Select a primary role',

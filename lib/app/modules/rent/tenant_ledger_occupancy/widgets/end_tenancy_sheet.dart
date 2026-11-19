@@ -8,6 +8,8 @@ import '../../../../data/local/db/income_local_data_source.dart';
 import '../../../../data/local/db/tenant_local_data_source.dart';
 import '../../../../data/local/db/tenant_rating_local_data_source.dart';
 import '../../../../data/local/service/currency_service.dart';
+import '../../../../data/local/service/remote_account_sync_service.dart';
+import '../utils/tenant_ledger_finance.dart';
 
 // ---------------------------------------------------------------------------
 // Result returned after sheet completes
@@ -197,6 +199,9 @@ class _EndTenancySheetState extends State<EndTenancySheet> {
         endedAtIso: endedAtIso,
         endedAtMs: endedAtMs,
       );
+      RemoteAccountSyncService.publishTenantCountFor(
+        widget.tenantRecord.propertyRef,
+      );
 
       // 2. Settle balance if partial payment specified
       if (_state.balanceHandling == 'partial') {
@@ -207,11 +212,15 @@ class _EndTenancySheetState extends State<EndTenancySheet> {
             amountValue: partial.toDouble(),
             datePaidIso: endedAtIso,
             category: 'rent',
-            notes: 'End-of-tenancy partial settlement',
+            notes: TenantLedgerFinance.appendTenantIdNote(
+              'End-of-tenancy partial settlement',
+              widget.tenantRecord.id,
+            ),
             apartment: widget.tenantRecord.propertyLabel,
             apartmentUnit: widget.tenantRecord.unitLabel,
             propertyRef: widget.tenantRecord.propertyRef,
             workspaceType: widget.workspace,
+            tenantId: widget.tenantRecord.id,
           );
         }
       }
@@ -497,7 +506,7 @@ class _StepConfirm extends StatelessWidget {
           'End Tenancy',
           style: TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: onSurface,
           ),
         ),
@@ -916,7 +925,7 @@ class _StarRow extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.only(left: 4),
                 child: Icon(
-                  filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                  filled ? Icons.star_outlined : Icons.star_outline,
                   color: filled ? Colors.amber : Colors.grey.shade400,
                   size: 28,
                 ),
@@ -1025,8 +1034,8 @@ class _StepConsent extends StatelessWidget {
               children: [
                 Icon(
                   state.shareConsent
-                      ? Icons.check_box_rounded
-                      : Icons.check_box_outline_blank_rounded,
+                      ? Icons.check_box_outlined
+                      : Icons.check_box_outline_blank_outlined,
                   color: state.shareConsent ? teal : Colors.grey.shade400,
                 ),
                 const SizedBox(width: 12),

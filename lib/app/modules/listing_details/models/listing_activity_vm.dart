@@ -26,6 +26,7 @@ class ListingActivityVm {
     this.unitLocalId,
     this.unitLocalPropertyRef,
     this.unitLocalName,
+    this.unitPropertyUnitRef,
   });
 
   final String title;
@@ -47,6 +48,9 @@ class ListingActivityVm {
   /// Extra context needed to open the EDIT_UNIT route.
   final String? unitLocalPropertyRef;
   final String? unitLocalName;
+
+  /// Stable unit id from `property_units.property_unit_ref` (when known).
+  final String? unitPropertyUnitRef;
 
   bool get isExpense => activityType == ActivityType.expense;
   bool get isIncome => activityType == ActivityType.income;

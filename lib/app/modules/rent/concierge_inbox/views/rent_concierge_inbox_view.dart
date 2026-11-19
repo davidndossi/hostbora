@@ -104,7 +104,7 @@ class RentConciergeInboxView extends RentBaseView<RentConciergeInboxController> 
           ],
           if (controller.renewalItems.isNotEmpty) ...[
             _sectionTitle(context,
-                icon: Icons.sync_alt_rounded,
+                icon: Icons.sync_alt_outlined,
                 label: _isSw
                     ? 'Mikataba Inayokaribia Kuisha'
                     : 'Upcoming Renewals'),
@@ -183,7 +183,7 @@ class RentConciergeInboxView extends RentBaseView<RentConciergeInboxController> 
             '$criticalCount CRITICAL',
             style: const TextStyle(
               color: Color(0xFFB24148),
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               fontSize: 10,
               letterSpacing: 0.6,
             ),
@@ -375,7 +375,7 @@ class _ConciergeInboxEmptyBody extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.spa_rounded,
+                    Icons.spa_outlined,
                     size: 20,
                     color: Color(0xFF5C3D32),
                   ),
@@ -437,7 +437,7 @@ class _UrgentCard extends StatelessWidget {
                       item.tag,
                       style: TextStyle(
                         fontSize: 10,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 1.0,
                         color: mutedColor,
                       ),
@@ -596,7 +596,7 @@ class _RenewalCard extends StatelessWidget {
                         item.dueLabel,
                         style: TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 0.9,
                           color: mutedColor,
                         ),
@@ -676,8 +676,8 @@ class _MaintenanceCard extends StatelessWidget {
                 child: Text(
                   item.categoryPill,
                   style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 0.6,
                     color: isDark ? const Color(0xFFF5C7B2) : const Color(0xFF6A473A),
                   ),
@@ -712,8 +712,8 @@ class _MaintenanceCard extends StatelessWidget {
                     Text(
                       item.scheduledCaption,
                       style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
                         color: mutedColor,
                       ),

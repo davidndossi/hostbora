@@ -70,6 +70,24 @@ class RentDefineTenantChargesController extends BaseController {
   String get totalFormatted =>
       Get.find<CurrencyService>().formatBase(totalTsh.round());
 
+  @override
+  void onInit() {
+    super.onInit();
+    final params = Get.parameters;
+    final args = Get.arguments;
+    var title = (params['propertyTitle'] ?? params['propertyLabel'] ?? '')
+        .toString()
+        .trim();
+    if (title.isEmpty && args is Map) {
+      title = (args['propertyTitle'] ?? args['propertyLabel'] ?? '')
+          .toString()
+          .trim();
+    }
+    if (title.isNotEmpty) {
+      selectedPropertyTitle.value = title;
+    }
+  }
+
   double? _parseAmount(String raw) {
     final cleaned = raw.replaceAll(RegExp(r'[^\d.]'), '');
     if (cleaned.isEmpty) return null;

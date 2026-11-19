@@ -40,7 +40,9 @@ class _QuickAddExpenseWizardBodyState
     }
     AddExpenseBinding().dependencies();
     controller = Get.find<AddExpenseController>();
-    controller.datePaidController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    controller.datePaidController.text = DateFormat(
+      'dd/MM/yyyy',
+    ).format(DateTime.now());
   }
 
   @override
@@ -70,7 +72,9 @@ class _QuickAddExpenseWizardBodyState
           required: true,
           content: (context) => _unitStep(context),
           validate: () {
-            if ((controller.selectedExpenseUnitKey.value ?? '').trim().isEmpty) {
+            if ((controller.selectedExpenseUnitKey.value ?? '')
+                .trim()
+                .isEmpty) {
               return 'Please select a unit';
             }
             return null;
@@ -86,7 +90,10 @@ class _QuickAddExpenseWizardBodyState
         required: true,
         content: (context) => _amountStep(context),
         validate: () {
-          final raw = controller.amountController.text.trim().replaceAll(',', '');
+          final raw = controller.amountController.text.trim().replaceAll(
+            ',',
+            '',
+          );
           final n = double.tryParse(raw);
           if (raw.isEmpty || n == null || n <= 0) {
             return 'Please enter a valid amount';
@@ -99,7 +106,8 @@ class _QuickAddExpenseWizardBodyState
         required: true,
         content: (context) => _dateStep(context),
         validate: () {
-          if (controller.validateDatePaid(controller.datePaidController.text) != null) {
+          if (controller.validateDatePaid(controller.datePaidController.text) !=
+              null) {
             return 'Please choose a valid date';
           }
           return null;
@@ -222,7 +230,8 @@ class _QuickAddExpenseWizardBodyState
               'qe-property-${controller.propertyOptions.length}-'
               '${controller.selectedProperty.value}',
             ),
-            initialValue: controller.propertyOptions.contains(
+            initialValue:
+                controller.propertyOptions.contains(
                   controller.selectedProperty.value,
                 )
                 ? controller.selectedProperty.value
@@ -249,7 +258,12 @@ class _QuickAddExpenseWizardBodyState
             initialValue: controller.selectedExpenseUnitKey.value,
             decoration: _decoration(context, hint: 'Select unit'),
             items: controller.expenseUnitsForSelectedProperty
-                .map((u) => DropdownMenuItem(value: u.selectionKey, child: Text(u.unitName)))
+                .map(
+                  (u) => DropdownMenuItem(
+                    value: u.selectionKey,
+                    child: Text(u.unitName),
+                  ),
+                )
                 .toList(),
             onChanged: controller.updateSelectedExpenseUnit,
           ),
@@ -268,7 +282,8 @@ class _QuickAddExpenseWizardBodyState
           () => _ChipRow(
             options: controller.expenses,
             selected: controller.selectedExpense,
-            onSelected: (v) => controller.selectExpense(controller.expenses.indexOf(v)),
+            onSelected: (v) =>
+                controller.selectExpense(controller.expenses.indexOf(v)),
           ),
         ),
       ],
@@ -284,7 +299,10 @@ class _QuickAddExpenseWizardBodyState
         quickWizardHeading(context, 'How much was spent?'),
         quickWizardLabel(context, 'CURRENCY'),
         const SizedBox(height: 8),
-        CurrencyDropdownField(selectedCurrency: controller.selectedCurrency, label: 'Currency'),
+        CurrencyDropdownField(
+          selectedCurrency: controller.selectedCurrency,
+          label: 'Currency',
+        ),
         const SizedBox(height: 16),
         quickWizardLabel(context, 'AMOUNT'),
         const SizedBox(height: 8),
@@ -333,7 +351,9 @@ class _QuickAddExpenseWizardBodyState
     DateTime initial = now;
     try {
       if (controller.datePaidController.text.trim().isNotEmpty) {
-        initial = DateFormat('dd/MM/yyyy').parseStrict(controller.datePaidController.text.trim());
+        initial = DateFormat(
+          'dd/MM/yyyy',
+        ).parseStrict(controller.datePaidController.text.trim());
       }
     } catch (_) {}
     final picked = await showDatePicker(
@@ -344,7 +364,9 @@ class _QuickAddExpenseWizardBodyState
       locale: const Locale('en', 'GB'),
     );
     if (picked == null) return;
-    controller.datePaidController.text = DateFormat('dd/MM/yyyy').format(picked);
+    controller.datePaidController.text = DateFormat(
+      'dd/MM/yyyy',
+    ).format(picked);
   }
 
   Widget _notesStep(BuildContext context) {
@@ -413,7 +435,11 @@ class _Step {
 }
 
 class _ChipRow extends StatelessWidget {
-  const _ChipRow({required this.options, required this.selected, required this.onSelected});
+  const _ChipRow({
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+  });
 
   final List<String> options;
   final String selected;

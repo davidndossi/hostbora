@@ -47,7 +47,7 @@ class ListingDetailsPayrollPanel extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     letterSpacing: 1.2,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: muted,
                   ),
                 ),
@@ -56,7 +56,7 @@ class ListingDetailsPayrollPanel extends StatelessWidget {
                   c.totalMonthlyFormatted,
                   style: const TextStyle(
                     fontSize: 26,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.colorPrimary,
                   ),
                 ),
@@ -81,7 +81,7 @@ class ListingDetailsPayrollPanel extends StatelessWidget {
             _t('Pay period', 'Kipindi cha malipo'),
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               letterSpacing: 1.1,
               color: muted,
             ),
@@ -96,7 +96,7 @@ class ListingDetailsPayrollPanel extends StatelessWidget {
             _t('Payroll breakdown', 'Muhtasari wa mishahara'),
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: textColor,
             ),
           ),

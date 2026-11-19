@@ -28,7 +28,8 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
       );
       options.headers.addAll(customHeaders);
 
-      if (!isNullEmptyOrFalse(options.data)) {
+      final skipEncrypt = options.path.contains('/api/auth/refresh');
+      if (!skipEncrypt && !isNullEmptyOrFalse(options.data)) {
         final encoded = _encodeRequestBody(options.data);
         final secret = generateSecret();
         const pub =
@@ -68,16 +69,61 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
     }
   }
 
+  /// Mark requests that must not clear the session on 401/403
+  /// (best-effort sync where local data is source of truth).
+  static const softAuthFailureExtra = 'softAuthFailure';
+
+  /// Sign-in, registration, and OTP verify must not carry a session token.
+  /// A leftover bearer turns "account not found" into HTTP 401, and refreshing
+  /// that 401 on the same Dio client never completes the login call.
+  bool _isCredentiallessAuth(String path) {
+    if (path.contains('/api/auth/refresh')) return false;
+    return path.contains('/api/auth/login') ||
+        path.contains('/api/auth/reg') ||
+        path.contains('/api/auth/verify');
+  }
+
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    _handleAuthError(err, handler).catchError((Object _) {
+      if (!handler.isCompleted) handler.next(err);
+    });
+  }
+
+  Future<void> _handleAuthError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
     final statusCode = err.response?.statusCode;
     final path = err.requestOptions.path;
     final isRefreshCall = path.contains('/api/auth/refresh');
     final alreadyRetried = err.requestOptions.extra['authRetried'] == true;
 
-    if ((statusCode == 401 || statusCode == 403) &&
-        !isRefreshCall &&
-        !alreadyRetried) {
+    // Let the login screen show the server error. Do not refresh or navigate.
+    if (_isCredentiallessAuth(path)) {
+      handler.next(err);
+      return;
+    }
+
+    // Refresh token was rejected. End the session instead of retrying it.
+    if (statusCode == 401 && isRefreshCall) {
+      await _endRejectedSession();
+      handler.next(err);
+      return;
+    }
+    final softAuth =
+        err.requestOptions.extra[softAuthFailureExtra] == true;
+
+    // Soft-fail calls (e.g. preference sync): never end the session.
+    if (softAuth &&
+        (statusCode == 401 || statusCode == 403) &&
+        !isRefreshCall) {
+      handler.next(err);
+      return;
+    }
+
+    // 401 = authentication (invalid/expired JWT). Refresh, retry, or log out.
+    if (statusCode == 401 && !isRefreshCall && !alreadyRetried) {
       var recovered = false;
       if (g.Get.isRegistered<SessionService>()) {
         // Force refresh: local access expiry can still look valid when the
@@ -94,30 +140,71 @@ class RequestHeaderInterceptor extends InterceptorsWrapper {
           handler.resolve(response);
           return;
         } catch (_) {
-          // Fall through to session clear / reject.
+          // Fall through to reject without wiping a still-valid refresh token.
         }
       }
-      await _preferenceManager.clearSession();
-      // Do not interrupt registration / OTP / forgot-password with a Login redirect.
-      if (!AppPages.isPublicAuthRoute()) {
-        g.Get.offAllNamed(AppPages.auth);
+      if (!await SessionService.hasLocalSession(_preferenceManager)) {
+        await _endRejectedSession();
       }
       handler.reject(err);
+      return;
+    }
+
+    // 403 = authorization (e.g. staff permission denial). Do not clear the
+    // session — that is what was logging staff out right after a successful
+    // login when post-login sync hit owner-only routes.
+    //
+    // Legacy: some older backends returned 403 for bad JWTs. Try one refresh
+    // + retry; if it still fails, pass the error through without logging out.
+    if (statusCode == 403 && !isRefreshCall && !alreadyRetried) {
+      var recovered = false;
+      if (g.Get.isRegistered<SessionService>()) {
+        recovered = await g.Get.find<SessionService>().ensureValidSession(
+          forceRefresh: true,
+        );
+      }
+      if (recovered) {
+        try {
+          final response = await DioRequestRetrier(
+            requestOptions: err.requestOptions,
+          ).retry();
+          handler.resolve(response);
+          return;
+        } catch (_) {
+          // Permission still denied (or other failure) — keep the session.
+        }
+      }
+      handler.next(err);
       return;
     }
 
     handler.next(err);
   }
 
+  Future<void> _endRejectedSession() async {
+    if (g.Get.isRegistered<SessionService>()) {
+      await g.Get.find<SessionService>().clearFullSession();
+    } else {
+      await _preferenceManager.clearSession();
+    }
+    if (!AppPages.isPublicAuthRoute()) {
+      g.Get.offAllNamed(AppPages.auth);
+    }
+  }
+
   Future<Map<String, String>> getCustomHeaders({String? requestPath}) async {
-    if (requestPath != null && requestPath.contains('/api/auth/refresh')) {
+    if (requestPath != null &&
+        (requestPath.contains('/api/auth/refresh') ||
+            _isCredentiallessAuth(requestPath))) {
       return {'content-type': 'application/json'};
     }
     var token = await _preferenceManager.getString(PreferenceManager.keyToken);
-    var customHeaders = {
+    final customHeaders = <String, String>{
       'content-type': 'application/json',
-      'Authorization': 'Bearer $token',
     };
+    if (token.trim().isNotEmpty) {
+      customHeaders['Authorization'] = 'Bearer $token';
+    }
     final actingAs = await _preferenceManager.getString(
       PreferenceManager.keyActingAsHostUserId,
       defaultValue: '',

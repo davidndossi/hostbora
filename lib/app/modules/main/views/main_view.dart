@@ -80,35 +80,21 @@ class MainView extends BaseView<MainController> {
       return const SizedBox.shrink();
     }
     final menu = controller.selectedMenuCode;
-    final isMaintenanceTab = menu == MenuCode.MAINTENANCE;
-    final isPropertiesTab = menu == MenuCode.PROPERTIES;
-    final isSw = controller.currentLocale.value == 'sw';
-
-    if (isPropertiesTab) {
-      return FloatingActionButton.extended(
-        onPressed: controller.addProperty,
-        backgroundColor: AppColors.designAccent,
-        icon: const Icon(Icons.add_home_work_rounded, color: Colors.white, size: 22),
-        label: Text(
-          isSw ? 'Ongeza Mali' : 'Add Property',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-      );
+    // Properties: create lives on the filter row (home-plus), not a FAB.
+    if (menu == MenuCode.PROPERTIES) {
+      return const SizedBox.shrink();
     }
+    final isMaintenanceTab = menu == MenuCode.MAINTENANCE;
 
-    // Home / Finances / More: AI FAB (Create lives on Home as an in-page CTA).
+    // Home / Finances / More: AI FAB. Services: add task.
     return FloatingActionButton(
       onPressed: isMaintenanceTab
           ? controller.addTask
           : controller.aiManager,
-      backgroundColor: AppColors.designAccent,
+      backgroundColor: AppColors.colorPrimary,
       child: Icon(
-        isMaintenanceTab ? Icons.add : Icons.auto_awesome,
-        color: AppColors.textColorWhite,
+        isMaintenanceTab ? Icons.add_outlined : Icons.auto_awesome,
+        color: AppColors.colorWhite,
         size: 28,
       ),
     );

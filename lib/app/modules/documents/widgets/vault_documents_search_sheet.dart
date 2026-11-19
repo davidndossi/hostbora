@@ -55,12 +55,12 @@ class _VaultDocumentsSearchSheetState extends State<VaultDocumentsSearchSheet> {
               onChanged: (v) => _query.value = v.trim().toLowerCase(),
               decoration: InputDecoration(
                 hintText: widget.hintText,
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search_outlined),
                 suffixIcon: Obx(() {
                   if (_query.value.isEmpty) return const SizedBox.shrink();
                   return IconButton(
                     tooltip: isSw ? 'Futa' : 'Clear',
-                    icon: const Icon(Icons.clear),
+                    icon: const Icon(Icons.clear_outlined),
                     onPressed: () {
                       _searchCtrl.clear();
                       _query.value = '';
@@ -110,7 +110,7 @@ class _VaultDocumentsSearchSheetState extends State<VaultDocumentsSearchSheet> {
                       subtitle: Text(item.size),
                       trailing: item.isDirectory
                           ? null
-                          : const Icon(Icons.more_vert),
+                          : const Icon(Icons.more_vert_outlined),
                       onTap: () => widget.onOpenItem(item),
                     );
                   },

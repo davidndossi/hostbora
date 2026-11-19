@@ -8,11 +8,12 @@ import '../../../core/utils/thousand_separator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/theme/form_surface_colors.dart';
+import '../../../core/values/property_unit_floor.dart';
+import '../../../core/widget/currency_dropdown_field.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
 import '../../../core/widget/skeleton_presets.dart';
 import '../controllers/add_listing_controller.dart';
-import 'add_units_section.dart';
 
 class AddListingView extends BaseView<AddListingController> {
   AddListingView({super.key});
@@ -46,21 +47,49 @@ class AddListingView extends BaseView<AddListingController> {
 
   @override
   Widget body(BuildContext context) {
-    final c = FormSurfaceColors.of(context);
     return Obx(() {
       if (controller.loadingListing.value && controller.isEditMode.value) {
         return const DefaultScreenSkeleton();
       }
-      return Column(
+      final step = controller.currentStep.value <= 1 ? 1 : 2;
+      return PopScope(
+        canPop: step == 1,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) controller.goBack();
+        },
+        child: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Form(
-                key: controller.formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              child: step == 1
+                  ? _buildPropertyStep(context)
+                  : _buildUnitStep(context),
+            ),
+          ),
+          _buildBottomBar(context, step),
+        ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildPropertyStep(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    return Form(
+      key: controller.formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+                    const SizedBox(height: 14),
+                    Text(
+                      _t(context, en: 'Step 1 of 2', sw: 'Hatua 1 kati ya 2'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: c.secondary,
+                      ),
+                    ),
                     const SizedBox(height: 14),
                     _buildLabel(
                       context,
@@ -138,8 +167,8 @@ class AddListingView extends BaseView<AddListingController> {
                           ),
                           style: TextStyle(color: c.hint, fontSize: 16),
                         ),
-                        icon: Icon(Icons.keyboard_arrow_down, color: c.hint),
-                        items: controller.propertyTypes
+                        icon: Icon(Icons.keyboard_arrow_down_outlined, color: c.hint),
+                        items: controller.propertyTypeOptions
                             .map(
                               (e) => DropdownMenuItem(value: e, child: Text(e)),
                             )
@@ -174,7 +203,7 @@ class AddListingView extends BaseView<AddListingController> {
                             sw: 'Chagua matumizi ya mali',
                           ),
                         ),
-                        icon: Icon(Icons.keyboard_arrow_down, color: c.hint),
+                        icon: Icon(Icons.keyboard_arrow_down_outlined, color: c.hint),
                         items: controller.listingModeOptions
                             .map(
                               (mode) => DropdownMenuItem(
@@ -210,120 +239,152 @@ class AddListingView extends BaseView<AddListingController> {
                     const SizedBox(height: 8),
                     _floorCountStepper(context),
                     const SizedBox(height: 20),
-                    Obx(() {
-                      if (!controller.isApartmentProperty) {
-                        return const SizedBox.shrink();
-                      }
-                      return buildAddUnitsSection(context, controller);
-                    }),
-                    Obx(() {
-                      if (controller.hideListingRentAmount) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 20),
-                            Divider(height: 1, color: c.divider),
-                            const SizedBox(height: 18),
-                          ],
-                        );
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          Divider(height: 1, color: c.divider),
-                          const SizedBox(height: 18),
-                          _buildLabel(context, 'RENT AMOUNT'),
-                          const SizedBox(height: 8),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: TextFormField(
-                                  controller: controller.rentAmountController,
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  textInputAction: TextInputAction.next,
-                                  autovalidateMode:
-                                      AutovalidateMode.onUserInteraction,
-                                  validator: controller.validateRentAmount,
-                                  inputFormatters: [
-                                    ThousandsSeparatorInputFormatter(),
-                                  ],
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: c.headline,
-                                  ),
-                                  decoration: InputDecoration(
-                                    prefix: Text(
-                                      '${controller.selectedCurrency.value} ',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: c.secondary,
-                                      ),
-                                    ),
-                                    hintText: '0.00',
-                                    hintStyle: TextStyle(
-                                      fontSize: 16,
-                                      color: c.hint,
-                                    ),
-                                    isDense: false,
-                                    contentPadding: const EdgeInsets.only(
-                                      left: 12,
-                                      right: 8,
-                                      top: 4,
-                                      bottom: 4,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      );
-                    }),
-                    const SizedBox(height: 20),
-                    _buildLabel(context, 'MINIMUM RENTAL DURATION'),
-                    const SizedBox(height: 8),
-                    Obx(
-                      () => _dropdownInput(
-                        context: context,
-                        value: controller.minRentalDuration.value,
-                        options: controller.minRentalDurationOptions,
-                        onChanged: controller.updateMinRentalDuration,
-                      ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnitStep(BuildContext context) {
+    final c = FormSurfaceColors.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 14),
+        Text(
+          _t(context, en: 'Step 2 of 2', sw: 'Hatua 2 kati ya 2'),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: c.secondary,
+          ),
+        ),
+        const SizedBox(height: 14),
+        _buildLabel(context, _t(context, en: 'UNIT NAME', sw: 'JINA LA CHUMBA')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller.draftUnitNameController,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.next,
+          style: TextStyle(fontSize: 16, color: c.headline),
+          decoration: _inputDecoration(
+            context,
+            hint: _t(context, en: 'e.g. 4B or Unit 1', sw: 'mf. 4B au Unit 1'),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _buildLabel(context, _t(context, en: 'UNIT MODE', sw: 'AINA YA CHUMBA')),
+        const SizedBox(height: 8),
+        Obx(
+          () => DropdownButtonFormField<String>(
+            initialValue: controller.draftUnitMode.value,
+            isExpanded: true,
+            decoration: _inputDecoration(
+              context,
+              hint: _t(context, en: 'Select unit mode', sw: 'Chagua aina ya chumba'),
+            ),
+            icon: Icon(Icons.keyboard_arrow_down_outlined, color: c.hint),
+            items: ['bnb', 'rent']
+                .map(
+                  (mode) => DropdownMenuItem(
+                    value: mode,
+                    child: Text(
+                      mode == 'rent'
+                          ? _t(context, en: 'Rent', sw: 'Kodi')
+                          : 'BnB',
                     ),
-                    const SizedBox(height: 20),
-                    // Text(
-                    //   _t(
-                    //     context,
-                    //     en: 'By clicking "Publish Listing", you agree to our Hosting Terms and Cancellation Policies.',
-                    //     sw: 'Kwa kubofya "Chapisha Tangazo", unakubali Masharti ya Ukaribishaji na Sera za Kughairi.',
-                    //   ),
-                    //   style: TextStyle(
-                    //     fontSize: 12,
-                    //     color: c.secondary,
-                    //     height: 1.4,
-                    //   ),
-                    // ),
-                  ],
+                  ),
+                )
+                .toList(),
+            onChanged: controller.updateDraftUnitMode,
+          ),
+        ),
+        const SizedBox(height: 20),
+        _buildLabel(context, l10n.unitFloorLabel.toUpperCase()),
+        const SizedBox(height: 8),
+        Obx(
+          () {
+            final floor = PropertyUnitFloor.indices.contains(
+                  controller.draftUnitFloor.value,
+                )
+                ? controller.draftUnitFloor.value
+                : PropertyUnitFloor.defaultIndex;
+            return DropdownButtonFormField<int>(
+              initialValue: floor,
+              isExpanded: true,
+              decoration: _inputDecoration(
+                context,
+                hint: l10n.unitFloorLabel,
+              ),
+              icon: Icon(Icons.keyboard_arrow_down_outlined, color: c.hint),
+              items: PropertyUnitFloor.indices
+                  .map(
+                    (f) => DropdownMenuItem<int>(
+                      value: f,
+                      child: Text(PropertyUnitFloor.label(l10n, f)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: controller.updateDraftUnitFloor,
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        _buildLabel(context, _t(context, en: 'UNIT RENT', sw: 'KODI YA CHUMBA')),
+        const SizedBox(height: 8),
+        Obx(
+          () => TextField(
+            controller: controller.draftUnitRentController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textInputAction: TextInputAction.next,
+            inputFormatters: [ThousandsSeparatorInputFormatter()],
+            style: TextStyle(fontSize: 16, color: c.headline),
+            decoration: _inputDecoration(
+              context,
+              hint: '0.00',
+            ).copyWith(
+              prefix: Text(
+                '${controller.selectedCurrency.value} ',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: c.secondary,
                 ),
               ),
             ),
           ),
-          _buildBottomBar(context),
-        ],
-      );
-    });
+        ),
+        const SizedBox(height: 20),
+        _buildLabel(context, _t(context, en: 'CURRENCY', sw: 'SARAFU')),
+        const SizedBox(height: 8),
+        CurrencyDropdownField(
+          selectedCurrency: controller.selectedCurrency,
+          label: _t(context, en: 'Currency', sw: 'Sarafu'),
+        ),
+        const SizedBox(height: 20),
+        _buildLabel(
+          context,
+          _t(context, en: 'DESCRIPTION', sw: 'MAELEZO'),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller.draftUnitDescriptionController,
+          textCapitalization: TextCapitalization.sentences,
+          minLines: 2,
+          maxLines: 4,
+          style: TextStyle(fontSize: 16, color: c.headline),
+          decoration: _inputDecoration(
+            context,
+            hint: _t(
+              context,
+              en: 'Short note for this unit',
+              sw: 'Maelezo mafupi ya hiki chumba',
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
   }
 
   Widget _buildLabel(BuildContext context, String text) {
@@ -353,7 +414,7 @@ class AddListingView extends BaseView<AddListingController> {
           children: [
             IconButton(
               onPressed: controller.decrementFloorCount,
-              icon: Icon(Icons.remove_rounded, color: c.headline),
+              icon: Icon(Icons.remove_outlined, color: c.headline),
             ),
             Expanded(
               child: Text(
@@ -368,7 +429,7 @@ class AddListingView extends BaseView<AddListingController> {
             ),
             IconButton(
               onPressed: controller.incrementFloorCount,
-              icon: Icon(Icons.add_rounded, color: c.headline),
+              icon: Icon(Icons.add_outlined, color: c.headline),
             ),
           ],
         ),
@@ -399,7 +460,7 @@ class AddListingView extends BaseView<AddListingController> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designAccent, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -408,68 +469,26 @@ class AddListingView extends BaseView<AddListingController> {
     );
   }
 
-  Widget _buildBottomBar(BuildContext context) {
+  Widget _buildBottomBar(BuildContext context, int step) {
+    final onUnitStep = step == 2;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(AppValues.largePadding),
-      child: Obx(
-        () => LoadingButton(
-          label: controller.isEditing.value
-              ? (_t(context, en: 'Save changes', sw: 'Hifadhi mabadiliko'))
-              : (_t(context, en: 'Save Property', sw: 'Hifadhi Mali')),
-          onPressed: controller.saveProperty,
-          isLoading: controller.isBusy.value,
-        ),
-      ),
-    );
-  }
-
-  Widget _dropdownInput({
-    required BuildContext context,
-    required String value,
-    required List<String> options,
-    required ValueChanged<String?> onChanged,
-    bool compact = false,
-  }) {
-    final c = FormSurfaceColors.of(context);
-    return DropdownButtonFormField<String>(
-      initialValue: options.contains(value) ? value : null,
-      isExpanded: true,
-      icon: Icon(Icons.expand_more, color: c.secondary),
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: c.headline,
-      ),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: c.fill,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: compact ? 12 : 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      dropdownColor: c.dropdownBg,
-      items: options
-          .map(
-            (item) => DropdownMenuItem<String>(
-              value: item,
-              child: Text(
-                item,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: c.headline,
-                ),
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: onChanged,
+      child: Obx(() {
+        // Read before the step test. Inlining this as `onUnitStep && isBusy`
+        // short-circuits on step 1, leaving the Obx with no observable to
+        // depend on, which GetX treats as a misuse and throws on.
+        final busy = controller.isBusy.value;
+        return LoadingButton(
+          label: onUnitStep
+              ? _t(context, en: 'Save Property', sw: 'Hifadhi Mali')
+              : _t(context, en: 'Continue', sw: 'Endelea'),
+          onPressed: onUnitStep
+              ? controller.saveFromUnitStep
+              : controller.continueToUnitDetails,
+          isLoading: onUnitStep && busy,
+        );
+      }),
     );
   }
 

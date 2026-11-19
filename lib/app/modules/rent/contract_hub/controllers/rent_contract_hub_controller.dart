@@ -144,7 +144,16 @@ class RentContractHubController extends BaseController {
   Future<void> onUploadSignedLease() async {
     final r = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
+      allowedExtensions: const [
+        'pdf',
+        'doc',
+        'docx',
+        'jpg',
+        'jpeg',
+        'png',
+        'heic',
+        'webp',
+      ],
     );
     if (r != null && r.files.isNotEmpty) {
       showSuccessMessage(
@@ -192,7 +201,7 @@ class RentContractHubController extends BaseController {
             children: [
               Text(
                 isSw ? 'Vichujio' : 'Filters',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
               ),
               const SizedBox(height: 16),
               SwitchListTile(

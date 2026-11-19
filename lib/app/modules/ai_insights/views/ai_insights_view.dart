@@ -74,7 +74,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
             children: [
               _circleIcon(
                 context,
-                Icons.arrow_back_ios_new_rounded,
+                Icons.arrow_back_ios_new_outlined,
                 onTap: Get.back,
               ),
               Text(
@@ -172,7 +172,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                 TextSpan(
                   text: '12%',
                   style: TextStyle(
-                    color: AppColors.colorSuccessGreen,
+                    color: AppColors.colorSuccess,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -298,7 +298,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                           ),
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.colorSuccessGreen,
+                            color: AppColors.colorSuccess,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -482,7 +482,7 @@ class AiInsightsView extends BaseView<AiInsightsController> {
                           child: Text(
                             badge,
                             style: TextStyle(
-                              fontSize: 9,
+                              fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: context.tokens.textPrimary,
                             ),

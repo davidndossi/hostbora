@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'dart:io';
 
 import '../data/help/guided_tour_service.dart';
+import '../data/service/analytics_service.dart';
 import '../data/service/apple_iap_service.dart';
 import '../data/service/subscription_service.dart';
 import 'local_source_bindings.dart';
@@ -15,6 +16,7 @@ class InitialBinding implements Bindings {
     RepositoryBindings().dependencies();
     RemoteSourceBindings().dependencies();
     LocalSourceBindings().dependencies();
+    Get.put<AnalyticsService>(AnalyticsService(), permanent: true);
     Get.put<GuidedTourService>(GuidedTourService(), permanent: true);
     if (Platform.isIOS) {
       Get.put<AppleIapService>(AppleIapService(), permanent: true);

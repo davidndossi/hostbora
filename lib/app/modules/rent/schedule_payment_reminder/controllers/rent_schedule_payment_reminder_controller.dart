@@ -41,7 +41,10 @@ class RentSchedulePaymentReminderController extends BaseController {
 
   final tenantName = ''.obs;
   final propertyLine = ''.obs;
-  final balanceTsh = 400000.obs;
+  /// Starts at zero rather than a placeholder figure: this value is
+  /// interpolated into the reminder sent to the tenant and into the payment
+  /// link amount, so a fabricated default would be billed to a real person.
+  final balanceTsh = 0.obs;
 
   final reminderDate = Rxn<DateTime>();
   final reminderTime = Rxn<TimeOfDay>();

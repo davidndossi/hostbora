@@ -30,6 +30,15 @@ abstract class BaseView<Controller extends BaseController>
   /// Rent module views use [RentBaseView] which sets this to false.
   bool get applyModuleDefaultTextStyle => true;
 
+  /// The style merged into every [Text] in [body] that does not set the
+  /// property itself. Null skips the merge entirely.
+  ///
+  /// Override this rather than [applyModuleDefaultTextStyle] when a screen
+  /// needs some of the default but not all of it — [RentBaseView] takes the
+  /// line height while declining the font size.
+  TextStyle? get defaultTextStyle =>
+      applyModuleDefaultTextStyle ? moduleDefaultTextStyle : null;
+
   /// When false, the scaffold does not shrink for the keyboard. Use for views
   /// hosted inside a bottom sheet that already pads for [viewInsets].
   bool get resizeToAvoidBottomInset => true;
@@ -99,11 +108,8 @@ abstract class BaseView<Controller extends BaseController>
             bottom: safeAreaBottom,
             child: body(context),
           );
-    if (applyModuleDefaultTextStyle) {
-      content = DefaultTextStyle.merge(
-        style: moduleDefaultTextStyle,
-        child: content,
-      );
+    if (defaultTextStyle case final style?) {
+      content = DefaultTextStyle.merge(style: style, child: content);
     }
     return content;
   }

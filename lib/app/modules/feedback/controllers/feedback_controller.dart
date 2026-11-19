@@ -91,13 +91,13 @@ class FeedbackController extends BaseController {
   IconData categoryIcon(FeedbackCategory category) {
     switch (category) {
       case FeedbackCategory.general:
-        return Icons.chat_bubble_outline_rounded;
+        return Icons.chat_bubble_outline;
       case FeedbackCategory.bug:
         return Icons.bug_report_outlined;
       case FeedbackCategory.feature:
-        return Icons.lightbulb_outline_rounded;
+        return Icons.lightbulb_outline;
       case FeedbackCategory.other:
-        return Icons.more_horiz_rounded;
+        return Icons.more_horiz_outlined;
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -15,6 +16,8 @@ import '/app/data/local/service/remote_account_sync_service.dart';
 import '/app/data/model/inventory_item_request.dart';
 import '/app/data/repository/app_repository.dart';
 import '/l10n/app_localizations.dart';
+import '/app/core/constants/ui_preference_keys.dart';
+import '/app/core/utils/form_recall.dart';
 
 class InventoryPropertyOption {
   const InventoryPropertyOption({
@@ -207,11 +210,21 @@ class InventoryItemFormController extends BaseController {
       propertyOptions.assignAll(options);
       _ensureSelectedOptionPresent();
 
-      if (!isEditing &&
-          selectedPropertyRef.value.isEmpty &&
-          options.length == 1) {
-        updateSelectedProperty(options.first.ref);
-      } else if (selectedPropertyRef.value.isNotEmpty) {
+      if (!isEditing && selectedPropertyRef.value.isEmpty) {
+        // Recall holds the ref rather than the label, so a renamed property
+        // still resolves. An item carries no money, so falling through to the
+        // first option is safe.
+        final recalled = await FormRecall.readAmong(
+          UiPreferenceKeys.inventoryProperty,
+          options.map((o) => o.ref),
+        );
+        if (recalled.isNotEmpty) {
+          updateSelectedProperty(recalled);
+        } else if (options.isNotEmpty) {
+          updateSelectedProperty(options.first.ref);
+        }
+      }
+      if (selectedPropertyRef.value.isNotEmpty) {
         propertyName = _labelForRef(selectedPropertyRef.value);
       }
     } finally {
@@ -296,6 +309,8 @@ class InventoryItemFormController extends BaseController {
         int.tryParse(reorderLevelController.text.trim()) ?? 0;
     final purchaseValue =
         double.tryParse(purchaseValueController.text.trim()) ?? 0;
+
+    unawaited(FormRecall.write(UiPreferenceKeys.inventoryProperty, propertyRef));
 
     saving.value = true;
     try {

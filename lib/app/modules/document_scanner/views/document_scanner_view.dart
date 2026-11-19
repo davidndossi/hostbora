@@ -48,7 +48,7 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
         elevation: 0,
         leading: IconButton(
           onPressed: controller.close,
-          icon: const Icon(Icons.close, size: 28),
+          icon: const Icon(Icons.close_outlined, size: 28),
           color: topIconColor,
         ),
         actions: [
@@ -273,7 +273,7 @@ class DocumentScannerView extends GetView<DocumentScannerController> {
               Expanded(
                 child: _BottomAction(
                   icon: Icons.photo_library_outlined,
-                  label: _t(context, en: 'IMPORT', sw: 'INGIZA'),
+                  label: _t(context, en: 'Import', sw: 'Ingiza'),
                   scannerPillBg: scannerPillBg,
                   scannerSecondary: scannerSecondary,
                   onTap: controller.importFromGallery,

@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 
 enum HelpWorkspace { both, bnb, rent }
 
-enum HelpTopicKind { guide, feature, tour }
+/// Context needed before opening a screen from Help.
+enum HelpNavContext {
+  none,
+  /// User must pick a property first.
+  property,
+  /// User must pick a tenant (and optionally its property).
+  tenant,
+}
 
 class HelpGuideStep {
   const HelpGuideStep({
@@ -13,6 +20,7 @@ class HelpGuideStep {
     this.route,
     this.routeParameters,
     this.routeArguments,
+    this.requiresContext = HelpNavContext.none,
   });
 
   final String titleEn;
@@ -22,6 +30,7 @@ class HelpGuideStep {
   final String? route;
   final Map<String, String>? routeParameters;
   final Map<String, dynamic>? routeArguments;
+  final HelpNavContext requiresContext;
 
   String title(bool isSw) => isSw ? titleSw : titleEn;
   String body(bool isSw) => isSw ? bodySw : bodyEn;
@@ -72,6 +81,9 @@ class HelpFeature {
     this.routeParameters,
     this.routeArguments,
     this.relatedGuideId,
+    this.requiresContext = HelpNavContext.none,
+    this.categoryEn = 'General',
+    this.categorySw = 'Jumla',
   });
 
   final String id;
@@ -85,7 +97,11 @@ class HelpFeature {
   final Map<String, String>? routeParameters;
   final Map<String, dynamic>? routeArguments;
   final String? relatedGuideId;
+  final HelpNavContext requiresContext;
+  final String categoryEn;
+  final String categorySw;
 
   String title(bool isSw) => isSw ? titleSw : titleEn;
   String description(bool isSw) => isSw ? descriptionSw : descriptionEn;
+  String category(bool isSw) => isSw ? categorySw : categoryEn;
 }

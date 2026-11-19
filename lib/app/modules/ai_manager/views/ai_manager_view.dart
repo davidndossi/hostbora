@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:genui/genui.dart';
 import 'package:get/get.dart';
 
 import '../../../core/base/base_view.dart';
@@ -41,7 +42,7 @@ class AiManagerView extends BaseView<AiManagerController> {
               IconButton(
                 onPressed: Get.back,
                 icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
+                  Icons.arrow_back_ios_new_outlined,
                   size: 20,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -155,6 +156,11 @@ class AiManagerView extends BaseView<AiManagerController> {
           return _ChatBubble(
             item: item,
             isDark: FormSurfaceColors.of(context).isDark,
+            surface: item.surfaceId == null
+                ? null
+                : Surface(
+                    surfaceContext: controller.genUi.contextFor(item.surfaceId!),
+                  ),
           );
         },
       );
@@ -239,8 +245,8 @@ class AiManagerView extends BaseView<AiManagerController> {
                     decoration: InputDecoration(
                       hintText: _t(
                         context,
-                        en: 'Ask about your properties...',
-                        sw: 'Uliza kuhusu mali zako...',
+                        en: 'Ask a question or say what to do...',
+                        sw: 'Uliza swali au sema nifanye nini...',
                       ),
                       hintStyle: TextStyle(
                         color: c.isDark
@@ -286,7 +292,7 @@ class AiManagerView extends BaseView<AiManagerController> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.send_rounded, color: Colors.white),
+                      : const Icon(Icons.send_outlined, color: Colors.white),
                 ),
               ),
             ],
@@ -300,8 +306,13 @@ class AiManagerView extends BaseView<AiManagerController> {
 class _ChatBubble extends StatelessWidget {
   final AiChatMessage item;
   final bool isDark;
+  final Widget? surface;
 
-  const _ChatBubble({required this.item, required this.isDark});
+  const _ChatBubble({
+    required this.item,
+    required this.isDark,
+    this.surface,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -345,19 +356,25 @@ class _ChatBubble extends StatelessWidget {
               ),
             Flexible(
               child: Container(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                width: surface == null ? null : double.infinity,
+                padding: surface == null
+                    ? const EdgeInsets.fromLTRB(14, 12, 14, 12)
+                    : EdgeInsets.zero,
                 decoration: BoxDecoration(
-                  color: bubbleColor,
+                  color: surface == null ? bubbleColor : Colors.transparent,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: item.fromAssistant
+                    color: surface != null
+                        ? Colors.transparent
+                        : item.fromAssistant
                         ? (isDark
                               ? Colors.white.withValues(alpha: 0.18)
                               : AppColors.designInputBorder)
                         : Colors.transparent,
                   ),
                 ),
-                child: item.isTyping
+                child: surface ??
+                    (item.isTyping
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -391,7 +408,8 @@ class _ChatBubble extends StatelessWidget {
                           color: textColor,
                           fontWeight: FontWeight.w500,
                         ),
-                      ),
+                      )
+                    ),
               ),
             ),
             if (!item.fromAssistant)

@@ -31,8 +31,13 @@ class TenantRentBilling {
   }
 
   static int _monthsBetween(DateTime start, DateTime end) {
-    var months = (end.year - start.year) * 12 + (end.month - start.month);
-    if (end.day < start.day) months -= 1;
+    final a = DateTime(start.year, start.month, start.day);
+    final b = DateTime(end.year, end.month, end.day);
+    if (b.isBefore(a)) return 0;
+    final exclusiveEnd = b.add(const Duration(days: 1));
+    var months =
+        (exclusiveEnd.year - a.year) * 12 + (exclusiveEnd.month - a.month);
+    if (exclusiveEnd.day < a.day) months -= 1;
     return months < 0 ? 0 : months;
   }
 
@@ -92,6 +97,54 @@ class TenantRentBilling {
       default:
         return rentAmountValue;
     }
+  }
+
+  /// How much of [paidTotal] covers [monthStart]'s expected rent.
+  ///
+  /// Payments are applied to lease months in order, so a June prepayment for
+  /// Jul–Dec still counts as collected in November.
+  static double collectedInCalendarMonth({
+    required double rentAmountValue,
+    required String rentFrequency,
+    required String leaseStartIso,
+    required String leaseEndIso,
+    required double paidTotal,
+    required DateTime monthStart,
+    required DateTime nextMonthStart,
+  }) {
+    if (paidTotal <= 0 || rentAmountValue <= 0) return 0;
+    final expected = revenueInCalendarMonth(
+      rentAmountValue: rentAmountValue,
+      rentFrequency: rentFrequency,
+      leaseStartIso: leaseStartIso,
+      leaseEndIso: leaseEndIso,
+      monthStart: monthStart,
+      nextMonthStart: nextMonthStart,
+    );
+    if (expected <= 0) return 0;
+
+    final start = _parseIsoDate(leaseStartIso);
+    var dueBefore = 0.0;
+    if (start != null) {
+      var cursor = DateTime(start.year, start.month, 1);
+      final cap = DateTime(monthStart.year, monthStart.month, 1);
+      while (cursor.isBefore(cap)) {
+        final next = DateTime(cursor.year, cursor.month + 1, 1);
+        dueBefore += revenueInCalendarMonth(
+          rentAmountValue: rentAmountValue,
+          rentFrequency: rentFrequency,
+          leaseStartIso: leaseStartIso,
+          leaseEndIso: leaseEndIso,
+          monthStart: cursor,
+          nextMonthStart: next,
+        );
+        cursor = next;
+      }
+    }
+
+    final leftover = paidTotal - dueBefore;
+    if (leftover <= 0) return 0;
+    return leftover < expected ? leftover : expected;
   }
 
   static DateTime? _parseIsoDate(String raw) {

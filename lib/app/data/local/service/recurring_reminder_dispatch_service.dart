@@ -12,6 +12,7 @@ import '../db/scheduled_whatsapp_local_data_source.dart';
 import 'local_notification_scheduler_service.dart';
 import 'reminder_recurrence_util.dart';
 import 'currency_service.dart';
+import '../../service/analytics_service.dart';
 
 /// Dispatches due recurring reminders locally (WhatsApp, SMS, push) and advances schedule.
 class RecurringReminderDispatchService extends GetxService {
@@ -86,6 +87,12 @@ class RecurringReminderDispatchService extends GetxService {
                 scheduledAtIso: nowIso,
                 notificationId: notificationId,
               );
+            } else {
+              analytics?.logReminderSent(
+                channel: 'whatsapp',
+                automated: true,
+                reminderType: row.reminderType,
+              );
             }
           } catch (_) {
             await _whatsappLocal.insert(
@@ -110,6 +117,12 @@ class RecurringReminderDispatchService extends GetxService {
                 messageBody: message,
                 scheduledAtIso: nowIso,
                 notificationId: notificationId,
+              );
+            } else {
+              analytics?.logReminderSent(
+                channel: 'sms',
+                automated: true,
+                reminderType: row.reminderType,
               );
             }
           } catch (_) {

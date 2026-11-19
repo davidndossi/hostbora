@@ -81,7 +81,7 @@ Widget buildAddUnitsSection(BuildContext context, AddListingController controlle
                 DropdownButtonFormField<String>(
                   initialValue: controller.draftUnitMode.value,
                   isExpanded: true,
-                  icon: Icon(Icons.expand_more, color: c.secondary),
+                  icon: Icon(Icons.expand_more_outlined, color: c.secondary),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -160,7 +160,7 @@ Widget buildAddUnitsSection(BuildContext context, AddListingController controlle
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: c.secondary,
+                    color: c.headline,
                   ),
                 ),
                 hintText: '0.00',
@@ -326,7 +326,7 @@ Widget _addedUnitTile(
         ),
         IconButton(
           onPressed: () => controller.removeApartmentUnit(index),
-          icon: Icon(Icons.close_rounded, color: c.hint),
+          icon: Icon(Icons.close_outlined, color: c.hint),
           tooltip: _t(context, en: 'Remove unit', sw: 'Ondoa chumba'),
           visualDensity: VisualDensity.compact,
         ),
@@ -380,7 +380,7 @@ Widget _unitFloorDropdown({
   return DropdownButtonFormField<int>(
     initialValue: floor,
     isExpanded: true,
-    icon: Icon(Icons.expand_more, color: c.secondary),
+    icon: Icon(Icons.expand_more_outlined, color: c.secondary),
     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: c.headline),
     decoration: InputDecoration(
       filled: true,

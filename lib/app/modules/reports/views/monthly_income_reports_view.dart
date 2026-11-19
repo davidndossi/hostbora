@@ -124,7 +124,7 @@ class MonthlyIncomeReportsView extends BaseView<MonthlyIncomeReportsController> 
           children: [
             IconButton(
               onPressed: controller.canGoPrevYear ? controller.prevYear : null,
-              icon: const Icon(Icons.chevron_left),
+              icon: const Icon(Icons.chevron_left_outlined),
               color: scheme.onSurface,
             ),
             Text(
@@ -137,7 +137,7 @@ class MonthlyIncomeReportsView extends BaseView<MonthlyIncomeReportsController> 
             ),
             IconButton(
               onPressed: controller.canGoNextYear ? controller.nextYear : null,
-              icon: const Icon(Icons.chevron_right),
+              icon: const Icon(Icons.chevron_right_outlined),
               color: scheme.onSurface,
             ),
           ],

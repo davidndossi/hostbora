@@ -59,7 +59,7 @@ class RentRecurringRemindersView
           }),
           TextButton.icon(
             onPressed: () => _showAddTypeDialog(context),
-            icon: Icon(Icons.add, size: 18, color: accent),
+            icon: Icon(Icons.add_outlined, size: 18, color: accent),
             label: Text(
               _isSw ? 'Ongeza aina' : 'Add custom type',
               style: TextStyle(color: accent),
@@ -404,7 +404,7 @@ class RentRecurringRemindersView
                     )
                   : Text(
                       _isSw ? 'PANGA VIKUMBUSHO' : 'SCHEDULE REMINDERS',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
             ),
           ),

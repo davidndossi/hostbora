@@ -51,7 +51,7 @@ class GuestAccessCodesView extends BaseView<GuestAccessCodesController> {
             borderRadius: BorderRadius.circular(AppValues.roundedButtonRadius),
           ),
           child: Text(
-            _t(context, en: 'TUYA CONNECTED', sw: 'TUYA IMEUNGANISHWA'),
+            _t(context, en: 'COMING SOON', sw: 'INAKUJA'),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -290,7 +290,7 @@ class _AccessCard extends StatelessWidget {
     final theme = Theme.of(context);
     final c = FormSurfaceColors.of(context);
     final statusColor = isActive
-        ? AppColors.colorSuccessGreen
+        ? AppColors.colorSuccess
         : _scheduledAmber;
     final statusLabel = isActive
         ? t(context, en: 'Active', sw: 'Hai')
@@ -367,7 +367,7 @@ class _AccessCard extends StatelessWidget {
               else
                 IconButton(
                   onPressed: onOptions,
-                  icon: const Icon(Icons.more_vert, size: 22),
+                  icon: const Icon(Icons.more_vert_outlined, size: 22),
                   color: c.isDark
                       ? theme.colorScheme.onSurface
                       : AppColors.textColorPrimary,

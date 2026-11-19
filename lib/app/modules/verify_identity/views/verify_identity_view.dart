@@ -136,7 +136,7 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.designAccentDark,
+                            color: AppColors.colorPrimaryDark,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -177,7 +177,7 @@ class VerifyIdentityView extends BaseView<VerifyIdentityController> {
               child: ElevatedButton(
                 onPressed: controller.verify,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.designAccent,
+                  backgroundColor: AppColors.colorPrimary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

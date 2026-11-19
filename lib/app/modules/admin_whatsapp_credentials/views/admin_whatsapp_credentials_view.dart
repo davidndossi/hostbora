@@ -58,7 +58,7 @@ class AdminWhatsappCredentialsView extends BaseView<AdminWhatsappCredentialsCont
               TextField(
                 decoration: InputDecoration(
                   labelText: _t(context, 'Search hosts', 'Tafuta wamiliki'),
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: const Icon(Icons.search_outlined),
                   border: const OutlineInputBorder(),
                 ),
                 onChanged: (v) => controller.searchQuery.value = v,

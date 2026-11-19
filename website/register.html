@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="sw">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="register.meta.title">Create your HostBora account</title>
+    <meta
+      name="description"
+      data-i18n="register.meta.description"
+      content="Sign up for HostBora the same way as in the app — name, phone, optional email, then a 4-digit code."
+    />
+    <meta name="theme-color" content="#1C6E64" />
+    <link rel="canonical" href="https://www.hostbora.co.tz/register.html" />
+    <link rel="icon" href="./assets/ui/logo-mark-a.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./assets/host_bora_logo.webp" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20261108" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
+
+    <header class="site-header">
+      <div class="shell site-header__inner">
+        <a class="brand" href="./index.html" data-i18n-aria-label="brand.home" aria-label="HostBora home">
+          <span class="brand__mark" aria-hidden="true">
+            <img src="./assets/ui/logo-mark-a.svg" width="27.5529" height="25.4743" alt="" />
+            <img src="./assets/ui/logo-mark-b.svg" width="13.2931" height="17.8369" alt="" />
+          </span>
+          <img
+            class="brand__wordmark"
+            src="./assets/ui/wordmark-dark.svg"
+            width="115.528"
+            height="18.9595"
+            alt="HostBora"
+          />
+        </a>
+
+        <button
+          class="menu-toggle"
+          id="menuBtn"
+          type="button"
+          aria-expanded="false"
+          aria-controls="nav"
+          data-i18n-aria-label="menu.open"
+          aria-label="Open menu"
+        >
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="nav" id="nav" data-i18n-aria-label="nav.label" aria-label="Primary">
+          <a href="./index.html" data-i18n="nav.home">Home</a>
+          <a href="./index.html#pricing" data-i18n="nav.pricing">Pricing</a>
+          <a href="./index.html#contact" data-i18n="nav.getStarted">Get Started</a>
+          <label class="lang" data-i18n-aria-label="lang.label" aria-label="Language">
+            <select id="langSelect">
+              <option value="en">English</option>
+              <option value="sw">Kiswahili</option>
+            </select>
+          </label>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="register">
+      <div class="shell register__shell">
+        <p class="eyebrow">
+          <img src="./assets/ui/star-north.svg" width="16" height="16" alt="" />
+          <span data-i18n="register.kicker">Create account</span>
+        </p>
+        <h1 class="display" data-i18n="register.title">Set up HostBora in a few steps</h1>
+        <p class="register__lead" data-i18n="register.lead">
+          Same onboarding as the app. After you verify, we send a payment prompt to the phone you
+          registered, for the plan you picked.
+        </p>
+
+        <p class="plan-pill" id="selectedPlan">
+          <span data-i18n="register.planLabel">Selected plan</span>
+          <strong id="selectedPlanName">Starter</strong>
+          <span id="selectedPlanAmount">19,000 TZS</span>
+        </p>
+
+        <div class="wizard-progress" aria-hidden="true">
+          <span id="wizardFill"></span>
+        </div>
+        <p class="wizard-step" id="wizardStepLabel"></p>
+
+        <form class="form register__form" id="registerForm" novalidate>
+          <div data-step="name">
+            <div class="field-row">
+              <div class="field">
+                <label for="reg-first" data-i18n="register.firstName">First name</label>
+                <input
+                  id="reg-first"
+                  name="firstName"
+                  autocomplete="given-name"
+                  data-i18n-placeholder="register.firstNamePlaceholder"
+                  placeholder="Amina"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="reg-last" data-i18n="register.lastName">Last name (optional)</label>
+                <input
+                  id="reg-last"
+                  name="lastName"
+                  autocomplete="family-name"
+                  data-i18n-placeholder="register.lastNamePlaceholder"
+                  placeholder="Mwamba"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div data-step="phone" hidden>
+            <div class="field">
+              <label for="reg-phone" data-i18n="register.phone">Tanzanian mobile number</label>
+              <input
+                id="reg-phone"
+                name="phone"
+                type="tel"
+                inputmode="tel"
+                autocomplete="tel"
+                data-i18n-placeholder="register.phonePlaceholder"
+                placeholder="0712 345 678"
+                required
+              />
+            </div>
+            <p class="form__hint" data-i18n="register.phoneHint">We will send a 4-digit code by SMS.</p>
+          </div>
+
+          <div data-step="email" hidden>
+            <p class="register__ask" data-i18n="register.emailAsk">Do you have an email address?</p>
+            <div class="choice-row">
+              <button class="choice" type="button" data-email-choice="yes" data-i18n="register.emailYes">Yes</button>
+              <button class="choice" type="button" data-email-choice="no" data-i18n="register.emailNo">
+                No, use SMS only
+              </button>
+            </div>
+            <div class="field" id="emailField" hidden>
+              <label for="reg-email" data-i18n="register.email">Email</label>
+              <input
+                id="reg-email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                data-i18n-placeholder="register.emailPlaceholder"
+                placeholder="you@email.com"
+              />
+            </div>
+            <p class="form__hint" data-i18n="register.emailHint">
+              Optional. You can receive the code by email instead of SMS.
+            </p>
+          </div>
+
+          <div data-step="code" hidden>
+            <div class="field">
+              <label for="reg-otp" data-i18n="register.code">Enter the 4-digit code</label>
+              <input
+                id="reg-otp"
+                name="otp"
+                class="otp-input"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="4"
+                pattern="[0-9]*"
+              />
+            </div>
+            <p class="form__hint" data-i18n="register.codeHintSms">We sent a code by SMS to your phone.</p>
+          </div>
+
+          <div data-step="done" hidden>
+            <h2 data-i18n="register.successTitle">Account created</h2>
+            <p id="successPay" data-i18n="register.successPay">
+              Check your phone for the mobile-money prompt to pay this plan.
+            </p>
+            <p id="successDesktop" hidden data-i18n="register.successDesktop">
+              Download HostBora and sign in with this phone number.
+            </p>
+            <p class="form__hint" data-i18n="register.signinHint">
+              After installing, return here and tap Open HostBora — you will land on Sign in.
+            </p>
+          </div>
+
+          <p class="form__status" id="registerFeedback" role="status" aria-live="polite"></p>
+
+          <div class="register__actions">
+            <button class="btn btn--ghost" id="registerBack" type="button" hidden>
+              <span data-i18n="register.back">Back</span>
+            </button>
+            <button class="btn btn--primary" id="registerContinue" type="submit">
+              <span data-continue-label data-i18n="register.continue">Continue</span>
+            </button>
+          </div>
+
+          <div class="register__actions" id="successActions" hidden>
+            <a class="btn btn--primary" id="openAppBtn" href="/app/signin/">
+              <span data-i18n="register.openApp">Open HostBora</span>
+            </a>
+            <a
+              class="btn btn--ghost"
+              id="downloadAppBtn"
+              href="https://play.google.com/store/apps/details?id=tz.co.artbel.paa_yangu"
+            >
+              <span data-i18n="register.download">Download the app</span>
+            </a>
+          </div>
+
+          <p class="form__hint" data-i18n="register.terms" data-i18n-html>
+            By continuing you agree to the
+            <a href="./terms-of-service.html">Terms</a> and
+            <a href="./privacy-policy.html">Privacy policy</a>.
+          </p>
+        </form>
+      </div>
+    </main>
+
+    <script src="./i18n.js?v=20261108"></script>
+    <script src="./app.js?v=20261108"></script>
+    <script src="./open-app.js?v=20261108"></script>
+    <script src="./register.js?v=20261108"></script>
+  </body>
+</html>

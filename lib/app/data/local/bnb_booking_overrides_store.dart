@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:get_storage/get_storage.dart';
 
+import '../../core/utils/sync_freshness.dart';
+
 /// Local overrides for BnB bookings (check-out date changes, checked-out status).
 ///
 /// Applied on top of API and [PendingBookingsStore] data until sync completes.
@@ -44,6 +46,19 @@ class BnbBookingOverridesStore {
 
   Map<String, dynamic>? get(String bookingKey) => _loadAll()[bookingKey];
 
+  /// True when this phone override should replace the server booking.
+  ///
+  /// A stamped override wins only when it is newer. An override saved before
+  /// edit times were recorded still applies, so an offline checkout is kept.
+  bool winsOver(String bookingKey, int remoteUpdatedMs) {
+    final override = get(bookingKey.trim());
+    if (override == null || override.isEmpty) return false;
+    final localMs = SyncFreshness.millis(override['updatedAtMs']);
+    if (localMs <= 0) return true;
+    if (remoteUpdatedMs <= 0) return true;
+    return localMs > remoteUpdatedMs;
+  }
+
   bool isCheckedOut(String bookingKey) {
     return _statusIs(bookingKey, 'checked_out');
   }
@@ -85,6 +100,7 @@ class BnbBookingOverridesStore {
     final existing = Map<String, dynamic>.from(all[bookingKey] ?? {});
     existing['status'] = 'checked_out';
     existing['checkedOutAt'] = DateTime.now().toIso8601String();
+    existing['updatedAtMs'] = DateTime.now().millisecondsSinceEpoch;
     all[bookingKey] = existing;
     await _saveAll(all);
   }
@@ -105,6 +121,7 @@ class BnbBookingOverridesStore {
       final existing = Map<String, dynamic>.from(all[k] ?? {});
       existing['status'] = 'cancelled';
       existing['cancelledAt'] = now;
+      existing['updatedAtMs'] = DateTime.now().millisecondsSinceEpoch;
       all[k] = existing;
     }
     await _saveAll(all);
@@ -136,6 +153,7 @@ class BnbBookingOverridesStore {
     final all = _loadAll();
     final existing = Map<String, dynamic>.from(all[bookingKey] ?? {});
     existing['checkOut'] = checkOutIso;
+    existing['updatedAtMs'] = DateTime.now().millisecondsSinceEpoch;
     all[bookingKey] = existing;
     await _saveAll(all);
   }

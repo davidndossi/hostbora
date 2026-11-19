@@ -27,7 +27,7 @@ class AdminSalesAgentsView extends BaseView<AdminSalesAgentsController> {
           child: TextField(
             decoration: InputDecoration(
               hintText: _t('Search agents', 'Tafuta wakala'),
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search_outlined),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onChanged: (v) => controller.searchQuery.value = v,
@@ -106,8 +106,13 @@ class AdminSalesAgentsView extends BaseView<AdminSalesAgentsController> {
               ),
               TextFormField(
                 controller: controller.phoneController,
-                decoration: InputDecoration(labelText: _t('Phone', 'Simu')),
+                decoration: InputDecoration(
+                  labelText: _t('Phone (login)', 'Simu (kuingia)'),
+                ),
                 keyboardType: TextInputType.phone,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? _t('Required', 'Lazima')
+                    : null,
               ),
               TextFormField(
                 controller: controller.emailController,
@@ -121,12 +126,6 @@ class AdminSalesAgentsView extends BaseView<AdminSalesAgentsController> {
                 controller: controller.agentCodeController,
                 decoration: InputDecoration(
                   labelText: _t('Agent code (optional)', 'Msimbo (si lazima)'),
-                ),
-              ),
-              TextFormField(
-                controller: controller.userIdController,
-                decoration: InputDecoration(
-                  labelText: _t('Host Bora user ID (optional)', 'Kitambulisho cha mtumiaji'),
                 ),
               ),
               const SizedBox(height: 16),

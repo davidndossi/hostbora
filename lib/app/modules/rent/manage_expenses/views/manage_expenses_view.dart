@@ -173,7 +173,7 @@ class ManageExpensesView extends RentBaseView<ManageExpensesController> {
           const SizedBox(height: 6),
           Text(
             controller.totalLabel,
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: titleColor),
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: titleColor),
           ),
         ],
       ),
@@ -206,7 +206,7 @@ class ManageExpensesView extends RentBaseView<ManageExpensesController> {
         children: [
           Text(
             appLocalization.managePaymentsFilters,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: muted),
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8, color: muted),
           ),
           const SizedBox(height: 10),
           Text(appLocalization.managePaymentsApartment, style: TextStyle(fontSize: 12, color: muted)),
@@ -368,7 +368,7 @@ class ManageExpensesView extends RentBaseView<ManageExpensesController> {
                       Text(
                         amountLabel,
                         style: TextStyle(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           fontSize: 15,
                           color: titleColor,
                         ),

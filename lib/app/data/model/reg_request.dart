@@ -60,7 +60,11 @@ class RegRequest {
     map['surname'] = _surname;
     map['gender'] = _gender;
     map['mobileNumber'] = _mobileNumber;
-    map['email'] = _email;
+    // Email is optional: hosts who do not have one register on their phone
+    // number alone, and the key is omitted rather than sent as null.
+    if (_email != null && _email!.trim().isNotEmpty) {
+      map['email'] = _email!.trim();
+    }
     // Passwordless: omit password unless a legacy client still sends one.
     if (_password != null && _password!.isNotEmpty) {
       map['password'] = _password;

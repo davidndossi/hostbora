@@ -10,6 +10,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/service/currency_service.dart';
 import '../../../routes/app_pages.dart';
+import '../../../data/service/analytics_service.dart';
 
 class ExpenseAnalysisController extends BaseController {
   ExpenseAnalysisController() : _expenseLocal = Get.find<ExpenseLocalDataSource>();
@@ -61,7 +62,7 @@ class ExpenseAnalysisController extends BaseController {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.refresh),
+              leading: const Icon(Icons.refresh_outlined),
               title: Text(_t('Refresh', 'Sasisha')),
               onTap: () {
                 Get.back();
@@ -77,7 +78,7 @@ class ExpenseAnalysisController extends BaseController {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.add),
+              leading: const Icon(Icons.add_outlined),
               title: Text(_t('Add expense', 'Ongeza matumizi')),
               onTap: () {
                 Get.back();
@@ -85,7 +86,7 @@ class ExpenseAnalysisController extends BaseController {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.close),
+              leading: const Icon(Icons.close_outlined),
               title: Text(appLocalization.cancel),
               onTap: Get.back,
             ),
@@ -127,7 +128,7 @@ class ExpenseAnalysisController extends BaseController {
                   leading: const Icon(Icons.select_all),
                   title: Text(_allPropertiesLabel),
                   trailing: selectedPropertyKey.value.isEmpty
-                      ? const Icon(Icons.check, color: Colors.teal)
+                      ? const Icon(Icons.check_outlined, color: Colors.teal)
                       : null,
                   onTap: () {
                     selectedPropertyKey.value = '';
@@ -141,7 +142,7 @@ class ExpenseAnalysisController extends BaseController {
                   return ListTile(
                     title: Text(key, maxLines: 2, overflow: TextOverflow.ellipsis),
                     trailing:
-                        sel ? const Icon(Icons.check, color: Colors.teal) : null,
+                        sel ? const Icon(Icons.check_outlined, color: Colors.teal) : null,
                     onTap: () {
                       selectedPropertyKey.value = key;
                       selectedProperty.value = key;
@@ -230,7 +231,7 @@ class ExpenseAnalysisController extends BaseController {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.close),
+              leading: const Icon(Icons.close_outlined),
               title: Text(appLocalization.cancel),
               onTap: Get.back,
             ),
@@ -321,6 +322,11 @@ class ExpenseAnalysisController extends BaseController {
       final file = File('${dir.path}/$name');
       await file.writeAsString(buf.toString(), flush: true);
       await Share.shareXFiles([XFile(file.path, mimeType: 'text/csv')]);
+      analytics?.logReportExported(
+        format: 'csv',
+        reportType: 'expense_analysis',
+        module: 'bnb',
+      );
       showSuccessMessage(
         _t('Report ready to share.', 'Ripoti iko tayari kushirikiwa.'),
       );

@@ -36,7 +36,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
       actions: [
         IconButton(
           onPressed: controller.openMoreOptions,
-          icon: const Icon(Icons.more_vert),
+          icon: const Icon(Icons.more_vert_outlined),
           color: c.isDark ? Colors.white : AppColors.appBarIconColor,
         ),
       ],
@@ -101,7 +101,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
   Widget? floatingActionButton() {
     return FloatingActionButton.extended(
       onPressed: controller.goToAddExpense,
-      icon: const Icon(Icons.add, color: Colors.white),
+      icon: const Icon(Icons.add_outlined, color: Colors.white),
       label: Text(
         _t(Get.context!, en: 'Add Expense', sw: 'Ongeza Matumizi'),
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -115,7 +115,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
         Expanded(
           child: _FilterChip(
             label: controller.selectedProperty.value,
-            icon: Icons.keyboard_arrow_down,
+            icon: Icons.keyboard_arrow_down_outlined,
             onTap: controller.selectPropertyFilter,
           ),
         ),
@@ -295,7 +295,7 @@ class ExpenseAnalysisView extends BaseView<ExpenseAnalysisController> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: controller.downloadReport,
-        icon: const Icon(Icons.download_rounded, size: 22),
+        icon: const Icon(Icons.download_outlined, size: 22),
         label: Text(
           _t(
             context,
@@ -475,16 +475,16 @@ class _TopExpenseCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        item.changeUp ? Icons.trending_up : Icons.trending_down,
+                        item.changeUp ? Icons.trending_up_outlined : Icons.trending_down_outlined,
                         size: 14,
-                        color: AppColors.colorSuccessGreen,
+                        color: AppColors.colorSuccess,
                       ),
                       const SizedBox(width: 2),
                       Text(
                         item.changePercent,
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.colorSuccessGreen,
+                          color: AppColors.colorSuccess,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -509,7 +509,7 @@ class _TopExpenseCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: item.thisMonthRatio,
               minHeight: 6,
-              backgroundColor: AppColors.lightGreyColor,
+              backgroundColor: AppColors.designInputBorder,
               valueColor: const AlwaysStoppedAnimation<Color>(
                 _expenseChartCyan,
               ),
@@ -530,7 +530,7 @@ class _TopExpenseCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: item.lastMonthRatio,
               minHeight: 6,
-              backgroundColor: AppColors.lightGreyColor,
+              backgroundColor: AppColors.designInputBorder,
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppColors.textColorSecondary,
               ),

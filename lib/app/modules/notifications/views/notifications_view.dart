@@ -57,7 +57,7 @@ class NotificationsView extends BaseView<NotificationsController> {
                 subtitle: Text(notification.msg ?? '-'),
                 isThreeLine: true,
                 trailing: IconButton(
-                  icon: const Icon(Icons.arrow_forward_ios),
+                  icon: const Icon(Icons.arrow_forward_ios_outlined),
                   onPressed: () {
                     controller.deliverNotification(notification.id!);
                     controller.showNotification(notification);
@@ -148,7 +148,7 @@ class NotificationsView extends BaseView<NotificationsController> {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.spa_rounded,
+                      Icons.spa_outlined,
                       size: 20,
                       color: isDark
                           ? theme.colorScheme.onSecondaryContainer

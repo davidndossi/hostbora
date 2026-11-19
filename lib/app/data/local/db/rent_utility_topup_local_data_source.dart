@@ -69,13 +69,7 @@ class RentUtilityTopUpRecord {
 class RentUtilityTopUpLocalDataSource {
   static const _table = AppLocalDatabase.rentUtilityTopupTable;
 
-  Database? _db;
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
-  }
+  Future<Database> get database => AppLocalDatabase.database;
 
   Future<int> insert({
     required String kind,

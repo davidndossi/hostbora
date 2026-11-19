@@ -28,6 +28,7 @@ import '../../../data/model/send_whatsapp_template_request.dart';
 import '../models/device_contact_entry.dart';
 import '../models/saved_whatsapp_group.dart';
 import '../views/whatsapp_credentials_dialog.dart';
+import '../../../data/service/analytics_service.dart';
 
 class SendSmsController extends BaseController
     with GetTickerProviderStateMixin {
@@ -512,13 +513,6 @@ class SendSmsController extends BaseController
       unawaited(refreshWhatsAppStatus());
     } else {
       isAccessAllowed(false);
-      PlanGate.showUpgradeSheet(
-        RequiredPlan.pro,
-        featureName: 'SMS / WhatsApp',
-        subtitle:
-            'Sending SMS and WhatsApp messages requires the Pro plan or above. '
-            'Upgrade from TZS 49,000/mo.',
-      );
     }
   }
 
@@ -928,6 +922,16 @@ class SendSmsController extends BaseController
       }
     }
     isLoading(false);
+    // Counts the messages the gateway actually accepted, so a partial send
+    // still reports the reminders that went out.
+    if (sent > 0) {
+      analytics?.logReminderSent(
+        channel: 'sms',
+        automated: false,
+        recipients: sent,
+        reminderType: 'manual_bulk',
+      );
+    }
     if (sent == numbers.length) {
       Get.dialog(
         AlertDialog(

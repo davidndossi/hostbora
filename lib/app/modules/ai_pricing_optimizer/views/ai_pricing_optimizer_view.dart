@@ -110,7 +110,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
               width: 40,
               height: 40,
               child: Icon(
-                Icons.arrow_back_ios_new_rounded,
+                Icons.arrow_back_ios_new_outlined,
                 size: 18,
                 color: c.isDark ? theme.colorScheme.onSurface : _kTitleNavy,
               ),
@@ -280,7 +280,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
               Row(
                 children: [
                   Icon(
-                    Icons.show_chart_rounded,
+                    Icons.show_chart_outlined,
                     color: Colors.white.withValues(alpha: 0.9),
                     size: 22,
                   ),
@@ -346,7 +346,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
                             ),
                           ),
                           Icon(
-                            Icons.keyboard_arrow_down_rounded,
+                            Icons.keyboard_arrow_down_outlined,
                             color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ],
@@ -414,7 +414,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
                     '\$${controller.estimatedTotal.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 22,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: _kTeal,
                     ),
                   ),
@@ -434,7 +434,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
                     ),
                     elevation: 0,
                   ),
-                  icon: const Icon(Icons.check_rounded, size: 22),
+                  icon: const Icon(Icons.check_outlined, size: 22),
                   label: Text(
                     _t(context, en: 'Apply Settings', sw: 'Tumia Mipangilio'),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
@@ -498,7 +498,7 @@ class AiPricingOptimizerView extends BaseView<AiPricingOptimizerController> {
         child: Row(
           children: [
             item(
-              Icons.grid_view_rounded,
+              Icons.grid_view_outlined,
               _t(context, en: 'Overview', sw: 'Muhtasari'),
               false,
               controller.goOverview,

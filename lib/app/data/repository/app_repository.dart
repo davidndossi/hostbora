@@ -62,9 +62,13 @@ abstract class AppRepository {
 
   Future<GeneralResponse> updateSettingsPreferences(UpdatePreferenceRequest request);
 
+  Future<GeneralResponse> getSettingsPreferences();
+
   Future<GeneralResponse> getUserNotifications(String userId, PageRequest request);
 
   Future<GeneralResponse> getUserNotificationsCount(String userId);
+
+  Future<GeneralResponse> saveFirebaseToken(String token);
 
   Future<GeneralResponse> getUserProfile(UserProfileRequest request);
 
@@ -83,6 +87,20 @@ abstract class AppRepository {
   Future<GeneralResponse> getHostScore();
 
   Future<GeneralResponse> getRewards();
+
+  Future<GeneralResponse> getMyNetwork();
+
+  Future<GeneralResponse> getPropertyManagers({
+    String? location,
+    String? propertyType,
+    String? properties,
+  });
+
+  Future<GeneralResponse> getPropertyManager(String id);
+
+  Future<GeneralResponse> contactPropertyManager(String id, String channel);
+
+  Future<GeneralResponse> recordHostInvite();
 
   Future<GeneralResponse> completeAcademy();
 
@@ -112,7 +130,6 @@ abstract class AppRepository {
     String? coverPhotoPath,
   });
 
-  Future<GeneralResponse> getMyListings({String? status});
   Future<GeneralResponse> getMyProperties();
   Future<GeneralResponse> addScheduledMaintenance(
       ScheduledMaintenanceRequest request);
@@ -134,7 +151,7 @@ abstract class AppRepository {
     InventoryMovementRequest request,
   );
 
-  Future<GeneralResponse> getListing(String listingId);
+  Future<GeneralResponse> getProperty(String propertyId);
 
   Future<GeneralResponse> updateListing(
     String listingId,
@@ -152,17 +169,20 @@ abstract class AppRepository {
   Future<GeneralResponse> updateBooking(UpdateBookingRequest request);
 
   Future<GeneralResponse> recordPayment(RecordPaymentRequest request);
+  Future<GeneralResponse> updatePayment(String paymentId, Map<String, dynamic> body);
   Future<GeneralResponse> deletePayment(String paymentId);
+  Future<GeneralResponse> getPayments();
 
   Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]);
   Future<GeneralResponse> updateExpense(String expenseId, AddExpenseRequest request);
   Future<GeneralResponse> deleteExpense(String expenseId);
+  Future<GeneralResponse> getExpenses();
 
   Future<GeneralResponse> getHomeOverview();
 
-  Future<GeneralResponse> getUpcomingBookings();
+  Future<GeneralResponse> getUpcomingBookings({int page = 0, int size = 50});
 
-  Future<GeneralResponse> getAllBookings();
+  Future<GeneralResponse> getAllBookings({int page = 0, int size = 50});
 
   Future<GeneralResponse> getDashboard();
 
@@ -213,6 +233,11 @@ abstract class AppRepository {
   Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body);
   Future<GeneralResponse> deleteTenant(String id);
   Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body);
+  Future<GeneralResponse> updateVaultDocument(Map<String, dynamic> body);
+  Future<GeneralResponse> deleteVaultDocument({
+    required String directoryId,
+    required String fileName,
+  });
   Future<GeneralResponse> createStaff(Map<String, dynamic> body);
   Future<GeneralResponse> getStaffList();
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body);
@@ -253,6 +278,9 @@ abstract class AppRepository {
   /// PUT /api/properties/ref/{propertyRef}
   Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body);
 
+  /// DELETE /api/properties/ref/{propertyRef}/units/{unitId}
+  Future<GeneralResponse> deletePropertyUnit(String propertyRef, String unitId);
+
   /// DELETE /api/properties/{id}
   Future<GeneralResponse> deleteProperty(int id);
 
@@ -285,6 +313,14 @@ abstract class AppRepository {
   Future<GeneralResponse> validateReferralCode(String code);
   Future<GeneralResponse> getSalesAgentDashboard(String userId);
   Future<GeneralResponse> recordSalesAgentInvite();
+  Future<GeneralResponse> pushSalesAgentPay(
+    String customerUserId,
+    Map<String, dynamic> body,
+  );
+  Future<GeneralResponse> sendSalesAgentReceipt(
+    String customerUserId,
+    Map<String, dynamic> body,
+  );
   Future<GeneralResponse> listSalesAgents();
   Future<GeneralResponse> createSalesAgent(Map<String, dynamic> body);
   Future<GeneralResponse> getAdminSalesAgentDashboard(int agentId);

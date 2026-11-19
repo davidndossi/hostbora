@@ -8,7 +8,11 @@ import 'package:intl/intl.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../core/base/feedback_extensions.dart';
 import '../../../core/mixins/listing_financial_trends_mixin.dart';
+import '../../../core/utils/auth_messages.dart';
+import '../../../core/utils/expected_month_rent.dart';
 import '../../../core/utils/property_listing_image_assigner.dart';
+import '../../../core/utils/property_remote_rent.dart';
+import '../../../data/local/db/property_listing_units_sync.dart';
 import '../../../data/local/db/property_local_data_source.dart';
 import '../../../data/local/db/expense_local_data_source.dart';
 import '../../../data/local/db/income_local_data_source.dart';
@@ -21,6 +25,9 @@ import '../../../data/local/db/rent_staff_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/deleted_properties_store.dart';
 import '../../../data/local/service/currency_service.dart';
+import '../../../data/local/service/offline_sync_worker_service.dart';
+import '../../add_listing/models/apartment_unit_draft.dart';
+import '../../../data/local/service/lease_income_extension.dart';
 import '../../../core/utils/property_financial_time_series.dart';
 import '../../../core/utils/property_listing_finance_scope.dart';
 import '../../../data/model/general_response.dart';
@@ -28,6 +35,7 @@ import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../home/controllers/home_controller.dart';
 import '../../my_properties/controllers/my_properties_controller.dart';
+import '../../all_tenants/controllers/all_tenants_controller.dart';
 import '../../rent/listing_activity_log/controllers/rent_listing_activity_log_controller.dart';
 import '../../rent/staff_management/controllers/rent_staff_management_controller.dart';
 import '../../rent/staff_payroll_details/controllers/rent_staff_payroll_details_controller.dart';
@@ -162,12 +170,24 @@ class ListingDetailsController extends BaseController
 
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
-  String _formatRentLabel(String raw) {
+  String _formatRentLabel(String raw, {String currency = ''}) {
     final parsed = double.tryParse(raw.trim().replaceAll(',', ''));
-    if (parsed != null) {
-      return Get.find<CurrencyService>().formatBase(parsed.round());
+    if (parsed == null) return raw.trim();
+    final cs = Get.find<CurrencyService>();
+    final cur = currency.trim().toUpperCase();
+    final base = cs.baseCurrency.value.trim().toUpperCase();
+    if (cur.isNotEmpty && cur != base) {
+      final rate = cs.sellingRateFor(cur);
+      if (rate != null && rate > 0) {
+        final converted =
+            cs.toBaseAmount(inputAmount: parsed, inputCurrency: cur);
+        return '≈ ${cs.formatBase(converted.round())}';
+      }
+      // FX rate not ready — show contract currency, never mislabel as base.
+      final n = NumberFormat('#,###', 'en_US').format(parsed.round());
+      return '$cur $n';
     }
-    return raw.trim();
+    return cs.formatBase(parsed.round());
   }
 
   List<String> get financeWorkspaceTypes {
@@ -291,12 +311,14 @@ class ListingDetailsController extends BaseController
         remoteListing = await _fetchListingMapFromRepository(_propertyId);
       }
 
-      // Priority: repository listing detail -> local listing units_json -> fallback demo rows.
-      var realRows = remoteListing == null
-          ? <ListingUnitRowVm>[]
-          : _unitRowsFromAnyMap(remoteListing);
-      if (realRows.isEmpty) {
-        realRows = await _loadUnitRowsFromLocal();
+      // FX rates must be ready before unit rent labels / expected income convert.
+      await _ensureCurrencyRatesLoaded();
+      await LeaseIncomeExtension.applyMissed();
+
+      // Priority: local units + tenants (immediate after add/delete) -> remote -> empty.
+      var realRows = await _loadUnitRowsFromLocal();
+      if (realRows.isEmpty && remoteListing != null) {
+        realRows = _unitRowsFromAnyMap(remoteListing);
       }
       unitRows.assignAll(realRows.isEmpty ? [] : realRows);
       await _syncPropertyWorkspaceMode();
@@ -388,7 +410,21 @@ class ListingDetailsController extends BaseController
     }
   }
 
+  Future<void> _ensureCurrencyRatesLoaded() async {
+    if (!Get.isRegistered<CurrencyService>()) return;
+    final cs = Get.find<CurrencyService>();
+    if (cs.rates.length <= 1 || cs.sellingRateFor('USD') == null) {
+      await CurrencyService.refreshIfRegistered();
+    }
+    if (cs.sellingRateFor('USD') == null) {
+      try {
+        await cs.refreshRatesFromRemote();
+      } catch (_) {}
+    }
+  }
+
   Future<void> _syncMonthlyRevenue(Map<String, dynamic>? remoteListing) async {
+    await _ensureCurrencyRatesLoaded();
     final incomes = <IncomeRecord>[];
     final expenses = <ExpenseRecord>[];
     for (final ws in financeWorkspaceTypes) {
@@ -521,19 +557,7 @@ class ListingDetailsController extends BaseController
     netIncomeLabel.value =
         _money.format((netIncomeBase - allTimeExpenseTotal).round());
 
-    final expectedRemote = remoteListing != null
-        ? _extractExpectedMonthlyIncome(remoteListing)
-        : 0.0;
-    final expectedLocal = await _expectedIncomeFromLocalUnits();
-
-    // For rent/both: active tenant contracted rents are more meaningful
-    // than unit list prices.
-    final tenantExpected = await _expectedIncomeFromTenants(scopeRefs);
-
-    // Priority: active tenants > unit rates > remote estimate
-    final expected = tenantExpected > 0
-        ? tenantExpected
-        : (expectedLocal > 0 ? expectedLocal : expectedRemote);
+    final expected = await _expectedIncomeFromTenants(scopeRefs);
 
     expectedIncomeLabel.value = _money.format(expected.round());
     monthlyRevenueProgress.value = expected <= 0
@@ -558,130 +582,130 @@ class ListingDetailsController extends BaseController
     return 0;
   }
 
-  double _extractExpectedMonthlyIncome(Map<String, dynamic> listing) {
-    final candidates = <dynamic>[
-      listing['expectedMonthlyIncome'],
-      listing['targetMonthlyIncome'],
-      listing['monthlyIncomeTarget'],
-      listing['expectedIncome'],
-    ];
-    for (final c in candidates) {
-      if (c is num) return c.toDouble();
-      if (c is String) {
-        final n = double.tryParse(c.replaceAll(',', '').trim());
-        if (n != null) return n;
-      }
-    }
-    return 0;
-  }
-
-  Future<double> _expectedIncomeFromLocalUnits() async {
-    try {
-      final rows = await _propertyLocal.getAllNewestFirst();
-      if (rows.isEmpty) return 0;
-      final target =
-          rows.firstWhereOrNull((r) {
-            final localId = 'local_${r.id}';
-            return (_propertyId.isNotEmpty &&
-                    (r.propertyRef.trim() == _propertyId ||
-                        localId == _propertyId)) ||
-                (_propertyName.isNotEmpty &&
-                    (r.apartmentSuite.trim() == _propertyName ||
-                        r.propertyLocation.trim() == _propertyName));
-          }) ??
-          rows.first;
-      final decoded = jsonDecode(
-        target.unitsJson.trim().isEmpty ? '[]' : target.unitsJson,
-      );
-      if (decoded is! List) return 0;
-      double total = 0;
-      for (final e in decoded.whereType<Map>()) {
-        final m = Map<String, dynamic>.from(e);
-        final raw = (m['unitRent'] ?? m['rent'] ?? m['price'] ?? '').toString();
-        final n = double.tryParse(raw.replaceAll(',', '').trim());
-        if (n != null && n > 0) total += n;
-      }
-      return total;
-    } catch (_) {
-      return 0;
-    }
-  }
-
-  /// Computes the expected monthly income from active tenant contracts.
-  ///
-  /// Workspace type is inferred from [TenantRecord.rentFrequency]:
-  /// - "per day" / "per night" / "nightly" → BnB (nightly × 30 as monthly proxy)
-  /// - "per stay" → BnB one-off (counted as-is)
-  /// - "per week" → monthly × 4.333
-  /// - "per year" → monthly ÷ 12
-  /// - "per quarter" → monthly ÷ 3
-  /// - everything else → treat as monthly rent
-  /// Formats [amount] in base currency, converting if [currency] != base.
-  /// Appends "≈" prefix when conversion is applied.
   String _formatRentInBase(double amount, String currency) {
     final cs = Get.find<CurrencyService>();
     final base = cs.baseCurrency.value.trim().toUpperCase();
     final cur = currency.trim().toUpperCase();
     if (cur.isNotEmpty && cur != base) {
-      final rate = cs.sellingRateFor(cur) ?? 0;
-      if (rate > 0) {
-        return '≈ ${cs.formatBase((amount * rate).round())}';
+      final converted = cs.toBaseAmount(inputAmount: amount, inputCurrency: cur);
+      if (converted > 0 && (converted - amount).abs() > 0.0001) {
+        return '≈ ${cs.formatBase(converted.round())}';
       }
     }
     return cs.formatBase(amount.round());
   }
 
-  /// Returns the expected monthly income in base currency.
-  /// If a tenant's [rentCurrency] differs from the base currency the amount is
-  /// converted live using the latest selling rate.
+  /// This property's expected income for the current month. BnB units use the
+  /// nightly rate in base currency times the days in the month. Rent tenants
+  /// use this month's contract rent.
   Future<double> _expectedIncomeFromTenants(Set<String> scopeRefs) async {
     try {
-      final tenants = await _tenantLocal.getAllNewestFirst();
-      final mode = propertyWorkspaceMode.value;
+      await _ensureCurrencyRatesLoaded();
+      final now = DateTime.now();
+      final monthStart = DateTime(now.year, now.month, 1);
+      final nextMonthStart = DateTime(now.year, now.month + 1, 1);
       final currencyService = Get.find<CurrencyService>();
-      double total = 0;
-
-      for (final t in tenants) {
-        if (!_tenantMatchesListingForActivity(t, scopeRefs)) continue;
-        var amount = t.rentAmountValue;
-        if (amount <= 0) continue;
-
-        // Convert contract amount to base currency if needed.
-        final tenantCurrency = t.rentCurrency.trim().toUpperCase();
-        final baseCurrency = currencyService.baseCurrency.value.trim().toUpperCase();
-        if (tenantCurrency != baseCurrency && tenantCurrency.isNotEmpty) {
-          final rate = currencyService.sellingRateFor(tenantCurrency) ?? 0;
-          if (rate > 0) amount = amount * rate;
-        }
-
-        final freq = t.rentFrequency.trim().toLowerCase();
-        final isBnb = freq.contains('day') ||
-            freq.contains('night') ||
-            freq.contains('stay');
-
-        if (isBnb) {
-          if (mode == 'bnb' || mode == 'both') {
-            // "per stay" is a fixed amount; nightly → monthly via ×30.
-            total += freq.contains('stay') ? amount : amount * 30;
-          }
-        } else {
-          if (mode == 'rent' || mode == 'both') {
-            final monthly = freq.contains('week')
-                ? amount * 4.333
-                : freq.contains('year')
-                    ? amount / 12
-                    : freq.contains('quarter')
-                        ? amount / 3
-                        : amount; // default: monthly
-            total += monthly;
-          }
+      final byId = <int, TenantRecord>{};
+      for (final ref in scopeRefs) {
+        for (final tenant in await _tenantLocal.listByPropertyRef(ref)) {
+          byId[tenant.id] = tenant;
         }
       }
 
+      final property = await _findLocalPropertyRowForListing();
+      final days = ExpectedMonthRent.daysInMonth(monthStart);
+      final bnbUnits = property == null
+          ? const <BnbUnitRate>[]
+          : ExpectedMonthRent.bnbUnitsOf(property, daysInMonth: days);
+      final coverAll = property != null &&
+          bnbUnits.isNotEmpty &&
+          ExpectedMonthRent.bnbUnitsCoverAllTenants(property);
+      var total = 0.0;
+      final coveredTenantIds = <int>{};
+      for (final unit in bnbUnits) {
+        var nightly = unit.nightlyAmount;
+        var currency = unit.currency;
+        for (final tenant in byId.values) {
+          if (property != null &&
+              !ExpectedMonthRent.tenantOnProperty(tenant, property)) {
+            continue;
+          }
+          final onThisUnit = unit.matchesTenant(tenant) ||
+              (bnbUnits.length == 1 && unit.unitId == 'main');
+          if (onThisUnit || coverAll) coveredTenantIds.add(tenant.id);
+          if (!onThisUnit || nightly > 0 || tenant.rentAmountValue <= 0) {
+            continue;
+          }
+          nightly = ExpectedMonthRent.nightlyFrom(
+                tenant.rentAmountValue,
+                tenant.rentFrequency,
+                days,
+              ) ??
+              tenant.rentAmountValue;
+          currency = tenant.rentCurrency;
+        }
+        if (nightly <= 0) continue;
+        final nightlyBase = currencyService.toBaseAmount(
+          inputAmount: nightly,
+          inputCurrency: currency.trim().isEmpty
+              ? currencyService.baseCurrency.value
+              : currency,
+        );
+        total += nightlyBase * days;
+      }
+      for (final tenant in byId.values) {
+        if (coveredTenantIds.contains(tenant.id)) continue;
+        var amount = ExpectedMonthRent.of(
+          tenant,
+          monthStart: monthStart,
+          nextMonthStart: nextMonthStart,
+        );
+        if (amount <= 0 && property != null) {
+          amount = _unitRentOnProperty(tenant, property);
+        }
+        final tenantCurrency = tenant.rentCurrency.trim().toUpperCase();
+        total += currencyService.toBaseAmount(
+          inputAmount: amount,
+          inputCurrency: tenantCurrency.isEmpty
+              ? currencyService.baseCurrency.value
+              : tenantCurrency,
+        );
+      }
       return total;
     } catch (_) {
       return 0;
     }
+  }
+
+  double _unitRentOnProperty(TenantRecord tenant, PropertyRecord property) {
+    final raw = property.unitsJson.trim();
+    if (raw.isEmpty) return 0;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return 0;
+      for (final entry in decoded.whereType<Map>()) {
+        final unitId = (entry['unitId'] ?? entry['id'] ?? '').toString().trim();
+        final unitName =
+            (entry['unitName'] ?? entry['name'] ?? '').toString().trim();
+        final tenantUnitId = tenant.apartmentUnitId.trim();
+        final tenantUnitName = tenant.unitLabel.trim();
+        final idMatches = tenantUnitId.isNotEmpty &&
+            unitId.isNotEmpty &&
+            tenantUnitId == unitId;
+        final nameMatches = tenantUnitName.isNotEmpty &&
+            unitName.isNotEmpty &&
+            tenantUnitName.toLowerCase() == unitName.toLowerCase();
+        if (!idMatches && !nameMatches) continue;
+        final rent = double.tryParse(
+          (entry['unitRent'] ?? entry['rent'] ?? '')
+              .toString()
+              .replaceAll(',', '')
+              .trim(),
+        );
+        if (rent != null && rent > 0) return rent;
+      }
+    } catch (_) {}
+    return 0;
   }
 
   Future<void> _syncOccupancyPercent(
@@ -693,12 +717,10 @@ class ListingDetailsController extends BaseController
       return;
     }
 
-    var tenantsCount = 0;
-    if (remoteListing != null) {
+    // Local DB is source of truth after add/delete tenant (remote lags).
+    var tenantsCount = await _extractTenantCountFromLocal();
+    if (tenantsCount <= 0 && remoteListing != null) {
       tenantsCount = _extractTenantCountFromRemote(remoteListing);
-    }
-    if (tenantsCount <= 0) {
-      tenantsCount = await _extractTenantCountFromLocal();
     }
     final pct = ((tenantsCount / totalUnits) * 100).round();
     occupancyPercent.value = pct.clamp(0, 100);
@@ -728,8 +750,8 @@ class ListingDetailsController extends BaseController
 
   Future<int> _extractTenantCountFromLocal() async {
     if (_propertyId.isNotEmpty) {
-      final byRef = await _tenantLocal.countByPropertyRef(_propertyId);
-      if (byRef > 0) return byRef;
+      // Trust ref-based count even when 0 (e.g. just deleted last tenant).
+      return _tenantLocal.countByPropertyRef(_propertyId);
     }
 
     final tenants = await _tenantLocal.getAllNewestFirst();
@@ -765,14 +787,14 @@ class ListingDetailsController extends BaseController
     String listingId,
   ) async {
     try {
-      final res = await _repository.getListing(listingId);
+      final res = await _repository.getProperty(listingId);
       final data = res.data;
       if (data is Map<String, dynamic>) return data;
       if (data is Map && data['data'] is Map<String, dynamic>) {
         return data['data'] as Map<String, dynamic>;
       }
-      if (data is Map && data['listing'] is Map<String, dynamic>) {
-        return data['listing'] as Map<String, dynamic>;
+      if (data is Map && data['property'] is Map<String, dynamic>) {
+        return data['property'] as Map<String, dynamic>;
       }
     } catch (_) {}
     return null;
@@ -917,6 +939,9 @@ class ListingDetailsController extends BaseController
             unitLocalId: u.id,
             unitLocalPropertyRef: u.propertyRef,
             unitLocalName: name,
+            unitPropertyUnitRef: u.propertyUnitRef.trim().isEmpty
+                ? null
+                : u.propertyUnitRef.trim(),
           ),
         ));
       }
@@ -1125,8 +1150,28 @@ class ListingDetailsController extends BaseController
     return DateFormat('dd/MM').format(day);
   }
 
+  /// Resolves BnB vs Rent for a unit row from JSON + frequency fallback.
+  String _resolveUnitOperationMode(Map<String, dynamic> m) {
+    final raw = (m['operationMode'] ?? '').toString().trim().toLowerCase();
+    if (raw == 'rent' || raw == 'bnb') return raw;
+    final freq = (m['unitRentFrequency'] ?? '').toString().trim().toLowerCase();
+    if (freq.contains('day') ||
+        freq.contains('night') ||
+        freq.contains('stay')) {
+      return 'bnb';
+    }
+    if (freq.contains('month') ||
+        freq.contains('week') ||
+        freq.contains('year') ||
+        freq.contains('quarter')) {
+      return 'rent';
+    }
+    return 'bnb';
+  }
+
   Future<List<ListingUnitRowVm>> _loadUnitRowsFromLocal() async {
     try {
+      await _ensureCurrencyRatesLoaded();
       final rows = await _propertyLocal.getAllNewestFirst();
       if (rows.isEmpty) return const [];
 
@@ -1134,7 +1179,10 @@ class ListingDetailsController extends BaseController
       if (_propertyId.isNotEmpty) {
         for (final r in rows) {
           final localId = 'local_${r.id}';
-          if (r.propertyRef.trim() == _propertyId || localId == _propertyId) {
+          final legacyId = 'legacy_${r.id}';
+          if (r.propertyRef.trim() == _propertyId ||
+              localId == _propertyId ||
+              legacyId == _propertyId) {
             target = r;
             break;
           }
@@ -1189,11 +1237,66 @@ class ListingDetailsController extends BaseController
 
       final listingTenants = tenants.where(tenantMatchesListing).toList();
 
+      // Local property_units can hold currency when unitsJson is stale/missing it.
+      final localUnitCurrencyByKey = <String, String>{};
+      try {
+        final refs = <String>{
+          listingRef,
+          'local_${target.id}',
+          'legacy_${target.id}',
+          if (target.propertyRef.trim().isNotEmpty) target.propertyRef.trim(),
+        };
+        for (final ref in refs) {
+          final unitRows = await _unitLocal.getAllByPropertyRefNewestFirstChunked(
+            propertyRef: ref,
+          );
+          for (final u in unitRows) {
+            final cur = u.rentCurrency.trim().toUpperCase();
+            if (cur.isEmpty) continue;
+            final idKey = u.propertyUnitRef.trim().toLowerCase();
+            final nameKey = u.unitName.trim().toLowerCase();
+            if (idKey.isNotEmpty) localUnitCurrencyByKey['id:$idKey'] = cur;
+            if (nameKey.isNotEmpty) localUnitCurrencyByKey['name:$nameKey'] = cur;
+          }
+        }
+      } catch (_) {}
+
+      String resolveUnitCurrency(Map<String, dynamic> m) {
+        final fromJson = (m['unitRentCurrency'] ??
+                m['rentCurrency'] ??
+                m['currency'] ??
+                '')
+            .toString()
+            .trim()
+            .toUpperCase();
+        if (fromJson.isNotEmpty && fromJson != 'TZS') return fromJson;
+        final unitId = (m['unitId'] ?? m['id'] ?? '').toString().trim().toLowerCase();
+        final unitName = (m['unitName'] ?? m['name'] ?? '').toString().trim().toLowerCase();
+        final fromLocal = (unitId.isNotEmpty
+                ? localUnitCurrencyByKey['id:$unitId']
+                : null) ??
+            (unitName.isNotEmpty ? localUnitCurrencyByKey['name:$unitName'] : null);
+        if (fromLocal != null && fromLocal.isNotEmpty) return fromLocal;
+        return fromJson.isNotEmpty ? fromJson : '';
+      }
+
       final unitsRaw = target.unitsJson.trim();
       if (unitsRaw.isEmpty) {
-        final attachedTenant = listingTenants.isEmpty
-            ? null
-            : listingTenants.first;
+        // Prefer structured property_units rows (survive remote sync that
+        // clears unitsJson) over a synthetic single placeholder.
+        final fromUnitTable = await _unitRowsFromPropertyUnitsTable(
+          listingRefs: <String>{
+            listingRef,
+            'local_${target.id}',
+            'legacy_${target.id}',
+            if (target.propertyRef.trim().isNotEmpty) target.propertyRef.trim(),
+          },
+          listingTenants: listingTenants,
+        );
+        if (fromUnitTable.isNotEmpty) return fromUnitTable;
+
+        final attachedTenant =
+            listingTenants.isEmpty ? null : listingTenants.first;
         final ws = target.workspaceType.trim().toLowerCase();
         return [
           ListingUnitRowVm(
@@ -1234,23 +1337,21 @@ class ListingDetailsController extends BaseController
           }
         }
         final rent = (m['unitRent'] ?? m['rent'] ?? '').toString().trim();
-        final mode = (m['operationMode'] ?? m['listingMode'] ?? m['workspaceType'])
-            .toString()
-            .trim()
-            .toLowerCase();
+        final rentCurrency = resolveUnitCurrency(m);
+        final mode = _resolveUnitOperationMode(m);
         out.add(
           ListingUnitRowVm(
             name: unitName,
             subtitle: rent.isEmpty
                 ? (_isSw ? 'Inasubiri mpangaji' : 'Awaiting tenant')
-                : 'Rent ${_formatRentLabel(rent)}',
+                : 'Rent ${_formatRentLabel(rent, currency: rentCurrency)}',
             status: attachedTenant == null
                 ? ListingUnitStatus.short
                 : ListingUnitStatus.occupied,
             tenantName: attachedTenant?.tenantName ?? '',
             tenantId: attachedTenant?.id,
             unitId: unitId,
-            operationMode: mode == 'rent' ? 'rent' : 'bnb',
+            operationMode: mode,
           ),
         );
       }
@@ -1258,6 +1359,68 @@ class ListingDetailsController extends BaseController
     } catch (_) {
       return const [];
     }
+  }
+
+  /// Builds unit rows from the local `property_units` table when unitsJson is empty.
+  Future<List<ListingUnitRowVm>> _unitRowsFromPropertyUnitsTable({
+    required Set<String> listingRefs,
+    required List<TenantRecord> listingTenants,
+  }) async {
+    final seen = <String>{};
+    final records = <PropertyUnitRecord>[];
+    for (final ref in listingRefs) {
+      if (ref.trim().isEmpty) continue;
+      final rows = await _unitLocal.getAllByPropertyRefNewestFirstChunked(
+        propertyRef: ref,
+      );
+      for (final u in rows) {
+        final key = u.propertyUnitRef.trim().isNotEmpty
+            ? 'id:${u.propertyUnitRef.trim().toLowerCase()}'
+            : 'name:${u.unitName.trim().toLowerCase()}';
+        if (key == 'id:' || key == 'name:') continue;
+        if (!seen.add(key)) continue;
+        records.add(u);
+      }
+    }
+    if (records.isEmpty) return const [];
+
+    final out = <ListingUnitRowVm>[];
+    for (final u in records) {
+      final unitName = u.unitName.trim();
+      if (unitName.isEmpty) continue;
+      final unitId = u.propertyUnitRef.trim();
+      TenantRecord? attachedTenant;
+      for (final t in listingTenants) {
+        final tid = t.apartmentUnitId.trim();
+        final tName = t.unitLabel.trim();
+        if (unitId.isNotEmpty && tid.isNotEmpty && tid == unitId) {
+          attachedTenant = t;
+          break;
+        }
+        if (tName.isNotEmpty && tName.toLowerCase() == unitName.toLowerCase()) {
+          attachedTenant = t;
+          break;
+        }
+      }
+      final rent = u.rentAmount > 0 ? u.rentAmount.toString() : '';
+      final mode = u.operationMode.trim().toLowerCase() == 'rent' ? 'rent' : 'bnb';
+      out.add(
+        ListingUnitRowVm(
+          name: unitName,
+          subtitle: rent.isEmpty
+              ? (_isSw ? 'Inasubiri mpangaji' : 'Awaiting tenant')
+              : 'Rent ${_formatRentLabel(rent, currency: u.rentCurrency)}',
+          status: attachedTenant == null
+              ? ListingUnitStatus.short
+              : ListingUnitStatus.occupied,
+          tenantName: attachedTenant?.tenantName ?? '',
+          tenantId: attachedTenant?.id,
+          unitId: unitId,
+          operationMode: mode,
+        ),
+      );
+    }
+    return out;
   }
 
   List<ListingUnitRowVm> _unitRowsFromAnyMap(Map<String, dynamic> listing) {
@@ -1287,6 +1450,12 @@ class ListingDetailsController extends BaseController
       final rent = (m['unitRent'] ?? m['rent'] ?? m['price'] ?? '')
           .toString()
           .trim();
+      final rentCurrency = (m['unitRentCurrency'] ??
+              m['rentCurrency'] ??
+              m['currency'] ??
+              '')
+          .toString()
+          .trim();
       final tenantName =
           (m['tenantName'] ??
                   m['occupantName'] ??
@@ -1310,11 +1479,12 @@ class ListingDetailsController extends BaseController
         ListingUnitRowVm(
           name: name,
           subtitle: rent.isNotEmpty
-              ? 'Rent ${_formatRentLabel(rent)}'
+              ? 'Rent ${_formatRentLabel(rent, currency: rentCurrency)}'
               : (_isSw ? 'Inasubiri mpangaji' : 'Awaiting tenant'),
           status: status,
           tenantName: tenantName,
           unitId: (m['unitId'] ?? m['id'] ?? '').toString().trim(),
+          operationMode: _resolveUnitOperationMode(m),
         ),
       );
     }
@@ -1607,16 +1777,102 @@ class ListingDetailsController extends BaseController
     );
   }
 
-  Future<void> onAddPropertyEstimationCosts() async {
-    var ref = _propertyId;
+  Future<String> _resolvePropertyRefForFinanceTools() async {
+    var ref = _propertyId.trim();
+    if (ref.isNotEmpty) return ref;
+    final row = await _findLocalPropertyRowForListing();
+    if (row == null) return '';
+    return row.propertyRef.trim().isNotEmpty
+        ? row.propertyRef.trim()
+        : 'local_${row.id}';
+  }
+
+  /// Property ROI Analysis (principal vs income charts) for this listing.
+  Future<void> onOpenPropertyRoiAnalysis() async {
+    final ref = await _resolvePropertyRefForFinanceTools();
     if (ref.isEmpty) {
-      final row = await _findLocalPropertyRowForListing();
-      if (row != null) {
-        ref = row.propertyRef.trim().isNotEmpty
-            ? row.propertyRef.trim()
-            : 'local_${row.id}';
-      }
+      showErrorMessage(
+        _isSw
+            ? 'Hakuna kitambulisho cha mali kwa uchambuzi wa ROI.'
+            : 'No property reference is available for ROI analysis.',
+      );
+      return;
     }
+    await Get.toNamed(
+      Routes.RENT_PROPERTY_ROI_ANALYSIS,
+      parameters: {
+        'propertyRef': ref,
+        'propertyLabel': _propertyLabelForEstimate(),
+      },
+    );
+    await loadListingDetail();
+  }
+
+  /// Tenancy Insights scoped to this listing (rent tenants, exports, charts).
+  Future<void> onOpenTenancyInsights() async {
+    final ref = await _resolvePropertyRefForFinanceTools();
+    final title = _propertyLabelForEstimate();
+    await Get.toNamed(
+      Routes.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER,
+      parameters: {
+        'ws': 'rent',
+        if (ref.isNotEmpty) 'propertyRef': ref,
+        if (title.isNotEmpty) 'propertyTitle': title,
+        if (_propertyLocation.isNotEmpty) 'propertyLoc': _propertyLocation,
+        if (_propertyName.isNotEmpty) 'propertySuite': _propertyName,
+      },
+      arguments: {
+        'ws': 'rent',
+        if (ref.isNotEmpty) 'propertyRef': ref,
+        if (title.isNotEmpty) 'propertyTitle': title,
+        if (_propertyLocation.isNotEmpty) 'propertyLoc': _propertyLocation,
+        if (_propertyName.isNotEmpty) 'propertySuite': _propertyName,
+      },
+    );
+    await loadListingDetail();
+  }
+
+  /// Define tenant charges for this listing.
+  Future<void> onOpenTenantCharges() async {
+    final ref = await _resolvePropertyRefForFinanceTools();
+    final title = _propertyLabelForEstimate();
+    await Get.toNamed(
+      Routes.RENT_DEFINE_TENANT_CHARGES,
+      parameters: {
+        if (ref.isNotEmpty) 'propertyRef': ref,
+        if (title.isNotEmpty) 'propertyLabel': title,
+        if (title.isNotEmpty) 'propertyTitle': title,
+      },
+      arguments: {
+        if (ref.isNotEmpty) 'propertyRef': ref,
+        if (title.isNotEmpty) 'propertyLabel': title,
+        if (title.isNotEmpty) 'propertyTitle': title,
+      },
+    );
+    await loadListingDetail();
+  }
+
+  /// Apartment rent / service charge PDF reports for this listing.
+  Future<void> onOpenApartmentReports() async {
+    final ref = await _resolvePropertyRefForFinanceTools();
+    final title = _propertyLabelForEstimate();
+    await Get.toNamed(
+      Routes.RENT_APARTMENT_REPORTS,
+      parameters: {
+        if (ref.isNotEmpty) 'propertyRef': ref,
+        if (title.isNotEmpty) 'propertyTitle': title,
+        if (title.isNotEmpty) 'propertyLabel': title,
+      },
+      arguments: {
+        if (ref.isNotEmpty) 'propertyRef': ref,
+        if (title.isNotEmpty) 'propertyTitle': title,
+        if (title.isNotEmpty) 'propertyLabel': title,
+      },
+    );
+  }
+
+  Future<void> onAddPropertyEstimationCosts() async {
+    final ref = await _resolvePropertyRefForFinanceTools();
     if (ref.isEmpty) {
       showErrorMessage(
         _isSw
@@ -1653,7 +1909,12 @@ class ListingDetailsController extends BaseController
   }
 
   Future<void> onAddNewUnit(String workspace) async {
-    final propertyHubId = _propertyId.trim();
+    var propertyHubId = _propertyId.trim();
+    final local = await _findLocalPropertyRowForListing();
+    if (local != null) {
+      final stored = local.propertyRef.trim();
+      propertyHubId = stored.isNotEmpty ? stored : 'local_${local.id}';
+    }
 
     if (propertyHubId.isEmpty) {
       Get.snackbar(
@@ -1676,8 +1937,18 @@ class ListingDetailsController extends BaseController
   }
 
   Future<void> onEditUnitDetails(ListingUnitRowVm row) async {
-    final propertyRef = _propertyId.trim();
-    if (propertyRef.isEmpty) {
+    // Route `property_id` may be a remote listing id that does not equal the
+    // local `property_ref`. Resolve the on-device row the same way the rest of
+    // listing details does (ref / local_ / name).
+    var propertyRef = _propertyId.trim();
+    int? propertyLocalId;
+    final local = await _findLocalPropertyRowForListing();
+    if (local != null) {
+      propertyLocalId = local.id;
+      final stored = local.propertyRef.trim();
+      propertyRef = stored.isNotEmpty ? stored : 'local_${local.id}';
+    }
+    if (propertyRef.isEmpty && propertyLocalId == null) {
       showErrorMessage(
         _isSw
             ? 'Hakuna kitambulisho cha mali kuhariri unit.'
@@ -1689,12 +1960,259 @@ class ListingDetailsController extends BaseController
     await Get.toNamed(
       Routes.EDIT_UNIT,
       arguments: {
-        'property_ref': propertyRef,
+        if (propertyRef.isNotEmpty) 'property_ref': propertyRef,
+        if (propertyLocalId != null) 'property_local_id': propertyLocalId,
+        if (_propertyId.trim().isNotEmpty) 'listing_id': _propertyId.trim(),
         'unit_name': row.name,
         if (row.unitId.trim().isNotEmpty) 'unit_id': row.unitId.trim(),
       },
     );
     await loadListingDetail();
+  }
+
+  Future<void> onDeleteUnit(ListingUnitRowVm row) async {
+    final occupied = row.tenantName.trim().isNotEmpty;
+    final confirmed = await confirmDestructive(
+      title: _isSw ? 'Futa unit?' : 'Delete unit?',
+      message: occupied
+          ? (_isSw
+              ? 'Unit "${row.name}" itafutwa. Rekodi ya mpangaji ${row.tenantName} itabaki.'
+              : '"${row.name}" will be removed. ${row.tenantName}\'s tenant record will stay.')
+          : (_isSw
+              ? 'Unit "${row.name}" itafutwa kwenye mali hii.'
+              : '"${row.name}" will be removed from this property.'),
+      confirmLabel: _isSw ? 'Futa' : 'Delete',
+      cancelLabel: _isSw ? 'Ghairi' : 'Cancel',
+    );
+    if (!confirmed) return;
+    final removed = await _removeUnitFromProperty(
+      unitId: row.unitId,
+      unitName: row.name,
+    );
+    if (!removed) return;
+    showSuccessWithHaptic(_isSw ? 'Unit imefutwa' : 'Unit deleted');
+    await loadListingDetail();
+    unawaited(MyPropertiesController.refreshIfRegistered());
+    unawaited(HomeController.refreshIfRegistered());
+  }
+
+  /// Removes one unit from `units_json` and `property_units`, then updates the
+  /// remote property. An empty `units_json` string is a missing list and would
+  /// show a placeholder unit again, so a property with no units stores `[]`.
+  Future<bool> _removeUnitFromProperty({
+    required String unitId,
+    required String unitName,
+    int? localRowId,
+  }) async {
+    final property = await _findLocalPropertyRowForListing();
+    if (property == null) {
+      showErrorMessage(
+        _isSw
+            ? 'Hakuna mali iliyohifadhiwa kwenye kifaa hiki.'
+            : 'No on-device property record found.',
+      );
+      return false;
+    }
+
+    var id = unitId.trim();
+    var name = unitName.trim();
+    if (localRowId != null && (id.isEmpty || name.isEmpty)) {
+      final row = await _unitLocal.getById(localRowId);
+      if (row != null) {
+        if (id.isEmpty) id = row.propertyUnitRef.trim();
+        if (name.isEmpty) name = row.unitName.trim();
+      }
+    }
+
+    final ref = property.propertyRef.trim().isNotEmpty
+        ? property.propertyRef.trim()
+        : 'local_${property.id}';
+    final aliases = <String>{
+      ref,
+      'local_${property.id}',
+      'legacy_${property.id}',
+      if (property.propertyRef.trim().isNotEmpty) property.propertyRef.trim(),
+    };
+
+    var drafts = _draftsFromUnitsJson(property.unitsJson);
+    if (drafts.isEmpty) {
+      drafts = await _draftsFromUnitTable(aliases);
+    }
+    var remaining = drafts
+        .where((d) => !_draftIsUnit(d, unitId: id, unitName: name))
+        .toList();
+    if (remaining.length == drafts.length) {
+      if (localRowId == null) {
+        showErrorMessage(
+          _isSw
+              ? 'Unit hii haijahifadhiwa kama kitengo tofauti.'
+              : 'This unit is not stored as a separate unit.',
+        );
+        return false;
+      }
+      await _unitLocal.deleteById(localRowId);
+      remaining = await _draftsFromUnitTable(aliases);
+    }
+
+    final unitsJson = jsonEncode(remaining.map((d) => d.toJson()).toList());
+    final listingRent = remaining.length == 1
+        ? remaining.first.unitRent
+        : property.rentAmount;
+    final rentAmount = remaining.isEmpty
+        ? ''
+        : PropertyRemoteRent.amount(
+            unitCount: remaining.length,
+            listingRentAmount: listingRent,
+            unitsJson: unitsJson,
+          );
+    final rentFrequency = remaining.isEmpty
+        ? property.rentFrequency
+        : PropertyRemoteRent.frequency(
+            unitCount: remaining.length,
+            listingRentFrequency: remaining.length == 1
+                ? remaining.first.unitRentFrequency
+                : property.rentFrequency,
+            unitsJson: unitsJson,
+            rentAmount: rentAmount,
+          );
+    final updated = property.copyWith(
+      units: remaining.length,
+      unitsJson: unitsJson,
+      rentAmount: rentAmount,
+      rentFrequency: rentFrequency,
+    );
+    await _propertyLocal.update(updated);
+
+    for (final alias in aliases) {
+      if (alias != ref) {
+        await _unitLocal.deleteByPropertyRef(alias);
+      }
+    }
+    await syncPropertyUnitsForListingSave(
+      unitLocal: _unitLocal,
+      propertyRef: ref,
+      isApartment: true,
+      apartmentUnitMaps: remaining.map((d) => d.toJson()).toList(),
+      minRentalDuration: property.minRentalDuration,
+      listingRentFrequency: rentFrequency,
+      listingRentRaw: rentAmount,
+      singleUnitName: property.propertyName,
+      rooms: 0,
+      maxGuests: 0,
+      listingMode: property.workspaceType,
+    );
+    unawaited(_pushUnitsToRemote(updated, deletedUnitId: id));
+    return true;
+  }
+
+  List<ApartmentUnitDraft> _draftsFromUnitsJson(String raw) {
+    final text = raw.trim();
+    if (text.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(text);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((m) => ApartmentUnitDraft.fromJson(Map<String, dynamic>.from(m)))
+          .where((d) => d.unitName.trim().isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<ApartmentUnitDraft>> _draftsFromUnitTable(Set<String> refs) async {
+    final seen = <String>{};
+    final out = <ApartmentUnitDraft>[];
+    for (final ref in refs) {
+      if (ref.trim().isEmpty) continue;
+      final rows = await _unitLocal.getAllByPropertyRefNewestFirstChunked(
+        propertyRef: ref,
+      );
+      for (final u in rows) {
+        final key = u.propertyUnitRef.trim().isNotEmpty
+            ? 'id:${u.propertyUnitRef.trim().toLowerCase()}'
+            : 'name:${u.unitName.trim().toLowerCase()}';
+        if (key == 'id:' || key == 'name:' || !seen.add(key)) continue;
+        if (u.unitName.trim().isEmpty) continue;
+        out.add(
+          ApartmentUnitDraft(
+            unitId: u.propertyUnitRef,
+            unitName: u.unitName,
+            unitRent: u.rentAmount > 0
+                ? u.rentAmount.toString()
+                : '',
+            unitRentFrequency: u.rentFrequency,
+            unitFloor: u.floor,
+            operationMode: u.operationMode,
+            unitDescription: u.notes,
+            unitRentCurrency: u.rentCurrency,
+          ),
+        );
+      }
+    }
+    return out;
+  }
+
+  bool _draftIsUnit(
+    ApartmentUnitDraft draft, {
+    required String unitId,
+    required String unitName,
+  }) {
+    final id = draft.unitId.trim();
+    if (unitId.isNotEmpty) return id.isNotEmpty && id == unitId;
+    final name = draft.unitName.trim().toLowerCase();
+    final wanted = unitName.trim().toLowerCase();
+    return wanted.isNotEmpty && name == wanted;
+  }
+
+  Future<void> _pushUnitsToRemote(
+    PropertyRecord property, {
+    String deletedUnitId = '',
+  }) async {
+    final ref = property.propertyRef.trim();
+    if (ref.isEmpty) return;
+    final unitKey = deletedUnitId.trim();
+    if (unitKey.isNotEmpty) {
+      try {
+        await _repository.deletePropertyUnit(ref, unitKey);
+      } catch (_) {}
+    }
+    final payload = <String, dynamic>{
+      'property_ref': ref,
+      'location': property.propertyLocation,
+      'name': property.propertyName,
+      'type': property.propertyType,
+      'units': property.units,
+      'tenants': property.tenants,
+      'workspace_type': property.workspaceType,
+      'rent_amount': property.rentAmount,
+      'rent_frequency': property.rentFrequency,
+      'min_rental_duration': property.minRentalDuration,
+      'units_json': property.unitsJson,
+      'floor_count': property.floorCount,
+      'cover_photo_path': property.coverPhotoPath,
+    };
+    try {
+      final res = await _repository.updatePropertyByRef(ref, payload);
+      final ok = res.responseCode == '0' ||
+          res.responseCode == '200' ||
+          res.responseCode == '201' ||
+          (res.responseCode ?? '').trim().isEmpty;
+      if (!ok) throw Exception(res.message ?? 'updatePropertyByRef failed');
+    } catch (_) {
+      try {
+        await _syncQueue.enqueue(
+          entityType: 'property',
+          operation: 'update',
+          payloadJson: jsonEncode(payload),
+          dedupeKey: 'property:update:$ref',
+        );
+        if (Get.isRegistered<OfflineSyncWorkerService>()) {
+          await Get.find<OfflineSyncWorkerService>().runNow(maxItems: 5);
+        }
+      } catch (_) {}
+    }
   }
 
   Future<void> onDeleteProperty() async {
@@ -1881,13 +2399,26 @@ class ListingDetailsController extends BaseController
         await Get.toNamed(Routes.RENT_STAFF_MANAGEMENT);
 
       case ActivityType.unit:
-        final ref = activity.unitLocalPropertyRef ?? _propertyId;
-        final name = activity.unitLocalName ?? '';
+        final ref = (activity.unitLocalPropertyRef ?? _propertyId).trim();
+        final name = (activity.unitLocalName ?? '').trim();
+        final unitId = (activity.unitPropertyUnitRef ?? '').trim();
+        if (ref.isEmpty && activity.unitLocalId == null) {
+          showErrorMessage(
+            _isSw
+                ? 'Hakuna kitambulisho cha mali kuhariri unit hii.'
+                : 'No property reference is available to edit this unit.',
+          );
+          return;
+        }
         await Get.toNamed(
           Routes.EDIT_UNIT,
           arguments: {
-            'property_ref': ref,
-            'unit_name': name,
+            if (ref.isNotEmpty) 'property_ref': ref,
+            if (_propertyId.trim().isNotEmpty) 'listing_id': _propertyId.trim(),
+            if (name.isNotEmpty) 'unit_name': name,
+            if (unitId.isNotEmpty) 'unit_id': unitId,
+            if (activity.unitLocalId != null)
+              'unit_local_id': activity.unitLocalId,
           },
         );
 
@@ -1983,6 +2514,10 @@ class ListingDetailsController extends BaseController
 
       case ActivityType.staff:
         final staffId = activity.staffId!;
+        final staffRec = await _staffLocal.getById(staffId);
+        if (staffRec != null) {
+          await RemovedStaffPhones.remember(staffRec.phone);
+        }
         final backendStaffId = await _staffLocal.backendIdForLocal(staffId);
         await _staffLocal.deleteById(staffId);
         if (backendStaffId != null && backendStaffId.isNotEmpty) {
@@ -1990,7 +2525,12 @@ class ListingDetailsController extends BaseController
         }
 
       case ActivityType.unit:
-        await _unitLocal.deleteById(activity.unitLocalId!);
+        final removed = await _removeUnitFromProperty(
+          unitId: activity.unitPropertyUnitRef ?? '',
+          unitName: activity.unitLocalName ?? activity.subtitle,
+          localRowId: activity.unitLocalId,
+        );
+        if (!removed) return;
 
       case ActivityType.remote:
         return;
@@ -2015,6 +2555,14 @@ class ListingDetailsController extends BaseController
       showSuccessWithHaptic(successMsg);
     }
     await loadListingDetail();
+    if (activity.activityType == ActivityType.tenant ||
+        activity.activityType == ActivityType.unit) {
+      unawaited(MyPropertiesController.refreshIfRegistered());
+      unawaited(HomeController.refreshIfRegistered());
+      if (activity.activityType == ActivityType.tenant) {
+        unawaited(AllTenantsController.refreshIfRegistered());
+      }
+    }
   }
 
   // ── Remote delete helpers (fire-and-forget with offline queue fallback) ──
@@ -2098,19 +2646,40 @@ class ListingDetailsController extends BaseController
   String _workspaceParamForMode(String mode) =>
       mode.trim().toLowerCase() == 'rent' ? 'rent' : 'bnb';
 
-  void onAddTenantForWorkspace(String workspace) {
-    final ws = _workspaceParamForMode(workspace);
+  /// True when every unit in [workspace] already has a tenant.
+  bool allUnitsOccupiedFor(String workspace) {
+    final rows = _workspaceParamForMode(workspace) == 'rent'
+        ? rentUnitRows
+        : bnbUnitRows;
+    if (rows.isEmpty) return false;
+    return rows.every((row) => row.status == ListingUnitStatus.occupied);
+  }
+
+  void _openAddTenant({
+    String unitId = '',
+    String unitName = '',
+    String workspace = '',
+    bool showAllUnits = false,
+  }) {
+    final ws = workspace.trim().toLowerCase();
+    final explicitWorkspace = !showAllUnits && (ws == 'rent' || ws == 'bnb');
     Get.toNamed(
       Routes.ADD_NEW_TENANT,
       parameters: {
         if (_propertyName.isNotEmpty) 'property': _propertyName,
         if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
-        'workspaceType': ws,
+        if (unitId.trim().isNotEmpty) 'unitId': unitId.trim(),
+        if (unitName.trim().isNotEmpty) 'unitName': unitName.trim(),
       },
       arguments: {
         if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
         if (_propertyName.isNotEmpty) 'property': _propertyName,
-        'workspaceType': ws,
+        if (unitId.trim().isNotEmpty) 'unitId': unitId.trim(),
+        if (unitName.trim().isNotEmpty) 'unitName': unitName.trim(),
+        // Quick Management is not a BnB or Rent tab, so both unit types stay
+        // selectable even if an earlier screen left workspaceType as bnb.
+        if (showAllUnits) 'showAllUnits': 'true',
+        if (explicitWorkspace) 'workspaceType': ws,
       },
     )?.then((_) => loadListingDetail());
   }
@@ -2152,10 +2721,13 @@ class ListingDetailsController extends BaseController
         if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
       },
       arguments: {
-        if (assignee != null && assignee.isNotEmpty)
-          'description': 'Assigned to: $assignee',
+        if (_propertyName.isNotEmpty) 'property': _propertyName,
+        if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
+        if (assignee != null && assignee.isNotEmpty) 'assignee': assignee,
       },
-    )?.then((_) => loadListingDetail());
+    )?.then((_) async {
+      await loadListingDetail();
+    });
   }
 
   void onPaymentFollowUpTap() {
@@ -2178,9 +2750,7 @@ class ListingDetailsController extends BaseController
   void onQuickAction(int index) {
     switch (index) {
       case 0:
-        onAddTenantForWorkspace(
-          propertyWorkspaceMode.value == 'rent' ? 'rent' : 'bnb',
-        );
+        _openAddTenant(showAllUnits: true);
         break;
       case 1:
         onAddIncomeForWorkspace(
@@ -2205,6 +2775,12 @@ class ListingDetailsController extends BaseController
       case 5:
         Get.toNamed(Routes.RENT_SMART_UTILITY_DASHBOARD);
         break;
+      case 6:
+        onOpenTenancyInsights();
+        break;
+      case 7:
+        onOpenPropertyRoiAnalysis();
+        break;
       default:
         break;
     }
@@ -2219,25 +2795,22 @@ class ListingDetailsController extends BaseController
         showSuccessMessage(_isSw ? 'Tuma ankara' : 'Send invoice');
         break;
       case ListingUnitStatus.occupied:
+        if (allUnitsOccupiedFor(workspace)) {
+          _openAddTenant(
+            unitId: row.unitId,
+            unitName: row.name,
+            workspace: workspace,
+          );
+          break;
+        }
         showSuccessMessage(_isSw ? 'Angalia maelezo' : 'View details');
         break;
       case ListingUnitStatus.short:
-        final ws = _workspaceParamForMode(workspace);
-        Get.toNamed(
-          Routes.ADD_NEW_TENANT,
-          parameters: {
-            if (_propertyName.isNotEmpty) 'property': _propertyName,
-            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
-            'unitName': row.name,
-            'workspaceType': ws,
-          },
-          arguments: {
-            if (_propertyId.isNotEmpty) 'propertyRef': _propertyId,
-            if (_propertyName.isNotEmpty) 'property': _propertyName,
-            'unitName': row.name,
-            'workspaceType': ws,
-          },
-        )?.then((_) => loadListingDetail());
+        _openAddTenant(
+          unitId: row.unitId,
+          unitName: row.name,
+          workspace: workspace,
+        );
         break;
     }
   }
@@ -2254,6 +2827,7 @@ class ListingDetailsController extends BaseController
   }
 
   Future<void> onAddStaff() async {
+    _bindStaffPropertyContext();
     await Get.toNamed(
       Routes.RENT_STAFF_MANAGEMENT,
       arguments: {
@@ -2266,6 +2840,7 @@ class ListingDetailsController extends BaseController
   }
 
   Future<void> refreshStaffPanel() async {
+    _bindStaffPropertyContext();
     if (Get.isRegistered<RentStaffManagementController>()) {
       await Get.find<RentStaffManagementController>().loadStaff();
     }
@@ -2275,11 +2850,24 @@ class ListingDetailsController extends BaseController
     await _loadAssigneeStaffOptions();
   }
 
+  void _bindStaffPropertyContext() {
+    if (!Get.isRegistered<RentStaffManagementController>()) return;
+    Get.find<RentStaffManagementController>().bindPropertyContext(
+      propertyRef: _propertyId,
+      propertyName: _propertyName,
+    );
+  }
+
   String primaryButtonLabel(ListingUnitRowVm row, bool isSw) {
     if (row.status == ListingUnitStatus.dueDate) {
       return isSw ? 'Tuma Ankara' : 'Send Invoice';
     }
     if (row.status == ListingUnitStatus.occupied) {
+      final workspace =
+          row.operationMode.trim().toLowerCase() == 'rent' ? 'rent' : 'bnb';
+      if (allUnitsOccupiedFor(workspace)) {
+        return isSw ? 'Ongeza Mpangaji' : 'Add Tenant';
+      }
       return isSw ? 'Angalia Maelezo' : 'View Details';
     }
     return isSw ? 'Ongeza Mpangaji' : 'Add Tenant';
@@ -2341,7 +2929,7 @@ class _IncomeBreakdownSheet extends StatelessWidget {
             isSw ? 'Mgawanyo wa Mapato' : 'Income Breakdown',
             style: TextStyle(
               fontSize: 17,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: textPrimary,
             ),
           ),
@@ -2438,7 +3026,7 @@ class _IncomeBreakdownSheet extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize: 15,
-              fontWeight: isBold ? FontWeight.w800 : FontWeight.w700,
+              fontWeight: isBold ? FontWeight.w700 : FontWeight.w700,
               color: textPrimary,
             ),
           ),

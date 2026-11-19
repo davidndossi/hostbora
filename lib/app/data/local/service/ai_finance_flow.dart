@@ -375,6 +375,7 @@ class AiFinanceFlow {
         paymentMethod: 'Cash',
         paymentDate: isoDate,
         status: 'PAID',
+        idempotencyKey: 'payment:create:$localId',
       );
       await syncQueue.enqueue(
         entityType: 'payment',

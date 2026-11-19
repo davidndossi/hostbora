@@ -167,7 +167,7 @@ class ManagePaymentsView extends RentBaseView<ManagePaymentsController> {
           const SizedBox(height: 6),
           Text(
             controller.totalLabel,
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: titleColor),
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: titleColor),
           ),
         ],
       ),
@@ -200,7 +200,7 @@ class ManagePaymentsView extends RentBaseView<ManagePaymentsController> {
         children: [
           Text(
             appLocalization.managePaymentsFilters,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: muted),
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8, color: muted),
           ),
           const SizedBox(height: 10),
           Text(appLocalization.managePaymentsApartment, style: TextStyle(fontSize: 12, color: muted)),
@@ -372,7 +372,7 @@ class ManagePaymentsView extends RentBaseView<ManagePaymentsController> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(amountLabel, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: titleColor)),
+                      Text(amountLabel, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: titleColor)),
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -384,7 +384,7 @@ class ManagePaymentsView extends RentBaseView<ManagePaymentsController> {
                           statusText,
                           style: TextStyle(
                             fontSize: 10,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             color: RentTheme.teal,
                           ),
                         ),

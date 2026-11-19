@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/access/staff_access.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../../l10n/app_localizations.dart';
+import 'staff_option_sheet_field.dart';
 
 class StaffPropertyOption {
   const StaffPropertyOption({required this.ref, required this.name});
@@ -56,9 +57,16 @@ class StaffAccessEditor extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          key: ValueKey(role),
-          initialValue: StaffPermissions.roles.contains(role) ? role : StaffPermissions.roleCleaner,
+        StaffOptionSheetField(
+          key: ValueKey(
+            StaffPermissions.roles.contains(role)
+                ? role
+                : StaffPermissions.roleCleaner,
+          ),
+          value: StaffPermissions.roles.contains(role)
+              ? role
+              : StaffPermissions.roleCleaner,
+          sheetTitle: l10n.staffAccessRole,
           decoration: InputDecoration(
             filled: true,
             fillColor: Theme.of(context).brightness == Brightness.dark
@@ -69,24 +77,18 @@ class StaffAccessEditor extends StatelessWidget {
               borderSide: BorderSide.none,
             ),
           ),
-          items: StaffPermissions.roles
-              .map(
-                (key) => DropdownMenuItem(
-                  value: key,
-                  child: Text(_roleLabel(l10n, key)),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value != null) onRoleChanged(value);
-          },
+          options: [
+            for (final key in StaffPermissions.roles)
+              StaffSheetOption(value: key, label: _roleLabel(l10n, key)),
+          ],
+          onChanged: onRoleChanged,
         ),
         const SizedBox(height: 18),
         Text(
           l10n.staffAccessCustomize,
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: onSurface,
           ),
         ),
@@ -130,7 +132,7 @@ class StaffAccessEditor extends StatelessWidget {
           l10n.staffAccessScope,
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: onSurface,
           ),
         ),

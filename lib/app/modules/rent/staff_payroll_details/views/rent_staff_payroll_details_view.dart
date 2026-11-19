@@ -42,7 +42,7 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
                     style: TextStyle(
                       fontSize: 10,
                       letterSpacing: 1.2,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: RentTheme.mutedText(context),
                     ),
                   ),
@@ -51,7 +51,7 @@ class RentStaffPayrollDetailsView extends RentBaseView<RentStaffPayrollDetailsCo
                     controller.totalMonthlyFormatted,
                     style: TextStyle(
                       fontSize: 26,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: RentTheme.teal,
                     ),
                   ),

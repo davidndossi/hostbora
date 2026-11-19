@@ -1,4 +1,5 @@
 import '../../../core/values/property_unit_floor.dart';
+import '../../../modules/add_listing/models/apartment_unit_draft.dart';
 import 'property_unit_local_data_source.dart';
 
 /// Replaces `property_units` rows for [propertyRef] after saving the parent property.
@@ -23,11 +24,12 @@ Future<void> syncPropertyUnitsForListingSave({
   final now = DateTime.now().millisecondsSinceEpoch;
 
   if (isApartment && apartmentUnitMaps.isNotEmpty) {
-    var i = 0;
     for (final m in apartmentUnitMaps) {
       final uid = (m['unitId'] ?? '').toString().trim();
-      final unitId = uid.isNotEmpty ? uid : 'u_${now}_$i';
-      i++;
+      final floor = PropertyUnitFloor.parse(m['unitFloor']);
+      final unitId = uid.isNotEmpty
+          ? uid
+          : ApartmentUnitDraft.newRef(floor: floor);
 
       final unitName = (m['unitName'] ?? '').toString().trim();
       if (unitName.isEmpty) continue;
@@ -39,7 +41,6 @@ Future<void> syncPropertyUnitsForListingSave({
       final freq = freqRaw.isNotEmpty ? freqRaw : listingRentFrequency;
 
       final notes = (m['unitDescription'] ?? '').toString();
-      final floor = PropertyUnitFloor.parse(m['unitFloor']);
       final operationMode = _normalizeUnitOperationMode(
         m['operationMode'],
         fallback: listingMode,
@@ -56,7 +57,10 @@ Future<void> syncPropertyUnitsForListingSave({
           status: 'vacant',
           rentAmount: rent,
           rentFrequency: freq,
-          minRentDuration: minRentalDuration,
+          minRentDuration: ApartmentUnitDraft.minDurationForMode(
+            operationMode,
+            frequency: freq,
+          ),
           maxGuests: maxGuests,
           rooms: rooms,
           floor: floor,
@@ -84,7 +88,10 @@ Future<void> syncPropertyUnitsForListingSave({
       status: 'vacant',
       rentAmount: rent,
       rentFrequency: listingRentFrequency,
-      minRentDuration: minRentalDuration,
+      minRentDuration: ApartmentUnitDraft.minDurationForMode(
+        listingMode,
+        frequency: listingRentFrequency,
+      ),
       maxGuests: maxGuests,
       rooms: rooms,
       floor: 0,

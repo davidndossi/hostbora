@@ -473,6 +473,17 @@
   "rentAddTenantIncomePromptBody": "Record the first rent payment now? We will pre-fill the income form from this tenant.",
   "rentAddTenantIncomePromptAdd": "Add income",
   "rentAddTenantIncomePromptLater": "Not now",
+  "bnbIncomeAddGuestPromptTitle": "Income saved",
+  "bnbIncomeAddGuestPromptBody": "No guest is recorded for {place} yet. Add the guest now?",
+  "@bnbIncomeAddGuestPromptBody": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "bnbIncomeAddGuestPromptAdd": "Add guest",
+  "bnbIncomeAddGuestPromptLater": "Not now",
   "loginSecurity": "LOGIN SECURITY",
   "pinCode": "PIN Code",
   "accessControl": "ACCESS CONTROL",
@@ -605,10 +616,10 @@
   "help": "HELP",
   "paaYangu": "Host Bora",
   "version": "Version",
-  "aboutIntro": "HostBora helps hosts and landlords run short-stay stays and long-term rentals from one app. Switch between the BnB and Rent workspaces any time.",
-  "aboutBnbFeatures": "BnB workspace: manage listings and units, track bookings and today's check-ins, use your host calendar, sync external calendars, record guest payments, and view reports.",
-  "aboutRentFeatures": "Rent workspace: track tenants and leases, manage rent payments and reminders, monitor expenses and monthly performance, handle staff, and review smart utility usage where set up.",
-  "aboutSharedFeatures": "Across both workspaces: add properties and expenses, message guests or tenants, keep documents in your property vault, and continue with secure on-device data when you are offline.",
+  "aboutIntro": "Manage short stays and long-term rentals from one app. Switch between the BnB and Rent workspaces any time.",
+  "aboutBnbFeatures": "BnB workspace: Manage listings and units, track bookings and today's check-ins, use your host calendar, sync external calendars, record guest payments, and view reports.",
+  "aboutRentFeatures": "Rent workspace: Track tenants and leases, manage rent payments and reminders, monitor expenses and monthly performance, handle staff, and review smart utility usage where set up.",
+  "aboutSharedFeatures": "Across both workspaces: Add properties and expenses, message guests or tenants, keep documents in your property vault, and continue with secure on-device data when you are offline.",
   "tryAgain": "Try Again",
   "goToHome": "Go to Home",
   "communityDashboard": "Community Dashboard",

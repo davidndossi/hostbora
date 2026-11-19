@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +15,8 @@ import '../../../../data/model/scheduled_maintenance_request.dart';
 import '../../../../data/repository/app_repository.dart';
 import '../../../add_listing/models/apartment_unit_draft.dart';
 import '../../../host_calendar/controllers/host_calendar_controller.dart';
+import '../../../../core/constants/ui_preference_keys.dart';
+import '../../../../core/utils/form_recall.dart';
 
 class RentScheduleMaintenanceFormController extends BaseController {
   final formKey = GlobalKey<FormState>();
@@ -90,8 +94,21 @@ class RentScheduleMaintenanceFormController extends BaseController {
   @override
   void onInit() {
     super.onInit();
+    _seedScheduleDate();
     _initRouteWorkspaceHint();
     _loadPropertyOptions();
+  }
+
+  /// Defaults to tomorrow rather than today: [scheduleTask] pins the reminder
+  /// to 09:00 on the chosen day, which is already in the past for most of the
+  /// working day.
+  void _seedScheduleDate() {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day)
+        .add(const Duration(days: 1));
+    scheduleDate.value = tomorrow;
+    scheduleDateFieldController.text =
+        DateFormat('dd/MM/yyyy').format(tomorrow);
   }
 
   void _initRouteWorkspaceHint() {
@@ -132,11 +149,11 @@ class RentScheduleMaintenanceFormController extends BaseController {
     final merged = <String>{...localNames, ...remoteNames}.toList();
     merged.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     propertyOptions.assignAll(merged);
-    _applyNavigationContext();
+    await _applyNavigationContext();
   }
 
   /// Reads [Get.arguments] (when a [Map]) and [Get.parameters] for route-driven defaults.
-  void _applyNavigationContext() {
+  Future<void> _applyNavigationContext() async {
     final args = Get.arguments;
 
     String? pickString(String key) {
@@ -173,6 +190,12 @@ class RentScheduleMaintenanceFormController extends BaseController {
         selectedProperty.value = match;
       }
     }
+    if (selectedProperty.value.isEmpty) {
+      selectedProperty.value = await FormRecall.readAmong(
+        UiPreferenceKeys.maintenanceProperty,
+        propertyOptions,
+      );
+    }
     if (selectedProperty.value.isEmpty && propertyOptions.isNotEmpty) {
       selectedProperty.value = propertyOptions.first;
     }
@@ -207,6 +230,16 @@ class RentScheduleMaintenanceFormController extends BaseController {
     final cat = pickString('category');
     if (cat != null && cat.isNotEmpty && categoryOptions.contains(cat)) {
       selectedCategory.value = cat;
+    } else {
+      // Hosts tend to schedule the same kind of work repeatedly, so the last
+      // category beats the alphabetical first one this field starts on.
+      final recalledCat = await FormRecall.readAmong(
+        UiPreferenceKeys.maintenanceCategory,
+        categoryOptions,
+      );
+      if (recalledCat.isNotEmpty) {
+        selectedCategory.value = recalledCat;
+      }
     }
 
     final desc = pickString('description');
@@ -296,10 +329,7 @@ class RentScheduleMaintenanceFormController extends BaseController {
       return list
           .map(
             (m) =>
-                (m['propertyName'] ?? m['name'] ?? m['title'])
-                    ?.toString()
-                    .trim() ??
-                '',
+                PropertyRecord.remoteName(m),
           )
           .where((e) => e.isNotEmpty)
           .toList();
@@ -400,6 +430,16 @@ class RentScheduleMaintenanceFormController extends BaseController {
     final propertyLabel = selectedProperty.value.trim();
     final issueDescription = descriptionController.text.trim();
     final fullDescription = _descriptionWithUnit(issueDescription, unit);
+
+    unawaited(
+      FormRecall.write(UiPreferenceKeys.maintenanceProperty, propertyLabel),
+    );
+    unawaited(
+      FormRecall.write(
+        UiPreferenceKeys.maintenanceCategory,
+        selectedCategory.value,
+      ),
+    );
 
     saving.value = true;
     try {

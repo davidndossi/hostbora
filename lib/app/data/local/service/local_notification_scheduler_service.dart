@@ -44,6 +44,15 @@ class LocalNotificationSchedulerService extends GetxService {
         ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
+  /// Drops every pending and delivered notification.
+  ///
+  /// Needed by the app reset: the schedule lives in the OS, not in the app's
+  /// database, so wiping local data alone would leave reminders queued for
+  /// tenants and tasks that no longer exist.
+  Future<void> cancelAll() async {
+    await _plugin.cancelAll();
+  }
+
   Future<void> scheduleOneShot({
     required int id,
     required DateTime when,

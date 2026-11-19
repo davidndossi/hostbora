@@ -48,13 +48,7 @@ class OfflineSyncQueueItem {
 class OfflineSyncQueueLocalDataSource {
   static const _table = AppLocalDatabase.offlineSyncQueueTable;
 
-  Database? _db;
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
-  }
+  Future<Database> get database => AppLocalDatabase.database;
 
   /// Adds a new pending operation.
   ///
@@ -143,6 +137,25 @@ class OfflineSyncQueueLocalDataSource {
       WHERE id = ?
       ''',
       [errorMessage, DateTime.now().millisecondsSinceEpoch, id],
+    );
+  }
+
+  /// Rows left `in_progress` after a crash or abandoned Future never retry
+  /// unless we move them back to `pending`.
+  Future<int> reclaimStaleInProgress({
+    Duration olderThan = const Duration(minutes: 2),
+  }) async {
+    final db = await database;
+    final cutoff =
+        DateTime.now().millisecondsSinceEpoch - olderThan.inMilliseconds;
+    return db.update(
+      _table,
+      {
+        'status': 'pending',
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'status = ? AND updated_at_ms < ?',
+      whereArgs: ['in_progress', cutoff],
     );
   }
 

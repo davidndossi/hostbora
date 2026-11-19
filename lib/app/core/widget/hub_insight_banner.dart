@@ -9,7 +9,7 @@ import '../../routes/app_pages.dart';
 import '../theme/app_theme_tokens.dart';
 import 'app_skeleton.dart';
 
-/// Tappable insight strip; loads portfolio metrics from local DB only.
+/// Tappable insight strip; loads portfolio metrics from local DB plus live backend rows.
 ///
 /// [compact] keeps it quiet so it does not compete with Create / AI FAB.
 class HubInsightBanner extends StatefulWidget {
@@ -155,14 +155,14 @@ class _HubInsightBannerState extends State<HubInsightBanner> {
                         minHeight: 28,
                       ),
                       icon: Icon(
-                        Icons.close_rounded,
+                        Icons.close_outlined,
                         size: 16,
                         color: tokens.textMuted,
                       ),
                       onPressed: _dismiss,
                     )
                   else
-                    Icon(Icons.chevron_right, color: tokens.textMuted, size: 18),
+                    Icon(Icons.chevron_right_outlined, color: tokens.textMuted, size: 18),
                 ],
               ),
             ),
@@ -210,7 +210,7 @@ class _HubInsightBannerState extends State<HubInsightBanner> {
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: tokens.accent, size: 22),
+                Icon(Icons.chevron_right_outlined, color: tokens.accent, size: 22),
               ],
             ),
           ),

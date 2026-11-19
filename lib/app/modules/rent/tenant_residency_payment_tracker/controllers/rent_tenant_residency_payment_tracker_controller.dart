@@ -21,6 +21,8 @@ import '../../../../data/local/preference/preference_manager.dart';
 import '../../../../data/local/service/currency_service.dart';
 import '../../../../data/local/service/local_notification_scheduler_service.dart';
 import '../../../../routes/app_pages.dart';
+import '../../../../data/service/analytics_service.dart';
+import '../../tenant_ledger_occupancy/utils/tenant_ledger_finance.dart';
 
 /// Payment box state for M1…M6 ledger.
 enum ResidencyMonthStatus { paid, partial, upcoming }
@@ -117,6 +119,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   final PreferenceManager _preferenceManager;
   final LocalNotificationSchedulerService _notificationScheduler;
   final searchController = TextEditingController();
+  final reportsScrollController = ScrollController();
   final searchQuery = ''.obs;
   final tenants = <TenantInsight>[].obs;
 
@@ -164,6 +167,9 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     final onScheduleCount = tenants.where((e) => e.onSchedule).length;
     return (onScheduleCount * 100 / tenants.length);
   }
+
+  /// Collection rate formatted as `xx.xx` (no % suffix).
+  String get collectionRatePctLabel => collectionRatePct.toStringAsFixed(2);
 
   @override
   void onReady() {
@@ -330,11 +336,14 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     );
   }
 
+  /// The listing this screen is scoped to, or empty when showing all tenants.
+  String get filterPropertyTitle => _filterPropertyTitle.trim();
+
   /// App bar label; includes listing name when opened with `propertyTitle` from listing details.
   String get tenantsScreenTitle {
     final isSw = Get.locale?.languageCode == 'sw';
     final t = _filterPropertyTitle;
-    if (t.isEmpty) return isSw ? 'Maarifa ya Upangaji' : 'Tenancy Insights';
+    if (t.isEmpty) return isSw ? 'Wapangaji' : 'Tenants';
     return isSw ? 'Wapangaji — $t' : 'Tenants — $t';
   }
 
@@ -464,6 +473,39 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     propertyLineFilter.value = '';
   }
 
+  /// Resets everything that can hide a tenant, search included.
+  ///
+  /// Separate from [clearFilters] because that one is also wired to the filter
+  /// sheet, where wiping a search the host typed outside it would be a
+  /// surprise. Here the whole point is to get every tenant back on screen.
+  void clearSearchAndFilters() {
+    clearFilters();
+    searchQuery.value = '';
+    searchController.clear();
+  }
+
+  /// Opens the Add Tenant form, carrying the property and workspace this
+  /// screen is already scoped to so the host is not asked to pick them again.
+  ///
+  /// Reloads on return rather than relying on the form to report back, because
+  /// the tenant may also have been saved and then edited before popping.
+  Future<void> addTenant() async {
+    final title = _filterPropertyTitle.trim();
+    final property = <String, String>{
+      if (_filterPropertyRef.isNotEmpty) 'propertyRef': _filterPropertyRef,
+      if (title.isNotEmpty) 'property': title,
+    };
+    await Get.toNamed(
+      Routes.ADD_NEW_TENANT,
+      parameters: property,
+      // `workspaceType` goes in arguments only. The form reads it from there
+      // by design, because Get.parameters carries the key over from earlier
+      // screens and a stale `bnb` would empty the rent unit dropdown.
+      arguments: {...property, 'workspaceType': _workspaceType},
+    );
+    await loadTenants();
+  }
+
   void onFilterPressed() {
     final isSw = Get.locale?.languageCode == 'sw';
     Get.bottomSheet<void>(
@@ -488,7 +530,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
                         child: Text(
                           isSw ? 'Vichujio' : 'Filters',
                           style: const TextStyle(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             fontSize: 18,
                           ),
                         ),
@@ -703,7 +745,16 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     expandedTenantCardIds.refresh();
   }
 
+  DateTime? _ledgerNavAt;
+
   void openTenantLedger(TenantInsight t) {
+    final now = DateTime.now();
+    final last = _ledgerNavAt;
+    if (last != null && now.difference(last) < const Duration(milliseconds: 800)) {
+      return;
+    }
+    if (Get.currentRoute == Routes.RENT_TENANT_LEDGER_OCCUPANCY) return;
+    _ledgerNavAt = now;
     Get.toNamed(
       Routes.RENT_TENANT_LEDGER_OCCUPANCY,
       parameters: {
@@ -719,6 +770,27 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
           'propertySuite': _filterPropertySuite,
       },
       arguments: {'ws': _workspaceType},
+    );
+  }
+
+  void openApartmentPdfReports() {
+    final title = _filterPropertyTitle.trim().isNotEmpty
+        ? _filterPropertyTitle.trim()
+        : (_filterPropertyLoc.trim().isNotEmpty
+            ? _filterPropertyLoc.trim()
+            : 'Property');
+    Get.toNamed(
+      Routes.RENT_APARTMENT_REPORTS,
+      parameters: {
+        if (_filterPropertyRef.isNotEmpty) 'propertyRef': _filterPropertyRef,
+        'propertyTitle': title,
+        'propertyLabel': title,
+      },
+      arguments: {
+        if (_filterPropertyRef.isNotEmpty) 'propertyRef': _filterPropertyRef,
+        'propertyTitle': title,
+        'propertyLabel': title,
+      },
     );
   }
 
@@ -741,8 +813,37 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
         'propertyRef': _filterPropertyRef,
         'workspace': _workspaceType,
         'contextLabel': contextTitle.isEmpty
-            ? 'Tenancy insights recipients'
+            ? 'Tenant recipients'
             : 'Tenants in $contextTitle',
+      },
+    );
+  }
+
+  /// Messages one tenant, from their own card.
+  ///
+  /// The card's icon is disabled when [TenantInsight.phoneNumber] is empty, so
+  /// the guard here is a backstop rather than the normal path — but it stays,
+  /// because reaching Send SMS with no recipient produces a form the host
+  /// cannot submit and no explanation of why.
+  void openSendSmsForTenant(TenantInsight tenant) {
+    final phone = tenant.phoneNumber.trim();
+    if (phone.isEmpty) {
+      showErrorMessage(
+        Get.locale?.languageCode == 'sw'
+            ? 'Mpangaji huyu hana namba ya simu'
+            : 'This tenant has no phone number',
+      );
+      return;
+    }
+    Get.toNamed(
+      Routes.SEND_SMS,
+      arguments: {
+        'phones': [phone],
+        'propertyRef': _filterPropertyRef,
+        'workspace': _workspaceType,
+        'contextLabel': tenant.name.trim().isEmpty
+            ? 'Tenant recipient'
+            : tenant.name.trim(),
       },
     );
   }
@@ -803,7 +904,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
         when: next,
         title: 'Tenant report ready',
         body:
-            'Open Tenancy Insights to send your ${frequency == TenantReportFrequency.weekly ? 'weekly' : 'monthly'} Excel report via WhatsApp.',
+            'Open Tenants to send your ${frequency == TenantReportFrequency.weekly ? 'weekly' : 'monthly'} Excel report via WhatsApp.',
         payload: 'tenant_report_schedule',
       );
     }
@@ -834,7 +935,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     await _resolveListingFilterAliases();
     final rows = await _tenantLocal.getAllNewestFirstByWorkspace(ws);
     final scoped = rows.where(_recordMatchesListingFilter).toList();
-    final incomeRows = await _incomeLocal.getAllNewestFirst(workspaceType: ws);
+    final incomeRows = await _incomeLocal.getAllNewestFirst();
     final expenseRows = await _expenseLocal.getAllNewestFirst(
       workspaceType: ws,
     );
@@ -854,22 +955,30 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
     tenants.assignAll(
       scoped.map((r) {
-        final start = _parseDate(r.leaseStartIso) ?? DateTime.now();
-        final end =
-            _parseDate(r.leaseEndIso) ??
-            DateTime.now().add(const Duration(days: 30));
-        final now = DateTime.now();
+        final now = DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day,
+        );
+        final start = _parseDate(r.leaseStartIso) ?? now;
+        final end = _parseDate(r.leaseEndIso) ??
+            start.add(const Duration(days: 30));
         final totalMonths = _monthsBetween(start, end).clamp(1, 240);
         final spentMonths = _monthsBetween(start, now).clamp(0, totalMonths);
         final progress = (spentMonths / totalMonths).clamp(0.0, 1.0);
         final totalAmount = r.rentAmountValue * totalMonths;
-        final paidFromIncome = _sumIncomeForTenant(
+        final tenureStart = _parseDate(r.leaseStartIso);
+        final tenureEnd = _parseDate(r.leaseEndIso);
+        final paidFromIncome = _sumIncomeForTenant(r, incomeRows);
+        final incomeForWindow = _sumIncomeForTenant(
           r,
           incomeRows,
           start: financeWindow.value == TenantFinanceWindow.tenure
-              ? start
+              ? tenureStart
               : null,
-          end: financeWindow.value == TenantFinanceWindow.tenure ? end : null,
+          end: financeWindow.value == TenantFinanceWindow.tenure
+              ? tenureEnd
+              : null,
         );
         final expenseForTenure = _sumExpenseForTenant(
           tenant: r,
@@ -881,7 +990,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
               : null,
           end: financeWindow.value == TenantFinanceWindow.tenure ? end : null,
         );
-        final paidAmount = paidFromIncome.clamp(0, totalAmount).toDouble();
+        final paidAmount = paidFromIncome < 0 ? 0.0 : paidFromIncome;
         final expectedToDate = (r.rentAmountValue * spentMonths).clamp(
           0,
           totalAmount,
@@ -925,7 +1034,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
           monthlyRent: r.rentAmountValue,
           arrearsAmount: arrears.toDouble(),
           isLeaseEndingSoon: isEndingSoon,
-          incomeForTenure: paidFromIncome,
+          incomeForTenure: incomeForWindow,
           expenseForTenure: expenseForTenure,
         );
       }),
@@ -1039,16 +1148,19 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
     final headers = template == TenancyExcelTemplate.customerRentDetails
         ? <String>[
-            'Name',
-            'Room No.',
-            'Rent / month',
-            'Rent period',
-            'Start',
-            'Expiry',
             'Date',
+            'Name',
+            'Apt no',
+            'Rent / month',
+            'Rent / 6 month',
+            'Rent period',
             'Amt paid',
-            'Amount owing / not paid',
-            'Remarks',
+            'Balance',
+            'Start date',
+            'Expiry date',
+            'Recipient',
+            'Status',
+            'Contract remarks',
           ]
         : <String>[
             'Name',
@@ -1087,21 +1199,33 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
 
     for (var r = 0; r < rows.length; r++) {
       final t = rows[r];
-      final status = t.arrearsAmount > 0
-          ? 'Arrears'
-          : (t.isLeaseEndingSoon ? 'Ending soon' : 'On schedule');
+      final status = t.arrearsAmount <= 0 && t.totalAmount > 0
+          ? 'PAID'
+          : (t.paidAmount <= 0 ? 'NOT PAID' : 'PARTIAL');
+      final periodMonths = ((t.leaseEnd.year - t.leaseStart.year) * 12 +
+              (t.leaseEnd.month - t.leaseStart.month))
+          .clamp(1, 1200);
+      final rentSix = t.monthlyRent * 6;
+      final remarks = status == 'PAID'
+          ? '$periodMonths months period paid fully'
+          : (status == 'PARTIAL'
+              ? 'Partial payment · balance ${_formatAmount(t.arrearsAmount.round())}'
+              : 'Not paid');
       final rowValues = template == TenancyExcelTemplate.customerRentDetails
           ? <Object?>[
+              _date.format(DateTime.now()),
               t.name,
               t.propertyLine,
               _formatAmount(t.monthlyRent.round()),
-              t.leasePeriodLabel,
-              _date.format(t.leaseStart),
-              _date.format(t.leaseEnd),
-              _date.format(DateTime.now()),
+              _formatAmount(rentSix.round()),
+              '$periodMonths',
               _formatAmount(t.paidAmount.round()),
               _formatAmount(t.arrearsAmount.round()),
+              _date.format(t.leaseStart),
+              _date.format(t.leaseEnd),
+              '',
               status,
+              remarks,
             ]
           : <Object?>[
               t.name,
@@ -1159,6 +1283,11 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       ),
     ], text: caption);
+    analytics?.logReportExported(
+      format: 'excel',
+      reportType: slug,
+      module: 'rent',
+    );
     if (!viaWhatsApp) {
       showSuccessMessage('Excel report prepared.');
     }
@@ -1331,11 +1460,16 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     DateTime? end,
   }) {
     var sum = 0.0;
+    final from = start == null
+        ? null
+        : DateTime(start.year, start.month, start.day);
+    final to = end == null ? null : DateTime(end.year, end.month, end.day);
     for (final row in incomeRows) {
-      final d = row.paidLocalCalendarOrCreated();
-      if (start != null && d.isBefore(start)) continue;
-      if (end != null && d.isAfter(end)) continue;
-      if (_incomeRowMatchesTenant(row, tenant)) {
+      final raw = row.paidLocalCalendarOrCreated();
+      final d = DateTime(raw.year, raw.month, raw.day);
+      if (from != null && d.isBefore(from)) continue;
+      if (to != null && d.isAfter(to)) continue;
+      if (TenantLedgerFinance.incomeMatchesTenant(row, tenant)) {
         sum += row.amountValue;
       }
     }
@@ -1346,60 +1480,7 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
     IncomeRecord income,
     TenantRecord tenant,
   ) {
-    final incomeTenant = income.tenantName.trim().toLowerCase();
-    final tenantName = tenant.tenantName.trim().toLowerCase();
-    final tenantMatches = incomeTenant.isNotEmpty && incomeTenant == tenantName;
-    if (incomeTenant.isNotEmpty && !tenantMatches) {
-      return false;
-    }
-    final tenantRef = tenant.propertyRef.trim();
-    final incomeRef = income.propertyRef.trim();
-    final refMatches =
-        tenantRef.isNotEmpty && incomeRef.isNotEmpty && tenantRef == incomeRef;
-    if (tenantRef.isNotEmpty &&
-        incomeRef.isNotEmpty &&
-        tenantRef != incomeRef) {
-      return false;
-    }
-    final unitMatches = _incomeRowMatchesTenantUnit(income, tenant);
-    if (refMatches && (tenantMatches || unitMatches)) return true;
-    if (tenantMatches && unitMatches) return true;
-    if (tenantMatches && _incomeRowMatchesTenantProperty(income, tenant)) {
-      return true;
-    }
-    return !tenantMatches &&
-        unitMatches &&
-        _incomeRowMatchesTenantProperty(income, tenant);
-  }
-
-  static bool _incomeRowMatchesTenantUnit(
-    IncomeRecord income,
-    TenantRecord tenant,
-  ) {
-    final tenantUnitId = tenant.apartmentUnitId.trim().toLowerCase();
-    final tenantUnit = tenant.unitLabel.trim().toLowerCase();
-    final incomeUnit = income.apartmentUnit.trim().toLowerCase();
-    final notes = income.notes.trim().toLowerCase();
-    if (tenantUnitId.isNotEmpty && incomeUnit == tenantUnitId) return true;
-    if (tenantUnit.isNotEmpty && incomeUnit == tenantUnit) return true;
-    if (tenantUnit.isNotEmpty && notes.contains(tenantUnit)) return true;
-    return false;
-  }
-
-  static bool _incomeRowMatchesTenantProperty(
-    IncomeRecord income,
-    TenantRecord tenant,
-  ) {
-    final pl = tenant.propertyLabel.trim().toLowerCase();
-    if (pl.isEmpty) return true;
-    final ap = income.apartment.trim().toLowerCase();
-    final unit = income.apartmentUnit.trim().toLowerCase();
-    final notes = income.notes.trim().toLowerCase();
-    final blob = '$ap $unit $notes'.trim();
-    return blob.contains(pl) ||
-        (ap.isNotEmpty && pl.contains(ap)) ||
-        (unit.isNotEmpty && pl.contains(unit)) ||
-        ap == pl;
+    return TenantLedgerFinance.incomeMatchesTenant(income, tenant);
   }
 
   static double _sumExpenseForTenant({
@@ -1451,14 +1532,13 @@ class RentTenantResidencyPaymentTrackerController extends BaseController {
   }
 
   int _monthsBetween(DateTime start, DateTime end) {
-    var months = (end.year - start.year) * 12 + (end.month - start.month);
-    if (end.day < start.day) months -= 1;
-    return months < 0 ? 0 : months;
+    return TenantLedgerFinance.monthsBetween(start, end);
   }
 
   @override
   void onClose() {
     searchController.dispose();
+    reportsScrollController.dispose();
     super.onClose();
   }
 }

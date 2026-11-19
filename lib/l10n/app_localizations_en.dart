@@ -1335,6 +1335,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rentAddTenantIncomePromptLater => 'Not now';
 
   @override
+  String get bnbIncomeAddGuestPromptTitle => 'Income saved';
+
+  @override
+  String bnbIncomeAddGuestPromptBody(String place) {
+    return 'No guest is recorded for $place yet. Add the guest now?';
+  }
+
+  @override
+  String get bnbIncomeAddGuestPromptAdd => 'Add guest';
+
+  @override
+  String get bnbIncomeAddGuestPromptLater => 'Not now';
+
+  @override
   String get loginSecurity => 'LOGIN SECURITY';
 
   @override
@@ -1734,19 +1748,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutIntro =>
-      'HostBora helps hosts and landlords run short-stay stays and long-term rentals from one app. Switch between the BnB and Rent workspaces any time.';
+      'Manage short stays and long-term rentals from one app. Switch between the BnB and Rent workspaces any time.';
 
   @override
   String get aboutBnbFeatures =>
-      'BnB workspace: manage listings and units, track bookings and today\'s check-ins, use your host calendar, sync external calendars, record guest payments, and view reports.';
+      'BnB workspace: Manage listings and units, track bookings and today\'s check-ins, use your host calendar, sync external calendars, record guest payments, and view reports.';
 
   @override
   String get aboutRentFeatures =>
-      'Rent workspace: track tenants and leases, manage rent payments and reminders, monitor expenses and monthly performance, handle staff, and review smart utility usage where set up.';
+      'Rent workspace: Track tenants and leases, manage rent payments and reminders, monitor expenses and monthly performance, handle staff, and review smart utility usage where set up.';
 
   @override
   String get aboutSharedFeatures =>
-      'Across both workspaces: add properties and expenses, message guests or tenants, keep documents in your property vault, and continue with secure on-device data when you are offline.';
+      'Across both workspaces: Add properties and expenses, message guests or tenants, keep documents in your property vault, and continue with secure on-device data when you are offline.';
 
   @override
   String get tryAgain => 'Try Again';

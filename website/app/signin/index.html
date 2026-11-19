@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="sw">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="signin.meta.title">Open HostBora</title>
+    <meta
+      name="description"
+      data-i18n="signin.meta.description"
+      content="Open HostBora to sign in, or download the app first."
+    />
+    <meta name="theme-color" content="#1C6E64" />
+    <link rel="canonical" href="https://www.hostbora.co.tz/app/signin/" />
+    <link rel="icon" href="../../assets/ui/logo-mark-a.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+    />
+    <link rel="stylesheet" href="../../styles.css?v=20261108" />
+  </head>
+  <body>
+    <main id="main" class="register">
+      <div class="shell register__shell">
+        <p class="eyebrow">
+          <img src="../../assets/ui/star-north.svg" width="16" height="16" alt="" />
+          <span>HostBora</span>
+        </p>
+        <h1 class="display" data-i18n="signin.title">Sign in to HostBora</h1>
+        <p class="register__lead" data-i18n="signin.lead">
+          If the app is installed it opens on Sign in. If not, download it, then come back and tap Open
+          HostBora.
+        </p>
+
+        <div class="register__actions">
+          <a class="btn btn--primary" id="openAppBtn" href="hostbora://signin">
+            <span data-i18n="signin.open">Open HostBora</span>
+          </a>
+          <a
+            class="btn btn--ghost"
+            id="playBtn"
+            href="https://play.google.com/store/apps/details?id=tz.co.artbel.paa_yangu"
+          >
+            <span data-i18n="signin.play">Get it on Google Play</span>
+          </a>
+          <a
+            class="btn btn--ghost"
+            id="appStoreBtn"
+            href="https://apps.apple.com/app/host-bora/id6760237277"
+          >
+            <span data-i18n="signin.appstore">Download on the App Store</span>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <script src="../../i18n.js?v=20261108"></script>
+    <script src="../../open-app.js?v=20261108"></script>
+    <script>
+      (function () {
+        function bindStoreButtons() {
+          if (!window.HostBoraOpenApp) return;
+          const p = window.HostBoraOpenApp.platform();
+          const play = document.getElementById('playBtn');
+          const apple = document.getElementById('appStoreBtn');
+          if (p === 'ios' && play) play.hidden = true;
+          if (p === 'android' && apple) apple.hidden = true;
+        }
+
+        function tryOpen(withStore) {
+          if (!window.HostBoraOpenApp) return;
+          window.HostBoraOpenApp.openApp({
+            storeFallback: !!withStore,
+            universalFallback: false,
+          });
+        }
+
+        bindStoreButtons();
+        tryOpen(false);
+        document.getElementById('openAppBtn')?.addEventListener('click', function (e) {
+          e.preventDefault();
+          tryOpen(true);
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/access/plan_agents.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
@@ -117,6 +118,16 @@ class GuestHistoryController extends BaseController {
 
       // Newest stay first (by check-in date descending).
       items.sort((a, b) => b.checkInIso.compareTo(a.checkInIso));
+      final historyStart = PlanAccess.historyStart();
+      if (historyStart != null) {
+        items.retainWhere((item) {
+          final checkOut = _parseDate(item.checkOutIso);
+          final checkIn = _parseDate(item.checkInIso);
+          final end = checkOut ?? checkIn;
+          if (end == null) return true;
+          return !DateTime(end.year, end.month, end.day).isBefore(historyStart);
+        });
+      }
       allGuests.assignAll(items);
       _applyFilter();
     } finally {

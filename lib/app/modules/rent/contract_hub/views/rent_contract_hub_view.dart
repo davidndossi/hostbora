@@ -29,20 +29,20 @@ class _HubUi {
   static const Color renewUrgentBg = Color(0xFF6D2E2E);
   static const Color badgeRose = Color(0xFFFFCDD2);
 
-  Color get accent =>
-      dark ? context.tokens.accent : AppColors.colorPrimary;
+  Color get accent => dark ? context.tokens.accent : AppColors.colorPrimary;
 
-  Color get softAccentFill => dark
-      ? accent.withValues(alpha: 0.16)
-      : const Color(0xFFFFF3ED);
+  Color get softAccentFill =>
+      dark ? accent.withValues(alpha: 0.16) : const Color(0xFFFFF3ED);
 
   List<BoxShadow> cardShadow(bool strong) => [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: dark ? 0.35 : (strong ? 0.08 : 0.05)),
-          blurRadius: strong ? 14 : 10,
-          offset: const Offset(0, 4),
-        ),
-      ];
+    BoxShadow(
+      color: Colors.black.withValues(
+        alpha: dark ? 0.35 : (strong ? 0.08 : 0.05),
+      ),
+      blurRadius: strong ? 14 : 10,
+      offset: const Offset(0, 4),
+    ),
+  ];
 }
 
 /// Contract Hub — aligned with Home / My Properties shell tokens.
@@ -56,9 +56,8 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
       FormSurfaceColors.of(context).scaffold;
 
   @override
-  PreferredSizeWidget? appBar(BuildContext context) => rentAppBar(
-    _isSw ? 'Mikataba' : 'Contracts',
-  );
+  PreferredSizeWidget? appBar(BuildContext context) =>
+      rentAppBar(_isSw ? 'Mikataba' : 'Contracts');
 
   @override
   Widget body(BuildContext context) {
@@ -125,12 +124,12 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
               ? 'Tafuta wapangaji au mali…'
               : 'Search tenants or properties…',
           hintStyle: TextStyle(color: u.muted, fontSize: 15),
-          prefixIcon: Icon(Icons.search_rounded, color: u.muted),
+          prefixIcon: Icon(Icons.search_outlined, color: u.muted),
           suffixIcon: controller.searchQuery.value.isEmpty
               ? null
               : IconButton(
                   tooltip: _isSw ? 'Futa' : 'Clear',
-                  icon: Icon(Icons.clear_rounded, color: u.muted),
+                  icon: Icon(Icons.clear_outlined, color: u.muted),
                   onPressed: controller.clearSearch,
                 ),
           filled: true,
@@ -143,8 +142,10 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: u.c.border),
           ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );
@@ -173,7 +174,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.tune_rounded, size: 22, color: u.accent),
+                Icon(Icons.tune_outlined, size: 22, color: u.accent),
                 const SizedBox(width: 10),
                 Text(
                   _isSw ? 'Vichujio' : 'Filters',
@@ -204,7 +205,11 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.cloud_upload_outlined, color: Colors.white.withValues(alpha: 0.95), size: 36),
+          Icon(
+            Icons.cloud_upload_outlined,
+            color: Colors.white.withValues(alpha: 0.95),
+            size: 36,
+          ),
           const SizedBox(height: 14),
           Text(
             _isSw ? 'Hifadhi Mkataba Mpya' : 'Archive a New Agreement',
@@ -218,8 +223,8 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
           const SizedBox(height: 10),
           Text(
             _isSw
-                ? 'Pakia haraka na uhifadhi mikataba iliyosainiwa katika vault salama.'
-                : 'Swiftly digitize and store signed lease documents into our secure vault.',
+                ? 'Pakia PDF, Word, au picha ya mkataba uliosainiwa kwenye vault salama.'
+                : 'Upload a PDF, Word, or image of the signed lease into our secure vault.',
             style: TextStyle(
               fontSize: 14,
               height: 1.45,
@@ -242,7 +247,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
               child: Text(
                 _isSw ? 'PAKIA MKATABA ULIOSAINIWA' : 'UPLOAD SIGNED LEASE',
                 style: const TextStyle(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   fontSize: 13,
                   letterSpacing: 0.6,
                 ),
@@ -264,7 +269,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
             _isSw ? 'MIKATABA HAI' : 'ACTIVE CONTRACTS',
             style: TextStyle(
               fontSize: 10,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
               color: u.muted,
             ),
@@ -366,7 +371,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                               c.propertyLineCaps,
                               style: TextStyle(
                                 fontSize: 10,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 letterSpacing: 0.6,
                                 color: u.accent,
                               ),
@@ -374,7 +379,10 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                           ),
                           if (c.showDaysLeftBadge && !urgent)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: u.dark
                                     ? _HubUi.badgeRose.withValues(alpha: 0.25)
@@ -386,10 +394,12 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                                     ? 'SIKU ${c.daysUntilExpiry}'
                                     : '${c.daysUntilExpiry} DAYS LEFT',
                                 style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
                                   letterSpacing: 0.4,
-                                  color: u.dark ? const Color(0xFFFFAB91) : _HubUi.urgentRed,
+                                  color: u.dark
+                                      ? const Color(0xFFFFAB91)
+                                      : _HubUi.urgentRed,
                                 ),
                               ),
                             ),
@@ -399,7 +409,6 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                       Text(
                         c.tenantName,
                         style: TextStyle(
-                          fontFamily: 'serif',
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: u.onSurface,
@@ -409,7 +418,9 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                       Row(
                         children: [
                           Icon(
-                            urgent ? Icons.warning_amber_rounded : Icons.calendar_today_outlined,
+                            urgent
+                                ? Icons.warning_amber_outlined
+                                : Icons.calendar_today_outlined,
                             size: 15,
                             color: urgent ? _HubUi.urgentRed : u.muted,
                           ),
@@ -418,15 +429,15 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                             child: Text(
                               c.isExpiredOrDue
                                   ? (_isSw
-                                      ? 'Imeisha ${controller.formatExpiry(c, isSw: _isSw)}'
-                                      : 'Expired ${controller.formatExpiry(c, isSw: _isSw)}')
+                                        ? 'Imeisha ${controller.formatExpiry(c, isSw: _isSw)}'
+                                        : 'Expired ${controller.formatExpiry(c, isSw: _isSw)}')
                                   : (_isSw
-                                      ? (urgent
-                                          ? 'Inaisha kwa siku ${c.daysUntilExpiry}'
-                                          : 'Inaisha ${controller.formatExpiry(c, isSw: _isSw)}')
-                                      : (urgent
-                                          ? 'Expires in ${c.daysUntilExpiry} days'
-                                          : 'Expires ${controller.formatExpiry(c, isSw: _isSw)}')),
+                                        ? (urgent
+                                              ? 'Inaisha kwa siku ${c.daysUntilExpiry}'
+                                              : 'Inaisha ${controller.formatExpiry(c, isSw: _isSw)}')
+                                        : (urgent
+                                              ? 'Expires in ${c.daysUntilExpiry} days'
+                                              : 'Expires ${controller.formatExpiry(c, isSw: _isSw)}')),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -465,7 +476,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                           child: Text(
                             _isSw ? 'FANYA UHUISHAJI' : 'RENEW LEASE',
                             style: const TextStyle(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               fontSize: 12,
                               letterSpacing: 0.5,
                             ),
@@ -475,7 +486,9 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                           onPressed: () => controller.onRenewLease(c),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: u.accent,
-                            side: BorderSide(color: u.accent.withValues(alpha: 0.45)),
+                            side: BorderSide(
+                              color: u.accent.withValues(alpha: 0.45),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -484,7 +497,7 @@ class RentContractHubView extends RentBaseView<RentContractHubController> {
                           child: Text(
                             _isSw ? 'FANYA UHUISHAJI' : 'RENEW LEASE',
                             style: const TextStyle(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               fontSize: 12,
                               letterSpacing: 0.5,
                             ),

@@ -153,13 +153,63 @@ class CurrencyService extends GetxService {
     final base = baseCurrency.value;
     if (from.isEmpty || from == base) return inputAmount;
 
-    final fromSelling = sellingRateFor(from) ?? 1;
-    final baseSelling = base == 'TZS' ? 1.0 : (sellingRateFor(base) ?? 1);
+    final fromSelling = sellingRateFor(from);
+    if (fromSelling == null || fromSelling <= 0) {
+      // Missing FX rate — avoid treating foreign amount as base (e.g. USD→TZS * 1).
+      return inputAmount;
+    }
+    final baseSelling = base == 'TZS' ? 1.0 : (sellingRateFor(base) ?? 0);
+    if (base != 'TZS' && (baseSelling <= 0)) return inputAmount;
 
     final inTzs = from == 'TZS' ? inputAmount : inputAmount * fromSelling;
     if (base == 'TZS') return inTzs;
-    if (baseSelling <= 0) return inTzs;
     return inTzs / baseSelling;
+  }
+
+  /// Formats [amount] of [fromCurrency] in the user's base currency.
+  ///
+  /// A USD price shown to a TZS user becomes the shilling equivalent. When the
+  /// rate is not loaded yet, the original currency is shown instead of a
+  /// number wearing the wrong symbol.
+  String formatMoneyInBase({
+    required double amount,
+    required String fromCurrency,
+    String suffix = '',
+  }) {
+    final from = fromCurrency.trim().toUpperCase();
+    final base = baseCurrency.value;
+    rates.length;
+    if (from.isEmpty || from == base || _canConvert(from, base)) {
+      final converted = from.isEmpty || from == base
+          ? amount
+          : toBaseAmount(inputAmount: amount, inputCurrency: from);
+      return '${formatBase(converted, decimalDigits: _displayDigits(base))}$suffix';
+    }
+    final digits = _displayDigits(from);
+    final fmt = NumberFormat.currency(
+      symbol: symbolFor(from),
+      decimalDigits: digits,
+      name: from,
+    );
+    return '${fmt.format(amount)}$suffix';
+  }
+
+  bool _canConvert(String from, String base) {
+    if (from == base) return true;
+    if (from != 'TZS' && sellingRateFor(from) == null) return false;
+    if (base != 'TZS' && sellingRateFor(base) == null) return false;
+    return true;
+  }
+
+  int _displayDigits(String code) {
+    switch (code) {
+      case 'TZS':
+      case 'UGX':
+      case 'RWF':
+        return 0;
+      default:
+        return 2;
+    }
   }
 
   String formatBase(num amount, {int decimalDigits = 0}) {

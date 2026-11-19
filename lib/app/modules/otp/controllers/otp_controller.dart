@@ -4,11 +4,13 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
+import '../../../core/access/sales_agent_session.dart';
 import '../../../core/base/base_controller.dart';
+import '../../../core/locale/app_locale_controller.dart';
+import '../../../core/utils/auth_messages.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
 import '../../../data/local/service/session_service.dart';
-import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/general_response.dart';
 import '../../../data/model/login_otp_request.dart';
 import '../../../data/model/login_response.dart';
@@ -16,6 +18,8 @@ import '../../../data/model/otp_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../data/service/app_review_service.dart';
 import '../../../network/exceptions/api_exception.dart';
+import '../../../network/exceptions/base_exception.dart';
+import '../../../network/exceptions/not_found_exception.dart';
 import '../../../routes/app_pages.dart';
 import '../../auth/controllers/auth_controller.dart';
 
@@ -31,6 +35,15 @@ class OtpController extends BaseController {
       );
     }
     return raw;
+  }
+
+  Future<String> _signInFailureCopy(String? raw, {bool notFound = false}) async {
+    if (isRemovedStaffError(raw) || await RemovedStaffPhones.contains(msisdn)) {
+      return removedStaffLoginMessage();
+    }
+    if (notFound || isMissingAccountError(raw)) return missingAccountLoginMessage();
+    if (raw != null && raw.trim().isNotEmpty) return _loginAccessMessage(raw);
+    return _t('Could not send OTP', 'Imeshindikana kutuma OTP');
   }
   final enteredPin = <String>[].obs;
   final selectedIndex = (-1).obs;
@@ -171,7 +184,12 @@ class OtpController extends BaseController {
   Future<void> _completeLogin(LoginResponse res) async {
     if (res.token == null || res.token!.isEmpty) {
       showErrorMessage(
-        _t('Login failed. Please try again.', 'Kuingia kumeshindikana. Jaribu tena.'),
+        isMissingAccountError(res.message)
+            ? missingAccountLoginMessage()
+            : _t(
+                'Login failed. Please try again.',
+                'Kuingia kumeshindikana. Jaribu tena.',
+              ),
       );
       errorController?.add(ErrorAnimationType.shake);
       return;
@@ -182,6 +200,9 @@ class OtpController extends BaseController {
     }
     // Fallback if AuthController is not in memory (e.g. deep-linked OTP).
     await Get.find<SessionService>().saveFromLogin(res);
+    if (Get.isRegistered<AppLocaleController>()) {
+      await Get.find<AppLocaleController>().syncWithAccount();
+    }
     await _preferenceManager.setString(
       PreferenceManager.keyUsername,
       res.user?.msisdn ?? msisdn,
@@ -194,49 +215,51 @@ class OtpController extends BaseController {
       await Get.find<AppReviewService>().onSuccessfulLogin();
     } catch (_) {}
     triggerRemoteAccountSync();
-    final hasPinEnabled = await _preferenceManager.getBool(
-      PreferenceManager.keyPinEnabled,
-      defaultValue: false,
-    );
-    final storedPin = await _preferenceManager.getString(
-      PreferenceManager.keyPinCode,
-      defaultValue: '',
-    );
-    if (!hasPinEnabled || storedPin.length != 4) {
-      Get.offAllNamed(Routes.CHANGE_PIN);
-    } else {
-      await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace();
-    }
+    // No PIN gate here. A host who deferred setting one during sign-up would
+    // otherwise be cornered into it at the next sign-in, which is the same
+    // interruption moved later rather than deferred.
+    Get.offAllNamed(await SalesAgentSession.homeRoute(_preferenceManager));
   }
 
   void _handleLoginOrRegistrationSuccess(LoginResponse res) {
     _completeLogin(res);
   }
 
-  void _handleVerificationResponseError(Exception e) {
-    final message = e is ApiException && e.message.isNotEmpty
-        ? _loginAccessMessage(e.message)
-        : _t('Invalid OTP', 'OTP si sahihi');
+  Future<void> _handleVerificationResponseError(Exception e) async {
+    final raw = e is BaseException ? e.message : '';
+    final message = e is NotFoundException || isMissingAccountError(raw)
+        ? await _signInFailureCopy(raw, notFound: e is NotFoundException)
+        : isRemovedStaffError(raw) || await RemovedStaffPhones.contains(msisdn)
+            ? removedStaffLoginMessage()
+            : e is ApiException && e.message.isNotEmpty
+                ? _loginAccessMessage(e.message)
+                : _t('Invalid OTP', 'OTP si sahihi');
     showErrorMessage(message);
     errorController?.add(ErrorAnimationType.shake);
   }
 
-  void _handleResendOtpResponseError(Exception e) {
+  Future<void> _handleResendOtpResponseError(Exception e) async {
     isResending.value = false;
     // Allow retry after a failed send (do not keep the full cooldown).
     _resendTimer?.cancel();
     _resendTimer = null;
     secondsLeft.value = 0;
-    final message = e is ApiException && e.message.isNotEmpty
-        ? _loginAccessMessage(e.message)
-        : _t(
-            'Failed to resend OTP or code',
-            'Imeshindikana kutuma tena OTP au msimbo',
-          );
+    final raw = e is BaseException ? e.message : '';
+    final message = e is NotFoundException ||
+            isMissingAccountError(raw) ||
+            isRemovedStaffError(raw) ||
+            await RemovedStaffPhones.contains(msisdn)
+        ? await _signInFailureCopy(raw, notFound: e is NotFoundException)
+        : e is ApiException && e.message.isNotEmpty
+            ? _loginAccessMessage(e.message)
+            : _t(
+                'Failed to resend OTP or code',
+                'Imeshindikana kutuma tena OTP au msimbo',
+              );
     showErrorMessage(message);
   }
 
-  void _handleResendOtpSuccess(GeneralResponse res) {
+  Future<void> _handleResendOtpSuccess(GeneralResponse res) async {
     isResending.value = false;
     if (res.responseCode == '0' || res.responseCode == null) {
       // Cooldown already started when the request was sent.
@@ -251,44 +274,98 @@ class OtpController extends BaseController {
     _resendTimer?.cancel();
     _resendTimer = null;
     secondsLeft.value = 0;
-    showErrorMessage(
-      _loginAccessMessage(
-        res.message ??
-            _t(
-              'Failed to resend OTP or code',
-              'Imeshindikana kutuma tena OTP au msimbo',
-            ),
-      ),
-    );
+    final raw = res.message ??
+        _t(
+          'Failed to resend OTP or code',
+          'Imeshindikana kutuma tena OTP au msimbo',
+        );
+    showErrorMessage(await _signInFailureCopy(raw));
+  }
+
+  Future<void> _verifyLoginOtp(String code) async {
+    try {
+      final firebaseToken = await _preferenceManager.getString(
+        PreferenceManager.keyFirebaseToken,
+      );
+      final res = await _repository
+          .verifyLoginOtp(LoginOtpRequest(
+            msisdn: msisdn,
+            otp: code,
+            firebaseToken: firebaseToken,
+          ))
+          .timeout(const Duration(seconds: 25));
+      _handleLoginOrRegistrationSuccess(res);
+    } on NotFoundException catch (e) {
+      showErrorMessage(await _signInFailureCopy(e.message, notFound: true));
+      errorController?.add(ErrorAnimationType.shake);
+    } on BaseException catch (e) {
+      _handleVerificationResponseError(e);
+    } on TimeoutException {
+      showErrorMessage(
+        _t(
+          'Could not verify the code. Try again.',
+          'Imeshindikana kuthibitisha msimbo. Jaribu tena.',
+        ),
+      );
+      errorController?.add(ErrorAnimationType.shake);
+    } catch (e) {
+      _handleVerificationResponseError(
+        e is Exception ? e : Exception('$e'),
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void validateOtp() {
+    if (isLoading.value) return;
+    final code = otp.value.trim();
+    if (code.length != 4) return;
+    isLoading.value = true;
     if (flow == 'reset_password') {
       callDataService(
-        _repository.verifyForgotOtp(OtpRequest(msisdn: msisdn, otp: otp.value)),
-        onError: _handleVerificationResponseError,
-        onSuccess: _handleVerifyForgotOtpSuccess,
+        _repository.verifyForgotOtp(OtpRequest(msisdn: msisdn, otp: code)),
+        onError: (e) {
+          isLoading.value = false;
+          _handleVerificationResponseError(e);
+        },
+        onSuccess: (res) {
+          isLoading.value = false;
+          _handleVerifyForgotOtpSuccess(res);
+        },
       );
       return;
     }
     if (flow == 'login') {
-      callDataService(
-        _repository.verifyLoginOtp(
-          LoginOtpRequest(msisdn: msisdn, otp: otp.value),
-        ),
-        onError: _handleVerificationResponseError,
-        onSuccess: _handleLoginOrRegistrationSuccess,
-      );
+      _verifyLoginOtp(code);
       return;
     }
     // Registration (default) — verifyPhone now returns a login session.
     callDataService(
       _repository.verifyPhoneNumber(
-        OtpRequest(msisdn: msisdn, otp: otp.value),
+        OtpRequest(msisdn: msisdn, otp: code),
       ),
-      onError: _handleVerificationResponseError,
-      onSuccess: _handleLoginOrRegistrationSuccess,
+      onError: (e) {
+        isLoading.value = false;
+        _handleVerificationResponseError(e);
+      },
+      onSuccess: (res) {
+        isLoading.value = false;
+        _handleLoginOrRegistrationSuccess(res);
+      },
     );
+  }
+
+  /// Called when SMS autofill / paste / typing fills all 4 digits.
+  void onOtpCompleted(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 4) return;
+    final code = digits.substring(0, 4);
+    otp.value = code;
+    if (otpController.text != code) {
+      otpController.text = code;
+    }
+    validateOtp();
   }
 
   void _handleVerifyForgotOtpSuccess(GeneralResponse res) {
@@ -330,12 +407,14 @@ class OtpController extends BaseController {
     _startResendCooldown();
     if (flow == 'login') {
       callDataService(
-        _repository.requestLoginOtp(
-          LoginOtpRequest(
-            msisdn: msisdn,
-            channel: channel ?? 'SMS',
-          ),
-        ),
+        _repository
+            .requestLoginOtp(
+              LoginOtpRequest(
+                msisdn: msisdn,
+                channel: channel ?? 'SMS',
+              ),
+            )
+            .timeout(const Duration(seconds: 25)),
         onError: _handleResendOtpResponseError,
         onSuccess: _handleResendOtpSuccess,
       );

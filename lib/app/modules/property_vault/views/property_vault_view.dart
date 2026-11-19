@@ -114,7 +114,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
               fontSize: 15,
             ),
             prefixIcon: Icon(
-              Icons.search,
+              Icons.search_outlined,
               size: 22,
               color: hintColor,
             ),
@@ -122,7 +122,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
                 ? null
                 : IconButton(
                     tooltip: Get.locale?.languageCode == 'sw' ? 'Futa' : 'Clear',
-                    icon: Icon(Icons.clear, size: 20, color: hintColor),
+                    icon: Icon(Icons.clear_outlined, size: 20, color: hintColor),
                     onPressed: controller.clearSearch,
                   ),
             border: InputBorder.none,
@@ -310,7 +310,7 @@ class PropertyVaultView extends BaseView<PropertyVaultController> {
     return FloatingActionButton(
       onPressed: controller.onFabTap,
       backgroundColor: AppColors.colorPrimary,
-      child: const Icon(Icons.add, color: Colors.white, size: 28),
+      child: const Icon(Icons.add_outlined, color: Colors.white, size: 28),
     );
   }
 }
@@ -342,7 +342,7 @@ class _RecentCard extends StatelessWidget {
               Container(
                 height: 90,
                 decoration: BoxDecoration(
-                  color: AppColors.lightGreyColor.withValues(alpha: 0.5),
+                  color: AppColors.designInputBorder.withValues(alpha: 0.5),
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(AppValues.radius_12),
                   ),

@@ -146,24 +146,33 @@ class NotificationsController extends BaseController {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(notification.msg ?? '-'),
+              SelectableText(notification.msg ?? '-'),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => acceptRejectNotificationRequest(notification.id!, 'accepted'),
-                      child: const Text('Accept'),
-                    ),
+              if (notification.isReceipt)
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('Close'),
                   ),
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => acceptRejectNotificationRequest(notification.id!, 'rejected'),
-                      child: const Text('Reject'),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => acceptRejectNotificationRequest(notification.id!, 'accepted'),
+                        child: const Text('Accept'),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => acceptRejectNotificationRequest(notification.id!, 'rejected'),
+                        child: const Text('Reject'),
+                      ),
+                    ),
+                  ],
+                ),
               const SizedBox(height: 24),
             ],
           ),

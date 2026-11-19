@@ -94,6 +94,10 @@ android {
     packaging {
         jniLibs {
             pickFirsts += "lib/*/libc++_shared.so"
+            // App jniLibs ships the NDK r27 rebuild of this library. pickFirst
+            // keeps one copy; the merge hook below overwrites it if the older
+            // Tuya AAR (NDK r21) is chosen first.
+            pickFirsts += "lib/*/libThingSmartLink.so"
         }
     }
 
@@ -109,8 +113,39 @@ android {
     buildTypes {
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8 shrink + optimize + obfuscate. Required for Play's DEX
+            // optimization report. Flutter also adds its ProGuard files when
+            // resource shrinking is enabled.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+}
+
+// Tuya thingsmart 6.7.7 ships libThingSmartLink.so built with NDK r21. Play
+// flags that binary on 16 KB devices. src/main/jniLibs has the same JNI
+// library from thingsmart-hardware 7.8.11, built with NDK r27 and 16 KB
+// alignment. Copy it over whatever the dependency merge selected.
+val thingSmartLinkJni = file("src/main/jniLibs")
+tasks.configureEach {
+    if (name.startsWith("merge") && name.endsWith("NativeLibs")) {
+        inputs.dir(thingSmartLinkJni)
+        doLast {
+            val merged = outputs.files.files
+                .flatMap { root ->
+                    if (!root.exists()) emptyList()
+                    else root.walkTopDown().filter { it.name == "libThingSmartLink.so" }.toList()
+                }
+            for (out in merged) {
+                val replacement = File(thingSmartLinkJni, "${out.parentFile.name}/libThingSmartLink.so")
+                if (replacement.isFile) {
+                    replacement.copyTo(out, overwrite = true)
+                }
+            }
         }
     }
 }

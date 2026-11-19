@@ -113,7 +113,7 @@ class _RecordPaymentSheetHost extends StatelessWidget {
                             ? 'Funga'
                             : 'Close',
                         onPressed: () => Get.back(),
-                        icon: Icon(Icons.close, color: tokens.textSecondary),
+                        icon: Icon(Icons.close_outlined, color: tokens.textSecondary),
                       ),
                     ],
                   ),

@@ -271,7 +271,7 @@ class _RatingCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+              Icon(Icons.star_outlined, color: Colors.amber, size: 18),
               const SizedBox(width: 6),
               Text(
                 'Landlord Rating',
@@ -335,7 +335,7 @@ class _StarDisplay extends StatelessWidget {
     return Row(
       children: List.generate(5, (i) {
         return Icon(
-          i < stars ? Icons.star_rounded : Icons.star_outline_rounded,
+          i < stars ? Icons.star_outlined : Icons.star_outline,
           color: Colors.amber,
           size: 16,
         );

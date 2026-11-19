@@ -140,7 +140,7 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: controller.reloadBoard,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh_outlined),
               label: Text(appLocalization.designMoodboardRetry),
             ),
           ],
@@ -283,8 +283,8 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                     Text(
                       sw.hex,
                       style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: isSel ? FontWeight.w800 : FontWeight.w500,
+                        fontSize: 10,
+                        fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
                         color: isSel
                             ? AppColors.colorPrimary
                             : theme.colorScheme.onSurfaceVariant,
@@ -351,7 +351,7 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
                 ),
                 IconButton(
                   onPressed: () => _showMoreMenu(context),
-                  icon: const Icon(Icons.more_vert),
+                  icon: const Icon(Icons.more_vert_outlined),
                 ),
                 const SizedBox(width: 4),
                 Expanded(
@@ -419,7 +419,7 @@ class DesignMoodboardView extends BaseView<DesignMoodboardController> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.open_in_new),
+              leading: const Icon(Icons.open_in_new_outlined),
               title: Text(appLocalization.designMoodboardOpenHomeDesigns),
               onTap: () {
                 Navigator.pop(ctx);

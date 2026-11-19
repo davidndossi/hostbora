@@ -5,8 +5,10 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '/app/core/base/base_controller.dart';
+import '/app/core/utils/expected_month_rent.dart';
 import '/app/data/local/db/offline_sync_queue_local_data_source.dart';
 import '/app/data/local/db/rent_property_estimate_local_data_source.dart';
+import '/app/data/local/db/tenant_local_data_source.dart';
 import '/app/data/local/service/currency_service.dart';
 import '/app/data/local/service/offline_sync_worker_service.dart';
 import '/app/data/local/service/property_break_even_notification_service.dart';
@@ -47,11 +49,13 @@ class EstimateCostItem {
 class RentPropertyRoiEstimateFormController extends BaseController {
   RentPropertyRoiEstimateFormController()
       : _estimateLocal = Get.find<RentPropertyEstimateLocalDataSource>(),
+        _tenantLocal = Get.find<TenantLocalDataSource>(),
         _repository = Get.find<AppRepository>(tag: (AppRepository).toString()),
         _syncQueue = Get.find<OfflineSyncQueueLocalDataSource>(),
         _syncWorker = Get.find<OfflineSyncWorkerService>();
 
   final RentPropertyEstimateLocalDataSource _estimateLocal;
+  final TenantLocalDataSource _tenantLocal;
   final AppRepository _repository;
   final OfflineSyncQueueLocalDataSource _syncQueue;
   final OfflineSyncWorkerService _syncWorker;
@@ -182,13 +186,54 @@ class RentPropertyRoiEstimateFormController extends BaseController {
   Future<void> _loadExisting() async {
     if (propertyRef.isEmpty) return;
     final existing = await _estimateLocal.findByPropertyRef(propertyRef);
-    if (existing == null) return;
+    if (existing == null) {
+      await _seedDefaults();
+      return;
+    }
     purchaseCostController.text = existing.purchaseCost.toStringAsFixed(0);
     renovationCostController.text = existing.renovationCost.toStringAsFixed(0);
     expectedMonthlyIncomeController.text = existing.expectedMonthlyIncome.toStringAsFixed(0);
     expectedMonthlyExpenseController.text = existing.expectedMonthlyExpense.toStringAsFixed(0);
     targetOccupancyController.text = existing.targetOccupancyPercent.toStringAsFixed(0);
     approximateTotalController.text = (existing.purchaseCost + existing.renovationCost).toStringAsFixed(0);
+  }
+
+  /// Fills a first-time estimate from what the app already knows, so the host
+  /// confirms figures instead of sourcing them.
+  ///
+  /// Expected income comes from the rent actually contracted on this
+  /// property's tenants. Expected expense is deliberately left blank: there is
+  /// no equivalent committed figure to read, and a plausible-looking guess
+  /// would quietly become the denominator of the host's ROI.
+  Future<void> _seedDefaults() async {
+    // A 100% assumption is the one answer that is certainly wrong; 85 is the
+    // usual planning figure and sits in an editable field.
+    if (targetOccupancyController.text.trim().isEmpty) {
+      targetOccupancyController.text = '85';
+    }
+
+    if (expectedMonthlyIncomeController.text.trim().isNotEmpty) return;
+    try {
+      final tenants = await _tenantLocal.getAllNewestFirst();
+      final now = DateTime.now();
+      final monthStart = DateTime(now.year, now.month, 1);
+      final nextMonthStart = DateTime(now.year, now.month + 1, 1);
+
+      var expected = 0.0;
+      for (final tenant in tenants) {
+        if (tenant.propertyRef.trim() != propertyRef) continue;
+        expected += ExpectedMonthRent.of(
+          tenant,
+          monthStart: monthStart,
+          nextMonthStart: nextMonthStart,
+        );
+      }
+      if (expected > 0) {
+        expectedMonthlyIncomeController.text = expected.toStringAsFixed(0);
+      }
+    } catch (_) {
+      // Seeding is a convenience; the form still opens without it.
+    }
   }
 
   String? validateRequiredAmount(String? v) {

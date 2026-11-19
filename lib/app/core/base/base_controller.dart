@@ -86,7 +86,18 @@ abstract class BaseController extends GetxController {
     Function? onComplete,
     bool useFullScreenLoader = false,
   }) async {
-    Exception? _exception;
+    Exception? caught;
+    var finished = false;
+
+    void finish() {
+      if (finished) return;
+      finished = true;
+      if (onComplete != null) {
+        onComplete();
+      } else if (useFullScreenLoader) {
+        hideLoading();
+      }
+    }
 
     if (onStart != null) {
       onStart();
@@ -96,48 +107,44 @@ abstract class BaseController extends GetxController {
 
     try {
       final T response = await future;
-      if (onComplete != null) {
-        onComplete();
-      } else if (useFullScreenLoader) {
-        hideLoading();
-      }
+      finish();
       if (onSuccess != null) onSuccess(response);
 
       return response;
     } on ServiceUnavailableException catch (exception) {
-      _exception = exception;
+      caught = exception;
       showErrorMessage(exception.message);
     } on UnauthorizedException catch (exception) {
-      _exception = exception;
+      caught = exception;
       showErrorMessage(exception.message);
     } on te.TimeoutException catch (exception) {
-      _exception = exception;
+      caught = exception;
       showErrorMessage(exception.message);
     } on NetworkException catch (exception) {
-      _exception = exception;
+      caught = exception;
       showErrorMessage(exception.message);
     } on JsonFormatException catch (exception) {
-      _exception = exception;
+      caught = exception;
       showErrorMessage(exception.message);
     } on NotFoundException catch (exception) {
-      _exception = exception;
+      caught = exception;
       showErrorMessage(exception.message);
     } on ApiException catch (exception) {
-      _exception = exception;
+      caught = exception;
     } on AppException catch (exception) {
-      _exception = exception;
+      caught = exception;
       showErrorMessage(exception.message);
     } catch (error) {
-      _exception = AppException(message: '$error');
+      caught = AppException(message: '$error');
       logger.e('Controller>>>>>> error $error');
-    }
-
-    if (onError != null) onError(_exception);
-
-    if (onComplete != null) {
-      onComplete();
-    } else if (useFullScreenLoader) {
-      hideLoading();
+    } finally {
+      try {
+        final error = caught;
+        if (error != null && onError != null) onError(error);
+      } catch (error) {
+        logger.e('onError callback failed: $error');
+      }
+      finish();
     }
   }
 

@@ -1,3 +1,10 @@
+int? _asInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
 class LoginResponse {
   LoginResponse({
     String? responseCode,
@@ -30,12 +37,12 @@ class LoginResponse {
   }
 
   LoginResponse.fromJson(dynamic json) {
-    _message = json['message'];
-    _status = json['status'];
-    _token = json['token'];
-    _expiresIn = json['expires_in'];
-    _refreshToken = json['refresh_token'];
-    _refreshExpiresIn = json['refresh_expires_in'];
+    _message = json['message']?.toString();
+    _status = json['status']?.toString();
+    _token = json['token']?.toString();
+    _expiresIn = _asInt(json['expires_in']);
+    _refreshToken = json['refresh_token']?.toString();
+    _refreshExpiresIn = _asInt(json['refresh_expires_in']);
     _user = json['user'] != null ? User.fromJson(json['user']) : null;
     _build = json['build'];
     _release = json['release'];
@@ -137,15 +144,17 @@ class User {
     }
     _email = json['email'];
     _nidaNumber = json['nidaNumber'];
-    _roles = List<String>.from(json['roles']);
+    _roles = json['roles'] is List
+        ? List<String>.from((json['roles'] as List).map((e) => e.toString()))
+        : <String>[];
     if (json['communities'] != null) {
       _communities = [];
       json['communities'].forEach((v) {
         _communities?.add(v);
       });
     }
-    _isLeader = json['isLeader'];
-    _isAdmin = json['isAdmin'];
+    _isLeader = json['isLeader'] == true;
+    _isAdmin = json['isAdmin'] == true;
   }
 
   String? _id;

@@ -55,6 +55,7 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
     final u = _ProfitUi(context);
     return Obx(() {
       controller.expenses.length;
+      controller.incomes.length;
       if (controller.loadingRealData.value) {
         return const DefaultScreenSkeleton();
       }
@@ -86,7 +87,7 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
               _isSw ? 'Uchambuzi wa Fedha' : 'Financial Analysis',
               style: TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 1.3,
                 color: u.muted,
               ),
@@ -97,8 +98,8 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
               label: _isSw ? 'LENGO LA FAIDA' : 'TARGET PROFIT',
               value: target,
               sublabel: _isSw
-                  ? 'Kutokana na makadirio ya matumizi/ujazaji ya 25%'
-                  : 'Based on 25% occupancy projection',
+                  ? 'Mapato bila gharama za dharura/matengenezo ya ghafla'
+                  : 'Income minus planned costs (excludes sudden maintenance)',
               icon: Icons.assured_workload_outlined,
               borderColor: Colors.transparent,
             ),
@@ -107,7 +108,9 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
               u,
               label: _isSw ? 'FAIDA HALISI' : 'ACTUAL PROFIT',
               value: actual,
-              sublabel: _isSw ? 'Mwaka hadi sasa wa mali zote' : 'Net as of all properties',
+              sublabel: _isSw
+                  ? 'Baada ya kutoa gharama zote (mwaka ${controller.chartYear})'
+                  : 'After deducting all expenses (${controller.chartYear})',
               icon: Icons.monetization_on_outlined,
               borderColor: _ProfitUi.forest.withValues(alpha: 0.45),
             ),
@@ -128,13 +131,12 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
   Widget _headerRow(_ProfitUi u) {
     return Row(
       children: [
-        const Icon(Icons.menu_rounded, color: Color(0xFF616161), size: 18),
+        const Icon(Icons.menu_outlined, color: Color(0xFF616161), size: 18),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             _isSw ? 'Uchambuzi wa Fedha' : 'Financial Analysis',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: u.onSurface,
@@ -176,7 +178,7 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
                 style: TextStyle(
                   fontSize: 10,
                   letterSpacing: 1.1,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: u.muted,
                 ),
               ),
@@ -188,9 +190,8 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
           Text(
             _fmt(value.abs()),
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 36,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               height: 0.98,
               color: value < 0 ? Colors.red.shade700 : u.onSurface,
             ),
@@ -223,21 +224,20 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
                 style: const TextStyle(
                   fontSize: 10,
                   letterSpacing: 1.1,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: Color(0xFFB45309),
                 ),
               ),
               const Spacer(),
-              Icon(Icons.warning_amber_rounded, color: Colors.brown.shade700, size: 17),
+              Icon(Icons.warning_amber_outlined, color: Colors.brown.shade700, size: 17),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             '${isNegative ? '-' : '+'} ${_fmt(deviation.abs())}',
             style: const TextStyle(
-              fontFamily: 'serif',
               fontSize: 34,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: Color(0xFF7C2D12),
             ),
           ),
@@ -261,7 +261,12 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
     List<double> actualBars,
     double maxY,
   ) {
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN'];
+    const months = [
+      'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+    ];
+    final minY = [...targetBars, ...actualBars].fold<double>(0, (a, b) => a < b ? a : b);
+    final chartMax = maxY <= 0 && minY >= 0 ? 1.0 : (maxY.abs() > minY.abs() ? maxY : minY.abs()) * 1.18;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -275,14 +280,15 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
           Text(
             _isSw ? 'Tofauti ya Faida' : 'Profit Variance',
             style: TextStyle(
-              fontFamily: 'serif',
               fontSize: 28,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: u.onSurface,
             ),
           ),
           Text(
-            _isSw ? 'Mwenendo wa mwezi kwa mwezi' : 'Monthly Performance',
+            _isSw
+                ? 'Lengo / Halisi kwa mwezi · ${controller.chartYear}'
+                : 'Target / Actual by month · ${controller.chartYear}',
             style: TextStyle(fontSize: 12, color: u.muted),
           ),
           const SizedBox(height: 10),
@@ -297,10 +303,11 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 170,
+            height: 190,
             child: BarChart(
               BarChartData(
-                maxY: maxY <= 0 ? 1 : maxY * 1.18,
+                maxY: chartMax,
+                minY: minY < 0 ? minY * 1.1 : 0,
                 alignment: BarChartAlignment.spaceAround,
                 barTouchData: BarTouchData(enabled: false),
                 gridData: const FlGridData(show: false),
@@ -319,7 +326,7 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
                             i >= 0 && i < months.length ? months[i] : '',
-                            style: TextStyle(fontSize: 9, color: u.muted),
+                            style: TextStyle(fontSize: 10, color: u.muted),
                           ),
                         );
                       },
@@ -327,19 +334,21 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
                   ),
                 ),
                 barGroups: List.generate(months.length, (i) {
+                  final t = i < targetBars.length ? targetBars[i] : 0.0;
+                  final a = i < actualBars.length ? actualBars[i] : 0.0;
                   return BarChartGroupData(
                     x: i,
-                    barsSpace: 4,
+                    barsSpace: 2,
                     barRods: [
                       BarChartRodData(
-                        toY: i < targetBars.length ? targetBars[i] : 0,
-                        width: 10,
+                        toY: t,
+                        width: 6,
                         color: u.muted.withValues(alpha: 0.45),
                         borderRadius: BorderRadius.circular(2),
                       ),
                       BarChartRodData(
-                        toY: i < actualBars.length ? actualBars[i] : 0,
-                        width: 10,
+                        toY: a,
+                        width: 6,
                         color: _ProfitUi.forest,
                         borderRadius: BorderRadius.circular(2),
                       ),
@@ -453,9 +462,8 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
                 child: Text(
                   _isSw ? 'Mchanganuo wa Gharama' : 'Expense Breakdown',
                   style: TextStyle(
-                    fontFamily: 'serif',
                     fontSize: 28,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: u.onSurface,
                   ),
                 ),
@@ -556,8 +564,8 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
                       ? (_isSw ? 'JUU YA MAKADIRIO' : 'UNPLANNED')
                       : (_isSw ? 'CHINI YA MAKADIRIO' : 'ON BUDGET'),
                   style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
                     color: varPositive ? Colors.red.shade600 : _ProfitUi.forest,
                     letterSpacing: 0.3,
                   ),
@@ -573,9 +581,9 @@ class RentProfitAnalysisDashboardView extends RentBaseView<RentProfitAnalysisDas
   IconData _iconForCategory(String category) {
     final c = category.trim();
     if (c == 'Maintenance') return Icons.build_outlined;
-    if (c == 'Utilities') return Icons.bolt_rounded;
+    if (c == 'Utilities') return Icons.bolt_outlined;
     if (c == 'Salary') return Icons.group_outlined;
-    if (c == 'Rent') return Icons.apartment_rounded;
+    if (c == 'Rent') return Icons.apartment_outlined;
     return Icons.receipt_long_outlined;
   }
 

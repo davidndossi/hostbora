@@ -13,6 +13,9 @@ abstract class Routes {
   static const SETTINGS = _Paths.SETTINGS;
   static const HELP_CENTER = _Paths.HELP_CENTER;
   static const CHALLENGES_REWARDS = _Paths.CHALLENGES_REWARDS;
+  static const MY_NETWORK = _Paths.MY_NETWORK;
+  static const PROPERTY_MANAGERS = _Paths.PROPERTY_MANAGERS;
+  static const PROPERTY_MANAGER_PROFILE = _Paths.PROPERTY_MANAGER_PROFILE;
   static const HELP_GUIDE_DETAIL = _Paths.HELP_GUIDE_DETAIL;
   static const NOTIFICATIONS = _Paths.NOTIFICATIONS;
   static const SUCCESS = _Paths.SUCCESS;
@@ -25,6 +28,7 @@ abstract class Routes {
   static const ADMIN_SALES_AGENT_DETAIL = _Paths.ADMIN_SALES_AGENT_DETAIL;
   static const ADMIN_GROWTH_METRICS = _Paths.ADMIN_GROWTH_METRICS;
   static const SALES_AGENT_DASHBOARD = _Paths.SALES_AGENT_DASHBOARD;
+  static const SALES_AGENT_HOME = _Paths.SALES_AGENT_HOME;
   static const SUBSCRIPTION = _Paths.SUBSCRIPTION;
   static const SPLASH = _Paths.SPLASH;
   static const ONBOARDING = _Paths.ONBOARDING;
@@ -32,6 +36,7 @@ abstract class Routes {
   static const TERMS = _Paths.TERMS;
   static const PRIVACY = _Paths.PRIVACY;
   static const CREATE_HOST_ACCOUNT = _Paths.CREATE_HOST_ACCOUNT;
+  static const FIRST_PROPERTY = _Paths.FIRST_PROPERTY;
   static const WELCOME_BACK = _Paths.WELCOME_BACK;
   static const RESET_PASSWORD = _Paths.RESET_PASSWORD;
   static const CHANGE_PIN = _Paths.CHANGE_PIN;
@@ -98,6 +103,7 @@ abstract class Routes {
   static const RENT_STAFF_MANAGEMENT = _Paths.RENT_STAFF_MANAGEMENT;
   static const RENT_SCHEDULE_MAINTENANCE_FORM = _Paths.RENT_SCHEDULE_MAINTENANCE_FORM;
   static const RENT_DEFINE_TENANT_CHARGES = _Paths.RENT_DEFINE_TENANT_CHARGES;
+  static const RENT_APARTMENT_REPORTS = _Paths.RENT_APARTMENT_REPORTS;
   static const RENT_TENANT_RESIDENCY_PAYMENT_TRACKER = _Paths.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER;
   /// Same destination as [RENT_TENANT_RESIDENCY_PAYMENT_TRACKER]; use with `propertyRef` / `propertyTitle` parameters to scope by listing.
   static const TENANTS = _Paths.RENT_TENANT_RESIDENCY_PAYMENT_TRACKER;
@@ -130,6 +136,9 @@ abstract class _Paths {
   static const SETTINGS = '/settings';
   static const HELP_CENTER = '/help-center';
   static const CHALLENGES_REWARDS = '/challenges-rewards';
+  static const MY_NETWORK = '/my-network';
+  static const PROPERTY_MANAGERS = '/property-managers';
+  static const PROPERTY_MANAGER_PROFILE = '/property-managers/profile';
   static const HELP_GUIDE_DETAIL = '/help-center/guide';
   static const SUCCESS = '/success';
   static const FAILED = '/failed';
@@ -142,6 +151,7 @@ abstract class _Paths {
   static const ADMIN_SALES_AGENT_DETAIL = '/admin/sales-agents/detail';
   static const ADMIN_GROWTH_METRICS = '/admin/growth-metrics';
   static const SALES_AGENT_DASHBOARD = '/sales-agent/dashboard';
+  static const SALES_AGENT_HOME = '/sales-agent/home';
   static const SUBSCRIPTION = '/subscription';
   static const SPLASH = '/splash';
   static const ONBOARDING = '/onboarding';
@@ -149,6 +159,7 @@ abstract class _Paths {
   static const TERMS = '/terms';
   static const PRIVACY = '/privacy';
   static const CREATE_HOST_ACCOUNT = '/create-host-account';
+  static const FIRST_PROPERTY = '/first-property';
   static const WELCOME_BACK = '/welcome-back';
   static const RESET_PASSWORD = '/reset-password';
   static const CHANGE_PIN = '/change-pin';
@@ -215,6 +226,7 @@ abstract class _Paths {
   static const RENT_STAFF_MANAGEMENT = '/rent/staff-management';
   static const RENT_SCHEDULE_MAINTENANCE_FORM = '/rent/schedule-maintenance-form';
   static const RENT_DEFINE_TENANT_CHARGES = '/rent/define-tenant-charges';
+  static const RENT_APARTMENT_REPORTS = '/rent/apartment-reports';
   static const RENT_TENANT_RESIDENCY_PAYMENT_TRACKER = '/rent/tenant-residency-payment-tracker';
   static const RENT_TENANT_LEDGER_OCCUPANCY = '/rent/tenant-ledger-occupancy';
   static const RENT_SCHEDULE_PAYMENT_REMINDER = '/rent/schedule-payment-reminder';

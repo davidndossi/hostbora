@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
 
+import '../../../core/access/sales_agent_session.dart';
 import '../../../core/base/base_controller.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/account_sync_trigger.dart';
@@ -49,7 +50,7 @@ class WelcomeBackController extends BaseController {
   final isBiometricAuthInProgress = false.obs;
 
   IconData get biometricIcon =>
-      prefersFaceBiometric.value ? Icons.face_rounded : Icons.fingerprint_rounded;
+      prefersFaceBiometric.value ? Icons.face_outlined : Icons.fingerprint_outlined;
 
   @override
   void onInit() {
@@ -166,9 +167,10 @@ class WelcomeBackController extends BaseController {
       Get.offAllNamed(Routes.AUTH);
       return;
     }
-    final ok = await session.ensureValidSession();
-    if (!ok) {
-      await session.clearFullSession();
+    // Refresh is best-effort. A network hiccup must not wipe a valid PIN session.
+    // A rejected refresh token clears the session and requires OTP again.
+    await session.ensureValidSession();
+    if (!await session.hasPersistedSession()) {
       showErrorMessage(_t(
         'Session expired. Sign in with your phone and OTP once.',
         'Kipindi kimeisha. Ingia kwa simu na OTP mara moja.',
@@ -292,7 +294,8 @@ class WelcomeBackController extends BaseController {
 
   Future<void> continueToApp() async {
     triggerRemoteAccountSync();
-    await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
+    Get.offAllNamed(
+      await SalesAgentSession.homeRoute(_preferenceManager),
       arguments: {
         'initialMenu': 'home',
         WorkspaceContextService.rentHubRedirectListingsIfEmptyKey: true,

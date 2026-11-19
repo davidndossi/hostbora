@@ -84,6 +84,7 @@ class OfflineSyncWorkerService extends GetxService {
 
     _isRunning = true;
     try {
+      await _queue.reclaimStaleInProgress();
       await _queue.requeueFailed();
       var processed = 0;
       for (var i = 0; i < maxItems; i++) {

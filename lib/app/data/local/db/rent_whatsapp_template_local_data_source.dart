@@ -168,13 +168,7 @@ class RentWhatsappTemplateRecord {
 class RentWhatsappTemplateLocalDataSource {
   static const _table = AppLocalDatabase.rentWhatsappTemplateTable;
 
-  Database? _db;
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
-  }
+  Future<Database> get database => AppLocalDatabase.database;
 
   Map<String, Object?> _toRow({
     required String name,

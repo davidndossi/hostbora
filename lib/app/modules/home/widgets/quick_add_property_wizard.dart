@@ -191,8 +191,10 @@ class _QuickAddPropertyWizardBodyState
           textCapitalization: TextCapitalization.words,
           maxLength: PropertyNameRules.maxLength,
           style: TextStyle(fontSize: 16, color: c.headline),
-          decoration: _decoration(context, hint: 'e.g., AB Apartment')
-              .copyWith(counterText: ''),
+          decoration: _decoration(
+            context,
+            hint: 'e.g., AB Apartment',
+          ).copyWith(counterText: ''),
         ),
       ],
     );
@@ -215,7 +217,10 @@ class _QuickAddPropertyWizardBodyState
           textCapitalization: TextCapitalization.words,
           keyboardType: TextInputType.streetAddress,
           style: TextStyle(fontSize: 16, color: c.headline),
-          decoration: _decoration(context, hint: 'Enter street address or area'),
+          decoration: _decoration(
+            context,
+            hint: 'Enter street address or area',
+          ),
         ),
       ],
     );
@@ -237,7 +242,10 @@ class _QuickAddPropertyWizardBodyState
           maxLines: 3,
           textCapitalization: TextCapitalization.words,
           style: TextStyle(fontSize: 16, color: c.headline),
-          decoration: _decoration(context, hint: 'Plot number, street, landmark…'),
+          decoration: _decoration(
+            context,
+            hint: 'Plot number, street, landmark…',
+          ),
         ),
       ],
     );
@@ -251,7 +259,7 @@ class _QuickAddPropertyWizardBodyState
         quickWizardHeading(context, 'What type of property is this?'),
         Obx(
           () => _ChipSelector(
-            options: controller.propertyTypes,
+            options: controller.propertyTypeOptions,
             selected: controller.selectedPropertyType.value,
             onSelected: controller.selectPropertyType,
           ),

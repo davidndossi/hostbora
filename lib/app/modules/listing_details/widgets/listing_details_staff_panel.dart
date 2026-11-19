@@ -5,6 +5,8 @@ import '../../../core/values/app_colors.dart';
 import '../../../routes/app_pages.dart';
 import '../../rent/staff_management/controllers/rent_staff_management_controller.dart';
 import '../../rent/staff_management/utils/rent_staff_pay_format.dart';
+import '../../rent/staff_management/widgets/staff_access_editor.dart';
+import '../../rent/staff_management/widgets/staff_option_sheet_field.dart';
 
 /// Staff registry + payroll block (from rent staff management) for listing tabs.
 class ListingDetailsStaffPanel extends StatelessWidget {
@@ -171,7 +173,7 @@ class ListingDetailsStaffPanel extends StatelessWidget {
                                 : _t('New staff member', 'Mfanyakazi mpya'),
                             style: TextStyle(
                               fontSize: 15,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: textColor,
                             ),
                           ),
@@ -183,10 +185,27 @@ class ListingDetailsStaffPanel extends StatelessWidget {
                           ),
                       ],
                     );
-                  }),
+                  }                  ),
+                  const SizedBox(height: 14),
+                  Obx(
+                    () => StaffAccessEditor(
+                      role: c.permissionRole.value,
+                      permissions: c.grantedPermissions.toSet(),
+                      allProperties: c.allPropertiesAccess.value,
+                      propertyRefs: c.selectedPropertyRefs.toSet(),
+                      properties: c.accessProperties.toList(),
+                      legacy: c.legacyStaffAccess.value,
+                      accent: AppColors.colorPrimary,
+                      onRoleChanged: c.applyPermissionRole,
+                      onPermissionToggled: c.togglePermission,
+                      onAllPropertiesChanged: c.setAllPropertiesAccess,
+                      onPropertyToggled: c.togglePropertyRef,
+                    ),
+                  ),
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: c.fullNameController,
+                    textCapitalization: TextCapitalization.words,
                     decoration: inputDeco(_t('Full name', 'Jina kamili')),
                     validator: c.validateFullName,
                     textInputAction: TextInputAction.next,
@@ -202,28 +221,23 @@ class ListingDetailsStaffPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Obx(
-                    () => DropdownButtonFormField<String>(
-                      key: ValueKey(
-                        'pay-${c.editingStaffId.value}-${c.paymentType.value}',
-                      ),
-                      initialValue:
-                          RentStaffPayFormat.paymentTypeLabels.containsKey(
-                                c.paymentType.value,
-                              )
-                              ? c.paymentType.value
-                              : RentStaffPayFormat.monthly,
+                    () => StaffOptionSheetField(
+                      key: ValueKey('pay-${c.editingStaffId.value}'),
+                      value: RentStaffPayFormat.paymentTypeLabels.containsKey(
+                            c.paymentType.value,
+                          )
+                          ? c.paymentType.value
+                          : RentStaffPayFormat.monthly,
                       decoration: inputDeco(
                         _t('Pay type', 'Aina ya malipo'),
                       ),
-                      items: RentStaffPayFormat.paymentTypeLabels.entries
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: c.updatePaymentType,
+                      sheetTitle: _t('Pay type', 'Aina ya malipo'),
+                      options: [
+                        for (final entry
+                            in RentStaffPayFormat.paymentTypeLabels.entries)
+                          StaffSheetOption(value: entry.key, label: entry.value),
+                      ],
+                      onChanged: (value) => c.updatePaymentType(value),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -250,26 +264,33 @@ class ListingDetailsStaffPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Obx(
-                    () => DropdownButtonFormField<String>(
-                      key: ValueKey(
-                        'role-${c.editingStaffId.value}-${c.selectedPrimaryRole.value}',
-                      ),
-                      initialValue: c.selectedPrimaryRole.value.isEmpty
-                          ? null
-                          : (RentStaffManagementController.primaryRoleOptions
-                                  .contains(c.selectedPrimaryRole.value)
-                              ? c.selectedPrimaryRole.value
-                              : null),
-                      decoration: inputDeco(
-                        _t('Primary role', 'Jukumu la msingi'),
-                      ),
-                      items: RentStaffManagementController.primaryRoleOptions
-                          .map(
-                            (e) => DropdownMenuItem(value: e, child: Text(e)),
-                          )
-                          .toList(),
-                      onChanged: c.updatePrimaryRole,
-                    ),
+                    () {
+                      final role = c.selectedPrimaryRole.value;
+                      final opts =
+                          RentStaffManagementController.primaryRoleOptions;
+                      return StaffOptionSheetField(
+                        key: ValueKey('role-${c.editingStaffId.value}'),
+                        value: role.isEmpty || !opts.contains(role) ? null : role,
+                        decoration: inputDeco(
+                          _t('Primary role', 'Jukumu la msingi'),
+                        ),
+                        hint: _t('Select a role...', 'Chagua jukumu...'),
+                        sheetTitle: _t('Select a role', 'Chagua jukumu'),
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                            ? _t(
+                                'Select a primary role',
+                                'Chagua jukumu la msingi',
+                              )
+                            : null,
+                        options: [
+                          for (final option in opts)
+                            StaffSheetOption(value: option, label: option),
+                        ],
+                        onChanged: (value) => c.updatePrimaryRole(value),
+                      );
+                    },
                   ),
                   const SizedBox(height: 36),
                   Obx(
@@ -291,7 +312,7 @@ class ListingDetailsStaffPanel extends StatelessWidget {
                         icon: Icon(
                           c.isEditMode
                               ? Icons.save_outlined
-                              : Icons.check_rounded,
+                              : Icons.check_outlined,
                           size: 18,
                         ),
                         label: Text(
@@ -321,7 +342,7 @@ class ListingDetailsStaffPanel extends StatelessWidget {
             _t('Active team', 'Timu hai'),
             style: TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: textColor,
             ),
           ),
@@ -363,7 +384,7 @@ class ListingDetailsStaffPanel extends StatelessWidget {
                 RentStaffPayFormat.formatPayrollTotal(total),
                 style: const TextStyle(
                   fontSize: 26,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
               ),

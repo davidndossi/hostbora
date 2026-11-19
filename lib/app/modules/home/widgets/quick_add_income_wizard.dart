@@ -25,8 +25,7 @@ class _QuickAddIncomeWizardBody extends StatefulWidget {
       _QuickAddIncomeWizardBodyState();
 }
 
-class _QuickAddIncomeWizardBodyState
-    extends State<_QuickAddIncomeWizardBody> {
+class _QuickAddIncomeWizardBodyState extends State<_QuickAddIncomeWizardBody> {
   late final RecordPaymentController controller;
   int _currentIndex = 0;
   bool _submitting = false;
@@ -39,7 +38,9 @@ class _QuickAddIncomeWizardBodyState
     }
     RecordPaymentBinding().dependencies();
     controller = Get.find<RecordPaymentController>();
-    controller.datePaidController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    controller.datePaidController.text = DateFormat(
+      'dd/MM/yyyy',
+    ).format(DateTime.now());
   }
 
   @override
@@ -85,7 +86,10 @@ class _QuickAddIncomeWizardBodyState
         required: true,
         content: (context) => _amountStep(context),
         validate: () {
-          final raw = controller.amountController.text.trim().replaceAll(',', '');
+          final raw = controller.amountController.text.trim().replaceAll(
+            ',',
+            '',
+          );
           final n = double.tryParse(raw);
           if (raw.isEmpty || n == null || n <= 0) {
             return 'Please enter a valid amount';
@@ -98,7 +102,8 @@ class _QuickAddIncomeWizardBodyState
         required: true,
         content: (context) => _dateStep(context),
         validate: () {
-          if (controller.validateDatePaid(controller.datePaidController.text) != null) {
+          if (controller.validateDatePaid(controller.datePaidController.text) !=
+              null) {
             return 'Please choose a valid date';
           }
           return null;
@@ -199,7 +204,8 @@ class _QuickAddIncomeWizardBodyState
               'qi-property-${controller.propertyOptions.length}-'
               '${controller.selectedProperty.value}',
             ),
-            initialValue: controller.propertyOptions.contains(
+            initialValue:
+                controller.propertyOptions.contains(
                   controller.selectedProperty.value,
                 )
                 ? controller.selectedProperty.value
@@ -226,7 +232,12 @@ class _QuickAddIncomeWizardBodyState
             initialValue: controller.selectedIncomeUnitKey.value,
             decoration: _decoration(context, hint: 'Select unit'),
             items: controller.incomeUnitsForSelectedProperty
-                .map((u) => DropdownMenuItem(value: u.selectionKey, child: Text(u.unitName)))
+                .map(
+                  (u) => DropdownMenuItem(
+                    value: u.selectionKey,
+                    child: Text(u.unitName),
+                  ),
+                )
                 .toList(),
             onChanged: controller.updateSelectedIncomeUnit,
           ),
@@ -255,9 +266,15 @@ class _QuickAddIncomeWizardBodyState
             initialValue: controller.selectedBookingKey.value,
             decoration: _decoration(context, hint: 'No booking selected'),
             items: [
-              const DropdownMenuItem<String?>(value: null, child: Text('No booking')),
+              const DropdownMenuItem<String?>(
+                value: null,
+                child: Text('No booking'),
+              ),
               ...controller.bookingOptions.map(
-                (o) => DropdownMenuItem<String?>(value: o.bookingKey, child: Text(o.label)),
+                (o) => DropdownMenuItem<String?>(
+                  value: o.bookingKey,
+                  child: Text(o.label),
+                ),
               ),
             ],
             onChanged: controller.updateSelectedBooking,
@@ -276,7 +293,10 @@ class _QuickAddIncomeWizardBodyState
         quickWizardHeading(context, 'How much was paid?'),
         quickWizardLabel(context, 'CURRENCY'),
         const SizedBox(height: 8),
-        CurrencyDropdownField(selectedCurrency: controller.selectedCurrency, label: 'Currency'),
+        CurrencyDropdownField(
+          selectedCurrency: controller.selectedCurrency,
+          label: 'Currency',
+        ),
         const SizedBox(height: 16),
         quickWizardLabel(context, 'AMOUNT'),
         const SizedBox(height: 8),
@@ -325,7 +345,9 @@ class _QuickAddIncomeWizardBodyState
     DateTime initial = now;
     try {
       if (controller.datePaidController.text.trim().isNotEmpty) {
-        initial = DateFormat('dd/MM/yyyy').parseStrict(controller.datePaidController.text.trim());
+        initial = DateFormat(
+          'dd/MM/yyyy',
+        ).parseStrict(controller.datePaidController.text.trim());
       }
     } catch (_) {}
     final picked = await showDatePicker(
@@ -336,7 +358,9 @@ class _QuickAddIncomeWizardBodyState
       locale: const Locale('en', 'GB'),
     );
     if (picked == null) return;
-    controller.datePaidController.text = DateFormat('dd/MM/yyyy').format(picked);
+    controller.datePaidController.text = DateFormat(
+      'dd/MM/yyyy',
+    ).format(picked);
   }
 
   Widget _paymentMethodStep(BuildContext context) {
@@ -422,7 +446,11 @@ class _Step {
 }
 
 class _ChipRow extends StatelessWidget {
-  const _ChipRow({required this.options, required this.selected, required this.onSelected});
+  const _ChipRow({
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+  });
 
   final List<String> options;
   final String selected;

@@ -2600,6 +2600,30 @@ abstract class AppLocalizations {
   /// **'Not now'**
   String get rentAddTenantIncomePromptLater;
 
+  /// No description provided for @bnbIncomeAddGuestPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Income saved'**
+  String get bnbIncomeAddGuestPromptTitle;
+
+  /// No description provided for @bnbIncomeAddGuestPromptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No guest is recorded for {place} yet. Add the guest now?'**
+  String bnbIncomeAddGuestPromptBody(String place);
+
+  /// No description provided for @bnbIncomeAddGuestPromptAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add guest'**
+  String get bnbIncomeAddGuestPromptAdd;
+
+  /// No description provided for @bnbIncomeAddGuestPromptLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get bnbIncomeAddGuestPromptLater;
+
   /// No description provided for @loginSecurity.
   ///
   /// In en, this message translates to:
@@ -3383,25 +3407,25 @@ abstract class AppLocalizations {
   /// No description provided for @aboutIntro.
   ///
   /// In en, this message translates to:
-  /// **'HostBora helps hosts and landlords run short-stay stays and long-term rentals from one app. Switch between the BnB and Rent workspaces any time.'**
+  /// **'Manage short stays and long-term rentals from one app. Switch between the BnB and Rent workspaces any time.'**
   String get aboutIntro;
 
   /// No description provided for @aboutBnbFeatures.
   ///
   /// In en, this message translates to:
-  /// **'BnB workspace: manage listings and units, track bookings and today\'s check-ins, use your host calendar, sync external calendars, record guest payments, and view reports.'**
+  /// **'BnB workspace: Manage listings and units, track bookings and today\'s check-ins, use your host calendar, sync external calendars, record guest payments, and view reports.'**
   String get aboutBnbFeatures;
 
   /// No description provided for @aboutRentFeatures.
   ///
   /// In en, this message translates to:
-  /// **'Rent workspace: track tenants and leases, manage rent payments and reminders, monitor expenses and monthly performance, handle staff, and review smart utility usage where set up.'**
+  /// **'Rent workspace: Track tenants and leases, manage rent payments and reminders, monitor expenses and monthly performance, handle staff, and review smart utility usage where set up.'**
   String get aboutRentFeatures;
 
   /// No description provided for @aboutSharedFeatures.
   ///
   /// In en, this message translates to:
-  /// **'Across both workspaces: add properties and expenses, message guests or tenants, keep documents in your property vault, and continue with secure on-device data when you are offline.'**
+  /// **'Across both workspaces: Add properties and expenses, message guests or tenants, keep documents in your property vault, and continue with secure on-device data when you are offline.'**
   String get aboutSharedFeatures;
 
   /// No description provided for @tryAgain.

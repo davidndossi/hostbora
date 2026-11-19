@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 
 import '/app/core/values/app_colors.dart';
 import '/app/data/local/db/inventory_item_local_data_source.dart';
+import '/app/data/local/preference/preference_manager.dart';
+import '/app/data/local/service/local_account_data_reset.dart';
 import '/app/routes/app_pages.dart';
 
 /// A compact banner widget that shows a low-stock / inventory summary across
@@ -34,6 +36,13 @@ class _InventoryLowStockBannerState extends State<InventoryLowStockBanner> {
 
   Future<void> _load() async {
     try {
+      if (Get.isRegistered<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      )) {
+        await LocalAccountDataReset.alignToUser(
+          Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
+        );
+      }
       final src = Get.find<InventoryItemLocalDataSource>();
       final db = await src.database;
       const t = 'inventory_item';
@@ -88,7 +97,7 @@ class _InventoryLowStockBannerState extends State<InventoryLowStockBanner> {
               ),
               child: Icon(
                 _lowStock > 0
-                    ? Icons.warning_amber_rounded
+                    ? Icons.warning_amber_outlined
                     : Icons.inventory_2_outlined,
                 size: 20,
                 color: _lowStock > 0
@@ -133,7 +142,7 @@ class _InventoryLowStockBannerState extends State<InventoryLowStockBanner> {
               ),
             ),
             Icon(
-              Icons.chevron_right_rounded,
+              Icons.chevron_right_outlined,
               size: 20,
               color: dark
                   ? const Color(0xFFAEAEB2)

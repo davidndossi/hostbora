@@ -79,6 +79,32 @@ class RewardCatalogItem {
   final String? description;
 }
 
+class RewardAchievement {
+  RewardAchievement({
+    required this.key,
+    required this.title,
+    required this.description,
+    required this.unlocked,
+    this.unlockedAtMs = 0,
+  });
+
+  factory RewardAchievement.fromJson(Map<String, dynamic> json) {
+    return RewardAchievement(
+      key: json['key']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      unlocked: json['unlocked'] == true,
+      unlockedAtMs: _toInt(json['unlockedAtMs']),
+    );
+  }
+
+  final String key;
+  final String title;
+  final String description;
+  final bool unlocked;
+  final int unlockedAtMs;
+}
+
 class RewardsDashboard {
   RewardsDashboard({
     required this.balance,
@@ -87,6 +113,7 @@ class RewardsDashboard {
     required this.challenges,
     required this.earn,
     required this.catalog,
+    required this.achievements,
   });
 
   factory RewardsDashboard.fromJson(Map<String, dynamic> json) {
@@ -97,6 +124,7 @@ class RewardsDashboard {
       challenges: _list(json['challenges'], RewardChallenge.fromJson),
       earn: _list(json['earn'], RewardEarnItem.fromJson),
       catalog: _list(json['catalog'], RewardCatalogItem.fromJson),
+      achievements: _list(json['achievements'], RewardAchievement.fromJson),
     );
   }
 
@@ -106,6 +134,7 @@ class RewardsDashboard {
   final List<RewardChallenge> challenges;
   final List<RewardEarnItem> earn;
   final List<RewardCatalogItem> catalog;
+  final List<RewardAchievement> achievements;
 }
 
 List<T> _list<T>(dynamic raw, T Function(Map<String, dynamic>) parse) {

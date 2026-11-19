@@ -42,39 +42,81 @@ class MaintenanceTasksView extends BaseView<MaintenanceTasksController> {
           _buildFilterTabs(context),
           Expanded(
             child: Obx(() {
-              if (controller.loading.value) {
+              final showSkeleton =
+                  controller.loading.value && controller.allTasks.isEmpty;
+              if (showSkeleton) {
                 return const DefaultScreenSkeleton();
               }
               controller.selectedFilter.value;
               controller.allTasks.length;
               final list = controller.visibleTasks;
-              if (list.isEmpty) {
-                return Center(
-                  child: Text(
-                    _t(context, en: 'No tasks', sw: 'Hakuna kazi'),
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: context.tokens.textSecondary,
+              return Column(
+                children: [
+                  if (controller.refreshing.value)
+                    const LinearProgressIndicator(minHeight: 2),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: controller.loadTasks,
+                      child: list.isEmpty
+                          ? LayoutBuilder(
+                              builder: (context, constraints) =>
+                                  SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minHeight: constraints.maxHeight,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      _t(
+                                        context,
+                                        en: 'No tasks',
+                                        sw: 'Hakuna kazi',
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: context.tokens.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding:
+                                  const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                              itemCount: list.length,
+                              separatorBuilder: (_, index) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final task = list[index];
+                                return _SwipeableTaskCard(
+                                  task: task,
+                                  onToggleComplete: () =>
+                                      controller.toggleComplete(task),
+                                  onTap: () =>
+                                      controller.openTaskDetail(task),
+                                  onCompleteSwipe: () =>
+                                      controller.completeTaskFromSwipe(task),
+                                  onSnoozeSwipe: () =>
+                                      controller.snoozeTask(task),
+                                  labelComplete: _t(
+                                    context,
+                                    en: 'Complete',
+                                    sw: 'Maliza',
+                                  ),
+                                  labelSnooze: _t(
+                                    context,
+                                    en: 'Snooze 1 day',
+                                    sw: 'Ahirisha siku 1',
+                                  ),
+                                );
+                              },
+                            ),
                     ),
                   ),
-                );
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-                itemCount: list.length,
-                separatorBuilder: (_, index) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final task = list[index];
-                  return _SwipeableTaskCard(
-                    task: task,
-                    onToggleComplete: () => controller.toggleComplete(task),
-                    onTap: () => controller.openTaskDetail(task),
-                    onCompleteSwipe: () => controller.completeTaskFromSwipe(task),
-                    onSnoozeSwipe: () => controller.snoozeTask(task),
-                    labelComplete: _t(context, en: 'Complete', sw: 'Maliza'),
-                    labelSnooze: _t(context, en: 'Snooze 1 day', sw: 'Ahirisha siku 1'),
-                  );
-                },
+                ],
               );
             }),
           ),
@@ -153,14 +195,14 @@ class _FilterChip extends StatelessWidget {
     final c = FormSurfaceColors.of(context);
     final chipColor = isSelected ? AppColors.colorPrimary : Colors.transparent;
     final textColor = isSelected
-        ? AppColors.textColorWhite
+        ? AppColors.colorWhite
         : Theme.of(context).colorScheme.onSurface;
     final badgeBg = isSelected
         ? Colors.white.withValues(alpha: 0.25)
         : (c.isDark
             ? Colors.white.withValues(alpha: 0.15)
             : AppColors.colorPrimary.withValues(alpha: 0.1));
-    final badgeFg = isSelected ? AppColors.textColorWhite : AppColors.colorPrimary;
+    final badgeFg = isSelected ? AppColors.colorWhite : AppColors.colorPrimary;
 
     return Material(
       color: isSelected
@@ -268,7 +310,8 @@ class _TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = FormSurfaceColors.of(context);
-    final isCompleted = task.isCompleted;
+    final isCompleted =
+        task.isCompleted || task.status == TaskStatus.completed;
     final opacity = isCompleted ? 0.6 : 1.0;
 
     return Material(
@@ -391,7 +434,7 @@ class _TaskCard extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_right,
+                Icons.chevron_right_outlined,
                 color: (c.secondary)
                     .withValues(alpha: opacity),
                 size: 24,
@@ -425,7 +468,7 @@ class _TaskCard extends StatelessWidget {
           ),
         ),
         child: isCompleted
-            ? const Icon(Icons.check, size: 16, color: AppColors.textColorWhite)
+            ? const Icon(Icons.check_outlined, size: 16, color: AppColors.colorWhite)
             : null,
       ),
     );
@@ -477,7 +520,7 @@ class _PriorityLabel extends StatelessWidget {
             ? 'KIPAUMBELE CHA JUU'
             : 'HIGH PRIORITY',
         const Color(0xFFE07A5F),
-        AppColors.textColorWhite,
+        AppColors.colorWhite,
       ),
       TaskPriority.medium => (
         Get.locale?.languageCode == 'sw' ? 'WASTANI' : 'MEDIUM',

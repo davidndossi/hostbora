@@ -421,7 +421,7 @@ class BookingDetailsController extends BaseController {
                     child: Text(
                       isSw ? 'Chaguzi' : 'Options',
                       style: Theme.of(sheetCtx).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           ),
                     ),
                   ),
@@ -464,7 +464,7 @@ class BookingDetailsController extends BaseController {
                       onTap: () => showExtendStayDialog(),
                     ),
                     tile(
-                      icon: Icons.logout_rounded,
+                      icon: Icons.logout_outlined,
                       title: _l10n.checkOutGuest,
                       onTap: () => confirmCheckOut(),
                     ),

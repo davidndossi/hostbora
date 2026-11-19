@@ -61,7 +61,7 @@ Future<void> showExpenseRowQuickActionsSheet({
           ),
           if (row.syncStatus == ItemSyncStatus.failed)
             ListTile(
-              leading: const Icon(Icons.sync),
+              leading: const Icon(Icons.sync_outlined),
               title: Text(isSw ? 'Jaribu kusawazisha tena' : 'Retry sync'),
               onTap: () {
                 Navigator.pop(ctx);

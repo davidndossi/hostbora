@@ -62,11 +62,15 @@ abstract class RemoteDataSource {
 
   Future<GeneralResponse> updateSettingsPreferences(UpdatePreferenceRequest request);
 
+  Future<GeneralResponse> getSettingsPreferences();
+
   Future<GeneralResponse> getUserProfile(UserProfileRequest request);
 
   Future<GeneralResponse> getUserNotifications(String userId, PageRequest request);
 
   Future<GeneralResponse> getUserNotificationsCount(String userId);
+
+  Future<GeneralResponse> saveFirebaseToken(String token);
 
   Future<GeneralResponse> getUsers(String searchValue);
 
@@ -85,6 +89,20 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> getHostScore();
 
   Future<GeneralResponse> getRewards();
+
+  Future<GeneralResponse> getMyNetwork();
+
+  Future<GeneralResponse> getPropertyManagers({
+    String? location,
+    String? propertyType,
+    String? properties,
+  });
+
+  Future<GeneralResponse> getPropertyManager(String id);
+
+  Future<GeneralResponse> contactPropertyManager(String id, String channel);
+
+  Future<GeneralResponse> recordHostInvite();
 
   Future<GeneralResponse> completeAcademy();
 
@@ -115,10 +133,7 @@ abstract class RemoteDataSource {
     String? coverPhotoPath,
   });
 
-  /// Fetches current user's listings. Optional [status] to filter: ACTIVE, DRAFT, ARCHIVED.
-  Future<GeneralResponse> getMyListings({String? status});
-
-  /// Fetches current user's properties from the property-management table (/api/properties).
+  /// Fetches current user's properties from `/api/properties`.
   Future<GeneralResponse> getMyProperties();
 
   /// Saves a scheduled maintenance record to the remote database.
@@ -138,8 +153,8 @@ abstract class RemoteDataSource {
     InventoryMovementRequest request,
   );
 
-  /// Fetches a single listing by id (for edit).
-  Future<GeneralResponse> getListing(String listingId);
+  /// Fetches a single property by id (for edit).
+  Future<GeneralResponse> getProperty(String propertyId);
 
   /// Updates an existing listing (multipart like create).
   Future<GeneralResponse> updateListing(
@@ -163,22 +178,25 @@ abstract class RemoteDataSource {
 
   /// Records a payment (amount, method, optional booking, date, status).
   Future<GeneralResponse> recordPayment(RecordPaymentRequest request);
+  Future<GeneralResponse> updatePayment(String paymentId, Map<String, dynamic> body);
   Future<GeneralResponse> deletePayment(String paymentId);
+  Future<GeneralResponse> getPayments();
 
   /// Adds an expense (amount, category, date, vendor, tax deductible).
   /// Optional [receiptFilePath] is uploaded as multipart when provided.
   Future<GeneralResponse> addExpense(AddExpenseRequest request, [String? receiptFilePath]);
   Future<GeneralResponse> updateExpense(String expenseId, AddExpenseRequest request);
   Future<GeneralResponse> deleteExpense(String expenseId);
+  Future<GeneralResponse> getExpenses();
 
   /// Home overview: activeBookings, monthlyRevenue, bookingsChange, revenueChange.
   Future<GeneralResponse> getHomeOverview();
 
   /// Upcoming check-ins (bookings with checkIn >= today).
-  Future<GeneralResponse> getUpcomingBookings();
+  Future<GeneralResponse> getUpcomingBookings({int page = 0, int size = 50});
 
   /// All bookings for current user (descending order).
-  Future<GeneralResponse> getAllBookings();
+  Future<GeneralResponse> getAllBookings({int page = 0, int size = 50});
 
   /// Dashboard metrics: totalRevenue, avgDailyRate, netProfit, trends, monthly data.
   Future<GeneralResponse> getDashboard();
@@ -241,6 +259,15 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> updateTenant(String id, Map<String, dynamic> body);
   Future<GeneralResponse> deleteTenant(String id);
   Future<GeneralResponse> uploadVaultDocument(Map<String, dynamic> body);
+
+  /// PUT /api/vault/documents — rename a document the server already has.
+  Future<GeneralResponse> updateVaultDocument(Map<String, dynamic> body);
+
+  /// DELETE /api/vault/documents — remove a document by folder and file name.
+  Future<GeneralResponse> deleteVaultDocument({
+    required String directoryId,
+    required String fileName,
+  });
   Future<GeneralResponse> createStaff(Map<String, dynamic> body);
   Future<GeneralResponse> getStaffList();
   Future<GeneralResponse> updateStaff(String id, Map<String, dynamic> body);
@@ -283,6 +310,9 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> createProperty(Map<String, dynamic> body);
   Future<GeneralResponse> updateProperty(int id, Map<String, dynamic> body);
   Future<GeneralResponse> updatePropertyByRef(String propertyRef, Map<String, dynamic> body);
+
+  /// DELETE /api/properties/ref/{propertyRef}/units/{unitId}
+  Future<GeneralResponse> deletePropertyUnit(String propertyRef, String unitId);
   Future<GeneralResponse> deleteProperty(int id);
 
   /// Check the latest available app version from the backend.
@@ -309,6 +339,14 @@ abstract class RemoteDataSource {
   Future<GeneralResponse> validateReferralCode(String code);
   Future<GeneralResponse> getSalesAgentDashboard(String userId);
   Future<GeneralResponse> recordSalesAgentInvite();
+  Future<GeneralResponse> pushSalesAgentPay(
+    String customerUserId,
+    Map<String, dynamic> body,
+  );
+  Future<GeneralResponse> sendSalesAgentReceipt(
+    String customerUserId,
+    Map<String, dynamic> body,
+  );
   Future<GeneralResponse> listSalesAgents();
   Future<GeneralResponse> createSalesAgent(Map<String, dynamic> body);
   Future<GeneralResponse> getAdminSalesAgentDashboard(int agentId);

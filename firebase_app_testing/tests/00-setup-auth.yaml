@@ -1,14 +1,17 @@
-# Core auth flows — run first or use --test-username/--test-password with other suites
+# Core auth flows — passwordless phone + OTP. Stage OTP is 0000.
 tests:
-  - displayName: Login with phone and password
+  - displayName: Login with phone and OTP
     id: host-login
     steps:
       - goal: Open the app and reach the Login screen
-        hint: Dismiss onboarding if this is a fresh install by completing or skipping intro screens until Login appears. Do not register a new account.
-        finalScreenAssertion: The Login screen is visible with phone and password fields
-      - goal: Enter the test host phone number and password and tap Login
-        hint: Phone uses Tanzanian format starting with 0. Tap the primary Login button. If OTP verification appears skip to OTP test file.
-        finalScreenAssertion: Either the main Home dashboard, PIN setup screen, or OTP verification screen is visible
+        hint: Dismiss onboarding if this is a fresh install by completing or skipping intro screens until Login appears. Do not register a new account. Login is phone-only — there is no password field.
+        finalScreenAssertion: The Login screen is visible with a phone number field and no password field
+      - goal: Enter the test host phone number and tap Continue or Login
+        hint: Phone uses Tanzanian format starting with 0. Tap the primary button. A sheet asks SMS or Email for the OTP. Choose SMS.
+        finalScreenAssertion: OTP verification screen asking for a 4-digit code is visible
+      - goal: Enter stage OTP 0000 and continue
+        hint: On stage use placeholder OTP 0000. Enter four zeros and submit or wait for auto-verify.
+        finalScreenAssertion: Either the main Home dashboard or PIN setup screen is visible
       - goal: Complete first-time PIN setup if prompted
         hint: If Change PIN or Set PIN screen appears enter 1234 twice to confirm. Skip this step if already on Home.
         finalScreenAssertion: The main app Home dashboard with bottom navigation is visible
@@ -21,17 +24,9 @@ tests:
         hint: Press home then reopen Host Bora. If Welcome Back or PIN screen appears enter PIN 1234.
         finalScreenAssertion: The Home dashboard or main shell is visible after unlock
 
-  - displayName: Forgot password request OTP
-    id: host-forgot-password-request
+  - displayName: Login OTP channel is SMS
+    id: host-login-otp-sms
     steps:
-      - goal: From Login tap Forgot Password and submit a registered phone number
-        hint: Use Forgot Password link below password field. Enter test phone number and submit.
-        finalScreenAssertion: OTP verification screen or success message about code sent is visible
-
-  - displayName: Change password while logged in
-    id: host-change-password
-    prerequisiteTestCaseId: host-login
-    steps:
-      - goal: Open Settings then Security and open Change Password
-        hint: Use More tab or Settings from bottom navigation. Navigate Security then Change Password.
-        finalScreenAssertion: Change password form with current and new password fields is visible
+      - goal: From Login enter a registered phone and choose SMS for the OTP
+        hint: There is no Forgot Password or password field. After tapping Login, pick SMS on the channel sheet. Email is hidden when the account has no email.
+        finalScreenAssertion: OTP verification screen is visible after SMS is chosen

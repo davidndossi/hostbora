@@ -183,7 +183,8 @@ class _QuickSendReminderWizardBodyState
 
   String _propertyTitle(TenantRecord tenant) {
     final label = tenant.propertyLabel.trim();
-    if (label.isEmpty) return tenant.unitLabel.trim().isEmpty ? 'N/A' : tenant.unitLabel;
+    if (label.isEmpty)
+      return tenant.unitLabel.trim().isEmpty ? 'N/A' : tenant.unitLabel;
     final comma = label.indexOf(',');
     final short = comma > 0 ? label.substring(0, comma).trim() : label;
     if (short.isEmpty) return 'N/A';
@@ -289,7 +290,9 @@ class _QuickSendReminderWizardBodyState
     nameController.dispose();
 
     if (cleanedName.isEmpty) {
-      _showSnack(_t('Template name is required', 'Jina la kiolezo linahitajika'));
+      _showSnack(
+        _t('Template name is required', 'Jina la kiolezo linahitajika'),
+      );
       return;
     }
     if (rawBody.isEmpty) {
@@ -345,9 +348,9 @@ class _QuickSendReminderWizardBodyState
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String? _validateStep() {
@@ -423,7 +426,10 @@ class _QuickSendReminderWizardBodyState
         for (final tenant in recipients) {
           final msg = _resolveMessage(template, tenant);
           final res = await _repository.sendWhatsApp(
-            SendSmsRequest(phoneNumber: tenant.phoneNumber.trim(), message: msg),
+            SendSmsRequest(
+              phoneNumber: tenant.phoneNumber.trim(),
+              message: msg,
+            ),
           );
           if (res.responseCode == '0') {
             sent += 1;
@@ -509,8 +515,9 @@ class _QuickSendReminderWizardBodyState
     }
 
     final selectable = _selectableTenants;
-    final withoutPhone =
-        _tenants.where((t) => t.phoneNumber.trim().isEmpty).length;
+    final withoutPhone = _tenants
+        .where((t) => t.phoneNumber.trim().isEmpty)
+        .length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -519,10 +526,7 @@ class _QuickSendReminderWizardBodyState
           context,
           _t('Choose recipients', 'Chagua wapokeaji'),
         ),
-        quickWizardLabel(
-          context,
-          _t('TENANTS', 'WAPANGAJI'),
-        ),
+        quickWizardLabel(context, _t('TENANTS', 'WAPANGAJI')),
         const SizedBox(height: 8),
         if (selectable.isEmpty)
           Text(
@@ -539,10 +543,7 @@ class _QuickSendReminderWizardBodyState
             onChanged: _toggleSelectAll,
             title: Text(
               _t('Select all', 'Chagua wote'),
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: c.headline,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w600, color: c.headline),
             ),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
@@ -561,7 +562,10 @@ class _QuickSendReminderWizardBodyState
                 tenant.tenantName.trim().isEmpty
                     ? _t('Unnamed tenant', 'Mpangaji bila jina')
                     : tenant.tenantName,
-                style: TextStyle(color: c.headline, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: c.headline,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               subtitle: Text(
                 subtitle,
@@ -591,10 +595,7 @@ class _QuickSendReminderWizardBodyState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        quickWizardHeading(
-          context,
-          _t('Compose reminder', 'Andika ukumbusho'),
-        ),
+        quickWizardHeading(context, _t('Compose reminder', 'Andika ukumbusho')),
         quickWizardLabel(
           context,
           _t('SAVED WHATSAPP TEMPLATE', 'KIOLEZO KILICHOHIFADHIWA'),
@@ -647,7 +648,9 @@ class _QuickSendReminderWizardBodyState
           label: Text(_t('Save as template', 'Hifadhi kama kiolezo')),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 44),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
         const SizedBox(height: 16),

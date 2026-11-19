@@ -11,6 +11,8 @@ import '../../../core/utils/haptic_feedback_util.dart';
 import '../../../core/utils/money_input_helper.dart';
 import '../../../core/utils/thousand_separator.dart';
 import '../../../data/local/service/currency_service.dart';
+import '../../../data/local/service/lease_income_extension.dart';
+import '../../../data/local/service/tenant_lease_remote_sync.dart';
 import '../../../data/local/bnb_booking_merge.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/client_event_local_data_source.dart';
@@ -26,11 +28,16 @@ import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/model/check_in_item.dart';
 import '../../../data/model/record_payment_request.dart';
 import '../../../data/repository/app_repository.dart';
+import '../../../routes/app_pages.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
 import '../../booking_details/controllers/booking_details_controller.dart';
+import '../../home/controllers/home_controller.dart';
 import '../../rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart';
 import '../../rent/tenant_ledger_occupancy/utils/tenant_ledger_finance.dart';
 import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
+import '../../../data/service/analytics_service.dart';
+import '../../../core/constants/ui_preference_keys.dart';
+import '../../../core/utils/form_recall.dart';
 
 enum PaymentStatus { paid, pending }
 
@@ -46,7 +53,7 @@ class BookingPickerOption {
   final String guestName;
 }
 
-class RecordPaymentController extends BaseController {
+class RecordPaymentController extends BaseController with FormRecallMixin {
   RecordPaymentController()
     : _incomeLocal = Get.find<IncomeLocalDataSource>(),
       _propertyLocal = Get.find<PropertyLocalDataSource>(),
@@ -127,6 +134,8 @@ class RecordPaymentController extends BaseController {
 
   Object? _unitMenuItemsCacheKey;
   List<DropdownMenuItem<String?>> _cachedUnitMenuItems = const [];
+
+  int? _linkedTenantId;
 
   String get selectedCategory => categories[selectedCategoryIndex.value];
   bool get hasProperties => propertyOptions.isNotEmpty;
@@ -342,8 +351,12 @@ class RecordPaymentController extends BaseController {
 
   ApartmentUnitDraft? _draftForIncomeUnitKey(String? key) {
     if (key == null || key.trim().isEmpty) return null;
+    final want = key.trim();
+    final lower = want.toLowerCase();
     for (final u in incomeUnitsForSelectedProperty) {
-      if (u.selectionKey == key) return u;
+      if (u.selectionKey == want) return u;
+      if (u.unitId.trim() == want) return u;
+      if (u.unitName.trim().toLowerCase() == lower) return u;
     }
     return null;
   }
@@ -370,13 +383,14 @@ class RecordPaymentController extends BaseController {
     final loc = p.propertyLocation.trim();
     final suite = p.propertyName.trim();
     final title = suite.isNotEmpty ? '$loc · $suite' : loc;
-    final propertyRef = p.propertyRef.trim().isNotEmpty
-        ? p.propertyRef.trim()
-        : 'legacy_${p.id}';
+    final refs = <String>{
+      if (p.propertyRef.trim().isNotEmpty) p.propertyRef.trim(),
+      'legacy_${p.id}',
+      'local_${p.id}',
+    };
     final r = t.propertyRef.trim();
-    if (r.isNotEmpty) {
-      return r == propertyRef;
-    }
+    if (r.isNotEmpty && refs.contains(r)) return true;
+    if (r.isNotEmpty) return false;
     final pl = t.propertyLabel.trim();
     if (pl == title) return true;
     if (pl == loc) return true;
@@ -396,6 +410,78 @@ class RecordPaymentController extends BaseController {
     return t.unitLabel.trim() == u.unitName.trim();
   }
 
+  /// BnB income with no active guest on that unit. A linked booking already
+  /// has a guest, so it does not ask again.
+  Future<({String place, ApartmentUnitDraft? unit})?> _bnbGuestPromptTarget({
+    required ApartmentUnitDraft? unit,
+    required String bookingId,
+  }) async {
+    if (bookingId.trim().isNotEmpty) return null;
+    if (_workspaceForIncomeSave(unit) != 'bnb') return null;
+    final prop = selectedPropertyRecord;
+    if (prop == null) return null;
+
+    var target = unit;
+    if (target == null && incomeUnitsForSelectedProperty.length == 1) {
+      final only = incomeUnitsForSelectedProperty.first;
+      if (_workspaceForIncomeSave(only) == 'bnb') target = only;
+    }
+    if (target == null && incomeUnitsForSelectedProperty.length > 1) {
+      return null;
+    }
+
+    final tenants = await _tenantLocal.getActiveTenants();
+    final hasGuest = target == null
+        ? tenants.any((t) => _tenantMatchesProperty(t, prop))
+        : tenants.any((t) => _tenantMatchesUnit(t, target!, prop));
+    if (hasGuest) return null;
+
+    final place = target != null && target.unitName.trim().isNotEmpty
+        ? target.unitName.trim()
+        : selectedProperty.value.trim();
+    if (place.isEmpty) return null;
+    return (place: place, unit: target);
+  }
+
+  Future<bool?> _promptAddGuestAfterBnbIncome(String place) {
+    return Get.dialog<bool>(
+      AlertDialog(
+        title: Text(appLocalization.bnbIncomeAddGuestPromptTitle),
+        content: Text(appLocalization.bnbIncomeAddGuestPromptBody(place)),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text(appLocalization.bnbIncomeAddGuestPromptLater),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: Text(appLocalization.bnbIncomeAddGuestPromptAdd),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  Map<String, dynamic> _guestNavigationArgs({
+    required ApartmentUnitDraft? unit,
+    required String guestName,
+  }) {
+    final ref = _propertyRefForIncomeInsert();
+    final property = selectedProperty.value.trim();
+    final unitId = unit?.unitId.trim() ?? '';
+    final unitName = unit?.unitName.trim() ?? '';
+    final name = guestName.trim();
+    return {
+      if (property.isNotEmpty) 'property': property,
+      if (ref.isNotEmpty) 'propertyRef': ref,
+      'workspaceType': 'bnb',
+      if (unitId.isNotEmpty) 'unitId': unitId,
+      if (unitName.isNotEmpty) 'unitName': unitName,
+      if (name.isNotEmpty) 'guestName': name,
+    };
+  }
+
   Future<void> _syncTenantFieldToSelectedUnit() async {
     final key = selectedIncomeUnitKey.value?.trim();
     final prop = selectedPropertyRecord;
@@ -409,10 +495,226 @@ class RecordPaymentController extends BaseController {
     for (final t in tenants) {
       if (_tenantMatchesUnit(t, unit, prop)) {
         tenantController.text = t.tenantName.trim();
+        _linkedTenantId ??= t.id;
+        expectedRent.value = t.rentAmountValue;
         return;
       }
     }
-    tenantController.clear();
+    if (tenantController.text.trim().isEmpty && _linkedTenantId == null) {
+      tenantController.clear();
+      expectedRent.value = 0;
+    }
+  }
+
+  /// Rent on the lease behind the selected unit, or 0 when no tenant resolves.
+  ///
+  /// Drives the amount presets. It is the contracted figure rather than a
+  /// round number, which is what makes a one-tap "full rent" chip safe to
+  /// offer against a field that files money.
+  final expectedRent = 0.0.obs;
+
+  /// Writes a preset into the amount field, formatted the way the field's own
+  /// thousands formatter would leave it so the two never disagree.
+  void applyAmountPreset(double amount) {
+    if (amount <= 0) return;
+    final formatted = amountThousandsFormatter.formatEditUpdate(
+      TextEditingValue.empty,
+      TextEditingValue(text: amount.toStringAsFixed(0)),
+    );
+    amountController.value = formatted.copyWith(
+      selection: TextSelection.collapsed(offset: formatted.text.length),
+    );
+  }
+
+  /// Lease payments cover whole rent periods. 1,200,000 against a 200,000
+  /// monthly rent adds 6 months, starting from the current lease end even
+  /// when that date is already past.
+  Future<String?> _extendTenancyForIncome({
+    required String tenantName,
+    required int? tenantId,
+    required ApartmentUnitDraft? unit,
+    required double inputAmount,
+    required String inputCurrency,
+    required int incomeId,
+  }) async {
+    if (selectedCategory != 'Lease') return null;
+    try {
+      final tenant = await _tenantForIncome(
+        tenantName: tenantName,
+        tenantId: tenantId,
+        unit: unit,
+      );
+      if (tenant == null) return null;
+      final rate = _periodicRent(tenant, unit);
+      if (rate == null || rate.amount <= 0) return null;
+      final periods = (_paidPeriods(
+        paidAmount: inputAmount,
+        paidCurrency: inputCurrency,
+        rentAmount: rate.amount,
+        rentCurrency: rate.currency,
+      )).floor();
+      if (periods <= 0) return null;
+
+      final end = _parseLeaseDay(tenant.leaseEndIso) ??
+          DateTime(
+            DateTime.now().year,
+            DateTime.now().month,
+            DateTime.now().day,
+          );
+      final nextEnd = _advanceByFrequency(end, rate.frequency, periods);
+      final nextEndIso = DateFormat('yyyy-MM-dd').format(nextEnd);
+      await _tenantLocal.updateLeaseTerms(
+        id: tenant.id,
+        rentAmountValue: tenant.rentAmountValue,
+        leaseStartIso: tenant.leaseStartIso,
+        leaseEndIso: nextEndIso,
+      );
+      await TenantLeaseRemoteSync.push(
+        tenant: tenant,
+        leaseEndIso: nextEndIso,
+      );
+      if (incomeId > 0) {
+        await LeaseIncomeExtension.markApplied(incomeId);
+      }
+      return 'Tenancy extended by $periods ${_periodLabel(rate.frequency)}.';
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<TenantRecord?> _tenantForIncome({
+    required String tenantName,
+    required int? tenantId,
+    required ApartmentUnitDraft? unit,
+  }) async {
+    if (tenantId != null && tenantId > 0) {
+      final byId = await _tenantLocal.findById(tenantId);
+      if (byId != null) return byId;
+    }
+    final prop = selectedPropertyRecord;
+    final tenants = await _tenantLocal.getAllNewestFirst();
+    if (prop != null && unit != null) {
+      for (final t in tenants) {
+        if (_tenantMatchesUnit(t, unit, prop)) return t;
+      }
+    }
+    final name = tenantName.trim().toLowerCase();
+    if (name.isEmpty) return null;
+    final named = tenants
+        .where((t) => t.tenantName.trim().toLowerCase() == name)
+        .toList();
+    if (named.isEmpty) return null;
+    if (prop != null) {
+      final onProperty =
+          named.where((t) => _tenantMatchesProperty(t, prop)).toList();
+      if (onProperty.isNotEmpty) return onProperty.first;
+    }
+    return named.first;
+  }
+
+  ({double amount, String frequency, String currency})? _periodicRent(
+    TenantRecord tenant,
+    ApartmentUnitDraft? unit,
+  ) {
+    final freq = tenant.rentFrequency.trim();
+    if (_isRepeatingRent(freq) && tenant.rentAmountValue > 0) {
+      return (
+        amount: tenant.rentAmountValue,
+        frequency: freq,
+        currency: tenant.rentCurrency,
+      );
+    }
+    if (unit != null) {
+      final amount = double.tryParse(unit.unitRent.replaceAll(',', '').trim());
+      final unitFreq = unit.unitRentFrequency.trim();
+      if (amount != null && amount > 0 && _isRepeatingRent(unitFreq)) {
+        return (
+          amount: amount,
+          frequency: unitFreq,
+          currency: unit.unitRentCurrency,
+        );
+      }
+    }
+    return null;
+  }
+
+  static bool _isRepeatingRent(String frequency) {
+    final value = frequency.trim().toLowerCase();
+    return value.contains('month') ||
+        value.contains('week') ||
+        value.contains('year') ||
+        value.contains('day') ||
+        value.contains('night');
+  }
+
+  double _paidPeriods({
+    required double paidAmount,
+    required String paidCurrency,
+    required double rentAmount,
+    required String rentCurrency,
+  }) {
+    if (rentAmount <= 0 || paidAmount <= 0) return 0;
+    final paid = paidCurrency.trim().toUpperCase();
+    final rent = rentCurrency.trim().toUpperCase();
+    if (paid.isEmpty || rent.isEmpty || paid == rent) {
+      return paidAmount / rentAmount;
+    }
+    final cs = Get.find<CurrencyService>();
+    final paidBase = cs.toBaseAmount(
+      inputAmount: paidAmount,
+      inputCurrency: paid,
+    );
+    final rentBase = cs.toBaseAmount(
+      inputAmount: rentAmount,
+      inputCurrency: rent,
+    );
+    if (rentBase <= 0) return 0;
+    return paidBase / rentBase;
+  }
+
+  static DateTime? _parseLeaseDay(String raw) {
+    final text = raw.trim();
+    if (text.length < 10) return null;
+    final y = int.tryParse(text.substring(0, 4));
+    final m = int.tryParse(text.substring(5, 7));
+    final d = int.tryParse(text.substring(8, 10));
+    if (y == null || m == null || d == null) return null;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    return DateTime(y, m, d);
+  }
+
+  static DateTime _advanceByFrequency(
+    DateTime base,
+    String frequency,
+    int units,
+  ) {
+    switch (frequency.trim().toLowerCase()) {
+      case 'per day':
+      case 'per night':
+        return base.add(Duration(days: units));
+      case 'per week':
+        return base.add(Duration(days: units * 7));
+      case 'per year':
+        return DateTime(base.year + units, base.month, base.day);
+      case 'per month':
+      default:
+        return DateTime(base.year, base.month + units, base.day);
+    }
+  }
+
+  static String _periodLabel(String frequency) {
+    switch (frequency.trim().toLowerCase()) {
+      case 'per day':
+      case 'per night':
+        return frequency.toLowerCase().contains('night') ? 'nights' : 'days';
+      case 'per week':
+        return 'weeks';
+      case 'per year':
+        return 'years';
+      case 'per month':
+      default:
+        return 'months';
+    }
   }
 
   @override
@@ -423,6 +725,11 @@ class RecordPaymentController extends BaseController {
 
   Future<void> _initForm() async {
     selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
+    // Payments are almost always recorded on the day they are received, and a
+    // blank field here hard-blocks the save on a format error.
+    if (datePaidController.text.trim().isEmpty) {
+      datePaidController.text = DateFormat(_dateFormat).format(paymentDate.value);
+    }
     // Prefer an explicit route workspace; otherwise load every workspace so
     // rent-only hosts are not stuck with an empty "bnb"-filtered dropdown.
     final routeWorkspace = Get.parameters['workspaceType']?.toString().trim();
@@ -454,6 +761,7 @@ class RecordPaymentController extends BaseController {
     if (preset != null && preset.isNotEmpty) {
       updateSelectedBooking(preset);
     }
+    await _applyIncomePrefill();
   }
 
   void selectCategory(int index) {
@@ -502,9 +810,13 @@ class RecordPaymentController extends BaseController {
       selectedProperty.value = fromRoute;
       return;
     }
-    if (options.length == 1) {
-      selectedProperty.value = options.first;
-    }
+    // Left blank with two or more properties and no recall: an arbitrary
+    // pre-selection here would file money against the wrong building, which
+    // is worse than one extra tap.
+    selectedProperty.value = await recallChoice(
+      key: UiPreferenceKeys.recordPaymentProperty,
+      options: options,
+    );
   }
 
   void updateSelectedProperty(String? value) {
@@ -692,6 +1004,80 @@ class RecordPaymentController extends BaseController {
     _syncTenantFieldToSelectedUnit();
   }
 
+  Future<void> _applyIncomePrefill() async {
+    final args = Get.arguments;
+    final raw = args is Map ? args['prefillIncome'] : null;
+    final prefill = raw is Map ? Map<String, dynamic>.from(raw) : const {};
+
+    _linkedTenantId = _firstInt([
+      prefill['tenantId'],
+      args is Map ? args['tenantId'] : null,
+      Get.parameters['tenantId'],
+    ]);
+
+    final name = (prefill['tenantName'] ??
+            Get.parameters['tenant'] ??
+            '')
+        .toString()
+        .trim();
+    if (name.isNotEmpty) {
+      tenantController.text = name;
+    } else if (_linkedTenantId != null && _linkedTenantId! > 0) {
+      final linked = await _tenantLocal.findById(_linkedTenantId!);
+      if (linked != null) {
+        tenantController.text = linked.tenantName.trim();
+      }
+    }
+
+    final amountRaw =
+        (prefill['amount'] ?? '').toString().trim().replaceAll(',', '');
+    final amount = double.tryParse(amountRaw);
+    if (amount != null && amount > 0) {
+      applyAmountPreset(amount);
+    }
+
+    final categoryIndex = prefill['categoryIndex'];
+    if (categoryIndex is int) {
+      selectCategory(categoryIndex);
+    }
+
+    final unitKey = (prefill['unitSelectionKey'] ?? '').toString().trim();
+    if (unitKey.isNotEmpty) {
+      selectedIncomeUnitKey.value = unitKey;
+      await _syncTenantFieldToSelectedUnit();
+    }
+  }
+
+  Future<int?> _resolveLinkedTenantId({
+    required String tenantName,
+    required ApartmentUnitDraft? unit,
+  }) async {
+    if (_linkedTenantId != null && _linkedTenantId! > 0) {
+      return _linkedTenantId;
+    }
+    final fromRoute = int.tryParse(Get.parameters['tenantId'] ?? '');
+    if (fromRoute != null && fromRoute > 0) return fromRoute;
+    final args = Get.arguments;
+    if (args is Map) {
+      final fromArgs = int.tryParse('${args['tenantId'] ?? ''}');
+      if (fromArgs != null && fromArgs > 0) return fromArgs;
+    }
+    final tenant = await _tenantForIncome(
+      tenantName: tenantName,
+      tenantId: null,
+      unit: unit,
+    );
+    return tenant?.id;
+  }
+
+  static int? _firstInt(List<Object?> values) {
+    for (final value in values) {
+      final parsed = int.tryParse('${value ?? ''}');
+      if (parsed != null && parsed > 0) return parsed;
+    }
+    return null;
+  }
+
   String _routePropertyLabel() {
     final args = Get.arguments;
     if (args is Map) {
@@ -755,6 +1141,25 @@ class RecordPaymentController extends BaseController {
     return 'legacy_${r.id}';
   }
 
+  /// Rent (Lease) income must belong to a tenant. BnB income is per booking,
+  /// and other categories (service charge, maintenance, other) are allowed to
+  /// stand alone.
+  bool _requiresTenantLink(String workspaceType) =>
+      workspaceType.trim().toLowerCase() == 'rent' &&
+      selectedCategory == 'Lease';
+
+  /// The only tenant on the selected property, or null when there are none or
+  /// several (then the user has to say which).
+  Future<TenantRecord?> _soleTenantOnSelectedProperty() async {
+    final prop = selectedPropertyRecord;
+    if (prop == null) return null;
+    final tenants = await _tenantLocal.getAllNewestFirst();
+    final onProperty = tenants
+        .where((t) => _tenantMatchesProperty(t, prop))
+        .toList();
+    return onProperty.length == 1 ? onProperty.first : null;
+  }
+
   Future<void> saveIncomeOffline() async {
     if (saving.value) return;
     // Only validate FormState when a Form is mounted (full Record Payment
@@ -789,6 +1194,7 @@ class RecordPaymentController extends BaseController {
       return;
     }
 
+    saving.value = true;
     final unitDraft = _draftForIncomeUnitKey(selectedIncomeUnitKey.value);
     final unitName = unitDraft?.unitName.trim() ?? '';
     final workspaceType = _workspaceForIncomeSave(unitDraft);
@@ -802,19 +1208,47 @@ class RecordPaymentController extends BaseController {
       baseNotes.write(" ");
       baseNotes.writeln(notes);
     }
-    final tenantIdParam = int.tryParse(Get.parameters['tenantId'] ?? '');
+    int? tenantIdParam;
+    try {
+      tenantIdParam = await _resolveLinkedTenantId(
+        tenantName: tenant,
+        unit: unitDraft,
+      );
+      if (tenantIdParam == null || tenantIdParam <= 0) {
+        // A property with a single tenant is unambiguous; link to them.
+        tenantIdParam = (await _soleTenantOnSelectedProperty())?.id;
+      }
+      if ((tenantIdParam == null || tenantIdParam <= 0) &&
+          _requiresTenantLink(workspaceType)) {
+        // Rent paid with no tenant can't be allocated to a month, so it would
+        // never reduce "yet to collect". Ask for the tenant instead of
+        // saving a payment that silently doesn't count.
+        showErrorMessage(
+          'Select the unit or enter the exact name of the tenant this rent '
+          'payment is for. If they are not listed, add the tenant first.',
+        );
+        return;
+      }
     if (tenantIdParam != null && tenantIdParam > 0) {
+      _linkedTenantId = tenantIdParam;
+      if (tenant.isEmpty) {
+        final linked = await _tenantLocal.findById(tenantIdParam);
+        if (linked != null) {
+          tenantController.text = linked.tenantName.trim();
+        }
+      }
       baseNotes.writeln(
         TenantLedgerFinance.appendTenantIdNote('', tenantIdParam),
       );
     }
+    final tenantNameForSave = tenantController.text.trim().isNotEmpty
+        ? tenantController.text.trim()
+        : tenant;
 
     final bookingId = _selectedBookingIdForSave() ?? '';
 
-    saving.value = true;
-    try {
       final localIncomeId = await _incomeLocal.insert(
-        tenantName: tenant,
+        tenantName: tenantNameForSave,
         amountValue: parsed.baseAmount,
         datePaidIso: DateFormat('yyyy-MM-dd').format(paidDate),
         category: selectedCategory,
@@ -826,6 +1260,7 @@ class RecordPaymentController extends BaseController {
         bookingId: bookingId,
         currencyCode: parsed.currency,
         inputAmountValue: parsed.inputAmount,
+        tenantId: tenantIdParam ?? 0,
       );
 
       // Write client event for this payment (phone resolved later via tenant lookup)
@@ -851,6 +1286,7 @@ class RecordPaymentController extends BaseController {
         bookingId: bookingId.isEmpty ? null : bookingId,
         paymentDate: DateFormat(_isoDateFormat).format(paidDate),
         status: status.value == PaymentStatus.paid ? 'PAID' : 'PENDING',
+        idempotencyKey: 'payment:create:$localIncomeId',
       );
       final payload = <String, dynamic>{
         ...request.toJson(),
@@ -862,25 +1298,65 @@ class RecordPaymentController extends BaseController {
         payloadJson: jsonEncode(payload),
         dedupeKey: 'payment:create:$localIncomeId',
       );
-      await _syncWorker.runNow(maxItems: 20);
+      unawaited(_syncWorker.runNow(maxItems: 1));
+      final extensionNote = await _extendTenancyForIncome(
+        tenantName: tenantNameForSave,
+        tenantId: tenantIdParam,
+        unit: unitDraft,
+        inputAmount: parsed.inputAmount,
+        inputCurrency: parsed.currency,
+        incomeId: localIncomeId,
+      );
       final pending = await _syncQueue.pendingCountByEntity(
         entityType: 'payment',
         operation: 'create',
       );
+      analytics?.logPaymentRecorded(
+        workspace: workspaceType,
+        currency: parsed.currency,
+        paymentMethod: selectedPaymentMethod.value,
+        category: selectedCategory,
+      );
+      rememberChoice(UiPreferenceKeys.recordPaymentProperty, property);
       hapticPrimaryConfirm();
-      if (pending > 0) {
-        showSuccessMessage(
-          'Income saved offline. Will sync when internet is available.',
-        );
-      } else {
-        showSuccessMessage('Income saved and synced.');
-      }
+      final saved = pending > 0
+          ? 'Income saved offline. Will sync when internet is available.'
+          : 'Income saved and synced.';
+      showSuccessMessage(
+        extensionNote == null ? saved : '$saved $extensionNote',
+      );
       await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
       await RentTenantLedgerOccupancyController.refreshIfRegistered();
       await BookingDetailsController.refreshIfRegistered();
+      await HomeController.refreshIfRegistered();
       await PropertyBreakEvenNotificationService.checkPropertyIfRegistered(
         _propertyRefForIncomeInsert(),
       );
+      final guestPrompt = await _bnbGuestPromptTarget(
+        unit: unitDraft,
+        bookingId: bookingId,
+      );
+      saving.value = false;
+      if (guestPrompt != null) {
+        final addGuest = await _promptAddGuestAfterBnbIncome(guestPrompt.place);
+        if (addGuest == true) {
+          final nav = _guestNavigationArgs(
+            unit: guestPrompt.unit,
+            guestName: tenant,
+          );
+          Get.back(result: true);
+          await Get.toNamed(
+            Routes.ADD_NEW_TENANT,
+            parameters: {
+              if (nav['property'] != null) 'property': nav['property'] as String,
+              if (nav['propertyRef'] != null)
+                'propertyRef': nav['propertyRef'] as String,
+            },
+            arguments: nav,
+          );
+          return;
+        }
+      }
       Get.back(result: true);
     } catch (e) {
       showErrorMessage('Failed to save income: $e');

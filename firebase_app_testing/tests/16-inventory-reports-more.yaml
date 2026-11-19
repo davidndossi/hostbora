@@ -1,0 +1,41 @@
+# Inventory, apartment reports, and More Options sheet
+tests:
+  - displayName: Open More Options sheet from center FAB
+    id: more-options-sheet
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: On the main shell tap the center FAB / More Options control to open the shortcuts sheet
+        hint: The elevated center button on the bottom nav opens a sheet with shortcuts such as add property, income, expense, help, and reports. Do not confuse with the teal AI sparkle FAB on Home.
+        finalScreenAssertion: More Options bottom sheet or overlay with multiple shortcut actions is visible
+
+  - displayName: Open inventory tracking for a listing
+    id: inventory-tracking-open
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: Open a property listing details then navigate to Inventory Tracking
+        hint: Properties tab → open any listing → find Inventory. If no property exists, create is out of scope — mark blocked and stop.
+        finalScreenAssertion: Inventory tracking list or empty inventory state is visible
+
+  - displayName: Open inventory item form
+    id: inventory-item-form
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From Inventory Tracking tap Add Item or equivalent to open the item form
+        hint: Use the add / FAB control on inventory. Fill is optional — opening the form is enough.
+        finalScreenAssertion: Inventory item form with name or quantity fields is visible
+
+  - displayName: Open apartment reports
+    id: rent-apartment-reports
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: From a rent listing or rent hub open Apartment Reports
+        hint: Listing details finance/reports section or Rent hub find Apartment Reports. Requires a rent or dual-mode listing when possible.
+        finalScreenAssertion: Apartment reports screen with filters, summary, or export action is visible
+
+  - displayName: Apartment reports export control present
+    id: rent-apartment-reports-export
+    prerequisiteTestCaseId: host-login
+    steps:
+      - goal: On Apartment Reports confirm an export or share/PDF action is available
+        hint: Look for Export, PDF, Share, or Download. Do not require a successful file share completion if the system sheet is flaky — presence of the control and a non-crash tap is enough.
+        finalScreenAssertion: An export/PDF/share control is visible on the apartment reports screen and tapping it does not crash the app

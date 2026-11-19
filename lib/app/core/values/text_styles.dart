@@ -124,7 +124,7 @@ const loanTitleStyle = TextStyle(
 );
 
 const loanSubtitleStyle = TextStyle(
-  fontSize: 8,
+  fontSize: 10,
   fontWeight: FontWeight.w400,
   color: Color(0x80323232)
 );
@@ -157,11 +157,6 @@ const alertTitleStyle = TextStyle(
   color: Colors.black,
 );
 
-const boldLabel = TextStyle(
-  fontSize: 18,
-  fontFamily: 'medium'
-);
-
 const simpleLabel = TextStyle(
   fontSize: 14,
   color: Colors.grey
@@ -174,7 +169,7 @@ const textGrey14 = TextStyle(
 );
 
 const loanBankNameStyle = TextStyle(
-  fontSize: 8,
+  fontSize: 10,
   fontWeight: FontWeight.w200,
   color: Colors.black
 );
@@ -315,9 +310,24 @@ const descriptionTextStyle = TextStyle(
 
 /// Default for [Text] under `lib/app/modules/` (excluding `rent/`).
 /// Applied via [BaseView.applyModuleDefaultTextStyle] and [ModuleDefaultTextScope].
+///
+/// The [height] is the reason this style matters. It is merged into every
+/// [Text] in a module that does not set its own, so it is the one place a
+/// line height can be given to the ~1,600 inline styles that declare a size
+/// and nothing else. 1.35 rather than Material's 1.5: it has to be safe for
+/// single-line labels inside fixed-height rows as well as for paragraphs.
 const moduleDefaultTextStyle = TextStyle(
   fontSize: 16,
+  height: 1.35,
 );
+
+/// Default for the rent workspace, via [RentBaseView].
+///
+/// The same line height with no [fontSize]. Rent screens set their own sizes
+/// deliberately and opted out of [moduleDefaultTextStyle] to keep them, which
+/// also cost them the line height — the sizes were the only part they needed
+/// to refuse.
+const rentDefaultTextStyle = TextStyle(height: 1.35);
 
 final bigTitleCyanStyle =
     bigTitleStyle.copyWith(color: AppColors.textColorCyan);
@@ -342,7 +352,7 @@ const boldTitleStyle = TextStyle(
   height: 1.34,
 );
 final boldTitleWhiteStyle =
-    boldTitleStyle.copyWith(color: AppColors.textColorWhite);
+    boldTitleStyle.copyWith(color: AppColors.colorWhite);
 
 final boldTitleCyanStyle =
     boldTitleStyle.copyWith(color: AppColors.textColorCyan);

@@ -8,6 +8,8 @@ class AddTaskRequest {
     this.propertyRef,
     this.workspaceType,
     this.assignee,
+    this.assigneePhone,
+    this.staffId,
     this.completed,
     this.status,
   });
@@ -23,6 +25,12 @@ class AddTaskRequest {
 
   /// Name of the staff member to assign the task to.
   final String? assignee;
+
+  /// Login phone for that staff member, so their account can see the task.
+  final String? assigneePhone;
+
+  /// Backend staff id, when the roster row has already synced.
+  final String? staffId;
   final bool? completed;
   final String? status;
 
@@ -41,6 +49,12 @@ class AddTaskRequest {
       if (assignee != null && assignee!.isNotEmpty) ...{
         'assignee': assignee,
         'assignedTo': assignee,
+      },
+      if (assigneePhone != null && assigneePhone!.trim().isNotEmpty)
+        'assigneePhone': assigneePhone!.trim(),
+      if (staffId != null && staffId!.trim().isNotEmpty) ...{
+        'staffId': staffId!.trim(),
+        'assigneeStaffId': staffId!.trim(),
       },
       if (completed != null) 'completed': completed,
       if (status != null && status!.isNotEmpty) 'status': status,

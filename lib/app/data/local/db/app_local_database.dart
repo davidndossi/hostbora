@@ -49,6 +49,7 @@ class AppLocalDatabase {
   static const tenantRatingTable = 'tenant_rating';
   static const inventoryItemTable = 'inventory_item';
   static const inventoryMovementTable = 'inventory_movement';
+  static const syncedEntityTable = 'synced_entity';
 
   static Database? _db;
 
@@ -85,6 +86,7 @@ class AppLocalDatabase {
         await _ensureTenantRatingTable(db);
         await _ensureTenantStatusColumns(db);
         await _ensureIncomeBackendPaymentIdColumn(db);
+        await _ensureIncomeTenantIdColumn(db);
         await _ensureTenantBackendTenantIdColumn(db);
         await _ensureMaintenanceBackendTaskIdColumn(db);
         await _ensurePropertyUnitRentCurrencyColumn(db);
@@ -92,8 +94,11 @@ class AppLocalDatabase {
         await _ensureInventoryItemTable(db);
         await _ensureInventoryMovementTable(db);
         await _ensureRentStaffBackendIdColumn(db);
+        await _ensureRentStaffPhoneColumn(db);
         await _ensureRecurringReminderTable(db);
         await _ensureScheduledSmsTable(db);
+        await _ensureEditTimestamps(db);
+        await _ensureSyncedEntityTable(db);
       },
     );
     return _db!;
@@ -173,6 +178,7 @@ class AppLocalDatabase {
         workspace_type TEXT NOT NULL DEFAULT 'rent',
         currency_code TEXT NOT NULL DEFAULT 'TZS',
         input_amount_value REAL NOT NULL DEFAULT 0,
+        tenant_id INTEGER NOT NULL DEFAULT 0,
         created_at_ms INTEGER NOT NULL
       )
     ''');
@@ -298,7 +304,8 @@ class AppLocalDatabase {
         pay_day_label TEXT NOT NULL DEFAULT '',
         created_at_ms INTEGER NOT NULL,
         payment_type TEXT NOT NULL DEFAULT 'monthly',
-        amount_value REAL NOT NULL DEFAULT 0
+        amount_value REAL NOT NULL DEFAULT 0,
+        phone TEXT NOT NULL DEFAULT ''
       )
     ''');
 
@@ -800,6 +807,15 @@ class AppLocalDatabase {
     );
   }
 
+  static Future<void> _ensureRentStaffPhoneColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      rentStaffTable,
+      'phone',
+      "TEXT NOT NULL DEFAULT ''",
+    );
+  }
+
   static Future<void> _ensurePropertyUnitRentCurrencyColumn(Database db) async {
     await _addColumnIfMissing(
       db,
@@ -874,6 +890,35 @@ class AppLocalDatabase {
       'backend_payment_id',
       "TEXT NOT NULL DEFAULT ''",
     );
+  }
+
+  static Future<void> _ensureIncomeTenantIdColumn(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      incomeTable,
+      'tenant_id',
+      'INTEGER NOT NULL DEFAULT 0',
+    );
+    if (!await _tableExists(db, incomeTable)) return;
+    if (!await _columnExists(db, incomeTable, 'tenant_id')) return;
+    final rows = await db.query(
+      incomeTable,
+      columns: const ['id', 'notes'],
+      where: "tenant_id = 0 AND notes LIKE '%tenantId:%'",
+    );
+    final tag = RegExp(r'(?:^|[^\d])tenantId:(\d+)(?!\d)', multiLine: true);
+    for (final row in rows) {
+      final notes = (row['notes'] as String?) ?? '';
+      final match = tag.firstMatch(notes);
+      final tenantId = int.tryParse(match?.group(1) ?? '') ?? 0;
+      if (tenantId <= 0) continue;
+      await db.update(
+        incomeTable,
+        {'tenant_id': tenantId},
+        where: 'id = ?',
+        whereArgs: [row['id']],
+      );
+    }
   }
 
   static Future<void> _ensureTenantBackendTenantIdColumn(Database db) async {
@@ -999,6 +1044,37 @@ class AppLocalDatabase {
     return rows.any((r) => r['name'] == column);
   }
 
+  static Future<void> _ensureEditTimestamps(Database db) async {
+    for (final table in const [
+      propertiesTable,
+      propertyUnitsTable,
+      tenantTable,
+      incomeTable,
+      expenseTable,
+    ]) {
+      await _addColumnIfMissing(
+        db,
+        table,
+        'updated_at_ms',
+        'INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+  }
+
+  static Future<void> _ensureSyncedEntityTable(Database db) async {
+    if (await _tableExists(db, syncedEntityTable)) return;
+    await db.execute('''
+      CREATE TABLE $syncedEntityTable (
+        entity_type TEXT NOT NULL,
+        entity_key TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        remote_updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        local_updated_at_ms INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (entity_type, entity_key)
+      )
+    ''');
+  }
+
   static Future<void> _addColumnIfMissing(
     Database db,
     String table,
@@ -1014,8 +1090,9 @@ class AppLocalDatabase {
 
   /// Closes the singleton handle (if any) and deletes the DB file from disk.
   ///
-  /// After this, **restart the app** (or hot restart) before using local DB
-  /// again — in-memory [Database] caches inside data sources are not cleared.
+  /// Also removes the unused pre-rename file (`host_bora_local.db`). That
+  /// file is not opened by the app, but it still sits in Documents and is
+  /// what a host sees when they browse the folder after a wipe.
   static Future<void> deleteLocalDatabaseFile() async {
     try {
       await _db?.close();
@@ -1023,11 +1100,19 @@ class AppLocalDatabase {
     _db = null;
     final dir = await getApplicationDocumentsDirectory();
     await deleteDatabase(p.join(dir.path, dbName));
+    final leftover = p.join(dir.path, 'host_bora_local.db');
+    try {
+      await deleteDatabase(leftover);
+    } catch (_) {}
   }
 
   static const List<String> _allDataTables = [
     inventoryMovementTable,
     inventoryItemTable,
+    clientEventTable,
+    tenantRatingTable,
+    recurringReminderTable,
+    scheduledSmsTable,
     offlineSyncQueueTable,
     propertyMembersTable,
     rentWhatsappTemplateTable,
@@ -1047,6 +1132,7 @@ class AppLocalDatabase {
     propertyUnitsTable,
     propertiesTable,
     exchangeRatesTable,
+    syncedEntityTable,
   ];
 
   /// Deletes every row from all local tables (schema and DB user version unchanged).
@@ -1054,6 +1140,11 @@ class AppLocalDatabase {
     final db = await database;
     await db.transaction((txn) async {
       for (final name in _allDataTables) {
+        final existing = await txn.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+          [name],
+        );
+        if (existing.isEmpty) continue;
         await txn.delete(name);
       }
     });

@@ -128,9 +128,9 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
   Widget _buildTopBar(BuildContext context) {
     return Row(
       children: [
-        _circleIcon(context, Icons.arrow_back_ios_new_rounded, onTap: Get.back),
+        _circleIcon(context, Icons.arrow_back_ios_new_outlined, onTap: Get.back),
         const Spacer(),
-        _circleIcon(context, Icons.help_outline_rounded, onTap: () {}),
+        _circleIcon(context, Icons.help_outline, onTap: () {}),
       ],
     );
   }
@@ -368,7 +368,7 @@ class AiAutomationsView extends BaseView<AiAutomationsController> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: controller.previewVoice,
-              icon: const Icon(Icons.play_circle_outline_rounded, size: 18),
+              icon: const Icon(Icons.play_circle_outline, size: 18),
               label: Text(
                 _t(context, en: 'Preview AI Voice', sw: 'Sikiliza Sauti ya AI'),
                 style: TextStyle(

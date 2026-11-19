@@ -25,7 +25,7 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
       scrolledUnderElevation: 0,
       leading: IconButton(
         onPressed: controller.goBack,
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 22),
+        icon: const Icon(Icons.arrow_back_ios_new_outlined, size: 22),
         color: isDark
             ? theme.colorScheme.onSurface
             : AppColors.textColorPrimary,
@@ -153,7 +153,7 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
                                     ),
                                     const SizedBox(width: 8),
                                     Icon(
-                                      Icons.arrow_forward_rounded,
+                                      Icons.arrow_forward_outlined,
                                       size: 20,
                                       color: Colors.white.withValues(
                                         alpha: 0.95,
@@ -174,7 +174,7 @@ class ResetPasswordView extends BaseView<ResetPasswordController> {
             child: TextButton.icon(
               onPressed: controller.backToLogin,
               icon: const Icon(
-                Icons.arrow_forward_rounded,
+                Icons.arrow_forward_outlined,
                 size: 18,
                 color: AppColors.colorPrimary,
               ),

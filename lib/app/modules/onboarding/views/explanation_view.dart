@@ -9,6 +9,7 @@ import '../../../core/values/text_styles.dart';
 import '../../../core/widget/base_currency_picker.dart';
 import '../../../core/widget/module_default_text_scope.dart';
 import '../../../data/local/service/workspace_context_service.dart';
+import 'rent_try_it_card.dart';
 
 class ExplanationView extends StatelessWidget {
   const ExplanationView({super.key});
@@ -35,7 +36,7 @@ class ExplanationView extends StatelessWidget {
               'images/host_bora_logo.png',
               width: 100,
               errorBuilder: (_, __, ___) => Icon(
-                Icons.home_work_rounded,
+                Icons.home_work_outlined,
                 size: 80,
                 color: AppColors.colorPrimary,
               ),
@@ -150,7 +151,14 @@ class ExplanationView extends StatelessWidget {
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          // Placed before the workspace question so the host gets something
+          // back from the app before being asked for anything at all.
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: RentTryItCard(),
+          ),
+          const SizedBox(height: 24),
           Center(
             child: Text(
               (currentLang == 'sw'

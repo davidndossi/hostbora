@@ -67,7 +67,7 @@ class TitleView extends StatelessWidget {
                                     height: 38,
                                     width: 26,
                                     child: Icon(
-                                      Icons.arrow_forward,
+                                      Icons.arrow_forward_outlined,
                                       size: 18,
                                       color: Theme.of(context).primaryColor,
                                     ),

@@ -150,7 +150,7 @@ class SupportView extends BaseView<SupportController> {
               color: accent.withValues(alpha: c.isDark ? 0.22 : 0.14),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.support_agent_rounded, color: accent, size: 28),
+            child: Icon(Icons.support_agent_outlined, color: accent, size: 28),
           ),
           const SizedBox(height: 12),
           Text(
@@ -158,7 +158,7 @@ class SupportView extends BaseView<SupportController> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: c.headline,
             ),
           ),
@@ -209,7 +209,7 @@ class SupportView extends BaseView<SupportController> {
           child: _quickAction(
             colors: c,
             accent: const Color(0xFF25D366),
-            icon: Icons.chat_rounded,
+            icon: Icons.chat_outlined,
             label: 'WhatsApp',
             onTap: controller.openWhatsApp,
           ),
@@ -333,7 +333,7 @@ class SupportView extends BaseView<SupportController> {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: c.hint),
+              Icon(Icons.chevron_right_outlined, color: c.hint),
             ],
           ),
         ),
@@ -344,7 +344,7 @@ class SupportView extends BaseView<SupportController> {
   Widget _tipsGrid(BuildContext context, FormSurfaceColors c, Color accent) {
     final tips = <_TipItem>[
       _TipItem(
-        Icons.filter_list_rounded,
+        Icons.filter_list_outlined,
         _t('Home filter', 'Kichujio cha Nyumbani'),
         _t(
           'Use All, BnB, or Rent on Home to filter properties. There is no workspace to switch.',
@@ -376,7 +376,7 @@ class SupportView extends BaseView<SupportController> {
         ),
       ),
       _TipItem(
-        Icons.bar_chart_rounded,
+        Icons.bar_chart_outlined,
         _t('Reports', 'Ripoti'),
         _t(
           'Open Reports for occupancy, revenue, and expense charts you can export.',
@@ -468,13 +468,13 @@ class SupportView extends BaseView<SupportController> {
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
         hintText: _t('Search questions', 'Tafuta maswali'),
-        prefixIcon: const Icon(Icons.search),
+        prefixIcon: const Icon(Icons.search_outlined),
         suffixIcon: Obx(
           () => controller.faqQuery.value.isEmpty
               ? const SizedBox.shrink()
               : IconButton(
                   tooltip: _t('Clear', 'Futa'),
-                  icon: const Icon(Icons.clear),
+                  icon: const Icon(Icons.clear_outlined),
                   onPressed: controller.clearFaqQuery,
                 ),
         ),
@@ -547,7 +547,7 @@ class SupportView extends BaseView<SupportController> {
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: onPressed,
-            icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+            icon: const Icon(Icons.arrow_forward_outlined, size: 18),
             label: Text(label, style: const TextStyle(fontSize: 15)),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -634,7 +634,7 @@ class SupportView extends BaseView<SupportController> {
               Expanded(
                 child: FilledButton.icon(
                   onPressed: controller.openWhatsApp,
-                  icon: const Icon(Icons.chat_rounded, size: 18),
+                  icon: const Icon(Icons.chat_outlined, size: 18),
                   label: Text(
                     l10n.supportWhatsAppButton,
                     maxLines: 1,
@@ -718,7 +718,7 @@ class SupportView extends BaseView<SupportController> {
           color: c.headline,
         ),
       ),
-      trailing: Icon(Icons.chevron_right_rounded, color: c.hint),
+      trailing: Icon(Icons.chevron_right_outlined, color: c.hint),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );
   }
@@ -728,7 +728,7 @@ class SupportView extends BaseView<SupportController> {
       text,
       style: TextStyle(
         fontSize: 18,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
         color: color,
         letterSpacing: 0.2,
       ),
@@ -847,7 +847,7 @@ class SupportView extends BaseView<SupportController> {
                 '${item.index}',
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: accent,
                 ),
               ),

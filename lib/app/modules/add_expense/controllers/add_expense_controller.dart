@@ -21,6 +21,8 @@ import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/model/add_expense_request.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
+import '../../../core/constants/ui_preference_keys.dart';
+import '../../../core/utils/form_recall.dart';
 
 class AddExpenseController extends BaseController {
   AddExpenseController()
@@ -213,6 +215,12 @@ class AddExpenseController extends BaseController {
     super.onInit();
     selectedCurrency.value = Get.find<CurrencyService>().baseCurrency.value;
     _captureEditArgs();
+    // Expenses are nearly always entered on the day they are paid, and a blank
+    // field hard-blocks the save on a format error. Edit mode overwrites this
+    // with the stored date in [_loadExpenseForEdit].
+    if (datePaidController.text.trim().isEmpty) {
+      datePaidController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    }
     _loadProperties().then((_) => _loadExpenseForEdit());
   }
 
@@ -284,8 +292,20 @@ class AddExpenseController extends BaseController {
       selectedProperty.value = fromRoute;
       return;
     }
-    if (!isEditMode && options.length == 1) {
-      selectedProperty.value = options.first;
+    if (!isEditMode) {
+      final recalled = await FormRecall.readAmong(
+        UiPreferenceKeys.addExpenseProperty,
+        options,
+      );
+      if (recalled.isNotEmpty) {
+        selectedProperty.value = recalled;
+        return;
+      }
+      if (options.length == 1) {
+        selectedProperty.value = options.first;
+      }
+      // Left blank with two or more properties and no recall, so an expense is
+      // never silently filed against the wrong building.
     }
   }
 
@@ -386,6 +406,9 @@ class AddExpenseController extends BaseController {
     try {
       final saved = await runBusy(() async {
         final property = selectedProperty.value.trim();
+        unawaited(
+          FormRecall.write(UiPreferenceKeys.addExpenseProperty, property),
+        );
         final unitDraft = _draftForExpenseUnitKey(selectedExpenseUnitKey.value);
         final unitName = unitDraft?.unitName.trim() ?? '';
         final workspaceType = _workspaceForExpenseSave(unitDraft);

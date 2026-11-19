@@ -6,6 +6,7 @@ import '../../model/send_sms_request.dart';
 import '../../model/send_whatsapp_template_request.dart';
 import '../../repository/app_repository.dart';
 import '../db/scheduled_whatsapp_local_data_source.dart';
+import '../../service/analytics_service.dart';
 
 /// Fires scheduled WhatsApp API sends when their time is due (rent + BnB).
 class ScheduledWhatsappDispatchService extends GetxService {
@@ -44,7 +45,16 @@ class ScheduledWhatsappDispatchService extends GetxService {
           final ok = row.templateName.trim().isNotEmpty
               ? await _sendTemplate(row, phone)
               : await _sendText(row, phone);
-          if (ok) await _local.markSent(row.id);
+          if (ok) {
+            await _local.markSent(row.id);
+            analytics?.logReminderSent(
+              channel: 'whatsapp',
+              automated: true,
+              reminderType: row.templateName.trim().isNotEmpty
+                  ? 'scheduled_template'
+                  : 'scheduled_queue',
+            );
+          }
         } catch (_) {
           // Retry on next tick.
         }

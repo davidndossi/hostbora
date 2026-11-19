@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/access/staff_access.dart';
+import '../../../../core/utils/auth_messages.dart';
 import '../../../../core/base/base_controller.dart';
 import '../../../../data/local/db/property_local_data_source.dart';
+import '../../../../data/local/preference/preference_manager.dart';
 import '../widgets/staff_access_editor.dart';
 import '../../../../core/base/feedback_extensions.dart';
 import '../../../../core/utils/haptic_feedback_util.dart';
@@ -122,6 +124,9 @@ class RentStaffManagementController extends BaseController {
   /// Used to scroll the registry form into view when Edit is tapped.
   final formSectionKey = GlobalKey();
 
+  /// Staff list header. Scrolled into view only after a member is saved.
+  final activeTeamSectionKey = GlobalKey();
+
   bool get _isSw => Get.locale?.languageCode == 'sw';
 
   @override
@@ -146,12 +151,17 @@ class RentStaffManagementController extends BaseController {
           .toString()
           .trim();
     }
+    // Seed property scope so Register works when StaffAccessEditor isn't shown
+    // (e.g. listing Staff tab) and Cleaner/Caretaker default to selected props.
+    _resetAccess();
   }
 
   @override
   void onReady() {
     super.onReady();
     _loadAccessProperties();
+    // Route args may be refreshed when navigating Add Staff with property context.
+    _absorbRoutePropertyArgs();
     loadStaff().then((_) async {
       final id = editingStaffId.value;
       if (id != null) {
@@ -159,6 +169,36 @@ class RentStaffManagementController extends BaseController {
         await editStaffById('$id');
       }
     });
+  }
+
+  /// Keeps property scope in sync when this controller is reused across routes.
+  void bindPropertyContext({String? propertyRef, String? propertyName}) {
+    final ref = (propertyRef ?? '').trim();
+    final name = (propertyName ?? '').trim();
+    if (ref.isNotEmpty) _propertyRef = ref;
+    if (name.isNotEmpty) _propertyName = name;
+    if (_propertyRef.isNotEmpty &&
+        !allPropertiesAccess.value &&
+        !selectedPropertyRefs.contains(_propertyRef)) {
+      selectedPropertyRefs.add(_propertyRef);
+    }
+  }
+
+  void _absorbRoutePropertyArgs() {
+    final args = Get.arguments;
+    if (args is! Map) return;
+    bindPropertyContext(
+      propertyRef: (args['property_ref'] ??
+              args['propertyRef'] ??
+              args['property_id'] ??
+              '')
+          .toString(),
+      propertyName: (args['property_name'] ??
+              args['propertyName'] ??
+              args['property'] ??
+              '')
+          .toString(),
+    );
   }
 
   Future<void> loadStaff() async {
@@ -216,21 +256,8 @@ class RentStaffManagementController extends BaseController {
   }
 
   /// Matches backend StaffService phone rules used for login usernames.
-  String? _normalizePhone(String raw) {
-    var digits = raw
-        .trim()
-        .replaceAll(RegExp(r'[\s\-()]'), '')
-        .replaceFirst(RegExp(r'^\+'), '');
-    if (digits.startsWith('255') && digits.length >= 12) {
-      digits = '0${digits.substring(3)}';
-    }
-    digits = digits.replaceAll(RegExp(r'\D'), '');
-    if (digits.length == 9 && RegExp(r'^[678]').hasMatch(digits)) {
-      digits = '0$digits';
-    }
-    if (!RegExp(r'^0[678]\d{8}$').hasMatch(digits)) return null;
-    return digits;
-  }
+  String? _normalizePhone(String raw) =>
+      RentStaffLocalDataSource.normalizePhone(raw);
 
   String? validateAmount(String? value) {
     final parsed = _parseAmount(value ?? '');
@@ -264,6 +291,20 @@ class RentStaffManagementController extends BaseController {
     if (value != null && value.isNotEmpty) {
       selectedPrimaryRole.value = value;
     }
+  }
+
+  /// Brings the staff list on screen after a member has been saved.
+  void _revealStaffList() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = activeTeamSectionKey.currentContext;
+      if (context == null || !context.mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.05,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   void _clearFormFields() {
@@ -320,16 +361,35 @@ class RentStaffManagementController extends BaseController {
 
   Future<void> _loadAccessProperties() async {
     try {
-      final rows = await Get.find<PropertyLocalDataSource>().fetchAll(userId: '');
+      final preferenceManager = Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      );
+      final userId = ((await preferenceManager.getUser()).id ?? '').trim();
+      final propertyLocal = Get.find<PropertyLocalDataSource>();
+
+      // Only properties visible to the logged-in user (owned or managed) —
+      // not every local row left on the device from other accounts.
+      final byRef = <String, PropertyRecord>{};
+      final rows = await propertyLocal.getAllVisibleNewestFirst(
+        userId: userId,
+        workspaceType: '',
+      );
+      for (final row in rows) {
+        final ref = row.propertyRef.trim().isNotEmpty
+            ? row.propertyRef.trim()
+            : 'local_${row.id}';
+        byRef.putIfAbsent(ref, () => row);
+      }
+
       accessProperties.assignAll(
-        rows
-            .where((row) => row.propertyRef.trim().isNotEmpty)
-            .map(
-              (row) => StaffPropertyOption(
-                ref: row.propertyRef.trim(),
-                name: row.propertyName.trim(),
-              ),
-            ),
+        byRef.entries.map(
+          (e) => StaffPropertyOption(
+            ref: e.key,
+            name: e.value.propertyName.trim().isNotEmpty
+                ? e.value.propertyName.trim()
+                : e.value.propertyLocation.trim(),
+          ),
+        ),
       );
     } catch (_) {}
   }
@@ -397,8 +457,60 @@ class RentStaffManagementController extends BaseController {
   bool _accessReady() {
     if (allPropertiesAccess.value) return true;
     if (selectedPropertyRefs.isNotEmpty) return true;
-    showErrorMessage(appLocalization.staffAccessSelectProperty);
+    // Listing Staff tab embeds this controller without StaffAccessEditor — bind
+    // the current property automatically when we have route context.
+    if (_propertyRef.isNotEmpty) {
+      selectedPropertyRefs.add(_propertyRef);
+      return true;
+    }
+    _surfaceError(appLocalization.staffAccessSelectProperty);
     return false;
+  }
+
+  /// Surfaces errors even when this controller is not hosted in its own BaseView
+  /// (e.g. listing details Staff tab embeds the form).
+  void _surfaceError(String msg) {
+    final text = msg.trim();
+    if (text.isEmpty) return;
+    hapticValidationError();
+    // Prefer a snackbar so embedded hosts always show it. Avoid showErrorMessage
+    // here — BaseView would also snack and duplicate on the dedicated Staff page.
+    if (Get.isSnackbarOpen) {
+      Get.closeAllSnackbars();
+    }
+    Get.rawSnackbar(
+      messageText: Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 14),
+      ),
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFFB91C1C),
+      margin: const EdgeInsets.all(12),
+      borderRadius: 10,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  void _surfaceSuccess(String msg) {
+    final text = msg.trim();
+    if (text.isEmpty) return;
+    hapticPrimaryConfirm();
+    // Prefer a snackbar so embedded hosts (listing Staff tab) always show it.
+    // Avoid showSuccessMessage here — BaseView would also toast and duplicate.
+    if (Get.isSnackbarOpen) {
+      Get.closeAllSnackbars();
+    }
+    Get.rawSnackbar(
+      messageText: Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 14),
+      ),
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFF15803D),
+      margin: const EdgeInsets.all(12),
+      borderRadius: 10,
+      duration: const Duration(seconds: 3),
+    );
   }
 
   void cancelEdit() {
@@ -452,7 +564,16 @@ class RentStaffManagementController extends BaseController {
   }
 
   Future<void> registerStaff() async {
-    if (!(formKey.currentState?.validate() ?? false)) return;
+    final form = formKey.currentState;
+    if (form == null) {
+      _surfaceError(
+        _isSw
+            ? 'Fomu haiko tayari. Jaribu tena.'
+            : 'The form is not ready. Please try again.',
+      );
+      return;
+    }
+    if (!form.validate()) return;
     final name = fullNameController.text.trim();
     final payDay = payDateController.text.trim();
     final role = selectedPrimaryRole.value.trim();
@@ -460,13 +581,20 @@ class RentStaffManagementController extends BaseController {
     final phone = _normalizePhone(phoneController.text);
 
     if (role.isEmpty) {
-      Get.snackbar('Error', 'Please select a primary role');
+      _surfaceError(
+        _isSw ? 'Chagua jukumu la msingi' : 'Please select a primary role',
+      );
       return;
     }
-    if (amount == null) return;
+    if (amount == null) {
+      _surfaceError(
+        _isSw ? 'Weka kiasi sahihi' : 'Please enter a valid amount',
+      );
+      return;
+    }
     if (!_accessReady()) return;
     if (phone == null) {
-      showErrorMessage(
+      _surfaceError(
         _isSw
             ? 'Weka namba sahihi ya simu (mf. 0712345678)'
             : 'Enter a valid phone number (e.g. 0712345678)',
@@ -474,6 +602,16 @@ class RentStaffManagementController extends BaseController {
       return;
     }
     phoneController.text = phone;
+
+    final duplicateMessage = await _duplicateStaffMessage(
+      phone: phone,
+      name: name,
+      excludeLocalId: editingStaffId.value,
+    );
+    if (duplicateMessage != null) {
+      _surfaceError(duplicateMessage);
+      return;
+    }
 
     await runBusy(() async {
       try {
@@ -486,6 +624,7 @@ class RentStaffManagementController extends BaseController {
             payDayLabel: payDay,
             paymentType: paymentType.value,
             amountValue: amount,
+            phone: phone,
           );
           final request = _buildStaffRequest(
             name: name,
@@ -513,18 +652,21 @@ class RentStaffManagementController extends BaseController {
           editingStaffId.value = null;
           _clearFormFields();
           await loadStaff();
-          showSuccessWithHaptic(
+          _revealStaffList();
+          _surfaceSuccess(
             _isSw ? 'Mfanyakazi amesasishwa' : 'Staff updated',
           );
           return;
         }
 
+        await RemovedStaffPhones.forget(phone);
         final localId = await _local.insert(
           name: name,
           jobTitle: role,
           payDayLabel: payDay,
           paymentType: paymentType.value,
           amountValue: amount,
+          phone: phone,
         );
         final today = DateTime.now();
         final startDate =
@@ -557,7 +699,8 @@ class RentStaffManagementController extends BaseController {
         }
         _clearFormFields();
         await loadStaff();
-        showSuccessWithHaptic(
+        _revealStaffList();
+        _surfaceSuccess(
           provisionedOnline
               ? (_isSw
                   ? 'Mfanyakazi ameongezwa. Anaweza kuingia kwa namba $phone.'
@@ -568,9 +711,8 @@ class RentStaffManagementController extends BaseController {
         );
       } catch (e, st) {
         logger.e('registerStaff $e $st');
-        hapticValidationError();
         final msg = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
-        showErrorMessage(
+        _surfaceError(
           msg.isNotEmpty && msg != 'null'
               ? msg
               : (_isSw
@@ -579,6 +721,78 @@ class RentStaffManagementController extends BaseController {
         );
       }
     });
+  }
+
+  /// Returns a user-facing message when [phone] / [name] already belong to staff.
+  Future<String?> _duplicateStaffMessage({
+    required String phone,
+    required String name,
+    int? excludeLocalId,
+  }) async {
+    final byPhone = await _local.findByPhone(
+      phone,
+      excludeId: excludeLocalId,
+    );
+    if (byPhone != null) {
+      return _isSw
+          ? 'Mfanyakazi mwenye namba hii ya simu tayari yupo (${byPhone.name}).'
+          : 'A staff member with this phone number already exists (${byPhone.name}).';
+    }
+
+    final byName = await _local.findByNameIgnoreCase(
+      name,
+      excludeId: excludeLocalId,
+    );
+    if (byName != null) {
+      final existingPhone =
+          RentStaffLocalDataSource.normalizePhone(byName.phone) ??
+              byName.phone.trim();
+      // Same person re-entered: matching name with empty/legacy phone, or same phone.
+      if (existingPhone.isEmpty || existingPhone == phone) {
+        return _isSw
+            ? 'Mfanyakazi "${byName.name}" tayari yupo. Badilisha jina au namba ya simu.'
+            : 'Staff member "${byName.name}" already exists. Use a different name or phone number.';
+      }
+    }
+
+    try {
+      final pending = await _syncQueue.listUnsynced(
+        entityType: 'staff',
+        operation: 'create',
+      );
+      for (final item in pending) {
+        Map<String, dynamic>? payload;
+        try {
+          final decoded = jsonDecode(item.payloadJson);
+          if (decoded is Map) {
+            payload = Map<String, dynamic>.from(decoded);
+          }
+        } catch (_) {
+          continue;
+        }
+        if (payload == null) continue;
+        final pendingPhone = RentStaffLocalDataSource.normalizePhone(
+              (payload['phone'] ?? '').toString(),
+            ) ??
+            (payload['phone'] ?? '').toString().trim();
+        if (pendingPhone.isNotEmpty && pendingPhone == phone) {
+          return _isSw
+              ? 'Mfanyakazi mwenye namba hii ya simu tayari anasubiri kusawazishwa.'
+              : 'A staff member with this phone number is already waiting to sync.';
+        }
+        final pendingName =
+            (payload['name'] ?? '').toString().trim().toLowerCase();
+        if (pendingName.isNotEmpty &&
+            pendingName == name.trim().toLowerCase() &&
+            (pendingPhone.isEmpty || pendingPhone == phone)) {
+          return _isSw
+              ? 'Mfanyakazi "$name" tayari anasubiri kusawazishwa.'
+              : 'Staff member "$name" is already waiting to sync.';
+        }
+      }
+    } catch (_) {}
+
+    return null;
   }
 
   bool _isClientValidationError(Object e) {
@@ -608,6 +822,19 @@ class RentStaffManagementController extends BaseController {
     if (name.trim().isEmpty || role.trim().isEmpty) return false;
     if (!_accessReady()) return false;
 
+    final phone = _normalizePhone(phoneController.text);
+    if (phone != null) {
+      final duplicateMessage = await _duplicateStaffMessage(
+        phone: phone,
+        name: name.trim(),
+        excludeLocalId: editId,
+      );
+      if (duplicateMessage != null) {
+        _surfaceError(duplicateMessage);
+        return false;
+      }
+    }
+
     try {
       await _local.updateById(
         id: editId,
@@ -616,6 +843,7 @@ class RentStaffManagementController extends BaseController {
         payDayLabel: payDay.trim(),
         paymentType: paymentType,
         amountValue: amount,
+        phone: phone,
       );
       final request = _buildStaffRequest(
         name: name.trim(),
@@ -721,6 +949,7 @@ class RentStaffManagementController extends BaseController {
       message: 'Staff member removed',
       duration: const Duration(seconds: 4),
       action: () async {
+        await RemovedStaffPhones.remember(snapshot.phone);
         await _local.deleteById(parsed);
         try {
           final res = await _repository.deleteStaff(apiStaffId);
@@ -753,6 +982,7 @@ class RentStaffManagementController extends BaseController {
         );
       },
       onUndo: () async {
+        await RemovedStaffPhones.forget(snapshot.phone);
         await _syncQueue.deleteByDedupeKey('staff:delete:$apiStaffId');
         await _local.restore(snapshot, backendStaffId: backendStaffId);
         await loadStaff();

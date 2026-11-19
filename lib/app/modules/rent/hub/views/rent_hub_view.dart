@@ -67,7 +67,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                   Text(
                     'RENT',
                     style: TextStyle(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       fontSize: 13,
                       letterSpacing: 0.6,
                       color: _HubTheme.teal,
@@ -176,7 +176,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                   label: _isSw ? 'Ukaaji' : 'Occupancy',
                   value: controller.occupancyLabel,
                   valueColor: incomeColor,
-                  icon: Icons.pie_chart_outline_rounded,
+                  icon: Icons.pie_chart_outline,
                   onTap: controller.openTenancyInsights,
                 ),
               ),
@@ -204,7 +204,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                   label: _isSw ? 'Deni (arrears)' : 'Arrears',
                   value: controller.totalArrearsLabel,
                   valueColor: arrearsColor,
-                  icon: Icons.warning_amber_rounded,
+                  icon: Icons.warning_amber_outlined,
                   onTap: controller.openTenancyInsights,
                 ),
               ),
@@ -247,9 +247,9 @@ class RentHubView extends RentBaseView<RentHubController> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 10,
                   letterSpacing: 0.8,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: _HubSurfaces.of(context).muted,
                 ),
               ),
@@ -260,7 +260,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: valueColor,
                   height: 1.1,
                 ),
@@ -273,88 +273,104 @@ class RentHubView extends RentBaseView<RentHubController> {
   }
 
   Widget _financialOverviewHeader(BuildContext context) {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                appLocalization.financialOverview.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                  color: _HubTheme.muted.withValues(alpha: 0.9),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    appLocalization.financialOverview.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      color: _HubTheme.muted.withValues(alpha: 0.9),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${appLocalization.monthly} ${appLocalization.performance}',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: _isSw ? 'Msaada' : 'Help',
+              onPressed: () => Get.toNamed(
+                Routes.HELP_CENTER,
+                parameters: {'workspace': 'rent'},
+              ),
+              icon: const Icon(Icons.help_outline, size: 22),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: controller.openAddExpense,
+                icon: const Icon(Icons.payment, size: 16),
+                label: Text(
+                  appLocalization.addExpense,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.colorPrimary,
+                  side: const BorderSide(color: AppColors.colorPrimary),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${appLocalization.monthly} ${appLocalization.performance}',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: controller.openAddIncome,
+                icon: const Icon(Icons.payments, size: 16),
+                label: Text(
+                  appLocalization.addIncome,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.colorPrimary,
+                  side: const BorderSide(color: AppColors.colorPrimary),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          tooltip: _isSw ? 'Msaada' : 'Help',
-          onPressed: () => Get.toNamed(
-            Routes.HELP_CENTER,
-            parameters: {'workspace': 'rent'},
-          ),
-          icon: const Icon(Icons.help_outline_rounded, size: 22),
-        ),
-        const SizedBox(width: 4),
-        ElevatedButton.icon(
-          onPressed: controller.openAddExpense,
-          icon: const Icon(Icons.payment, size: 16),
-          label: Text(
-            appLocalization.addExpense.replaceFirst(' ', '\n'),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
             ),
-          ),
-          style: ElevatedButton.styleFrom(
-            fixedSize: const Size(92, 48),
-            minimumSize: const Size(92, 48),
-            maximumSize: const Size(92, 48),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        ElevatedButton.icon(
-          onPressed: controller.openAddIncome,
-          icon: const Icon(Icons.payments, size: 16),
-          label: Text(
-            appLocalization.addIncome.replaceFirst(' ', '\n'),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            fixedSize: const Size(92, 48),
-            minimumSize: const Size(92, 48),
-            maximumSize: const Size(92, 48),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
+          ],
         ),
       ],
     );
@@ -398,13 +414,13 @@ class RentHubView extends RentBaseView<RentHubController> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.trending_up_rounded, size: 14, color: Colors.green.shade800),
+                    Icon(Icons.trending_up_outlined, size: 14, color: Colors.green.shade800),
                     const SizedBox(width: 4),
                     Text(
                       controller.profitTrendLabel,
                       style: TextStyle(
                         fontSize: 10,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: Colors.green.shade900,
                       ),
                     ),
@@ -427,7 +443,7 @@ class RentHubView extends RentBaseView<RentHubController> {
             controller.netProfitLabel,
             style: const TextStyle(
               fontSize: 30,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: Colors.white,
               height: 1.05,
             ),
@@ -461,7 +477,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: s.accent),
+              Icon(Icons.chevron_right_outlined, color: s.accent),
             ],
           ),
         ),
@@ -479,7 +495,7 @@ class RentHubView extends RentBaseView<RentHubController> {
             label: appLocalization.income,
             value: controller.totalIncomeLabel,
             circleColor: isDark ? const Color(0xFF1A3D3D) : const Color(0xFFD8EFEE),
-            icon: Icons.arrow_upward_rounded,
+            icon: Icons.arrow_upward_outlined,
             iconColor: _HubSurfaces.of(context).accent,
             onTap: () => Get.toNamed(Routes.RENT_MANAGE_PAYMENTS),
           ),
@@ -491,7 +507,7 @@ class RentHubView extends RentBaseView<RentHubController> {
             label: appLocalization.expenses,
             value: controller.expensesLabel,
             circleColor: isDark ? const Color(0xFF3D2520) : const Color(0xFFF5D5CE),
-            icon: Icons.arrow_downward_rounded,
+            icon: Icons.arrow_downward_outlined,
             iconColor: isDark ? const Color(0xFFFFAB91) : const Color(0xFF9A3412),
             onTap: () => Get.toNamed(Routes.RENT_MANAGE_EXPENSES),
           ),
@@ -531,8 +547,8 @@ class RentHubView extends RentBaseView<RentHubController> {
                     Text(
                       label,
                       style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 0.9,
                         color: labelColor,
                       ),
@@ -542,7 +558,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                       value,
                       style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: valueColor,
                       ),
                     ),
@@ -642,7 +658,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                       interval: gridInterval,
                       getTitlesWidget: (v, m) => Text(
                         v == v.roundToDouble() ? v.toInt().toString() : '',
-                        style: TextStyle(fontSize: 9, color: axisMuted.withValues(alpha: 0.9)),
+                        style: TextStyle(fontSize: 10, color: axisMuted.withValues(alpha: 0.9)),
                       ),
                     ),
                   ),
@@ -658,7 +674,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                           child: Text(
                             RentHubController.days[i],
                             style: TextStyle(
-                              fontSize: 9,
+                              fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: axisMuted.withValues(alpha: 0.95),
                             ),
@@ -741,7 +757,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                     ),
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: s.accent),
+                Icon(Icons.chevron_right_outlined, color: s.accent),
               ],
             ),
           ),
@@ -864,7 +880,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.work_outline_rounded, color: _HubTheme.teal, size: 26),
+                child: const Icon(Icons.work_outline, color: _HubTheme.teal, size: 26),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -902,7 +918,7 @@ class RentHubView extends RentBaseView<RentHubController> {
           'Your portfolio',
           style: TextStyle(
             fontSize: 10,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             letterSpacing: 1.3,
             color: _HubTheme.muted.withValues(alpha: 0.9),
           ),
@@ -917,7 +933,7 @@ class RentHubView extends RentBaseView<RentHubController> {
                 appLocalization.myProperties,
                 style: TextStyle(
                   fontSize: 22,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: _HubTheme.navy,
                 ),
               ),
@@ -1018,8 +1034,8 @@ class _ListingCard extends StatelessWidget {
                             'Occupied',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: 0.6,
                             ),
                           ),
@@ -1036,8 +1052,8 @@ class _ListingCard extends StatelessWidget {
                     Text(
                       item.categoryLabel,
                       style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 1,
                         color: _HubTheme.muted.withValues(alpha: 0.9),
                       ),
@@ -1064,8 +1080,8 @@ class _ListingCard extends StatelessWidget {
                               Text(
                                 'Monthly rent',
                                 style: TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w800,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
                                   letterSpacing: 0.6,
                                   color: _HubTheme.muted.withValues(alpha: 0.85),
                                 ),
@@ -1074,14 +1090,14 @@ class _ListingCard extends StatelessWidget {
                                 item.monthlyRentLabel,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                   color: _HubTheme.teal,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: _HubTheme.muted, size: 20),
+                        const Icon(Icons.chevron_right_outlined, color: _HubTheme.muted, size: 20),
                       ],
                     ),
                   ],

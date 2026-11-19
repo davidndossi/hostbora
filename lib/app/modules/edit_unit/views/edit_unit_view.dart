@@ -239,7 +239,7 @@ class EditUnitView extends BaseView<EditUnitController> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.designAccent, width: 1.4),
+          borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.4),
         ),
       );
 }

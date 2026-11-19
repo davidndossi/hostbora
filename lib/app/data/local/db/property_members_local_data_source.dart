@@ -34,13 +34,7 @@ class PropertyMemberRecord {
 class PropertyMembersLocalDataSource {
   static const _table = AppLocalDatabase.propertyMembersTable;
 
-  Database? _db;
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
-  }
+  Future<Database> get database => AppLocalDatabase.database;
 
   Future<void> upsertMember({
     required String propertyRef,

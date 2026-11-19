@@ -57,7 +57,7 @@ class _InventoryBarcodeScannerViewState
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.flash_on_rounded, color: Colors.white),
+            icon: const Icon(Icons.flash_on_outlined, color: Colors.white),
             tooltip: _isSw ? 'Taa' : 'Torch',
             onPressed: () => _controller.toggleTorch(),
           ),

@@ -1,0 +1,16 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "tz.co.artbel.paa_yangu",
+      "sha256_cert_fingerprints": [
+        "FB:7C:0D:83:C4:83:7A:08:FA:21:33:7E:13:03:38:DA:6F:4B:61:C6:E4:74:56:81:02:57:4A:69:B2:E3:58:06",
+        "6F:58:9D:02:22:FB:00:2C:A6:D6:43:BF:82:16:84:C8:F6:01:63:EC:19:66:45:9C:EA:00:43:C8:9E:C2:E4:26"
+      ]
+    }
+  }
+]

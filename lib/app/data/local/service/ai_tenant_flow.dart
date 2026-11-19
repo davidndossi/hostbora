@@ -9,6 +9,7 @@ import '../db/property_local_data_source.dart';
 import '../db/tenant_local_data_source.dart';
 import '../service/currency_service.dart';
 import '../service/offline_sync_worker_service.dart';
+import '../service/remote_account_sync_service.dart';
 import '../../../modules/add_listing/models/apartment_unit_draft.dart';
 
 /// Conversational AI flow for:
@@ -311,12 +312,15 @@ class AiTenantFlow {
         'rentFrequency': _rentFrequency,
       },
     ));
+    RemoteAccountSyncService.publishTenantCountFor(prop.propertyRef);
 
     final payload = {
       'name': _tenantName,
       'phone': _phone,
       'email': '',
       'propertyRef': prop.propertyRef,
+      'property_name': propLabel,
+      'propertyName': propLabel,
       'unitId': unitId,
       'unitName': unitLabel,
       'leaseStart': _leaseStartIso,
@@ -371,6 +375,7 @@ class AiTenantFlow {
       endedAtIso: endIso,
       endedAtMs: endMs,
     );
+    RemoteAccountSyncService.publishTenantCountFor(t.propertyRef);
 
     unawaited(eventLocal?.insert(
       tenantLocalId: t.id,

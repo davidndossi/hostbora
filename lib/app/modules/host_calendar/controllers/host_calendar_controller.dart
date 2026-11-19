@@ -7,6 +7,7 @@ import '../../../core/base/base_controller.dart';
 import '../../../core/utils/booking_api_response.dart';
 import '../../../core/utils/getx_instance_probe.dart';
 import '../../../data/local/bnb_booking_merge.dart';
+import '../../../data/local/db/synced_entity_store.dart';
 import '../../../data/local/bnb_booking_pending_loader.dart';
 import '../../../data/local/db/income_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
@@ -260,16 +261,13 @@ class HostCalendarController extends BaseController {
 
   Future<List<String>> _loadRemotePropertyNames() async {
     try {
-      final res = await _repository.getMyListings(status: null);
+      final res = await _repository.getMyProperties();
       if (res.responseCode != '0' || res.data == null) return const [];
       final list = _extractListFromResponse(res.data);
       return list
           .map(
             (m) =>
-                (m['propertyName'] ?? m['title'] ?? m['name'])
-                    ?.toString()
-                    .trim() ??
-                '',
+                PropertyRecord.remoteName(m),
           )
           .where((e) => e.isNotEmpty)
           .toList();
@@ -280,13 +278,13 @@ class HostCalendarController extends BaseController {
 
   static List<Map<String, dynamic>> _extractListFromResponse(dynamic data) {
     if (data is List) return data.whereType<Map<String, dynamic>>().toList();
-    if (data is Map && data['content'] is List) {
-      return (data['content'] as List)
+    if (data is Map && data['properties'] is List) {
+      return (data['properties'] as List)
           .whereType<Map<String, dynamic>>()
           .toList();
     }
-    if (data is Map && data['listings'] is List) {
-      return (data['listings'] as List)
+    if (data is Map && data['content'] is List) {
+      return (data['content'] as List)
           .whereType<Map<String, dynamic>>()
           .toList();
     }
@@ -380,9 +378,11 @@ class HostCalendarController extends BaseController {
 
     final properties = _allLocalProperties;
 
+    var loadedFromNetwork = false;
     try {
-      final res = await _repository.getAllBookings();
+      final res = await _repository.getAllBookings(size: 200);
       if (BookingApiResponse.isSuccess(res.responseCode)) {
+        loadedFromNetwork = true;
         for (final m in BookingApiResponse.parseBookingsList(res.data)) {
           final normalized = Map<String, dynamic>.from(m);
           final listingId =
@@ -400,6 +400,19 @@ class HostCalendarController extends BaseController {
         }
       }
     } catch (_) {}
+
+    if (!loadedFromNetwork) {
+      try {
+        final cached =
+            await SyncedEntityStore().load(SyncedEntityStore.bookingType);
+        for (final row in cached) {
+          if (row.payload.isEmpty) continue;
+          final item = merge.fromApiMap(row.payload);
+          if (item.isCancelled) continue;
+          mergedMaps.putIfAbsent(item.bookingKey, () => row.payload);
+        }
+      } catch (_) {}
+    }
 
     try {
       for (final m in await _pendingBookingLoader.loadAll()) {

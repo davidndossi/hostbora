@@ -9,6 +9,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_values.dart';
 import '../../../core/widget/custom_app_bar.dart';
 import '../../../core/widget/loading_button.dart';
+import '../../../core/widget/sticky_form_actions.dart';
 import '../controllers/add_new_booking_controller.dart';
 
 const _bookingNavTeal = Color(0xFF1E8877);
@@ -36,7 +37,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
   /// Visible chevron for dropdown fields (do not use [SizedBox.shrink] as icon).
   Widget _dropdownIcon(BuildContext context) {
     return Icon(
-      Icons.keyboard_arrow_down_rounded,
+      Icons.keyboard_arrow_down_outlined,
       size: 28,
       color: FormSurfaceColors.of(context).isDark
           ? Colors.white70
@@ -74,7 +75,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
-        borderSide: const BorderSide(color: AppColors.designAccent, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.colorPrimary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
@@ -116,8 +117,8 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
 
   @override
   Widget body(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
       child: Form(
         key: controller.formKey,
         child: Column(
@@ -141,7 +142,7 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   child: Row(
                     children: [
                       Icon(
-                        syncing ? Icons.sync : Icons.cloud_off_outlined,
+                        syncing ? Icons.sync_outlined : Icons.cloud_off_outlined,
                         size: 22,
                         color: AppColors.colorPrimary,
                       ),
@@ -346,18 +347,31 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                   ),
                 );
               }
+              final noFreeUnits = controller.listings.isEmpty;
               return DropdownButtonFormField<String>(
                 initialValue: controller.selectedListingId.value,
                 decoration: _inputDecoration(
                   context,
-                  hint: _t(
-                    context,
-                    en: 'Choose a listing',
-                    sw: 'Chagua tangazo',
-                  ),
+                  hint: noFreeUnits
+                      ? _t(
+                          context,
+                          en: 'No free BnB units',
+                          sw: 'Hakuna vyumba vya BnB vilivyo wazi',
+                        )
+                      : _t(
+                          context,
+                          en: 'Choose a listing',
+                          sw: 'Chagua tangazo',
+                        ),
                 ),
                 hint: Text(
-                  _t(context, en: 'Choose a listing', sw: 'Chagua tangazo'),
+                  noFreeUnits
+                      ? _t(
+                          context,
+                          en: 'No free BnB units',
+                          sw: 'Hakuna vyumba vya BnB vilivyo wazi',
+                        )
+                      : _t(context, en: 'Choose a listing', sw: 'Chagua tangazo'),
                   style: TextStyle(
                     color: FormSurfaceColors.of(context).isDark
                         ? Colors.white70
@@ -571,11 +585,16 @@ class AddNewBookingView extends BaseView<AddNewBookingController> {
                 ),
               ),
             ),
-            const SizedBox(height: 28),
-            _buildSaveButton(context),
           ],
         ),
       ),
+    );
+
+    return Column(
+      children: [
+        Expanded(child: content),
+        StickyFormActions(primary: _buildSaveButton(context)),
+      ],
     );
   }
 }

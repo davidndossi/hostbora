@@ -328,7 +328,7 @@ class RentPropertyRoiEstimateFormView
                   isExpanded: true,
                   decoration: _inputDeco(u),
                   icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
+                    Icons.keyboard_arrow_down_outlined,
                     color: u.label,
                     size: 18,
                   ),
@@ -453,7 +453,7 @@ class RentPropertyRoiEstimateFormView
                 borderSide: BorderSide(color: u.softBorder, width: 1.5),
               ),
             ),
-            icon: Icon(Icons.keyboard_arrow_down_rounded, color: u.label),
+            icon: Icon(Icons.keyboard_arrow_down_outlined, color: u.label),
             items: controller.expenseCategories
                 .map(
                   (c) => DropdownMenuItem(
@@ -512,7 +512,7 @@ class RentPropertyRoiEstimateFormView
                   isExpanded: true,
                   decoration: _inputDeco(u),
                   icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
+                    Icons.keyboard_arrow_down_outlined,
                     color: u.label,
                     size: 18,
                   ),
@@ -602,7 +602,7 @@ class RentPropertyRoiEstimateFormView
                 borderSide: BorderSide(color: u.softBorder, width: 1.5),
               ),
             ),
-            icon: Icon(Icons.keyboard_arrow_down_rounded, color: u.label),
+            icon: Icon(Icons.keyboard_arrow_down_outlined, color: u.label),
             items: RentPropertyRoiEstimateFormController.paymentMethodOptions
                 .map(
                   (m) => DropdownMenuItem(
@@ -701,7 +701,7 @@ class RentPropertyRoiEstimateFormView
                       color: u.card,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.add, size: 14, color: u.teal),
+                    child: Icon(Icons.add_outlined, size: 14, color: u.teal),
                   ),
                   const SizedBox(width: 8),
                   Flexible(
@@ -724,7 +724,7 @@ class RentPropertyRoiEstimateFormView
                     const SizedBox(width: 6),
                     GestureDetector(
                       onTap: controller.clearReceipt,
-                      child: Icon(Icons.close, size: 16, color: u.muted),
+                      child: Icon(Icons.close_outlined, size: 16, color: u.muted),
                     ),
                   ],
                 ],
@@ -823,13 +823,13 @@ class RentPropertyRoiEstimateFormView
           children: [
             Row(
               children: [
-                Icon(Icons.filter_list_rounded, size: 16, color: u.muted),
+                Icon(Icons.filter_list_outlined, size: 16, color: u.muted),
                 const SizedBox(width: 6),
                 Text(
                   _isSw ? 'Chuja vipengele' : 'Filter items',
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: u.text,
                   ),
                 ),
@@ -855,7 +855,7 @@ class RentPropertyRoiEstimateFormView
                 u,
                 hint: _isSw ? 'Tafuta bidhaa...' : 'Search materials...',
               ).copyWith(
-                prefixIcon: Icon(Icons.search, size: 20, color: u.muted),
+                prefixIcon: Icon(Icons.search_outlined, size: 20, color: u.muted),
               ),
             ),
             const SizedBox(height: 10),
@@ -957,7 +957,7 @@ class RentPropertyRoiEstimateFormView
                         Text(
                           e.materialName,
                           style: TextStyle(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             fontSize: 14,
                             color: u.text,
                           ),
@@ -997,7 +997,7 @@ class RentPropertyRoiEstimateFormView
                         _formatMoney(e.totalCost),
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: u.text,
                         ),
                       ),
@@ -1049,7 +1049,7 @@ class RentPropertyRoiEstimateFormView
                       .toUpperCase(),
                   style: TextStyle(
                     fontSize: 10,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
                     color: Colors.white.withValues(alpha: 0.8),
                   ),
@@ -1059,7 +1059,7 @@ class RentPropertyRoiEstimateFormView
                   _formatMoney(totalProject),
                   style: const TextStyle(
                     fontSize: 28,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
                 ),
@@ -1071,7 +1071,7 @@ class RentPropertyRoiEstimateFormView
             _isSw ? 'Mgawanyo wa gharama' : 'Cost breakdown',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: u.text,
             ),
           ),
@@ -1139,7 +1139,7 @@ class RentPropertyRoiEstimateFormView
               child: Row(
                 children: [
                   Icon(
-                    Icons.trending_up_rounded,
+                    Icons.trending_up_outlined,
                     size: 18,
                     color: u.amberText,
                   ),

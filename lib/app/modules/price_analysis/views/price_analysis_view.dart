@@ -150,7 +150,7 @@ class PriceAnalysisView extends BaseView<PriceAnalysisController> {
   Widget _topBar(BuildContext context) {
     return Row(
       children: [
-        _roundIcon(context, Icons.arrow_back_ios_new_rounded, onTap: Get.back),
+        _roundIcon(context, Icons.arrow_back_ios_new_outlined, onTap: Get.back),
         const Spacer(),
         Text(
           _t(context, en: 'Price Analysis', sw: 'Uchambuzi wa Bei'),

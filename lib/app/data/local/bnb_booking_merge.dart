@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/models/item_sync_status.dart';
 import '../../core/utils/bnb_stay_billing.dart';
+import '../../core/utils/sync_freshness.dart';
 import '../model/check_in_item.dart';
 import 'bnb_booking_overrides_store.dart';
 import 'pending_bookings_store.dart';
@@ -31,17 +32,23 @@ class BnbBookingMerge {
         if ((m[field]?.toString().trim() ?? '').isNotEmpty)
           m[field]!.toString().trim(),
     };
-    final checkOut =
-        _overrides.effectiveCheckOut(key, rawCheckOut) ??
-        (fallbackKey != key
-            ? _overrides.effectiveCheckOut(fallbackKey, rawCheckOut)
-            : rawCheckOut) ??
-        rawCheckOut;
+    final remoteUpdated = SyncFreshness.fromMap(m);
+    final applyOverride =
+        overrideKeys.any((k) => _overrides.winsOver(k, remoteUpdated));
+    final checkOut = applyOverride
+        ? (_overrides.effectiveCheckOut(key, rawCheckOut) ??
+            (fallbackKey != key
+                ? _overrides.effectiveCheckOut(fallbackKey, rawCheckOut)
+                : rawCheckOut) ??
+            rawCheckOut)
+        : rawCheckOut;
     final status = (m['status'] ?? '').toString().trim().toLowerCase();
-    final checkedOut = _overrides.isCheckedOutForAny(overrideKeys) ||
+    final checkedOut = (applyOverride &&
+            _overrides.isCheckedOutForAny(overrideKeys)) ||
         status == 'checked_out' ||
         status == 'completed';
-    final cancelled = _overrides.isCancelledForAny(overrideKeys) ||
+    final cancelled = (applyOverride &&
+            _overrides.isCancelledForAny(overrideKeys)) ||
         status == 'cancelled' ||
         status == 'canceled';
     final confirmedFlag = m['isConfirmed'];

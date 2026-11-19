@@ -1,384 +1,572 @@
 (function () {
-  const STORAGE_KEY = 'hostbora-lang';
+  const STORAGE_KEY = 'hostbora-lang-choice';
 
   const messages = {
     en: {
-      'lang.label': 'Language',
-      'lang.en': 'English',
-      'lang.sw': 'Kiswahili',
+      /* ---------------------------------------------------------- meta -- */
+      'meta.title': 'HostBora — Property management that stays clear',
+      'meta.description':
+        'HostBora brings short-stay BnB and long-term rent into one app for landlords and property managers in Tanzania. Track bookings and tenants, record payments in TZS, and see how each property performs.',
+
+      /* ---------------------------------------------------------- chrome -- */
       'skip': 'Skip to content',
       'brand.home': 'HostBora home',
       'menu.open': 'Open menu',
       'menu.close': 'Close menu',
       'nav.label': 'Primary',
+      'nav.home': 'Home',
       'nav.features': 'Features',
       'nav.workspaces': 'Workspaces',
       'nav.audience': 'Who uses it',
       'nav.pricing': 'Pricing',
       'nav.trust': 'Trust',
-      'nav.privacy': 'Privacy',
-      'nav.getStarted': 'Get started',
-      'nav.contact': 'Contact',
+      'nav.getStarted': 'Get Started',
+      'cta.register': 'Create account',
+      'pricing.choose': 'Choose this plan',
+      'nav.privacy': 'Privacy policy',
       'nav.about': 'About',
       'nav.whatsapp': 'WhatsApp',
-      'nav.terms': 'Terms',
-      'meta.title': 'HostBora — Property management for East Africa',
-      'meta.description':
-        'HostBora helps landlords and property managers in Tanzania and East Africa run short-stay BnB and long-term rentals — bookings, payments, staff, and more.',
+      'lang.label': 'Language',
+      'lang.en': 'English',
+      'lang.sw': 'Kiswahili',
+
+      /* ------------------------------------------------------------ hero -- */
       'hero.badge': 'Early access — join 200+ landlords already using HostBora',
-      'hero.eyebrow': 'Built for landlords & property managers',
       'hero.title': 'Property management that stays clear — from guest nights to monthly rent.',
       'hero.tagline': 'Manage your properties with ease — short-stay BnB and long-term rent.',
       'hero.lead':
         'HostBora brings short-stay hosting and long-term rentals into one trustworthy app. Track bookings and tenants, record payments in TZS, manage staff and expenses, and see how each property performs.',
-      'cta.playTop': 'Download free on',
-      'cta.playBottom': 'Google Play',
-      'cta.explore': 'Explore features ↓',
-      'app.version': 'App v1.2.3 · Updated June 2026',
-      'hero.stats.label': 'Highlights',
-      'hero.stats.bnb': 'BnB + Rent',
-      'hero.stats.bnbSub': 'Two workspaces',
-      'hero.stats.tzs': 'TZS-ready',
-      'hero.stats.tzsSub': 'Local currency',
-      'hero.stats.offline': 'Offline-friendly',
-      'hero.stats.offlineSub': 'Works on the go',
+      'cta.install': 'Install Now',
+      'cta.availableOn': 'Available on',
+      'app.version': 'App v1.5.8 · Updated October 2026',
+      'chip.vault': 'Document Vault',
+      'chip.calendar': 'Host Calendar',
+      'chip.access': 'Guest Access',
+      'chip.ai': 'AI Help Chat',
+      'chip.report': 'Daily Report',
+      'chip.maintenance': 'Maintenance',
+
+      /* -------------------------------------------------------- features -- */
       'features.kicker': 'Daily toolkit',
-      'features.pain':
-        'Most landlords in Dar manage rent via M-Pesa screenshots, WhatsApp threads, and handwritten notebooks. HostBora replaces that chaos.',
       'features.title': 'Everything landlords and managers need daily',
       'features.sub':
         'One calm toolkit for income, operations, people, and records — whether you host nights or collect monthly rent.',
-      'demo.title': 'See HostBora in 60 seconds',
-      'demo.sub': 'A quick walkthrough of the app — properties, payments, staff, and more.',
-      'demo.iframeTitle': 'HostBora app walkthrough video',
-      'feat.rentals.title': 'Rentals & tenants',
-      'feat.rentals.desc':
-        'List units, track leases, and keep tenant details organized across your portfolio.',
+
       'feat.payments.title': 'Payments & expenses',
       'feat.payments.desc':
         'Track M-Pesa and mobile money payments — Tigo Pesa, Airtel Money, and more. Record rent and guest income, log expenses, and see cash flow without spreadsheet chaos.',
-      'feat.staff.title': 'Staff & tasks',
-      'feat.staff.desc':
-        'Assign cleaners, guards, or maintenance — with due dates and status so nothing is missed.',
-      'feat.reminders.title': 'Reminders',
-      'feat.reminders.desc':
-        'Stay ahead of renewals, check-ins, payment follow-ups, and recurring property chores.',
-      'feat.bnb.title': 'BnB & long-term rent',
-      'feat.bnb.desc':
+      'feat.workspaces.title': 'BnB & long-term rent',
+      'feat.workspaces.desc':
         'Run short-stay bookings and monthly leases from the same portfolio — switch when you need to.',
       'feat.reports.title': 'Reports & profitability',
       'feat.reports.desc':
         'Understand income vs spend per property with summaries that support real decisions.',
-      'feat.access.title': 'Smart access',
-      'feat.access.desc':
-        'Coordinate digital locks and guest access where supported — fewer handoffs at check-in.',
+      'feat.staff.title': 'Staff and Tasks',
+      'feat.staff.desc':
+        'Assign cleaners, guards, or maintenance — with due dates and status so nothing is missed.',
+      'feat.reminders.title': 'WhatsApp reminders',
+      'feat.reminders.desc':
+        'Send tenants rent-due and lease reminders on WhatsApp, from the app.',
+      'feat.reminders.tag': 'On WhatsApp',
       'feat.vault.title': 'Document vault',
       'feat.vault.desc':
         'Store leases, IDs, manuals, and tax records in clear folders — ready when you need them.',
-      'feat.calendar.title': 'Calendar sync',
-      'feat.calendar.desc':
-        'Link external calendars to reduce double bookings and keep blocked dates aligned.',
+
+      'more.vault.title': 'Document vault',
+      'more.vault.desc': 'Leases, IDs and receipts per property',
+      'more.calendar.title': 'Calendar sync',
+      'more.calendar.desc': 'Link channels, cut double bookings',
+      'more.reminders.title': 'WhatsApp reminders',
+      'more.reminders.desc': 'Rent and lease notices to tenants',
+      'more.fx.title': 'Multi-currency',
+      'more.fx.desc': 'TZS first, with live FX for diaspora owners',
+      'more.referrals.title': 'Referrals & rewards',
+      'more.referrals.desc': 'Invite other landlords, earn free months',
+      'more.score.title': 'Host Score',
+      'more.score.desc': 'Challenges that keep records up to date',
+
+      /* ------------------------------------------------------ workspaces -- */
       'workspaces.kicker': 'BnB + Rent',
       'workspaces.title': 'Two workspaces, one app',
       'workspaces.sub': 'Switch between BnB and Rent anytime — same properties, tailored flows.',
       'workspaces.bnb.badge': 'BnB',
       'workspaces.bnb.title': 'Short-stay hosting',
       'workspaces.bnb.desc':
-        'Manage nightly bookings, guest turnover, cleaning schedules, and hospitality-style income. Ideal for furnished apartments, guest houses, and holiday lets.',
-      'workspaces.bnb.li1': 'Booking calendar & check-in/out',
-      'workspaces.bnb.li2': 'Guest payments & stay expenses',
-      'workspaces.bnb.li3': 'Operations tuned for turnover',
+        'Manage nightly bookings, guest turnover, cleaning schedules and hospitality-style income. Ideal for furnished apartments, guest houses and holiday lets.',
       'workspaces.rent.badge': 'Rent',
       'workspaces.rent.title': 'Long-term rentals',
       'workspaces.rent.desc':
-        'Run monthly leases, tenant records, rent collection, and building-level expenses. Built for landlords and managers with recurring income.',
-      'workspaces.rent.li1': 'Tenants, units & lease tracking',
-      'workspaces.rent.li2': 'Rent payments & arrears visibility',
-      'workspaces.rent.li3': 'Staff, utilities & building costs',
+        'Run monthly leases, tenant records, rent collection and building-level expenses. Built for landlords and managers with recurring income.',
+
+      /* -------------------------------------------------------- audience -- */
       'audience.kicker': 'Who it’s for',
       'audience.title': 'Made for people who run properties',
       'audience.sub':
-        'Whether you own one unit or manage a growing portfolio across Dar, Arusha, or beyond.',
+        'Whether you own one unit or manage a growing portfolio across Dar, Arusha or beyond.',
       'audience.landlords.title': 'Landlords',
       'audience.landlords.desc':
-        'Own apartments, houses, or blocks? See rent collected, vacancies, and costs per unit without juggling notebooks.',
-      'audience.managers.title': 'Property managers',
+        'Whether you own one unit or manage a growing portfolio across Dar, Arusha, or beyond.',
+      'audience.managers.title': 'Property Managers',
       'audience.managers.desc':
         'Oversee multiple owners or buildings with staff workflows, expenses, and reports your clients can trust.',
       'audience.hosts.title': 'Hosts & operators',
       'audience.hosts.desc':
         'Run BnB or mixed portfolios — from boutique stays to serviced apartments — with bookings and ops in sync.',
+      'audience.hosts.tag1': 'Nightly + monthly income side by side',
+      'audience.hosts.tag2': 'Cleaning and turnover tasks',
+      'audience.hosts.tag3': 'Guest codes and entry logs',
+      'audience.hosts.tag4': 'One report per owner',
+
+      /* ----------------------------------------------------------- offer -- */
+      'offer.badge': 'Lunch Offer!',
+      'offer.leadStrong': 'Free for a limited time,',
+      'offer.lead':
+        "Full access to HostBora while we're in early access — every feature, no credit card, no commitment.",
+      'offer.cta': 'Download for Free Now',
+
+      /* --------------------------------------------------------- pricing -- */
       'pricing.kicker': 'Pricing',
       'pricing.title': 'Simple, transparent pricing',
       'pricing.sub':
         'No surprises — start free today, then pick a plan that fits your portfolio when billing begins.',
-      'pricing.badge': 'Launch offer',
-      'pricing.freeTitle': 'Free for a limited time',
-      'pricing.freeLead':
-        "Full access to HostBora while we're in early access — every feature, no credit card, no commitment.",
-      'pricing.download': 'Download free on Android',
-      'pricing.freeNote': "We'll notify you before any paid plan takes effect.",
-      'pricing.intro': 'After the free period, choose the tier that matches how you manage properties:',
+      'pricing.period': 'TZS / month',
+      'pricing.renews': 'Renews automatically. Cancel anytime.',
+      'pricing.footnote':
+        'Planned rates shown in Tanzanian shillings. M-Pesa and mobile money supported when billing starts. <a href="#contact">Questions?</a> Chat with us on WhatsApp or email.',
+
       'pricing.starter.name': 'Starter',
-      'pricing.starter.period': 'TZS / month',
       'pricing.starter.summary': 'For solo hosts getting organised.',
       'pricing.starter.li1': 'Up to 3 properties',
       'pricing.starter.li2': 'BnB or Rent workspace',
       'pricing.starter.li3': 'Payments, expenses & reminders',
       'pricing.starter.li4': 'Basic reports',
-      'pricing.pro.badge': 'Most popular',
+
+      'pricing.pro.badge': 'Our Recommendation',
       'pricing.pro.name': 'Pro',
-      'pricing.pro.period': 'TZS / month',
       'pricing.pro.summary': 'For growing portfolios and small teams.',
       'pricing.pro.li1': 'Up to 10 properties',
       'pricing.pro.li2': 'Staff, tasks & calendar sync',
       'pricing.pro.li3': 'Document vault & advanced reports',
       'pricing.pro.li4': 'SMS / WhatsApp add-on available',
+
       'pricing.ultra.name': 'Ultra',
-      'pricing.ultra.period': 'TZS / month',
-      'pricing.ultra.summary': 'For operators and property managers at scale.',
+      'pricing.ultra.summary': 'For major operators and property managers.',
       'pricing.ultra.li1': 'Unlimited properties',
       'pricing.ultra.li2': 'Smart locks & entry logs',
       'pricing.ultra.li3': 'AI Manager & design tools',
       'pricing.ultra.li4': 'Priority support',
-      'pricing.footnote':
-        'Planned rates shown in Tanzanian shillings. M-Pesa and mobile money supported when billing starts. <a href="#contact">Questions?</a> Chat with us on WhatsApp or email.',
+
+      /* ----------------------------------------------------------- trust -- */
       'trust.kicker': 'Trust',
-      'trust.title': 'Built for how you work in East Africa',
+      'trust.title': 'Built for how you work in Africa',
       'trust.sub':
         'Professional, dependable, and respectful of local realities — not a generic import.',
       'trust.offline.title': 'Works offline',
       'trust.offline.desc':
-        "Keep recording payments, notes, and tasks when connectivity dips — sync when you're back online.",
+        'Keep recording payments, notes and tasks when connectivity dips — everything syncs when you are back online.',
       'trust.tzs.title': 'TZS-friendly',
       'trust.tzs.desc':
-        'Think in Tanzanian shillings and the mobile money you already use — M-Pesa, Tigo Pesa, and Airtel Money — not a foreign-currency mindset.',
+        'Think in Tanzanian shillings and the mobile money you already use — M-Pesa, Tigo Pesa and Airtel Money — with live FX when an owner thinks in dollars.',
       'trust.security.title': 'Security & privacy',
       'trust.security.desc':
-        'Your property and tenant data stay yours. Data encrypted in transit and at rest. Hosted on servers meeting international security standards. We collect only what\'s needed to run the service — see our <a href="./privacy-policy.html">Privacy Policy</a>.',
-      'contact.title': 'Get started with HostBora',
+        'Your property and tenant data stay yours, encrypted in transit and at rest. We collect only what the service needs — see our <a href="./privacy-policy.html">Privacy Policy</a>.',
+      'trust.chart.title': 'Yearly Status',
+      'trust.chart.income': 'Income',
+      'trust.chart.expenses': 'Expenses',
+      'trust.chart.caption': 'Income',
+
+      /* --------------------------------------------------------- contact -- */
+      'contact.kicker': 'Connect',
+      'contact.title': 'Kick things off with HostBora!',
       'contact.sub':
         'Available on mobile for hosts, landlords, and managers in Tanzania and the wider East Africa region. Reach out for early access, partnerships, or support.',
-      'contact.about':
-        'Built by <strong>Artbel Technologies</strong> in Dar es Salaam — a Tanzanian team behind HostBora. <a href="./about.html">About us</a>',
       'contact.whatsapp': 'Chat on WhatsApp',
-      'contact.email': 'Email us',
-      'contact.region': 'Dar es Salaam · Tanzania · East Africa',
-      'contact.form.label': 'Contact form',
+      'contact.or': 'Or directly connect with us',
       'contact.name': 'Name',
-      'contact.namePh': 'Your name',
-      'contact.emailLabel': 'Email',
-      'contact.emailPh': 'you@example.com',
-      'contact.message': 'Message',
-      'contact.messagePh': 'Tell us about your properties (BnB, rent, or both)…',
-      'contact.submit': 'Send message',
+      'contact.namePlaceholder': 'Joseph Mwita',
+      'contact.email': 'Email *',
+      'contact.emailPlaceholder': 'yourname@email.com',
+      'contact.propertyType': 'Property Type? *',
+      'contact.select': 'Select',
+      'contact.typeBnb': 'Short-stay / BnB',
+      'contact.typeRent': 'Long-term rent',
+      'contact.typeMixed': 'Both',
+      'contact.typeManaging': 'I manage for owners',
+      'contact.message': 'Your Message',
+      'contact.messagePlaceholder': 'Tell us more about your project',
+      'contact.submit': 'Submit Now',
       'contact.hint': 'WhatsApp is fastest — or use the form and we’ll reply by email.',
-      'contact.sending': 'Sending your message…',
-      'contact.sent': 'Thanks — your message was sent. We’ll reply soon.',
-      'contact.error': 'Could not send your message. Please try again.',
-      'contact.copied': 'Copied — open email',
-      'contact.openingEmail': 'Opening email…',
-      'footer.tagline': 'Property management for landlords, managers, and hosts.',
-      'footer.social.label': 'HostBora on social media',
-      'footer.social.instagram': 'Instagram',
-      'footer.social.facebook': 'Facebook',
-      'footer.credit': 'Built by <a href="./about.html">Artbel</a>, Dar es Salaam',
-      'footer.copy': '© 2026 HostBora. All rights reserved.',
-      'footer.appMeta': 'App v1.2.3 · Updated',
-      'wa.fab': 'Chat with HostBora on WhatsApp',
+      'contact.sending': 'Sending…',
+      'contact.sent': 'Thanks — we’ve got your message and will reply by email.',
+      'contact.error': 'Could not send your message. Please try WhatsApp or email instead.',
+      'contact.copied': 'Email address copied. Opening your mail app…',
+      'contact.openingEmail': 'Opening your mail app…',
+
+      /* ---------------------------------------------------------- footer -- */
+      'footer.about':
+        'Property management for landlords, managers, and hosts. Built by <strong>Artbel Technologies</strong> in Dar es Salaam — a Tanzanian team behind HostBora.',
+      'footer.getApp': 'Get The App Now',
+      'footer.navLabel': 'Footer',
+      'footer.sections': 'Sections',
+      'footer.policies': 'Policies',
+      'footer.social': 'Social Links',
+      'footer.terms': 'Terms & conditions',
+      'footer.vulnerability': 'Report a vulnerability',
+      'footer.copyright': '© 2026 Artbel Technologies. All rights reserved.',
+
+      /* ------------------------------------------------------- register -- */
+      'register.meta.title': 'Create your HostBora account',
+      'register.meta.description':
+        'Sign up for HostBora the same way as in the app — name, phone, optional email, then a 4-digit code.',
+      'register.kicker': 'Create account',
+      'register.title': 'Set up HostBora in a few steps',
+      'register.lead':
+        'Same onboarding as the app. After you verify, we send a payment prompt to the phone you registered, for the plan you picked.',
+      'register.planLabel': 'Selected plan',
+      'register.stepName': 'Your name',
+      'register.stepPhone': 'Phone number',
+      'register.stepEmail': 'Email',
+      'register.stepCode': 'Verification code',
+      'register.firstName': 'First name',
+      'register.lastName': 'Last name (optional)',
+      'register.firstNamePlaceholder': 'Amina',
+      'register.lastNamePlaceholder': 'Mwamba',
+      'register.phone': 'Tanzanian mobile number',
+      'register.phonePlaceholder': '0712 345 678',
+      'register.phoneHint': 'We will send a 4-digit code by SMS.',
+      'register.emailAsk': 'Do you have an email address?',
+      'register.emailYes': 'Yes',
+      'register.emailNo': 'No, use SMS only',
+      'register.email': 'Email',
+      'register.emailPlaceholder': 'you@email.com',
+      'register.emailHint': 'Optional. You can receive the code by email instead of SMS.',
+      'register.code': 'Enter the 4-digit code',
+      'register.codeHintSms': 'We sent a code by SMS to your phone.',
+      'register.codeHintEmail': 'We sent a code to your email.',
+      'register.continue': 'Continue',
+      'register.back': 'Back',
+      'register.verify': 'Verify and pay',
+      'register.sending': 'Sending…',
+      'register.paying': 'Starting payment…',
+      'register.successTitle': 'Account created',
+      'register.successPay':
+        'Check your phone for the mobile-money prompt to pay this plan.',
+      'register.successPayFail':
+        'Your account is ready. Open the app to pay for your plan if the prompt does not arrive.',
+      'register.successDesktop': 'Download HostBora and sign in with this phone number.',
+      'register.openApp': 'Open HostBora',
+      'register.download': 'Download the app',
+      'register.signinHint':
+        'After installing, return here and tap Open HostBora — you will land on Sign in.',
+      'register.exists': 'An account with this phone already exists. Open the app to sign in.',
+      'register.error': 'Something went wrong. Try again.',
+      'register.invalidPhone': 'Enter a valid Tanzanian mobile number (e.g. 0712345678).',
+      'register.invalidName': 'Enter your first name.',
+      'register.invalidEmail': 'Enter a valid email, or choose SMS only.',
+      'register.invalidCode': 'Enter the 4-digit code.',
+      'register.terms':
+        'By continuing you agree to the <a href="./terms-of-service.html">Terms</a> and <a href="./privacy-policy.html">Privacy policy</a>.',
+      'signin.meta.title': 'Open HostBora',
+      'signin.meta.description': 'Open HostBora to sign in, or download the app first.',
+      'signin.title': 'Sign in to HostBora',
+      'signin.lead':
+        'If the app is installed it opens on Sign in. If not, download it, then come back and tap Open HostBora.',
+      'signin.open': 'Open HostBora',
+      'signin.play': 'Get it on Google Play',
+      'signin.appstore': 'Download on the App Store',
     },
+
     sw: {
-      'lang.label': 'Lugha',
-      'lang.en': 'Kiingereza',
-      'lang.sw': 'Kiswahili',
-      'skip': 'Ruka hadi maudhui',
+      /* ---------------------------------------------------------- meta -- */
+      'meta.title': 'HostBora — Usimamizi wa majengo ulio wazi',
+      'meta.description':
+        'HostBora inaunganisha BnB ya muda mfupi na upangaji wa muda mrefu katika app moja kwa wamiliki na wasimamizi wa majengo Tanzania. Fuatilia nafasi na wapangaji, rekodi malipo kwa TZS, na uone jinsi kila mali inavyofanya kazi.',
+
+      /* ---------------------------------------------------------- chrome -- */
+      'skip': 'Nenda kwenye maudhui',
       'brand.home': 'Mwanzo wa HostBora',
       'menu.open': 'Fungua menyu',
       'menu.close': 'Funga menyu',
-      'nav.label': 'Msingi',
+      'nav.label': 'Kuu',
+      'nav.home': 'Mwanzo',
       'nav.features': 'Vipengele',
-      'nav.workspaces': 'Nafasi za kazi',
-      'nav.audience': 'Nani hutumia',
+      'nav.workspaces': 'Maeneo ya kazi',
+      'nav.audience': 'Wanaotumia',
       'nav.pricing': 'Bei',
       'nav.trust': 'Uaminifu',
-      'nav.privacy': 'Faragha',
       'nav.getStarted': 'Anza sasa',
-      'nav.contact': 'Wasiliana',
+      'cta.register': 'Fungua akaunti',
+      'pricing.choose': 'Chagua mpango huu',
+      'nav.privacy': 'Sera ya faragha',
       'nav.about': 'Kuhusu',
       'nav.whatsapp': 'WhatsApp',
-      'nav.terms': 'Masharti',
-      'meta.title': 'HostBora — Usimamizi wa mali kwa Afrika Mashariki',
-      'meta.description':
-        'HostBora inawasaidia wamiliki na wasimamizi wa mali nchini Tanzania na Afrika Mashariki kuendesha BnB za muda mfupi na kodi za muda mrefu — uhifadhi, malipo, wafanyakazi, na zaidi.',
-      'hero.badge': 'Ufikiaji wa mapema — jiunge na wamiliki 200+ wanaotumia HostBora',
-      'hero.eyebrow': 'Imeundwa kwa wamiliki na wasimamizi wa mali',
-      'hero.title': 'Usimamizi wa mali unaobaki wazi — kutoka usiku wa wageni hadi kodi ya kila mwezi.',
-      'hero.tagline': 'Simamia mali zako kwa urahisi — BnB na kodi za muda mrefu.',
+      'lang.label': 'Lugha',
+      'lang.en': 'Kiingereza',
+      'lang.sw': 'Kiswahili',
+
+      /* ------------------------------------------------------------ hero -- */
+      'hero.badge': 'Ufikiaji wa mwanzo — jiunge na wamiliki 200+ wanaotumia HostBora',
+      'hero.title': 'Usimamizi wa majengo unaobaki wazi — kutoka usiku wa wageni hadi kodi ya mwezi.',
+      'hero.tagline': 'Simamia mali zako kwa urahisi — BnB ya muda mfupi na upangaji wa muda mrefu.',
       'hero.lead':
-        'HostBora inaunganisha ukarimu wa muda mfupi na kodi za muda mrefu katika programu moja ya kuaminika. Fuatilia uhifadhi na wapangaji, rekodi malipo kwa TZS, simamia wafanyakazi na gharama, na uone utendaji wa kila mali.',
-      'cta.playTop': 'Pakua bure kwenye',
-      'cta.playBottom': 'Google Play',
-      'cta.explore': 'Gundua vipengele ↓',
-      'app.version': 'Programu v1.2.3 · Imesasishwa Juni 2026',
-      'hero.stats.label': 'Muhtasari',
-      'hero.stats.bnb': 'BnB + Kodi',
-      'hero.stats.bnbSub': 'Nafasi mbili za kazi',
-      'hero.stats.tzs': 'TZS-tayari',
-      'hero.stats.tzsSub': 'Sarafu ya ndani',
-      'hero.stats.offline': 'Inafanya kazi nje ya mtandao',
-      'hero.stats.offlineSub': 'Inafanya kazi popote',
+        'HostBora inaunganisha ukaribishaji wa muda mfupi na upangaji wa muda mrefu katika app moja ya kuaminika. Fuatilia nafasi na wapangaji, rekodi malipo kwa TZS, simamia wafanyakazi na matumizi, na uone jinsi kila mali inavyofanya kazi.',
+      'cta.install': 'Pakua sasa',
+      'cta.availableOn': 'Inapatikana kwenye',
+      'app.version': 'App v1.5.8 · Imeboreshwa Oktoba 2026',
+      'chip.vault': 'Hifadhi ya nyaraka',
+      'chip.calendar': 'Kalenda ya mwenyeji',
+      'chip.access': 'Ufikiaji wa wageni',
+      'chip.ai': 'Mazungumzo ya AI',
+      'chip.report': 'Ripoti ya kila siku',
+      'chip.maintenance': 'Matengenezo',
+
+      /* -------------------------------------------------------- features -- */
       'features.kicker': 'Zana za kila siku',
-      'features.pain':
-        'Wamiliki wengi Dar wanadhibiti kodi kupitia picha za M-Pesa, mazungumzo ya WhatsApp, na daftari za mkono. HostBora inachukua nafasi ya msukosuko huo.',
       'features.title': 'Kila kitu wamiliki na wasimamizi wanahitaji kila siku',
       'features.sub':
-        'Zana moja tulivu kwa mapato, uendeshaji, watu, na rekodi — ukiwa unapokea wageni au ukusanya kodi ya kila mwezi.',
-      'demo.title': 'Tazama HostBora kwa sekunde 60',
-      'demo.sub': 'Muhtasari wa haraka wa programu — mali, malipo, wafanyakazi, na zaidi.',
-      'demo.iframeTitle': 'Video ya muhtasari wa programu ya HostBora',
-      'feat.rentals.title': 'Upangaji na wapangaji',
-      'feat.rentals.desc':
-        'Orodhesha vyumba, fuatilia mikataba, na weka maelezo ya wapangaji kwa mpangilio katika mali zako.',
-      'feat.payments.title': 'Malipo na gharama',
+        'Zana moja tulivu kwa mapato, uendeshaji, watu na kumbukumbu — iwe unapangisha kwa siku au unakusanya kodi ya mwezi.',
+
+      'feat.payments.title': 'Malipo na matumizi',
       'feat.payments.desc':
-        'Fuatilia malipo ya M-Pesa na pesa za simu — Tigo Pesa, Airtel Money, na zaidi. Rekodi mapato ya kodi na wageni, andika gharama, na uone mtiririko wa fedha bila machafuko ya spreadsheet.',
-      'feat.staff.title': 'Wafanyakazi na kazi',
-      'feat.staff.desc':
-        'Pangia wasafishaji, walinzi, au matengenezo — na tarehe za mwisho na hali ili hakuna kinachopotea.',
-      'feat.reminders.title': 'Vikumbusho',
-      'feat.reminders.desc':
-        'Kaa mbele ya upyaji wa mikataba, kuingia kwa wageni, ufuatiliaji wa malipo, na kazi za mara kwa mara za mali.',
-      'feat.bnb.title': 'BnB na kodi ya muda mrefu',
-      'feat.bnb.desc':
-        'Endesha uhifadhi wa muda mfupi na mikataba ya kila mwezi kutoka kwenye mfuko huo huo — badilisha unapohitaji.',
+        'Fuatilia malipo ya M-Pesa na pesa za simu — Tigo Pesa, Airtel Money, na zaidi. Rekodi kodi na mapato ya wageni, weka matumizi, na uone mtiririko wa fedha bila lahajedwali.',
+      'feat.workspaces.title': 'BnB na upangaji wa muda mrefu',
+      'feat.workspaces.desc':
+        'Endesha nafasi za muda mfupi na mikataba ya mwezi kutoka kwenye majengo yale yale — badilisha unapohitaji.',
       'feat.reports.title': 'Ripoti na faida',
       'feat.reports.desc':
-        'Elewa mapato dhidi ya matumizi kwa kila mali kwa muhtasari unaounga mkono maamuzi halisi.',
-      'feat.access.title': 'Ufikiaji mahiri',
-      'feat.access.desc':
-        'Ratibu kufuli za kidijitali na ufikiaji wa wageni pale inapoungwa mkono — mikataba machache wakati wa kuingia.',
+        'Elewa mapato dhidi ya matumizi kwa kila jengo kwa muhtasari unaosaidia maamuzi halisi.',
+      'feat.staff.title': 'Wafanyakazi na kazi',
+      'feat.staff.desc':
+        'Gawia wasafishaji, walinzi au matengenezo — kwa tarehe za mwisho na hali ili kitu kisikosewe.',
+      'feat.reminders.title': 'Vikumbusho vya WhatsApp',
+      'feat.reminders.desc':
+        'Wapangaji wanapata vikumbusho vya kodi na mkataba kwenye WhatsApp.',
+      'feat.reminders.tag': 'Kwenye WhatsApp',
       'feat.vault.title': 'Hifadhi ya nyaraka',
       'feat.vault.desc':
-        'Hifadhi mikataba, vitambulisho, miongozo, na rekodi za kodi katika folda wazi — tayari unapozihitaji.',
-      'feat.calendar.title': 'Usawazishaji wa kalenda',
-      'feat.calendar.desc':
-        'Unganisha kalenda za nje kupunguza uhifadhi maradufu na kuweka tarehe zilizozuiliwa sawa.',
+        'Hifadhi mikataba, vitambulisho, miongozo na kumbukumbu za kodi kwenye folda zilizo wazi — tayari unapohitaji.',
+
+      'more.vault.title': 'Hifadhi ya nyaraka',
+      'more.vault.desc': 'Mikataba, vitambulisho na risiti kwa kila jengo',
+      'more.calendar.title': 'Kuunganisha kalenda',
+      'more.calendar.desc': 'Unganisha njia, punguza kuweka nafasi mara mbili',
+      'more.reminders.title': 'Vikumbusho vya WhatsApp',
+      'more.reminders.desc': 'Taarifa za kodi na mkataba kwa wapangaji',
+      'more.fx.title': 'Sarafu nyingi',
+      'more.fx.desc': 'TZS kwanza, na viwango vya ubadilishaji kwa wamiliki wa ugenini',
+      'more.referrals.title': 'Marejeleo na zawadi',
+      'more.referrals.desc': 'Karibisha wamiliki wengine, pata miezi ya bure',
+      'more.score.title': 'Alama ya mwenyeji',
+      'more.score.desc': 'Changamoto zinazoweka kumbukumbu zako sawa',
+
+      /* ------------------------------------------------------ workspaces -- */
       'workspaces.kicker': 'BnB + Kodi',
-      'workspaces.title': 'Nafasi mbili za kazi, programu moja',
-      'workspaces.sub': 'Badilisha kati ya BnB na Kodi wakati wowote — mali zile zile, mtiririko ulioboreshwa.',
+      'workspaces.title': 'Maeneo mawili ya kazi, app moja',
+      'workspaces.sub':
+        'Badilisha kati ya BnB na Kodi wakati wowote — majengo yale yale, mifumo iliyobinafsishwa.',
       'workspaces.bnb.badge': 'BnB',
-      'workspaces.bnb.title': 'Ukarimu wa muda mfupi',
+      'workspaces.bnb.title': 'Upangishaji wa muda mfupi',
       'workspaces.bnb.desc':
-        'Simamia uhifadhi wa kila usiku, mabadiliko ya wageni, ratiba za usafi, na mapato ya ukarimu. Inafaa kwa vyumba vya furnished, nyumba za wageni, na makao ya likizo.',
-      'workspaces.bnb.li1': 'Kalenda ya uhifadhi na kuingia/kutoka',
-      'workspaces.bnb.li2': 'Malipo ya wageni na gharama za makao',
-      'workspaces.bnb.li3': 'Uendeshaji ulioboreshwa kwa mabadiliko',
+        'Simamia nafasi za usiku, mabadiliko ya wageni, ratiba za usafi na mapato ya ukarimu. Inafaa kwa vyumba vilivyo na vifaa, nyumba za wageni na mapumziko.',
       'workspaces.rent.badge': 'Kodi',
       'workspaces.rent.title': 'Upangaji wa muda mrefu',
       'workspaces.rent.desc':
-        'Endesha mikataba ya kila mwezi, rekodi za wapangaji, ukusanyaji wa kodi, na gharama za jengo. Imejengwa kwa wamiliki na wasimamizi wenye mapato ya mara kwa mara.',
-      'workspaces.rent.li1': 'Wapangaji, vyumba na ufuatiliaji wa mikataba',
-      'workspaces.rent.li2': 'Malipo ya kodi na mwonekano wa deni',
-      'workspaces.rent.li3': 'Wafanyakazi, huduma na gharama za jengo',
+        'Endesha mikataba ya mwezi, kumbukumbu za wapangaji, ukusanyaji wa kodi na matumizi ya jengo. Imeundwa kwa wamiliki na wasimamizi wenye mapato ya kila mwezi.',
+
+      /* -------------------------------------------------------- audience -- */
       'audience.kicker': 'Kwa nani',
-      'audience.title': 'Imeundwa kwa watu wanaodhibiti mali',
+      'audience.title': 'Imeundwa kwa watu wanaoendesha majengo',
       'audience.sub':
-        'Ukiwa unamiliki chumba kimoja au unasimamia mfuko unaokua katika Dar, Arusha, au zaidi.',
-      'audience.landlords.title': 'Wamiliki',
+        'Iwe unamiliki chumba kimoja au unasimamia majengo yanayoongezeka Dar, Arusha au kwingine.',
+      'audience.landlords.title': 'Wamiliki wa majengo',
       'audience.landlords.desc':
-        'Unamiliki vyumba, nyumba, au majengo? Ona kodi iliyokusanywa, nafasi tupu, na gharama kwa kila chumba bila kusukumana na daftari.',
-      'audience.managers.title': 'Wasimamizi wa mali',
+        'Iwe unamiliki chumba kimoja au unasimamia majengo yanayoongezeka Dar, Arusha au kwingine.',
+      'audience.managers.title': 'Wasimamizi wa majengo',
       'audience.managers.desc':
-        'Simamia wamiliki au majengo mengi kwa mtiririko wa wafanyakazi, gharama, na ripoti ambazo wateja wako wanaweza kuamini.',
+        'Simamia wamiliki au majengo mengi kwa mifumo ya wafanyakazi, matumizi na ripoti ambazo wateja wako wanaweza kuziamini.',
       'audience.hosts.title': 'Wenyeji na waendeshaji',
       'audience.hosts.desc':
-        'Endesha BnB au mali mchanganyiko — kutoka makao ya boutique hadi vyumba vya huduma — na uhifadhi na uendeshaji vikiendana.',
+        'Endesha BnB au majengo mchanganyiko — kutoka nyumba ndogo za kipekee hadi vyumba vya huduma — na nafasi na uendeshaji vikiwa sawa.',
+      'audience.hosts.tag1': 'Mapato ya siku na ya mwezi pamoja',
+      'audience.hosts.tag2': 'Kazi za usafi na mabadiliko ya wageni',
+      'audience.hosts.tag3': 'Namba za wageni na kumbukumbu za kuingia',
+      'audience.hosts.tag4': 'Ripoti moja kwa kila mmiliki',
+
+      /* ----------------------------------------------------------- offer -- */
+      'offer.badge': 'Ofa ya chakula cha mchana!',
+      'offer.leadStrong': 'Bure kwa muda mfupi,',
+      'offer.lead':
+        'Ufikiaji kamili wa HostBora tukiwa katika ufikiaji wa mwanzo — kila kipengele, hakuna kadi ya benki, hakuna ahadi.',
+      'offer.cta': 'Pakua bure sasa',
+
+      /* --------------------------------------------------------- pricing -- */
       'pricing.kicker': 'Bei',
       'pricing.title': 'Bei rahisi na wazi',
       'pricing.sub':
-        'Hakuna mshangao — anza bure leo, kisha chagua mpango unaofaa mfuko wako wakati malipo yataanza.',
-      'pricing.badge': 'Ofa ya uzinduzi',
-      'pricing.freeTitle': 'Bure kwa muda mfupi',
-      'pricing.freeLead':
-        'Ufikiaji kamili wa HostBora tunapokuwa katika ufikiaji wa mapema — kila kipengele, hakuna kadi ya mkopo, hakuna ahadi.',
-      'pricing.download': 'Pakua bure kwenye Android',
-      'pricing.freeNote': 'Tutakujulisha kabla ya mpango wowote wa kulipia kuanza kutumika.',
-      'pricing.intro': 'Baada ya kipindi cha bure, chagua kiwango kinacholingana na jinsi unavyosimamia mali:',
-      'pricing.starter.name': 'Starter',
-      'pricing.starter.period': 'TZS / mwezi',
-      'pricing.starter.summary': 'Kwa wenyeji peke yao wanaopanga.',
-      'pricing.starter.li1': 'Hadi mali 3',
-      'pricing.starter.li2': 'Nafasi ya BnB au Kodi',
-      'pricing.starter.li3': 'Malipo, gharama na vikumbusho',
-      'pricing.starter.li4': 'Ripoti za msingi',
-      'pricing.pro.badge': 'Inayopendwa zaidi',
-      'pricing.pro.name': 'Pro',
-      'pricing.pro.period': 'TZS / mwezi',
-      'pricing.pro.summary': 'Kwa mali zinazokua na timu ndogo.',
-      'pricing.pro.li1': 'Hadi mali 10',
-      'pricing.pro.li2': 'Wafanyakazi, kazi na usawazishaji wa kalenda',
-      'pricing.pro.li3': 'Hifadhi ya nyaraka na ripoti za hali ya juu',
-      'pricing.pro.li4': 'Ongezeko la SMS / WhatsApp linapatikana',
-      'pricing.ultra.name': 'Ultra',
-      'pricing.ultra.period': 'TZS / mwezi',
-      'pricing.ultra.summary': 'Kwa waendeshaji na wasimamizi wa mali kwa kiwango kikubwa.',
-      'pricing.ultra.li1': 'Mali zisizo na kikomo',
-      'pricing.ultra.li2': 'Kufuli mahiri na kumbukumbu za kuingia',
-      'pricing.ultra.li3': 'Msimamizi wa AI na zana za muundo',
-      'pricing.ultra.li4': 'Msaada wa kipaumbele',
+        'Hakuna mshangao — anza bure leo, kisha chagua mpango unaolingana na majengo yako malipo yanapoanza.',
+      'pricing.period': 'TZS / mwezi',
+      'pricing.renews': 'Inajiongeza yenyewe. Sitisha wakati wowote.',
       'pricing.footnote':
-        'Viwango vilivyopangwa vinaonyeshwa kwa shilingi za Tanzania. M-Pesa na pesa za simu zinasaidiwa malipo yatakapoanza. <a href="#contact">Maswali?</a> Wasiliana nasi kupitia WhatsApp au barua pepe.',
+        'Bei zilizopangwa zinaonyeshwa kwa shilingi za Tanzania. M-Pesa na pesa za simu zitaungwa mkono malipo yanapoanza. <a href="#contact">Maswali?</a> Zungumza nasi kwa WhatsApp au barua pepe.',
+
+      'pricing.starter.name': 'Starter',
+      'pricing.starter.summary': 'Kwa wenyeji wa pekee wanaoanza kujipanga.',
+      'pricing.starter.li1': 'Hadi majengo 3',
+      'pricing.starter.li2': 'Eneo la kazi la BnB au Kodi',
+      'pricing.starter.li3': 'Malipo, matumizi na vikumbusho',
+      'pricing.starter.li4': 'Ripoti za msingi',
+
+      'pricing.pro.badge': 'Tunapendekeza',
+      'pricing.pro.name': 'Pro',
+      'pricing.pro.summary': 'Kwa majengo yanayoongezeka na timu ndogo.',
+      'pricing.pro.li1': 'Hadi majengo 10',
+      'pricing.pro.li2': 'Wafanyakazi, kazi na kuunganisha kalenda',
+      'pricing.pro.li3': 'Hifadhi ya nyaraka na ripoti za kina',
+      'pricing.pro.li4': 'SMS / WhatsApp inapatikana kama nyongeza',
+
+      'pricing.ultra.name': 'Ultra',
+      'pricing.ultra.summary': 'Kwa waendeshaji wakubwa na wasimamizi wa majengo.',
+      'pricing.ultra.li1': 'Majengo bila kikomo',
+      'pricing.ultra.li2': 'Kufuli mahiri na kumbukumbu za kuingia',
+      'pricing.ultra.li3': 'Msimamizi wa AI na zana za ubunifu',
+      'pricing.ultra.li4': 'Msaada wa kipaumbele',
+
+      /* ----------------------------------------------------------- trust -- */
       'trust.kicker': 'Uaminifu',
-      'trust.title': 'Imeundwa kwa jinsi unavyofanya kazi Afrika Mashariki',
+      'trust.title': 'Imeundwa kwa jinsi unavyofanya kazi Afrika',
       'trust.sub':
-        'Ya kitaalamu, ya kuaminika, na inayheshimu hali halisi ya ndani — si bidhaa ya jeneriki iliyoagizwa.',
-      'trust.offline.title': 'Inafanya kazi nje ya mtandao',
+        'Ya kitaalamu, ya kutegemewa na inayoheshimu mazingira ya hapa — si bidhaa ya kuagiza tu.',
+      'trust.offline.title': 'Inafanya kazi bila intaneti',
       'trust.offline.desc':
-        'Endelea kurekodi malipo, maelezo, na kazi mtandao unapopungua — sawazisha unapokuwa mtandaoni tena.',
+        'Endelea kurekodi malipo, maelezo na kazi mtandao unaposhuka — kila kitu kinasawazishwa unaporejea mtandaoni.',
       'trust.tzs.title': 'Rafiki kwa TZS',
       'trust.tzs.desc':
-        'Fikiria kwa shilingi za Tanzania na pesa za simu unazotumia tayari — M-Pesa, Tigo Pesa, na Airtel Money — si mtazamo wa sarafu ya kigeni.',
+        'Fikiri kwa shilingi za Tanzania na pesa za simu unazotumia — M-Pesa, Tigo Pesa na Airtel Money — na viwango vya ubadilishaji mmiliki anapofikiri kwa dola.',
       'trust.security.title': 'Usalama na faragha',
       'trust.security.desc':
-        'Data yako ya mali na wapangaji inabaki yako. Data imesimbwa wakati wa usafirishaji na uhifadhi. Inahifadhiwa kwenye seva zinazokidhi viwango vya kimataifa vya usalama. Tunakusanya tu kinachohitajika kuendesha huduma — angalia <a href="./privacy-policy.html">Sera yetu ya Faragha</a>.',
-      'contact.title': 'Anza na HostBora',
+        'Taarifa za majengo na wapangaji wako zinabaki zako, zikiwa zimefichwa wakati wa kusafirishwa na kuhifadhiwa. Tunakusanya tu kinachohitajika — ona <a href="./privacy-policy.html">Sera yetu ya Faragha</a>.',
+      'trust.chart.title': 'Hali ya mwaka',
+      'trust.chart.income': 'Mapato',
+      'trust.chart.expenses': 'Matumizi',
+      'trust.chart.caption': 'Mapato',
+
+      /* --------------------------------------------------------- contact -- */
+      'contact.kicker': 'Ungana nasi',
+      'contact.title': 'Anza safari yako na HostBora!',
       'contact.sub':
-        'Inapatikana kwenye simu kwa wenyeji, wamiliki, na wasimamizi nchini Tanzania na Afrika Mashariki pana. Wasiliana kwa ufikiaji wa mapema, ushirikiano, au msaada.',
-      'contact.about':
-        'Imeundwa na <strong>Artbel Technologies</strong> Dar es Salaam — timu ya Tanzania nyuma ya HostBora. <a href="./about.html">Kuhusu sisi</a>',
-      'contact.whatsapp': 'Tuchat WhatsApp',
-      'contact.email': 'Tutumie barua pepe',
-      'contact.region': 'Dar es Salaam · Tanzania · Afrika Mashariki',
-      'contact.form.label': 'Fomu ya mawasiliano',
+        'Inapatikana kwa simu kwa wenyeji, wamiliki na wasimamizi Tanzania na Afrika Mashariki kwa ujumla. Wasiliana nasi kwa ufikiaji wa mwanzo, ushirikiano au msaada.',
+      'contact.whatsapp': 'Zungumza kwa WhatsApp',
+      'contact.or': 'Au wasiliana nasi moja kwa moja',
       'contact.name': 'Jina',
-      'contact.namePh': 'Jina lako',
-      'contact.emailLabel': 'Barua pepe',
-      'contact.emailPh': 'wewe@example.com',
-      'contact.message': 'Ujumbe',
-      'contact.messagePh': 'Tuambie kuhusu mali zako (BnB, kodi, au zote mbili)…',
-      'contact.submit': 'Tuma ujumbe',
+      'contact.namePlaceholder': 'Joseph Mwita',
+      'contact.email': 'Barua pepe *',
+      'contact.emailPlaceholder': 'jina@email.com',
+      'contact.propertyType': 'Aina ya jengo? *',
+      'contact.select': 'Chagua',
+      'contact.typeBnb': 'Muda mfupi / BnB',
+      'contact.typeRent': 'Kodi ya muda mrefu',
+      'contact.typeMixed': 'Zote mbili',
+      'contact.typeManaging': 'Nasimamia kwa wamiliki',
+      'contact.message': 'Ujumbe wako',
+      'contact.messagePlaceholder': 'Tuambie zaidi kuhusu mradi wako',
+      'contact.submit': 'Tuma sasa',
       'contact.hint': 'WhatsApp ni haraka zaidi — au tumia fomu na tutajibu kwa barua pepe.',
-      'contact.sending': 'Inatuma ujumbe wako…',
-      'contact.sent': 'Asante — ujumbe wako umetumwa. Tutajibu hivi karibuni.',
-      'contact.error': 'Haikuwezekana kutuma ujumbe wako. Tafadhali jaribu tena.',
-      'contact.copied': 'Imenakiliwa — fungua barua pepe',
-      'contact.openingEmail': 'Inafungua barua pepe…',
-      'footer.tagline': 'Usimamizi wa mali kwa wamiliki, wasimamizi, na wenyeji.',
-      'footer.social.label': 'HostBora kwenye mitandao ya kijamii',
-      'footer.social.instagram': 'Instagram',
-      'footer.social.facebook': 'Facebook',
-      'footer.credit': 'Imeundwa na <a href="./about.html">Artbel</a>, Dar es Salaam',
-      'footer.copy': '© 2026 HostBora. Haki zote zimehifadhiwa.',
-      'footer.appMeta': 'Programu v1.2.3 · Imesasishwa',
-      'wa.fab': 'Piga gumzo na HostBora kwenye WhatsApp',
+      'contact.sending': 'Inatuma…',
+      'contact.sent': 'Asante — tumepokea ujumbe wako na tutajibu kwa barua pepe.',
+      'contact.error': 'Hatuwezi kutuma ujumbe wako. Tafadhali tumia WhatsApp au barua pepe.',
+      'contact.copied': 'Barua pepe imenakiliwa. Tunafungua app yako ya barua…',
+      'contact.openingEmail': 'Tunafungua app yako ya barua…',
+
+      /* ---------------------------------------------------------- footer -- */
+      'footer.about':
+        'Usimamizi wa majengo kwa wamiliki, wasimamizi na wenyeji. Imeundwa na <strong>Artbel Technologies</strong> Dar es Salaam — timu ya Kitanzania iliyo nyuma ya HostBora.',
+      'footer.getApp': 'Pata app sasa',
+      'footer.navLabel': 'Chini ya ukurasa',
+      'footer.sections': 'Sehemu',
+      'footer.policies': 'Sera',
+      'footer.social': 'Mitandao ya kijamii',
+      'footer.terms': 'Vigezo na masharti',
+      'footer.vulnerability': 'Ripoti udhaifu wa kiusalama',
+      'footer.copyright': '© 2026 Artbel Technologies. Haki zote zimehifadhiwa.',
+
+      /* ------------------------------------------------------- register -- */
+      'register.meta.title': 'Fungua akaunti ya HostBora',
+      'register.meta.description':
+        'Jisajili HostBora kama kwenye app — jina, simu, barua pepe ya hiari, kisha msimbo wa tarakimu 4.',
+      'register.kicker': 'Fungua akaunti',
+      'register.title': 'Anzisha HostBora kwa hatua chache',
+      'register.lead':
+        'Usajili ni ule ule wa app. Baada ya kuthibitisha, tutatuma ombi la malipo kwenye simu uliyosajili, kwa mpango uliochagua.',
+      'register.planLabel': 'Mpango uliochaguliwa',
+      'register.stepName': 'Jina lako',
+      'register.stepPhone': 'Namba ya simu',
+      'register.stepEmail': 'Barua pepe',
+      'register.stepCode': 'Msimbo wa uthibitisho',
+      'register.firstName': 'Jina la kwanza',
+      'register.lastName': 'Jina la ukoo (si lazima)',
+      'register.firstNamePlaceholder': 'Amina',
+      'register.lastNamePlaceholder': 'Mwamba',
+      'register.phone': 'Namba ya simu Tanzania',
+      'register.phonePlaceholder': '0712 345 678',
+      'register.phoneHint': 'Tutakutumia msimbo wa tarakimu 4 kwa SMS.',
+      'register.emailAsk': 'Una barua pepe?',
+      'register.emailYes': 'Ndiyo',
+      'register.emailNo': 'Hapana, tumia SMS pekee',
+      'register.email': 'Barua pepe',
+      'register.emailPlaceholder': 'wewe@email.com',
+      'register.emailHint': 'Si lazima. Unaweza kupokea msimbo kwa barua pepe badala ya SMS.',
+      'register.code': 'Weka msimbo wa tarakimu 4',
+      'register.codeHintSms': 'Tumekutumia msimbo kwa SMS kwenye simu yako.',
+      'register.codeHintEmail': 'Tumekutumia msimbo kwenye barua pepe yako.',
+      'register.continue': 'Endelea',
+      'register.back': 'Rudi',
+      'register.verify': 'Thibitisha na ulipe',
+      'register.sending': 'Inatuma…',
+      'register.paying': 'Inaanzisha malipo…',
+      'register.successTitle': 'Akaunti imefunguliwa',
+      'register.successPay':
+        'Angalia simu yako kwa ombi la malipo ya pesa taslimu ya simu kwa mpango huu.',
+      'register.successPayFail':
+        'Akaunti iko tayari. Fungua app kulipia mpango wako ikiwa ombi halijafika.',
+      'register.successDesktop': 'Pakua HostBora na uingie kwa namba hii ya simu.',
+      'register.openApp': 'Fungua HostBora',
+      'register.download': 'Pakua app',
+      'register.signinHint':
+        'Baada ya kusakinisha, rudi hapa na ubonyeze Fungua HostBora — utafika kwenye Ingia.',
+      'register.exists': 'Akaunti yenye namba hii ipo. Fungua app kuingia.',
+      'register.error': 'Kumetokea hitilafu. Jaribu tena.',
+      'register.invalidPhone': 'Weka namba sahihi ya simu Tanzania (mfano 0712345678).',
+      'register.invalidName': 'Weka jina lako la kwanza.',
+      'register.invalidEmail': 'Weka barua pepe sahihi, au chagua SMS pekee.',
+      'register.invalidCode': 'Weka msimbo wa tarakimu 4.',
+      'register.terms':
+        'Kwa kuendelea unakubali <a href="./terms-of-service.html">Masharti</a> na <a href="./privacy-policy.html">Sera ya faragha</a>.',
+      'signin.meta.title': 'Fungua HostBora',
+      'signin.meta.description': 'Fungua HostBora kuingia, au pakua app kwanza.',
+      'signin.title': 'Ingia HostBora',
+      'signin.lead':
+        'Ikiwa app imesakinishwa itafunguka kwenye Ingia. Ikiwa sivyo, ipakue, kisha rudi na ubonyeze Fungua HostBora.',
+      'signin.open': 'Fungua HostBora',
+      'signin.play': 'Pata kwenye Google Play',
+      'signin.appstore': 'Pakua kwenye App Store',
     },
   };
 
+  function isInTanzania() {
+    try {
+      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      if (zone === 'Africa/Dar_es_Salaam') return true;
+      if (zone) return false;
+    } catch (_) {}
+    return true;
+  }
+
   function getLang() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'en' || stored === 'sw') return stored;
-    const nav = navigator.language || '';
-    return nav.startsWith('sw') ? 'sw' : 'en';
+    const requested = new URLSearchParams(location.search).get('lang');
+    if (requested === 'en' || requested === 'sw') return requested;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'en' || saved === 'sw') return saved;
+    return isInTanzania() ? 'sw' : 'en';
   }
 
   function t(key, lang) {
@@ -386,8 +574,10 @@
     return messages[l]?.[key] ?? messages.en[key] ?? '';
   }
 
-  function applyLang(lang) {
-    localStorage.setItem(STORAGE_KEY, lang);
+  function applyLang(lang, options) {
+    if (options && options.persist) {
+      localStorage.setItem(STORAGE_KEY, lang);
+    }
     document.documentElement.lang = lang === 'sw' ? 'sw' : 'en';
 
     document.querySelectorAll('[data-i18n]').forEach((el) => {
@@ -442,6 +632,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     const langSelect = document.getElementById('langSelect');
     applyLang(getLang());
-    langSelect?.addEventListener('change', (e) => applyLang(e.target.value));
+    langSelect?.addEventListener('change', (e) => applyLang(e.target.value, { persist: true }));
   });
 })();

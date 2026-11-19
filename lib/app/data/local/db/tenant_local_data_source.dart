@@ -1,5 +1,9 @@
+import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../../core/utils/sync_freshness.dart';
+import '../preference/preference_manager.dart';
+import '../service/local_account_data_reset.dart';
 import 'app_local_database.dart';
 import 'property_local_data_source.dart';
 
@@ -50,7 +54,20 @@ class TenantRecord {
     required this.createdAtMs,
     this.backendTenantId = '',
     this.rentCurrency = 'TZS',
+    this.tenancyStatus = 'active',
+    this.updatedAtMs = 0,
   });
+
+  /// `active` while the tenant is current. `ended` after a replacement or end tenancy.
+  final String tenancyStatus;
+
+  /// Last local or applied remote edit. `0` means "use [createdAtMs]".
+  final int updatedAtMs;
+
+  bool get isActiveTenancy {
+    final status = tenancyStatus.trim().toLowerCase();
+    return status.isEmpty || status == 'active';
+  }
 
   factory TenantRecord.fromMap(Map<String, Object?> m) {
     return TenantRecord(
@@ -74,6 +91,8 @@ class TenantRecord {
       createdAtMs: m['created_at_ms'] as int? ?? 0,
       backendTenantId: m['backend_tenant_id'] as String? ?? '',
       rentCurrency: _normCurrency(m['rent_currency'] as String?),
+      tenancyStatus: m['tenancy_status'] as String? ?? 'active',
+      updatedAtMs: (m['updated_at_ms'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -89,13 +108,7 @@ class TenantLocalDataSource {
   static String _normalizeWorkspace(String w) =>
       w.trim().toLowerCase() == 'bnb' ? 'bnb' : 'rent';
 
-  Database? _db;
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await AppLocalDatabase.database;
-    return _db!;
-  }
+  Future<Database> get database => AppLocalDatabase.database;
 
   Future<int> insert({
     required String propertyLabel,
@@ -116,6 +129,7 @@ class TenantLocalDataSource {
     String rentCurrency = 'TZS',
   }) async {
     final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
     return db.insert(_table, {
       'property_label': propertyLabel,
       'property_ref': propertyRef,
@@ -133,14 +147,23 @@ class TenantLocalDataSource {
       'contract_file_path': contractFilePath,
       'contract_file_name': contractFileName,
       'rent_currency': rentCurrency.trim().toUpperCase().isEmpty ? 'TZS' : rentCurrency.trim().toUpperCase(),
-      'created_at_ms': DateTime.now().millisecondsSinceEpoch,
+      'created_at_ms': now,
+      'updated_at_ms': now,
     });
   }
 
   Future<List<TenantRecord>> getAllNewestFirst() async {
+    await _isolateSignedInAccount();
     final db = await database;
+    final userId = await _signedInUserId();
+    if (userId.isEmpty) return const [];
+    final props = await _propertiesForUser(db, userId);
+    if (props.isEmpty) return const [];
     final maps = await db.query(_table, orderBy: 'created_at_ms DESC');
-    return maps.map(TenantRecord.fromMap).toList();
+    return maps
+        .map(TenantRecord.fromMap)
+        .where((tenant) => props.any((p) => _tenantMatchesProperty(tenant, p)))
+        .toList();
   }
 
   /// Tenants linked to properties in [ws] (`rent` / `bnb`).
@@ -153,7 +176,10 @@ class TenantLocalDataSource {
     if (tenants.isEmpty) return const [];
 
     final db = await database;
-    final propMaps = await db.query(AppLocalDatabase.propertiesTable);
+    final userId = await _signedInUserId();
+    final propMaps = userId.isEmpty
+        ? const <Map<String, Object?>>[]
+        : await _propertyMapsForUser(db, userId);
     final props = <PropertyRecord>[];
     for (final m in propMaps) {
       final p = PropertyRecord.fromMap(m);
@@ -176,6 +202,64 @@ class TenantLocalDataSource {
       }
     }
     return out;
+  }
+
+  Future<void> _isolateSignedInAccount() async {
+    if (!Get.isRegistered<PreferenceManager>(
+      tag: (PreferenceManager).toString(),
+    )) {
+      return;
+    }
+    await LocalAccountDataReset.alignToUser(
+      Get.find<PreferenceManager>(tag: (PreferenceManager).toString()),
+    );
+  }
+
+  Future<String> _signedInUserId() async {
+    if (!Get.isRegistered<PreferenceManager>(
+      tag: (PreferenceManager).toString(),
+    )) {
+      return '';
+    }
+    try {
+      final user = await Get.find<PreferenceManager>(
+        tag: (PreferenceManager).toString(),
+      ).getUser();
+      return user.id?.trim() ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<List<PropertyRecord>> _propertiesForUser(
+    Database db,
+    String userId,
+  ) async {
+    final maps = await _propertyMapsForUser(db, userId);
+    return maps.map(PropertyRecord.fromMap).toList();
+  }
+
+  Future<List<Map<String, Object?>>> _propertyMapsForUser(
+    Database db,
+    String userId,
+  ) async {
+    return db.rawQuery(
+      '''
+      SELECT p.*
+      FROM ${AppLocalDatabase.propertiesTable} p
+      WHERE p.owner_user_id = ?
+         OR EXISTS (
+           SELECT 1
+           FROM ${AppLocalDatabase.propertyMembersTable} m
+           WHERE m.user_id = ?
+             AND m.property_ref = CASE
+               WHEN p.property_ref IS NULL OR p.property_ref = '' THEN 'legacy_' || p.id
+               ELSE p.property_ref
+             END
+         )
+      ''',
+      [userId, userId],
+    );
   }
 
   static bool _tenantMatchesProperty(TenantRecord t, PropertyRecord p) {
@@ -253,7 +337,36 @@ class TenantLocalDataSource {
     final db = await database;
     await db.update(
       _table,
-      {'lease_end_iso': leaseEndIso},
+      {
+        'lease_end_iso': leaseEndIso,
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> updateTenantDetails({
+    required int id,
+    required String tenantName,
+    required String phoneNumber,
+    required String email,
+    required double rentAmountValue,
+    required String leaseStartIso,
+    required String leaseEndIso,
+  }) async {
+    final db = await database;
+    await db.update(
+      _table,
+      {
+        'tenant_name': tenantName.trim(),
+        'phone_number': phoneNumber.trim(),
+        'email': email.trim(),
+        'amount_paid': rentAmountValue,
+        'lease_start_iso': leaseStartIso,
+        'lease_end_iso': leaseEndIso,
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -272,6 +385,7 @@ class TenantLocalDataSource {
         'amount_paid': rentAmountValue,
         'lease_start_iso': leaseStartIso,
         'lease_end_iso': leaseEndIso,
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
       },
       where: 'id = ?',
       whereArgs: [id],
@@ -285,7 +399,10 @@ class TenantLocalDataSource {
     final db = await database;
     await db.update(
       _table,
-      {'payment_status': paymentStatus.trim().toLowerCase()},
+      {
+        'payment_status': paymentStatus.trim().toLowerCase(),
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -302,16 +419,34 @@ class TenantLocalDataSource {
       {
         'contract_file_path': contractFilePath,
         'contract_file_name': contractFileName,
+        'updated_at_ms': DateTime.now().millisecondsSinceEpoch,
       },
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  /// Returns the number of tenant rows for this listing hub id.
+  /// Tenant rows for this listing hub id, including `local_` / `legacy_` aliases.
+  Future<List<TenantRecord>> listByPropertyRef(String propertyRef) async {
+    final r = propertyRef.trim();
+    if (r.isEmpty) return const [];
+    final aliases = await _propertyRefAliases(r);
+    if (aliases.isEmpty) return const [];
+    final db = await database;
+    final placeholders = List.filled(aliases.length, '?').join(',');
+    final rows = await db.rawQuery(
+      'SELECT * FROM $_table WHERE property_ref IN ($placeholders) ORDER BY created_at_ms DESC',
+      aliases.toList(),
+    );
+    return rows.map(TenantRecord.fromMap).toList();
+  }
+
+  /// Returns the number of current tenants for this listing hub id.
   ///
   /// Counts rows whose `property_ref` matches [propertyRef] or any alias
   /// (`local_<id>`, `legacy_<id>`, or the property's stored hub UUID).
+  /// Ended tenancies stay in the table after a replacement, so they are
+  /// left out of this count.
   Future<int> countByPropertyRef(String propertyRef) async {
     final r = propertyRef.trim();
     if (r.isEmpty) return 0;
@@ -320,7 +455,8 @@ class TenantLocalDataSource {
     final db = await database;
     final placeholders = List.filled(aliases.length, '?').join(',');
     final rows = await db.rawQuery(
-      'SELECT COUNT(*) AS c FROM $_table WHERE property_ref IN ($placeholders)',
+      'SELECT COUNT(*) AS c FROM $_table WHERE property_ref IN ($placeholders) '
+      "AND (tenancy_status IS NULL OR tenancy_status = '' OR tenancy_status = 'active')",
       aliases.toList(),
     );
     if (rows.isEmpty) return 0;
@@ -452,6 +588,8 @@ class TenantLocalDataSource {
     required String leaseStartIso,
     required String leaseEndIso,
     required String rentCurrency,
+    int remoteUpdatedAtMs = 0,
+    String tenancyStatus = '',
   }) async {
     final backendId = backendTenantId.trim();
     final existing = backendId.isNotEmpty
@@ -472,8 +610,27 @@ class TenantLocalDataSource {
                     : propertyRef.trim(),
               ));
 
+    if (byName != null &&
+        SyncFreshness.phoneIsNewer(
+          localUpdatedMs: byName.updatedAtMs,
+          localCreatedMs: byName.createdAtMs,
+          remoteUpdatedMs: remoteUpdatedAtMs,
+        )) {
+      if (backendId.isNotEmpty && byName.backendTenantId.trim().isEmpty) {
+        await saveBackendTenantId(localId: byName.id, backendId: backendId);
+        return (await findById(byName.id))!;
+      }
+      return byName;
+    }
+
     final db = await database;
     final now = DateTime.now().millisecondsSinceEpoch;
+    final appliedUpdated = remoteUpdatedAtMs > 0
+        ? remoteUpdatedAtMs
+        : (byName != null
+            ? (byName.updatedAtMs > 0 ? byName.updatedAtMs : byName.createdAtMs)
+            : now);
+    final incomingStatus = tenancyStatus.trim().toLowerCase();
     final data = <String, Object?>{
       'property_label': propertyLabel,
       'property_ref': propertyRef,
@@ -495,9 +652,35 @@ class TenantLocalDataSource {
           ? backendId
           : (byName?.backendTenantId ?? ''),
       'created_at_ms': byName?.createdAtMs ?? now,
+      'updated_at_ms': appliedUpdated,
     };
+    if (incomingStatus == 'active' || incomingStatus == 'ended') {
+      data['tenancy_status'] = incomingStatus;
+    }
 
     if (byName != null) {
+      if (leaseEndIso.trim().isEmpty) {
+        data['lease_end_iso'] = byName.leaseEndIso;
+      }
+      if (tenantName.trim().isEmpty) data['tenant_name'] = byName.tenantName;
+      if (phoneNumber.trim().isEmpty) data['phone_number'] = byName.phoneNumber;
+      if (email.trim().isEmpty) data['email'] = byName.email;
+      if (rentAmountValue <= 0) data['amount_paid'] = byName.rentAmountValue;
+      if (unitLabel.trim().isEmpty) data['unit_label'] = byName.unitLabel;
+      if (apartmentUnitId.trim().isEmpty) {
+        data['apartment_unit_id'] = byName.apartmentUnitId;
+      }
+      if (leaseStartIso.trim().isEmpty &&
+          byName.leaseStartIso.trim().isNotEmpty) {
+        data['lease_start_iso'] = byName.leaseStartIso;
+      }
+      final incomingLabel = propertyLabel.trim();
+      final localLabel = byName.propertyLabel.trim();
+      if (_looksLikePropertyRef(incomingLabel) &&
+          localLabel.isNotEmpty &&
+          !_looksLikePropertyRef(localLabel)) {
+        data['property_label'] = localLabel;
+      }
       await db.update(_table, data, where: 'id = ?', whereArgs: [byName.id]);
       return (await findById(byName.id))!;
     }
@@ -517,6 +700,9 @@ class TenantLocalDataSource {
         'tenancy_status': 'ended',
         'ended_at_ms': endedAtMs,
         'lease_end_iso': endedAtIso,
+        'updated_at_ms': endedAtMs > 0
+            ? endedAtMs
+            : DateTime.now().millisecondsSinceEpoch,
       },
       where: 'id = ?',
       whereArgs: [id],
@@ -531,5 +717,15 @@ class TenantLocalDataSource {
       orderBy: 'created_at_ms DESC',
     );
     return maps.map(TenantRecord.fromMap).toList();
+  }
+
+  static bool _looksLikePropertyRef(String value) {
+    final v = value.trim();
+    if (v.startsWith('local_') ||
+        v.startsWith('legacy_') ||
+        v.startsWith('remote_')) {
+      return true;
+    }
+    return RegExp(r'^[0-9a-fA-F-]{16,}$').hasMatch(v);
   }
 }

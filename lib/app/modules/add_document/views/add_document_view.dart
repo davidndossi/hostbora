@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -49,6 +51,10 @@ class AddDocumentView extends BaseView<AddDocumentController> {
               _buildSectionLabel(context, _t(en: 'ADD FROM', sw: 'ONGEZA KUTOKA')),
               const SizedBox(height: 12),
               _buildSourceOptions(context, c, theme),
+              const SizedBox(height: 20),
+              _buildPreview(context, c, theme),
+              const SizedBox(height: 20),
+              _buildSaveButton(context),
             ],
           ),
         ),
@@ -224,7 +230,7 @@ class AddDocumentView extends BaseView<AddDocumentController> {
         ),
         const SizedBox(height: 12),
         _SourceOptionCard(
-          icon: Icons.attach_file_rounded,
+          icon: Icons.attach_file_outlined,
           title: _t(en: 'Upload File', sw: 'Pakia Faili'),
           subtitle: _t(
             en: 'Choose a file from your device storage',
@@ -238,6 +244,151 @@ class AddDocumentView extends BaseView<AddDocumentController> {
         ),
       ],
     );
+  }
+
+  Widget _buildPreview(
+    BuildContext context,
+    FormSurfaceColors c,
+    ThemeData theme,
+  ) {
+    return Obx(() {
+      if (!controller.hasPendingFile) return const SizedBox.shrink();
+      final path = controller.pendingPath.value!;
+      final name = controller.pendingFileName.value;
+      final isImage = controller.pendingIsImage.value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionLabel(context, _t(en: 'PREVIEW', sw: 'ONYESHO')),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: c.isDark
+                  ? theme.colorScheme.surfaceContainerHigh
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(AppValues.radius_12),
+              border: Border.all(color: _teal.withValues(alpha: 0.25)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isImage)
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(AppValues.radius_12),
+                    ),
+                    child: Image.file(
+                      File(path),
+                      height: 220,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => _filePreview(name, c),
+                    ),
+                  )
+                else
+                  _filePreview(name, c),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: c.headline,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: controller.clearPendingFile,
+                        child: Text(_t(en: 'Remove', sw: 'Ondoa')),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _filePreview(String name, FormSurfaceColors c) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.insert_drive_file_outlined,
+              color: Color(0xFF8B5CF6),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: c.headline,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveButton(BuildContext context) {
+    return Obx(() {
+      final enabled = controller.hasPendingFile && !controller.saving.value;
+      return SizedBox(
+        width: double.infinity,
+        height: AppValues.formButtonHeight + 8,
+        child: ElevatedButton(
+          onPressed: enabled ? controller.savePendingDocument : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _teal,
+            disabledBackgroundColor: _teal.withValues(alpha: 0.35),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppValues.radius_6),
+            ),
+            elevation: 0,
+          ),
+          child: controller.saving.value
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  _t(en: 'Add Document', sw: 'Ongeza Hati'),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+        ),
+      );
+    });
   }
 }
 
@@ -317,7 +468,7 @@ class _SourceOptionCard extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_right,
+                Icons.chevron_right_outlined,
                 size: 22,
                 color: accentColor.withValues(alpha: 0.6),
               ),

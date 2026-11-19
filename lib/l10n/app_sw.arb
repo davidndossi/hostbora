@@ -473,6 +473,17 @@
   "rentAddTenantIncomePromptBody": "Rekodi malipo ya kwanza ya kodi sasa? Maelezo yatajazwa kiotomatiki.",
   "rentAddTenantIncomePromptAdd": "Ongeza mapato",
   "rentAddTenantIncomePromptLater": "Baadaye",
+  "bnbIncomeAddGuestPromptTitle": "Mapato yamehifadhiwa",
+  "bnbIncomeAddGuestPromptBody": "Hakuna mgeni aliyeandikwa kwa {place} bado. Ongeza mgeni sasa?",
+  "@bnbIncomeAddGuestPromptBody": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "bnbIncomeAddGuestPromptAdd": "Ongeza mgeni",
+  "bnbIncomeAddGuestPromptLater": "Baadaye",
   "loginSecurity": "USALAMA WA KUINGIA",
   "pinCode": "Msimbo wa PIN",
   "accessControl": "UDHIBITI WA UFIKEIAJI",
@@ -603,7 +614,7 @@
   "help": "MSAADA",
   "paaYangu": "Host Bora",
   "version": "Toleo",
-  "aboutIntro": "HostBora inawasaidia wenye nyumba na wamiliki wa mali kuendesha makazi ya muda mfupi na kodi za muda mrefu katika programu moja. Badilisha kati ya sehemu za BnB na Rent wakati wowote.",
+  "aboutIntro": "Simamia makazi ya muda mfupi na kodi za muda mrefu katika programu moja. Badilisha kati ya sehemu za BnB na Rent wakati wowote.",
   "aboutBnbFeatures": "Sehemu ya BnB: simamia orodha na vyumba, fuatilia uhifadhi na wageni wanaochelewa leo, tumia kalenda ya mwenyeji, landanisha kalenda za nje, rekodi malipo ya wageni, na angalia ripoti.",
   "aboutRentFeatures": "Sehemu ya Rent: fuatilia wapangaji na mikataba, simamia malipo ya kodi na vikumbusho, fuatilia gharama na utendaji wa kila mwezi, simamia wafanyakazi, na angalia matumizi ya huduma mahiri pale yalipowekwa.",
   "aboutSharedFeatures": "Katika sehemu zote mbili: ongeza mali na gharama, tuma ujumbe kwa wageni au wapangaji, hifadhi nyaraka katika hifadhi ya mali, na endelea kwa data salama kwenye simu hata bila mtandao.",

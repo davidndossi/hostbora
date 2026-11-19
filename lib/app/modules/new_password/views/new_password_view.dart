@@ -33,7 +33,7 @@ class NewPasswordView extends GetView<NewPasswordController> {
         elevation: 0,
         leading: IconButton(
           onPressed: controller.goBack,
-          icon: const Icon(Icons.chevron_left),
+          icon: const Icon(Icons.chevron_left_outlined),
           color: isDark
               ? theme.colorScheme.onSurface
               : AppColors.textColorPrimary,
@@ -171,7 +171,7 @@ class NewPasswordView extends GetView<NewPasswordController> {
                             ),
                           )
                         : const Icon(
-                            Icons.arrow_forward,
+                            Icons.arrow_forward_outlined,
                             size: 20,
                             color: Colors.white,
                           ),
@@ -187,7 +187,7 @@ class NewPasswordView extends GetView<NewPasswordController> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isDark
                           ? theme.colorScheme.primary
-                          : AppColors.designAccent,
+                          : AppColors.colorPrimary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -277,7 +277,7 @@ class NewPasswordView extends GetView<NewPasswordController> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppValues.radius_6),
         borderSide: BorderSide(
-          color: isDark ? theme.colorScheme.primary : AppColors.designAccent,
+          color: isDark ? theme.colorScheme.primary : AppColors.colorPrimary,
           width: 1.5,
         ),
       ),
@@ -317,11 +317,11 @@ class NewPasswordView extends GetView<NewPasswordController> {
                   minHeight: 6,
                   backgroundColor: isDark
                       ? theme.colorScheme.surfaceContainerHighest
-                      : AppColors.lightGreyColor,
+                      : AppColors.designInputBorder,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     controller.strength >= 0.75
-                        ? AppColors.colorSuccessGreen
-                        : AppColors.designAccent,
+                        ? AppColors.colorSuccess
+                        : AppColors.colorPrimary,
                   ),
                 ),
               ),
@@ -332,12 +332,12 @@ class NewPasswordView extends GetView<NewPasswordController> {
               decoration: BoxDecoration(
                 color: AppColors.colorPrimaryLight,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.designAccent),
+                border: Border.all(color: AppColors.colorPrimary),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check, size: 14, color: AppColors.designAccent),
+                  Icon(Icons.check_outlined, size: 14, color: AppColors.colorPrimary),
                   const SizedBox(width: 6),
                   Text(
                     controller.strengthLabel,
@@ -345,7 +345,7 @@ class NewPasswordView extends GetView<NewPasswordController> {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.5,
-                      color: AppColors.designAccent,
+                      color: AppColors.colorPrimary,
                     ),
                   ),
                 ],
@@ -424,7 +424,7 @@ class _ValidationRow extends StatelessWidget {
           met ? Icons.check_circle : Icons.circle_outlined,
           size: 18,
           color: met
-              ? AppColors.colorSuccessGreen
+              ? AppColors.colorSuccess
               : AppColors.designPlaceholder,
         ),
         const SizedBox(width: 8),
@@ -433,7 +433,7 @@ class _ValidationRow extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             color: met
-                ? AppColors.colorSuccessGreen
+                ? AppColors.colorSuccess
                 : AppColors.textColorSecondary,
           ),
         ),

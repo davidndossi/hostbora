@@ -3,6 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:local_auth/local_auth.dart';
 
+import '../../../core/access/sales_agent_session.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/workspace_context_service.dart';
 import '../../../data/model/general_response.dart';
@@ -164,11 +165,22 @@ class ChangePinController extends BaseController {
       }
       if (secondPIN.value == firstPIN.value) {
         pinStatus(PINStatus.equals);
-      } else {
-        pinStatus(PINStatus.unequals);
+        update();
+        changePin();
+        return;
       }
+      pinStatus(PINStatus.unequals);
       update();
     }
+  }
+
+  void retryAfterMismatch() {
+    firstPIN('');
+    secondPIN('');
+    pinStatus(
+      remoteConfirmMode.value ? PINStatus.confirmRemote : PINStatus.enterFirst,
+    );
+    update();
   }
 
   void _verifyCurrentPin() {
@@ -185,6 +197,16 @@ class ChangePinController extends BaseController {
     secondPIN('');
     pinStatus(PINStatus.enterFirst);
     update();
+  }
+
+  /// True only while a fresh sign-up has not yet added or skipped its first
+  /// property. Changing an existing PIN from settings never sets this flag.
+  Future<bool> _hasPendingFirstProperty() async {
+    if (changePinMode.value || remoteConfirmMode.value) return false;
+    return _preferenceManager.getBool(
+      PreferenceManager.keyPendingFirstProperty,
+      defaultValue: false,
+    );
   }
 
   Map<String, dynamic>? get _redirectWorkspaceArgs {
@@ -213,8 +235,10 @@ class ChangePinController extends BaseController {
         await _preferenceManager.setInt(PreferenceManager.keyPinFailedAttempts, 0);
         await _preferenceManager.setInt(PreferenceManager.keyPinLockedUntilMs, 0);
         showSuccessMessage(_t('Welcome back!', 'Karibu tena!'));
-        await Get.find<WorkspaceContextService>()
-            .offAllToPreferredWorkspace(arguments: _redirectWorkspaceArgs);
+        Get.offAllNamed(
+          await SalesAgentSession.homeRoute(_preferenceManager),
+          arguments: _redirectWorkspaceArgs,
+        );
         return;
       }
 
@@ -290,42 +314,70 @@ class ChangePinController extends BaseController {
   }
 
   void _handleChangePinSuccess(GeneralResponse res) async {
+    final isSw = Get.locale?.languageCode == 'sw';
     showDialog(
-        context: Get.context!,
-        builder: (context) => AlertDialog(
-          shape: const RoundedRectangleBorder(
-              borderRadius:
-              BorderRadius.all(Radius.circular(15))),
-          icon: SizedBox(
-            height: 50,
-            width: 50,
-            child: SvgPicture.asset(
-              'images/tick-circle.svg',
-            ),
+      context: Get.context!,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        icon: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF1C6E64).withValues(alpha: 0.12),
           ),
-          title: const Text('Your PIN code changed successfully!'),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            TextButton(
-              onPressed: () async {
-                Get.back(closeOverlays: true);
-                final args = Get.arguments;
-                final redirect = args is Map &&
-                    args[WorkspaceContextService.rentHubRedirectListingsIfEmptyKey] ==
-                        true;
-                await Get.find<WorkspaceContextService>().offAllToPreferredWorkspace(
-                  arguments: redirect
-                      ? {
-                          WorkspaceContextService.rentHubRedirectListingsIfEmptyKey:
-                              true,
-                        }
-                      : null,
-                );
-              },
-              child: const Text('OK'),
-            )
-          ],
-        ));
+          alignment: Alignment.center,
+          child: SizedBox(
+            height: 36,
+            width: 36,
+            child: SvgPicture.asset('images/tick-circle.svg'),
+          ),
+        ),
+        title: Text(
+          isSw ? 'PIN imewekwa' : 'PIN is set',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          isSw
+              ? 'Utatumia tarakimu hizi 4 kufungua Host Bora.'
+              : 'You’ll use these 4 digits to unlock Host Bora.',
+          textAlign: TextAlign.center,
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          FilledButton(
+            onPressed: () async {
+              Get.back(closeOverlays: true);
+              final home =
+                  await SalesAgentSession.homeRoute(_preferenceManager);
+              if (home == Routes.SALES_AGENT_HOME) {
+                Get.offAllNamed(home);
+                return;
+              }
+              if (await _hasPendingFirstProperty()) {
+                Get.offAllNamed(Routes.FIRST_PROPERTY);
+                return;
+              }
+              final args = Get.arguments;
+              final redirect = args is Map &&
+                  args[WorkspaceContextService.rentHubRedirectListingsIfEmptyKey] ==
+                      true;
+              Get.offAllNamed(
+                home,
+                arguments: redirect
+                    ? {
+                        WorkspaceContextService.rentHubRedirectListingsIfEmptyKey:
+                            true,
+                      }
+                    : null,
+              );
+            },
+            child: Text(isSw ? 'Sawa' : 'Continue'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Persists the new PIN locally and shows success. Backend sync can be wired

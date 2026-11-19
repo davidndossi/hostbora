@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 
-import '/app/routes/app_pages.dart';
 import '../preference/preference_manager.dart';
 
 class WorkspaceContextService extends GetxService {
@@ -8,18 +7,30 @@ class WorkspaceContextService extends GetxService {
     required PreferenceManager preferenceManager,
   }) : _preferenceManager = preferenceManager;
 
-  /// Pass in [offAllToPreferredWorkspace] `arguments` after sign-in so the rent shell
-  /// can switch to the Listings tab once when the hub has no properties.
+  /// Passed as a navigation argument after sign-in so the rent shell can
+  /// switch to the Listings tab once when the hub has no properties.
+  ///
+  /// Currently written by the sign-in paths and read by nobody: the rent hub
+  /// it targets has no registered route. Kept rather than removed because the
+  /// shell is unfinished, not abandoned.
   static const String rentHubRedirectListingsIfEmptyKey = 'redirect_rent_listings_if_empty';
 
   final PreferenceManager _preferenceManager;
 
-  final currentWorkspace = 'bnb'.obs;
+  /// `all` | `bnb` | `rent`.
+  ///
+  /// Defaults to `all` because the host is never asked to choose. Picking a
+  /// side on their behalf is what previously hid half the product: the value
+  /// defaulted to `bnb`, so a long-term landlord's rent data was filtered out
+  /// of Home by a preference they had never set.
+  final currentWorkspace = _allWorkspaces.obs;
+
+  static const String _allWorkspaces = 'all';
 
   Future<WorkspaceContextService> init() async {
     final saved = await _preferenceManager.getString(
       PreferenceManager.keyWorkspaceType,
-      defaultValue: 'bnb',
+      defaultValue: _allWorkspaces,
     );
     currentWorkspace.value = _normalize(saved);
     return this;
@@ -30,7 +41,7 @@ class WorkspaceContextService extends GetxService {
     if (value.isEmpty) {
       final saved = await _preferenceManager.getString(
         PreferenceManager.keyWorkspaceType,
-        defaultValue: 'bnb',
+        defaultValue: _allWorkspaces,
       );
       currentWorkspace.value = _normalize(saved);
     }
@@ -43,24 +54,16 @@ class WorkspaceContextService extends GetxService {
     await _preferenceManager.setString(PreferenceManager.keyWorkspaceType, next);
   }
 
-  /// Clears the stack and opens BnB shell or Rent shell based on saved workspace.
-  Future<void> offAllToPreferredWorkspace({Map<String, dynamic>? arguments}) async {
-    final saved = await _preferenceManager.getString(
-      PreferenceManager.keyWorkspaceType,
-      defaultValue: 'bnb',
-    );
-    await switchWorkspace(_normalize(saved));
-    if (currentWorkspace.value == 'bnb') {
-      Get.offAllNamed(Routes.MAIN, arguments: arguments);
-    } else {
-      // Get.offAllNamed(Routes.RENT_HUB, arguments: arguments);
-    }
-  }
-
+  /// `bnb` and `rent` are explicit host choices made inside the app. Anything
+  /// else — unset, `both`, or a value from a build that stored something
+  /// different — means no side was chosen, which is [_allWorkspaces]. That
+  /// matches the data layer, where empty and `all` both select every
+  /// workspace.
   String _normalize(String raw) {
     final v = raw.trim().toLowerCase();
     if (v == 'bnb') return 'bnb';
-    return 'rent';
+    if (v == 'rent') return 'rent';
+    return _allWorkspaces;
   }
 }
 

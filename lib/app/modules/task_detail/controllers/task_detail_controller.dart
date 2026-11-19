@@ -66,7 +66,12 @@ class TaskDetailController extends BaseController {
       assignee: trimmed,
       status: t.isCompleted ? TaskStatus.completed : TaskStatus.inProgress,
     );
-    final request = updated.toUpdateRequest(assigneeOverride: trimmed);
+    final identity = await _staffIdentity(trimmed);
+    final request = updated.toUpdateRequest(
+      assigneeOverride: trimmed,
+      assigneePhone: identity.phone,
+      staffId: identity.staffId,
+    );
     task.value = updated;
     await TaskAssignmentStore.remember(updated);
     try {
@@ -82,6 +87,17 @@ class TaskDetailController extends BaseController {
       showSuccessMessage('Assigned locally — will sync when online');
     } finally {
       assigningStaff.value = false;
+    }
+  }
+
+  Future<({String phone, String staffId})> _staffIdentity(String name) async {
+    try {
+      final row = await _staffLocal.findByNameIgnoreCase(name);
+      if (row == null) return (phone: '', staffId: '');
+      final backendId = await _staffLocal.backendIdForLocal(row.id);
+      return (phone: row.phone.trim(), staffId: backendId ?? '');
+    } catch (_) {
+      return (phone: '', staffId: '');
     }
   }
 
@@ -147,6 +163,23 @@ class TaskDetailController extends BaseController {
     final assignee = _isUnassigned(remote.assignee) && !_isUnassigned(cached.assignee)
         ? cached.assignee
         : remote.assignee;
+    // Keep local completion when the API still returns pending.
+    final keepCompleted = !remote.isCompleted &&
+        remote.status != TaskStatus.completed &&
+        (cached.isCompleted || cached.status == TaskStatus.completed);
+    if (keepCompleted) {
+      return MaintenanceTask(
+        id: remote.id,
+        title: remote.title,
+        assignee: assignee,
+        description: remote.description,
+        priority: remote.priority,
+        status: TaskStatus.completed,
+        dueDate: remote.dueDate,
+        isCompleted: true,
+        completedAt: cached.completedAt ?? DateTime.now(),
+      );
+    }
     return remote.copyWith(assignee: assignee);
   }
 
@@ -211,14 +244,32 @@ class TaskDetailController extends BaseController {
     );
   }
 
-  void toggleComplete() {
+  Future<void> toggleComplete() async {
     final t = task.value;
     if (t == null) return;
     final now = DateTime.now();
-    task.value = t.copyWith(
-      isCompleted: !t.isCompleted,
-      status: t.isCompleted ? TaskStatus.pending : TaskStatus.completed,
-      completedAt: t.isCompleted ? null : now,
+    final completing = !t.isCompleted;
+    final updated = MaintenanceTask(
+      id: t.id,
+      title: t.title,
+      assignee: t.assignee,
+      description: t.description,
+      priority: t.priority,
+      status: completing ? TaskStatus.completed : TaskStatus.pending,
+      dueDate: t.dueDate,
+      isCompleted: completing,
+      completedAt: completing ? now : null,
     );
+    task.value = updated;
+    await TaskAssignmentStore.remember(updated);
+    final request = updated.toUpdateRequest();
+    try {
+      final res = await _repository.updateTask(t.id, request);
+      if (!res.isSuccess) {
+        await _queueTaskUpdate(t.id, request);
+      }
+    } catch (_) {
+      await _queueTaskUpdate(t.id, request);
+    }
   }
 }

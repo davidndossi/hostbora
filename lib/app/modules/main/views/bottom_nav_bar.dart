@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../../../l10n/app_localizations.dart';
 import '/app/core/values/app_colors.dart';
 import '/app/core/values/app_values.dart';
+import '/app/data/local/service/property_count_store.dart';
 import '/app/modules/main/controllers/bottom_nav_controller.dart';
 import '/app/modules/main/controllers/main_controller.dart';
 import '/app/modules/main/model/menu_code.dart';
@@ -157,6 +158,9 @@ class _BottomNavBarState extends State<BottomNavBar>
           return Obx(() {
             final selectedCode = Get.find<MainController>().selectedMenuCode;
             final moreOpen = navController.moreMenuOpen.value;
+            final propertyBadge = Get.isRegistered<PropertyCountStore>()
+                ? Get.find<PropertyCountStore>().badgeLabel
+                : null;
 
             return SizedBox(
               height: totalHeight,
@@ -178,70 +182,89 @@ class _BottomNavBarState extends State<BottomNavBar>
                     top: bodyTop,
                     bottom: bottomInset,
                     child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      for (final item in leftItems)
-                        Expanded(
-                          child: _NavBarTile(
-                            key: item.menuCode == MenuCode.PROPERTIES
-                                ? navController.propertiesTabKey
-                                : null,
-                            item: item,
-                            isSelected:
-                                !moreOpen && item.menuCode == selectedCode,
-                            selectedColor: theme.colorScheme.primary,
-                            unselectedColor: unselectedItemColor,
-                            onTap: () => _onTabTap(item.menuCode),
-                          ),
-                        ),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            SizedBox(height: lerpDouble(16, 8, t)),
-                            Text(
-                              appLocalization.more,
-                              style: TextStyle(
-                                fontSize: 12,
-                                letterSpacing: 0.2,
-                                foreground: moreOpen || t > 0.5
-                                    ? (Paint()
-                                      ..shader = LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          theme.colorScheme.primary,
-                                          // Color(0xFF2FA5B7),
-                                          // Color(0xFF2FB7A6),
-                                          theme.colorScheme.primary
-                                        ],
-                                      ).createShader(
-                                        const Rect.fromLTWH(0, 0, 48, 16),
-                                      ))
-                                    : null,
-                                color: moreOpen || t > 0.5
-                                    ? null
-                                    : unselectedItemColor,
-                                fontWeight: FontWeight.w400,
-                              ),
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        for (final item in leftItems)
+                          Expanded(
+                            child: _NavBarTile(
+                              key: item.menuCode == MenuCode.PROPERTIES
+                                  ? navController.propertiesTabKey
+                                  : null,
+                              item: item,
+                              isSelected:
+                                  !moreOpen && item.menuCode == selectedCode,
+                              selectedColor: theme.colorScheme.primary,
+                              unselectedColor: unselectedItemColor,
+                              badgeLabel: item.menuCode == MenuCode.PROPERTIES
+                                  ? propertyBadge
+                                  : null,
+                              onTap: () => _onTabTap(item.menuCode),
                             ),
-                            const SizedBox(height: 10),
-                          ],
-                        ),
-                      ),
-                      for (final item in rightItems)
+                          ),
                         Expanded(
-                          child: _NavBarTile(
-                            item: item,
-                            isSelected:
-                                !moreOpen && item.menuCode == selectedCode,
-                            selectedColor: theme.colorScheme.primary,
-                            unselectedColor: unselectedItemColor,
-                            onTap: () => _onTabTap(item.menuCode),
+                          // Match sibling tiles: icon slot + 4px + label, so
+                          // "More" sits on the same baseline (not at the bar floor).
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 8,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(height: AppValues.iconDefaultSize),
+                                const SizedBox(height: 4),
+                                Text(
+                                  appLocalization.more,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    letterSpacing: 0.2,
+                                    foreground: moreOpen || t > 0.5
+                                        ? (Paint()
+                                            ..shader =
+                                                LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [
+                                                    theme.colorScheme.primary,
+                                                    theme.colorScheme.primary,
+                                                  ],
+                                                ).createShader(
+                                                  const Rect.fromLTWH(
+                                                    0,
+                                                    0,
+                                                    48,
+                                                    16,
+                                                  ),
+                                                ))
+                                        : null,
+                                    color: moreOpen || t > 0.5
+                                        ? null
+                                        : unselectedItemColor,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                    ],
-                  ),
+                        for (final item in rightItems)
+                          Expanded(
+                            child: _NavBarTile(
+                              item: item,
+                              isSelected:
+                                  !moreOpen && item.menuCode == selectedCode,
+                              selectedColor: theme.colorScheme.primary,
+                              unselectedColor: unselectedItemColor,
+                              onTap: () => _onTabTap(item.menuCode),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                   // Center FAB — gray "+" closed, teal "X" open (Figma 311:17710).
                   Positioned(
@@ -264,13 +287,11 @@ class _BottomNavBarState extends State<BottomNavBar>
                             width: 44,
                             height: 44,
                             child: Icon(
-                              t > 0.5 ? Icons.close_rounded : Icons.add,
+                              t > 0.5
+                                  ? Icons.close_outlined
+                                  : Icons.add_outlined,
                               size: 20,
-                              color: Color.lerp(
-                                closedFabIcon,
-                                Colors.white,
-                                t,
-                              ),
+                              color: Color.lerp(closedFabIcon, Colors.white, t),
                             ),
                           ),
                         ),
@@ -298,6 +319,7 @@ class _NavBarTile extends StatelessWidget {
   final Color selectedColor;
   final Color unselectedColor;
   final VoidCallback onTap;
+  final String? badgeLabel;
 
   const _NavBarTile({
     super.key,
@@ -306,11 +328,38 @@ class _NavBarTile extends StatelessWidget {
     required this.selectedColor,
     required this.unselectedColor,
     required this.onTap,
+    this.badgeLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final color = isSelected ? selectedColor : unselectedColor;
+    final label = badgeLabel;
+    Widget icon = SizedBox(
+      width: AppValues.iconDefaultSize,
+      height: AppValues.iconDefaultSize,
+      child: SvgPicture.asset(
+        'images/${item.iconSvgName}',
+        fit: BoxFit.contain,
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      ),
+    );
+    if (label != null && label.isNotEmpty) {
+      icon = Badge(
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            height: 1,
+          ),
+        ),
+        backgroundColor: AppColors.colorAlert,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: icon,
+      );
+    }
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -322,15 +371,7 @@ class _NavBarTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: AppValues.iconDefaultSize,
-                height: AppValues.iconDefaultSize,
-                child: SvgPicture.asset(
-                  'images/${item.iconSvgName}',
-                  fit: BoxFit.contain,
-                  colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-                ),
-              ),
+              icon,
               const SizedBox(height: 4),
               Text(
                 item.navTitle,
@@ -385,10 +426,7 @@ class _BottomNavShapePainter extends CustomPainter {
       closed,
       Paint()..color = color.withValues(alpha: 1 - progress),
     );
-    canvas.drawPath(
-      open,
-      Paint()..color = color.withValues(alpha: progress),
-    );
+    canvas.drawPath(open, Paint()..color = color.withValues(alpha: progress));
   }
 
   @override
@@ -402,14 +440,7 @@ Path _closedUnionPath(Size size) {
   final p = Path();
   void m(double x, double y) => p.moveTo(x * sx, y * sx);
   void l(double x, double y) => p.lineTo(x * sx, y * sx);
-  void c(
-    double x1,
-    double y1,
-    double x2,
-    double y2,
-    double x3,
-    double y3,
-  ) =>
+  void c(double x1, double y1, double x2, double y2, double x3, double y3) =>
       p.cubicTo(x1 * sx, y1 * sx, x2 * sx, y2 * sx, x3 * sx, y3 * sx);
 
   m(184.458, 0);
@@ -444,14 +475,7 @@ Path _openSubtractPath(Size size) {
   final p = Path();
   void m(double x, double y) => p.moveTo(x * sx, y * sx + dy);
   void l(double x, double y) => p.lineTo(x * sx, y * sx + dy);
-  void c(
-    double x1,
-    double y1,
-    double x2,
-    double y2,
-    double x3,
-    double y3,
-  ) =>
+  void c(double x1, double y1, double x2, double y2, double x3, double y3) =>
       p.cubicTo(
         x1 * sx,
         y1 * sx + dy,

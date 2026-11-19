@@ -74,7 +74,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: controller.onOpenCalendarSync,
-                      icon: const Icon(Icons.sync, size: 18),
+                      icon: const Icon(Icons.sync_outlined, size: 18),
                       label: Text(appLocalization.calendarSyncOpenFromListing),
                     ),
                   ),
@@ -352,7 +352,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
               style: TextStyle(color: _secondaryText(context)),
             ),
             icon: Icon(
-              Icons.keyboard_arrow_down,
+              Icons.keyboard_arrow_down_outlined,
               color: _secondaryText(context),
             ),
             style: TextStyle(color: _primaryText(context), fontSize: 15),
@@ -436,7 +436,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
           ),
           selectedTextStyle: const TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: Colors.white,
           ),
           todayDecoration: BoxDecoration(
@@ -446,7 +446,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
           ),
           todayTextStyle: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: AppColors.colorPrimary,
           ),
           cellMargin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
@@ -586,7 +586,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: isSelected || isToday
-                      ? FontWeight.w800
+                      ? FontWeight.w700
                       : FontWeight.w600,
                   color: dayColor,
                   decoration: isBlocked ? TextDecoration.lineThrough : null,
@@ -617,7 +617,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                   child: Text(
                     _t(context, en: 'Blocked', sw: 'Imefungwa'),
                     style: TextStyle(
-                      fontSize: 8,
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? Colors.white
@@ -727,7 +727,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                     size: 20,
                     color: isBlocked
                         ? AppColors.colorPrimary
-                        : AppColors.paaYanguAlert,
+                        : AppColors.colorAlert,
                   ),
                   label: Text(
                     isBlocked
@@ -738,7 +738,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                       fontWeight: FontWeight.w600,
                       color: isBlocked
                           ? AppColors.colorPrimary
-                          : AppColors.paaYanguAlert,
+                          : AppColors.colorAlert,
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -746,7 +746,7 @@ class HostCalendarView extends BaseView<HostCalendarController> {
                     side: BorderSide(
                       color: isBlocked
                           ? AppColors.colorPrimary
-                          : AppColors.paaYanguAlert,
+                          : AppColors.colorAlert,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppValues.radius_6),

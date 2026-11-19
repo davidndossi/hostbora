@@ -68,12 +68,12 @@ class _SearchBar extends StatelessWidget {
                 ? 'Tafuta jina, mali, nambari…'
                 : 'Search name, property, phone…',
             hintStyle: TextStyle(color: c.hint, fontSize: 14),
-            prefixIcon: Icon(Icons.search, size: 20, color: c.hint),
+            prefixIcon: Icon(Icons.search_outlined, size: 20, color: c.hint),
             suffixIcon: controller.searchQuery.value.isEmpty
                 ? null
                 : IconButton(
                     tooltip: isSw ? 'Futa' : 'Clear',
-                    icon: Icon(Icons.clear, size: 20, color: c.hint),
+                    icon: Icon(Icons.clear_outlined, size: 20, color: c.hint),
                     onPressed: controller.clearSearch,
                   ),
             // Override global InputDecorationTheme (light theme forces white fill).
@@ -136,7 +136,7 @@ class _CategoryFilterRow extends StatelessWidget {
             _CategoryChip(
               label: isSw ? 'Wote ($all)' : 'All ($all)',
               isSelected: selected == TenantCategoryFilter.all,
-              color: AppColors.designAccent,
+              color: AppColors.colorPrimary,
               onTap: () =>
                   controller.setCategoryFilter(TenantCategoryFilter.all),
               c: c,
@@ -288,7 +288,7 @@ class _StatusFilterRow extends StatelessWidget {
         child: Row(
           children: [
             chip(isSw ? 'Wote' : 'All', TenantStatusFilter.all,
-                AppColors.designAccent),
+                AppColors.colorPrimary),
             const SizedBox(width: 8),
             chip(isSw ? 'Wanaokaa' : 'Active',
                 TenantStatusFilter.active, const Color(0xFF16A34A)),

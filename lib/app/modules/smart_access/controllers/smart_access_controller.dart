@@ -78,40 +78,12 @@ class SmartAccessController extends BaseController {
   void openMoreOptions() {
   }
 
-  /// Remote unlock via Tuya Smart Lock SDK when a lock device is available.
   Future<void> unlockDoor() async {
-    if (Get.isRegistered<TuyaSmartLockService>() && _selectedLockDeviceId != null) {
-      final lockService = Get.find<TuyaSmartLockService>();
-      final ok = await lockService.unlock(_selectedLockDeviceId!);
-      if (ok) {
-        isLocked.value = false;
-        await EntryLogsService().recordAppUnlock(
-          deviceId: _selectedLockDeviceId,
-          deviceName: propertyLabel.value.split('•').first.trim(),
-        );
-        _loadRecentActivity();
-      }
-      return;
-    }
-    isLocked.value = false;
+    showSuccessMessage('Smart lock coming soon');
   }
 
-  /// Remote lock via Tuya Smart Lock SDK when a lock device is available.
   Future<void> lockDoor() async {
-    if (Get.isRegistered<TuyaSmartLockService>() && _selectedLockDeviceId != null) {
-      final lockService = Get.find<TuyaSmartLockService>();
-      final ok = await lockService.lock(_selectedLockDeviceId!);
-      if (ok) {
-        isLocked.value = true;
-        await EntryLogsService().recordAppLock(
-          deviceId: _selectedLockDeviceId,
-          deviceName: propertyLabel.value.split('•').first.trim(),
-        );
-        _loadRecentActivity();
-      }
-      return;
-    }
-    isLocked.value = true;
+    showSuccessMessage('Smart lock coming soon');
   }
 
   void generateGuestCode() {

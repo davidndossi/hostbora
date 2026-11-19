@@ -13,8 +13,10 @@ import '../../../data/local/db/client_event_local_data_source.dart';
 import '../../../data/local/db/offline_sync_queue_local_data_source.dart';
 import '../../../data/local/db/tenant_local_data_source.dart';
 import '../../../data/local/db/property_local_data_source.dart';
+import '../../../data/local/db/property_unit_local_data_source.dart';
 import '../../../data/local/preference/preference_manager.dart';
 import '../../../data/local/service/offline_sync_worker_service.dart';
+import '../../../data/local/service/remote_account_sync_service.dart';
 import '../../../data/repository/app_repository.dart';
 import '../../../routes/app_pages.dart';
 import '../../add_listing/models/apartment_unit_draft.dart';
@@ -22,6 +24,7 @@ import '../../listing_details/controllers/listing_details_controller.dart';
 import '../../my_properties/controllers/my_properties_controller.dart';
 import '../../all_tenants/controllers/all_tenants_controller.dart';
 import '../../rent/expected_payment_schedule/controllers/rent_expected_payment_schedule_controller.dart';
+import '../../rent/tenant_ledger_occupancy/controllers/rent_tenant_ledger_occupancy_controller.dart';
 import '../../rent/tenant_residency_payment_tracker/controllers/rent_tenant_residency_payment_tracker_controller.dart';
 
 class AddTenantFormController extends BaseController {
@@ -47,6 +50,10 @@ class AddTenantFormController extends BaseController {
   final propertyRef = ''.obs;
   final availableUnitDrafts = <ApartmentUnitDraft>[].obs;
   final selectedUnitKey = RxnString();
+
+  /// Every unit on this property is already occupied, so saving replaces
+  /// the tenant on the selected unit.
+  final replacingOccupiedUnit = false.obs;
   final formKey = GlobalKey<FormState>();
 
   final tenantNameController = TextEditingController();
@@ -67,6 +74,13 @@ class AddTenantFormController extends BaseController {
   final leaseStart = Rx<DateTime?>(null);
   final leaseEnd = Rx<DateTime?>(null);
 
+  /// Seeded dates are a placeholder. Save prompts until the host picks a
+  /// range or types a term in the lease-term dialog.
+  bool _leaseTermEnteredByUser = false;
+
+  bool get _isSw => Get.locale?.languageCode == 'sw';
+  String _t(String en, String sw) => _isSw ? sw : en;
+
   final ratePerPeriod = 0.0.obs;
   final stayBillingUnits = 0.obs;
   final stayTotalPreview = 0.0.obs;
@@ -76,6 +90,9 @@ class AddTenantFormController extends BaseController {
   bool _routePrefersRent = false;
   /// True when `workspaceType` was provided on the route (Rent/BnB tab intent).
   bool _routeWorkspaceExplicit = false;
+
+  /// Quick Management asks for every unit, BnB and rent.
+  bool _showAllUnits = false;
 
   static const genderOptions = [
     'Female',
@@ -89,30 +106,60 @@ class AddTenantFormController extends BaseController {
   List<String> get rentFrequencyOptions =>
       isRentFlow.value ? rentRentFrequencyOptions : bnbRentFrequencyOptions;
 
-  List<String> get unitSelectionKeys =>
-      availableUnitDrafts.map((u) => u.selectionKey).toList();
+  /// Separates two units that would otherwise share one dropdown value.
+  static const _dupKeySplit = '\u001f';
+
+  List<String> get unitSelectionKeys => [
+        for (var i = 0; i < availableUnitDrafts.length; i++) _unitKeyAt(i),
+      ];
+
+  String _unitKeyAt(int index) {
+    final base = availableUnitDrafts[index].selectionKey;
+    var copies = 0;
+    for (final draft in availableUnitDrafts) {
+      if (draft.selectionKey == base) copies++;
+    }
+    if (copies <= 1) return base;
+    return '$base$_dupKeySplit$index';
+  }
 
   String unitDisplayLabel(String selectionKey) {
-    for (final u in availableUnitDrafts) {
-      if (u.selectionKey == selectionKey) {
-        final rent = u.unitRent.trim();
-        if (rent.isEmpty) return u.unitName;
-        final parsed = double.tryParse(rent.replaceAll(',', ''));
-        if (parsed != null) {
-          return '${u.unitName} (${Get.find<CurrencyService>().formatBase(parsed.round())})';
-        }
-        return '${u.unitName} ($rent)';
-      }
+    final u = _draftForKey(selectionKey);
+    if (u == null) return selectionKey;
+    final rent = u.unitRent.trim();
+    if (rent.isEmpty) return u.unitName;
+    final parsed = double.tryParse(rent.replaceAll(',', ''));
+    if (parsed != null) {
+      return '${u.unitName} (${Get.find<CurrencyService>().formatBase(parsed.round())})';
     }
-    return selectionKey;
+    return '${u.unitName} ($rent)';
   }
 
   ApartmentUnitDraft? _draftForKey(String? key) {
     if (key == null || key.isEmpty) return null;
+    for (var i = 0; i < availableUnitDrafts.length; i++) {
+      if (_unitKeyAt(i) == key) return availableUnitDrafts[i];
+    }
+    final split = key.lastIndexOf(_dupKeySplit);
+    if (split >= 0) {
+      final index = int.tryParse(key.substring(split + _dupKeySplit.length));
+      if (index != null &&
+          index >= 0 &&
+          index < availableUnitDrafts.length) {
+        return availableUnitDrafts[index];
+      }
+    }
     for (final u in availableUnitDrafts) {
       if (u.selectionKey == key) return u;
     }
     return null;
+  }
+
+  void _selectDraft(ApartmentUnitDraft unit, PropertyRecord property) {
+    final index = availableUnitDrafts.indexWhere((d) => identical(d, unit));
+    selectedUnitKey.value =
+        index >= 0 ? _unitKeyAt(index) : unit.selectionKey;
+    _prefillRentFromUnit(unit, property);
   }
 
   @override
@@ -142,10 +189,29 @@ class AddTenantFormController extends BaseController {
     final paramUnitName = Get.parameters['unitName']?.trim() ??
         _argString('unitName') ??
         '';
+    final guestName = _argString('guestName');
+    if (guestName != null && tenantNameController.text.trim().isEmpty) {
+      tenantNameController.text = guestName;
+    }
+    _seedLeasePeriod();
     _loadPropertyUnits(
       preferredUnitId: paramUnitId,
       preferredUnitName: paramUnitName,
     );
+  }
+
+  /// Seeds the lease range the flow implies: a twelve-month tenancy for rent,
+  /// a one-night stay for BnB. Runs after [_syncRentFrequencyForFlow] so
+  /// [isRentFlow] is settled, and skips any range already set from the route.
+  void _seedLeasePeriod() {
+    if (leaseStart.value != null || leaseEnd.value != null) return;
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    leaseStart.value = start;
+    leaseEnd.value = isRentFlow.value
+        ? DateTime(start.year + 1, start.month, start.day)
+        : start.add(const Duration(days: 1));
+    _refreshStayTotalPreview();
   }
 
   String? _argString(String key) {
@@ -159,11 +225,19 @@ class AddTenantFormController extends BaseController {
 
   /// Rent vs BnB is decided by the tab that opened this form, not by the
   /// shared `/add-new-tenant` route name (that path is used for both).
+  ///
+  /// Workspace comes from this navigation's arguments only. [Get.parameters]
+  /// keeps `workspaceType` from earlier screens (Record Payment on a dual-mode
+  /// property writes `bnb`), which removed rent units from the dropdown.
   void _resolveRouteWorkspacePreference() {
-    final ws = (Get.parameters['workspaceType']?.trim().toLowerCase() ??
-            _argString('workspaceType')?.toLowerCase() ??
-            '')
-        .trim();
+    final showAll = (_argString('showAllUnits') ?? '').trim().toLowerCase();
+    if (showAll == 'true' || showAll == '1') {
+      _showAllUnits = true;
+      _routePrefersRent = false;
+      _routeWorkspaceExplicit = false;
+      return;
+    }
+    final ws = (_argString('workspaceType') ?? '').trim().toLowerCase();
     if (ws == 'rent') {
       _routePrefersRent = true;
       _routeWorkspaceExplicit = true;
@@ -231,22 +305,33 @@ class AddTenantFormController extends BaseController {
     propertyRef.value = selected.propertyRef.isNotEmpty
         ? selected.propertyRef
         : 'local_${selected.id}';
-    final composed = selected.propertyName.trim().isNotEmpty
-        ? '${selected.propertyName.trim()} · ${selected.propertyLocation.trim()}'
-        : selected.propertyLocation.trim();
-    if (composed.isNotEmpty) {
-      propertyContextLabel.value = composed;
+    final propertyName = _nameOf(selected);
+    if (propertyName.isNotEmpty) {
+      propertyContextLabel.value = propertyName;
     }
 
     _updateFlowForProperty(selected);
 
-    final drafts = _parseUnitDrafts(selected.unitsJson);
-    final flowDrafts = _unitsForCurrentFlow(drafts, selected);
+    final drafts = await _unitDraftsFor(selected);
+    final flowDrafts = _unitsForCurrentFlow(
+      drafts,
+      selected,
+      keepUnitId: preferredUnitId,
+      keepUnitName: preferredUnitName,
+    );
     final tenants = await _tenantLocal.getActiveTenants();
-    final visibleDrafts = _excludeAssignedUnits(
+    final freeDrafts = _excludeAssignedUnits(
       flowDrafts,
       property: selected,
       tenants: tenants,
+    );
+    final allOccupied = flowDrafts.isNotEmpty && freeDrafts.isEmpty;
+    replacingOccupiedUnit.value = allOccupied;
+    final visibleDrafts = _withRequestedUnit(
+      flowDrafts,
+      allOccupied ? flowDrafts : freeDrafts,
+      unitId: preferredUnitId,
+      unitName: preferredUnitName,
     );
     availableUnitDrafts.assignAll(visibleDrafts);
 
@@ -255,37 +340,26 @@ class AddTenantFormController extends BaseController {
       return;
     }
 
-    if (preferredUnitId.isNotEmpty) {
-      for (final u in visibleDrafts) {
-        if (u.unitId == preferredUnitId) {
-          selectedUnitKey.value = u.selectionKey;
-          _prefillRentFromUnit(u, selected);
-          return;
-        }
-      }
-    }
-    if (preferredUnitName.isNotEmpty) {
-      for (final u in visibleDrafts) {
-        if (u.unitName.trim() == preferredUnitName) {
-          selectedUnitKey.value = u.selectionKey;
-          _prefillRentFromUnit(u, selected);
-          return;
-        }
-      }
+    final requested = _findUnit(
+      visibleDrafts,
+      unitId: preferredUnitId,
+      unitName: preferredUnitName,
+    );
+    if (requested != null) {
+      _selectDraft(requested, selected);
+      return;
     }
 
     // Prefer a unit that matches the tab that opened this form.
     final preferred = _preferredUnitForFlow(visibleDrafts);
     if (preferred != null) {
-      selectedUnitKey.value = preferred.selectionKey;
-      _prefillRentFromUnit(preferred, selected);
+      _selectDraft(preferred, selected);
       return;
     }
 
-    selectedUnitKey.value =
-        visibleDrafts.length == 1 ? visibleDrafts.first.selectionKey : null;
+    selectedUnitKey.value = null;
     if (visibleDrafts.length == 1) {
-      _prefillRentFromUnit(visibleDrafts.first, selected);
+      _selectDraft(visibleDrafts.first, selected);
     }
   }
 
@@ -337,6 +411,77 @@ class AddTenantFormController extends BaseController {
     }).toList();
   }
 
+  Future<void> _replaceTenantOnUnit({
+    required String unitId,
+    required String unitName,
+  }) async {
+    final property = _linkedProperty;
+    if (property == null) return;
+    final tenants = await _tenantLocal.getActiveTenants();
+    final now = DateTime.now();
+    final endIso = DateFormat('yyyy-MM-dd').format(now);
+    final endMs = now.millisecondsSinceEpoch;
+    for (final tenant in tenants) {
+      if (!_tenantMatchesProperty(tenant, property)) continue;
+      if (!_tenantMatchesUnit(tenant, unitId: unitId, unitName: unitName)) {
+        continue;
+      }
+      await _tenantLocal.endTenancy(
+        id: tenant.id,
+        endedAtIso: endIso,
+        endedAtMs: endMs,
+      );
+      unawaited(_clientEventLocal.insert(
+        tenantLocalId: tenant.id,
+        phoneNumber: tenant.phoneNumber,
+        clientName: tenant.tenantName,
+        propertyRef: tenant.propertyRef,
+        propertyLabel: tenant.propertyLabel,
+        unitLabel: tenant.unitLabel,
+        workspace: isRentFlow.value ? 'rent' : 'bnb',
+        eventType: ClientEventType.leaseEnded,
+        metadata: {'endedAt': endIso, 'replaced': true},
+      ));
+      final backendId = tenant.backendTenantId.trim();
+      if (backendId.isEmpty) continue;
+      try {
+        final res = await _repository.deleteTenant(backendId);
+        final ok = res.responseCode == '0' ||
+            res.responseCode == '200' ||
+            res.responseCode == '201' ||
+            res.responseCode == '204';
+        if (!ok) throw Exception(res.message ?? 'API error');
+      } catch (_) {
+        await _syncQueue.enqueue(
+          entityType: 'tenant',
+          operation: 'delete',
+          payloadJson: jsonEncode({'id': backendId}),
+          dedupeKey: 'tenant:delete:$backendId',
+        );
+        _syncWorker.runNow();
+      }
+    }
+  }
+
+  bool _tenantMatchesUnit(
+    TenantRecord tenant, {
+    required String unitId,
+    required String unitName,
+  }) {
+    final id = tenant.apartmentUnitId.trim();
+    final name = tenant.unitLabel.trim();
+    if (unitId.isNotEmpty && id.isNotEmpty && id == unitId) return true;
+    if (unitName.isNotEmpty &&
+        name.isNotEmpty &&
+        name.toLowerCase() == unitName.toLowerCase()) {
+      return true;
+    }
+    return unitId.isEmpty &&
+        unitName.isEmpty &&
+        id.isEmpty &&
+        name.isEmpty;
+  }
+
   bool _tenantMatchesProperty(TenantRecord t, PropertyRecord property) {
     final listingRef = property.propertyRef.trim().isNotEmpty
         ? property.propertyRef.trim()
@@ -375,19 +520,63 @@ class AddTenantFormController extends BaseController {
 
   List<ApartmentUnitDraft> _unitsForCurrentFlow(
     List<ApartmentUnitDraft> drafts,
-    PropertyRecord property,
-  ) {
-    if (!_routeWorkspaceExplicit) return drafts;
+    PropertyRecord property, {
+    String keepUnitId = '',
+    String keepUnitName = '',
+  }) {
+    if (_showAllUnits || !_routeWorkspaceExplicit) return drafts;
     final propertyWs = property.workspaceType.trim().toLowerCase();
     if (propertyWs == 'rent' || propertyWs == 'bnb') {
       // Single-mode listing: all units belong to that mode.
       return drafts;
     }
     // Dual-mode: only show units for the tab that opened add-tenant.
-    return drafts.where((u) {
-      final um = u.operationMode.trim().toLowerCase();
-      return _routePrefersRent ? um == 'rent' : um != 'rent';
+    // The unit the user just tapped is always kept, even if its stored mode
+    // still says bnb.
+    final filtered = drafts.where((u) {
+      final rent = u.operationMode.trim().toLowerCase() == 'rent';
+      return _routePrefersRent ? rent : !rent;
     }).toList();
+    return _withRequestedUnit(
+      drafts,
+      filtered,
+      unitId: keepUnitId,
+      unitName: keepUnitName,
+    );
+  }
+
+  List<ApartmentUnitDraft> _withRequestedUnit(
+    List<ApartmentUnitDraft> all,
+    List<ApartmentUnitDraft> visible, {
+    required String unitId,
+    required String unitName,
+  }) {
+    if (_findUnit(visible, unitId: unitId, unitName: unitName) != null) {
+      return visible;
+    }
+    final requested = _findUnit(all, unitId: unitId, unitName: unitName);
+    if (requested == null) return visible;
+    return [...visible, requested];
+  }
+
+  ApartmentUnitDraft? _findUnit(
+    List<ApartmentUnitDraft> drafts, {
+    required String unitId,
+    required String unitName,
+  }) {
+    final id = unitId.trim();
+    final name = unitName.trim().toLowerCase();
+    if (id.isEmpty && name.isEmpty) return null;
+    if (id.isNotEmpty) {
+      for (final unit in drafts) {
+        if (unit.unitId.trim() == id) return unit;
+      }
+    }
+    if (name.isEmpty) return null;
+    for (final unit in drafts) {
+      if (unit.unitName.trim().toLowerCase() == name) return unit;
+    }
+    return null;
   }
 
   ApartmentUnitDraft? _preferredUnitForFlow(List<ApartmentUnitDraft> drafts) {
@@ -400,6 +589,26 @@ class AddTenantFormController extends BaseController {
       if (!_routePrefersRent && um != 'rent') return u;
     }
     return null;
+  }
+
+  String _nameOf(PropertyRecord property) {
+    final name = property.propertyName.trim();
+    if (name.isNotEmpty) return name;
+    return property.propertyLocation.trim();
+  }
+
+  /// Name stored on the tenant. The property reference stays in [propertyRef].
+  String _propertyNameForSave() {
+    final linked = _linkedProperty;
+    if (linked != null) {
+      final name = _nameOf(linked);
+      if (name.isNotEmpty) return name;
+    }
+    final label = propertyContextLabel.value.trim();
+    final ref = propertyRef.value.trim();
+    if (label.isEmpty || label == ref) return '';
+    if (label.startsWith('local_') || label.startsWith('legacy_')) return '';
+    return label;
   }
 
   bool _propertyMatchesLabel(PropertyRecord p, String wanted) {
@@ -416,6 +625,11 @@ class AddTenantFormController extends BaseController {
   }
 
   void _updateFlowForProperty(PropertyRecord property, {ApartmentUnitDraft? unit}) {
+    if (_showAllUnits && unit != null) {
+      isRentFlow.value = unit.operationMode == 'rent';
+      _syncRentFrequencyForFlow();
+      return;
+    }
     // Explicit Rent/BnB tab navigation must not be overridden by a unit whose
     // operationMode still defaults to "bnb" on dual-mode properties.
     if (_routeWorkspaceExplicit) {
@@ -520,6 +734,79 @@ class AddTenantFormController extends BaseController {
     _refreshStayTotalPreview();
   }
 
+  Future<List<ApartmentUnitDraft>> _unitDraftsFor(PropertyRecord property) async {
+    final fromJson = _parseUnitDrafts(property.unitsJson);
+    final fromTable = await _unitDraftsFromTable(property);
+    if (fromJson.isEmpty) return fromTable;
+    if (fromTable.isEmpty) return fromJson;
+
+    final merged = [...fromJson];
+    final seen = <String>{};
+    for (final unit in fromJson) {
+      final id = unit.unitId.trim().toLowerCase();
+      final name = unit.unitName.trim().toLowerCase();
+      if (id.isNotEmpty) seen.add('id:$id');
+      if (name.isNotEmpty) seen.add('name:$name');
+    }
+    for (final unit in fromTable) {
+      final id = unit.unitId.trim().toLowerCase();
+      final name = unit.unitName.trim().toLowerCase();
+      final known = (id.isNotEmpty && seen.contains('id:$id')) ||
+          (name.isNotEmpty && seen.contains('name:$name'));
+      if (known) continue;
+      merged.add(unit);
+      if (id.isNotEmpty) seen.add('id:$id');
+      if (name.isNotEmpty) seen.add('name:$name');
+    }
+    return merged;
+  }
+
+  Future<List<ApartmentUnitDraft>> _unitDraftsFromTable(
+    PropertyRecord property,
+  ) async {
+    if (!Get.isRegistered<PropertyUnitLocalDataSource>()) return const [];
+    final local = Get.find<PropertyUnitLocalDataSource>();
+    final refs = <String>{
+      property.propertyRef.trim(),
+      'local_${property.id}',
+      'legacy_${property.id}',
+    };
+    final seen = <String>{};
+    final out = <ApartmentUnitDraft>[];
+    for (final ref in refs) {
+      if (ref.isEmpty) continue;
+      final rows = await local.getAllByPropertyRefNewestFirstChunked(
+        propertyRef: ref,
+      );
+      for (final row in rows) {
+        final name = row.unitName.trim();
+        if (name.isEmpty) continue;
+        final id = row.propertyUnitRef.trim().isNotEmpty
+            ? row.propertyUnitRef.trim()
+            : '${row.id}';
+        if (!seen.add(id.toLowerCase())) continue;
+        out.add(
+          ApartmentUnitDraft(
+            unitId: id,
+            unitName: name,
+            unitRent: row.rentAmount > 0 ? '${row.rentAmount}' : '',
+            unitRentFrequency: row.rentFrequency.trim().isEmpty
+                ? 'Per Month'
+                : row.rentFrequency.trim(),
+            unitFloor: row.floor,
+            operationMode: ApartmentUnitDraft.resolveOperationMode(
+              row.operationMode,
+              row.rentFrequency,
+            ),
+            unitDescription: row.notes,
+            unitRentCurrency: row.rentCurrency,
+          ),
+        );
+      }
+    }
+    return out;
+  }
+
   List<ApartmentUnitDraft> _parseUnitDrafts(String unitsJson) {
     if (unitsJson.trim().isEmpty) return const [];
     try {
@@ -579,6 +866,7 @@ class AddTenantFormController extends BaseController {
     }
     leaseStart.value = start;
     leaseEnd.value = end;
+    _leaseTermEnteredByUser = true;
     _refreshStayTotalPreview();
   }
 
@@ -636,9 +924,16 @@ class AddTenantFormController extends BaseController {
     final draft = _draftForKey(selectedUnitKey.value);
     final unitLabel = draft?.unitName.trim() ?? '';
     final apartmentUnitId = draft?.unitId.trim() ?? '';
+    if (replacingOccupiedUnit.value) {
+      await _replaceTenantOnUnit(
+        unitId: apartmentUnitId,
+        unitName: unitLabel,
+      );
+    }
 
+    final propertyName = _propertyNameForSave();
     final bnbTenantId = await _tenantLocal.insert(
-      propertyLabel: propertyContextLabel.value.trim(),
+      propertyLabel: propertyName,
       propertyRef: propertyRef.value.trim(),
       apartmentUnitId: apartmentUnitId,
       unitLabel: unitLabel,
@@ -658,7 +953,7 @@ class AddTenantFormController extends BaseController {
       phoneNumber: phoneController.text.trim(),
       clientName: tenantNameController.text.trim(),
       propertyRef: propertyRef.value.trim(),
-      propertyLabel: propertyContextLabel.value.trim(),
+      propertyLabel: propertyName,
       unitLabel: unitLabel,
       workspace: 'bnb',
       eventType: ClientEventType.bookingCreated,
@@ -674,6 +969,8 @@ class AddTenantFormController extends BaseController {
       'phone': phoneController.text.trim(),
       'email': emailController.text.trim(),
       'propertyRef': propertyRef.value.trim(),
+      'property_name': propertyName,
+      'propertyName': propertyName,
       'unitId': apartmentUnitId,
       'unitName': unitLabel,
       'leaseStart': DateFormat('yyyy-MM-dd').format(leaseStart.value!),
@@ -684,6 +981,7 @@ class AddTenantFormController extends BaseController {
       'rentCurrency': selectedCurrency.value,
       'localTenantId': bnbTenantId,
     };
+    var synced = false;
     try {
       final res = await _repository.createTenant(payload);
       final ok = res.responseCode == '0' ||
@@ -693,11 +991,12 @@ class AddTenantFormController extends BaseController {
       final backendId =
           (res.data is Map) ? (res.data as Map)['id']?.toString() ?? '' : '';
       if (backendId.isNotEmpty) {
-        unawaited(_tenantLocal.saveBackendTenantId(
+        await _tenantLocal.saveBackendTenantId(
           localId: bnbTenantId,
           backendId: backendId,
-        ));
+        );
       }
+      synced = true;
     } catch (_) {
       await _syncQueue.enqueue(
         entityType: 'tenant',
@@ -709,21 +1008,32 @@ class AddTenantFormController extends BaseController {
       _syncWorker.runNow();
     }
 
+    RemoteAccountSyncService.publishTenantCountFor(propertyRef.value);
+
+    if (replacingOccupiedUnit.value) {
+      showSuccessMessage('Tenant replaced');
+      await _refreshPropertyTenantSurfaces();
+      Get.back(result: true);
+      return;
+    }
+
     final units = stayBillingUnits.value;
     if (stayTotal > 0 && units > 0) {
       final nightLabel = units == 1 ? 'night' : 'nights';
       showSuccessMessage(
-        'Tenant saved. Total for stay ($units $nightLabel): '
+        '${synced ? 'Tenant saved' : 'Tenant saved offline'}. Total for stay ($units $nightLabel): '
         '${Get.find<CurrencyService>().formatBase(stayTotal.round())}',
       );
     } else {
-      showSuccessMessage('Tenant saved offline');
+      showSuccessMessage(synced ? 'Tenant saved' : 'Tenant saved offline');
     }
     await _refreshPropertyTenantSurfaces();
     Get.back(result: true);
   }
 
   Future<void> _saveRentTenant() async {
+    if (!await _ensureLeaseTerm()) return;
+
     final amountRaw = rentAmountController.text.trim().replaceAll(',', '');
     final amount = double.tryParse(amountRaw);
     if (amount == null || amount <= 0) {
@@ -734,14 +1044,21 @@ class AddTenantFormController extends BaseController {
     final draft = _draftForKey(selectedUnitKey.value);
     final unitLabel = draft?.unitName.trim() ?? '';
     final apartmentUnitId = draft?.unitId.trim() ?? '';
+    if (replacingOccupiedUnit.value) {
+      await _replaceTenantOnUnit(
+        unitId: apartmentUnitId,
+        unitName: unitLabel,
+      );
+    }
     await _markUnitOccupied(
       unitId: apartmentUnitId,
       unitName: unitLabel,
       tenantName: tenantNameController.text.trim(),
     );
 
+    final propertyName = _propertyNameForSave();
     final rentTenantId = await _tenantLocal.insert(
-      propertyLabel: propertyContextLabel.value.trim(),
+      propertyLabel: propertyName,
       propertyRef: propertyRef.value.trim(),
       apartmentUnitId: apartmentUnitId,
       unitLabel: unitLabel,
@@ -763,7 +1080,7 @@ class AddTenantFormController extends BaseController {
       phoneNumber: phoneController.text.trim(),
       clientName: tenantNameController.text.trim(),
       propertyRef: propertyRef.value.trim(),
-      propertyLabel: propertyContextLabel.value.trim(),
+      propertyLabel: propertyName,
       unitLabel: unitLabel,
       workspace: 'rent',
       eventType: ClientEventType.tenantAdded,
@@ -780,6 +1097,8 @@ class AddTenantFormController extends BaseController {
       'phone': phoneController.text.trim(),
       'email': emailController.text.trim(),
       'propertyRef': propertyRef.value.trim(),
+      'property_name': propertyName,
+      'propertyName': propertyName,
       'unitId': apartmentUnitId,
       'unitName': unitLabel,
       'leaseStart': DateFormat('yyyy-MM-dd').format(leaseStart.value!),
@@ -790,6 +1109,7 @@ class AddTenantFormController extends BaseController {
       'rentCurrency': selectedCurrency.value,
       'localTenantId': rentTenantId,
     };
+    var synced = false;
     try {
       final res = await _repository.createTenant(rentPayload);
       final ok = res.responseCode == '0' ||
@@ -799,11 +1119,12 @@ class AddTenantFormController extends BaseController {
       final backendId =
           (res.data is Map) ? (res.data as Map)['id']?.toString() ?? '' : '';
       if (backendId.isNotEmpty) {
-        unawaited(_tenantLocal.saveBackendTenantId(
+        await _tenantLocal.saveBackendTenantId(
           localId: rentTenantId,
           backendId: backendId,
-        ));
+        );
       }
+      synced = true;
     } catch (_) {
       await _syncQueue.enqueue(
         entityType: 'tenant',
@@ -815,14 +1136,20 @@ class AddTenantFormController extends BaseController {
       _syncWorker.runNow();
     }
 
+    RemoteAccountSyncService.publishTenantCountFor(propertyRef.value);
+
     await _refreshPropertyTenantSurfaces();
 
     hapticPrimaryConfirm();
-    showSuccessMessage('Tenant saved offline');
+    showSuccessMessage(
+      replacingOccupiedUnit.value
+          ? 'Tenant replaced'
+          : (synced ? 'Tenant saved' : 'Tenant saved offline'),
+    );
 
     final addIncome = await _promptAddIncomeAfterTenant();
     if (addIncome == true) {
-      final nav = _incomeNavigationArgs();
+      final nav = _incomeNavigationArgs(tenantId: rentTenantId);
       Get.back(result: true);
       await Get.toNamed(
         Routes.RECORD_PAYMENT,
@@ -830,6 +1157,7 @@ class AddTenantFormController extends BaseController {
           if (nav['property'] != null) 'property': nav['property'] as String,
           if (nav['propertyRef'] != null)
             'propertyRef': nav['propertyRef'] as String,
+          'tenantId': '$rentTenantId',
         },
         arguments: nav,
       );
@@ -841,6 +1169,7 @@ class AddTenantFormController extends BaseController {
 
   Future<void> _refreshPropertyTenantSurfaces() async {
     await RentTenantResidencyPaymentTrackerController.refreshIfRegistered();
+    await RentTenantLedgerOccupancyController.refreshIfRegistered();
     await ListingDetailsController.refreshIfRegistered();
     await RentExpectedPaymentScheduleController.refreshIfRegistered();
     await MyPropertiesController.refreshIfRegistered();
@@ -867,7 +1196,7 @@ class AddTenantFormController extends BaseController {
     );
   }
 
-  Map<String, dynamic> _incomeNavigationArgs() {
+  Map<String, dynamic> _incomeNavigationArgs({required int tenantId}) {
     final p = _linkedProperty;
     final propertyOption = p == null
         ? propertyContextLabel.value.trim()
@@ -877,13 +1206,95 @@ class AddTenantFormController extends BaseController {
     return {
       'property': propertyOption,
       'propertyRef': propertyRef.value.trim(),
+      'tenantId': tenantId,
       'prefillIncome': {
+        'tenantId': tenantId,
         'tenantName': tenantNameController.text.trim(),
         'amount': rentAmountController.text.trim().replaceAll(',', ''),
         'unitSelectionKey': selectedUnitKey.value,
         'categoryIndex': 0,
       },
     };
+  }
+
+  Future<bool> _ensureLeaseTerm() async {
+    if (_leaseTermEnteredByUser &&
+        leaseStart.value != null &&
+        leaseEnd.value != null) {
+      return true;
+    }
+    final months = await _promptLeaseTermMonths();
+    if (months == null) return false;
+    final now = DateTime.now();
+    final start = leaseStart.value ?? DateTime(now.year, now.month, now.day);
+    leaseStart.value = start;
+    leaseEnd.value = _addCalendarMonths(start, months);
+    _leaseTermEnteredByUser = true;
+    _refreshStayTotalPreview();
+    return true;
+  }
+
+  Future<int?> _promptLeaseTermMonths() async {
+    final controller = TextEditingController();
+    final result = await Get.dialog<int>(
+      AlertDialog(
+        title: Text(_t('Enter lease term', 'Weka muda wa mkataba')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _t(
+                'How many months is this tenancy?',
+                'Mkataba huu ni miezi mingapi?',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: _t('Months', 'Miezi'),
+                hintText: '6',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(_t('Cancel', 'Ghairi')),
+          ),
+          FilledButton(
+            onPressed: () {
+              final months = int.tryParse(controller.text.trim());
+              if (months == null || months <= 0) {
+                Get.snackbar(
+                  _t('Lease term', 'Muda wa mkataba'),
+                  _t('Enter the number of months', 'Weka idadi ya miezi'),
+                );
+                return;
+              }
+              Get.back(result: months);
+            },
+            child: Text(_t('Save', 'Hifadhi')),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+    controller.dispose();
+    return result;
+  }
+
+  static DateTime _addCalendarMonths(DateTime start, int months) {
+    final targetMonth = start.month + months;
+    final year = start.year + ((targetMonth - 1) ~/ 12);
+    final month = ((targetMonth - 1) % 12) + 1;
+    final lastDay = DateTime(year, month + 1, 0).day;
+    final day = start.day > lastDay ? lastDay : start.day;
+    return DateTime(year, month, day);
   }
 
   Future<void> _markUnitOccupied({

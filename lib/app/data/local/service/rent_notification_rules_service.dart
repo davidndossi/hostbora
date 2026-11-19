@@ -9,10 +9,11 @@ import '/app/data/local/db/tenant_local_data_source.dart';
 import '/app/data/local/db/rent_notification_log_local_data_source.dart';
 import '/app/data/local/preference/preference_manager.dart';
 import '/app/data/local/service/local_notification_scheduler_service.dart';
+import '/app/data/local/service/plan_expiry_warning_service.dart';
 import '/app/data/local/service/property_break_even_notification_service.dart';
 
 /// Rule-based reminders:
-/// - Staff salary due: 2 days prior
+/// - Staff salary due: 2 days prior, 1 day prior, and 6 hours prior
 /// - Tenant payment: 1 month prior, then weekly until lease end
 /// - Scheduled maintenance: 1 day prior
 class RentNotificationRulesService extends GetxService {
@@ -42,7 +43,8 @@ class RentNotificationRulesService extends GetxService {
 
   void start() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(hours: 12), (_) {
+    // Hourly so the 6-hour salary window can still fire if scheduling was missed.
+    _timer = Timer.periodic(const Duration(hours: 1), (_) {
       unawaited(runNow());
     });
     // Defer first pass so login/Home paint stay responsive.
@@ -53,46 +55,140 @@ class RentNotificationRulesService extends GetxService {
     if (_running) return;
     _running = true;
     try {
-      final today = _day(DateTime.now());
-      await _handleStaffSalaryReminders(today);
+      final now = DateTime.now();
+      final today = _day(now);
+      await _handleStaffSalaryReminders(now, today);
       await _handleTenantPaymentReminders(today);
       await _handleMaintenanceReminders(today);
       if (Get.isRegistered<PropertyBreakEvenNotificationService>()) {
         await Get.find<PropertyBreakEvenNotificationService>().runNow();
       }
+      // Rides this pass rather than owning a timer: it needs the same
+      // hourly cadence and the same deferred first run after login.
+      await PlanExpiryWarningService.refreshIfRegistered();
     } finally {
       _running = false;
     }
   }
 
-  Future<void> _handleStaffSalaryReminders(DateTime today) async {
+  Future<void> _handleStaffSalaryReminders(DateTime now, DateTime today) async {
     final staff = await _staffLocal.getAllNewestFirst();
     for (final s in staff) {
       final payDay = int.tryParse(s.payDayLabel.trim());
       if (payDay == null || payDay < 1 || payDay > 31) continue;
+
+      // Reminder days are based on this calendar month's payday.
       final due = _safeDate(today.year, today.month, payDay);
-      final reminderDate = _day(due.subtract(const Duration(days: 2)));
-      if (!_sameDay(reminderDate, today)) continue;
+      final monthKey = DateFormat('yyyyMM').format(due);
 
-      final monthKey = DateFormat('yyyyMM').format(today);
-      final dedupe = 'staff_due_${s.id}_$monthKey';
-      if (await _alreadySent(dedupe)) continue;
-
-      await _notificationScheduler.showNow(
-        id: _notificationId('staff_${s.id}_$monthKey'),
+      await _maybeSendStaffDayReminder(
+        staffId: s.id,
+        staffName: s.name,
+        jobTitle: s.jobTitle,
+        payDayLabel: s.payDayLabel,
+        today: today,
+        due: due,
+        daysBefore: 2,
+        monthKey: monthKey,
         title: 'Salary Due Soon',
-        body: '${s.name} salary is due in 2 days (day ${s.payDayLabel}).',
-        payload: 'staff:${s.id}',
-      );
-      await _notificationLogLocal.insert(
-        type: 'urgent',
-        title: 'Salary Due: ${s.name}',
+        body:
+            '${s.name} salary is due in 2 days (day ${s.payDayLabel}).',
         subtitle: '${s.jobTitle} - due in 2 days',
-        actionLabel: 'Open Staff',
-        payload: 'staff:${s.id}',
       );
-      await _markSent(dedupe);
+      await _maybeSendStaffDayReminder(
+        staffId: s.id,
+        staffName: s.name,
+        jobTitle: s.jobTitle,
+        payDayLabel: s.payDayLabel,
+        today: today,
+        due: due,
+        daysBefore: 1,
+        monthKey: monthKey,
+        title: 'Salary Due Tomorrow',
+        body:
+            '${s.name} salary is due tomorrow (day ${s.payDayLabel}).',
+        subtitle: '${s.jobTitle} - due in 1 day',
+      );
+
+      // 6 hours before payday start (midnight) → previous day 18:00.
+      final sixHoursBefore = due.subtract(const Duration(hours: 6));
+      final dedupe6h = 'staff_due_6h_${s.id}_$monthKey';
+      if (sixHoursBefore.isAfter(now)) {
+        if (!await _alreadySent(dedupe6h)) {
+          await _notificationScheduler.scheduleOneShot(
+            id: _notificationId('staff6h_${s.id}_$monthKey'),
+            when: sixHoursBefore,
+            title: 'Salary Due in 6 Hours',
+            body:
+                '${s.name} salary is due in 6 hours (day ${s.payDayLabel}).',
+            payload: 'staff:${s.id}',
+          );
+          await _notificationLogLocal.insert(
+            type: 'urgent',
+            title: 'Salary Due: ${s.name}',
+            subtitle: '${s.jobTitle} - due in 6 hours',
+            actionLabel: 'Open Staff',
+            payload: 'staff:${s.id}',
+          );
+          await _markSent(dedupe6h);
+        }
+      } else if (!now.isBefore(sixHoursBefore) && now.isBefore(due)) {
+        // App opened inside the 6h window — fire immediately if not already sent.
+        if (!await _alreadySent('${dedupe6h}_shown')) {
+          await _notificationScheduler.showNow(
+            id: _notificationId('staff6h_now_${s.id}_$monthKey'),
+            title: 'Salary Due in 6 Hours',
+            body:
+                '${s.name} salary is due today (day ${s.payDayLabel}).',
+            payload: 'staff:${s.id}',
+          );
+          await _notificationLogLocal.insert(
+            type: 'urgent',
+            title: 'Salary Due: ${s.name}',
+            subtitle: '${s.jobTitle} - payday today',
+            actionLabel: 'Open Staff',
+            payload: 'staff:${s.id}',
+          );
+          await _markSent('${dedupe6h}_shown');
+          await _markSent(dedupe6h);
+        }
+      }
     }
+  }
+
+  Future<void> _maybeSendStaffDayReminder({
+    required int staffId,
+    required String staffName,
+    required String jobTitle,
+    required String payDayLabel,
+    required DateTime today,
+    required DateTime due,
+    required int daysBefore,
+    required String monthKey,
+    required String title,
+    required String body,
+    required String subtitle,
+  }) async {
+    final reminderDate = _day(due.subtract(Duration(days: daysBefore)));
+    if (!_sameDay(reminderDate, today)) return;
+
+    final dedupe = 'staff_due_${daysBefore}d_${staffId}_$monthKey';
+    if (await _alreadySent(dedupe)) return;
+
+    await _notificationScheduler.showNow(
+      id: _notificationId('staff_${daysBefore}d_${staffId}_$monthKey'),
+      title: title,
+      body: body,
+      payload: 'staff:$staffId',
+    );
+    await _notificationLogLocal.insert(
+      type: 'urgent',
+      title: 'Salary Due: $staffName',
+      subtitle: subtitle,
+      actionLabel: 'Open Staff',
+      payload: 'staff:$staffId',
+    );
+    await _markSent(dedupe);
   }
 
   Future<void> _handleTenantPaymentReminders(DateTime today) async {
